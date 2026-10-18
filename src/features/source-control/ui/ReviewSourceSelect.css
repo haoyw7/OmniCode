@@ -1,0 +1,57 @@
+/* ZCode's large input trigger and floating source menu. */
+.review-source-select,
+.review-source-menu {
+  background: color-mix(
+    in srgb,
+    var(--color-menu) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+  border-color: var(--color-stroke);
+  font-size: var(--text-ui-base);
+}
+
+.review-source-select {
+  background: var(--color-input);
+  border-color: var(--color-input-border);
+  transition: border-color 120ms var(--motion-ease-out);
+}
+
+.review-source-select:hover,
+.review-source-select[aria-expanded="true"] {
+  border-color: var(--color-input-border-hover);
+}
+
+.review-source-menu {
+  border-radius: 8px;
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+  opacity: 1;
+  transform: none;
+}
+
+.review-source-menu.popover-open {
+  animation: none;
+}
+
+.review-source-menu:is(
+  [data-fold-state="closing"],
+  [data-fold-state="closed"]
+) {
+  opacity: 0;
+  transform: translateY(var(--popover-lift, -4px)) scale(0.98);
+  pointer-events: none;
+}
+
+@starting-style {
+  .review-source-menu {
+    opacity: 0;
+    transform: translateY(var(--popover-lift, -4px)) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-source-menu {
+    transition: none;
+  }
+}

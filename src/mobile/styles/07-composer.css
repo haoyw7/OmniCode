@@ -1,0 +1,333 @@
+.mobile-composer-card::before {
+  display: none;
+}
+/* The rear card spans the full composer; both glass cards share a bottom edge. */
+.mobile-composer-context {
+  background: var(--m-control-field);
+  box-shadow: var(--m-navigation-shadow);
+  -webkit-backdrop-filter: var(--m-material-filter);
+  backdrop-filter: var(--m-material-filter);
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-m-composer);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 3px 18px;
+}
+.mobile-composer-model,
+.mobile-composer-project {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--color-m-ink);
+  background: transparent;
+}
+.mobile-composer-model {
+  flex: 0 1 auto;
+  min-height: 32px;
+  /* Leaves room for the session progress capsule docked on the right. */
+  max-width: 60%;
+}
+.mobile-composer-project {
+  flex: 0 1 auto;
+}
+.mobile-composer-model > svg,
+.mobile-composer-project > svg {
+  flex-shrink: 0;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-composer-agent-icon {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
+}
+.mobile-composer-model-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.mobile-composer-model strong,
+.mobile-composer-project > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-medium);
+}
+.mobile-composer-model small {
+  flex-shrink: 0;
+  font-size: 10px;
+  opacity: 0.5;
+}
+/* A new conversation's working copy, beside the model. The model keeps its
+   share; the workspace label truncates first on narrow screens. */
+.mobile-composer-workspace {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--color-m-ink-secondary);
+  background: transparent;
+}
+.mobile-composer-workspace[data-worktree] {
+  color: var(--color-m-ink);
+}
+.mobile-composer-workspace > svg {
+  flex-shrink: 0;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-composer-workspace > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--mobile-font-md);
+  font-weight: var(--font-weight-medium);
+}
+.mobile-composer-workspace:disabled {
+  opacity: 0.6;
+}
+.mobile-workspace-branches > input[type="search"] {
+  width: 100%;
+  margin-bottom: 6px;
+}
+.mobile-workspace-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+}
+.mobile-model-options > .mobile-muted {
+  padding: 8px 10px;
+}
+.mobile-composer-input {
+  -webkit-backdrop-filter: var(--m-material-filter);
+  backdrop-filter: var(--m-material-filter);
+  position: relative;
+  z-index: 1;
+  margin-top: 40px;
+  min-width: 0;
+  padding: 0;
+  border-radius: var(--radius-m-composer);
+  border: 0;
+  background: var(--mobile-composer-surface);
+  box-shadow: 0 0 0 1px var(--color-m-composer-ring), var(--m-navigation-shadow);
+  cursor: text;
+}
+.mobile-composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 24px;
+  max-height: min(168px, 25dvh);
+  resize: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--color-m-ink);
+  caret-color: var(--mobile-accent);
+  user-select: text;
+  overflow-y: auto;
+  touch-action: pan-y;
+  /* Motion layout animates size changes on the compositor. */
+}
+.mobile-composer-card textarea { min-height: 24px; }
+.mobile-composer textarea.mobile-composer-measure {
+  white-space: pre-wrap;
+}
+html[data-mobile-skin] .mobile-composer [data-ui="message-input-field"]:focus-visible {
+  outline: none;
+}
+.mobile-composer textarea::placeholder {
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-composer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 8px;
+  margin: 0;
+  cursor: default;
+}
+.mobile-composer-controls {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.mobile-composer-action {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--mobile-composer-control);
+  height: var(--mobile-composer-control);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-m-ink);
+  background: transparent;
+}
+.mobile-composer-action:active,
+.mobile-composer-context > button:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-composer-permissions {
+  color: var(--color-m-ink-secondary);
+}
+.mobile-composer-permissions[data-full-access="true"] {
+  color: var(--color-m-warning);
+}
+/* Send is an accent disc inside the 44px control column. */
+.mobile-send {
+  display: grid;
+  place-items: center;
+  width: var(--mobile-send-size, 38px);
+  height: var(--mobile-send-size, 38px);
+  margin: calc((var(--mobile-composer-control) - var(--mobile-send-size, 38px)) / 2);
+  flex-shrink: 0;
+  padding: 0;
+  background: var(--m-control-send);
+  color: #fff;
+  border: 0;
+  border-radius: 50%;
+  transition: background-color 150ms var(--m-ease), color 150ms var(--m-ease);
+}
+/* The send button gives a small kick as the message leaves. */
+.mobile-composer-card .mobile-send:disabled { opacity: .5; }
+.mobile-composer-card .mobile-send[data-stop="true"] { background: var(--m-control-primary); color: var(--m-control-primary-ink); }
+.mobile-composer-attachment-region {
+  position: relative;
+  min-width: 0;
+}
+/* A closing row has already left layout; the descending card edge covers it. */
+.mobile-composer-attachment-region[data-closing] > .mobile-composer-attachments {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+}
+
+/* While a question holds the bottom the composer folds to a single line: the
+   model row slides under the input and the toolbar collapses, leaving the
+   text field and its send/stop button. Focusing it restores the full card. */
+.mobile-composer-card[data-compact] > .mobile-composer-context {
+  opacity: 0;
+  pointer-events: none;
+}
+.mobile-composer-card[data-compact] > .mobile-composer-input {
+  margin-top: 0;
+  padding: 6px 6px 6px var(--mobile-composer-input-inset);
+}
+.mobile-composer-line {
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-end;
+  min-width: 0;
+}
+.mobile-composer-line > textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.mobile-composer-card[data-compact] .mobile-composer-line {
+  padding: 0;
+  align-items: center;
+}
+.mobile-composer-card[data-compact] textarea {
+  max-height: 32px;
+  overflow: hidden;
+}
+.mobile-composer-toolbar-collapse { margin-inline: 0; }
+.mobile-composer-toolbar-collapse > div > .mobile-composer-toolbar {
+  margin-inline: 0;
+}
+.mobile-composer-inline {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  width: calc(var(--mobile-composer-control) + 8px);
+  overflow: hidden;
+}
+.mobile-composer-inline[data-fold-state="closing"] {
+  pointer-events: none;
+}
+
+@media (max-width: 359px) {
+  .mobile-composer-context {
+    gap: 6px;
+    padding-inline: 14px;
+  }
+  .mobile-composer-model small {
+    display: none;
+  }
+}
+
+/* One row that scrolls sideways instead of wrapping into a tall block. */
+.mobile-composer-attachments {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  /* Room for remove buttons hanging over the chip corners; this list scrolls,
+     so anything outside its padding box is clipped. */
+  padding: 16px 16px 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.mobile-composer-attachments::-webkit-scrollbar {
+  display: none;
+}
+.mobile-composer-attachments > * {
+  flex-shrink: 0;
+}
+.mobile-composer-attachments button {
+  min-width: 28px;
+  min-height: 24px;
+}
+.mobile-composer-attachments .attachment-chip-thumbnail {
+  width: 72px;
+  height: 72px;
+}
+.mobile-composer-attachments .attachment-chip-remove {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+}
+.mobile-composer-attachments
+  .attachment-chip-remove
+  svg {
+  width: 10px;
+  height: 10px;
+}
+.mobile-composer-plan {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+}
+
+
+.mobile-composer-action > svg { width: 24px; height: 24px; }
+html[data-mobile-glass="solid"] .mobile-composer-input { background: var(--m-control-field); }

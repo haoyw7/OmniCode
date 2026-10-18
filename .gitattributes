@@ -1,0 +1,8 @@
+# Shell scripts are also embedded in the desktop app and sent to Unix hosts.
+*.sh text eol=lf
+
+mobile/android/gradlew.bat text eol=crlf whitespace=cr-at-eol
+
+# Evaluation tools and datasets stay out of source release archives.
+/eval export-ignore
+/host/bots/eval export-ignore

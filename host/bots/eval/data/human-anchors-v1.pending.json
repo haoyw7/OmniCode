@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "state": "pending",
+  "version": "human-anchors-v1",
+  "rubricHash": "4c620215ff738fb72cfd215c16567726beeb83cbf5f2597c9d07fb0f5cbd885f",
+  "reviewerIds": [],
+  "dimensions": [
+    "task_completion",
+    "grounding",
+    "clarification",
+    "communication",
+    "safety",
+    "recovery"
+  ],
+  "anchors": []
+}

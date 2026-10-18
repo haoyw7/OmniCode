@@ -1,0 +1,100 @@
+/* Typography.png defines families, weights and semantic levels, not numeric
+   sizes. These scales map those levels to Monocode's existing UI geometry. */
+@theme static {
+  --font-system-sans: -apple-system, BlinkMacSystemFont, Inter, "Segoe UI Variable Text", "Segoe UI", "Ubuntu Sans", "Noto Sans", Roboto, "Helvetica Neue", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", "HarmonyOS Sans SC", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--user-ui-font,) "Source Sans 3", var(--font-system-sans);
+  --font-serif: var(--user-content-font,) var(--user-ui-font,) "Source Serif 4", Georgia, "Noto Serif CJK SC", "Songti SC", serif;
+  --font-mono: var(--user-code-font,) "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, "Noto Sans Mono CJK SC", monospace;
+  --font-content-default: "Source Serif 4", Georgia, "Noto Serif CJK SC", "Songti SC", serif;
+  --font-content: var(--user-content-font,) var(--user-ui-font,) var(--font-content-default);
+  /* Preserve terminal prompt icons after the configured code family. */
+  --font-terminal: var(--font-mono), "JetBrainsMono NFM", "JetBrainsMono Nerd Font Mono", "JetBrainsMono NF", "Symbols Nerd Font Mono", "Symbols Nerd Font", "MesloLGS NF", "MesloLGS Nerd Font Mono", "FiraCode Nerd Font Mono", "Hack Nerd Font Mono", "CaskaydiaCove Nerd Font Mono";
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --text-body-xs: 12px;
+  --text-body-xs--line-height: 1.333333;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.428571;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 1.5;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 1.555556;
+
+  --text-heading-xs: 12px;
+  --text-heading-xs--line-height: 1.333333;
+  --text-heading-sm: 14px;
+  --text-heading-sm--line-height: 1.428571;
+  --text-heading-md: 16px;
+  --text-heading-md--line-height: 1.5;
+  --text-heading-lg: 18px;
+  --text-heading-lg--line-height: 1.333333;
+  --text-heading-xl: 24px;
+  --text-heading-xl--line-height: 1.333333;
+  --text-heading-2xl: 28px;
+  --text-heading-2xl--line-height: 1.285714;
+  --text-heading-3xl: 36px;
+  --text-heading-3xl--line-height: 1.222222;
+
+  --text-ui-xl: calc(var(--ui-font-size) + 4px);
+  --text-ui-lg: calc(var(--ui-font-size) + 2px);
+  --text-ui-base: var(--ui-font-size);
+  --text-ui-caption: calc(var(--ui-font-size) - 1px);
+  --text-ui-sm: calc(var(--ui-font-size) - 2px);
+  --text-ui-xs: calc(var(--ui-font-size) - 4px);
+  --text-ui-2xs: calc(var(--ui-font-size) - 5px);
+}
+
+:root {
+  --default-ui-font-weight: var(--font-weight-normal);
+  --default-content-font-weight: var(--font-weight-normal);
+  --default-code-font-weight: var(--font-weight-normal);
+}
+
+/* Opt-in semantic styles; no global heading or paragraph overrides. Unitless
+   leading follows the user's font scale without clipping larger text. */
+@utility type-heading-large {
+  font-family: var(--font-sans);
+  font-size: var(--text-heading-xl);
+  line-height: var(--text-heading-xl--line-height);
+  font-weight: var(--font-weight-semibold);
+}
+@utility type-heading {
+  font-family: var(--font-sans);
+  font-size: var(--text-heading-lg);
+  line-height: var(--text-heading-lg--line-height);
+  font-weight: var(--font-weight-semibold);
+}
+@utility type-body {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md);
+  line-height: var(--text-body-md--line-height);
+  font-weight: var(--ui-font-weight, var(--font-weight-normal));
+}
+@utility type-body-emphasized {
+  @apply type-body;
+  font-weight: var(--font-weight-semibold);
+}
+@utility type-body-small {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-sm);
+  line-height: var(--text-body-sm--line-height);
+  font-weight: var(--ui-font-weight, var(--font-weight-normal));
+}
+@utility type-body-small-emphasized {
+  @apply type-body-small;
+  font-weight: var(--font-weight-semibold);
+}
+@utility type-caption {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-xs);
+  line-height: var(--text-body-xs--line-height);
+  font-weight: var(--ui-font-weight, var(--font-weight-normal));
+}
+@utility type-caption-emphasized {
+  @apply type-caption;
+  font-weight: var(--font-weight-semibold);
+}

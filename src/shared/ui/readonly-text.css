@@ -1,0 +1,60 @@
+.readonly-text-view {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--color-stroke);
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--color-background-base) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+  color: var(--color-content);
+  font-size: calc(13px + var(--mobile-popup-font-step, 0px));
+  user-select: text;
+}
+.readonly-text-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-stroke);
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+.readonly-text-toolbar button {
+  min-height: 36px;
+  padding: 0 6px;
+  touch-action: manipulation;
+}
+.readonly-text-toolbar button[aria-pressed="true"] {
+  color: var(--color-accent);
+}
+.readonly-text-viewport {
+  height: min(55dvh, 440px);
+  min-height: 160px;
+}
+.readonly-text-view .cm-content {
+  user-select: text;
+  -webkit-user-select: text;
+}
+.readonly-text-view .cm-scroller {
+  scrollbar-width: var(--readonly-scrollbar-width, thin);
+}
+.readonly-text-view .cm-scroller::-webkit-scrollbar {
+  width: var(--scrollbar-size, max(var(--scrollbar-min-size, 0px), calc(10px * var(--scrollbar-scale, 1))));
+  height: var(--scrollbar-size, max(var(--scrollbar-min-size, 0px), calc(10px * var(--scrollbar-scale, 1))));
+}
+.mobile-detail-section > .readonly-text-view {
+  margin-top: 6px;
+}
+.agent-markdown .markdown-code-shell:has(> .readonly-text-view) {
+  /* Reserve the existing absolute filename/icon/copy header without margin collapse. */
+  padding-top: 36px;
+}
+.readonly-text-view .readonly-diff-add {
+  background: rgb(16 185 129 / 12%);
+}
+.readonly-text-view .readonly-diff-del {
+  background: rgb(244 63 94 / 12%);
+}

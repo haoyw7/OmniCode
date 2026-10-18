@@ -1,0 +1,40 @@
+{
+  "family": "JetBrains Mono",
+  "version": "2.304",
+  "upstream": "https://github.com/JetBrains/JetBrainsMono/tree/v2.304",
+  "license": "OFL-1.1",
+  "files": [
+    {
+      "file": "JetBrainsMono-Regular.woff2",
+      "sha256": "a9cb1cd82332b23a47e3a1239d25d13c86d16c4220695e34b243effa999f45f2"
+    },
+    {
+      "file": "JetBrainsMono-Italic.woff2",
+      "sha256": "cb6a1b246318ed3885d7dffa14a2609297fe80e9b8e500bea33b52fa312a36a4"
+    },
+    {
+      "file": "JetBrainsMono-Medium.woff2",
+      "sha256": "086c48dfbea9ddaff1320f7e09399b8e2924e88ce67453721255db3bdbb5a353"
+    },
+    {
+      "file": "JetBrainsMono-MediumItalic.woff2",
+      "sha256": "1c9b7a62ee6c3f77c82982a3d0ab7ead8805f5e67ccfc1942037fc65f398f22b"
+    },
+    {
+      "file": "JetBrainsMono-SemiBold.woff2",
+      "sha256": "918edad542a1da608fd2ba8daebaff9ac802309103fe760eed465b8b4e47faf1"
+    },
+    {
+      "file": "JetBrainsMono-SemiBoldItalic.woff2",
+      "sha256": "07daacf7fc1956b5b68d902ab4763a062b196a3665d713e54bff066c667c0674"
+    },
+    {
+      "file": "JetBrainsMono-Bold.woff2",
+      "sha256": "c503cc5ec5f8b2c7666b7ecda1adf44bd45f2e6579b2eba0fc292150416588a2"
+    },
+    {
+      "file": "JetBrainsMono-BoldItalic.woff2",
+      "sha256": "3a013466c0eee979fb9d42c2d7a8887cd3645dc8b897cfc5b71781cf982efc5a"
+    }
+  ]
+}

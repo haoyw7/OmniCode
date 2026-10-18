@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-motion omi-motion-running" role="img" aria-label="Omi · 执行" data-state="running" data-duration="1.2">
+  <style>
+@keyframes omi-running-line { 0% {opacity:0;transform:translateX(0)} 20% {opacity:1;transform:translateX(0)} 80% {opacity:1;transform:translateX(120px)} 100% {opacity:0;transform:translateX(120px)} }
+.omi-motion-running .omi-progress{animation:omi-running-line 1.2s cubic-bezier(.22,1,.36,1) infinite}
+.omi-motion-running .omi-a {transform-box:view-box}
+.omi-motion-running[data-paused="true"] .omi-a {animation-play-state:paused}
+.omi-motion-running[data-motion="off"] .omi-a {animation:none!important}
+@media (prefers-reduced-motion:reduce) {.omi-motion-running .omi-a {animation:none!important}}</style>
+  <g fill="#ffffff" stroke="#ffffff"><g transform="translate(32 32)"><g class="omi-a omi-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omi-a omi-face"><path d="M 84 109 L 109 127 L 84 145 M 153 127 H 179" fill="none" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></g></g></g><path d="M 76 291 H 244" fill="none" stroke-width="9" opacity=".2" stroke-linecap="round"/><path class="omi-a omi-progress" d="M 76 291 H 124" fill="none" stroke-width="9" stroke-linecap="round"/></g>
+</svg>

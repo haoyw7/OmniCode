@@ -1,0 +1,1613 @@
+import {
+  measureGenerationTurn,
+  emitGenerationText,
+  generationRequestStarted,
+  reportGenerationUsage,
+  resetGenerationMetrics,
+} from "../../core/generationMetrics";
+import { botContextKey } from "../../core/botContext";
+import type { NativeTitleInput } from "../../core/titleCoordinator";
+import { nativeModelId } from "../../../../features/sessions/model/models";
+import { sameProviderAccountId } from "../../../../features/providers/model/providerAccounts";
+import {
+  exhaustedWindowResetAt,
+  parseCodexRateLimits,
+} from "../../../../features/providers/model/rateLimits";
+import type { RuntimeMode } from "../../../../features/sessions/model/session";
+import { questionPromptTitle, type UserQuestionReply } from "../../../../features/sessions/model/userQuestion";
+import {
+  killChild,
+  resolveCodexBinary,
+  spawnChild,
+  unwatchChild,
+  watchChild,
+} from "../../core/child";
+import {
+  asRecord,
+  buildCodexAppServerArgs,
+  buildThreadStartParams,
+  buildTurnStartParams,
+  buildTurnSteerParams,
+  isRecoverableThreadResumeError,
+  mapApprovalRequest,
+  codexSubagentStates,
+  codexSubagentThreadIds,
+  mapCodexNotification,
+  mapCodexSubagentSteps,
+  stringField,
+  toCodexApprovalDecision,
+  type CodexApprovalKind,
+} from "./codexProtocol";
+import { isTauri } from "@tauri-apps/api/core";
+import { JsonRpcClient, type JsonRpcId } from "../../core/jsonRpc";
+import { deleteGeneratedImages, saveGeneratedImage } from "../../../../platform/tauri/fs";
+import {
+  codexAsyncQuestions,
+  codexAsyncQuestionResponse,
+  codexQuestions,
+  codexQuestionResponse,
+} from "./codexQuestions";
+import { codexMcpConfirmation } from "./codexElicitation";
+import { snapshotRemainder } from "../../core/streamText";
+import type {
+  ApprovalDecision,
+  CompactContextInput,
+  HarnessEvent,
+  HarnessSessionInput,
+  RewindLastTurnInput,
+  RewindLastTurnResult,
+  SendTurnInput,
+  SteerTurnInput,
+} from "../../core/types";
+
+type ApprovalOutcome = ApprovalDecision | "cancelled";
+
+type PendingApproval = {
+  rpcId: JsonRpcId;
+  threadId: string;
+  kind: CodexApprovalKind;
+  resolve: (decision: ApprovalOutcome) => void;
+};
+
+type PendingQuestion = {
+  /** Async agentMessage questions have no pending server request. */
+  rpcId: JsonRpcId | null;
+  threadId: string;
+  turnId?: string;
+  sending?: boolean;
+  event: Extract<HarnessEvent, { type: "question.asked" }>;
+  isBlocking: boolean;
+  timer?: ReturnType<typeof setTimeout>;
+  resolve: (reply: UserQuestionReply | "cancelled") => void;
+};
+
+// Non-blocking questions stay in the composer for two minutes. Interaction
+// keeps them open; their transcript records remain available afterwards.
+const QUESTION_AUTO_RESOLVE_MS = 120_000;
+
+type Live = {
+  rpc: JsonRpcClient;
+  threadId: string;
+  cwd: string;
+  providerAccountId?: string;
+  /** Thread-level network policy used when this app-server opened the thread. */
+  controlsAgents: boolean;
+  botContextKey: string;
+  runtimeMode: RuntimeMode;
+  planning: boolean;
+  onEvent: (event: HarnessEvent) => void;
+  approvals: Map<number, PendingApproval>;
+  questions: Map<number, PendingQuestion>;
+  visibleQuestionId: number | null;
+  nextApprovalUiId: number;
+  cancelled: boolean;
+  muteUpdates: boolean;
+  activeTurnId: string | null;
+  turns: Promise<void>;
+  /** Resolves when the current turn completes (or is cancelled). */
+  turnDone: (() => void) | null;
+  turnFailed: ((error: Error) => void) | null;
+  /** turn/completed arrived before runTurn registered turnDone. */
+  turnEndPending: boolean;
+  /** Completed snapshots describe one item, not all text in the turn. */
+  emittedAssistantByItem: Map<string, string>;
+  emittedReasoningByItem: Map<string, string>;
+  emittedGeneratedImages: Set<string>;
+  emittedAsyncQuestions: Set<string>;
+  turnGeneration: number;
+  generationUsageFingerprint?: string;
+  notificationQueue: Promise<void> | null;
+  /** Child thread id -> the agent tool row that spawned it. */
+  subagentThreads: Map<string, string>;
+  /** Child notifications that arrived before their row was known. */
+  pendingSubagent: Map<string, Array<{ method: string; params: unknown }>>;
+  /** Agent rows still running, by call id, with the name to settle them under. */
+  openAgentRows: Map<string, string>;
+  /** Latest rate-limit windows by limit id, merged from sparse updates. */
+  rateLimits: Map<string, Record<string, unknown>>;
+  /** The active turn failed on a spent usage limit. */
+  usageLimited: boolean;
+};
+
+function trackNotificationQueue(
+  live: Live,
+  queued: Promise<void>,
+): void {
+  live.notificationQueue = queued;
+  void queued.then(() => {
+    if (live.notificationQueue === queued) live.notificationQueue = null;
+  });
+}
+
+type Resume = {
+  native: boolean;
+  threadId: string;
+  cwd: string;
+  providerAccountId?: string;
+};
+
+const liveByThread = new Map<string, Live>();
+const resumeByThread = new Map<string, Resume>();
+const cancelledThreads = new Set<string>();
+
+let resolveCodexBinaryImpl: () => Promise<{ path: string }> =
+  resolveCodexBinary;
+
+export async function sendCodexTurn(input: SendTurnInput): Promise<void> {
+  return measureGenerationTurn(input, sendCodexTurnMeasured);
+}
+
+async function sendCodexTurnMeasured(input: SendTurnInput): Promise<void> {
+  let live: Live;
+  try {
+    live = await ensureLive(input);
+  } catch (error) {
+    cancelledThreads.delete(input.sessionId);
+    throw error;
+  }
+  if (cancelledThreads.delete(input.sessionId)) return;
+
+  live.onEvent = input.onEvent;
+  live.turns = live.turns
+    .catch(() => undefined)
+    .then(async () => {
+      live.runtimeMode = input.runtimeMode;
+      live.planning = input.intent === "plan";
+      live.cancelled = false;
+      live.muteUpdates = false;
+      try {
+        await runTurn(live, input);
+      } catch (error) {
+        if (live.cancelled) return;
+        throw error;
+      }
+    });
+  await live.turns;
+}
+
+export async function compactCodexContext(
+  input: CompactContextInput,
+): Promise<void> {
+  let live: Live;
+  try {
+    live = await ensureLive(input);
+  } catch (error) {
+    cancelledThreads.delete(input.sessionId);
+    throw error;
+  }
+  if (cancelledThreads.delete(input.sessionId)) return;
+
+  live.onEvent = input.onEvent;
+  live.turns = live.turns
+    .catch(() => undefined)
+    .then(async () => {
+      live.cancelled = false;
+      live.muteUpdates = false;
+      try {
+        await runCompaction(live);
+      } catch (error) {
+        if (live.cancelled) return;
+        throw error;
+      }
+    });
+  await live.turns;
+}
+
+export async function rewindCodexLastTurn(
+  input: RewindLastTurnInput,
+): Promise<RewindLastTurnResult> {
+  let live: Live;
+  try {
+    live = await ensureLive(input);
+  } catch (error) {
+    cancelledThreads.delete(input.sessionId);
+    throw error;
+  }
+  if (cancelledThreads.delete(input.sessionId)) return { submitted: false };
+
+  live.onEvent = input.onEvent;
+  await live.turns;
+  if (live.activeTurnId) {
+    throw new Error("Stop the current turn before editing the last message");
+  }
+
+  const beforeTurnId = await lastUserTurnId(live, input.providerTurnId);
+  await live.rpc.request("thread/revert", {
+    threadId: live.threadId,
+    beforeTurnId,
+  });
+  return { submitted: false };
+}
+
+async function lastUserTurnId(
+  live: Live,
+  providerTurnId?: string,
+): Promise<string> {
+  const exact = providerTurnId?.trim();
+  if (exact) return exact;
+
+  const page = await live.rpc.request<{ data?: unknown[] }>(
+    "thread/turns/list",
+    {
+      threadId: live.threadId,
+      limit: 100,
+      sortDirection: "desc",
+      itemsView: "summary",
+    },
+  );
+  const turns = Array.isArray(page.data) ? page.data : [];
+  const userTurn = turns.find((candidate) => {
+    const turn = asRecord(candidate);
+    return (
+      Array.isArray(turn?.items) &&
+      turn.items.some(
+        (item) => stringField(asRecord(item), "type") === "userMessage",
+      )
+    );
+  });
+  const latest = asRecord(userTurn);
+  const turnId = stringField(latest, "id");
+  if (!turnId) throw new Error("Codex did not expose a user turn id to edit");
+  return turnId;
+}
+
+export async function steerCodexTurn(input: SteerTurnInput): Promise<void> {
+  const live = liveByThread.get(input.sessionId);
+  if (!live) throw new Error("No active Codex session");
+  const turnId = live.activeTurnId;
+  if (!turnId) throw new Error("No active turn to steer");
+
+  const params = buildTurnSteerParams({
+    threadId: live.threadId,
+    expectedTurnId: turnId,
+    prompt: input.text.trim() || undefined,
+    attachments: input.attachments,
+  });
+  if (
+    !params.input ||
+    (Array.isArray(params.input) && params.input.length === 0)
+  ) {
+    return;
+  }
+
+  await live.rpc.request("turn/steer", params);
+  live.onEvent({ type: "turn.started", providerTurnId: turnId });
+}
+
+export function respondCodexApproval(
+  sessionId: string,
+  requestId: number,
+  decision: ApprovalDecision,
+): void {
+  const live = liveByThread.get(sessionId);
+  const pending = live?.approvals.get(requestId);
+  if (!pending) return;
+  pending.resolve(decision);
+}
+
+export function respondCodexQuestion(
+  sessionId: string,
+  requestId: number,
+  reply: UserQuestionReply,
+): void {
+  const live = liveByThread.get(sessionId);
+  const pending = live?.questions.get(requestId);
+  if (!live || !pending || pending.sending) return;
+  if (pending.rpcId !== null || reply.kind === "skipped") {
+    pending.resolve(reply);
+    return;
+  }
+  const text = codexAsyncQuestionResponse(pending.event.questions, reply);
+  if (!text) {
+    pending.resolve({ kind: "skipped" });
+    return;
+  }
+  const turnId = pending.turnId;
+  if (!turnId || live.activeTurnId !== turnId) {
+    pending.resolve("cancelled");
+    return;
+  }
+  pending.sending = true;
+  keepCodexQuestionOpen(sessionId, requestId);
+  void live.rpc
+    .request(
+      "turn/steer",
+      buildTurnSteerParams({
+        threadId: pending.threadId,
+        expectedTurnId: turnId,
+        prompt: text,
+      }),
+    )
+    .then(() => {
+      if (live.questions.get(requestId) === pending) pending.resolve(reply);
+    })
+    .catch((error: unknown) => {
+      pending.sending = false;
+      if (live.questions.get(requestId) !== pending) return;
+      live.onEvent({
+        type: "status",
+        text: `Could not send your answer to Codex: ${error instanceof Error ? error.message : String(error)}`,
+      });
+    });
+}
+
+export function keepCodexQuestionOpen(
+  sessionId: string,
+  requestId: number,
+): void {
+  const live = liveByThread.get(sessionId);
+  const pending = live?.questions.get(requestId);
+  if (!live || !pending || pending.timer === undefined) return;
+  clearTimeout(pending.timer);
+  pending.timer = undefined;
+  live.onEvent({ type: "question.updated", requestId });
+}
+
+function clearServerRequests(live: Live): void {
+  for (const pending of live.approvals.values()) pending.resolve("cancelled");
+  for (const pending of live.questions.values()) {
+    clearTimeout(pending.timer);
+    pending.resolve("cancelled");
+  }
+  live.approvals.clear();
+  live.questions.clear();
+  live.visibleQuestionId = null;
+}
+
+function showNextQuestion(live: Live): void {
+  if (
+    live.visibleQuestionId !== null &&
+    live.questions.has(live.visibleQuestionId)
+  )
+    return;
+  const next = live.questions.entries().next().value;
+  live.visibleQuestionId = next?.[0] ?? null;
+  if (next) {
+    const pending = next[1];
+    if (!pending.isBlocking) {
+      pending.event.autoResolveAt = Date.now() + QUESTION_AUTO_RESOLVE_MS;
+      pending.timer = setTimeout(
+        () => pending.resolve({ kind: "skipped" }),
+        QUESTION_AUTO_RESOLVE_MS,
+      );
+    }
+    live.onEvent(pending.event);
+  }
+}
+
+export async function cancelCodexTurn(sessionId: string): Promise<void> {
+  const live = liveByThread.get(sessionId);
+  if (!live) {
+    cancelledThreads.add(sessionId);
+    return;
+  }
+  resetGenerationMetrics(live.onEvent);
+  live.cancelled = true;
+  live.muteUpdates = true;
+  clearServerRequests(live);
+  const turnId = live.activeTurnId;
+  if (turnId) {
+    await live.rpc
+      .request("turn/interrupt", {
+        threadId: live.threadId,
+        turnId,
+      })
+      .catch(() => undefined);
+  }
+  finishActiveTurn(live, [
+    { type: "message.completed" },
+    { type: "reasoning.completed" },
+  ]);
+}
+
+export async function stopCodexSession(sessionId: string): Promise<void> {
+  cancelledThreads.delete(sessionId);
+  const live = liveByThread.get(sessionId);
+  liveByThread.delete(sessionId);
+  if (live) {
+    live.muteUpdates = true;
+    live.turnGeneration += 1;
+  live.generationUsageFingerprint = undefined;
+    clearServerRequests(live);
+    live.turnDone?.();
+    live.turnDone = null;
+    live.turnFailed = null;
+    live.rpc.close();
+  }
+  unwatchChild(sessionId);
+  await killChild(sessionId).catch(() => undefined);
+}
+
+export async function forgetCodexSession(sessionId: string): Promise<void> {
+  resumeByThread.delete(sessionId);
+  await stopCodexSession(sessionId);
+}
+
+export function bindCodexSession(
+  threadId: string,
+  providerSessionId: string,
+  cwd: string,
+  providerAccountId?: string,
+  nativeSession?: import("../../../../features/sessions/model/session").NativeSessionLink,
+): void {
+  const providerThreadId = providerSessionId.trim();
+  if (!threadId || !providerThreadId || !cwd.trim()) return;
+  resumeByThread.set(threadId, {
+    native: !!nativeSession,
+    threadId: providerThreadId,
+    cwd,
+    providerAccountId,
+  });
+}
+
+async function ensureLive(input: HarnessSessionInput): Promise<Live> {
+  let existing = liveByThread.get(input.sessionId);
+  // Native CLIs can append between MonoCode turns. Reopen an idle imported
+  // thread so the next turn loads their latest context from disk.
+  if (
+    existing && resumeByThread.get(input.sessionId)?.native &&
+    !existing.activeTurnId && !existing.turnDone
+  ) {
+    await stopCodexSession(input.sessionId);
+    existing = undefined;
+  }
+  const controlsAgents = input.controlsAgents === true;
+  if (
+    existing &&
+    existing.cwd === input.cwd &&
+    sameProviderAccountId(existing.providerAccountId, input.providerAccountId) &&
+    existing.controlsAgents === controlsAgents &&
+    existing.botContextKey === botContextKey(input.botContext)
+  ) {
+    existing.onEvent = input.onEvent;
+    return existing;
+  }
+  if (existing) {
+    // Codex may retain the thread's sandbox network policy across turns.
+    // Switch it when this session gains /operator access or loses agent
+    // control, so its local CLI socket matches the current policy.
+    if (
+      existing.cwd !== input.cwd ||
+      !sameProviderAccountId(existing.providerAccountId, input.providerAccountId)
+    ) {
+      resumeByThread.delete(input.sessionId);
+    }
+    await stopCodexSession(input.sessionId);
+  }
+
+  const resume = resumeByThread.get(input.sessionId);
+  const canResume =
+    resume != null &&
+    resume.cwd === input.cwd &&
+    sameProviderAccountId(resume.providerAccountId, input.providerAccountId);
+  if (
+    resume &&
+    (resume.cwd !== input.cwd ||
+      !sameProviderAccountId(resume.providerAccountId, input.providerAccountId))
+  ) {
+    resumeByThread.delete(input.sessionId);
+  }
+
+  const { path } = await resolveCodexBinaryImpl();
+  const liveRef: { current: Live | null } = { current: null };
+
+  const rpc = new JsonRpcClient(
+    input.sessionId,
+    {
+      onNotification: (method, params) => {
+        const receivedAt = performance.now();
+        const live = liveRef.current;
+        if (!live || live.muteUpdates) return;
+        if (live.notificationQueue) {
+          const turnGeneration = live.turnGeneration;
+          const queued = live.notificationQueue
+            .catch(() => undefined)
+            .then(() => {
+              if (
+                live.muteUpdates ||
+                live.cancelled ||
+                turnGeneration !== live.turnGeneration
+              ) {
+                return;
+              }
+              return handleNotification(live, method, params, receivedAt);
+            });
+          trackNotificationQueue(live, queued.catch(() => undefined));
+          return;
+        }
+        const result = handleNotification(live, method, params, receivedAt);
+        if (!result) return;
+        trackNotificationQueue(live, result.catch(() => undefined));
+      },
+      onRequest: (id, method, params) => {
+        const live = liveRef.current;
+        const turn = live?.turnDone;
+        // The external clock can be requested before thread/start or resume
+        // returns, so it must not depend on the live session being bound.
+        const response =
+          method === "currentTime/read"
+            ? rpc.respond(id, { currentTimeAt: Math.floor(Date.now() / 1000) })
+            : live
+              ? handleServerRequest(live, id, method, params)
+              : undefined;
+        void response?.catch((error: unknown) => {
+          if (live?.muteUpdates || (live && live.turnDone !== turn)) return;
+          const failure =
+            error instanceof Error ? error : new Error(String(error));
+          if (live?.turnFailed) {
+            live.turnFailed(failure);
+          } else {
+            (live?.onEvent ?? input.onEvent)({
+              type: "session.error",
+              message: failure.message,
+            });
+          }
+        });
+      },
+    },
+    { includeJsonrpc: false, label: "codex" },
+  );
+
+  watchChild(
+    input.sessionId,
+    (line) => rpc.pushLine(line),
+    (code, error) => {
+      const failure = new Error(error ?? "Codex app-server exited");
+      rpc.close(failure);
+      liveByThread.delete(input.sessionId);
+      const live = liveRef.current;
+      if (!live?.muteUpdates) {
+        (live?.onEvent ?? input.onEvent)({ type: "session.ended", code });
+      }
+      live?.turnFailed?.(failure);
+      if (live) {
+        clearServerRequests(live);
+        live.turnDone = null;
+        live.turnFailed = null;
+      }
+    },
+  );
+
+  await spawnChild(
+    input.sessionId,
+    path,
+    buildCodexAppServerArgs(input.botContext),
+    input.cwd,
+    {
+      provider: "codex",
+      id: input.providerAccountId ?? "default",
+    },
+    "codex",
+  );
+
+  try {
+    await rpc.request("initialize", {
+      clientInfo: {
+        name: "monocode",
+        title: "OmniCode",
+        version: "0.1.0",
+      },
+      capabilities: {
+        // Required by collaborationMode (including Plan); currentTime/read is
+        // handled above even while the thread is starting or resuming.
+        experimentalApi: true,
+      },
+    });
+    await rpc.notify("initialized", undefined);
+
+    const model = nativeModelId(input.model);
+    const serviceTier = input.modelSettings?.serviceTier;
+    const effort = input.modelSettings?.reasoningEffort;
+
+    let threadId: string | undefined;
+    let didResume = false;
+
+    if (canResume && resume) {
+      try {
+        const opened = await rpc.request<{ thread?: { id?: string } }>(
+          "thread/resume",
+          {
+            threadId: resume.threadId,
+            ...buildThreadStartParams({
+              cwd: input.cwd,
+              runtimeMode: input.runtimeMode,
+              controlsAgents: input.controlsAgents,
+              model,
+              serviceTier,
+              systemInstructions: input.botContext?.systemInstructions,
+            }),
+          },
+        );
+        threadId = opened.thread?.id ?? resume.threadId;
+        didResume = true;
+      } catch (error) {
+        if (resume.native || !isRecoverableThreadResumeError(error)) throw error;
+        threadId = undefined;
+      }
+    }
+
+    if (!threadId) {
+      const opened = await rpc.request<{ thread?: { id?: string } }>(
+        "thread/start",
+        buildThreadStartParams({
+          cwd: input.cwd,
+          runtimeMode: input.runtimeMode,
+          controlsAgents: input.controlsAgents,
+          model,
+          serviceTier,
+          systemInstructions: input.botContext?.systemInstructions,
+        }),
+      );
+      threadId = opened.thread?.id?.trim();
+    }
+
+    if (!threadId) throw new Error("Codex did not return a thread id");
+
+    // Suppress unused warning for effort until first turn applies it.
+    void effort;
+
+    const live: Live = {
+      rpc,
+      threadId,
+      cwd: input.cwd,
+      providerAccountId: input.providerAccountId,
+      controlsAgents,
+      botContextKey: botContextKey(input.botContext),
+      runtimeMode: input.runtimeMode,
+      planning: input.intent === "plan",
+      onEvent: input.onEvent,
+      approvals: new Map(),
+      questions: new Map(),
+      visibleQuestionId: null,
+      nextApprovalUiId: 1,
+      cancelled: false,
+      muteUpdates: didResume,
+      activeTurnId: null,
+      turns: Promise.resolve(),
+      turnDone: null,
+      turnFailed: null,
+      turnEndPending: false,
+       emittedAssistantByItem: new Map(),
+       emittedReasoningByItem: new Map(),
+       emittedGeneratedImages: new Set(),
+       emittedAsyncQuestions: new Set(),
+       turnGeneration: 0,
+       notificationQueue: null,
+       subagentThreads: new Map(),
+      pendingSubagent: new Map(),
+      openAgentRows: new Map(),
+      rateLimits: new Map(),
+      usageLimited: false,
+    };
+    liveRef.current = live;
+    liveByThread.set(input.sessionId, live);
+    resumeByThread.set(input.sessionId, {
+      native: resume?.native ?? false,
+      threadId,
+      cwd: input.cwd,
+      providerAccountId: input.providerAccountId,
+    });
+    live.onEvent({
+      type: "session.providerBound",
+      providerSessionId: threadId,
+    });
+    live.onEvent({ type: "session.started" });
+    return live;
+  } catch (error) {
+    rpc.close(error instanceof Error ? error : new Error(String(error)));
+    await stopCodexSession(input.sessionId);
+    throw error;
+  }
+}
+
+async function runTurn(live: Live, input: SendTurnInput): Promise<void> {
+  const model = nativeModelId(input.model);
+  const effort = input.modelSettings?.reasoningEffort;
+  const serviceTier = input.modelSettings?.serviceTier;
+
+  const params = buildTurnStartParams({
+    threadId: live.threadId,
+    runtimeMode: input.runtimeMode,
+    controlsAgents: input.controlsAgents,
+    prompt: input.text.trim() || undefined,
+    attachments: input.attachments,
+    model,
+    effort,
+    serviceTier,
+    intent: input.intent,
+  });
+
+  if (Array.isArray(params.input) && params.input.length === 0) {
+    return;
+  }
+
+  live.emittedAssistantByItem.clear();
+  live.emittedReasoningByItem.clear();
+  live.emittedGeneratedImages.clear();
+  live.emittedAsyncQuestions.clear();
+  live.turnGeneration += 1;
+
+  const turnPromise = new Promise<void>((resolve, reject) => {
+    live.turnDone = resolve;
+    live.turnFailed = reject;
+  });
+  settlePendingTurn(live);
+
+  try {
+    const response = await live.rpc.request<{ turn?: { id?: string } }>(
+      "turn/start",
+      params,
+    );
+    input.onAccepted?.();
+    const turnId = response.turn?.id ?? live.activeTurnId;
+    // turn/completed can arrive before turn/start returns; don't resurrect a
+    // finished turn's id after finishActiveTurn cleared activeTurnId.
+    if (turnId && live.turnDone) {
+      live.activeTurnId = live.activeTurnId ?? turnId;
+      live.onEvent({ type: "turn.started", providerTurnId: turnId });
+    }
+    settlePendingTurn(live);
+    await turnPromise;
+  } catch (error) {
+    if (live.cancelled) return;
+    live.onEvent({
+      type: "session.error",
+      message: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  } finally {
+    live.turnDone = null;
+    live.turnFailed = null;
+  }
+}
+
+async function runCompaction(live: Live): Promise<void> {
+  live.emittedAssistantByItem.clear();
+  live.emittedReasoningByItem.clear();
+  live.emittedGeneratedImages.clear();
+  const turnPromise = new Promise<void>((resolve, reject) => {
+    live.turnDone = resolve;
+    live.turnFailed = reject;
+  });
+  settlePendingTurn(live);
+
+  try {
+    await live.rpc.request("thread/compact/start", {
+      threadId: live.threadId,
+    });
+    settlePendingTurn(live);
+    await turnPromise;
+  } finally {
+    live.turnDone = null;
+    live.turnFailed = null;
+  }
+}
+
+function handleNotification(
+  live: Live,
+  method: string,
+  params: unknown,
+  receivedAt = performance.now(),
+): void | Promise<void> {
+  if (method === "thread/name/updated") {
+    const title = asRecord(params);
+    if (title?.threadId === live.threadId && typeof title.threadName === "string") live.onEvent({ type: "session.titleUpdated", providerSessionId: live.threadId, title: title.threadName });
+    return;
+  }
+  if (live.muteUpdates || live.cancelled) return;
+  const rec = asRecord(params);
+  if (method === "serverRequest/resolved") {
+    for (const pending of live.approvals.values()) {
+      if (
+        pending.rpcId === rec?.requestId &&
+        pending.threadId === rec?.threadId
+      )
+        pending.resolve("cancelled");
+    }
+    for (const pending of live.questions.values()) {
+      if (
+        pending.rpcId === rec?.requestId &&
+        pending.threadId === rec?.threadId
+      )
+        pending.resolve("cancelled");
+    }
+    return;
+  }
+  // Child threads share this connection. Their lifecycle must not touch the
+  // parent's turn or clear its approvals, but what they do is the inside of a
+  // subagent — mirror it onto the row that spawned them.
+  const threadId =
+    stringField(rec, "threadId") ??
+    (method === "thread/started"
+      ? stringField(asRecord(rec?.thread), "id")
+      : undefined);
+  if (threadId && threadId !== live.threadId) {
+    return handleSubagentNotification(live, threadId, method, params);
+  }
+  // A Codex turn is a sequence of items. Completing an agentMessage does not
+  // mean the turn is over — more tools and messages can still arrive. Only
+  // turn/completed (and turn/aborted) settle sendCodexTurn, which is what the
+  // UI uses for busy / stop / "Working for".
+  const notificationTurnId = stringField(rec, "turnId");
+  if (notificationTurnId && live.activeTurnId && notificationTurnId !== live.activeTurnId) return;
+  if (method === "error" || method === "turn/aborted") resetGenerationMetrics(live.onEvent);
+  const mapped = mapCodexNotification(method, params);
+  if (mapped.diagnostic) {
+    console.debug(
+      `[monocode] codex ${live.threadId} ${method}`,
+      mapped.diagnostic,
+    );
+  }
+  // Codex describes one spawned agent through more than one item type. The
+  // first row to name a child thread owns it; a later item for the same thread
+  // would otherwise stand up a second agent that never does anything.
+  const duplicate = bindSubagentThreads(live, method, rec);
+  const snapshot = method === "item/completed";
+  const itemId = snapshot
+    ? stringField(asRecord(rec?.item), "id")
+    : stringField(rec, "itemId");
+  let pending: Promise<void> | undefined;
+  for (const event of mapped.events) {
+    if (duplicate && duplicateAgentRow(event)) continue;
+    if (event.type === "image.generated") {
+      if (live.emittedGeneratedImages.has(event.itemId)) continue;
+      live.emittedGeneratedImages.add(event.itemId);
+      if ("data" in event) {
+        const save = () => materializeGeneratedImage(live, event);
+        pending = pending ? pending.then(save) : save();
+        continue;
+      }
+      live.onEvent(event);
+      continue;
+    }
+    trackAgentRow(live, event);
+    if (event.type === "message.delta") {
+      publishCodexText(live, "assistant", event.text, snapshot, itemId, receivedAt);
+      continue;
+    }
+    if (event.type === "reasoning.delta") {
+      publishCodexText(live, "reasoning", event.text, snapshot, itemId);
+      continue;
+    }
+    live.onEvent(event);
+  }
+  if (method === "thread/tokenUsage/updated") {
+    const tokenUsage = asRecord(rec?.tokenUsage);
+    const usage = asRecord(tokenUsage?.last);
+    const total = asRecord(tokenUsage?.total);
+    const fields = ["inputTokens", "outputTokens", "reasoningOutputTokens", "cachedInputTokens", "totalTokens"];
+    const fingerprint = JSON.stringify([notificationTurnId ?? live.activeTurnId,
+      ...fields.map(key => usage?.[key] ?? null), ...fields.map(key => total?.[key] ?? null)]);
+    // Repeated token snapshots can arrive after the next request starts streaming.
+    if (usage && fingerprint !== live.generationUsageFingerprint) {
+      live.generationUsageFingerprint = fingerprint;
+      reportGenerationUsage(live.onEvent, {
+        outputTokens: typeof usage.outputTokens === "number" ? usage.outputTokens : undefined,
+        reasoningTokens: typeof usage.reasoningOutputTokens === "number" ? usage.reasoningOutputTokens : undefined,
+      });
+      generationRequestStarted(live.onEvent);
+    }
+  }
+  emitCodexAgentInfo(live, rec);
+  if (method === "item/completed") showCodexAsyncQuestion(live, rec);
+  // Metadata and steps can arrive before the spawn. Create its row first.
+  let replay: Promise<void> | undefined;
+  for (const childId of codexSubagentThreadIds(asRecord(rec?.item) ?? {})) {
+    const owner = live.subagentThreads.get(childId);
+    if (!owner) continue;
+    const backlog = live.pendingSubagent.get(childId);
+    live.pendingSubagent.delete(childId);
+    for (const pendingStep of backlog ?? []) {
+      const emit = () =>
+        emitSubagentSteps(live, owner, pendingStep.method, pendingStep.params);
+      if (replay) {
+        replay = replay.then(emit);
+      } else {
+        const result = emit();
+        if (result) replay = result;
+      }
+    }
+  }
+  const finish = () => {
+    settleSubagentRows(live, rec);
+    if (mapped.rateLimits) noteRateLimits(live, mapped.rateLimits);
+    if (mapped.usageLimited) live.usageLimited = true;
+    if (mapped.activeTurnId !== undefined) {
+      live.activeTurnId = mapped.activeTurnId;
+    }
+    if (mapped.turnCompleted) {
+      // Report the limit before the turn settles so queued follow-ups hold.
+      if (live.usageLimited && !live.cancelled) {
+        const resetsAt = usageLimitResetAt(live);
+        live.onEvent({
+          type: "usage.limited",
+          ...(resetsAt != null ? { resetsAt } : {}),
+        });
+      }
+      live.usageLimited = false;
+      finishActiveTurn(live);
+    }
+  };
+  const afterImages = () => {
+    if (live.muteUpdates || live.cancelled) return;
+    if (replay) return replay.then(finish);
+    finish();
+  };
+  if (pending) return pending.then(afterImages);
+  return afterImages();
+}
+
+function showCodexAsyncQuestion(
+  live: Live,
+  rec: Record<string, unknown> | null,
+): void {
+  const item = asRecord(rec?.item);
+  const itemId = stringField(item, "id");
+  const turnId = stringField(rec, "turnId") ?? live.activeTurnId;
+  if (
+    !itemId ||
+    !turnId ||
+    turnId !== live.activeTurnId ||
+    live.emittedAsyncQuestions.has(itemId)
+  )
+    return;
+  let questions;
+  try {
+    questions = codexAsyncQuestions(item);
+  } catch (error) {
+    live.onEvent({
+      type: "status",
+      text: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+  if (!questions.length) return;
+  live.emittedAsyncQuestions.add(itemId);
+  const uiId = live.nextApprovalUiId++;
+  const event: Extract<HarnessEvent, { type: "question.asked" }> = {
+    type: "question.asked",
+    requestId: uiId,
+    title: questionPromptTitle(questions),
+    questions,
+    callId: itemId,
+    allowLateReply: true,
+  };
+  const outcome = new Promise<UserQuestionReply | "cancelled">((resolve) => {
+    live.questions.set(uiId, {
+      rpcId: null,
+      threadId: live.threadId,
+      turnId,
+      event,
+      isBlocking: false,
+      resolve,
+    });
+  }).finally(() => {
+    clearTimeout(live.questions.get(uiId)?.timer);
+    live.questions.delete(uiId);
+  });
+  showNextQuestion(live);
+  void outcome.then((reply) => {
+    live.onEvent({
+      type: "question.resolved",
+      requestId: uiId,
+      ...(reply !== "cancelled" && reply.kind === "answered" ? { reply } : {}),
+      decision:
+        reply === "cancelled"
+          ? "cancelled"
+          : reply.kind === "answered"
+            ? "answered"
+            : "skipped",
+    });
+    showNextQuestion(live);
+  });
+}
+
+async function materializeGeneratedImage(
+  live: Live,
+  event: Extract<HarnessEvent, { type: "image.generated"; data: string }>,
+): Promise<void> {
+  // The headless Host persists the raw bytes itself; only the desktop app can
+  // reach the Tauri image store.
+  if (!(typeof isTauri === "function" && isTauri())) {
+    live.onEvent(event);
+    return;
+  }
+  const turnGeneration = live.turnGeneration;
+  try {
+    const asset = await saveGeneratedImage({
+      data: event.data,
+      name: event.name,
+    });
+    if (
+      live.cancelled ||
+      live.muteUpdates ||
+      turnGeneration !== live.turnGeneration
+    ) {
+      void deleteGeneratedImages([asset.path]).catch(() => undefined);
+      return;
+    }
+    live.onEvent({
+      type: "image.generated",
+      itemId: event.itemId,
+      ...(event.agentCallId ? { agentCallId: event.agentCallId } : {}),
+      path: asset.path,
+      name: event.name,
+      mimeType: asset.mimeType,
+      size: asset.size,
+      ...(event.alt ? { alt: event.alt } : {}),
+    });
+  } catch (cause) {
+    if (
+      live.cancelled ||
+      live.muteUpdates ||
+      turnGeneration !== live.turnGeneration
+    ) {
+      return;
+    }
+    const message = `Could not save generated image: ${cause instanceof Error ? cause.message : String(cause)}`;
+    live.onEvent(event.agentCallId
+      ? { type: "agent.step", callId: event.agentCallId, stepId: `${event.itemId}:error`, kind: "message", text: message }
+      : { type: "session.error", message });
+  }
+}
+
+/** Rate-limit updates are sparse: a missing window keeps its last reading. */
+function noteRateLimits(live: Live, update: Record<string, unknown>): void {
+  const id = stringField(update, "limitId") ?? "";
+  const current = live.rateLimits.get(id) ?? {};
+  live.rateLimits.set(id, {
+    primary: update.primary ?? current.primary,
+    secondary: update.secondary ?? current.secondary,
+  });
+}
+
+function usageLimitResetAt(live: Live): number | null {
+  let latest: number | null = null;
+  for (const windows of live.rateLimits.values()) {
+    const resetsAt = exhaustedWindowResetAt(parseCodexRateLimits(windows));
+    if (resetsAt != null) latest = Math.max(latest ?? 0, resetsAt);
+  }
+  return latest;
+}
+
+/**
+ * How many notifications a not-yet-identified child thread may bank. Codex can
+ * stream a subagent's first calls before the spawn item reports which thread it
+ * created, and those calls are the most interesting ones — but an unrecognised
+ * thread must not be able to grow this without bound.
+ */
+const MAX_PENDING_SUBAGENT = 64;
+
+/**
+ * Learns which agent row a child thread belongs to.
+ * Returns true when every thread this item names already belongs to another
+ * row, which makes the item a second description of an agent we already show.
+ */
+function bindSubagentThreads(
+  live: Live,
+  method: string,
+  rec: Record<string, unknown> | null,
+): boolean {
+  if (method !== "item/started" && method !== "item/completed") return false;
+  const item = asRecord(rec?.item);
+  if (!item) return false;
+  const itemType = stringField(item, "type") ?? "";
+  if (itemType !== "subAgentActivity" && itemType !== "collabAgentToolCall") {
+    return false;
+  }
+  const callId = stringField(item, "id");
+  if (!callId) return false;
+  const children = codexSubagentThreadIds(item).filter(
+    (childId) => childId !== live.threadId,
+  );
+  let claimed = 0;
+  for (const childId of children) {
+    const owner = live.subagentThreads.get(childId);
+    if (owner) {
+      const model = stringField(item, "model");
+      if (model && item.tool === "spawnAgent")
+        live.onEvent({
+          type: "tool.updated",
+          callId: owner,
+          kind: "agent",
+          agentModel: model,
+        });
+      if (owner !== callId) claimed += 1;
+      continue;
+    }
+    live.subagentThreads.set(childId, callId);
+  }
+  return children.length > 0 && claimed === children.length;
+}
+
+/**
+ * An agent row for a child thread another row already owns. A failure still
+ * gets its row — the reason a run died is the one thing worth a line of its
+ * own — but a duplicate "running" or "done" is just noise.
+ */
+function duplicateAgentRow(event: HarnessEvent): boolean {
+  if (event.type !== "tool.started" && event.type !== "tool.updated") {
+    return false;
+  }
+  return event.kind === "agent" && event.status !== "failed";
+}
+
+/**
+ * A child thread's notification. Until the spawn item says which row the thread
+ * belongs to, keep it: dropping it loses the opening moves of the run.
+ */
+function handleSubagentNotification(
+  live: Live,
+  threadId: string,
+  method: string,
+  params: unknown,
+): void | Promise<void> {
+  const callId = live.subagentThreads.get(threadId);
+  if (callId) {
+    return emitSubagentSteps(live, callId, method, params);
+  }
+  if (!live.activeTurnId) return;
+  if (
+    method !== "item/started" &&
+    method !== "item/completed" &&
+    method !== "thread/started" &&
+    !method.startsWith("item/")
+  )
+    return;
+  const backlog = live.pendingSubagent.get(threadId) ?? [];
+  if (backlog.length >= MAX_PENDING_SUBAGENT) {
+    // Retain a visible gap marker until this thread is attached to its spawn.
+    backlog.splice(0, 1);
+    pendingSubagentGaps(live).add(threadId);
+  }
+  backlog.push({ method, params });
+  live.pendingSubagent.set(threadId, backlog);
+}
+
+const codexAgentGaps = new WeakMap<Live, Set<string>>();
+function pendingSubagentGaps(live: Live): Set<string> {
+  let gaps = codexAgentGaps.get(live);
+  if (!gaps) { gaps = new Set(); codexAgentGaps.set(live, gaps); }
+  return gaps;
+}
+function emitCodexAgentInfo(live: Live, rec: Record<string, unknown> | null): void {
+  const item = asRecord(rec?.item);
+  if (!item) return;
+  const ids = codexSubagentThreadIds(item);
+  for (const id of ids) {
+    const callId = live.subagentThreads.get(id);
+    if (!callId) continue;
+    live.onEvent({ type: "agent.updated", callId, providerSessionId: id,
+      prompt: item.tool === "spawnAgent" || item.type === "subAgentActivity" ? stringField(item, "prompt") : undefined,
+      model: stringField(item, "model"), coverage: pendingSubagentGaps(live).has(id) ? "partial" : undefined });
+    const prompt = stringField(item, "prompt");
+    const itemId = stringField(item, "id");
+    if (prompt && itemId && item.type === "collabAgentToolCall" && item.tool !== "spawnAgent")
+      live.onEvent({ type: "agent.step", callId, stepId: `${itemId}:prompt`, kind: "user", text: prompt });
+  }
+}
+
+async function emitSubagentSteps(
+  live: Live, callId: string, method: string, params: unknown,
+): Promise<void> {
+  const rec = asRecord(params);
+  const duplicate = bindSubagentThreads(live, method, rec);
+  const image = mapCodexNotification(method, params).events.find(
+    (event): event is Extract<HarnessEvent, { type: "image.generated" }> => event.type === "image.generated",
+  );
+  if (image) {
+    const key = `${callId}:${image.itemId}`;
+    if (live.emittedGeneratedImages.has(key)) return;
+    live.emittedGeneratedImages.add(key);
+    const scoped = { ...image, agentCallId: callId };
+    if ("data" in scoped) await materializeGeneratedImage(live, scoped);
+    else live.onEvent(scoped);
+    return;
+  }
+  for (const event of mapCodexSubagentSteps(callId, method, params)) {
+    if (duplicate && event.type === "agent.step" && event.toolKind === "agent") continue;
+    live.onEvent(event);
+  }
+  emitCodexAgentInfo(live, rec);
+  for (const child of codexSubagentThreadIds(asRecord(rec?.item) ?? {})) {
+    const owner = live.subagentThreads.get(child);
+    if (!owner) continue;
+    const backlog = live.pendingSubagent.get(child);
+    live.pendingSubagent.delete(child);
+    for (const step of backlog ?? []) await emitSubagentSteps(live, owner, step.method, step.params);
+  }
+}
+
+/** Remembers an agent row while it runs, so the turn can close it out. */
+function trackAgentRow(live: Live, event: HarnessEvent): void {
+  if (event.type !== "tool.started" && event.type !== "tool.updated") return;
+  if (event.kind !== "agent") return;
+  if (event.status === "in_progress" || event.status === "pending") {
+    live.openAgentRows.set(event.callId, event.title ?? "Subagent");
+    return;
+  }
+  live.openAgentRows.delete(event.callId);
+}
+
+/**
+ * Settles spawned agents from the per-agent state a collab item reports. The
+ * spawn call returns immediately; this is the first word on whether the agent
+ * it started actually finished.
+ */
+function settleSubagentRows(
+  live: Live,
+  rec: Record<string, unknown> | null,
+): void {
+  const item = asRecord(rec?.item);
+  if (!item) return;
+  for (const state of codexSubagentStates(item)) {
+    const callId = live.subagentThreads.get(state.threadId);
+    const title = callId ? live.openAgentRows.get(callId) : undefined;
+    if (!callId || !title) continue;
+    live.openAgentRows.delete(callId);
+    live.onEvent({
+      type: "tool.updated",
+      callId,
+      title,
+      kind: "agent",
+      status: state.status,
+      ...(state.message ? { detail: state.message } : {}),
+    });
+  }
+}
+
+/**
+ * A turn cannot end with an agent still working. Codex does not always report
+ * a closing state for every child, and a row left running would hop forever.
+ */
+function closeOpenAgentRows(live: Live): void {
+  for (const [callId, title] of live.openAgentRows) {
+    live.onEvent({
+      type: "tool.updated",
+      callId,
+      title,
+      kind: "agent",
+      status: "completed",
+    });
+  }
+  live.openAgentRows.clear();
+}
+
+function publishCodexText(
+  live: Live,
+  role: "assistant" | "reasoning",
+  text: string,
+  snapshot: boolean,
+  itemId: string | undefined,
+  receivedAt = performance.now(),
+): void {
+  const emitted =
+    role === "assistant"
+      ? live.emittedAssistantByItem
+      : live.emittedReasoningByItem;
+  // Keep id-less notifications compatible without mixing them into known items.
+  const key = itemId ?? "";
+  const already = emitted.get(key) ?? "";
+  const emit = snapshot ? snapshotRemainder(already, text) : text;
+  if (!emit) return;
+  // These are deltas (or a snapshot's missing suffix), so repeated tokens count.
+  // Retain completed items until the turn ends to ignore repeated completions.
+  emitted.set(key, already + emit);
+  if (role === "assistant") {
+    if (snapshot) live.onEvent({ type: "message.delta", text: emit });
+    else emitGenerationText(live.onEvent, emit, itemId, receivedAt);
+    return;
+  }
+  live.onEvent({ type: "reasoning.delta", text: emit });
+}
+
+function finishActiveTurn(live: Live, extraEvents: HarnessEvent[] = []): void {
+  clearServerRequests(live);
+  closeOpenAgentRows(live);
+  live.turnEndPending = false;
+  live.turnGeneration += 1;
+  live.activeTurnId = null;
+  live.emittedAssistantByItem.clear();
+  live.emittedReasoningByItem.clear();
+  live.emittedGeneratedImages.clear();
+  live.emittedAsyncQuestions.clear();
+  live.subagentThreads.clear();
+  live.pendingSubagent.clear();
+  for (const event of extraEvents) {
+    live.onEvent(event);
+  }
+  const done = live.turnDone;
+  const failed = live.turnFailed;
+  live.turnDone = null;
+  live.turnFailed = null;
+  if (done) {
+    done();
+    return;
+  }
+  if (!failed) {
+    live.turnEndPending = true;
+  }
+}
+
+function settlePendingTurn(live: Live): void {
+  if (!live.turnEndPending || !live.turnDone) return;
+  finishActiveTurn(live);
+}
+
+async function handleServerRequest(
+  live: Live,
+  id: JsonRpcId,
+  method: string,
+  params: unknown,
+): Promise<void> {
+  const threadId = stringField(asRecord(params), "threadId") ?? live.threadId;
+  if (method === "item/tool/requestUserInput") {
+    if (live.cancelled || live.muteUpdates) {
+      await live.rpc.respond(id, { answers: {} });
+      return;
+    }
+    let questions;
+    try {
+      questions = codexQuestions(params);
+    } catch (error) {
+      live.onEvent({
+        type: "status",
+        text: error instanceof Error ? error.message : String(error),
+      });
+      await live.rpc.respond(id, { answers: {} });
+      return;
+    }
+    const uiId = live.nextApprovalUiId++;
+    const event: Extract<HarnessEvent, { type: "question.asked" }> = {
+      type: "question.asked",
+      requestId: uiId,
+      title: questionPromptTitle(questions),
+      questions,
+      callId: stringField(asRecord(params), "itemId"),
+      ...(asRecord(params)?.isBlocking === false ? { allowLateReply: true } : {}),
+    };
+    const outcome = new Promise<UserQuestionReply | "cancelled">((resolve) => {
+      live.questions.set(uiId, {
+        rpcId: id,
+        threadId,
+        event,
+        resolve,
+        // Older servers omit this field and must keep their blocking behavior.
+        isBlocking: asRecord(params)?.isBlocking !== false,
+      });
+    }).finally(() => {
+      clearTimeout(live.questions.get(uiId)?.timer);
+      live.questions.delete(uiId);
+    });
+    showNextQuestion(live);
+    const reply = await outcome;
+    live.onEvent({
+      type: "question.resolved",
+      requestId: uiId,
+      ...(reply !== "cancelled" && reply.kind === "answered" ? { reply } : {}),
+      decision:
+        reply === "cancelled"
+          ? "cancelled"
+          : reply.kind === "answered"
+            ? "answered"
+            : "skipped",
+    });
+    showNextQuestion(live);
+    if (reply !== "cancelled")
+      await live.rpc.respond(id, codexQuestionResponse(questions, reply));
+    return;
+  }
+
+  if (method === "mcpServer/elicitation/request") {
+    const confirmation = codexMcpConfirmation(params);
+    if (!confirmation || live.cancelled || live.muteUpdates) {
+      if (!live.cancelled && !live.muteUpdates)
+        live.onEvent({
+          type: "status",
+          text: "This MCP server requested a form or browser sign-in that OmniCode does not support yet. Complete it in the server's own interface.",
+        });
+      await live.rpc.respond(id, {
+        action: "cancel",
+        content: null,
+        _meta: null,
+      });
+      return;
+    }
+    if (!live.planning && live.runtimeMode === "full-access") {
+      await live.rpc.respond(id, {
+        action: "accept",
+        content: confirmation.content,
+        _meta: null,
+      });
+      return;
+    }
+    const uiId = live.nextApprovalUiId++;
+    const pending = waitApproval(live, uiId, id, "permissions", threadId);
+    // MCP consent requires an explicit decision outside non-plan Full Access turns.
+    live.onEvent({
+      type: "approval.requested",
+      requestId: uiId,
+      kind: "other",
+      title: confirmation.title,
+    });
+    const decision = await pending;
+    live.onEvent({ type: "approval.resolved", requestId: uiId, decision });
+    if (decision !== "cancelled")
+      await live.rpc.respond(id, {
+        action: decision === "allow" ? "accept" : "decline",
+        content: decision === "allow" ? confirmation.content : null,
+        _meta: null,
+      });
+    return;
+  }
+
+  const uiId = live.nextApprovalUiId++;
+  const mapped = mapApprovalRequest(method, params, uiId);
+  if (!mapped) {
+    // An empty success or invented denial hides protocol incompatibility.
+    live.onEvent({
+      type: "status",
+      text: `Unsupported Codex request: ${method}`,
+    });
+    await live.rpc.respondError(id, {
+      code: -32601,
+      message: `Unsupported method: ${method}`,
+    });
+    return;
+  }
+
+  if (live.planning || live.cancelled || live.muteUpdates) {
+    // Plan turns run in a non-escalating read-only sandbox. If an older
+    // app-server still asks for broader access, deny it silently instead of
+    // leaking a Supervised approval prompt into the user's selected mode.
+    if (method === "item/permissions/requestApproval") {
+      await live.rpc.respond(id, { permissions: {} }).catch(() => undefined);
+    } else {
+      await live.rpc
+        .respond(id, {
+          decision: toCodexApprovalDecision("deny", mapped.kind),
+        })
+        .catch(() => undefined);
+    }
+    return;
+  }
+
+  if (method === "item/permissions/requestApproval") {
+    // Auto-deny extra permission grants in supervised; allow in full-access.
+    if (live.runtimeMode === "full-access") {
+      const rec = asRecord(params);
+      const permissions = rec?.permissions ?? {};
+      await live.rpc.respond(id, {
+        scope: "session",
+        permissions,
+      });
+      return;
+    }
+    if (live.runtimeMode === "supervised") {
+      const pending = waitApproval(live, uiId, id, mapped.kind, threadId);
+      live.onEvent(mapped.event);
+      const decision = await pending;
+      live.onEvent({
+        type: "approval.resolved",
+        requestId: uiId,
+        decision,
+      });
+      if (decision === "cancelled") return;
+      if (decision === "allow") {
+        const rec = asRecord(params);
+        await live.rpc.respond(id, {
+          scope: "turn",
+          permissions: rec?.permissions ?? {},
+        });
+      } else {
+        await live.rpc.respond(id, { permissions: {} });
+      }
+      return;
+    }
+    // auto / auto-accept: grant requested permissions for the turn.
+    const rec = asRecord(params);
+    await live.rpc.respond(id, {
+      scope: "turn",
+      permissions: rec?.permissions ?? {},
+    });
+    return;
+  }
+
+  const auto = autoApproval(live.runtimeMode, mapped.kind);
+  if (auto) {
+    await live.rpc.respond(id, {
+      decision: toCodexApprovalDecision(auto, mapped.kind),
+    });
+    return;
+  }
+
+  const pending = waitApproval(live, uiId, id, mapped.kind, threadId);
+  live.onEvent(mapped.event);
+  const decision = await pending;
+  live.onEvent({
+    type: "approval.resolved",
+    requestId: uiId,
+    decision,
+  });
+  if (decision === "cancelled") return;
+  await live.rpc.respond(id, {
+    decision: toCodexApprovalDecision(decision, mapped.kind),
+  });
+}
+
+function waitApproval(
+  live: Live,
+  uiId: number,
+  rpcId: JsonRpcId,
+  kind: CodexApprovalKind,
+  threadId: string,
+): Promise<ApprovalOutcome> {
+  return new Promise<ApprovalOutcome>((resolve) => {
+    live.approvals.set(uiId, { rpcId, threadId, kind, resolve });
+  }).finally(() => {
+    live.approvals.delete(uiId);
+  });
+}
+
+function autoApproval(
+  runtimeMode: RuntimeMode,
+  kind: CodexApprovalKind,
+): ApprovalDecision | null {
+  if (runtimeMode === "supervised") return null;
+  if (runtimeMode === "full-access") return "allow";
+  if (runtimeMode === "auto") {
+    // auto_review is set on the server; still prompt if Codex asks.
+    return null;
+  }
+  // auto-accept-edits: auto file changes, ask for commands.
+  if (kind === "file-change") return "allow";
+  return null;
+}
+
+/** Exported for tests. */
+export function __codexTestReset(): void {
+  liveByThread.clear();
+  resumeByThread.clear();
+  cancelledThreads.clear();
+}
+
+export async function readCodexSessionTitle(input: NativeTitleInput): Promise<string | null> {
+  const live = liveByThread.get(input.sessionId);
+  if (!live) {
+    const childId = `monocode-codex-title-read-${crypto.randomUUID()}`;
+    const rpc = new JsonRpcClient(childId, {}, { includeJsonrpc: false, label: "codex-title-read" });
+    watchChild(childId, (line) => rpc.pushLine(line), () => rpc.close());
+    const deadline = Date.now() + 5_000;
+    try {
+      const { path } = await resolveCodexBinary();
+      await spawnChild(childId, path, ["app-server"], input.cwd, { provider: "codex", id: input.providerAccountId ?? "default" }, "codex");
+      await rpc.request("initialize", { clientInfo: { name: "monocode-title-read", version: "1" }, capabilities: { experimentalApi: true } }, Math.max(1, deadline - Date.now()));
+      await rpc.notify("initialized", undefined);
+      const metadata = await rpc.request<{ thread?: { name?: string } }>("thread/read", { threadId: input.providerSessionId, includeTurns: false }, Math.max(1, deadline - Date.now()));
+      return metadata.thread?.name ?? null;
+    } finally { rpc.close(); unwatchChild(childId); await killChild(childId).catch(() => undefined); }
+  }
+  if (live.threadId !== input.providerSessionId || live.cwd !== input.cwd || !sameProviderAccountId(live.providerAccountId, input.providerAccountId)) return null;
+  const result = await live.rpc.request<{ thread?: { name?: string } }>("thread/read", { threadId: input.providerSessionId, includeTurns: false }, 5_000);
+  return result.thread?.name ?? null;
+}

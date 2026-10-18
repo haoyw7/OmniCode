@@ -1,0 +1,18 @@
+[package]
+name = "monocode-host-supervisor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Provider process supervisor for the headless MonoCode Host"
+
+[[bin]]
+name = "monocode-supervisor"
+path = "src/main.rs"
+
+[dependencies]
+monocode-process-tree = { path = "../process-tree" }
+serde.workspace = true
+serde_json.workspace = true
+
+[target.'cfg(unix)'.dev-dependencies]
+libc = "0.2"

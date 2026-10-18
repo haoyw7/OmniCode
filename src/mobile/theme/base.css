@@ -1,0 +1,212 @@
+/* Utility contract for shared renderers, owned by the mobile entry. */
+@theme {
+  /* Preserve descenders in compact labels, including two 10px lines in a 30px tab. */
+  --leading-label: 1.4;
+  --color-background-base: hsl(
+    var(--theme-hue) var(--theme-saturation) var(--background-lightness)
+  );
+  --color-content: hsl(
+    var(--theme-hue) var(--theme-saturation) var(--content-lightness)
+  );
+  /* Structural separators: use border-stroke, divide-stroke, or bg-stroke. */
+  --color-stroke: color-mix(
+    in srgb,
+    var(--color-content) var(--stroke-strength),
+    transparent
+  );
+  /* ZCode (Zai) surface ladder, derived from the tint so hue settings apply. */
+  --color-window: var(--window-color);
+  --color-panel: var(--panel-color);
+  --color-card: var(--card-color);
+  --color-menu: var(--card-color);
+  --color-menu-hover: var(--menu-hover-color);
+  --color-surface: color-mix(
+    in srgb,
+    var(--color-content) var(--surface-strength),
+    transparent
+  );
+  --color-surface-hover: color-mix(
+    in srgb,
+    var(--color-content) var(--surface-hover-strength),
+    transparent
+  );
+  --color-border-hover: color-mix(
+    in srgb,
+    var(--color-content) calc(var(--stroke-strength) + 5%),
+    transparent
+  );
+  --color-foreground-subtle: color-mix(
+    in srgb,
+    var(--color-content) calc(60% + var(--contrast-offset, 0) * 20%),
+    transparent
+  );
+  --color-foreground-subtlest: color-mix(
+    in srgb,
+    var(--color-content) var(--subtlest-strength),
+    transparent
+  );
+  --color-brand: var(--brand-color);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-destructive: #ef4444;
+  /* Interactive fills keep their dark-theme contrast but use gentler ink in
+     light mode. Prefer these over content opacity for selected/raised UI. */
+  --color-selection-subtle: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-subtle-strength),
+    transparent
+  );
+  --color-selection: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-strength),
+    transparent
+  );
+  --color-selection-strong: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-strong-strength),
+    transparent
+  );
+  --color-selection-hover: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-hover-strength),
+    transparent
+  );
+  --color-selection-emphasis: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-emphasis-strength),
+    transparent
+  );
+  --color-accent: var(--accent-color);
+  --color-skill: #e8c547;
+  --color-mention: #38bdf8;
+
+}
+@theme {
+  --tracking-wf-label: 0.09em;
+  --color-foreground: color-mix(in srgb, var(--color-content) 88%, transparent);
+  --color-foreground-inverse: var(--color-background-base);
+  --color-background: var(--color-background-base);
+  --color-border: var(--color-stroke);
+  --color-hover: var(--color-surface-hover);
+  --color-selected: var(--color-selection);
+  --color-card-border: var(--color-stroke);
+  --color-popover: var(--card-color);
+  --color-popover-foreground: var(--color-foreground);
+  --color-popover-border: var(--color-stroke);
+  --color-input: var(--card-color);
+  --color-input-focused: var(--card-color);
+  --color-input-border: var(--color-stroke);
+  --color-input-border-hover: var(--color-border-hover);
+  --color-input-border-focused: var(--color-brand);
+  --color-ring: var(--color-brand);
+  --color-primary: var(--color-content);
+  --color-primary-foreground: var(--color-background-base);
+  --color-secondary: var(--color-selection-strong);
+  --color-destructive-foreground: #ffffff;
+  --color-success: #16a34a;
+  --color-success-foreground: #ffffff;
+  --color-warning: #d97706;
+  --color-warning-foreground: #ffffff;
+  --color-workflow-rule: color-mix(in srgb, var(--color-content) 6%, transparent);
+  --color-workflow-trace: color-mix(in srgb, var(--color-content) 32%, transparent);
+  --color-workflow-trace-strong: color-mix(in srgb, var(--color-content) 57%, transparent);
+}
+
+@theme {
+  --color-app: var(--color-m-app);
+  --color-background-base: var(--color-m-app);
+  --color-content: var(--color-m-ink);
+  --color-window: var(--color-m-app);
+  --color-panel: var(--color-m-panel);
+  --color-card: var(--color-m-card);
+  --color-menu: var(--color-m-menu);
+  --color-raised: var(--color-m-raised);
+  --color-raised-hover: var(--color-m-raised-hover);
+  --color-composer: var(--color-m-composer);
+  --color-composer-ring: var(--color-m-composer-ring);
+  --color-inset: var(--color-m-inset);
+  --color-control: var(--color-m-control);
+  --color-hairline: var(--color-m-hairline);
+  --color-ink: var(--color-m-ink);
+  --color-ink-secondary: var(--color-m-ink-secondary);
+  --color-ink-tertiary: var(--color-m-ink-tertiary);
+  --color-accent: var(--m-control-focus);
+  --color-accent-ink: #ffffff;
+  --color-accent-border: var(--m-control-focus);
+  --color-accent-text: var(--color-m-accent-text);
+  --color-focus: var(--m-control-focus);
+  --color-bubble-user: var(--color-m-bubble-user);
+  --color-bubble-user-ink: var(--color-m-bubble-user-ink);
+  --color-danger: var(--m-control-danger);
+  --color-danger-ink: #ffffff;
+  --color-success-ink: var(--color-m-success-ink);
+  --color-foreground-subtle: var(--color-m-ink-secondary);
+  --color-foreground-subtlest: var(--color-m-ink-tertiary);
+  --color-stroke: var(--color-m-hairline);
+  --animate-caret: caret-blink 1s step-end infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-status-pulse: status-pulse 1.6s steps(2, jump-none) infinite;
+}
+
+:root {
+  --theme-hue: 48;
+  --theme-saturation: 3%;
+  --content-lightness: 85%;
+  --ui-font-size: 14px;
+  --font-scale: var(--ui-font-scale, 1);
+  --window-color: var(--color-m-app);
+  --panel-color: var(--color-m-panel);
+  --card-color: var(--color-m-card);
+  --menu-hover-color: var(--color-m-raised-hover);
+  --brand-color: var(--m-control-primary);
+  --brand-foreground: var(--m-control-primary-ink);
+  --accent-color: var(--m-control-focus);
+  --link-color: var(--color-m-accent-text);
+  --surface-strength: 5%;
+  --surface-hover-strength: 7%;
+  --stroke-strength: 15%;
+  --selection-subtle-strength: 5%;
+  --selection-strength: 10%;
+  --selection-strong-strength: 10%;
+  --selection-hover-strength: 7%;
+  --selection-emphasis-strength: 15%;
+  --panel-opacity: 1;
+  --popover-opacity: 1;
+  --window-opacity: 1;
+  --chat-background-empty-opacity: 0.24;
+  --chat-background-session-opacity: 0.24;
+  --color-markdown-heading: var(--color-m-ink);
+  --motion-feedback-duration: 0.2s;
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-sheet: var(--m-shadow-float);
+}
+html.theme-light { --content-lightness: 15%; }
+
+html, body, #root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: var(--color-m-app);
+  color: var(--color-m-ink);
+  overflow: hidden;
+  overscroll-behavior: none;
+  user-select: none;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+body { font-weight: var(--ui-font-weight, 400); }
+
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+@keyframes shimmer {
+  from { background-position: 200% 50%; }
+  to { background-position: -200% 50%; }
+}
+@keyframes status-pulse {
+  0%, 100% { opacity: 0.25; }
+  30% { opacity: 1; }
+  60% { opacity: 0.25; }
+}

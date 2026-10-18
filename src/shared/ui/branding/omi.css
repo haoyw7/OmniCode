@@ -1,0 +1,117 @@
+/* Generated from the approved SVG animation masters. */
+
+@keyframes omi-ready-body { 0%,66.666%,100% {transform:translateY(0)} 8.333%,58.333% {transform:translateY(-3px)} }
+@keyframes omi-ready-face { 0%,72%,84%,100% {transform:scaleY(1)} 78% {transform:scaleY(.16)} }
+.omi-motion-ready .omi-body{animation:omi-ready-body 2.88s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-ready .omi-face{animation:omi-ready-face 2.88s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 127px}
+.omi-motion-ready .omi-a {transform-box:view-box}
+.omi-motion-ready[data-paused="true"] .omi-a {animation-play-state:paused}
+.omi-motion-ready[data-motion="off"] .omi-a {animation:none!important}
+@media (prefers-reduced-motion:reduce) {.omi-motion-ready .omi-a {animation:none!important}}
+
+@keyframes omi-thinking-face { 0%,20%,70%,100% {transform:translate(0,0)} 30%,60% {transform:translate(4px,-5px)} }
+@keyframes omi-thinking-dot { 0%,66.666%,100% {opacity:.25} 33.333% {opacity:1} }
+.omi-motion-thinking .omi-face{animation:omi-thinking-face 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-thinking .omi-dot{animation:omi-thinking-dot .72s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-thinking .omi-dot-b{animation-delay:-.24s}.omi-motion-thinking .omi-dot-c{animation-delay:-.48s}
+.omi-motion-thinking .omi-a {transform-box:view-box}
+.omi-motion-thinking[data-paused="true"] .omi-a {animation-play-state:paused}
+.omi-motion-thinking[data-motion="off"] .omi-a {animation:none!important}
+@media (prefers-reduced-motion:reduce) {.omi-motion-thinking .omi-a {animation:none!important}}
+
+@keyframes omi-running-line { 0% {opacity:0;transform:translateX(0)} 20% {opacity:1;transform:translateX(0)} 80% {opacity:1;transform:translateX(120px)} 100% {opacity:0;transform:translateX(120px)} }
+.omi-motion-running .omi-progress{animation:omi-running-line 1.2s cubic-bezier(.22,1,.36,1) infinite}
+.omi-motion-running .omi-a {transform-box:view-box}
+.omi-motion-running[data-paused="true"] .omi-a {animation-play-state:paused}
+.omi-motion-running[data-motion="off"] .omi-a {animation:none!important}
+@media (prefers-reduced-motion:reduce) {.omi-motion-running .omi-a {animation:none!important}}
+
+@keyframes omi-done-body { 0%,20%,100% {transform:translateY(0)} 10% {transform:translateY(-5px)} }
+@keyframes omi-done-check { 0% {opacity:0;stroke-dashoffset:1} 10%,90% {opacity:1;stroke-dashoffset:0} 100% {opacity:0;stroke-dashoffset:0} }
+@keyframes omi-done-check-once { from {opacity:0;stroke-dashoffset:1} to {opacity:1;stroke-dashoffset:0} }
+.omi-motion-done .omi-body{animation:omi-done-body 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-done .omi-check{stroke-dasharray:1;stroke-dashoffset:0;animation:omi-done-check 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-done.omi-once .omi-body{animation:omi-done-body 2.4s cubic-bezier(.22,1,.36,1) 1 both}.omi-motion-done.omi-once .omi-check{animation:omi-done-check-once .24s cubic-bezier(.22,1,.36,1) 1 both}
+.omi-motion-done .omi-a {transform-box:view-box}
+.omi-motion-done[data-paused="true"] .omi-a {animation-play-state:paused}
+.omi-motion-done[data-motion="off"] .omi-a {animation:none!important}
+@media (prefers-reduced-motion:reduce) {.omi-motion-done .omi-a {animation:none!important}}
+
+@keyframes omi-approval-bubble { 0%,70%,100% {opacity:.45} 10%,60% {opacity:1} }
+.omi-motion-approval .omi-bubble{animation:omi-approval-bubble 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-motion-approval .omi-a {transform-box:view-box}
+.omi-motion-approval[data-paused="true"] .omi-a {animation-play-state:paused}
+.omi-motion-approval[data-motion="off"] .omi-a {animation:none!important}
+@media (prefers-reduced-motion:reduce) {.omi-motion-approval .omi-a {animation:none!important}}
+
+@keyframes omi-connecting-dot { 0%,100% {opacity:.25} 25%,50% {opacity:1} 75% {opacity:.25} }
+.omi-motion-connecting .omi-dot{animation:omi-connecting-dot .96s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-connecting .omi-dot-b{animation-delay:-.48s}
+.omi-motion-connecting .omi-a {transform-box:view-box}
+.omi-motion-connecting[data-paused="true"] .omi-a {animation-play-state:paused}
+.omi-motion-connecting[data-motion="off"] .omi-a {animation:none!important}
+@media (prefers-reduced-motion:reduce) {.omi-motion-connecting .omi-a {animation:none!important}}
+@keyframes omi-expr-curious-body{0%,60%,100%{transform:rotate(0deg)}10%,50%{transform:rotate(-4deg)}}
+@keyframes omi-expr-curious-accent{0%,60%,100%{opacity:.4;transform:translateY(3px)}10%,50%{opacity:1;transform:translateY(0)}}
+.omi-expr-curious .omx-body{animation:omi-expr-curious-body 2.4s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 128px}
+.omi-expr-curious .omx-accent{animation:omi-expr-curious-accent 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-curious .omx-a{transform-box:view-box}
+.omi-expr-curious[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-curious[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-curious .omx-a{animation:none!important}}
+@keyframes omi-expr-inspired-body{0%,30%,100%{transform:translateY(0)}10%,20%{transform:translateY(-4px)}}
+@keyframes omi-expr-inspired-accent{0%,80%,100%{opacity:.3;transform:scale(.8)}10%,70%{opacity:1;transform:scale(1)}}
+.omi-expr-inspired .omx-body{animation:omi-expr-inspired-body 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-inspired .omx-accent{animation:omi-expr-inspired-accent 2.4s cubic-bezier(.22,1,.36,1) infinite;transform-origin:156px 34px}
+.omi-expr-inspired .omx-a{transform-box:view-box}
+.omi-expr-inspired[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-inspired[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-inspired .omx-a{animation:none!important}}
+@keyframes omi-expr-focused-face{0%,30%,60%,100%{transform:translateX(0)}10%,20%{transform:translateX(5px)}40%,50%{transform:translateX(-5px)}}
+.omi-expr-focused .omx-face{animation:omi-expr-focused-face 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-focused .omx-a{transform-box:view-box}
+.omi-expr-focused[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-focused[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-focused .omx-a{animation:none!important}}
+@keyframes omi-expr-surprised-body{0%,20%,100%{transform:translateY(0)}10%{transform:translateY(-7px)}}
+@keyframes omi-expr-surprised-face{0%,20%,100%{transform:scale(1)}10%{transform:scale(1.06)}}
+@keyframes omi-expr-surprised-accent{0%,80%,100%{opacity:.35}10%,70%{opacity:1}}
+.omi-expr-surprised .omx-body{animation:omi-expr-surprised-body 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-surprised .omx-face{animation:omi-expr-surprised-face 2.4s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 130px}
+.omi-expr-surprised .omx-accent{animation:omi-expr-surprised-accent 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-surprised .omx-a{transform-box:view-box}
+.omi-expr-surprised[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-surprised[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-surprised .omx-a{animation:none!important}}
+@keyframes omi-expr-sleepy-body{0%,66.666%,100%{transform:translateY(0)}6.666%,60%{transform:translateY(3px)}}
+@keyframes omi-expr-sleepy-accent{0%{opacity:0;transform:translate(0,6px)}6.666%{opacity:1;transform:translate(0,6px)}60%{opacity:1;transform:translate(4px,-6px)}66.666%,100%{opacity:0;transform:translate(4px,-6px)}}
+.omi-expr-sleepy .omx-body{animation:omi-expr-sleepy-body 3.6s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-sleepy .omx-accent{animation:omi-expr-sleepy-accent 3.6s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-sleepy .omx-a{transform-box:view-box}
+.omi-expr-sleepy[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-sleepy[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-sleepy .omx-a{animation:none!important}}
+@keyframes omi-expr-joyful-body{0%,20%,40%,100%{transform:translateY(0)}10%{transform:translateY(-6px)}30%{transform:translateY(-3px)}}
+@keyframes omi-expr-joyful-accent{0%,40%,100%{opacity:.3}10%,30%{opacity:1}}
+.omi-expr-joyful .omx-body{animation:omi-expr-joyful-body 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-joyful .omx-accent{animation:omi-expr-joyful-accent 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-joyful .omx-a{transform-box:view-box}
+.omi-expr-joyful[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-joyful[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-joyful .omx-a{animation:none!important}}
+@keyframes omi-expr-encouraging-body{0%,20%,100%{transform:rotate(0deg)}10%{transform:rotate(3deg)}}
+@keyframes omi-expr-encouraging-accent{0%,30%,100%{transform:translateY(0);opacity:.55}10%,20%{transform:translateY(-5px);opacity:1}}
+@keyframes omi-expr-encouraging-wink{0%,20%,100%{transform:scaleY(1)}10%{transform:scaleY(.2)}}
+.omi-expr-encouraging .omx-body{animation:omi-expr-encouraging-body 2.4s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 128px}
+.omi-expr-encouraging .omx-accent{animation:omi-expr-encouraging-accent 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-encouraging .omx-wink{animation:omi-expr-encouraging-wink 2.4s cubic-bezier(.22,1,.36,1) infinite;transform-origin:163px 127px}
+.omi-expr-encouraging .omx-a{transform-box:view-box}
+.omi-expr-encouraging[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-encouraging[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-encouraging .omx-a{animation:none!important}}
+@keyframes omi-expr-error-body{0%,30%,100%{transform:translateX(0)}10%{transform:translateX(-4px)}20%{transform:translateX(4px)}}
+.omi-expr-error .omx-body{animation:omi-expr-error-body 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-error .omx-a{transform-box:view-box}
+.omi-expr-error[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-error[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-error .omx-a{animation:none!important}}
+[data-ui="omi"] { display: block; flex-shrink: 0; overflow: hidden; }
+[data-ui="omi"]:not([data-animated]) * { animation: none !important; }
+[data-ui="omi"][data-animation-paused] * { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) {
+  [data-ui="omi"] * { animation: none !important; }
+}

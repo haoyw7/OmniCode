@@ -1,0 +1,8 @@
+Source: Berkeley Function Calling Leaderboard, Shishir Patil / Gorilla project.
+Pinned repository revision: 6ea57973c7a6097fd7c5915698c54c17c5b1b6c8.
+Code license: Apache-2.0, reproduced in LICENSE.
+Dataset card declares Apache-2.0:
+https://huggingface.co/datasets/gorilla-llm/Berkeley-Function-Calling-Leaderboard
+Original source and answers are preserved in eval/data/upstream/bfcl-v4-sample.
+Local additions: offline simulated receipt adapter and strict candidate scorer.
+This adapter is neither the official BFCL AST checker nor a leaderboard result.

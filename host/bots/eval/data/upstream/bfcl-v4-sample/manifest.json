@@ -1,0 +1,131 @@
+{
+  "source": "bfcl",
+  "revision": "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8",
+  "provenance": "unmodified-original-upstream-lines; deterministically sampled, not adapted",
+  "codeLicense": "Apache-2.0",
+  "dataLicense": "Apache-2.0 on official Hugging Face dataset card; preserve file-level notices.",
+  "licenseUrl": "https://github.com/ShishirPatil/gorilla/blob/6ea57973c7a6097fd7c5915698c54c17c5b1b6c8/LICENSE",
+  "dataLicenseUrl": "https://huggingface.co/datasets/gorilla-llm/Berkeley-Function-Calling-Leaderboard",
+  "licenseSha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+  "sampling": "Six evenly spaced line indexes per category, including first and last; fixed-order representative sample, not random or a leaderboard split.",
+  "categories": {
+    "simple_python": {
+      "sourceUrl": "https://github.com/ShishirPatil/gorilla/blob/6ea57973c7a6097fd7c5915698c54c17c5b1b6c8/berkeley-function-call-leaderboard/bfcl_eval/data/BFCL_v4_simple_python.json",
+      "sourceSha256": "82dd63ba502eb2520c6b5d1d9a5c4b590e03ff261565175561f6228a367d1991",
+      "sourceRows": 400,
+      "sourceLineNumbers": [
+        1,
+        81,
+        161,
+        240,
+        320,
+        400
+      ],
+      "ids": [
+        "simple_python_0",
+        "simple_python_80",
+        "simple_python_160",
+        "simple_python_239",
+        "simple_python_319",
+        "simple_python_399"
+      ],
+      "subsetSha256": "2116c656ec203bdb9bf05e2b04601f99658bed45072f38b0cdd77ee5f7d19a4c",
+      "answersSourceSha256": "90cd5bc653690ee8e459b5b3f3fc9458606f7f3fcbf795bb51b7dc581f8c86dc",
+      "answersSubsetSha256": "8974f6fb0bba38ab52e487244005a61db973731f5baa145fd73fb84c74ed31e1"
+    },
+    "multiple": {
+      "sourceUrl": "https://github.com/ShishirPatil/gorilla/blob/6ea57973c7a6097fd7c5915698c54c17c5b1b6c8/berkeley-function-call-leaderboard/bfcl_eval/data/BFCL_v4_multiple.json",
+      "sourceSha256": "aef168155ebd74b7ac2401198b201343bc7d16d7a3d7e0d4e6d8ee82c6969b2a",
+      "sourceRows": 200,
+      "sourceLineNumbers": [
+        1,
+        41,
+        81,
+        120,
+        160,
+        200
+      ],
+      "ids": [
+        "multiple_0",
+        "multiple_40",
+        "multiple_80",
+        "multiple_119",
+        "multiple_159",
+        "multiple_199"
+      ],
+      "subsetSha256": "a3da081a6463254c477dd58179c62ff4abe23463ac6335e28b4ac437a3442bd9",
+      "answersSourceSha256": "244e00ce9395df948bcafc7bee64e8f9c87ef70887587d83cae45b13699f3047",
+      "answersSubsetSha256": "f7b34871ef6f49a4a3facae85d4ddcf7e962e702870fe96c426581189cf0f6ba"
+    },
+    "parallel": {
+      "sourceUrl": "https://github.com/ShishirPatil/gorilla/blob/6ea57973c7a6097fd7c5915698c54c17c5b1b6c8/berkeley-function-call-leaderboard/bfcl_eval/data/BFCL_v4_parallel.json",
+      "sourceSha256": "19f51a82eff42e5d62541aa500115a056eb78f437c2ba1f10415fd7c8e5dda84",
+      "sourceRows": 200,
+      "sourceLineNumbers": [
+        1,
+        41,
+        81,
+        120,
+        160,
+        200
+      ],
+      "ids": [
+        "parallel_0",
+        "parallel_40",
+        "parallel_80",
+        "parallel_119",
+        "parallel_159",
+        "parallel_199"
+      ],
+      "subsetSha256": "eee002bba1678df5c45493fe2e0af2be7685c426c7a2f98a14bdc13badafcaed",
+      "answersSourceSha256": "8a6aa19c1adddc6a5a2f7e40f9dbf30cc7e95815e7b830c90589ab318229e0f0",
+      "answersSubsetSha256": "5d5044533a5bb41e5fec7c8eae887a5b9cb9349c61040197234c60fb7966bb67"
+    },
+    "parallel_multiple": {
+      "sourceUrl": "https://github.com/ShishirPatil/gorilla/blob/6ea57973c7a6097fd7c5915698c54c17c5b1b6c8/berkeley-function-call-leaderboard/bfcl_eval/data/BFCL_v4_parallel_multiple.json",
+      "sourceSha256": "8863ea8433239f55c5f016154cf0830853c89f693c6ea270396a2fa121960579",
+      "sourceRows": 200,
+      "sourceLineNumbers": [
+        1,
+        41,
+        81,
+        120,
+        160,
+        200
+      ],
+      "ids": [
+        "parallel_multiple_0",
+        "parallel_multiple_40",
+        "parallel_multiple_80",
+        "parallel_multiple_119",
+        "parallel_multiple_159",
+        "parallel_multiple_199"
+      ],
+      "subsetSha256": "a7db0c9177d1671164da065950519db948e5b6e358de42ae8315af92dd140d74",
+      "answersSourceSha256": "5ebf24f458c1f16300c05505d83d6f0a1b68b79be273a033febd0d4f840507e3",
+      "answersSubsetSha256": "382ec9546a371543ec3b6487a0fbd963b47a00b27c841bc422d95c60c537c6f9"
+    },
+    "irrelevance": {
+      "sourceUrl": "https://github.com/ShishirPatil/gorilla/blob/6ea57973c7a6097fd7c5915698c54c17c5b1b6c8/berkeley-function-call-leaderboard/bfcl_eval/data/BFCL_v4_irrelevance.json",
+      "sourceSha256": "2b6ed4c2e992cdcf5f1678a701851f944bef7550ee026ed1ddb89efed5be01a6",
+      "sourceRows": 240,
+      "sourceLineNumbers": [
+        1,
+        49,
+        97,
+        144,
+        192,
+        240
+      ],
+      "ids": [
+        "irrelevance_0",
+        "irrelevance_48",
+        "irrelevance_96",
+        "irrelevance_143",
+        "irrelevance_191",
+        "irrelevance_239"
+      ],
+      "subsetSha256": "ec8f79efd83bd1f99364c45a95f1e9079b5a8ab285a4a6f8e3224762b372fe21"
+    }
+  }
+}

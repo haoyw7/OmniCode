@@ -1,0 +1,52 @@
+.rolling-clock {
+  display: inline-block;
+  flex-shrink: 0;
+  color: color-mix(in srgb, var(--color-content, #fff) 65%, transparent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.rolling-clock-face,
+.rolling-clock-group {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.rolling-clock-unit {
+  margin-left: 0.08em;
+  white-space: pre;
+}
+
+.rolling-clock-digit {
+  position: relative;
+  display: inline-block;
+  width: 1ch;
+  height: 1.3em;
+  overflow: hidden;
+  line-height: 1.3em;
+  text-align: center;
+}
+
+.rolling-clock-current,
+.rolling-clock-glyph {
+  pointer-events: none;
+}
+
+.rolling-clock-current {
+  position: relative;
+  display: block;
+}
+
+.rolling-clock-glyph {
+  position: absolute;
+  inset: 0;
+}
+
+.rolling-clock-glyph[data-exiting]::before {
+  content: attr(data-glyph);
+}
+
+.rolling-clock[data-motion="roll"] .rolling-clock-digit {
+  mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+}

@@ -1,0 +1,898 @@
+import {
+  markTurnInterrupted,
+  type ResumedWorkspace,
+} from "../../sessions/model/inFlight";
+import {
+  closeLeaf,
+  APP_VIEW_KINDS,
+  isAgentTab as isWorkerTab,
+  isSubagentTab,
+  isAppPageKind,
+  isWorkflowAgentTab,
+  isWorkflowRunTab,
+  isAppViewTab,
+  isAppViewOnlyTab,
+  isTerminalTab,
+  leafIds,
+  newTab,
+  type CommitTabSource,
+  type AppViewKind,
+  type EditorPane,
+  type FilePaneTab,
+  type LayoutNode,
+  type PlanTabSource,
+  type SessionChangesSource,
+  type WorkspaceTab,
+} from "./layout";
+import type { ReleaseNotesTabSource } from "../../../app/model/releaseNotes";
+import {
+  clampDockSize,
+  isDockSide,
+  type DockSide,
+  type ProjectTerminalDock,
+} from "../../projects/model/projectTerminal";
+import { normalizeProjectPath } from "../../projects/model/recents";
+import { pathKey } from "../../../shared/lib/paths";
+import { parseRemotePath, remotePath } from "../../connections/model/remoteProjects";
+import { isRetiredSession } from "../../sessions/model/retiredSessions";
+import {
+  isBlankSession,
+  reconcileProjectReturn,
+  type ProjectReturnMemory,
+} from "../../projects/model/projectReturn";
+import type { InboxAskContext } from "../../inbox/model/inboxAsk";
+import {
+  HARNESSES,
+  RUNTIME_MODES,
+  newSession,
+  type HarnessId,
+  type RuntimeMode,
+  type Session,
+} from "../../sessions/model/session";
+
+export type WorkspaceSessionStub = {
+  inboxAsk?: InboxAskContext;
+  id: string;
+  cwd: string;
+  harness: HarnessId;
+  model: string;
+  modelSettings: Record<string, string>;
+  runtimeMode: RuntimeMode;
+  title: string;
+  providerSessionId?: string;
+  providerAccountId?: string;
+  branch?: string;
+  executionCwd?: string;
+  worktreeRemoved?: boolean;
+};
+
+export type WorkspaceSnapshot = {
+  tabs: WorkspaceTab[];
+  sessions: WorkspaceSessionStub[];
+  activeTabId: string;
+  projectCwd: string;
+  projectTerminals: ProjectTerminalDock[];
+  projectReturnTargets?: {
+    projectPath: string;
+    tabId?: string;
+    paneId?: string;
+  }[];
+  lastDockSide?: DockSide;
+};
+
+export function collectWorkspaceSnapshot(
+  tabs: WorkspaceTab[],
+  sessions: Session[],
+  activeTabId: string,
+  projectCwd: string,
+  memory: ProjectReturnMemory,
+  projectTerminals: ProjectTerminalDock[] = [],
+  lastDockSide?: DockSide,
+  keepTab?: (tab: WorkspaceTab) => boolean,
+): WorkspaceSnapshot {
+  // Tabs left out (another worktree's, say) do not reopen, and neither do
+  // sessions that only they showed.
+  const kept = keepTab ? tabs.filter(keepTab) : tabs;
+  const keptIds = new Set(kept.flatMap((tab) => leafIds(tab.layout)));
+  const droppedIds = new Set(
+    tabs
+      .filter((tab) => !kept.includes(tab))
+      .flatMap((tab) => leafIds(tab.layout))
+      .filter((id) => !keptIds.has(id)),
+  );
+  const snapshot = withoutInboxSessions({
+    tabs: withoutObsoleteOrDuplicateAppViews(
+      withoutAgentTabs(kept)
+        .map(sanitizeTab)
+        .filter((tab): tab is WorkspaceTab => tab != null),
+    ),
+    sessions: sessions
+      .filter((session) =>
+        !droppedIds.has(session.id) &&
+        (keptIds.has(session.id) || !isBlankSession(session)),
+      )
+      .map(sessionStub)
+      .filter((stub): stub is WorkspaceSessionStub => stub != null),
+    activeTabId,
+    projectCwd: projectCwd.trim() || "~",
+    projectTerminals: projectTerminals
+      .map(sanitizeProjectTerminal)
+      .filter((dock): dock is ProjectTerminalDock => dock != null),
+    ...(isDockSide(lastDockSide) ? { lastDockSide } : {}),
+  });
+  return withProjectReturnTargets(
+    {
+      ...snapshot,
+      activeTabId: snapshot.tabs.some((tab) => tab.id === snapshot.activeTabId)
+        ? snapshot.activeTabId
+        : (snapshot.tabs[0]?.id ?? ""),
+    },
+    memory,
+  );
+}
+
+function withProjectReturnTargets(
+  snapshot: WorkspaceSnapshot,
+  memory: ProjectReturnMemory,
+): WorkspaceSnapshot {
+  const valid = reconcileProjectReturn({
+    ...snapshot,
+    memory,
+    activeTabId: "",
+  });
+  return {
+    ...snapshot,
+    projectReturnTargets: [...valid].map(([projectPath, paneId]) => ({
+      projectPath,
+      tabId: paneId,
+    })),
+  };
+}
+
+function parseProjectReturnTargets(raw: unknown): ProjectReturnMemory {
+  const memory = new Map<string, string>();
+  if (!Array.isArray(raw)) return memory;
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    if (!("projectPath" in entry)) continue;
+    const projectPath = (entry as { projectPath?: unknown }).projectPath;
+    if (typeof projectPath !== "string" || !projectPath.trim()) continue;
+
+    const remembered =
+      (entry as { paneId?: unknown }).paneId ??
+      (entry as { tabId?: unknown }).tabId;
+    if (typeof remembered !== "string" || !remembered.trim()) continue;
+
+    memory.set(pathKey(projectPath), remembered.trim());
+  }
+  return memory;
+}
+
+/**
+ * Agent tabs watch a live worker, and a run does not outlive the window that
+ * started it. Dropping them in `sanitizeFile` would strand an empty pane and
+ * cost the whole workspace tab on restore, so the pane is closed here instead.
+ */
+/** Orchestration workers and workflow views watch live Host state; they are not restored. */
+function isAgentTab(file: Parameters<typeof isWorkerTab>[0]) {
+  return isWorkerTab(file) || isSubagentTab(file) || isWorkflowRunTab(file) || isWorkflowAgentTab(file);
+}
+
+function withoutAgentTabs(tabs: WorkspaceTab[]): WorkspaceTab[] {
+  return tabs.flatMap((tab) => {
+    if (!tab.editorPanes.some((pane) => pane.files.some(isAgentTab)))
+      return [tab];
+    let remaining: WorkspaceTab | null = tab;
+    const panes: EditorPane[] = [];
+    for (const pane of tab.editorPanes) {
+      const files = pane.files.filter((file) => !isAgentTab(file));
+      if (files.length === pane.files.length) {
+        panes.push(pane);
+      } else if (files.length === 0) {
+        remaining = remaining && closeLeaf(remaining, pane.id);
+      } else {
+        panes.push({
+          ...pane,
+          files,
+          activeFileId: files.some((file) => file.id === pane.activeFileId)
+            ? pane.activeFileId
+            : files[0].id,
+        });
+      }
+    }
+    return remaining ? [{ ...remaining, editorPanes: panes }] : [];
+  });
+}
+
+/** Full-area pages no longer occupy saved panes; remaining views stay unique. */
+function withoutObsoleteOrDuplicateAppViews(tabs: WorkspaceTab[]): WorkspaceTab[] {
+  const standaloneSeen = new Set<AppViewKind>();
+  return tabs.flatMap((tab) => {
+    const seen = isAppViewOnlyTab(tab)
+      ? standaloneSeen
+      : new Set<AppViewKind>();
+    let remaining: WorkspaceTab | null = tab;
+    const panes: EditorPane[] = [];
+    for (const pane of tab.editorPanes) {
+      const files = pane.files.filter((file) => {
+        if (!isAppViewTab(file)) return true;
+        if (isAppPageKind(file.appView.kind)) return false;
+        if (seen.has(file.appView.kind)) return false;
+        seen.add(file.appView.kind);
+        return true;
+      });
+      if (files.length === pane.files.length) {
+        panes.push(pane);
+      } else if (files.length === 0) {
+        remaining = remaining && closeLeaf(remaining, pane.id);
+      } else {
+        panes.push({
+          ...pane,
+          files,
+          activeFileId: files.some((file) => file.id === pane.activeFileId)
+            ? pane.activeFileId
+            : files[0].id,
+        });
+      }
+    }
+    return remaining ? [{ ...remaining, editorPanes: panes }] : [];
+  });
+}
+
+/** Also removes tabs saved by the earlier, persistent Inbox implementation. */
+function withoutInboxSessions(snapshot: WorkspaceSnapshot): WorkspaceSnapshot {
+  const inboxIds = snapshot.sessions
+    .filter((session) => session.inboxAsk)
+    .map((session) => session.id);
+  if (inboxIds.length === 0) return snapshot;
+  let tabs = snapshot.tabs;
+  for (const id of inboxIds) {
+    tabs = tabs.flatMap((tab) => {
+      if (!leafIds(tab.layout).includes(id)) return [tab];
+      const next = closeLeaf(tab, id);
+      return next ? [next] : [];
+    });
+  }
+  return {
+    ...snapshot,
+    tabs,
+    sessions: snapshot.sessions.filter((session) => !session.inboxAsk),
+    activeTabId: tabs.some((tab) => tab.id === snapshot.activeTabId)
+      ? snapshot.activeTabId
+      : (tabs[0]?.id ?? ""),
+  };
+}
+
+export function parseWorkspaceSnapshot(raw: unknown): WorkspaceSnapshot | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as {
+    tabs?: unknown;
+    sessions?: unknown;
+    activeTabId?: unknown;
+    projectCwd?: unknown;
+    projectTerminals?: unknown;
+    projectReturnTargets?: unknown;
+    lastDockSide?: unknown;
+  };
+  if (!Array.isArray(value.tabs) || typeof value.activeTabId !== "string") {
+    return null;
+  }
+  const validTabs = value.tabs
+    .map(sanitizeTab)
+    .filter((tab): tab is WorkspaceTab => tab != null);
+  if (validTabs.length === 0) return null;
+  const tabs = withoutObsoleteOrDuplicateAppViews(validTabs);
+  const sessions = Array.isArray(value.sessions)
+    ? value.sessions
+        .map(sanitizeStub)
+        .filter((stub): stub is WorkspaceSessionStub => stub != null)
+    : [];
+  if (tabs.length === 0) {
+    const sessionId =
+      sessions.find((session) => !session.inboxAsk)?.id ?? crypto.randomUUID();
+    tabs.push(newTab(sessionId));
+  }
+  const activeTabId = tabs.some((tab) => tab.id === value.activeTabId)
+    ? value.activeTabId
+    : tabs[0].id;
+  const projectCwd =
+    typeof value.projectCwd === "string" && value.projectCwd.trim()
+      ? value.projectCwd.trim()
+      : "~";
+  const projectTerminals = Array.isArray(value.projectTerminals)
+    ? value.projectTerminals
+        .map(sanitizeProjectTerminal)
+        .filter((dock): dock is ProjectTerminalDock => dock != null)
+    : [];
+  const lastDockSide = isDockSide(value.lastDockSide)
+    ? value.lastDockSide
+    : undefined;
+  const snapshot = withoutInboxSessions({
+    tabs,
+    sessions,
+    activeTabId,
+    projectCwd,
+    projectTerminals,
+    lastDockSide,
+  });
+  return snapshot.tabs.length > 0
+    ? withProjectReturnTargets(
+        snapshot,
+        parseProjectReturnTargets(value.projectReturnTargets),
+      )
+    : null;
+}
+
+export function workspaceSnapshotKey(snapshot: WorkspaceSnapshot): string {
+  return JSON.stringify(snapshot);
+}
+
+/** Retired records must never fall back to a saved stub or an empty leaf. */
+export function withoutRetiredSessions<T extends {
+  tabs: WorkspaceTab[];
+  sessions: { id: string; cwd: string }[];
+  activeTabId: string;
+  projectCwd: string;
+}>(snapshot: T): T {
+  const cwds = new Map(snapshot.sessions.map((session) => [session.id, session.cwd]));
+  const retired = (id: string) => isRetiredSession(id, cwds.get(id) ?? snapshot.projectCwd);
+  const tabs = snapshot.tabs.flatMap((tab) => {
+    let remaining: WorkspaceTab | null = tab;
+    const paneIds = new Set([...tab.editorPanes, ...(tab.terminalPanes ?? [])].map((pane) => pane.id));
+    for (const id of leafIds(tab.layout)) {
+      if (!paneIds.has(id) && retired(id)) remaining = remaining && closeLeaf(remaining, id);
+    }
+    if (!remaining) return [];
+    for (const pane of remaining.editorPanes) {
+      const files = pane.files.filter((file) => !isWorkerTab(file) ||
+        (!retired(file.agent.sessionId) && !retired(file.agent.leadId)));
+      if (files.length === pane.files.length) continue;
+      if (!files.length) {
+        remaining = remaining && closeLeaf(remaining, pane.id);
+      } else if (remaining) {
+        remaining = { ...remaining, editorPanes: remaining.editorPanes.map((entry) => entry.id !== pane.id ? entry : {
+          ...entry, files, activeFileId: files.some((file) => file.id === entry.activeFileId) ? entry.activeFileId : files[0].id,
+        }) };
+      }
+    }
+    return remaining ? [remaining] : [];
+  });
+  return { ...snapshot, tabs,
+    sessions: snapshot.sessions.filter((session) => !isRetiredSession(session.id, session.cwd)),
+    activeTabId: tabs.some((tab) => tab.id === snapshot.activeTabId) ? snapshot.activeTabId : (tabs[0]?.id ?? ""),
+  };
+}
+
+/**
+ * Reopen the saved tabs/panes. Transcripts come from `loaded` when the
+ * session was persisted; blank tabs fall back to the stub.
+ */
+export function hydrateWorkspaceSnapshot(
+  snapshot: WorkspaceSnapshot,
+  loaded: Map<string, Session>,
+  interruptedIds: ReadonlySet<string> = new Set(),
+): ResumedWorkspace | null {
+  const parsed = parseWorkspaceSnapshot(withoutRetiredSessions(snapshot));
+  if (!parsed) return null;
+
+  const paneIds = new Set<string>();
+  for (const tab of parsed.tabs) {
+    for (const pane of [...tab.editorPanes, ...(tab.terminalPanes ?? [])]) {
+      paneIds.add(pane.id);
+    }
+  }
+
+  const stubs = new Map(parsed.sessions.map((stub) => [stub.id, stub]));
+  const sessions = new Map<string, Session>();
+
+  const take = (id: string): Session | null => {
+    if (isRetiredSession(id, loaded.get(id)?.cwd ?? stubs.get(id)?.cwd ?? parsed.projectCwd)) return null;
+    const existing = sessions.get(id);
+    if (existing) return existing;
+    const record = loaded.get(id);
+    const stub = stubs.get(id);
+    const base = record ?? (stub ? sessionFromStub(stub) : null);
+    if (!base || base.inboxAsk) return null;
+    const next = interruptedIds.has(id)
+      ? markTurnInterrupted(base)
+      : { ...base, busy: false };
+    sessions.set(id, next);
+    return next;
+  };
+
+  const openSessionIds = new Set(parsed.tabs.flatMap((tab) => leafIds(tab.layout)));
+  for (const stub of parsed.sessions) {
+    // Old snapshots included every retained session. A missing transcript with
+    // no open pane must not become another empty "New session" on startup.
+    if (!openSessionIds.has(stub.id) && !interruptedIds.has(stub.id)) {
+      const record = loaded.get(stub.id);
+      if (!record || isBlankSession(record)) continue;
+    }
+    take(stub.id);
+  }
+
+  const tabs: WorkspaceTab[] = [];
+  for (const tab of parsed.tabs) {
+    for (const id of leafIds(tab.layout)) {
+      if (paneIds.has(id) || take(id)) continue;
+      sessions.set(
+        id,
+        sessionFromStub({
+          id,
+          cwd: parsed.projectCwd,
+          harness: "cursor",
+          model: "",
+          modelSettings: {},
+          runtimeMode: "supervised",
+          title: "",
+        }),
+      );
+    }
+    tabs.push(tab);
+  }
+
+  for (const id of interruptedIds) {
+    if (isRetiredSession(id, loaded.get(id)?.cwd ?? parsed.projectCwd)) continue;
+    const session = take(id);
+    if (!session || session.inboxAsk) continue;
+    if (tabs.some((tab) => leafIds(tab.layout).includes(id))) continue;
+    tabs.push(newTab(id));
+  }
+
+  if (tabs.length === 0) return null;
+  const activeTabId = tabs.some((tab) => tab.id === parsed.activeTabId)
+    ? parsed.activeTabId
+    : tabs[0].id;
+  const projectCwd =
+    parsed.projectCwd !== "~"
+      ? parsed.projectCwd
+      : (sessions.values().next().value?.cwd ?? "~");
+
+  return {
+    tabs,
+    sessions: [...sessions.values()],
+    activeTabId,
+    projectCwd,
+    projectTerminals: parsed.projectTerminals,
+    projectReturnMemory: reconcileProjectReturn({
+      memory: parseProjectReturnTargets(parsed.projectReturnTargets),
+      tabs,
+      sessions: [...sessions.values()],
+      activeTabId,
+    }),
+    lastDockSide: parsed.lastDockSide,
+  };
+}
+
+function sessionStub(session: Session): WorkspaceSessionStub | null {
+  if (!session.id) return null;
+  return {
+    id: session.id,
+    cwd: session.cwd || "~",
+    harness: session.harness,
+    model: session.model,
+    modelSettings: { ...session.modelSettings },
+    runtimeMode: session.runtimeMode,
+    title: session.title,
+    ...(session.inboxAsk ? { inboxAsk: session.inboxAsk } : {}),
+    ...(session.providerSessionId
+      ? { providerSessionId: session.providerSessionId }
+      : {}),
+    ...(session.providerAccountId
+      ? { providerAccountId: session.providerAccountId }
+      : {}),
+    ...(session.branch ? { branch: session.branch } : {}),
+    ...(session.executionCwd ? { executionCwd: session.executionCwd } : {}),
+    ...(session.worktreeRemoved ? { worktreeRemoved: true } : {}),
+  };
+}
+
+function sessionFromStub(stub: WorkspaceSessionStub): Session {
+  const session = newSession(
+    stub.harness,
+    stub.cwd,
+    stub.model,
+    stub.runtimeMode,
+    stub.modelSettings,
+  );
+  return {
+    ...session,
+    id: stub.id,
+    // A snapshot is a saved choice, not a new conversation. Catalog discovery
+    // and the current picker preferences must not replace its model.
+    model: stub.model || session.model,
+    modelSettings: { ...stub.modelSettings },
+    title: stub.title,
+    ...(stub.inboxAsk ? { inboxAsk: stub.inboxAsk } : {}),
+    ...(stub.providerSessionId
+      ? { providerSessionId: stub.providerSessionId }
+      : {}),
+    ...(stub.providerAccountId
+      ? { providerAccountId: stub.providerAccountId }
+      : {}),
+    ...(stub.branch ? { branch: stub.branch } : {}),
+    ...(stub.executionCwd ? { executionCwd: stub.executionCwd } : {}),
+    ...(stub.worktreeRemoved ? { worktreeRemoved: true } : {}),
+  };
+}
+
+function sanitizeStub(raw: unknown): WorkspaceSessionStub | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  // Read old saved workspaces once; runtime objects and subsequent writes use executionCwd.
+  const executionCwd = value.executionCwd ?? value.worktreeCwd;
+  if (typeof value.id !== "string" || !value.id) return null;
+  const harness = asHarness(value.harness);
+  const runtimeMode = asRuntimeMode(value.runtimeMode);
+  if (!harness || !runtimeMode) return null;
+  const modelSettings =
+    value.modelSettings &&
+    typeof value.modelSettings === "object" &&
+    !Array.isArray(value.modelSettings)
+      ? Object.fromEntries(
+          Object.entries(value.modelSettings as Record<string, unknown>).filter(
+            (entry): entry is [string, string] => typeof entry[1] === "string",
+          ),
+        )
+      : {};
+  return {
+    id: value.id,
+    cwd:
+      typeof value.cwd === "string" && value.cwd.trim()
+        ? value.cwd.trim()
+        : "~",
+    harness,
+    model: typeof value.model === "string" ? value.model : "",
+    modelSettings,
+    runtimeMode,
+    title: typeof value.title === "string" ? value.title : "",
+    ...(value.inboxAsk && typeof value.inboxAsk === "object"
+      ? { inboxAsk: value.inboxAsk as InboxAskContext }
+      : {}),
+    ...(typeof value.providerSessionId === "string" && value.providerSessionId
+      ? { providerSessionId: value.providerSessionId }
+      : {}),
+    ...(typeof value.providerAccountId === "string" &&
+    /^[A-Za-z0-9_-]+$/.test(value.providerAccountId)
+      ? { providerAccountId: value.providerAccountId }
+      : {}),
+    ...(typeof value.branch === "string" && value.branch.trim()
+      ? { branch: value.branch.trim() }
+      : {}),
+    ...(typeof executionCwd === "string" && executionCwd.trim()
+      ? { executionCwd: executionCwd.trim() }
+      : {}),
+    ...(value.worktreeRemoved === true ? { worktreeRemoved: true } : {}),
+  };
+}
+
+function sanitizeTab(raw: unknown): WorkspaceTab | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  if (typeof value.id !== "string" || !value.id) return null;
+  const layout = sanitizeLayout(value.layout);
+  if (!layout) return null;
+  const editorResult = sanitizePanes(value.editorPanes);
+  const terminalResult = sanitizePanes(value.terminalPanes);
+  // App views are editor documents; malformed terminal entries must not
+  // bypass the window's kind lookup and duplicate sanitization.
+  if (terminalResult.panes.some((pane) => pane.files.some(isAppViewTab)))
+    return null;
+  const invalidPaneIds = new Set([
+    ...editorResult.invalidIds,
+    ...terminalResult.invalidIds,
+  ]);
+  if (leafIds(layout).some((id) => invalidPaneIds.has(id))) return null;
+  const editorPanes = editorResult.panes;
+  const terminalPanes = terminalResult.panes;
+  const focusedId =
+    typeof value.focusedId === "string" && value.focusedId
+      ? value.focusedId
+      : leafIds(layout)[0];
+  if (!focusedId) return null;
+  return {
+    kind: "session",
+    id: value.id,
+    layout,
+    focusedId,
+    editorPanes,
+    terminalPanes,
+    ...(value.diffOpen === true ? { diffOpen: true } : {}),
+    ...(value.diffFocused === true ? { diffFocused: true } : {}),
+    ...(value.surfaceMode === "split" || value.surfaceMode === "unified"
+      ? { surfaceMode: value.surfaceMode }
+      : {}),
+    ...(typeof value.autoArrangeTools === "boolean"
+      ? { autoArrangeTools: value.autoArrangeTools }
+      : {}),
+    ...(typeof value.groupId === "string" && value.groupId
+      ? { groupId: value.groupId }
+      : {}),
+  };
+}
+
+function sanitizeLayout(raw: unknown): LayoutNode | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  if (value.type === "leaf") {
+    return typeof value.id === "string" && value.id
+      ? { type: "leaf", id: value.id }
+      : null;
+  }
+  if (value.type !== "split" || typeof value.id !== "string" || !value.id) {
+    return null;
+  }
+  const dir =
+    value.dir === "down" ? "down" : value.dir === "right" ? "right" : null;
+  if (!dir || !Array.isArray(value.children) || value.children.length < 2) {
+    return null;
+  }
+  const children = value.children
+    .map(sanitizeLayout)
+    .filter((node): node is LayoutNode => node != null);
+  if (children.length < 2) return null;
+  const sizes = Array.isArray(value.sizes)
+    ? value.sizes.filter(
+        (size): size is number =>
+          typeof size === "number" && Number.isFinite(size),
+      )
+    : [];
+  const normalized =
+    sizes.length === children.length
+      ? sizes
+      : children.map(() => 1 / children.length);
+  return { type: "split", id: value.id, dir, children, sizes: normalized };
+}
+
+function sanitizePanes(raw: unknown): {
+  panes: EditorPane[];
+  invalidIds: string[];
+} {
+  if (!Array.isArray(raw)) return { panes: [], invalidIds: [] };
+  const panes: EditorPane[] = [];
+  const invalidIds: string[] = [];
+  for (const entry of raw) {
+    const pane = sanitizePane(entry);
+    if (pane) {
+      panes.push(pane);
+      continue;
+    }
+    if (!entry || typeof entry !== "object") continue;
+    const id = (entry as Record<string, unknown>).id;
+    if (typeof id === "string" && id) invalidIds.push(id);
+  }
+  return { panes, invalidIds };
+}
+
+function sanitizePane(raw: unknown): EditorPane | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  if (typeof value.id !== "string" || !value.id) return null;
+  if (!Array.isArray(value.files)) return null;
+  const files = value.files
+    .map(sanitizeFile)
+    .filter((file): file is FilePaneTab => file != null);
+  if (files.length === 0) return null;
+  const activeFileId =
+    typeof value.activeFileId === "string" &&
+    files.some((file) => file.id === value.activeFileId)
+      ? value.activeFileId
+      : files[0].id;
+  return { id: value.id, files, activeFileId };
+}
+
+function sanitizeFile(raw: unknown): FilePaneTab | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  if (typeof value.id !== "string" || !value.id) return null;
+  if (typeof value.path !== "string" || !value.path) return null;
+  if (typeof value.cwd !== "string" || !value.cwd) return null;
+  if ("appView" in value) {
+    const appView = value.appView;
+    if (!appView || typeof appView !== "object") return null;
+    const kind = (appView as Record<string, unknown>).kind;
+    if (!APP_VIEW_KINDS.includes(kind as AppViewKind)) return null;
+    if (
+      [
+        "plan", "releaseNotes", "review", "changes", "changeKind",
+        "sessionChanges", "commit", "agent", "terminal", "remoteFile",
+      ].some((field) => field in value)
+    ) return null;
+    return {
+      id: value.id,
+      path: `app:${kind}`,
+      cwd: "~",
+      appView: { kind: kind as AppViewKind },
+    };
+  }
+  if (value.explorer === true) {
+    if (["plan", "releaseNotes", "review", "changes", "sessionChanges", "commit", "agent", "terminal"].some((key) => value[key])) return null;
+    return { id: value.id, path: value.cwd, cwd: value.cwd, explorer: true,
+      ...(typeof value.projectCwd === "string" && value.projectCwd ? { projectCwd: value.projectCwd } : {}),
+      ...ownerSessionField(value) };
+  }
+  const plan = sanitizePlan(value.plan);
+  const hasReleaseNotes = "releaseNotes" in value;
+  const releaseNotes = sanitizeReleaseNotes(value.releaseNotes);
+  const hasCommit = "commit" in value;
+  const commit = sanitizeCommit(value.commit);
+  const hasSessionChanges = "sessionChanges" in value;
+  const sessionChanges = sanitizeSessionChanges(value.sessionChanges);
+  const hasRemoteFile = "remoteFile" in value;
+  const remoteFile = sanitizeRemoteFile(value.remoteFile);
+  if (hasReleaseNotes && !releaseNotes) return null;
+  if (hasCommit && !commit) return null;
+  if (hasSessionChanges && !sessionChanges) return null;
+  if (hasRemoteFile && !remoteFile) return null;
+  const remoteOwner =
+    remoteFile && typeof value.projectCwd === "string"
+      ? parseRemotePath(value.projectCwd)
+      : undefined;
+  if (remoteFile && !remoteOwner) return null;
+  if (
+    remoteFile &&
+    (value.plan != null ||
+      releaseNotes ||
+      commit ||
+      sessionChanges ||
+      value.terminal === true)
+  )
+    return null;
+  if (
+    sessionChanges &&
+    (value.plan != null ||
+      releaseNotes != null ||
+      commit != null ||
+      value.changes === true ||
+      value.terminal === true)
+  ) {
+    return null;
+  }
+  if (
+    releaseNotes &&
+    (value.plan != null ||
+      value.review === true ||
+      value.changes === true ||
+      sessionChanges != null ||
+      value.terminal === true ||
+      commit != null)
+  ) {
+    return null;
+  }
+  if (
+    commit &&
+    (value.plan != null ||
+      value.review === true ||
+      value.changes === true ||
+      sessionChanges != null ||
+      value.terminal === true)
+  ) {
+    return null;
+  }
+  return {
+    id: value.id,
+    path: remoteOwner ? remotePath(remoteOwner.environmentId, value.path) : value.path,
+    cwd: remoteOwner ? remotePath(remoteOwner.environmentId, value.cwd) : value.cwd,
+    ...(typeof value.projectCwd === "string" && value.projectCwd
+      ? { projectCwd: value.projectCwd }
+      : {}),
+    ...(plan ? { plan } : {}),
+    ...(releaseNotes ? { releaseNotes } : {}),
+    ...(commit ? { commit } : {}),
+    ...(sessionChanges ? { sessionChanges, review: true } : {}),
+    ...(value.review === true ? { review: true } : {}),
+    ...(value.changes === true ? { changes: true, review: true } : {}),
+    ...(value.changeKind === "staged" || value.changeKind === "unstaged"
+      ? { changeKind: value.changeKind }
+      : {}),
+    ...(value.terminal === true ? { terminal: true, ...ownerSessionField(value) } : {}),
+    ...(value.preview === true ? { preview: true } : {}),
+  };
+}
+
+/** The chat whose header toggle owns an explorer or terminal tab. */
+function ownerSessionField(value: Record<string, unknown>): { ownerSessionId?: string } {
+  return typeof value.ownerSessionId === "string" && value.ownerSessionId
+    ? { ownerSessionId: value.ownerSessionId }
+    : {};
+}
+
+function sanitizeRemoteFile(raw: unknown): { machineId: string; projectId: string; relativePath: string } | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  if (
+    typeof value.machineId !== "string" ||
+    !value.machineId ||
+    typeof value.projectId !== "string" ||
+    !value.projectId ||
+    typeof value.relativePath !== "string" ||
+    !value.relativePath
+  )
+    return null;
+  return {
+    machineId: value.machineId,
+    projectId: value.projectId,
+    relativePath: value.relativePath,
+  };
+}
+
+function sanitizeSessionChanges(
+  raw: unknown,
+): SessionChangesSource | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const sessionId = (raw as Record<string, unknown>).sessionId;
+  return typeof sessionId === "string" && sessionId.trim()
+    ? { sessionId: sessionId.trim() }
+    : undefined;
+}
+
+function sanitizeCommit(raw: unknown): CommitTabSource | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const value = raw as Record<string, unknown>;
+  if (typeof value.sha !== "string" || !value.sha.trim()) return undefined;
+  if (typeof value.shortSha !== "string" || !value.shortSha.trim()) {
+    return undefined;
+  }
+  if (typeof value.subject !== "string") return undefined;
+  return {
+    sha: value.sha.trim(),
+    shortSha: value.shortSha.trim(),
+    subject: value.subject,
+  };
+}
+
+function sanitizeReleaseNotes(raw: unknown): ReleaseNotesTabSource | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const version = (raw as Record<string, unknown>).version;
+  if (typeof version !== "string" || !version.trim()) return undefined;
+  return { version: version.trim() };
+}
+
+function sanitizeProjectTerminal(raw: unknown): ProjectTerminalDock | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  if (typeof value.projectPath !== "string" || !value.projectPath.trim()) {
+    return null;
+  }
+  if (!isDockSide(value.side)) return null;
+  const pane = sanitizePane(value.pane);
+  if (!pane) return null;
+  const files = pane.files.filter(isTerminalTab);
+  if (files.length === 0) return null;
+  const activeFileId = files.some((file) => file.id === pane.activeFileId)
+    ? pane.activeFileId
+    : files[0].id;
+  return {
+    projectPath: normalizeProjectPath(value.projectPath),
+    pane: { ...pane, files, activeFileId },
+    side: value.side,
+    size: clampDockSize(value.side, Number(value.size)),
+    open: value.open !== false,
+  };
+}
+
+function sanitizePlan(raw: unknown): PlanTabSource | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const value = raw as Record<string, unknown>;
+  if (typeof value.sessionId !== "string" || !value.sessionId) return undefined;
+  if (typeof value.blockId !== "string" || !value.blockId) return undefined;
+  if (typeof value.title !== "string") return undefined;
+  return {
+    sessionId: value.sessionId,
+    blockId: value.blockId,
+    title: value.title,
+  };
+}
+
+function asHarness(value: unknown): HarnessId | null {
+  return typeof value === "string" && (HARNESSES as string[]).includes(value)
+    ? (value as HarnessId)
+    : null;
+}
+
+function asRuntimeMode(value: unknown): RuntimeMode | null {
+  return typeof value === "string" &&
+    (RUNTIME_MODES as string[]).includes(value)
+    ? (value as RuntimeMode)
+    : null;
+}

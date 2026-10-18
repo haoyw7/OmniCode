@@ -1,0 +1,27 @@
+.mobile-page-stack {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  isolation: isolate;
+}
+.mobile-page-layer {
+  grid-area: 1 / 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--color-background-base);
+}
+.mobile-page-layer[data-page-active="true"] { z-index: 1; }
+/* Chat stays above the list while entering and while sliding back out. */
+.mobile-page-layer[data-page-front="true"] { z-index: 2; }
+.mobile-page-layer[data-page-active="false"] { pointer-events: none; }
+.mobile-page-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+}

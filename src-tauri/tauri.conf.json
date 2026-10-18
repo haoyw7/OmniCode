@@ -1,0 +1,79 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "OmniCode",
+  "version": "0.1.0",
+  "identifier": "com.monocode.desktop",
+  "build": {
+    "beforeDevCommand": "npm run host:build && npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run host:desktop-package && npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "OmniCode",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 520,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "transparent": true,
+        "backgroundColor": "#151515",
+        "backgroundThrottling": "throttle",
+        "shadow": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost https://asset.localhost data: blob: https://avatars.githubusercontent.com https://www.gravatar.com https://uploads.linear.app https://lh3.googleusercontent.com; font-src 'self' data:; connect-src ipc: http://ipc.localhost https://ipc.localhost asset: http://asset.localhost https://asset.localhost; media-src 'self' asset: http://asset.localhost https://asset.localhost blob:; object-src 'none'; base-uri 'self'; frame-src 'none'",
+      "devCsp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost https://asset.localhost data: blob: https://avatars.githubusercontent.com https://www.gravatar.com https://uploads.linear.app https://lh3.googleusercontent.com; font-src 'self' data:; connect-src ipc: http://ipc.localhost https://ipc.localhost asset: http://asset.localhost https://asset.localhost http://localhost:1420 ws://localhost:1420 http://127.0.0.1:1420 ws://127.0.0.1:1420; media-src 'self' asset: http://asset.localhost https://asset.localhost blob:; object-src 'none'; base-uri 'self'; frame-src 'none'",
+      "dangerousDisableAssetCspModification": ["style-src"],
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$APPDATA/**"
+        ]
+      }
+    }
+  },
+  "bundle": {
+    "createUpdaterArtifacts": true,
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../build/desktop-host/": "desktop-host/"
+    },
+    "macOS": {
+      "entitlements": "Entitlements.plist",
+      "signingIdentity": "-"
+    },
+    "linux": {
+      "rpm": {
+        "depends": [
+          "gtk3",
+          "libappindicator-gtk3",
+          "librsvg2",
+          "openssl-libs",
+          "webkit2gtk4.1"
+        ]
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ5REM3QzZBMTFBQzY5MTUKUldRVmFhd1JhbnpjMlVKcWFOdVNHd2V6NC8rUVozem1aZndQN2cybDhYdWFSbmRzTGRvL05ySmgK",
+      "endpoints": ["https://github.com/yyy0107/ohmymonocode/releases/latest/download/latest.json"],
+      "dangerousInsecureTransportProtocol": false
+    }
+  }
+}

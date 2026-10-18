@@ -1,0 +1,145 @@
+/* Mobile appearance for the shared controls. Portals inherit the root skin. */
+html[data-mobile-skin] [data-ui="button"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--m-control-height);
+  height: auto;
+  padding: 10px 16px;
+  border: 1px solid var(--m-control-border);
+  border-radius: var(--m-control-pill);
+  background: transparent;
+  color: var(--m-control-ink);
+  font-size: var(--text-body-md);
+  font-weight: var(--font-weight-semibold);
+  line-height: 22px;
+  box-shadow: none;
+}
+html[data-mobile-skin] [data-ui="button"]:is([data-size="xs"], [data-size="sm"]) {
+  min-height: var(--m-control-small);
+  padding-block: 5px;
+  font-size: var(--text-body-sm);
+  line-height: var(--text-body-sm--line-height);
+}
+html[data-mobile-skin] [data-ui="button"][data-variant="primary"] {
+  border-color: transparent;
+  background: var(--m-control-primary);
+  color: var(--m-control-primary-ink);
+}
+html[data-mobile-skin] [data-ui="button"][data-variant="danger"] {
+  border-color: transparent;
+  background: var(--m-control-danger);
+  color: #fff;
+}
+html[data-mobile-skin] [data-ui="button"]:is([data-variant="ghost"], [data-variant="link"]) { border-color: transparent; }
+html[data-mobile-skin] [data-ui="button"][data-variant="link"] { text-decoration: underline; }
+html[data-mobile-skin] :is([data-ui="button"], [data-ui="icon-button"]):active:not(:disabled, [aria-disabled="true"]) { filter: brightness(.92); }
+html[data-mobile-skin] :is([data-ui="button"], [data-ui="icon-button"], [data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-ui="switch"], [data-ui="checkbox"], [data-ui="radio"]):is(:disabled, [aria-disabled="true"]) { opacity: .5; cursor: default; }
+html[data-mobile-skin] [data-ui]:focus-visible { outline: 2px solid var(--m-control-focus); outline-offset: 2px; }
+html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]) {
+  min-width: 0;
+  min-height: var(--m-control-height);
+  padding: 10px 16px;
+  border: .5px solid var(--m-control-border);
+  border-radius: var(--m-control-radius);
+  background: var(--m-control-field);
+  color: var(--m-control-ink);
+  box-shadow: var(--m-control-shadow);
+  /* Keep iOS from zooming the viewport when editing. */
+  font-size: var(--text-body-md);
+  font-weight: var(--font-weight-normal);
+  line-height: 22px;
+  caret-color: var(--m-control-ink);
+}
+html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"])::placeholder { color: var(--m-control-placeholder); opacity: 1; }
+html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]):focus {
+  border-color: var(--m-control-focus);
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px var(--m-control-focus), var(--m-control-shadow);
+}
+html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"])[aria-invalid="true"] { border-color: var(--m-control-danger); box-shadow: inset 0 0 0 1.5px var(--m-control-danger); }
+html[data-mobile-skin] [data-ui="icon-button"] {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--m-control-icon);
+  height: var(--m-control-icon);
+  min-height: var(--m-control-icon);
+  padding: 6px;
+  border: 0;
+  border-radius: var(--m-control-pill);
+  background: transparent;
+  color: var(--m-control-ink);
+}
+html[data-mobile-skin] [data-ui="icon-button"] svg { width: 24px; height: 24px; }
+html[data-mobile-skin] [data-ui="icon-button"]:is(:active, [aria-pressed="true"], [aria-expanded="true"], [data-active="true"]):not(:disabled, [aria-disabled="true"]) { background: var(--m-control-active); }
+html[data-mobile-skin] [data-ui="switch"] {
+  --switch-travel: var(--m-switch-travel);
+  position: relative;
+  flex: 0 0 var(--m-switch-width);
+  width: var(--m-switch-width);
+  min-width: var(--m-switch-width);
+  height: var(--m-switch-height);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--m-control-pill);
+  background: var(--m-control-off);
+  box-shadow: none;
+}
+html[data-mobile-skin] [data-ui="switch"][data-state="checked"] { background: var(--m-control-focus); }
+html[data-mobile-skin] [data-ui="switch"] [data-slot="switch-thumb"] {
+  position: absolute;
+  top: 2px;
+  inset-inline-start: 2px;
+  width: var(--m-switch-thumb-width);
+  height: var(--m-switch-thumb-height);
+  border: 0;
+  border-radius: var(--m-control-pill);
+  background: #fff;
+  box-shadow: none;
+}
+html[data-mobile-skin] :is([data-ui="radio"], [data-ui="checkbox"]) {
+  appearance: none;
+  position: relative;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+html[data-mobile-skin] :is([data-ui="radio"], [data-ui="checkbox"])::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1.5px solid var(--m-control-border);
+  border-radius: 50%;
+}
+html[data-mobile-skin] [data-ui="radio"]:checked::before {
+  border-color: var(--m-control-focus);
+  background: radial-gradient(circle, var(--m-control-focus) 0 4px, transparent 4.5px);
+}
+html[data-mobile-skin] [data-ui="checkbox"]:is(:checked, [data-state="checked"], [data-state="indeterminate"])::before { border-color: var(--m-control-focus); background: var(--m-control-focus); }
+html[data-mobile-skin] input[data-ui="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 7px;
+  width: 5px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+html[data-mobile-skin] [data-slot="checkbox-indicator"] { position: relative; width: 24px; height: 24px; color: white; }
+html[data-mobile-skin] [data-slot="checkbox-indicator"] svg { width: 12px; height: 12px; }
+@media (prefers-reduced-motion: reduce) {
+  html[data-mobile-skin] [data-ui] { transition: none; }
+}
+html[data-mobile-skin][data-reduced-motion="on"] [data-ui] { transition: none; }
+
+html[data-mobile-skin] [data-ui="switch"]:dir(rtl) { --switch-travel: calc(0px - var(--m-switch-travel)); }

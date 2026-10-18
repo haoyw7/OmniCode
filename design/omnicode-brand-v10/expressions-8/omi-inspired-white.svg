@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-inspired" role="img" aria-label="Omi · 灵感" data-state="inspired" data-duration="2.4">
+<style>@keyframes omi-expr-inspired-body{0%,30%,100%{transform:translateY(0)}10%,20%{transform:translateY(-4px)}}
+@keyframes omi-expr-inspired-accent{0%,80%,100%{opacity:.3;transform:scale(.8)}10%,70%{opacity:1;transform:scale(1)}}
+.omi-expr-inspired .omx-body{animation:omi-expr-inspired-body 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-inspired .omx-accent{animation:omi-expr-inspired-accent 2.4s cubic-bezier(.22,1,.36,1) infinite;transform-origin:156px 34px}
+.omi-expr-inspired .omx-a{transform-box:view-box}
+.omi-expr-inspired[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-inspired[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-inspired .omx-a{animation:none!important}}</style>
+<g fill="#ffffff" stroke="#ffffff"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omx-a omx-face"><path d="M 80 137 L 94 117 L 108 137 M 149 137 L 163 117 L 177 137" fill="none" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/></g></g></g><g class="omx-a omx-accent"><path d="M 156 29 V 13 M 133 34 L 122 24 M 179 34 L 190 24" fill="none" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></g></g>
+</svg>

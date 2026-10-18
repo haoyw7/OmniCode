@@ -1,0 +1,112 @@
+/* claude-ui-analysis: code-changes-open, font-styles and root-theme-variables.
+   The code renderer has its own tokens because it lives in a shadow root. */
+.git-review-pane {
+  --review-added: #32d74b;
+  --review-removed: #ff2c56;
+  --review-bg: #1a1a19;
+  --review-secondary: #c3c2b7;
+  --review-muted: #898781;
+  --review-header: color-mix(in srgb, #fff 5%, var(--review-bg));
+  background: var(--review-bg);
+}
+
+.theme-light .git-review-pane {
+  --review-added: #1e9e3c;
+  --review-removed: #cd2054;
+  --review-bg: #fff;
+  --review-secondary: #52514e;
+  --review-header: color-mix(in srgb, #0b0b0b 5%, var(--review-bg));
+}
+
+.review-toolbar {
+  min-height: 32px;
+  color: var(--review-secondary);
+}
+
+.review-toolbar .review-source-select {
+  height: 24px;
+  padding-inline: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--review-secondary);
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.review-toolbar .review-source-select:is(:hover, [aria-expanded="true"]) {
+  background: var(--review-header);
+}
+
+.review-total-counts,
+.review-commit-label {
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.review-toolbar-actions > button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--review-secondary);
+}
+
+.review-toolbar-actions > button > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.review-file-header {
+  background: var(--review-header);
+}
+
+.review-file-toggle {
+  color: var(--review-secondary);
+  transition-duration: 120ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.review-file-toggle:hover {
+  background: var(--cds-fill-ghost-hover, var(--color-surface-hover));
+}
+
+.review-file-chevron,
+.review-file-dir {
+  color: var(--review-muted);
+}
+
+.review-file-icon > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.review-file-icon[data-markdown] svg path {
+  fill: var(--review-added);
+}
+
+.review-file-name,
+.review-file-counts {
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.review-file-name {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.review-file-dir {
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.review-stage-hunk {
+  background: var(--review-header);
+}
+
+/* Keep the comparison and actions visible when the review pane is narrow. */
+.git-review-pane[data-inline-below~="36"] .git-review-worktree {
+  display: none;
+}

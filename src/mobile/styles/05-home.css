@@ -1,0 +1,713 @@
+.mobile-list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  min-height: 75px;
+  padding: 12px 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--color-m-ink);
+}
+.mobile-row-icon {
+  width: 37px;
+  height: 37px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--color-selection-subtle);
+  color: var(--color-m-ink-secondary);
+  flex-shrink: 0;
+}
+.mobile-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+.mobile-row-text strong {
+  font-size: var(--mobile-font-md);
+  font-weight: var(--font-weight-medium);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.mobile-row-text small {
+  color: var(--color-m-ink-tertiary);
+  font-size: var(--mobile-font-xs);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.mobile-list-row > svg {
+  opacity: 0.4;
+}
+.mobile-session-list {
+  gap: 2px;
+}
+.mobile-session-row {
+  min-height: 44px;
+  padding: 8px 6px;
+}
+.mobile-session-row .mobile-row-text {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+}
+.mobile-session-row .mobile-row-text strong {
+  flex: 1;
+  min-width: 0;
+}
+.mobile-session-row .mobile-row-text small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.mobile-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 48px 28px;
+  min-height: 260px;
+}
+.mobile-empty-icon {
+  opacity: 0.25;
+  margin-bottom: 20px;
+}
+.mobile-empty h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  letter-spacing: -0.3px;
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-empty p {
+  margin: 0;
+  max-width: 320px;
+  color: var(--color-m-ink-tertiary);
+  line-height: 1.5;
+  font-size: var(--mobile-font-lg);
+}
+.mobile-empty p [data-ui="button"] {
+  display: flex;
+  margin: 22px auto 0;
+}
+.mobile-empty > [data-ui="button"] {
+  margin-top: 22px;
+}
+.mobile-home {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  touch-action: pan-y;
+}
+.mobile-home-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  padding: calc(var(--mobile-safe-top) + var(--mobile-header-height) + 18px)
+    18px calc(var(--mobile-safe-bottom) + 110px);
+}
+.mobile-app .mobile-home-scroll::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.mobile-home :where(h2) {
+  margin: 0;
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-home section + section {
+  margin-top: 22px;
+}
+.mobile-home-projects > h2,
+.mobile-home-recent > h2 {
+  margin-bottom: 10px;
+}
+.mobile-home-project {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--radius-m-xl);
+  background: transparent;
+  transition: background-color 150ms var(--m-ease);
+  color: var(--color-m-ink);
+  text-align: left;
+}
+/* The project glyph sits in a rounded tile, in the avatar column. */
+.mobile-home-project > svg {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  border-radius: var(--radius-m-xl);
+  background: var(--color-m-raised);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-home-project > span:not(.mobile-home-project-activity) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.mobile-home-project-activity {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-inline-start: auto;
+  color: var(--mobile-accent);
+}
+.mobile-home-project-state {
+  display: flex;
+}
+.mobile-home-project strong {
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-home-project small {
+  font-size: var(--mobile-font-sm);
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-home-project strong,
+.mobile-home-project small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-home-add {
+  color: var(--mobile-accent);
+}
+.mobile-list-more {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--color-m-ink-secondary);
+  font-size: var(--mobile-font-md);
+  text-align: start;
+}
+.mobile-list-more:active {
+  color: var(--color-m-ink);
+}
+.mobile-home-recent > .mobile-list-more {
+  text-align: center;
+}
+.mobile-home-empty,
+.mobile-home-error {
+  margin: 20px 0;
+  color: var(--color-m-ink-secondary);
+  line-height: 1.6;
+}
+.mobile-home-error button {
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--mobile-accent);
+}
+.mobile-home-dock {
+  position: absolute;
+  /* Keep Home actions covered while the keyboard shortens the page. */
+  bottom: calc(
+    var(--mobile-safe-bottom) + 16px -
+    var(--mobile-keyboard-layout)
+  );
+  inset-inline: 24px;
+  display: flex;
+  justify-content: center;
+}
+.mobile-home-new {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 460px);
+  min-height: 56px;
+  padding: 12px 18px;
+  border: 1px solid var(--color-stroke);
+  border-radius: 30px;
+  background: var(--mobile-card);
+  box-shadow: 0 6px 26px #0002;
+  color: var(--color-m-ink);
+  text-align: left;
+}
+.mobile-home-new svg {
+  flex-shrink: 0;
+}
+.mobile-home-new small {
+  margin-inline-start: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-home-project:active,
+.mobile-home-new:active {
+  --mobile-press-color: var(--color-selection);
+}
+/* A selected project is a flat history list with its actions within thumb reach. */
+.mobile-home[data-project="true"] .mobile-home-scroll {
+  padding-top: calc(var(--mobile-safe-top) + var(--mobile-header-height) + 8px);
+}
+/* Home sections follow Claude Code's phone layout: a quiet heading with its
+   action on the same row, then generous cards. */
+.mobile-home-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  margin-bottom: 6px;
+}
+.mobile-home-section-head h2 {
+  color: var(--color-m-ink-tertiary);
+  font-size: var(--mobile-font-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.mobile-home-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-inline-end: -6px;
+  padding: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-m-ink-secondary);
+  font-size: var(--mobile-font-md);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: normal;
+  text-transform: none;
+}
+.mobile-home-filter:active {
+  --mobile-press-color: var(--color-selection);
+}
+/* Home's device row scrolls sideways like Codex's environment chips. */
+.mobile-device-chips {
+  display: flex;
+  gap: 8px;
+  margin: -4px -18px 18px;
+  padding: 4px 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.mobile-app .mobile-device-chips::-webkit-scrollbar {
+  display: none;
+}
+.mobile-device-chip {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--m-control);
+  padding: 0 14px;
+  border: 1px solid var(--color-m-hairline);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-m-ink-secondary);
+  font-size: var(--mobile-font-md);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+.mobile-device-chip::before {
+  content: "";
+  position: absolute;
+  inset: -4px -2px;
+}
+.mobile-device-chip[aria-checked="true"] {
+  border-color: transparent;
+  background: var(--color-m-raised);
+  color: var(--color-m-ink);
+}
+.mobile-device-chip:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-device-chip:disabled {
+  opacity: 0.5;
+}
+/* An unreachable device keeps the device row above a centered retry state. */
+.mobile-host-unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 12px 0;
+  color: var(--color-m-ink-secondary);
+  font-size: var(--mobile-font-lg);
+  text-align: center;
+}
+.mobile-host-unavailable-spinner {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 64px;
+  border-radius: 50%;
+  background: var(--color-m-card);
+  box-shadow: var(--m-shadow-float);
+  color: var(--color-m-ink);
+}
+.mobile-host-unavailable-spinner[data-visible="false"] {
+  opacity: 0;
+  transform: scale(0.8);
+}
+.mobile-host-unavailable-logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 18px;
+  padding: 10px;
+  border-radius: calc(var(--radius-m-xl) + 8px);
+  background: var(--color-m-card);
+  box-shadow: 0 0 0 1px var(--color-m-hairline);
+  object-fit: contain;
+}
+.mobile-host-unavailable strong {
+  color: var(--color-m-ink);
+  font-size: var(--mobile-font-xl);
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-host-unavailable button {
+  min-height: 44px;
+  margin-top: 40px;
+  padding: 0 20px;
+  border: 1px solid var(--color-m-hairline);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-m-ink);
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-host-unavailable button:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-host-unavailable button:disabled {
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-host-unavailable-spinner {
+    transition: none;
+  }
+}
+.mobile-home :is(.mobile-home-pinned, .mobile-home-overview-projects) > h2.mobile-home-section-head {
+  margin-inline-end: -6px;
+  margin-bottom: 0;
+}
+/* Include the heading gap in the measured fold height. An outside margin would
+   collapse only after the content unmounts, shifting the next section again. */
+.mobile-home :is(.mobile-home-pinned, .mobile-home-overview-projects) > .zen-fold-item > div {
+  padding-top: 6px;
+}
+.mobile-home-section-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 6px 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-m-ink-tertiary);
+  font: inherit;
+  font-size: var(--mobile-font-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.mobile-home-project[data-compact] {
+  min-height: 52px;
+}
+.mobile-home-project-host,
+.mobile-home-session-host {
+  flex-shrink: 1;
+  max-width: 34%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-m-ink-tertiary);
+  font-size: var(--mobile-font-sm);
+}
+.mobile-home-project-host {
+  margin-inline-start: auto;
+}
+.mobile-home-project-host + .mobile-home-project-activity {
+  margin-inline-start: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-home-section-toggle > svg {
+    transition: none;
+  }
+}
+.mobile-sheet-row[data-separated] {
+  position: relative;
+  margin-top: 9px;
+}
+.mobile-sheet-row[data-separated]::before {
+  content: "";
+  position: absolute;
+  inset-inline: -10px;
+  top: -5px;
+  border-top: 1px solid var(--mobile-separator);
+}
+/* Conversations are a plain list: the agent, title, then its state or age. */
+.mobile-home-session {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 8px;
+  border: 0;
+  border-radius: var(--radius-m-xl);
+  background: transparent;
+  transition: background-color 150ms var(--m-ease);
+  color: var(--color-m-ink);
+  text-align: left;
+}
+/* The agent mark sits in a round avatar before the title. */
+.mobile-home-session-icon {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  padding: 9px;
+  border-radius: 50%;
+  background: var(--color-m-raised);
+}
+.mobile-home-session > strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: 22px;
+}
+.mobile-home-session > time,
+.mobile-home-session-pin,
+.mobile-home-session-state {
+  flex-shrink: 0;
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-home-session > time {
+  font-size: var(--mobile-font-sm);
+}
+.mobile-home-session-state {
+  display: flex;
+  align-items: center;
+}
+.mobile-home-session[data-state="running"] .mobile-home-session-state {
+  color: var(--mobile-accent);
+}
+.mobile-home-session[data-state="input"] .mobile-home-session-state {
+  color: var(--mobile-accent);
+}
+.mobile-home-session:active {
+  --mobile-press-color: var(--color-selection);
+}
+/* Skeletons keep the real rows' typography, padding and minimum heights. */
+.mobile-list-skeleton {
+  pointer-events: none;
+}
+.mobile-skeleton-bar {
+  position: relative;
+  display: inline-block;
+  height: 12px;
+  max-width: 100%;
+  border-radius: 6px;
+  vertical-align: middle;
+  overflow: hidden;
+  background: var(--mobile-fill);
+}
+.mobile-skeleton-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 200%;
+  background: linear-gradient(90deg,
+    transparent 25%,
+    color-mix(in srgb, var(--color-m-ink) 15%, transparent) 50%,
+    transparent 75%);
+  animation: mobile-skeleton-shimmer 1.6s ease-in-out infinite;
+}
+.mobile-skeleton-bar.mobile-skeleton-icon {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+.mobile-home-project > .mobile-skeleton-icon {
+  border-radius: var(--radius-m-xl);
+}
+.mobile-skeleton-project-text {
+  flex: 1;
+}
+.mobile-list-skeleton strong > .mobile-skeleton-bar {
+  width: 65%;
+}
+.mobile-list-skeleton small > .mobile-skeleton-bar {
+  width: 45%;
+  height: 8px;
+}
+.mobile-skeleton-age {
+  width: 42px;
+}
+@keyframes mobile-skeleton-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-skeleton-bar::before {
+    display: none;
+    animation: none;
+  }
+}
+/* Home keeps one compact, high-contrast action at the thumb's corner. */
+.mobile-home:not([data-project="true"]) .mobile-home-dock {
+  justify-content: flex-end;
+}
+.mobile-home:not([data-project="true"]) .mobile-home-new {
+  width: auto;
+  gap: 10px;
+  min-height: 48px;
+  padding: 11px 22px 11px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-m-accent);
+  color: var(--color-m-accent-ink);
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--m-shadow-float);
+}
+.mobile-home:not([data-project="true"]) .mobile-home-new:active {
+  --mobile-press-color: rgb(0 0 0 / 0.15);
+}
+.mobile-home[data-project="true"] .mobile-home-dock {
+  isolation: isolate;
+  inset-inline: 0;
+  width: min(calc(100% - 48px), 460px);
+  margin-inline: auto;
+  gap: 10px;
+}
+.mobile-home[data-project="true"] .mobile-home-dock::before {
+  content: "";
+  position: absolute;
+  inset: -48px -24px calc(-16px - var(--mobile-safe-bottom));
+  z-index: -1;
+  background: linear-gradient(transparent, var(--color-m-app) 48%);
+  pointer-events: none;
+}
+.mobile-home-search,
+.mobile-home[data-project="true"] .mobile-home-new {
+  min-width: 0;
+  min-height: 48px;
+  gap: 10px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 999px;
+  font-size: var(--mobile-font-lg);
+  box-shadow: var(--m-shadow-float);
+}
+.mobile-home-search {
+  display: flex;
+  align-items: center;
+  flex: 1.6;
+  background: var(--color-m-inset);
+  color: var(--color-m-ink-tertiary);
+  text-align: left;
+}
+.mobile-home-search > svg {
+  flex-shrink: 0;
+}
+.mobile-home-search > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-home-search:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-home[data-project="true"] .mobile-home-new {
+  flex: 1;
+  width: auto;
+  justify-content: center;
+  background: var(--mobile-accent);
+  color: var(--mobile-accent-foreground);
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-home[data-project="true"] .mobile-home-new:active {
+  --mobile-press-color: rgb(0 0 0 / 0.15);
+}
+.mobile-home[data-project="true"] .mobile-home-dock:has(> .mobile-home-new:only-child) {
+  justify-content: flex-end;
+}
+.mobile-home[data-project="true"] .mobile-home-new:only-child {
+  flex: none;
+  padding-inline: 22px;
+}
+.mobile-chat {
+  /* Horizontal pulls reach JavaScript to open the drawer; nested code
+     blocks and tables still scroll sideways on their own. */
+  touch-action: pan-y;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  /* Clip rather than hide: a hidden axis turns the chat into a scroll
+     container, which the WebView scrolls to reveal a focused composer and
+     lifts the whole conversation with it. */
+  overflow-x: clip;
+}
+/* Phones have no hovering pointer, so scrollbars are never useful; hide
+   both axes everywhere in the conversation. */
+.mobile-app .mobile-chat,
+.mobile-app .mobile-chat * {
+  scrollbar-width: none;
+}
+.mobile-app .mobile-chat::-webkit-scrollbar,
+.mobile-app .mobile-chat ::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+.mobile-chat > .mobile-empty,
+.mobile-chat > .mobile-loading {
+  min-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+.mobile-chat[data-new-conversation="true"] > .mobile-empty {
+  /* Keep the greeting centered in the full screen above the resting composer,
+     even when the keyboard shortens the shell. */
+  flex: 0 0 max(0px, calc(var(--mobile-viewport-full, 100dvh) - var(--mobile-dock-height, 0px)));
+}
+/* Android keeps the WebView full screen. The page reserves keyboard space
+   once per motion; only the moving surfaces use the animated height. */

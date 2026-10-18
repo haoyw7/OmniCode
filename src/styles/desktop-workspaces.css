@@ -1,0 +1,367 @@
+html[data-skin] .app-view-dialog {
+  inset: 0;
+  width: min(1024px, calc(100% - 32px));
+  height: min(800px, calc(100% - 32px));
+  margin: auto;
+  border: 0;
+  border-radius: var(--desktop-radius-dialog);
+  background: var(--color-card);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-panel);
+}
+
+html[data-skin] [data-app-view-dialog] > .modal-backdrop,
+html[data-skin] [data-window-chrome-backdrop] {
+  background: var(--color-backdrop);
+  backdrop-filter: none;
+}
+
+html[data-skin] .app-view-dialog > .popover-backdrop {
+  display: none;
+}
+
+html[data-skin] .app-view-dialog-close {
+  width: 32px;
+  height: 32px;
+  top: 12px;
+  right: 12px;
+  border-radius: 8px;
+}
+
+html[data-skin] .app-view-dialog-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+html[data-skin] [data-settings-segmented] > button[aria-checked="true"] {
+  background: transparent;
+}
+
+html[data-skin] .project-terminal-card[data-dock-side="right"] {
+  border-radius: var(--desktop-radius-dialog);
+}
+
+html[data-skin] [data-terminal-toolbar-actions] {
+  gap: var(--desktop-pane-toolbar-gap);
+  padding-inline-end: var(--desktop-pane-toolbar-inset);
+}
+/* Every workspace pane toolbar shares the file panel's action and icon size;
+   ungapped rows space their actions with the same toolbar gap. */
+html[data-skin] [data-surface-tab-strip] :is([data-ui="icon-button"][data-file-toolbar-action], [data-card-maximize], [data-surface-pane-drag], [data-session-tool-toggle], [data-session-overflow-menu], [data-surface-mode-toggle]) {
+  width: var(--desktop-pane-toolbar-action);
+  height: var(--desktop-pane-toolbar-action);
+  min-height: var(--desktop-pane-toolbar-action);
+  padding: 0;
+  margin: 0 var(--desktop-pane-toolbar-gap) 0 0;
+}
+html[data-skin] [data-terminal-toolbar-actions] [data-ui="icon-button"] {
+  width: var(--desktop-pane-toolbar-action);
+  height: var(--desktop-pane-toolbar-action);
+  min-height: var(--desktop-pane-toolbar-action);
+  padding: 0;
+  margin: 0;
+}
+html[data-skin] [data-surface-tab-strip] :is([data-ui="icon-button"][data-file-toolbar-action], [data-card-maximize], [data-surface-pane-drag], [data-session-tool-toggle], [data-session-overflow-menu], [data-surface-mode-toggle]) > svg,
+html[data-skin] [data-terminal-toolbar-actions] [data-ui="icon-button"] > svg {
+  width: var(--desktop-pane-toolbar-icon);
+  height: var(--desktop-pane-toolbar-icon);
+}
+
+/* Settings uses a centered, two-column surface with uncarded rows. */
+html[data-skin] [data-app-settings] { position: relative; background: var(--color-card); }
+html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar {
+  position: absolute;
+  inset: 12px 12px auto;
+  z-index: 3;
+  height: 32px;
+  min-height: 32px;
+  border: 0;
+  pointer-events: auto;
+}
+html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar > div:first-child { display: none; }
+html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar > div:last-child { display: contents; }
+html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar > div:last-child > button {
+  position: absolute;
+  top: 0;
+  right: 44px;
+  height: 32px;
+  pointer-events: auto;
+}
+html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar > div:last-child > .relative {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--desktop-settings-nav) - 24.8px);
+  pointer-events: auto;
+}
+html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar .relative > .w-56 { width: 100%; }
+html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar input[type="search"] {
+  height: 32px;
+  min-height: 32px;
+  padding: 5px 8px 5px 32px;
+  font-size: 14px;
+  line-height: 20px;
+}
+html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar .relative:has(> button) > input[type="search"] { padding-inline-end: 32px; }
+html[data-skin] .settings-nav {
+  width: var(--desktop-settings-nav);
+  padding: 74px 12px 24px;
+  gap: 24px;
+  border-inline-end: var(--desktop-border) solid var(--color-hairline);
+  background: var(--color-panel);
+}
+html[data-skin] .settings-nav-group { gap: 1px; }
+html[data-skin] .settings-nav-group > div:first-child {
+  padding: 0 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: var(--font-weight-normal);
+  color: var(--color-ink-tertiary);
+}
+html[data-skin] .settings-nav-item {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 8px;
+  gap: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-ink-secondary);
+  transition: color var(--desktop-feedback) var(--desktop-popup-ease), background-color var(--desktop-feedback) var(--desktop-popup-ease);
+}
+html[data-skin] .settings-nav-item[aria-current] { background: var(--color-raised-hover); color: var(--color-ink); font-weight: var(--font-weight-medium); }
+html[data-skin] .settings-nav-icon { width: 20px; height: 20px; opacity: 1; }
+html[data-skin] .settings-nav-label { font: inherit; }
+html[data-skin] [data-app-settings] .settings-panel {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+/* Reserve the toolbar outside the scrolling viewport, including Skills. */
+html[data-skin] .app-view-dialog [data-app-settings] .settings-panel {
+  padding-top: var(--desktop-settings-toolbar-height);
+}
+html[data-skin] [data-settings-content] { max-width: none; padding: 24px 24px 40px; }
+html[data-skin] [data-settings-title] { font-size: 15px; line-height: 20px; font-weight: var(--font-weight-semibold); }
+html[data-skin] [data-settings-content] [data-settings-page] > header { padding-bottom: 24px; }
+html[data-skin] [data-settings-group] { padding-top: 24px; }
+html[data-skin] [data-settings-group]:first-child { padding-top: 0; }
+html[data-skin] [data-settings-group-title] { color: var(--color-ink); font-size: 15px; line-height: 20px; font-weight: var(--font-weight-semibold); }
+html[data-skin] [data-app-settings] .settings-card { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+html[data-skin] .settings-row {
+  padding: 16px 0;
+  column-gap: 20px;
+  row-gap: 8px;
+  border-top-width: 0;
+  border-bottom: 1px solid var(--color-hairline);
+}
+html[data-skin] .settings-row:not([data-stacked]) { flex-wrap: wrap; }
+html[data-skin] .settings-row-label { font-size: 14px; line-height: 20px; font-weight: var(--font-weight-normal); }
+html[data-skin] .settings-row-description { margin-top: 5px; color: var(--color-ink-tertiary); font-size: 14px; line-height: 20px; }
+html[data-skin] .settings-row-control { max-width: 100%; }
+.desktop-skin-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(128px, 100%), 1fr));
+  gap: 12px;
+}
+.desktop-skin-option {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: var(--desktop-radius-card);
+  cursor: pointer;
+}
+.desktop-skin-option:has(:focus-visible) { outline-width: 2px; outline-style: solid; outline-offset: 2px; }
+.desktop-skin-preview {
+  display: block;
+  height: 100px;
+  overflow: hidden;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 6px;
+}
+.desktop-skin-preview-auto { display: grid; grid-template-columns: 1fr 1fr; height: 100%; }
+.desktop-skin-scene { display: flex; height: 100%; overflow: hidden; }
+.desktop-skin-scene-sidebar { display: flex; width: 22%; flex-shrink: 0; flex-direction: column; gap: 5px; padding: 9px 4px; }
+.desktop-skin-scene-sidebar > span { height: 4px; border-radius: 2px; }
+.desktop-skin-scene-thread { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 7px; padding: 10px 6px 6px; }
+.desktop-skin-scene-message { height: 7px; width: 75%; border-radius: 4px; }
+.desktop-skin-scene-user { height: 10px; width: 65%; align-self: flex-end; border-radius: 4px; }
+.desktop-skin-scene-composer { display: flex; height: 18px; margin-top: auto; align-items: center; justify-content: flex-end; padding: 3px; border-width: 1px; border-style: solid; border-radius: 6px; }
+.desktop-skin-scene-composer > span { width: 10px; height: 10px; border-radius: 50%; }
+.desktop-skin-option-label { display: flex; align-items: center; gap: 6px; font-size: var(--text-body-sm); line-height: var(--text-body-sm--line-height); }
+html[data-skin] [data-settings-segmented] {
+  isolation: isolate;
+  position: relative;
+  --segment-cell: calc(
+    (100% - 2 * var(--segment-pad) - (var(--segment-count) - 1) * var(--segment-gap)) /
+      var(--segment-count)
+  );
+  --segment-gap: 0px;
+  --segment-pad: 2px;
+  background: var(--color-inset); min-height: 32px; height: auto; gap: 0; padding: 2px; border-radius: 8px; }
+html[data-skin] [data-settings-segmented] > button { min-height: 28px; padding-inline: 10px; border-radius: 6px; font-size: 13px; line-height: 19px; }
+html[data-skin] .settings-row[data-revealed] { background-color: transparent; }
+@container settings (width < 560px) {
+  html[data-skin] [data-settings-content] { padding-inline: 16px; }
+  html[data-skin] .settings-row-control { justify-content: flex-start; }
+}
+
+/* Shared owned chrome for every existing secondary workspace. Code/terminal
+ * content keeps its own typography, scrolling and editor theme. */
+/* Match the chat ground instead of exposing the legacy body-glass tint. */
+html[data-skin] :is([data-app-inbox], [data-app-notes], [data-app-automations], [data-app-workflows], [data-app-search], [data-app-bots]) {
+  background: var(--color-app);
+}
+
+html[data-skin] .desktop-page-heading { font-family: var(--font-serif); font-size: 24px; line-height: 32px; font-weight: var(--font-weight-medium); }
+html[data-skin] .desktop-pane-heading { font-size: 15px; line-height: 20px; font-weight: var(--font-weight-semibold); }
+html[data-skin] .desktop-pane-description { font-size: 14px; line-height: 20px; color: var(--color-ink-secondary); }
+html[data-skin] .desktop-section-heading { font-size: 13px; line-height: 19px; font-weight: var(--font-weight-medium); }
+html[data-skin] .desktop-toolbar { gap: 8px; border-color: var(--color-hairline); min-height: 52px; padding-inline: 12px; border-bottom-width: var(--desktop-border); }
+html[data-skin] .desktop-card { border-radius: var(--desktop-radius-card); border-color: var(--color-composer-ring); background-color: var(--color-card); border-width: var(--desktop-border); }
+html[data-skin] .desktop-empty-description { font-size: 14px; line-height: 20px; color: var(--color-ink-secondary); }
+html[data-skin] .desktop-badge { padding: 1px 5px; border-radius: 4px; font-size: 12px; line-height: 17px; }
+
+/* Bots is an existing desktop workspace, scoped separately from assistant-chat
+ * and the phone shell so its contacts, editor and management panels keep state. */
+html[data-skin] .desktop-bots-host .assistant-chat.desktop-bots-workspace {
+  background: var(--color-app);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+html[data-skin] .desktop-bots-host .assistant-chat.desktop-bots-workspace .desktop-bots-navigation { background: var(--color-app); border-color: var(--color-hairline); }
+html[data-skin] .desktop-bots-host .assistant-chat.desktop-bots-workspace .desktop-bots-search { background: var(--color-card); border-color: var(--color-hairline); border-radius: 8px; }
+html[data-skin] .desktop-bots-host .assistant-chat.desktop-bots-workspace .desktop-bots-contact { border-radius: 8px; }
+html[data-skin] .desktop-bots-host .assistant-chat.desktop-bots-workspace .desktop-bots-contact:not([data-selected="true"]) { background: transparent; }
+html[data-skin] .desktop-bots-host .assistant-chat.desktop-bots-workspace .desktop-bots-contact[data-selected="true"] { background: var(--color-raised-hover); }
+html[data-skin] .desktop-bots-host .assistant-chat.desktop-bots-workspace .desktop-bots-contact:hover { background: var(--color-control); }
+html[data-skin] .desktop-bots-host .assistant-chat.desktop-bots-workspace :is(.desktop-bot-activity, .desktop-bot-runtime, .desktop-bot-automation, .desktop-bots-archive) { color: var(--color-ink); border-color: var(--color-hairline); }
+
+/* Secondary-page layouts follow their available pane width beside the sidebar. */
+html[data-skin] .automation-picker { container: automation-picker / inline-size; }
+html[data-skin] .automation-template-grid { grid-template-columns: minmax(0, 1fr); }
+@container automation-picker (min-width: 600px) {
+  html[data-skin] .automation-template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+html[data-skin] [data-app-notes] { container: notes / inline-size; }
+html[data-skin] [data-app-automations] { container: automations / inline-size; }
+@container automations (max-width: 680px) {
+  html[data-skin] [data-automation-columns] { flex-direction: column; }
+  html[data-skin] [data-automation-list] {
+    width: 100%;
+    max-height: 200px;
+    min-height: 0;
+    flex-shrink: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+}
+@container notes (max-width: 680px) {
+  html[data-skin] [data-notes-columns] { flex-direction: column; }
+  html[data-skin] [data-notes-list] {
+    width: 100% !important;
+    max-height: 200px;
+    flex-shrink: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  html[data-skin] [data-notes-list] > .resize-handle { display: none; }
+  html[data-skin] [data-notes-detail] { padding-left: 0; }
+}
+
+@media (max-width: 639px) {
+  html[data-skin] .settings-nav { width: 152px; padding-inline: 8px; background: var(--color-panel); border-inline-end: var(--desktop-border) solid var(--color-hairline); }
+  html[data-skin] .settings-nav-item { padding-inline: 6px; gap: 8px; }
+  html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar > div:last-child > .relative { width: 136px; left: -4px; }
+  html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar > div:last-child > button { max-width: calc(100% - 192px); overflow: hidden; white-space: nowrap; }
+  html[data-skin] [data-settings-content] { padding: 24px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-skin] .settings-nav-item { transition: none; }
+  html[data-skin] .settings-row[data-revealed],
+  html[data-skin] .popover-open { animation: none; }
+}
+
+.desktop-file-explorer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.desktop-file-explorer [data-surface-tab-strip] {
+  height: 36px;
+  border-bottom: 0;
+  align-items: center;
+  column-gap: var(--desktop-pane-toolbar-gap);
+  padding-inline-end: var(--desktop-pane-toolbar-inset);
+}
+.desktop-file-explorer [data-surface-tab-list] {
+  column-gap: var(--desktop-pane-toolbar-gap);
+  padding-inline-start: var(--desktop-pane-toolbar-inset);
+}
+html[data-skin][data-desktop-mode] .desktop-file-explorer [data-file-tab-id] > .surface-tab {
+  height: 24px;
+  min-height: 24px;
+}
+html[data-skin] .desktop-file-explorer [data-surface-tab-strip] :is([data-file-toolbar-action], [data-card-maximize], [data-surface-pane-drag], [data-session-tool-toggle], [data-session-overflow-menu], [data-surface-mode-toggle]) {
+  margin: 0;
+}
+.desktop-file-explorer-body {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  transition: grid-template-columns 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.desktop-file-explorer-body[data-resizing],
+html.is-resizing .desktop-file-explorer-body {
+  transition: none;
+}
+.desktop-file-explorer-tree,
+.desktop-file-explorer-preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.desktop-file-explorer-preview[hidden] { display: none; }
+.desktop-file-explorer-tree { padding: 0 0 6px 6px; }
+.desktop-file-explorer-body[data-has-document="true"][data-split-layout="true"] .desktop-file-explorer-tree {
+  border-right: 1px solid var(--color-stroke);
+}
+.desktop-file-explorer-divider { position: relative; z-index: 1; }
+.desktop-file-explorer-divider [data-resize-edge="left"] { left: -3px; }
+.desktop-file-filter[data-ui="input-group"] { width: auto; flex-shrink: 0; margin: 3px 8px 8px 2px; }
+.desktop-file-breadcrumb { position: relative; display: flex; align-items: center; gap: 8px; min-height: 34px; flex-shrink: 0; padding: 0 10px; border-bottom: 1px solid var(--color-hairline); font-size: var(--text-ui-caption); font-weight: var(--ui-font-weight, var(--font-weight-normal)); }
+.desktop-file-breadcrumb-path { display: flex; align-items: center; gap: 0; min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; color: var(--color-ink-secondary); }
+.desktop-file-breadcrumb-segment { display: inline-flex; max-width: none; flex-shrink: 0; }
+.desktop-file-breadcrumb-current { min-width: 0; flex-shrink: 1; }
+.desktop-file-breadcrumb-segment [data-ui="button"][data-breadcrumb-trigger] > span { padding-inline: 1px; margin-inline: -1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desktop-file-breadcrumb-measure { position: absolute; width: max-content; max-width: none; display: flex; visibility: hidden; pointer-events: none; contain: layout; font: inherit; white-space: nowrap; }
+.desktop-file-breadcrumb-measure :is([data-breadcrumb-label], [data-breadcrumb-ellipsis]) { padding-inline: 2px; }
+.desktop-file-breadcrumb-separator { flex-shrink: 0; padding: 0; margin: 0; font: inherit; color: var(--color-ink-tertiary); }
+html[data-skin] .desktop-file-breadcrumb-segment [data-ui="button"][data-breadcrumb-trigger] { max-width: 100%; min-width: 0; height: auto; min-height: 0; padding: 2px; border: 0; border-radius: 4px; background: transparent; font-family: inherit; font-size: inherit; line-height: var(--text-body-sm--line-height); font-weight: inherit; color: var(--color-ink-secondary); }
+.desktop-file-breadcrumb-segment [aria-current="page"] { color: var(--color-ink); }
+.desktop-file-filter-results { min-height: 0; flex: 1; overflow: auto; }
+.desktop-file-filter-results > button { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 28px; padding: 4px 8px; text-align: left; border-radius: 6px; }
+.desktop-file-filter-results > button:hover { background: var(--color-surface-hover); }
+.desktop-file-filter-results > button > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desktop-file-filter-results > p { padding: 8px; color: var(--color-ink-secondary); }
+@media (prefers-reduced-motion: reduce) {
+  .desktop-file-explorer-body { transition: none; }
+}
+html[data-reduced-motion="on"] .desktop-file-explorer-body { transition: none; }
+
+.desktop-file-breadcrumb-menu { display: flex; flex-direction: column; padding: 4px; }
+.desktop-file-breadcrumb-menu > div { height: auto; min-height: 28px; max-height: 100%; }

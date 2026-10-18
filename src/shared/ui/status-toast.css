@@ -1,0 +1,125 @@
+/* Shared progress/result toast (StatusToast.tsx), desktop and mobile. */
+.status-toast-stack {
+  position: fixed;
+  /* Android supplies native insets on the root; iOS/browser use env(). */
+  top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 52px);
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .status-toast-stack {
+    top: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 10px);
+  }
+}
+
+.status-toast {
+  --status-toast-tint: var(--color-content);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-stroke);
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--card-color) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+  color: var(--color-content);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.14);
+  font-size: 14px;
+  line-height: 20px;
+  pointer-events: auto;
+
+}
+
+.status-toast[data-tone="success"],
+.status-toast[data-tone="error"] {
+  border-color: color-mix(in srgb, var(--status-toast-tint) 30%, var(--card-color));
+  background: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--status-toast-tint) 9%, var(--card-color))
+      calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+  color: var(--status-toast-tint);
+  padding-right: 8px;
+}
+
+.status-toast[data-tone="success"] {
+  --status-toast-tint: var(--color-success);
+}
+
+.status-toast[data-tone="error"] {
+  --status-toast-tint: #dc2626;
+}
+
+html:not(.theme-light) .status-toast[data-tone="success"] {
+  --status-toast-tint: #4ade80;
+}
+
+html:not(.theme-light) .status-toast[data-tone="error"] {
+  --status-toast-tint: #f87171;
+}
+
+
+
+.status-toast-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.status-toast[data-tone="loading"] .status-toast-icon {
+  color: color-mix(in srgb, var(--color-content) 55%, transparent);
+  animation: status-toast-spin 0.9s linear infinite;
+}
+
+.status-toast-message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.status-toast-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-left: 2px;
+  border-radius: 6px;
+  color: inherit;
+  opacity: 0.75;
+}
+
+.status-toast-close:hover {
+  background: color-mix(in srgb, var(--status-toast-tint) 12%, transparent);
+  opacity: 1;
+}
+
+.status-toast-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes status-toast-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-toast[data-tone="loading"] .status-toast-icon {
+    animation: none;
+  }
+}

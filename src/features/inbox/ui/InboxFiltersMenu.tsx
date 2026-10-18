@@ -1,0 +1,359 @@
+import { useTranslation } from "../../../shared/i18n/useTranslation";
+import { Check, CircleDot, GitPullRequest } from "../../../shared/ui/icons";
+import { type ReactNode } from "react";
+import type { InboxKind } from "../model/githubTasks";
+import {
+  DEFAULT_INBOX_FILTERS,
+  hasActiveInboxFilters,
+  isTrackerSource,
+  type InboxFilters,
+  type InboxSource,
+  type InboxTimeFilter,
+  type LinearProjectOption,
+} from "../model/inboxFilters";
+import type { JiraProject } from "../model/jira";
+import type { LinearTeam } from "../model/linear";
+import { Popover } from "../../../shared/ui/Popover";
+import { MenuHover } from "../../../shared/ui/MenuHover";
+import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
+
+export const INBOX_FILTER_MENU_WIDTH = 228;
+
+type ProjectOption = {
+  path: string;
+  name: string;
+  logoPath: string | null;
+};
+
+type Props = {
+  x: number;
+  y: number;
+  projects: ProjectOption[];
+  linearProjects: LinearProjectOption[];
+  linearTeams: LinearTeam[];
+  hiddenLinearTeamIds: string[];
+  jiraProjects: JiraProject[];
+  hiddenJiraProjectIds: string[];
+  source: InboxSource;
+  filters: InboxFilters;
+  onChange: (filters: InboxFilters) => void;
+  /** Shared with Settings → Inbox → Linear; narrows the fetch, not just the list. */
+  onLinearTeamsChange: (ids: string[]) => void;
+  /** Shared with Settings → Inbox → Jira; narrows the fetch, not just the list. */
+  onJiraProjectsChange: (ids: string[]) => void;
+  onClose: () => void;
+};
+
+const TIME_OPTIONS: { id: InboxTimeFilter; label: string }[] = [
+  { id: "all", label: "All time" },
+  { id: "today", label: "Today" },
+  { id: "7d", label: "Last 7 days" },
+  { id: "30d", label: "Last 30 days" },
+];
+
+const KIND_OPTIONS: {
+  id: InboxKind;
+  label: string;
+  icon: ReactNode;
+}[] = [
+  {
+    id: "issue",
+    label: "Issues",
+    icon: <CircleDot className="size-3.5 shrink-0" />,
+  },
+  {
+    id: "pr",
+    label: "Pull requests",
+    icon: <GitPullRequest className="size-3.5 shrink-0" />,
+  },
+];
+
+export function InboxFiltersMenu({
+  x,
+  y,
+  projects,
+  linearProjects,
+  linearTeams,
+  hiddenLinearTeamIds,
+  jiraProjects,
+  hiddenJiraProjectIds,
+  source,
+  filters,
+  onChange,
+  onLinearTeamsChange,
+  onJiraProjectsChange,
+  onClose,
+}: Props) {
+  const { t: uiT } = useTranslation();
+  const hiddenProjects = new Set(filters.hiddenProjects);
+  const hiddenLinearProjects = new Set(filters.hiddenLinearProjects);
+  const hiddenTeams = new Set(hiddenLinearTeamIds);
+  const hiddenKinds = new Set(filters.hiddenKinds);
+  const teamsActive = source === "linear" && hiddenLinearTeamIds.length > 0;
+  const hiddenJira = new Set(hiddenJiraProjectIds);
+  const jiraProjectsActive =
+    source === "jira" && hiddenJiraProjectIds.length > 0;
+  const tracker = isTrackerSource(source);
+
+  const toggleAssigned = () => {
+    onChange({ ...filters, assignedToMe: !filters.assignedToMe });
+  };
+
+  const toggleKind = (kind: InboxKind) => {
+    const next = new Set(hiddenKinds);
+    if (next.has(kind)) next.delete(kind);
+    else next.add(kind);
+    onChange({ ...filters, hiddenKinds: [...next] });
+  };
+
+  const toggleProject = (path: string) => {
+    const next = new Set(hiddenProjects);
+    if (next.has(path)) next.delete(path);
+    else next.add(path);
+    onChange({ ...filters, hiddenProjects: [...next] });
+  };
+
+  const toggleLinearTeam = (id: string) => {
+    const next = new Set(hiddenTeams);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onLinearTeamsChange([...next]);
+  };
+
+  const toggleJiraProject = (id: string) => {
+    const next = new Set(hiddenJira);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onJiraProjectsChange([...next]);
+  };
+
+  const toggleLinearProject = (id: string) => {
+    const next = new Set(hiddenLinearProjects);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onChange({ ...filters, hiddenLinearProjects: [...next] });
+  };
+
+  const setTime = (time: InboxTimeFilter) => {
+    onChange({ ...filters, time });
+  };
+
+  const toggleStatus = (key: keyof InboxFilters["status"]) => {
+    onChange({
+      ...filters,
+      status: { ...filters.status, [key]: !filters.status[key] },
+    });
+  };
+
+  return (
+    <Popover
+      anchor={{ x, y }}
+      gap={0}
+      width={INBOX_FILTER_MENU_WIDTH}
+      maxHeight={480}
+      onDismiss={onClose}
+      role="menu"
+      aria-label={uiT("Filter inbox")}
+      onContextMenu={(event) => event.preventDefault()}
+      className="overflow-y-auto overscroll-none p-1"
+    >
+      <FilterItem
+        label={
+          source === "gitlab" || source === "azuredevops"
+            ? uiT("Needs attention")
+            : uiT("Assigned to me")
+        }
+        checked={filters.assignedToMe}
+        onClick={toggleAssigned}
+      />
+
+      <SectionLabel>{uiT("Status")}</SectionLabel>
+      <FilterItem
+        label={uiT("Open")}
+        checked={filters.status.open}
+        onClick={() => toggleStatus("open")}
+      />
+      {!tracker ? (
+        <FilterItem
+          label={uiT("Draft")}
+          checked={filters.status.draft}
+          onClick={() => toggleStatus("draft")}
+        />
+      ) : null}
+      <FilterItem
+        label={uiT("Closed")}
+        checked={filters.status.closed}
+        onClick={() => toggleStatus("closed")}
+      />
+      {!tracker ? (
+        <FilterItem
+          label={uiT("Merged")}
+          checked={filters.status.merged}
+          onClick={() => toggleStatus("merged")}
+        />
+      ) : null}
+
+      <SectionLabel>{uiT("Time")}</SectionLabel>
+      {TIME_OPTIONS.map((option) => (
+        <FilterItem
+          key={option.id}
+          label={uiT(option.label)}
+          checked={filters.time === option.id}
+          onClick={() => setTime(option.id)}
+        />
+      ))}
+
+      {!tracker ? (
+        <>
+          <SectionLabel>{uiT("Type")}</SectionLabel>
+          {KIND_OPTIONS.map((option) => (
+            <FilterItem
+              key={option.id}
+              label={
+                source === "gitlab" && option.id === "pr"
+                  ? uiT("Merge requests")
+                  : uiT(option.label)
+              }
+              checked={!hiddenKinds.has(option.id)}
+              icon={option.icon}
+              onClick={() => toggleKind(option.id)}
+            />
+          ))}
+        </>
+      ) : null}
+
+      {source === "linear" && linearTeams.length > 0 ? (
+        <>
+          <SectionLabel>{uiT("Teams")}</SectionLabel>
+          {linearTeams.map((team) => (
+            <FilterItem
+              key={team.id}
+              label={team.name || team.key}
+              checked={!hiddenTeams.has(team.id)}
+              onClick={() => toggleLinearTeam(team.id)}
+            />
+          ))}
+        </>
+      ) : null}
+
+      {source === "linear" && linearProjects.length > 0 ? (
+        <>
+          <SectionLabel>{uiT("Projects")}</SectionLabel>
+          {linearProjects.map((project) => (
+            <FilterItem
+              key={project.id}
+              label={project.name}
+              checked={!hiddenLinearProjects.has(project.id)}
+              onClick={() => toggleLinearProject(project.id)}
+            />
+          ))}
+        </>
+      ) : null}
+
+      {source === "jira" && jiraProjects.length > 0 ? (
+        <>
+          <SectionLabel>{uiT("Projects")}</SectionLabel>
+          {jiraProjects.map((project) => (
+            <FilterItem
+              key={project.id}
+              label={project.name || project.key}
+              checked={!hiddenJira.has(project.id)}
+              onClick={() => toggleJiraProject(project.id)}
+            />
+          ))}
+        </>
+      ) : null}
+
+      {!tracker &&
+      !(
+        (source === "gitlab" || source === "azuredevops") &&
+        filters.assignedToMe
+      ) &&
+      projects.length > 0 ? (
+        <>
+          <SectionLabel>{uiT("Projects")}</SectionLabel>
+          {projects.map((project) => (
+            <FilterItem
+              key={project.path}
+              label={project.name}
+              checked={!hiddenProjects.has(project.path)}
+              icon={
+                project.logoPath ? (
+                  <ProjectLogoIcon
+                    path={project.logoPath}
+                    className="size-3.5 shrink-0 rounded-sm"
+                    imageClassName="size-3.5"
+                  />
+                ) : undefined
+              }
+              onClick={() => toggleProject(project.path)}
+            />
+          ))}
+        </>
+      ) : null}
+
+      {hasActiveInboxFilters(
+        filters,
+        source,
+        hiddenLinearTeamIds,
+        hiddenJiraProjectIds,
+      ) ? (
+        <>
+          <div role="separator" className="my-1 h-px bg-content/10" />
+          <button
+            type="button"
+            role="menuitem"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              onChange(DEFAULT_INBOX_FILTERS);
+              if (teamsActive) onLinearTeamsChange([]);
+              if (jiraProjectsActive) onJiraProjectsChange([]);
+            }}
+            className="flex h-7 w-full items-center rounded-lg px-2 text-left text-[13px] leading-none text-content/70 hover:bg-content/3 hover:text-content"
+          >
+            <MenuHover />
+            {uiT("Clear filters")}
+          </button>
+        </>
+      ) : null}
+    </Popover>
+  );
+}
+
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <div className="px-2 pb-0.5 pt-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-content/40">
+      {children}
+    </div>
+  );
+}
+
+function FilterItem({
+  label,
+  checked,
+  icon,
+  onClick,
+}: {
+  label: string;
+  checked: boolean;
+  icon?: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitemcheckbox"
+      aria-checked={checked}
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+      className="flex h-7 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] leading-none text-content hover:bg-content/3"
+    >
+      <MenuHover />
+      {icon}
+      <span data-menu-title className="min-w-0 flex-1 truncate">{label}</span>
+      {checked ? (
+        <Check className="size-3.5 shrink-0" strokeWidth={2.25} />
+      ) : null}
+    </button>
+  );
+}

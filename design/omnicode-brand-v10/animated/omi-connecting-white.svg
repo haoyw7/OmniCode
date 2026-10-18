@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-motion omi-motion-connecting" role="img" aria-label="Omi · 连接中" data-state="connecting" data-duration="0.96">
+  <style>
+@keyframes omi-connecting-dot { 0%,100% {opacity:.25} 25%,50% {opacity:1} 75% {opacity:.25} }
+.omi-motion-connecting .omi-dot{animation:omi-connecting-dot .96s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-connecting .omi-dot-b{animation-delay:-.48s}
+.omi-motion-connecting .omi-a {transform-box:view-box}
+.omi-motion-connecting[data-paused="true"] .omi-a {animation-play-state:paused}
+.omi-motion-connecting[data-motion="off"] .omi-a {animation:none!important}
+@media (prefers-reduced-motion:reduce) {.omi-motion-connecting .omi-a {animation:none!important}}</style>
+  <g fill="#ffffff" stroke="#ffffff"><g transform="translate(32 32)"><g class="omi-a omi-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omi-a omi-face"><path d="M 84 109 L 109 127 L 84 145 M 153 127 H 179" fill="none" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></g></g></g><g stroke="none"><circle class="omi-a omi-dot" cx="265" cy="22" r="5"/><circle class="omi-a omi-dot omi-dot-b" cx="287" cy="44" r="5"/></g></g>
+</svg>

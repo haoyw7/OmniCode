@@ -1,0 +1,462 @@
+/* Desktop semantic palette and utility color bindings. Layout belongs to each surface. */
+:root {
+  --context-usage-messages: #2f80ed;
+  --context-usage-tools: #f27337;
+  --context-usage-mcp: #18ad81;
+  --context-usage-muted: #91918a;
+  --context-usage-buffer: #bcbcb1;
+  --context-usage-free: color-mix(in srgb, var(--color-content) 10%, transparent);
+}
+@theme {
+  --animate-caret: caret-blink 1s step-end infinite;
+  --animate-shimmer: shimmer 2s linear infinite;
+  --animate-status-pulse: status-pulse 1.6s steps(2, jump-none) infinite;
+}
+
+@theme {
+  --color-app: var(--color-background-base);
+  --color-raised: var(--color-selection);
+  --color-raised-hover: var(--color-selection-hover);
+  --color-composer: var(--composer-input, var(--card-color));
+  --color-composer-ring: var(--color-stroke);
+  --color-inset: var(--color-surface);
+  --color-control: var(--color-selection-subtle);
+  --color-hairline: var(--color-stroke);
+  --color-ink: var(--color-content);
+  --color-ink-secondary: var(--color-foreground-subtle);
+  --color-ink-tertiary: var(--color-foreground-subtlest);
+  --color-accent-border: var(--color-accent);
+  --color-accent-text: var(--color-accent);
+  --color-accent-ink: #ffffff;
+  --color-focus: var(--color-accent);
+  --color-bubble-user: var(--color-selection-strong);
+  --color-bubble-user-ink: var(--color-content);
+  --color-danger: var(--color-destructive);
+  --color-danger-ink: #ffffff;
+  --color-success-ink: #ffffff;
+}
+
+@keyframes caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 50%; }
+  to { background-position: -200% 50%; }
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 0.25; }
+  30% { opacity: 1; }
+  60% { opacity: 0.25; }
+}
+
+html[data-skin]:not(.theme-light) {
+  /* Native scrollbar buttons cannot use CSS masks; keep their SVG ink here. */
+  --scrollbar-arrow-up-idle: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.15'/%3E%3C/svg%3E");
+  --scrollbar-arrow-up-edge: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.32'/%3E%3C/svg%3E");
+  --scrollbar-arrow-down-idle: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.15' transform='rotate%28180 3.5 3.5%29'/%3E%3C/svg%3E");
+  --scrollbar-arrow-down-edge: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.32' transform='rotate%28180 3.5 3.5%29'/%3E%3C/svg%3E");
+}
+
+[data-skin="midnight"] {
+  --color-app: #242423;
+  --color-panel: #191918;
+  --color-raised: #42403a;
+  --color-raised-hover: #504d45;
+  --color-composer: #34332f;
+  --color-composer-ring: #807b70;
+  --color-card: #32312e;
+  --color-menu: #3b3934;
+  --color-inset: #1c1c1a;
+  --color-control: #42403a;
+  --color-hairline: #58544a;
+  --color-ink: #f0efec;
+  --color-ink-secondary: #cdc9bf;
+  --color-ink-tertiary: #a8a499;
+  --color-accent: #bd5937;
+  --color-accent-border: rgb(240 239 236 / 24%);
+  --color-accent-text: #eca78f;
+  --color-focus: #e39478;
+  --color-accent-ink: #ffffff;
+  --color-bubble-user: #42403a;
+  --color-bubble-user-ink: #f0efec;
+  --color-success: #32d74b;
+  --color-danger: #ff5667;
+  --color-danger-ink: #151515;
+  --color-success-ink: #151515;
+  --color-warning: #ffb65c;
+  --color-scrollbar: #ffffff33;
+  --color-backdrop: #00000080;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+html[data-skin].theme-light {
+  /* Native scrollbar buttons cannot use CSS masks; keep their SVG ink here. */
+  --scrollbar-arrow-up-idle: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%231f1e1d' opacity='.15'/%3E%3C/svg%3E");
+  --scrollbar-arrow-up-edge: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23141413' opacity='.32'/%3E%3C/svg%3E");
+  --scrollbar-arrow-down-idle: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%231f1e1d' opacity='.15' transform='rotate%28180 3.5 3.5%29'/%3E%3C/svg%3E");
+  --scrollbar-arrow-down-edge: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23141413' opacity='.32' transform='rotate%28180 3.5 3.5%29'/%3E%3C/svg%3E");
+}
+
+[data-skin="daylight"] {
+  --color-app: #f9f9f7;
+  --color-panel: #ecebe5;
+  --color-raised: #d7d6cd;
+  --color-raised-hover: #ccc9be;
+  --color-composer: #ffffff;
+  --color-composer-ring: #918c80;
+  --color-card: #ffffff;
+  --color-menu: #ffffff;
+  --color-inset: #eeece6;
+  --color-control: #e3e0d7;
+  --color-hairline: #c1bdb2;
+  --color-ink: #141413;
+  --color-ink-secondary: #504e47;
+  --color-ink-tertiary: #6c6860;
+  --color-accent: #bd5937;
+  --color-accent-border: rgb(31 30 29 / 30%);
+  --color-accent-text: #a34c30;
+  --color-focus: #bd5937;
+  --color-accent-ink: #ffffff;
+  --color-bubble-user: #e5e2d8;
+  --color-bubble-user-ink: #141413;
+  --color-success: #1e7f35;
+  --color-danger: #c02b3a;
+  --color-danger-ink: #ffffff;
+  --color-success-ink: #ffffff;
+  --color-warning: #8a5a00;
+  --color-scrollbar: #0b0b0b33;
+  --color-backdrop: #00000066;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+}
+
+/* Additional palettes share their hue families with mobile/theme/skins.css
+   (originally OpenMausBot, Apache-2.0). Navigation, elevated surfaces and
+   selection have distinct fills; composer outlines stay visible in every skin.
+   Desktop geometry remains in desktop-tokens.css. */
+[data-skin="foundry"] {
+  --color-app: #100e0b;
+  --color-panel: #1d1913;
+  --color-raised: #423727;
+  --color-raised-hover: #51432f;
+  --color-card: #2b251d;
+  --color-menu: #342c22;
+  --color-composer: #30281f;
+  --color-composer-ring: #817058;
+  --color-inset: #0b0a08;
+  --color-control: #3a3023;
+  --color-hairline: #534430;
+  --color-ink: #f4efe4;
+  --color-ink-secondary: #c2b8a4;
+  --color-ink-tertiary: #9f9581;
+  --color-accent: #d99a3e;
+  --color-accent-border: #e8b25e;
+  --color-accent-text: #e0a44c;
+  --color-accent-ink: #1c150c;
+  --color-focus: #e0a44c;
+  --color-bubble-user: #423727;
+  --color-bubble-user-ink: #f4efe4;
+  --color-success: #57b078;
+  --color-success-ink: #1c150c;
+  --color-danger: #e0685e;
+  --color-danger-ink: #1c0d0b;
+  --color-warning: #dfa441;
+  --color-scrollbar: #ffffff33;
+  --color-backdrop: #00000080;
+}
+
+[data-skin="graphite"] {
+  --color-app: #111214;
+  --color-panel: #20242a;
+  --color-raised: #343f4d;
+  --color-raised-hover: #3e4a5c;
+  --color-card: #2b3038;
+  --color-menu: #333b46;
+  --color-composer: #303740;
+  --color-composer-ring: #7b889a;
+  --color-inset: #0d0e10;
+  --color-control: #2e3642;
+  --color-hairline: #3c495c;
+  --color-ink: #f2f4f7;
+  --color-ink-secondary: #c2cbd7;
+  --color-ink-tertiary: #9da6b3;
+  --color-accent: #4f75a2;
+  --color-accent-border: #698fbb;
+  --color-accent-text: #8fb4df;
+  --color-accent-ink: #ffffff;
+  --color-focus: #8fb4df;
+  --color-bubble-user: #343f4d;
+  --color-bubble-user-ink: #f2f4f7;
+  --color-success: #63b58a;
+  --color-success-ink: #101a14;
+  --color-danger: #dd6b73;
+  --color-danger-ink: #1e0b0e;
+  --color-warning: #d3a150;
+  --color-scrollbar: #ffffff33;
+  --color-backdrop: #00000080;
+}
+
+[data-skin="dusk"] {
+  --color-app: #121014;
+  --color-panel: #231d29;
+  --color-raised: #45364f;
+  --color-raised-hover: #52415e;
+  --color-card: #302735;
+  --color-menu: #3b3042;
+  --color-composer: #352b3c;
+  --color-composer-ring: #8d7898;
+  --color-inset: #0d0b0f;
+  --color-control: #3d3046;
+  --color-hairline: #53415c;
+  --color-ink: #f4eff6;
+  --color-ink-secondary: #cdbcd2;
+  --color-ink-tertiary: #a898ae;
+  --color-accent: #765683;
+  --color-accent-border: #9670a3;
+  --color-accent-text: #c49bd2;
+  --color-accent-ink: #ffffff;
+  --color-focus: #c49bd2;
+  --color-bubble-user: #45364f;
+  --color-bubble-user-ink: #f4eff6;
+  --color-success: #6fad83;
+  --color-success-ink: #101812;
+  --color-danger: #db727a;
+  --color-danger-ink: #210c10;
+  --color-warning: #d0a35d;
+  --color-scrollbar: #ffffff33;
+  --color-backdrop: #00000080;
+}
+
+/* True black for OLED panels: neutral greys, surfaces separated by hairlines. */
+[data-skin="black"] {
+  --color-app: #000000;
+  --color-panel: #0a0a0a;
+  --color-raised: #262626;
+  --color-raised-hover: #313131;
+  --color-card: #161616;
+  --color-menu: #1c1c1c;
+  --color-composer: #141414;
+  --color-composer-ring: #646464;
+  --color-inset: #0c0c0c;
+  --color-control: #1f1f1f;
+  --color-hairline: #414141;
+  --color-ink: #f5f5f5;
+  --color-ink-secondary: #b8b8b8;
+  --color-ink-tertiary: #8c8c8c;
+  --color-accent: #3a75c7;
+  --color-accent-border: #4f86d3;
+  --color-accent-text: #81abef;
+  --color-accent-ink: #ffffff;
+  --color-focus: #81abef;
+  --color-bubble-user: #262626;
+  --color-bubble-user-ink: #f5f5f5;
+  --color-success: #3bb47c;
+  --color-success-ink: #000000;
+  --color-danger: #f15e5f;
+  --color-danger-ink: #000000;
+  --color-warning: #e5a937;
+  --color-scrollbar: #ffffff33;
+  --color-backdrop: #000000b3;
+}
+
+[data-skin="atelier"] {
+  --color-app: #f5f1eb;
+  --color-panel: #e9e2d7;
+  --color-raised: #d8cdbb;
+  --color-raised-hover: #cdbea6;
+  --color-card: #ffffff;
+  --color-menu: #ffffff;
+  --color-composer: #ffffff;
+  --color-composer-ring: #91816b;
+  --color-inset: #ece5d9;
+  --color-control: #e3d8c7;
+  --color-hairline: #bbae99;
+  --color-ink: #1a1a18;
+  --color-ink-secondary: #51483a;
+  --color-ink-tertiary: #6c6253;
+  --color-accent: #a05f25;
+  --color-accent-border: #b06a2c;
+  --color-accent-text: #96551f;
+  --color-accent-ink: #ffffff;
+  --color-focus: #96551f;
+  --color-bubble-user: #e7d9c5;
+  --color-bubble-user-ink: #1a1a18;
+  --color-success: #3f6b47;
+  --color-success-ink: #ffffff;
+  --color-danger: #a33a32;
+  --color-danger-ink: #ffffff;
+  --color-warning: #7a5f31;
+  --color-scrollbar: #0b0b0b33;
+  --color-backdrop: #00000066;
+}
+
+[data-skin="lagoon"] {
+  --color-app: #dfeceb;
+  --color-panel: #c9dfdc;
+  --color-raised: #b1ccc7;
+  --color-raised-hover: #a5c1bc;
+  --color-card: #ffffff;
+  --color-menu: #ffffff;
+  --color-composer: #ffffff;
+  --color-composer-ring: #628a84;
+  --color-inset: #cfe2de;
+  --color-control: #c3dcd7;
+  --color-hairline: #91b2ac;
+  --color-ink: #14201f;
+  --color-ink-secondary: #344844;
+  --color-ink-tertiary: #4f625d;
+  --color-accent: #11736d;
+  --color-accent-border: #14807a;
+  --color-accent-text: #0d5f5a;
+  --color-accent-ink: #ffffff;
+  --color-focus: #0d5f5a;
+  --color-bubble-user: #c1dcd5;
+  --color-bubble-user-ink: #14201f;
+  --color-success: #2f6b4f;
+  --color-success-ink: #ffffff;
+  --color-danger: #a8382f;
+  --color-danger-ink: #ffffff;
+  --color-warning: #7a5a2a;
+  --color-scrollbar: #0b0b0b33;
+  --color-backdrop: #00000066;
+}
+
+[data-skin="linen"] {
+  --color-app: #eceff3;
+  --color-panel: #dae1e9;
+  --color-raised: #c2cdda;
+  --color-raised-hover: #b4c2d4;
+  --color-card: #ffffff;
+  --color-menu: #ffffff;
+  --color-composer: #ffffff;
+  --color-composer-ring: #778aa1;
+  --color-inset: #dfe5ed;
+  --color-control: #d5dfe9;
+  --color-hairline: #a7b5c7;
+  --color-ink: #1d2229;
+  --color-ink-secondary: #3c4858;
+  --color-ink-tertiary: #566373;
+  --color-accent: #355f8a;
+  --color-accent-border: #4978a6;
+  --color-accent-text: #2c5680;
+  --color-accent-ink: #ffffff;
+  --color-focus: #2c5680;
+  --color-bubble-user: #d3dfed;
+  --color-bubble-user-ink: #1d2229;
+  --color-success: #2f704f;
+  --color-success-ink: #ffffff;
+  --color-danger: #a83d48;
+  --color-danger-ink: #ffffff;
+  --color-warning: #765b2b;
+  --color-scrollbar: #0b0b0b33;
+  --color-backdrop: #00000066;
+}
+
+[data-skin="meadow"] {
+  --color-app: #ffffff;
+  --color-panel: #e7efe9;
+  --color-raised: #c7ddcd;
+  --color-raised-hover: #b9d5c1;
+  --color-card: #f1f5f2;
+  --color-menu: #ffffff;
+  --color-composer: #ffffff;
+  --color-composer-ring: #6f937a;
+  --color-inset: #e1ebe4;
+  --color-control: #d4e3d8;
+  --color-hairline: #a8c1af;
+  --color-ink: #0f1a13;
+  --color-ink-secondary: #405346;
+  --color-ink-tertiary: #5b6e61;
+  --color-accent: #1a7a48;
+  --color-accent-border: #1f8a52;
+  --color-accent-text: #176b3f;
+  --color-accent-ink: #ffffff;
+  --color-focus: #1a7a48;
+  --color-bubble-user: #d9e9dd;
+  --color-bubble-user-ink: #0f1a13;
+  --color-success: #1a7a48;
+  --color-success-ink: #ffffff;
+  --color-danger: #c02b3a;
+  --color-danger-ink: #ffffff;
+  --color-warning: #8a5a00;
+  --color-scrollbar: #0b0b0b33;
+  --color-backdrop: #00000066;
+}
+
+html[data-skin][data-skin] {
+  --scrollbar-thumb-color: var(--color-stroke);
+  --scrollbar-thumb-hover-color: color-mix(in srgb, var(--color-content) 32%, transparent);
+  --scrollbar-arrow-idle-color: var(--scrollbar-thumb-color);
+  --scrollbar-arrow-edge-color: var(--scrollbar-thumb-hover-color);
+  /* Legacy utilities, menu layers and shared controls use the same hover ink. */
+  --color-hover-fill: var(--cds-fill-ghost-hover);
+  --color-background-base: var(--color-app);
+  --color-background: var(--color-app);
+  --window-color: var(--color-app);
+  --panel-color: var(--color-panel);
+  --card-color: var(--color-card);
+  --menu-hover-color: var(--color-hover-fill);
+  --accent-color: var(--color-accent);
+  --link-color: var(--color-accent-text);
+  --brand-color: var(--color-accent);
+  --brand-foreground: var(--color-accent-ink);
+  --color-content: var(--color-ink);
+  --color-foreground: var(--color-ink);
+  --color-foreground-subtle: var(--color-ink-secondary);
+  --color-foreground-subtlest: var(--color-ink-tertiary);
+  --color-stroke: var(--color-hairline);
+  --color-border: var(--color-hairline);
+  --color-border-hover: color-mix(in srgb, var(--color-hairline), var(--color-ink) 30%);
+  --color-destructive: var(--color-danger);
+  --color-selection: var(--color-raised);
+  --color-selection-subtle: color-mix(in srgb, var(--color-raised) 72%, transparent);
+  --color-selection-strong: var(--color-raised);
+  --color-selection-hover: var(--color-hover-fill);
+  --color-selection-emphasis: var(--color-raised-hover);
+  --color-surface: color-mix(in srgb, var(--color-raised) 45%, transparent);
+  --color-surface-hover: var(--color-hover-fill);
+  --composer-input: var(--color-composer);
+  --composer-surface: var(--color-panel);
+  --composer-border: var(--color-composer-ring);
+  --composer-border-hover: color-mix(in srgb, var(--color-composer-ring), var(--color-ink) 20%);
+  --composer-hover: var(--color-raised-hover);
+  --composer-placeholder: var(--color-ink-tertiary);
+  --composer-muted: var(--color-ink-secondary);
+}
+
+/* Messaging palette; geometry and component state live in their own layers. */
+html[data-skin] {
+  --messaging-border: var(--color-hairline);
+  --messaging-divider: var(--color-hairline);
+  --messaging-send: #c6613f;
+  --messaging-send-hover: #b65333;
+  --messaging-spark: #d97757;
+  --messaging-skeleton: rgb(115 114 108 / 50%);
+}
+
+/* Miniature scenes read their own data-skin palette, not the active document's. */
+.desktop-skin-option { border-color: var(--color-hairline); }
+.desktop-skin-option:hover { background: var(--color-hover-fill); }
+.desktop-skin-option:has(:checked) { border-color: var(--color-focus); box-shadow: 0 0 0 1px var(--color-focus); }
+.desktop-skin-option:has(:focus-visible) { outline-color: var(--color-focus); }
+.desktop-skin-preview { border-color: var(--color-hairline); }
+.desktop-skin-scene { background: var(--color-app); }
+.desktop-skin-scene-sidebar { background: var(--color-panel); }
+.desktop-skin-scene-sidebar > span { background: var(--color-control); }
+.desktop-skin-scene-message { background: var(--color-card); }
+.desktop-skin-scene-user { background: var(--color-bubble-user); }
+.desktop-skin-scene-composer { background: var(--color-composer); border-color: var(--color-composer-ring); }
+.desktop-skin-scene-composer > span { background: var(--color-accent); }
+
+/* Explicit accent choices override every palette without changing its surfaces. */
+html.has-user-accent[data-skin] {
+  --color-accent: var(--user-accent-color);
+  --color-accent-border: var(--user-accent-color);
+  --color-accent-text: var(--user-accent-color);
+  --color-accent-ink: var(--user-accent-foreground);
+  --color-focus: var(--user-accent-color);
+}

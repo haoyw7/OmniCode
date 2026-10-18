@@ -1,0 +1,217 @@
+/* Native and custom rails share platform-supplied geometry and colors.
+   This sheet also runs inside the diff viewer's shadow root. */
+::-webkit-scrollbar {
+  width: var(
+    --scrollbar-size,
+    max(var(--scrollbar-min-size, 0px), calc(14px * var(--scrollbar-scale, 1)))
+  );
+  height: var(
+    --scrollbar-size,
+    max(var(--scrollbar-min-size, 0px), calc(14px * var(--scrollbar-scale, 1)))
+  );
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  min-width: 32px;
+  min-height: 32px;
+  background: var(--scrollbar-thumb-color, var(--color-stroke));
+  background-clip: padding-box;
+  border: var(--scrollbar-inset, calc(3px * var(--scrollbar-scale, 1))) solid
+    transparent;
+  border-radius: 9999px;
+}
+
+/* Keep the visible bar and arrows aligned inside the rail. */
+::-webkit-scrollbar-thumb:vertical {
+  border-inline-width: var(
+    --scrollbar-edge-inset,
+    var(--scrollbar-inset, 1.5px)
+  );
+}
+::-webkit-scrollbar-thumb:horizontal {
+  border-block-width: var(
+    --scrollbar-edge-inset,
+    var(--scrollbar-inset, 1.5px)
+  );
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(
+    --scrollbar-thumb-hover-color,
+    var(--color-border-hover)
+  );
+}
+
+/* Suppress duplicate OS buttons; keep one arrow at each end only. */
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::-webkit-scrollbar-button:vertical:decrement:start,
+::-webkit-scrollbar-button:vertical:increment:end,
+::-webkit-scrollbar-button:horizontal:decrement:start,
+::-webkit-scrollbar-button:horizontal:increment:end {
+  display: var(--scrollbar-button-display, none);
+  width: var(--scrollbar-size, 0px);
+  height: var(--scrollbar-size, 0px);
+  border: 0;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: calc(
+      var(--scrollbar-size, 7px) - 2 * var(--scrollbar-edge-inset, 1px)
+    )
+    calc(var(--scrollbar-size, 7px) - 2 * var(--scrollbar-edge-inset, 1px));
+}
+
+/* Start is the initial position. Native edge tracking updates only this element. */
+:not(
+    [data-scrollbar-start-y="false"]
+  )::-webkit-scrollbar-button:vertical:decrement:start,
+[data-scrollbar-end-y="true"]::-webkit-scrollbar-button:vertical:increment:end,
+:not(
+    [data-scrollbar-start-x="false"]
+  )::-webkit-scrollbar-button:horizontal:decrement:start,
+[data-scrollbar-end-x="true"]::-webkit-scrollbar-button:horizontal:increment:end {
+  --scrollbar-arrow-color: var(
+    --scrollbar-arrow-edge-color,
+    var(--color-border-hover)
+  );
+}
+
+::-webkit-scrollbar-button:vertical:decrement:start,
+::-webkit-scrollbar-button:vertical:increment:end {
+  width: var(--scrollbar-size, 7px);
+  height: var(--scrollbar-vertical-button-size, 9px);
+  background-size: var(--scrollbar-arrow-size, 6px) var(--scrollbar-arrow-size, 6px);
+}
+::-webkit-scrollbar-button:vertical:decrement:start {
+  background-image: var(--scrollbar-arrow-up-idle);
+}
+::-webkit-scrollbar-button:vertical:increment:end {
+  background-image: var(--scrollbar-arrow-down-idle);
+}
+:not([data-scrollbar-start-y="false"])::-webkit-scrollbar-button:vertical:decrement:start {
+  background-image: var(--scrollbar-arrow-up-edge);
+}
+[data-scrollbar-end-y="true"]::-webkit-scrollbar-button:vertical:increment:end {
+  background-image: var(--scrollbar-arrow-down-edge);
+}
+::-webkit-scrollbar-button:horizontal:decrement:start {
+  background-image: conic-gradient(
+    from 63.434949deg at 0% 50%,
+    var(
+        --scrollbar-arrow-color,
+        var(--scrollbar-arrow-idle-color, var(--color-stroke))
+      )
+      0deg 53.130102deg,
+    transparent 53.130102deg
+  );
+}
+::-webkit-scrollbar-button:horizontal:increment:end {
+  background-image: conic-gradient(
+    from 243.434949deg at 100% 50%,
+    var(
+        --scrollbar-arrow-color,
+        var(--scrollbar-arrow-idle-color, var(--color-stroke))
+      )
+      0deg 53.130102deg,
+    transparent 53.130102deg
+  );
+}
+
+[data-ui="scrollbar"] {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: var(--scrollbar-size, 7px);
+  background: transparent;
+  touch-action: none;
+  user-select: none;
+  cursor: default;
+}
+/* Keep geometry observable while non-overflowing; no paint or hit target. */
+[data-ui="scrollbar"][data-overflow="false"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+[data-ui="scrollbar-thumb"] {
+  position: absolute;
+  inset: var(--scrollbar-vertical-button-size, 9px) 0 auto;
+  box-sizing: border-box;
+  border: var(--scrollbar-inset, 1.5px) solid transparent;
+  border-inline-width: var(--scrollbar-edge-inset, 1px);
+  border-radius: 9999px;
+  background: var(--scrollbar-thumb-color, var(--color-stroke));
+  background-clip: padding-box;
+}
+[data-ui="scrollbar-thumb"]:hover,
+[data-ui="scrollbar"][data-dragging] > [data-ui="scrollbar-thumb"] {
+  background-color: var(
+    --scrollbar-thumb-hover-color,
+    var(--color-border-hover)
+  );
+}
+[data-ui="scrollbar-arrow"] {
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--scrollbar-vertical-button-size, 9px);
+  color: var(--scrollbar-arrow-idle-color, var(--color-stroke));
+}
+[data-ui="scrollbar-arrow"][data-direction="end"] {
+  inset: auto 0 0;
+}
+[data-ui="scrollbar-arrow"]::before {
+  content: "";
+  position: absolute;
+  inset: var(--scrollbar-edge-inset, 1px);
+  background: currentColor;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+[data-orientation="vertical"] > [data-ui="scrollbar-arrow"]::before {
+  inset-block: calc((var(--scrollbar-vertical-button-size, 9px) - var(--scrollbar-arrow-size, 6px)) / 2);
+  inset-inline: calc((var(--scrollbar-size, 7px) - var(--scrollbar-arrow-size, 6px)) / 2);
+  clip-path: none;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23000' opacity='1'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+[data-ui="scrollbar-arrow"][data-direction="end"]::before {
+  transform: rotate(180deg);
+}
+[data-ui="scrollbar"][data-scrollbar-start="true"]
+  > [data-ui="scrollbar-arrow"][data-direction="start"],
+[data-ui="scrollbar"][data-scrollbar-end="true"]
+  > [data-ui="scrollbar-arrow"][data-direction="end"] {
+  color: var(--scrollbar-arrow-edge-color, var(--color-border-hover));
+}
+[data-ui="scrollbar"][data-orientation="horizontal"] {
+  inset: auto 0 0;
+  width: auto;
+  height: var(--scrollbar-size, 7px);
+}
+[data-orientation="horizontal"] > [data-ui="scrollbar-thumb"] {
+  inset: 0 auto 0 var(--scrollbar-size, 7px);
+  border-inline-width: var(--scrollbar-inset, 1.5px);
+  border-block-width: var(--scrollbar-edge-inset, 1px);
+}
+[data-orientation="horizontal"] > [data-ui="scrollbar-arrow"] {
+  inset: 0 auto 0 0;
+  width: var(--scrollbar-size, 7px);
+  height: auto;
+}
+[data-orientation="horizontal"]
+  > [data-ui="scrollbar-arrow"][data-direction="end"] {
+  inset: 0 0 0 auto;
+}
+[data-orientation="horizontal"] > [data-ui="scrollbar-arrow"]::before {
+  transform: rotate(-90deg);
+}
+[data-orientation="horizontal"]
+  > [data-ui="scrollbar-arrow"][data-direction="end"]::before {
+  transform: rotate(90deg);
+}

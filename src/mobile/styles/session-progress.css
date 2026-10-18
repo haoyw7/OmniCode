@@ -1,0 +1,183 @@
+/* Stay below the header, outside the transcript's keyboard-follow transform. */
+.mobile-session-progress {
+  position: absolute;
+  top: calc(var(--mobile-header-height) + var(--mobile-safe-top));
+  inset-inline: calc(16px + var(--mobile-safe-left))
+    calc(16px + var(--mobile-safe-right));
+  z-index: 11;
+  pointer-events: none;
+}
+/* Animate only the floating capsule so its appearance never shifts messages. */
+.mobile-session-progress:not([data-docked]) > .zen-fold-item {
+  --collapse-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mobile-progress-capsule {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 24px;
+  color: var(--color-m-ink);
+  font-size: var(--mobile-font-md);
+  text-align: start;
+  pointer-events: auto;
+}
+/* Docked beside the composer's model picker. */
+.mobile-composer-progress {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline-start: auto;
+}
+.mobile-session-progress[data-docked="true"] {
+  position: static;
+  inset: auto;
+}
+.mobile-session-progress[data-docked="true"] .mobile-progress-capsule {
+  width: auto;
+  max-width: 100%;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 16px;
+}
+.mobile-progress-icon,
+.mobile-progress-capsule > svg {
+  flex-shrink: 0;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-progress-icon {
+  display: grid;
+  place-items: center;
+}
+.mobile-progress-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-progress-count {
+  flex-shrink: 0;
+  font-size: var(--mobile-font-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-desktop-transcript[data-progress="true"] > .agent-transcript {
+  /* Scroll targets clear the overlay without reserving space in the layout. */
+  scroll-padding-top: calc(
+    var(--mobile-header-height) + var(--mobile-safe-top) + 52px
+  );
+}
+.mobile-progress-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 8px 12px;
+}
+.mobile-progress-section {
+  min-width: 0;
+}
+.mobile-progress-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  font-size: var(--mobile-font-md);
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-progress-section h3 > span:first-child {
+  display: grid;
+}
+.mobile-progress-section h3 small {
+  margin-inline-start: auto;
+  font-size: var(--mobile-font-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-progress-tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.mobile-progress-tasks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 4px;
+  font-size: var(--mobile-font-md);
+  line-height: 1.5;
+}
+.mobile-progress-tasks li > span:first-child {
+  margin-top: 3px;
+}
+.mobile-progress-tasks li > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mobile-progress-tasks
+  li:is([data-status="completed"], [data-status="cancelled"])
+  > span:last-child {
+  color: var(--color-m-ink-tertiary);
+  text-decoration: line-through;
+}
+.mobile-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 4px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-m-ink);
+  text-align: start;
+  font-size: var(--mobile-font-md);
+  line-height: 1.5;
+}
+.mobile-progress-row > span:not([aria-label]) {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mobile-progress-row > svg {
+  flex-shrink: 0;
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-progress-row small {
+  display: block;
+  font-size: var(--mobile-font-sm);
+  color: var(--color-m-ink-secondary);
+}
+/* Background commands can embed whole heredoc prompts; keep each row short. */
+.mobile-progress-command {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  font-family: var(--font-mono);
+}
+.mobile-progress-more {
+  min-height: 44px;
+  width: 100%;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-m-ink-secondary);
+  text-align: start;
+  font-size: var(--mobile-font-md);
+}
+.mobile-progress-more:active,
+button.mobile-progress-row:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-progress-git-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}

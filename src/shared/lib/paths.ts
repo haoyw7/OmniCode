@@ -1,0 +1,301 @@
+import { IS_WIN } from "../../platform/tauri/platform";
+import { parseWslPath } from "./wslPaths";
+
+function windowsPath(path: string): boolean {
+  return /^[A-Za-z]:[\\/]/.test(path) || path.startsWith("\\\\") || path.startsWith("//");
+}
+
+export function slash(path: string): string {
+  if (path.startsWith("wsl://")) return path;
+  return windowsPath(path) || (IS_WIN && !path.startsWith("/"))
+    ? path.replace(/\\/g, "/") : path;
+}
+
+function trimSlash(path: string): string {
+  return slash(path).replace(/\/+$/, "") || "/";
+}
+
+// Render paths compare the same few hundred paths over and over; each key
+// costs several regex passes, so remember them (bounded, keys are pure).
+const PATH_KEY_LIMIT = 4096;
+const pathKeys = new Map<string, string>();
+
+/** Stable comparison key for Windows paths without changing their display case. */
+export function pathKey(path: string): string {
+  const cached = pathKeys.get(path);
+  if (cached !== undefined) return cached;
+  const normalized = trimSlash(path);
+  const key =
+    /^[A-Za-z]:(?:\/|$)/.test(normalized) || normalized.startsWith("//")
+      ? normalized.toLowerCase()
+      : normalized;
+  if (pathKeys.size >= PATH_KEY_LIMIT) pathKeys.clear();
+  pathKeys.set(path, key);
+  return key;
+}
+
+export function prettyCwd(cwd: string): string {
+  const wsl = parseWslPath(cwd);
+  if (wsl) return `WSL · ${wsl.machine.distribution} · ${prettyCwd(wsl.hostPath)}`;
+  const trimmed = trimSlash(cwd);
+  if (trimmed === "~") return "~";
+
+  const parts = trimmed.split("/").filter(Boolean);
+  if (parts.length >= 2 && (parts[0] === "Users" || parts[0] === "home")) {
+    const rest = parts.slice(2).join("/");
+    return rest ? `~/${rest}` : "~";
+  }
+  if (
+    parts.length >= 3 &&
+    /^[A-Za-z]:$/.test(parts[0]) &&
+    parts[1] === "Users"
+  ) {
+    const rest = parts.slice(3).join("/");
+    return rest ? `~/${rest}` : "~";
+  }
+  return trimmed;
+}
+
+export function parentPath(path: string): string {
+  const trimmed = trimSlash(path);
+  if (/^wsl:\/\/[^/]+$/.test(trimmed)) return `${trimmed}/`;
+  if (/^\/\/[^/]+\/[^/]+$/.test(trimmed)) return trimmed;
+  if (/^[A-Za-z]:$/.test(trimmed)) return `${trimmed}/`;
+  const i = trimmed.lastIndexOf("/");
+  if (i <= 0) return "/";
+  const parent = trimmed.slice(0, i);
+  if (/^[A-Za-z]:$/.test(parent)) return `${parent}/`;
+  return parent;
+}
+
+export function rebasePath(path: string, from: string, to: string): string {
+  const normalized = trimSlash(path);
+  const source = trimSlash(from);
+  const dest = trimSlash(to);
+  const key = pathKey(normalized);
+  const sourceKey = pathKey(source);
+  if (key === sourceKey) return /^[A-Za-z]:$/.test(dest) ? `${dest}/` : dest;
+  if (key.startsWith(`${sourceKey}/`)) {
+    return `${dest}${normalized.slice(source.length)}`;
+  }
+  return slash(path);
+}
+
+export function isEqualOrInside(path: string, root: string): boolean {
+  const normalized = trimSlash(path);
+  const base = trimSlash(root);
+  const key = pathKey(normalized);
+  const baseKey = pathKey(base);
+  return key === baseKey || key.startsWith(`${baseKey}/`);
+}
+
+export function joinPath(parent: string, relative: string): string {
+  const base = trimSlash(parent);
+  const parts = relative
+    .split(windowsPath(parent) ? /[/\\]/ : /\//)
+    .filter((part) => part && part !== ".");
+  let out = base;
+  for (const part of parts) {
+    if (part === "..") {
+      out = parentPath(out);
+      continue;
+    }
+    out = out === "/" ? `/${part}` : `${out}/${part}`;
+  }
+  return out;
+}
+
+/**
+ * The real OS home directory, primed once at startup from `fs.homeDir()`
+ * (see `setHomeDir`). This module has no direct OS access of its own, so
+ * until it is primed - or in a context that never primes it, like a test -
+ * a `~/` reference falls back to `homeDirFromCwd`, which only works when the
+ * project's own cwd happens to sit under a recognisable home.
+ */
+let cachedHomeDir: string | undefined;
+
+/**
+ * Record the OS's actual home directory so `~/` references resolve exactly,
+ * instead of only being inferred from `cwd`. That inference fails whenever a
+ * project lives outside the usual `/Users/<name>` or `/home/<name>` shape -
+ * a custom install location, a container, a drive letter this module does
+ * not recognise - even though the real home directory is known. Pass
+ * `undefined` to clear it, e.g. between tests.
+ */
+export function setHomeDir(path: string | undefined): void {
+  cachedHomeDir = path ? trimSlash(slash(path)) : undefined;
+}
+
+/**
+ * Home directory, recognised the same way `prettyCwd` finds one inside a
+ * project path. This module has no direct OS access, so a `~/` reference can
+ * only be expanded when the project's own cwd sits under a recognisable home.
+ */
+function homeDirFromCwd(cwd: string): string | undefined {
+  const remoteRoot = /^(?:remote|wsl):\/\/[^/]+\//.exec(cwd)?.[0];
+  const trimmed = trimSlash(remoteRoot ? `/${cwd.slice(remoteRoot.length)}` : cwd);
+  if (trimmed === "~") return undefined;
+  const parts = trimmed.split("/").filter(Boolean);
+  if (parts.length >= 2 && (parts[0] === "Users" || parts[0] === "home")) {
+    const home = `/${parts[0]}/${parts[1]}`;
+    return remoteRoot ? `${remoteRoot}${home.slice(1)}` : home;
+  }
+  if (
+    parts.length >= 3 &&
+    /^[A-Za-z]:$/.test(parts[0]) &&
+    parts[1].toLowerCase() === "users"
+  ) {
+    const home = `${parts[0]}/${parts[1]}/${parts[2]}`;
+    return remoteRoot ? `${remoteRoot}${home}` : home;
+  }
+  return undefined;
+}
+
+/** Absolute path for a workspace file href, local or on a connected machine. */
+export function resolveWorkspacePath(
+  href: string,
+  cwd?: string,
+): string | undefined {
+  return parseWorkspaceFileReference(href, cwd, false)?.path;
+}
+
+/** Keep source positions while resolving a local Markdown file reference. */
+export function resolveWorkspaceFileReference(
+  href: string,
+  cwd?: string,
+): { path: string; navigation?: { line: number; column?: number } } | undefined {
+  return parseWorkspaceFileReference(href, cwd, true);
+}
+
+function parseWorkspaceFileReference(
+  href: string,
+  cwd: string | undefined,
+  decodeUrl: boolean,
+) {
+  let value = href.trim();
+  if (!value) return undefined;
+
+  // Strip heading anchors before decoding, keeping encoded '#' in filenames.
+  if (decodeUrl) {
+    const hash = value.indexOf("#");
+    if (hash > 0 && !/^L\d+(?:-L\d+)?$/.test(value.slice(hash + 1)))
+      value = value.slice(0, hash);
+  }
+  const location = value.match(/(?::(\d+)(?::(\d+))?|#L(\d+)(?:-L\d+)?)$/);
+  const line = Number(location?.[1] ?? location?.[3]);
+  const column = location?.[2] ? Number(location[2]) : undefined;
+  const navigation =
+    Number.isSafeInteger(line) && line > 0
+      ? { line, ...(column && Number.isSafeInteger(column) ? { column } : {}) }
+      : undefined;
+  if (location) value = value.slice(0, location.index);
+
+  const fileUrl = value.startsWith("file://");
+  if (fileUrl) {
+    value = value.slice("file://".length);
+    if (value.startsWith("localhost/")) value = value.slice("localhost".length);
+  }
+  if (decodeUrl || fileUrl) {
+    try {
+      value = decodeURIComponent(value);
+    } catch {
+      // A literal percent sign is valid in a local filename.
+    }
+  }
+
+  value = slash(value);
+  const remoteRoot = cwd ? /^remote:\/\/[^/]+\//.exec(cwd)?.[0] : undefined;
+  if (remoteRoot && value.startsWith(remoteRoot))
+    return { path: value, navigation };
+  // File URLs can also decode to UNC paths. Windows accepts mixed separators.
+  if ((decodeUrl || fileUrl) && /^[\\/]{2}/.test(value)) return undefined;
+  // A provider-relative `~/` reference means the user's home directory, not a
+  // path relative to the project's cwd. Expand it to an absolute path up
+  // front when a home directory can be recognised, so it flows through the
+  // same absolute-path handling below instead of being joined onto cwd.
+  if (value === "~" || value.startsWith("~/")) {
+    const home = remoteRoot
+      ? homeDirFromCwd(cwd!)
+      : cachedHomeDir ?? (cwd ? homeDirFromCwd(cwd) : undefined);
+    // Without a recognisable home, joining "~/..." onto cwd like an ordinary
+    // relative path would silently produce a nonsense location instead of
+    // the file the reference actually means.
+    if (!home) return undefined;
+    value = value === "~" ? home : joinPath(home, value.slice(2));
+  }
+  if (remoteRoot && value.startsWith(remoteRoot))
+    return { path: value, navigation };
+  // A bare filename's :line[:column] suffix must be removed before this check.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value) && !/^[A-Za-z]:\//.test(value))
+    return undefined;
+  if (!value || value === "." || value.startsWith("#") || value.startsWith("?") || value.includes("://")) {
+    return undefined;
+  }
+  if (!looksLikeFilePath(value)) return undefined;
+
+  if (/^[A-Za-z]:\//.test(value))
+    return { path: remoteRoot ? `${remoteRoot}${value}` : value, navigation };
+  if (remoteRoot && value.startsWith("//"))
+    return { path: `${remoteRoot}${value.slice(1)}`, navigation };
+  if (value.startsWith("/")) {
+    return {
+      path: remoteRoot
+        ? `${remoteRoot}${value.replace(/^\/+/, "")}`
+        : /^\/[A-Za-z]:\//.test(value) ? value.slice(1) : value,
+      navigation,
+    };
+  }
+  if (!cwd || cwd === "~") return undefined;
+  return { path: joinPath(cwd, value), navigation };
+}
+
+export function isExtensionlessFileName(value: string): boolean {
+  return /^(dockerfile|makefile|gemfile|license)$/i.test(value);
+}
+
+export function looksLikeFilePath(value: string): boolean {
+  if (value.startsWith("/") || /^[A-Za-z]:\//.test(value)) return true;
+  if (value.includes("/")) return true;
+  return isExtensionlessFileName(value) ||
+    /\.[A-Za-z][A-Za-z0-9+]{0,11}$/.test(value);
+}
+
+export function prettyParent(path: string): string {
+  return prettyCwd(parentPath(path));
+}
+
+/** Path relative to cwd when it lives under the project, otherwise unchanged. */
+export function displayPath(path: string, cwd?: string): string {
+  const normalized = trimSlash(path);
+  const base = cwd ? trimSlash(cwd) : undefined;
+  if (base && base !== "~") {
+    const key = pathKey(normalized);
+    const baseKey = pathKey(base);
+    if (key === baseKey) {
+      return normalized.split("/").filter(Boolean).pop() || normalized;
+    }
+    const prefix = `${base}/`;
+    if (key.startsWith(`${baseKey}/`)) {
+      return normalized.slice(prefix.length);
+    }
+  }
+  return normalized;
+}
+
+/** Folder name for tab labels — `~` when the cwd is home. */
+export function projectName(cwd: string): string {
+  if (!cwd || prettyCwd(cwd) === "~") return "~";
+  const trimmed = trimSlash(cwd);
+  if (/^[A-Za-z]:$/.test(trimmed)) return trimmed;
+  const parts = trimmed.split("/").filter(Boolean);
+  return parts[parts.length - 1] ?? trimmed;
+}
+
+/**
+ * Identity for a project's saved appearance and data. Folder names repeat across
+ * checkouts (`cortex/agentbase` and `cortex-finance/agentbase`), so the whole
+ * path is the key — `projectName` is for display only.
+ */
+export function projectKey(cwd: string): string {
+  return pathKey(cwd);
+}

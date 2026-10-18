@@ -1,0 +1,50 @@
+[
+  {
+    "id": "curious",
+    "label": "疑惑",
+    "duration": 2.4,
+    "description": "挑起一边眉毛，轻轻歪头"
+  },
+  {
+    "id": "inspired",
+    "label": "灵感",
+    "duration": 2.4,
+    "description": "视线向上，三条灵感线展开"
+  },
+  {
+    "id": "focused",
+    "label": "专注",
+    "duration": 2.4,
+    "description": "收紧眼神，小幅左右观察"
+  },
+  {
+    "id": "surprised",
+    "label": "惊讶",
+    "duration": 2.4,
+    "description": "睁圆眼睛，轻轻向上弹起"
+  },
+  {
+    "id": "sleepy",
+    "label": "困倦",
+    "duration": 3.6,
+    "description": "闭眼慢呼吸，睡眠符号缓缓上浮"
+  },
+  {
+    "id": "joyful",
+    "label": "开心",
+    "duration": 2.4,
+    "description": "眯眼笑，连续两次轻跳"
+  },
+  {
+    "id": "encouraging",
+    "label": "鼓励",
+    "duration": 2.4,
+    "description": "眨眼点头，小爱心轻轻上浮"
+  },
+  {
+    "id": "error",
+    "label": "出错",
+    "duration": 2.4,
+    "description": "叉眼轻摇头，再短暂停留"
+  }
+]

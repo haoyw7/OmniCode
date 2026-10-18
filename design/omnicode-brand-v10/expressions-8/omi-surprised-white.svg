@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-surprised" role="img" aria-label="Omi · 惊讶" data-state="surprised" data-duration="2.4">
+<style>@keyframes omi-expr-surprised-body{0%,20%,100%{transform:translateY(0)}10%{transform:translateY(-7px)}}
+@keyframes omi-expr-surprised-face{0%,20%,100%{transform:scale(1)}10%{transform:scale(1.06)}}
+@keyframes omi-expr-surprised-accent{0%,80%,100%{opacity:.35}10%,70%{opacity:1}}
+.omi-expr-surprised .omx-body{animation:omi-expr-surprised-body 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-surprised .omx-face{animation:omi-expr-surprised-face 2.4s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 130px}
+.omi-expr-surprised .omx-accent{animation:omi-expr-surprised-accent 2.4s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-surprised .omx-a{transform-box:view-box}
+.omi-expr-surprised[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-surprised[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-surprised .omx-a{animation:none!important}}</style>
+<g fill="#ffffff" stroke="#ffffff"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omx-a omx-face"><circle cx="91" cy="122" r="11" fill="none" stroke-width="8"/><circle cx="165" cy="122" r="11" fill="none" stroke-width="8"/><circle cx="128" cy="168" r="7" fill="none" stroke-width="6"/></g></g></g><g class="omx-a omx-accent"><path d="M 279 21 V 40" fill="none" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="279" cy="53" r="3.5" stroke="none"/></g></g>
+</svg>

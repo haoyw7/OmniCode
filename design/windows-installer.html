@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>OmniCode · Windows 安装器设计</title>
+  <style>
+    :root { --ink:#242925; --muted:#727a73; --line:#e7eae5; --green:#315c46; --soft:#f3f6f0; --paper:#fdfefb; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#eceee8; color:var(--ink); font-family:Inter,"Segoe UI Variable","Segoe UI","Microsoft YaHei",sans-serif; font-size:14px; -webkit-font-smoothing:antialiased; }
+    button,input { font:inherit; }
+    button { cursor:pointer; }
+    button:disabled { cursor:default; opacity:.55; }
+    button:focus-visible,input:focus-visible { outline:3px solid #7fa78c; outline-offset:4px; }
+    button { -webkit-tap-highlight-color:transparent; }
+    [hidden] { display:none!important; }
+    .studio { max-width:1180px; margin:auto; padding:38px 48px 28px; }
+    .studio-header,.studio-brand,.preview-nav,.titlebar,.title-brand,.window-footer,.footer-actions,.path-label,.progress-label,.studio-footer { display:flex; align-items:center; }
+    .studio-header { justify-content:space-between; gap:24px; }
+    .studio-brand { gap:13px; }
+    .studio-brand strong { font-size:14px; letter-spacing:2px; font-weight:650; }
+    .separator { height:16px; width:1px; background:#c8cec5; }
+    .studio-brand span:last-child { font-size:12px; color:var(--muted); }
+    .preview-nav { padding:4px; gap:3px; border:1px solid #dce1d7; border-radius:10px; background:#e5e9e0; }
+    .preview-nav button { border:0; color:#626d61; background:transparent; border-radius:7px; padding:8px 15px; font-size:12px; transition:background .18s,color .18s; }
+    .preview-nav button[aria-pressed="true"] { background:var(--paper); color:var(--ink); box-shadow:0 1px 3px #28342110; }
+    .stage { min-height:calc(100vh - 168px); display:grid; grid-template-columns:minmax(0,1fr); place-items:center; padding:50px 0 44px; }
+    .window { width:760px; max-width:100%; border-radius:13px; overflow:hidden; background:var(--paper); border:1px solid #d4dad0; box-shadow:0 36px 70px -30px #33432d45,0 8px 24px -12px #25371e20,0 1px 2px #ffffff; }
+    .titlebar { height:49px; padding-left:21px; justify-content:space-between; border-bottom:1px solid #f0f2ed; }
+    .title-brand { gap:9px; font-size:12px; color:#555e55; }
+    .brand-image { object-fit:contain; }
+    .title-brand img { width:20px; height:20px; }
+    .close { align-self:stretch; width:49px; border:0; background:transparent; color:#60685f; display:grid; place-items:center; transition:background .15s,color .15s; }
+    .close:hover { background:#c94740; color:white; }
+    .close svg { width:15px; height:15px; }
+    .content { padding:40px 62px 35px; min-height:449px; }
+    .hero { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+    .hero img { width:68px; height:68px; margin-left:-6px; }
+    .platform { color:#6a7368; border:1px solid var(--line); border-radius:6px; padding:6px 9px; font-size:11px; letter-spacing:.35px; display:flex; gap:7px; align-items:center; }
+    .platform svg { width:12px; height:12px; }
+    h1 { margin:0 0 11px; font-size:30px; font-weight:600; letter-spacing:-1.1px; line-height:1.4; }
+    .subtitle { color:var(--muted); line-height:1.8; margin:0; font-size:13px; }
+    .setup-options { margin-top:31px; }
+    .path-label { justify-content:space-between; font-size:12px; margin-bottom:9px; }
+    .path-label span { color:#7a8277; font-size:11px; }
+    .path-box { display:flex; gap:12px; align-items:center; border:1px solid #dfe5da; background:#fafbf7; border-radius:7px; padding:0 14px; transition:border-color .2s; }
+    .path-box:focus-within { border-color:#729579; }
+    .path-box svg { width:17px; height:17px; color:#8b9787; flex-shrink:0; }
+    .path-box input { min-width:0; width:100%; color:#505c4c; font-size:12px; height:44px; background:transparent; border:0; font-family:Consolas,"Cascadia Code",monospace; }
+    .path-box input:focus { outline:0; }
+    .path-box:focus-within { outline:2px solid #7fa78c; outline-offset:2px; }
+    .path-hint { font-size:11px; color:#7a8277; margin:8px 0 18px; }
+    .check { display:inline-flex; gap:9px; align-items:center; font-size:12px; cursor:pointer; min-height:28px; }
+    .check input { width:15px; height:15px; accent-color:var(--green); margin:0; }
+    .window-footer { min-height:81px; padding:18px 27px 18px 33px; background:#f7f9f3; border-top:1px solid var(--line); justify-content:space-between; gap:20px; }
+    .footer-note { color:#727d6d; font-size:11px; display:flex; align-items:center; gap:7px; line-height:1.7; }
+    .footer-note svg { width:14px; height:14px; flex-shrink:0; }
+    .footer-actions { gap:10px; }
+    .btn { border:1px solid #dfe5d8; border-radius:7px; padding:10px 19px; background:var(--paper); color:#505c4b; font-size:12px; line-height:1.5; white-space:nowrap; transition:background .15s,transform .15s; }
+    .btn:hover { background:#eaf0e3; }
+    .btn:active { transform:translateY(1px); }
+    .btn.primary { background:var(--green); border-color:var(--green); color:#fff; min-width:130px; box-shadow:inset 0 1px #ffffff16,0 2px 3px #214b3020; }
+    .btn.primary:hover { background:#254c38; }
+    .arrow { margin-left:18px; font-size:16px; line-height:0; }
+    .studio-footer { justify-content:space-between; color:#76816f; font-size:11px; gap:20px; line-height:1.8; }
+    .studio-footer .concept { letter-spacing:1.5px; font-size:10px; }
+    .live-note { display:flex; align-items:center; gap:7px; }
+    .dot { width:5px; height:5px; background:#7a9871; border-radius:50%; flex-shrink:0; }
+    .progress-area { margin-top:37px; }
+    .progress-label { justify-content:space-between; margin-bottom:13px; gap:15px; font-size:12px; }
+    .percent { color:var(--green); font-variant-numeric:tabular-nums; }
+    .track { height:5px; background:#e9eee4; border-radius:5px; overflow:hidden; }
+    .bar { width:0; height:100%; background:var(--green); border-radius:5px; transition:width .32s linear; }
+    .steps { display:flex; gap:22px; margin:22px 0 0; padding:0; list-style:none; color:#90998a; font-size:11px; }
+    .steps li { display:flex; align-items:center; gap:7px; }
+    .step-icon { width:15px; height:15px; border:1px solid #cdd6c5; border-radius:50%; display:grid; place-items:center; font-size:9px; }
+    .steps .active { color:var(--green); }
+    .steps .active .step-icon { border-color:var(--green); background:#edf2e8; }
+    .steps .done { color:#65735d; }
+    .steps .done .step-icon { color:white; background:#65805c; border-color:#65805c; }
+    .success-hero { position:relative; width:max-content; }
+    .success-check { position:absolute; bottom:3px; right:-4px; background:var(--green); color:white; border:3px solid var(--paper); border-radius:50%; width:26px; height:26px; display:grid; place-items:center; font-size:12px; }
+    .ready-card { margin-top:31px; display:flex; align-items:center; gap:13px; padding:17px 18px; background:var(--soft); border:1px solid #e6ecdf; border-radius:8px; }
+    .ready-symbol { width:34px; height:34px; display:grid; place-items:center; color:var(--green); background:#e4ecdc; border-radius:7px; font-family:Consolas,monospace; font-size:18px; }
+    .ready-card strong { display:block; font-size:12px; font-weight:500; margin-bottom:5px; }
+    .ready-card p { font-size:11px; margin:0; color:#73806a; }
+    .error { color:#ae453e; font-size:12px; margin:9px 0 0; }
+    .notice { min-height:22px; color:var(--green); font-size:12px; margin:17px 0 0; line-height:1.7; }
+    dialog { border:1px solid #dae1d5; border-radius:12px; padding:28px; width:390px; max-width:calc(100% - 32px); box-shadow:0 24px 80px #182b1930; background:var(--paper); color:var(--ink); }
+    dialog::backdrop { background:#26352750; backdrop-filter:blur(3px); }
+    dialog h2 { margin:0 0 10px; font-size:19px; }
+    dialog p { color:var(--muted); font-size:13px; line-height:1.8; margin:0 0 24px; }
+    dialog .footer-actions { justify-content:flex-end; }
+    @media (max-width:780px) { .studio { padding:24px; } .studio-header { align-items:flex-start; } .studio-brand { flex-wrap:wrap; row-gap:7px; } .studio-brand .separator { display:none; } .studio-brand span:last-child { width:100%; } .preview-nav button { padding:7px 10px; white-space:nowrap; } .content { padding:32px; } .stage { min-height:calc(100svh - 180px); padding:30px 0; } .window-footer { padding:18px 24px; } }
+    @media (max-width:480px) { .studio { padding:20px 14px; } .studio-header { flex-direction:column; gap:18px; } .preview-nav { align-self:stretch; } .preview-nav button { flex:1; padding:9px 5px; } .content { padding:26px 23px; min-height:439px; } h1 { font-size:25px; } .hero { margin-bottom:23px; } .platform { font-size:10px; padding:5px 7px; } .window-footer { flex-wrap:wrap; gap:14px; padding:18px 23px; } .footer-actions { width:100%; } .footer-actions .primary { flex:1; } .studio-footer { align-items:flex-start; flex-direction:column; gap:4px; } .steps { gap:12px; flex-wrap:wrap; } .path-label { align-items:flex-start; gap:8px; } .path-label span { max-width:150px; text-align:right; } .stage { padding:26px 0; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none!important; animation:none!important; } }
+    /* Approved direction: monochrome pixel UI. Native implementation keeps OS window chrome. */
+    :root { --ink:#111; --muted:#626262; --line:#ccc; --green:#111; --soft:#f2f2f2; --paper:#fff; }
+    body { background:#eee; font-family:"Cascadia Mono",Consolas,"Microsoft YaHei",monospace; }
+    .studio-brand strong { letter-spacing:3px; }
+    .separator { background:#bbb; }
+    .preview-nav { background:#e5e5e5; border-color:#bbb; border-radius:0; }
+    .preview-nav button { border-radius:0; color:#555; }
+    .preview-nav button[aria-pressed="true"] { background:#111; color:#fff; box-shadow:none; }
+    .window { border:2px solid #111; border-radius:0; box-shadow:8px 8px 0 #c8c8c8; }
+    .titlebar { border-bottom:1px solid #111; }
+    .title-brand { color:#333; }
+    .close { color:#111; }
+    .close:hover { background:#111; color:#fff; }
+    .brand-image { image-rendering:auto; }
+    .platform { color:#444; border-color:#bbb; border-radius:0; }
+    h1 { font-family:"Segoe UI","Microsoft YaHei",sans-serif; font-weight:700; }
+    .path-label span,.path-hint { color:#666; }
+    .path-box { border:1px solid #111; border-radius:0; background:#fff; }
+    .path-box svg,.path-box input { color:#444; }
+    .path-box:focus-within { outline:2px solid #111; border-color:#111; }
+    .window-footer { background:#f2f2f2; border-top:1px solid #111; }
+    .footer-note { color:#555; }
+    .btn { color:#111; background:#fff; border:1px solid #111; border-radius:0; box-shadow:2px 2px 0 #bbb; }
+    .btn:hover { background:#ddd; }
+    .btn.primary { background:#111; border-color:#111; box-shadow:3px 3px 0 #bbb; }
+    .btn.primary:hover { background:#333; }
+    .studio-footer { color:#626262; }
+    .dot { background:#111; border-radius:0; }
+    .track { height:10px; background:#e5e5e5; border-radius:0; }
+    .bar { background:repeating-linear-gradient(90deg,#111 0,#111 10px,transparent 10px,transparent 13px); border-radius:0; transition:width .32s steps(4,end); }
+    .steps { color:#707070; }
+    .step-icon { border-color:#aaa; border-radius:0; }
+    .steps .active .step-icon { background:#111; color:#fff; border-color:#111; }
+    .steps .done { color:#444; }
+    .steps .done .step-icon { background:#111; border-color:#111; }
+    .success-check { border-radius:0; }
+    .ready-card { border:1px solid #aaa; border-radius:0; background:#f4f4f4; }
+    .ready-symbol { background:#111; color:#fff; border-radius:0; }
+    .ready-card p { color:#626262; }
+    .error { color:#111; font-weight:700; }
+    dialog { border:2px solid #111; border-radius:0; box-shadow:6px 6px 0 #777; }
+    dialog::backdrop { background:#0006; backdrop-filter:none; }
+    button:focus-visible,input:focus-visible { outline-color:#111; }
+  </style>
+</head>
+<body>
+  <div class="studio">
+    <header class="studio-header">
+      <div class="studio-brand"><strong>MONOCODE</strong><span class="separator"></span><span>Windows 安装体验</span></div>
+      <nav class="preview-nav" aria-label="预览安装状态">
+        <button type="button" data-view="setup" aria-pressed="true">01 准备安装</button>
+        <button type="button" data-view="progress" aria-pressed="false">02 安装中</button>
+        <button type="button" data-view="done" aria-pressed="false">03 已完成</button>
+      </nav>
+    </header>
+    <main class="stage">
+      <section class="window" aria-label="OmniCode 安装器预览">
+        <header class="titlebar">
+          <div class="title-brand"><img class="brand-image" alt="" src="../public/omnicode.svg"><span>OmniCode 安装程序</span></div>
+          <button type="button" class="close" id="close" aria-label="关闭安装程序"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.2"/></svg></button>
+        </header>
+        <section class="content" id="setup">
+          <div class="hero"><img class="brand-image" alt="OmniCode" src="../public/omnicode.svg"><span class="platform"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1 2.5 7 1.7v6H1zm7-1 7-1v7.2H8zM1 8.7h6v5.6l-6-.8zm7 0h7v6.8l-7-1z"/></svg>Windows · x64</span></div>
+          <h1>让好想法，开始运行。</h1>
+          <p class="subtitle">安装 OmniCode，在一个工作空间里与 AI 一起编写代码。</p>
+          <form id="install-form" class="setup-options">
+            <div class="path-label"><label for="install-path">安装位置</label><span>仅为当前用户安装</span></div>
+            <div class="path-box"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2.5 5a1 1 0 0 1 1-1H8l2 2h6.5a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1Z" stroke="currentColor" stroke-width="1.4"/></svg><input id="install-path" aria-describedby="path-hint path-error" aria-label="安装位置" value="C:\Users\You\AppData\Local\OmniCode" spellcheck="false" autocomplete="off" required></div>
+            <p id="path-hint" class="path-hint">可直接编辑安装路径。</p>
+            <label class="check"><input id="shortcut" type="checkbox" checked>创建桌面快捷方式</label>
+            <p id="path-error" class="error" role="alert" hidden>请输入完整的 Windows 本地路径，例如 C:\Apps\OmniCode。</p>
+          </form>
+        </section>
+        <section class="content" id="progress" hidden>
+          <div class="hero"><img class="brand-image" alt="OmniCode" src="../public/omnicode.svg"><span class="platform">正在安装</span></div>
+          <h1>你的工作空间，即将就绪。</h1>
+          <p class="subtitle">正在为你准备 OmniCode，请稍候。</p>
+          <div class="progress-area">
+            <div class="progress-label"><span id="progress-text" role="status">正在准备安装文件…</span><span id="percent" class="percent">0%</span></div>
+            <div id="progressbar" class="track" role="progressbar" aria-label="安装进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="bar" class="bar"></div></div>
+            <ol class="steps"><li class="active"><span class="step-icon">1</span>准备文件</li><li><span class="step-icon">2</span>安装应用</li><li><span class="step-icon">3</span>完成设置</li></ol>
+          </div>
+        </section>
+        <section class="content" id="done" hidden>
+          <div class="hero"><div class="success-hero"><img class="brand-image" alt="OmniCode" src="../public/omnicode.svg"><span class="success-check" aria-hidden="true">✓</span></div><span class="platform">安装完成</span></div>
+          <h1>准备好了。开始创造。</h1>
+          <p class="subtitle">OmniCode 已安装完成，你的下一个项目从这里开始。</p>
+          <div class="ready-card"><div class="ready-symbol" aria-hidden="true">&gt;_</div><div><strong>一个工作空间，无限可能</strong><p>打开项目，连接你的 AI 编程助手。</p></div></div>
+          <p id="launch-status" class="notice" role="status"></p>
+        </section>
+        <section class="content" id="closed" hidden>
+          <div class="hero"><img class="brand-image" alt="OmniCode" src="../public/omnicode.svg"><span class="platform">预览已结束</span></div>
+          <h1 id="closed-heading">安装已取消。</h1>
+          <p class="subtitle">这是交互设计预览，未对你的电脑进行任何更改。</p>
+        </section>
+        <footer class="window-footer">
+          <span class="footer-note"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m8 1.5 5 2v4c0 3-3.1 5.6-5 7-1.9-1.4-5-4-5-7v-4Z" stroke="currentColor" stroke-width="1.15"/><path d="m5.5 7.5 1.6 1.6 3.4-3.4" stroke="currentColor" stroke-width="1.2"/></svg><span id="footer-note">为当前用户安装</span></span>
+          <div class="footer-actions"><button type="button" class="btn" id="secondary">取消</button><button type="submit" form="install-form" class="btn primary" id="primary">安装 OmniCode <span class="arrow" aria-hidden="true">→</span></button></div>
+        </footer>
+      </section>
+    </main>
+    <footer class="studio-footer"><span class="live-note"><span class="dot"></span>交互原型 · 安装进度与启动操作均为模拟</span><span class="concept">PIXEL EDITION / 02</span></footer>
+  </div>
+  <dialog id="cancel-dialog" aria-labelledby="cancel-title" aria-describedby="cancel-description">
+    <h2 id="cancel-title">取消安装？</h2><p id="cancel-description">安装尚未完成。你可以继续等待，或退出本次安装预览。</p>
+    <div class="footer-actions"><button class="btn" id="confirm-cancel" type="button">取消安装</button><button class="btn primary" id="continue" type="button" autofocus>继续安装</button></div>
+  </dialog>
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const views = ['setup', 'progress', 'done', 'closed'];
+      let current = 'setup';
+      let timer;
+      let percent = 0;
+      const nav = [...document.querySelectorAll('[data-view]')];
+      const steps = [...document.querySelectorAll('.steps li')];
+      function updateProgress(value) {
+        percent = value;
+        $('percent').textContent = `${value}%`;
+        $('bar').style.width = `${value}%`;
+        $('progressbar').setAttribute('aria-valuenow', String(value));
+        const stage = value < 22 ? 0 : value < 86 ? 1 : 2;
+        const texts = ['正在准备安装文件…', '正在安装 OmniCode…', $('shortcut').checked ? '正在创建快捷方式并完成设置…' : '正在完成设置…'];
+        if ($('progress-text').textContent !== texts[stage]) $('progress-text').textContent = texts[stage];
+        steps.forEach((item, index) => {
+          item.className = index < stage ? 'done' : index === stage ? 'active' : '';
+          item.firstElementChild.textContent = index < stage ? '✓' : String(index + 1);
+        });
+      }
+      function show(view, focus = false) {
+        clearInterval(timer);
+        current = view;
+        views.forEach(id => $(id).hidden = id !== view);
+        nav.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === view)));
+        $('secondary').hidden = view === 'closed';
+        $('primary').hidden = view === 'progress';
+        $('primary').disabled = false;
+        $('secondary').textContent = view === 'done' ? '关闭' : '取消';
+        $('primary').type = view === 'setup' ? 'submit' : 'button';
+        $('primary').innerHTML = (view === 'done' ? '启动 OmniCode' : view === 'closed' ? '重新预览' : '安装 OmniCode') + ' <span class="arrow" aria-hidden="true">→</span>';
+        $('footer-note').textContent = view === 'progress' ? '正在准备你的工作空间' : view === 'done' ? '已为当前用户安装' : view === 'closed' ? 'OmniCode 安装器设计预览' : '为当前用户安装';
+        $('launch-status').textContent = '';
+        if (focus) {
+          const heading = $(view).querySelector('h1');
+          heading.tabIndex = -1;
+          heading.focus({preventScroll:true});
+        }
+        if (view === 'progress') {
+          updateProgress(0);
+          timer = setInterval(() => {
+            if ($('cancel-dialog').open) return;
+            if (percent >= 100) { show('done', true); return; }
+            updateProgress(Math.min(100, percent + 4));
+          }, 320);
+        }
+      }
+      function closePreview() {
+        if (current === 'progress') { $('cancel-dialog').showModal(); return; }
+        const finished = current === 'done';
+        show('closed', true);
+        $('closed-heading').textContent = finished ? '安装预览已结束。' : '安装已取消。';
+      }
+      nav.forEach(button => button.addEventListener('click', () => show(button.dataset.view, true)));
+      $('install-form').addEventListener('submit', event => {
+        event.preventDefault();
+        const path = $('install-path').value.trim();
+        const valid = /^[a-z]:\\[^<>:"|?*\x00-\x1f]+$/i.test(path);
+        $('path-error').hidden = valid;
+        $('install-path').setAttribute('aria-invalid', String(!valid));
+        if (!valid) { $('install-path').focus(); return; }
+        show('progress', true);
+      });
+      $('install-path').addEventListener('input', () => {
+        $('path-error').hidden = true;
+        $('install-path').removeAttribute('aria-invalid');
+      });
+      $('primary').addEventListener('click', event => {
+        if (current !== 'setup') event.preventDefault();
+        if (current === 'done') {
+          $('launch-status').textContent = '启动交互已演示。正式安装器将在此打开 OmniCode。';
+        } else if (current === 'closed') show('setup', true);
+      });
+      $('secondary').addEventListener('click', closePreview);
+      $('close').addEventListener('click', closePreview);
+      $('continue').addEventListener('click', () => $('cancel-dialog').close());
+      $('confirm-cancel').addEventListener('click', () => {
+        $('cancel-dialog').close();
+        show('closed', true);
+        $('closed-heading').textContent = '安装已取消。';
+      });
+    })();
+  </script>
+</body>
+</html>

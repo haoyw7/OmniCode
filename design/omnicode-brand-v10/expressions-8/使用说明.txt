@@ -1,0 +1,53 @@
+Omi · 八种新增表情与透明动画
+
+新增八种表情，保留已确认的 O 形矢量母版；不覆盖原来的六种工作状态。
+素材使用 SVG 路径和 CSS 动画，完全透明、无位图、无外部字体、无 SVG 内嵌脚本。
+
+表情与节奏
+curious / 疑惑：2.4 秒，挑眉和轻歪头，问号柔和出现。
+inspired / 灵感：2.4 秒，向上看的尖拱眼神，三条灵感线展开。
+focused / 专注：2.4 秒，收紧眼神，视线小幅左右观察。
+surprised / 惊讶：2.4 秒，圆眼与小圆嘴，轻微上弹。
+sleepy / 困倦：3.6 秒，闭眼慢呼吸，睡眠符号缓缓上浮。
+joyful / 开心：2.4 秒，笑眼与笑嘴，连续两次轻跳。
+encouraging / 鼓励：2.4 秒，眨眼点头，小爱心轻轻上浮。
+error / 出错：2.4 秒，叉眼轻摇头后短暂停留。
+所有文件均为循环动画；正式应用中请由真实状态决定显示哪个表情。
+
+素材
+omi-{表情}-{black,white,current}.svg：24 个动画 SVG。
+static/omi-{表情}-{black,white,current}.svg：24 个静态替代 SVG。
+black 为 #151515；white 为 #ffffff；current 使用 currentColor。
+viewBox 统一为 0 0 320 320。建议显示为 64–160 CSS px；表情变化仅用于助手插画。
+小尺寸托盘、应用图标和正式字标继续使用原静态品牌素材。
+
+预览与控制
+preview.html：八种内联动画，可暂停/继续、重播、切换深浅背景、透明网格与静态预览。
+preview-light.png / preview-dark.png：静态总览截图，预览底色不属于 SVG。
+embedding.html：picture 外部图片嵌入示例，包含系统减少动态效果与手动静态切换。
+manifest.json：表情名称、文件 ID、周期与描述。
+
+内联 SVG
+currentColor 会继承宿主文字颜色；直接 img 引用时不会继承，请用 black / white 固定颜色。
+根元素 data-paused="true" 暂停，改为 false 继续。
+根元素 data-motion="off" 禁用动画并显示完整的静态表情。
+prefers-reduced-motion 会自动禁用内联 SVG 动画；预览页在后台隐藏时暂停。
+
+外部图片
+不要只依赖外部 SVG 自身的媒体查询。在宿主页面使用 picture 选择明确的静态替代文件：
+
+<picture>
+  <source media="(prefers-reduced-motion: reduce)"
+          srcset="static/omi-curious-black.svg">
+  <img src="omi-curious-black.svg" width="80" height="80" alt="Omi · 疑惑">
+</picture>
+
+矢量编辑器可能只展示静态轮廓；请在浏览器中查看 CSS 动画。
+所有动画缓动均为 cubic-bezier(.22,1,.36,1)，主要动作段约 0.24 秒，循环包含停留时间。
+generate.mjs 使用 Node.js 标准库，从 ../svg/ 读取统一 O 形母版；素材本身不依赖生成器。
+
+验证
+Chromium 153.0.8010.12：24 个动画 SVG 多时间点变化、透明像素、边界检查通过。
+已验证暂停、重播、手动静态模式、系统减少动态效果、picture 静态替代及恢复、390px 预览布局。
+已目视检查黑白预览；verification.json 保存实际检查记录。
+未在其他浏览器或原生 WebView 验收。本轮未修改应用代码、替换生产资源、构建或发布。

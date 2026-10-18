@@ -1,0 +1,18 @@
+{
+  "license": "OFL-1.1",
+  "version": "3.052",
+  "files": [
+    {
+      "source": "https://raw.githubusercontent.com/adobe-fonts/source-sans/ed1808970eb3c7301c9a523bee26473ba0bb62fa/WOFF2/VF/SourceSans3VF-Upright.ttf.woff2",
+      "sha256": "5f16566f7a40d39b339ad26be151fa5a1ab1f0c2574c7a2e619765584a1acbd8",
+      "file": "SourceSans3VF-Upright.ttf.woff2"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/adobe-fonts/source-sans/ed1808970eb3c7301c9a523bee26473ba0bb62fa/WOFF2/VF/SourceSans3VF-Italic.ttf.woff2",
+      "sha256": "b4959abc0569392f87c6c6ac612f90e3fe0104d283724189b7d8b6f61af347d3",
+      "file": "SourceSans3VF-Italic.ttf.woff2"
+    }
+  ],
+  "upstream": "https://github.com/adobe-fonts/source-sans/tree/ed1808970eb3c7301c9a523bee26473ba0bb62fa",
+  "family": "Source Sans 3"
+}

@@ -1,0 +1,166 @@
+{
+  "source": "api_bank",
+  "status": "executable_adapted_subset",
+  "seed": 17,
+  "imported_original_records": 534,
+  "imported_by_split": {
+    "level-1-api": 399,
+    "level-2-api": 135
+  },
+  "eligible_after_native_replay": 205,
+  "executable_variants": 32,
+  "distinct_upstream_problems": 32,
+  "distinct_dialogues": 32,
+  "distinct_target_apis": 32,
+  "categories": {
+    "calendar_and_reminders": 14,
+    "travel_and_finance_fixtures": 3,
+    "health_records_and_appointments": 5,
+    "smart_home": 1,
+    "document_and_knowledge_lookup": 3,
+    "medical_knowledge_fixture_lookup": 2,
+    "media_fixture_tools": 3,
+    "arithmetic": 1
+  },
+  "context_kinds": {
+    "multi_turn_context": 27,
+    "short_context": 5
+  },
+  "history_api_counts": {
+    "1": 18,
+    "0": 12,
+    "2": 2
+  },
+  "exclusion_counts": {
+    "native_replay_or_schema_mismatch": 14,
+    "non_whitelisted_target_or_history": 107,
+    "mock_authentication_support_only_not_target": 73,
+    "ToolSearcher_requires_embedding_model_excluded_no_replacement_metric": 135,
+    "seed17_stratified_not_selected": 173
+  },
+  "deduplication": "split+file+id and canonical raw-record SHA256 before sampling",
+  "sampling": "sort IDs, seed17 shuffle within API strata, shuffled category round robin, max one per API and dialogue, cap32",
+  "data": {
+    "url": "https://huggingface.co/datasets/liminghao1630/API-Bank",
+    "revision": "12e8158b7628c168f07e8f31fbbe3445e99f44cf",
+    "license": "MIT (publisher dataset card, bundled verbatim)",
+    "files": [
+      {
+        "path": "raw/level-1-api.json",
+        "sha256": "0d3155c5495399836b5b1f1cc4eb6d5d50efa16b2734af50a016a158e9dd79bb",
+        "records": 399
+      },
+      {
+        "path": "raw/level-2-api.json",
+        "sha256": "c61966448d9d5cf98334f39b44c0db1fe5a9c6c84a1f53e652f4aacdbbfc5da0",
+        "records": 135
+      }
+    ],
+    "card_sha256": "3e0e15fa0c5cc81675bd69af8eb469d128a725c1a7bfc71f03b7877b7b650567",
+    "mapping": "raw/data_mapping.json: all399 level1 expected calls exactly match structured repository targets by prior-API ordinal; upstream README says lv1-lv2-samples and HF test-data contain the conversation data",
+    "license_evidence_limitation": "HF card declares MIT but provides no separate copyright/full license text; structured Git companion annotations mapped via publisher README and exact399 target correspondence, no separate data-specific Git license."
+  },
+  "code": {
+    "url": "https://github.com/AlibabaResearch/DAMO-ConvAI",
+    "revision": "f30ccf22b4e2617fab32958d4c03f5c1f2e7dfcf",
+    "license": "Apache-2.0",
+    "license_path": "LICENSE-CODE-APACHE-2.0.txt",
+    "runtime": "vendor/tool_manager.py retains five upstream methods verbatim, audited registry constructor and per-Episode deep copies",
+    "audit": "vendor_audit.json"
+  },
+  "initial_state": {
+    "path": "fixtures",
+    "files": [
+      {
+        "path": "fixtures/Account.json",
+        "sha256": "179761beb5b0ed6ed46f4e0c1e9aaafee2c57d81d068d5ee7432af1ea2856afb"
+      },
+      {
+        "path": "fixtures/Agenda.json",
+        "sha256": "6064f59450d0a604001dd49780d935c259d0316ac77c73a8e065d0c296855902"
+      },
+      {
+        "path": "fixtures/Alarm.json",
+        "sha256": "5b4892abb58bd04ac1aa83ac6073d66e7d54c0b347fed11b9e051d0a64a9b4d6"
+      },
+      {
+        "path": "fixtures/Appointments.json",
+        "sha256": "5f5ef14e2fd6d38c1aaa8a02074c49d58ac5dffd4c658959a7a9c077cf85744a"
+      },
+      {
+        "path": "fixtures/Bank.json",
+        "sha256": "bcb6d5f35b02ee0973663bf161b7ef33bfc50c8d03bca71fc7a52c7d3ba8366c"
+      },
+      {
+        "path": "fixtures/HealthData.json",
+        "sha256": "89cdbe228d1ff794d6baa763b782c370e8363426612fde8c17c3e628e92ffc71"
+      },
+      {
+        "path": "fixtures/History.json",
+        "sha256": "1cea80b1df7d9c8373666b2e5bb00515b07d9903d9b090d4983c50412874d734"
+      },
+      {
+        "path": "fixtures/Hotel.json",
+        "sha256": "53e5672479066658d58868a61ca329d6f892b81e6196bc041e40e3b8f89f957f"
+      },
+      {
+        "path": "fixtures/ImageCaptioning.json",
+        "sha256": "3bcdb311b3028dfb6f0d822542958b10b194488f623286d7c15f5f3368bd38d8"
+      },
+      {
+        "path": "fixtures/Meeting.json",
+        "sha256": "8d11d457dd1dd6610d036752640ed7b9e2cc9f5b1b71d82f352e4c2195be6935"
+      },
+      {
+        "path": "fixtures/QuestionAnswering.json",
+        "sha256": "aa7098462bd87ab69e8bb1c21394585384fcbe2c65bae1fe2d5f17f2848b6dca"
+      },
+      {
+        "path": "fixtures/Reminder.json",
+        "sha256": "c944fe6892a453525709aec20dc490247727c87881140769631f4b4174e9b305"
+      },
+      {
+        "path": "fixtures/Scenes.json",
+        "sha256": "0d20c733d724e346046c8f7298faa007c33063eb4d63f0adb4f99fb8cebca1b0"
+      },
+      {
+        "path": "fixtures/SearchEngine.json",
+        "sha256": "d42929cf13fbbc73b98d34dff2822065b6ed623d2f59576134bae235e670984f"
+      },
+      {
+        "path": "fixtures/SpeechRecognition.json",
+        "sha256": "8315b3fa57995986e3d3f126a72e9cc271a7553d953acd5b1ec8068912af0955"
+      },
+      {
+        "path": "fixtures/Stock.json",
+        "sha256": "02bb3b325366d17babc2f84d93fc817d47711addde05898b9969dcd8c8c984b5"
+      },
+      {
+        "path": "fixtures/Symptom.json",
+        "sha256": "ed96c682712d812e7f5c4d00e1f0cf317e7ee85485b62e5087f97725ae2a79d4"
+      },
+      {
+        "path": "fixtures/TimeSwitch.json",
+        "sha256": "c95a92bb01296c11c6cf5854990f8c2acc3d977ae11e4166073f8aa07a779fa6"
+      },
+      {
+        "path": "fixtures/Wiki.json",
+        "sha256": "4174fc92c03b02ebdb17797b131887abea71e19c07a0acad3dc46e4f10e5fad0"
+      }
+    ],
+    "source_scope": "complete upstream init_database at pinned code revision; repository-shipped mock fixtures under repository Apache-2.0 license"
+  },
+  "metric": "adapted_stateful_next_tool_continuation; upstream per-API checker AND native result AND database state AND trace authenticity AND structured final",
+  "not_covered": [
+    "full interactive end-to-end dialogue success",
+    "API-Bank level2 ToolSearcher retrieval and level3 planning",
+    "live external APIs or model-driven perception",
+    "official language response ROUGE or LLM judge",
+    "malformed/mismatched native records listed in exclusions"
+  ],
+  "runtime_dependencies": [
+    "Python >=3.10 standard library; validated on Python 3.14.4; upstream month/day parser needs revalidation for 3.15"
+  ],
+  "model_calls": 0,
+  "raw_dialogue_files": 214
+}

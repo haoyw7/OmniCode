@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "OmniCode",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 520,
+        "decorations": false,
+        "transparent": true,
+        "backgroundColor": "#17171a",
+        "backgroundThrottling": "throttle",
+        "shadow": true
+      }
+    ]
+  },
+  "bundle": {
+    "targets": [
+      "deb",
+      "appimage"
+    ],
+    "createUpdaterArtifacts": false,
+    "category": "DeveloperTool",
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      }
+    },
+    "resources": {
+      "../build/desktop-host/": "desktop-host/"
+    }
+  }
+}

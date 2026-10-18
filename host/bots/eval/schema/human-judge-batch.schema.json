@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "modelId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "protocolHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "rubricHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "humanAnchorVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "anchors": {
+      "minItems": 20,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reviews": {
+            "minItems": 2,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "scores": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "additionalProperties": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4
+                  }
+                },
+                "evidence": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "dimension": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "quote": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "dimension",
+                      "quote"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "rationale": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "scores",
+                "evidence",
+                "rationale"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "reviews"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "modelId",
+    "protocolHash",
+    "rubricHash",
+    "humanAnchorVersion",
+    "anchors"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,563 @@
+.mobile-settings {
+  --mobile-settings-inset: 16px;
+  --mobile-settings-icon: 30px;
+  --mobile-settings-gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding-bottom: calc(36px + var(--mobile-safe-bottom));
+  scrollbar-width: none;
+}
+.mobile-app .mobile-settings::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.mobile-settings-group {
+  flex-shrink: 0;
+  min-width: 0;
+}
+.mobile-settings-group h2 {
+  margin: 0 var(--mobile-settings-inset) 8px;
+  font-size: var(--mobile-font-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-settings-card {
+  overflow: hidden;
+  border-radius: var(--mobile-card-radius);
+  background: var(--mobile-card);
+}
+.mobile-settings-card > * {
+  position: relative;
+}
+.mobile-connection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--mobile-card-radius);
+  overflow: hidden;
+}
+.mobile-connection-list > li {
+  background: var(--mobile-card);
+  border-radius: 4px;
+}
+.mobile-settings-row.mobile-connection-row {
+  min-height: 88px;
+  padding: 18px var(--mobile-settings-inset);
+  font-size: var(--mobile-font-xl);
+}
+.mobile-connection-row > svg {
+  color: var(--color-m-ink);
+}
+.mobile-connection-row .mobile-settings-label {
+  gap: 6px;
+}
+.mobile-connection-row .mobile-settings-label small {
+  font-size: var(--mobile-font-md);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-connection-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-settings-row.mobile-connection-device {
+  padding-block: 0;
+}
+.mobile-connection-details {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  flex: 1;
+  min-width: 0;
+  gap: var(--mobile-settings-gap);
+  padding: 18px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.mobile-connection-details > svg { flex-shrink: 0; }
+.mobile-connection-details:focus-visible { outline: 2px solid var(--mobile-accent); outline-offset: 3px; }
+.mobile-connection-menu-name {
+  margin: 4px 12px 10px;
+  color: var(--color-m-ink-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-connection-menu .mobile-sheet-row { min-height: 48px; }
+.mobile-connection-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 4px 14px 16px;
+}
+.mobile-connection-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mobile-connection-editor-header h2 { margin: 0; font-size: 22px; font-weight: var(--font-weight-semibold); }
+.mobile-connection-name-field { position: relative; margin-top: 6px; }
+.mobile-connection-name-field > span {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  padding-inline: 5px;
+  background: var(--mobile-card);
+  font-size: var(--mobile-font-md);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-connection-name-field input {
+  min-height: 58px;
+  padding: 16px;
+  font-size: var(--mobile-font-xl);
+}
+.mobile-connection-icons { display: flex; justify-content: space-between; gap: 12px; }
+.mobile-connection-icons button {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  min-width: 44px;
+  height: 58px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-connection-icons button[aria-pressed="true"] {
+  background: var(--mobile-card);
+  color: var(--color-m-ink);
+}
+.mobile-connection-info { margin: 0; padding: 0 16px; border: 1px solid var(--mobile-separator); border-radius: 20px; }
+.mobile-connection-info > div { display: flex; justify-content: space-between; gap: 16px; padding-block: 16px; }
+.mobile-connection-info > div + div { border-top: 1px solid var(--mobile-separator); }
+.mobile-connection-info dt { flex-shrink: 0; }
+.mobile-connection-info dd { margin: 0; text-align: end; overflow-wrap: anywhere; min-width: 0; color: var(--color-m-ink-secondary); }
+.mobile-connection-editor-action { width: 100%; min-height: 48px; border-radius: 999px; justify-content: center; }
+
+.mobile-connection-row .mobile-host-status {
+  font: inherit;
+}
+.mobile-connection-row .mobile-host-status-dot {
+  display: none;
+}
+.mobile-connection-row .mobile-host-status-label {
+  max-width: none;
+  white-space: normal;
+  color: inherit;
+}
+.mobile-connection-status {
+  display: flex;
+  min-width: 0;
+}
+.mobile-connection-status > span { flex-shrink: 0; }
+.mobile-connection-status > .mobile-connection-address {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-connection-address::before { content: "\00a0·\00a0"; }
+/* Inset separators begin at the label, as in iOS lists. */
+.mobile-settings-card > * + *::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: calc(var(--mobile-settings-inset) + var(--mobile-settings-icon) + var(--mobile-settings-gap)) 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-m-hairline) 70%, transparent);
+  pointer-events: none;
+}
+.mobile-settings-footer {
+  margin: 12px var(--mobile-settings-inset) 0;
+  font-size: var(--mobile-font-md);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-settings-footer .mobile-form-error {
+  margin: 0 0 12px;
+}
+.mobile-defaults-status {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--mobile-separator);
+  border-radius: 18px;
+  background: var(--mobile-card);
+  color: var(--color-m-ink);
+  font-size: var(--mobile-font-md);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.mobile-defaults-status p { margin: 0 0 10px; }
+.mobile-defaults-status-heading { display: flex; align-items: center; gap: 8px; }
+.mobile-defaults-status-heading > svg { flex-shrink: 0; }
+.mobile-defaults-status strong { font-weight: var(--font-weight-medium); }
+.mobile-defaults-status [data-attention="true"] { color: var(--color-m-warning); }
+.mobile-defaults-status-issues { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.mobile-defaults-status-issues li { display: flex; flex-wrap: wrap; column-gap: 8px; }
+.mobile-defaults-status-issues small { width: 100%; font-size: inherit; color: var(--color-m-ink-secondary); }
+.mobile-defaults-status-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
+.mobile-defaults-status-details { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--color-m-ink-secondary); }
+
+.mobile-defaults-status-details:focus-visible { outline: 2px solid var(--mobile-accent); outline-offset: 3px; }
+.mobile-defaults-status-raw { display: grid; gap: 12px; margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--mobile-separator); }
+.mobile-defaults-status-raw dt { font-weight: var(--font-weight-medium); }
+.mobile-defaults-status-raw dd { margin: 2px 0 0; white-space: pre-wrap; color: var(--color-m-ink-secondary); }
+
+.mobile-settings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--mobile-settings-gap);
+  width: 100%;
+  min-height: 52px;
+  padding: 12px var(--mobile-settings-inset);
+  border: 0;
+  background: transparent;
+  color: var(--color-m-ink);
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.45;
+  text-align: left;
+}
+/* The shell's `button { font: inherit }` reset outranks the row size. */
+.mobile-app button.mobile-settings-row {
+  font-size: var(--mobile-font-lg);
+}
+button.mobile-settings-row:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-settings-row > svg {
+  flex-shrink: 0;
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-settings-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--mobile-settings-icon);
+  height: var(--mobile-settings-icon);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-settings-icon > svg {
+  width: 24px;
+  height: 24px;
+}
+/* The current computer leads the page like the iOS account card. */
+.mobile-settings-hero {
+  min-height: 78px;
+  padding-block: 12px;
+}
+.mobile-settings-hero .mobile-settings-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+}
+.mobile-settings-hero .mobile-current-host-name {
+  font-size: var(--mobile-font-xl);
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-settings-hero small {
+  font-size: var(--mobile-font-md);
+}
+.mobile-settings-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+.mobile-settings-label small,
+.mobile-settings-row small {
+  font-size: var(--mobile-font-md);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
+  color: var(--color-m-ink-secondary);
+  overflow-wrap: anywhere;
+}
+.mobile-settings-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--mobile-font-md);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-settings-action {
+  color: var(--mobile-accent);
+}
+.mobile-settings-row .mobile-select-trigger {
+  width: auto;
+  max-width: 42%;
+  min-width: 0;
+  min-height: 36px;
+  gap: 8px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  font-size: var(--mobile-font-lg);
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-settings-notifications label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 16px;
+  align-items: center;
+}
+.mobile-settings-notifications label > small {
+  grid-row: 2;
+  grid-column: 1 / -1;
+}
+.mobile-settings-notifications label > input {
+  grid-row: 1;
+  grid-column: 2;
+}
+/* Give account labels and long values their own lines on phone widths. */
+@media (max-width: 420px) {
+  .mobile-settings-row-stacked {
+    display: grid;
+    grid-template-columns: var(--mobile-settings-icon) minmax(0, 1fr);
+    row-gap: 4px;
+  }
+  .mobile-settings-row-stacked > .mobile-settings-icon {
+    grid-row: 1 / 3;
+  }
+  .mobile-settings-row-stacked > .mobile-settings-label,
+  .mobile-settings-row-stacked > .mobile-select-trigger {
+    grid-column: 2;
+  }
+  .mobile-settings-row-stacked > .mobile-select-trigger {
+    width: 100%;
+    max-width: 100%;
+    min-height: 32px;
+    padding: 4px 0;
+  }
+}
+.mobile-settings-note {
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: var(--mobile-font-sm);
+}
+.mobile-current-host > div {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.mobile-current-host strong,
+.mobile-settings-label strong {
+  font-weight: var(--font-weight-medium);
+}
+/* A row's current value reads as a subtitle under its name. */
+.mobile-settings-label > small.mobile-settings-value {
+  display: block;
+  gap: 0;
+  margin-top: -4px;
+  font-size: var(--mobile-font-md);
+  line-height: 1.4;
+}
+.mobile-settings .mobile-app-updates {
+  margin: 0;
+  padding: 16px;
+  border-radius: var(--mobile-card-radius);
+  background: var(--mobile-card);
+}
+.mobile-settings .mobile-app-updates h2 {
+  display: none;
+}
+.mobile-settings-slider {
+  align-items: flex-start;
+  padding-block: 16px 12px;
+}
+.mobile-settings-slider .mobile-settings-label {
+  gap: 8px;
+  padding-top: 5px;
+}
+.mobile-settings-slider-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mobile-settings-slider output {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-app input.mobile-range {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 28px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.mobile-app input.mobile-range:disabled {
+  opacity: 0.4;
+}
+.mobile-app input.mobile-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--mobile-accent) var(--mobile-range-value, 50%),
+    var(--color-m-control) var(--mobile-range-value, 50%)
+  );
+}
+.mobile-app input.mobile-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 1px 4px #0000004d,
+    0 0 0 0.5px #0000001f;
+}
+.mobile-app input.mobile-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-stroke);
+}
+.mobile-app input.mobile-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--mobile-accent);
+}
+.mobile-app input.mobile-range::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px #0000004d;
+}
+/* A live sample of the current material over a colorful scene. */
+.mobile-glass-preview {
+  height: 124px;
+  overflow: hidden;
+}
+.mobile-glass-preview-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  font-size: 34px;
+  font-weight: var(--font-weight-bold);
+  color: rgb(255 255 255 / 0.9);
+  text-shadow: 0 1px 2px #0003;
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.25) 0 2px, transparent 2px 18px),
+    radial-gradient(circle at 18% 30%, #ff6b8a, transparent 45%),
+    radial-gradient(circle at 82% 72%, #4facfe, transparent 50%),
+    radial-gradient(circle at 55% 8%, #ffd36b, transparent 45%),
+    linear-gradient(135deg, #7f5af0, #2cb1bc);
+}
+.mobile-glass-preview-chip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 54px;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  color: var(--color-m-ink);
+  transform: translate(-50%, -50%);
+}
+
+.mobile-home-session {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+}
+.mobile-home-session[aria-expanded="true"] {
+  background: var(--color-selection);
+}
+.mobile-session-menu-title {
+  margin: 4px 14px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-m-ink-secondary);
+  font-size: var(--mobile-font-md);
+}
+
+.mobile-accent-preview {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+.mobile-archive-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-archive-restore {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  font-size: var(--mobile-font-lg);
+}
+.mobile-archive-restore:disabled {
+  opacity: 0.4;
+}
+
+.mobile-about-version {
+  margin: 6px 12px 8px;
+  font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px));
+  color: var(--color-m-ink-secondary);
+}
+
+/* Popup menus: roomy rows with an icon, and the chosen row in the accent
+   colour rather than on a highlight, as in Claude Code on phones. */
+:where(.mobile-sheet-backdrop[data-placement="anchor"]) .mobile-sheet-row {
+  gap: 16px;
+  min-height: 52px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: calc(var(--mobile-font-xl) + var(--mobile-popup-font-step, 0px));
+}
+.mobile-sheet-row[aria-checked="true"] {
+  background: transparent;
+  color: var(--mobile-accent);
+}
+.mobile-sheet-row[aria-checked="true"] > svg {
+  color: var(--mobile-accent);
+}
+.mobile-sheet-backdrop[data-placement="anchor"] .mobile-sheet {
+  padding: 10px;
+  border-radius: 18px;
+}
+
+/* Reading sheets rest at half height and pull up to fill the screen. The
+   stylesheet owns the half stop; sheetDrag.ts writes the full or dragged one. */

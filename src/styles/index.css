@@ -1,0 +1,2183 @@
+@import "tailwindcss";
+@import "./desktop-theme.css";
+@import "./desktop-tokens.css";
+@import "../shared/styles/fonts.css";
+@import "../shared/styles/typography.css";
+@import "../shared/styles/icons.css";
+@import "./controls/forms.css";
+@import "./desktop-controls.css";
+@import "./desktop-workspaces.css";
+@import "../features/workflows/workflows.css";
+@import "./desktop-sidebar.css";
+@import "./desktop-navigation.css";
+@import "./desktop-conversation.css";
+@import "./controls/messaging.css";
+@import "../shared/styles/conversation.css";
+@source "../../node_modules/streamdown/dist/*.js";
+@source "../../node_modules/@streamdown/code/dist/*.js";
+@source "../../node_modules/@streamdown/mermaid/dist/*.js";
+
+@custom-variant dark (&:where(html:not(.theme-light), html:not(.theme-light) *));
+/* shadcn's Radix state variants, used by the ported ZCode switch. */
+@custom-variant data-checked (&:where([data-state="checked"], [data-checked]:not([data-checked="false"])));
+@custom-variant data-unchecked (&:where([data-state="unchecked"], [data-unchecked]:not([data-unchecked="false"])));
+
+@container settings (width < 560px) {
+  .settings-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .settings-row-control {
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+
+  .settings-row:has(> .settings-row-control > [data-ui="switch"]:only-child) {
+    flex-direction: row;
+    gap: 1.5rem;
+  }
+}
+
+@theme {
+  /* Preserve descenders in compact labels, including two 10px lines in a 30px tab. */
+  --leading-label: 1.4;
+  --color-background-base: hsl(
+    var(--theme-hue) var(--theme-saturation) var(--background-lightness)
+  );
+  --color-content: hsl(
+    var(--theme-hue) var(--theme-saturation) var(--content-lightness)
+  );
+  /* Structural separators: use border-stroke, divide-stroke, or bg-stroke. */
+  --color-stroke: color-mix(
+    in srgb,
+    var(--color-content) var(--stroke-strength),
+    transparent
+  );
+  /* ZCode (Zai) surface ladder, derived from the tint so hue settings apply. */
+  --color-window: var(--window-color);
+  --color-panel: var(--panel-color);
+  --color-card: var(--card-color);
+  --color-menu: var(--card-color);
+  --color-menu-hover: var(--menu-hover-color);
+  --color-surface: color-mix(
+    in srgb,
+    var(--color-content) var(--surface-strength),
+    transparent
+  );
+  --color-surface-hover: color-mix(
+    in srgb,
+    var(--color-content) var(--surface-hover-strength),
+    transparent
+  );
+  --color-border-hover: color-mix(
+    in srgb,
+    var(--color-content) calc(var(--stroke-strength) + 5%),
+    transparent
+  );
+  --color-foreground-subtle: color-mix(
+    in srgb,
+    var(--color-content) calc(60% + var(--contrast-offset, 0) * 20%),
+    transparent
+  );
+  --color-foreground-subtlest: color-mix(
+    in srgb,
+    var(--color-content) var(--subtlest-strength),
+    transparent
+  );
+  --color-brand: var(--brand-color);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-destructive: #ef4444;
+  /* Interactive fills keep their dark-theme contrast but use gentler ink in
+     light mode. Prefer these over content opacity for selected/raised UI. */
+  --color-selection-subtle: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-subtle-strength),
+    transparent
+  );
+  --color-selection: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-strength),
+    transparent
+  );
+  --color-selection-strong: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-strong-strength),
+    transparent
+  );
+  --color-selection-hover: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-hover-strength),
+    transparent
+  );
+  --color-selection-emphasis: color-mix(
+    in srgb,
+    var(--color-content) var(--selection-emphasis-strength),
+    transparent
+  );
+  --color-accent: var(--accent-color);
+  --color-skill: #e8c547;
+  --color-mention: #38bdf8;
+
+}
+
+/* ZCode component tokens used by the ported dynamic-workflow UI, derived from
+   Monocode's own tint so hue, contrast and light/dark settings apply. */
+@theme {
+  --tracking-wf-label: 0.09em;
+  --color-foreground: color-mix(in srgb, var(--color-content) 88%, transparent);
+  --color-foreground-inverse: var(--color-background-base);
+  --color-background: var(--color-background-base);
+  --color-border: var(--color-stroke);
+  --color-hover: var(--color-surface-hover);
+  --color-selected: var(--color-selection);
+  --color-card-border: var(--color-stroke);
+  --color-popover: var(--card-color);
+  --color-popover-foreground: var(--color-foreground);
+  --color-popover-border: var(--color-stroke);
+  --color-input: var(--card-color);
+  --color-input-focused: var(--card-color);
+  --color-input-border: var(--color-stroke);
+  --color-input-border-hover: var(--color-border-hover);
+  --color-input-border-focused: var(--color-brand);
+  --color-ring: var(--color-brand);
+  --color-primary: var(--color-content);
+  --color-primary-foreground: var(--color-background-base);
+  --color-secondary: var(--color-selection-strong);
+  --color-destructive-foreground: #ffffff;
+  --color-success: #16a34a;
+  --color-success-foreground: #ffffff;
+  --color-warning: #d97706;
+  --color-warning-foreground: #ffffff;
+  --color-workflow-rule: color-mix(in srgb, var(--color-content) 6%, transparent);
+  --color-workflow-trace: color-mix(in srgb, var(--color-content) 32%, transparent);
+  --color-workflow-trace-strong: color-mix(in srgb, var(--color-content) 57%, transparent);
+}
+
+
+:root {
+  --scrollbar-scale: 0.5;
+  --scrollbar-min-size: 6px;
+  --readonly-scrollbar-width: auto;
+  --motion-reorder-duration: 160ms;
+  --motion-tab-close-duration: 200ms;
+  --motion-feedback-duration: 120ms;
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-tab-ease-out: cubic-bezier(0.3333, 0.6667, 0.6667, 1);
+  --theme-hue: 240;
+  --theme-saturation: 0%;
+  --theme-dark-lightness: 9%;
+  --ui-font-size: 14px;
+  /* Settings → Appearance font sizes. The build rewrites every px and
+     --text-* font-size to scale by --font-scale; containers below choose
+     which of the three scales their text follows. */
+  --font-scale: var(--ui-font-scale, 1);
+  /* Zai Dark: #2b2b2b window frame, #161616 content panels, #202020 headers,
+     #2b2b2b cards and menus, #363636 menu hover. */
+  --window-color: hsl(
+    var(--theme-hue) var(--theme-saturation)
+      calc(var(--background-lightness) + 8.3%)
+  );
+  --panel-color: hsl(
+    var(--theme-hue) var(--theme-saturation)
+      calc(var(--background-lightness) + 3.9%)
+  );
+  --card-color: hsl(
+    var(--theme-hue) var(--theme-saturation)
+      calc(var(--background-lightness) + 8.3%)
+  );
+  --menu-hover-color: hsl(
+    var(--theme-hue) var(--theme-saturation)
+      calc(var(--background-lightness) + 11%)
+  );
+  /* Settings → Appearance → Contrast moves these around the stock values;
+     `--contrast-offset` is -1…1 and 0 by default. */
+  --stroke-strength: calc(10% + var(--contrast-offset, 0) * 6%);
+  --surface-strength: 5%;
+  --surface-hover-strength: 7%;
+  --subtlest-strength: calc(30% + var(--contrast-offset, 0) * 15%);
+  --brand-color: #ffffff;
+  --brand-foreground: #000000;
+  --accent-color: #4099ff;
+  --sidebar-opacity: 0.85;
+  --popover-opacity: 0.02;
+  --window-opacity: 1;
+  --panel-opacity: 1;
+  --chat-background-empty-opacity: 0.24;
+  --chat-background-session-opacity: 0.24;
+  --selection-subtle-strength: 5%;
+  --selection-strength: 10%;
+  --selection-strong-strength: 10%;
+  --selection-hover-strength: 7%;
+  --selection-emphasis-strength: 15%;
+  --background-lightness: var(--theme-dark-lightness);
+  --content-lightness: calc(83% + var(--contrast-offset, 0) * 12%);
+  --link-color: #4099ff;
+  --color-skill: #e8c547;
+  --color-mention: #38bdf8;
+  --color-markdown-heading: var(--color-content);
+}
+
+html {
+  color-scheme: dark;
+}
+
+html.theme-light {
+  /* Zai Light: #ececee window frame, #f8f8f8 content panels, white cards. */
+  --background-lightness: 97%;
+  --content-lightness: calc(15% - var(--contrast-offset, 0) * 10%);
+  --window-color: hsl(var(--theme-hue) var(--theme-saturation) 93%);
+  --panel-color: hsl(var(--theme-hue) var(--theme-saturation) 100%);
+  --card-color: hsl(var(--theme-hue) var(--theme-saturation) 100%);
+  --menu-hover-color: hsl(var(--theme-hue) var(--theme-saturation) 96%);
+  --stroke-strength: calc(10% + var(--contrast-offset, 0) * 6%);
+  --surface-strength: 3%;
+  --surface-hover-strength: 4%;
+  --subtlest-strength: calc(40% + var(--contrast-offset, 0) * 15%);
+  --brand-color: #000000;
+  --brand-foreground: #ffffff;
+  --accent-color: #0066dd;
+  --link-color: #0066dd;
+  --color-skill: #a07c10;
+  --color-mention: #0284c7;
+  --color-markdown-heading: var(--color-content);
+  --selection-subtle-strength: 3%;
+  --selection-strength: 5%;
+  --selection-strong-strength: 5%;
+  --selection-hover-strength: 4%;
+  --selection-emphasis-strength: 10%;
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: var(--color-window);
+  color: var(--color-content);
+  overflow: hidden;
+  overscroll-behavior: none;
+  user-select: none;
+}
+
+/* Linux/Windows: explicit sans. macOS keeps default text rendering. */
+html:not(.is-mac),
+html:not(.is-mac) body,
+html:not(.is-mac) #root {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-weight: var(--ui-font-weight, var(--default-ui-font-weight, 500));
+}
+
+/* Tint-less transparent rather than `transparent`, which browsers interpolate
+   through black and would dim the page on the way in and out of glass. */
+html.has-native-glass:not(.theme-light),
+html.has-native-glass:not(.theme-light) body,
+html.has-native-glass:not(.theme-light) #root {
+  background: color-mix(in srgb, var(--color-background-base) 0%, transparent);
+}
+
+.reorder-item {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.reorder-item:is([data-dragging], [data-settling]) {
+  z-index: 10;
+}
+
+/* Preserve the sortable slot while its preview follows the pointer in the body. */
+.reorder-item[data-reorder-floating] {
+  opacity: 0;
+}
+
+/* Long sidebar lists promote layers only while a gesture is moving them. */
+.session-reorder-item:not([data-reordering], [data-dragging], [data-settling]),
+.sidebar-pinned-entry:not([data-reordering], [data-dragging], [data-settling]) {
+  transform: none;
+  will-change: auto;
+}
+
+.tab-motion,
+.tab-motion > button,
+.surface-tab {
+  transition:
+    background-color var(--motion-feedback-duration) var(--motion-ease-out), border-color var(--motion-feedback-duration) var(--motion-ease-out), box-shadow var(--motion-feedback-duration) var(--motion-ease-out), color var(--motion-feedback-duration) var(--motion-ease-out), opacity var(--motion-feedback-duration) var(--motion-ease-out);
+}
+
+/* Shared chrome for workspace, document and navigation tabs. */
+.surface-tab {
+  align-self: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-foreground-subtle);
+}
+
+.surface-tab:hover {
+  background: var(--color-surface);
+  color: var(--color-content);
+}
+
+.surface-tab:is(
+  [aria-selected="true"],
+  [data-selected="true"]
+) {
+  background: var(--color-surface-hover);
+  color: var(--color-content);
+}
+
+/* ZCode segmented toggle: a pill track with a background-colored thumb. */
+.sidebar-segment {
+  position: relative;
+}
+
+/* The selected button carries its own fill while its wrapper is being dragged. */
+
+.sidebar-segment .surface-tab {
+  border: 0;
+  border-radius: 9999px;
+}
+
+.sidebar-segment .surface-tab:is([aria-selected="true"], [data-selected="true"]),
+.sidebar-segment .workspace-tab > .surface-tab[aria-selected="true"]:hover {
+  background: transparent;
+  color: var(--color-content);
+}
+
+.sidebar-segment[data-reordering] .workspace-tab > .surface-tab[aria-selected="true"] {
+  background: var(--color-background-base);
+}
+
+.sidebar-segment .workspace-tab:not([data-reordering])
+  > button:not([aria-selected="true"]):hover {
+  background: transparent;
+  color: var(--color-content);
+}
+
+[data-tab-slot-id]:has(
+  .surface-tab[aria-selected="false"]
+)::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: calc(50% - 6px);
+  height: 12px;
+  width: 1px;
+  background: color-mix(in srgb, var(--color-content) 22%, transparent);
+  pointer-events: none;
+}
+
+.tab-motion[data-reordering] [data-no-drag] {
+  visibility: hidden;
+}
+
+.tab-closing,
+.tab-opening {
+  overflow: hidden;
+  flex-basis: auto;
+  flex-grow: 0;
+  width: var(--tab-slot-width, 14rem);
+  min-width: var(--tab-slot-min-width, 0);
+  margin-right: 0;
+  box-sizing: border-box;
+}
+
+.tab-opening {
+  --tab-slot-min-width: 7rem;
+  flex-shrink: 1;
+}
+
+.tab-closing {
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.tab-closing[data-collapsed],
+.tab-opening[data-collapsed] {
+  width: 0;
+  min-width: 0;
+  margin-right: -0.125rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .tab-motion,
+  .tab-motion > button,
+  .surface-tab {
+    transition: none;
+  }
+
+  .tab-closing,
+  .tab-opening {
+    transition: none;
+  }
+
+  .tab-closing {
+    display: none;
+  }
+}
+
+.workspace-tab:not([data-reordering])
+  > button:not([aria-selected="true"]):hover,
+.workspace-tab[data-dragging] > button:not([aria-selected="true"]),
+.project-reorder-item:not([data-reordering], [data-selected]):hover {
+  background: var(--color-surface-hover);
+  color: var(--color-content);
+}
+
+.reorder-item:is([data-dragging], [data-settling]) > .project-tree-header,
+[data-sidebar-reorder-section]:is([data-dragging], [data-settling]) [data-sidebar-section-header],
+.sidebar-pinned-entry:is([data-dragging], [data-settling]) [data-session-card],
+.session-reorder-item:is([data-dragging], [data-settling]) [data-session-card],
+.project-reorder-item:is([data-dragging], [data-settling]) {
+  background: var(--color-background-base);
+  box-shadow: 0 0 0 1px var(--color-stroke) inset, var(--shadow-lg);
+  cursor: grabbing;
+}
+
+.reorder-item:is([data-dragging], [data-settling]) > .project-tree-header > button,
+[data-sidebar-reorder-section]:is([data-dragging], [data-settling]) [data-sidebar-section-toggle],
+.project-reorder-item:is([data-dragging], [data-settling]) > button {
+  cursor: grabbing;
+}
+
+/* Keep project controls from appearing as rows pass beneath the pointer. */
+[data-sidebar-reorder-section][data-reordering] [data-sidebar-section-header] > :not([data-sidebar-section-toggle]),
+.project-reorder-item[data-reordering] [data-no-drag],
+.sidebar-pinned-entry[data-reordering] [data-no-drag],
+.session-reorder-item[data-reordering] [data-no-drag],
+.reorder-item[data-reordering] .project-tree-header [data-no-drag] {
+  visibility: hidden;
+}
+
+/* Keep the avatar/hover-chevron swap visible while the disclosure is inactive. */
+.reorder-item[data-reordering] > .project-tree-header [data-project-avatar],
+.reorder-item[data-reordering] > .project-tree-header [data-project-chevron] {
+  visibility: visible;
+  pointer-events: none;
+}
+
+.project-reorder-item[data-reordering] > button:first-of-type {
+  padding-right: 0;
+}
+
+.project-reorder-item[data-reordering] .project-card-logo {
+  opacity: 1;
+}
+
+.project-reorder-item[data-reordering] .project-card-stats {
+  display: flex;
+}
+
+[data-project-group-header][data-project-group-drop-target] {
+  background: var(--color-selection);
+  box-shadow: 0 0 0 1px var(--color-border-hover) inset;
+  color: var(--color-content);
+  opacity: 1;
+}
+
+[data-sidebar-pin-drop-target] {
+  background: var(--color-selection-subtle);
+  box-shadow: 0 0 0 1px var(--color-border-hover) inset;
+  border-radius: 8px;
+}
+
+/* ZCode: the sidebar and window chrome sit directly on the window frame. */
+.sidebar-glass,
+.shell-chrome {
+  background: var(--color-window);
+}
+
+/* Window opacity scales every surface; listed before .sidebar-glass so the
+   activity bar, which is both, keeps the sidebar treatment. */
+html.has-native-glass:not(.theme-light) .shell-chrome,
+html.has-native-glass:not(.theme-light):not(.glass-body) .body-glass,
+html.has-native-glass:not(.theme-light) .pane-card-gutter {
+  background: color-mix(
+    in srgb,
+    var(--color-window) calc(var(--window-opacity) * 100%),
+    transparent
+  );
+}
+
+html.has-native-glass:not(.theme-light) .sidebar-glass {
+  background: hsl(
+    var(--theme-hue) var(--theme-saturation) var(--background-lightness) /
+      calc(var(--sidebar-opacity) * var(--window-opacity))
+  );
+}
+
+html.has-native-glass:not(.theme-light) .pane-card {
+  background: color-mix(
+    in srgb,
+    var(--color-background-base) calc(var(--window-opacity) * 100%),
+    transparent
+  );
+}
+
+/* The activity dot sits at (23px, 9px) in a 32px button. Its icon is
+   centered at (8px, 8px), so this cuts a 2px gap around the 6px dot. */
+.compact-rail-icon-with-dot {
+  -webkit-mask-image: radial-gradient(
+    circle at 15px 1px,
+    transparent 5px,
+    black 5.5px
+  );
+  mask-image: radial-gradient(circle at 15px 1px, transparent 5px, black 5.5px);
+}
+
+.body-glass {
+  background: var(--color-window);
+}
+
+/*
+ * Full-window background: one backdrop behind the whole shell replaces the
+ * per-pane copies (project backgrounds stay in their panes). Two independent
+ * controls:
+ *   - image strength mixes the artwork over the theme colour inside the
+ *     backdrop (--chat-background-empty-opacity);
+ *   - Desktop transparency fades the backdrop as a whole under glass
+ *     (--window-opacity), keeping that mix intact.
+ * Interface surfaces add no fill of their own on top, apart from the
+ * sidebar's tint, so neither control changes what the other shows.
+ * `:root` outranks the glass rules that tint these surfaces elsewhere.
+ */
+.window-chat-background {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--color-background-base);
+  opacity: 0;
+}
+
+.window-chat-background::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--chat-background-image, none);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: var(--chat-background-empty-opacity);
+}
+
+.window-chat-background > .gradient-blur-background {
+  display: none;
+  position: absolute;
+  inset: 0;
+  opacity: var(--chat-background-empty-opacity);
+}
+
+html.chat-background-window.has-chat-background .window-chat-background {
+  display: block;
+}
+
+html.chat-background-window.chat-background-gradient-blur
+  .window-chat-background::before {
+  background-image: none;
+}
+
+html.chat-background-window.chat-background-gradient-blur
+  .window-chat-background
+  > .gradient-blur-background {
+  display: block;
+}
+
+html.chat-background-window.has-chat-background.chat-background-effect-ready
+  .window-chat-background {
+  opacity: 1;
+}
+
+html.has-native-glass:not(.theme-light).chat-background-window.has-chat-background.chat-background-effect-ready
+  .window-chat-background {
+  opacity: var(--window-opacity);
+}
+
+html.chat-background-window
+  .chat-pane-background[data-project-chat-background="false"]::before,
+html.chat-background-window
+  .chat-pane-background[data-project-chat-background="false"]
+  > .gradient-blur-background {
+  display: none;
+}
+
+:root.chat-background-window.has-chat-background.chat-background-effect-ready
+  :is(.app-shell-root, .shell-chrome, .body-glass, .pane-card, .pane-card-gutter) {
+  background: transparent;
+}
+
+/* The sidebar keeps a tint of its own over the backdrop to stay distinct;
+   under glass it fades with the rest of the window. */
+:root.chat-background-window.has-chat-background.chat-background-effect-ready
+  .sidebar-glass {
+  background: color-mix(
+    in srgb,
+    var(--color-background-base) calc(var(--sidebar-opacity) * 100%),
+    transparent
+  );
+}
+
+:root.has-native-glass:not(.theme-light).chat-background-window.has-chat-background.chat-background-effect-ready
+  .sidebar-glass {
+  background: color-mix(
+    in srgb,
+    var(--color-background-base)
+      calc(var(--sidebar-opacity) * var(--window-opacity) * 100%),
+    transparent
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .window-chat-background {
+    transition-duration: 0ms;
+  }
+}
+
+/*
+ * While a project switch renders, the previous project stays on screen. Dim it
+ * after a short delay so quick switches never flash; restore immediately.
+ */
+
+.project-switch-surface[data-project-switching] {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-switch-surface,
+  .project-switch-surface[data-project-switching] {
+    transition-duration: 0ms;
+  }
+}
+
+html.has-native-glass.glass-body:not(.theme-light) .body-glass {
+  background: color-mix(
+    in srgb,
+    var(--color-background-base)
+      calc(var(--sidebar-opacity) * var(--window-opacity) * 100%),
+    transparent
+  );
+}
+
+.workspace-surface[aria-hidden="true"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+html.is-reordering,
+html.is-reordering * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+html.is-explorer-file-dragging,
+html.is-explorer-file-dragging * {
+  cursor: grabbing !important;
+}
+
+.explorer-file-drag-preview {
+  position: fixed !important;
+  inset: 0 auto auto 0 !important;
+  z-index: 2147483647;
+  display: flex !important;
+  width: max-content !important;
+  max-width: min(280px, calc(100vw - 16px));
+  height: 26px !important;
+  align-items: center;
+  gap: 6px;
+  margin: 0 !important;
+  padding: 0 9px 0 7px !important;
+  overflow: hidden;
+  pointer-events: none !important;
+  border: 1px solid color-mix(in srgb, var(--color-content) 12%, transparent);
+  border-radius: 5px;
+  background: color-mix(
+    in srgb,
+    var(--color-background-base) 96%,
+    var(--color-content) 4%
+  ) !important;
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 18%),
+    0 1px 2px rgb(0 0 0 / 20%);
+  color: var(--color-content) !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+  opacity: 0.94 !important;
+  will-change: transform;
+  contain: paint;
+}
+
+.explorer-file-drag-preview > span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+html.theme-light .explorer-file-drag-preview {
+  background: var(--color-background-base) !important;
+  opacity: 1 !important;
+}
+
+/* Native resize geometry; capture listeners leave controls and scrollbars exposed. */
+[data-window-resize-handles] {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  --window-resize-edge: 10px;
+  --window-resize-corner: 16px;
+}
+
+[data-window-resize-direction] {
+  position: absolute;
+  pointer-events: none;
+  touch-action: none;
+  user-select: none;
+}
+
+[data-window-resize-direction="North"],
+[data-window-resize-direction="South"] {
+  left: var(--window-resize-corner);
+  right: var(--window-resize-corner);
+  height: var(--window-resize-edge);
+  cursor: ns-resize;
+}
+
+[data-window-resize-direction="North"] {
+  top: 0;
+}
+
+[data-window-resize-direction="South"] {
+  bottom: 0;
+}
+
+[data-window-resize-direction="East"],
+[data-window-resize-direction="West"] {
+  top: var(--window-resize-corner);
+  bottom: var(--window-resize-corner);
+  width: var(--window-resize-edge);
+  cursor: ew-resize;
+}
+
+[data-window-resize-direction="East"] {
+  right: 0;
+}
+
+[data-window-resize-direction="West"] {
+  left: 0;
+}
+
+[data-window-resize-direction="NorthWest"],
+[data-window-resize-direction="NorthEast"],
+[data-window-resize-direction="SouthWest"],
+[data-window-resize-direction="SouthEast"] {
+  width: var(--window-resize-corner);
+  height: var(--window-resize-corner);
+}
+
+[data-window-resize-direction="NorthWest"],
+[data-window-resize-direction="NorthEast"] {
+  top: 0;
+}
+
+[data-window-resize-direction="SouthWest"],
+[data-window-resize-direction="SouthEast"] {
+  bottom: 0;
+}
+
+[data-window-resize-direction="NorthWest"],
+[data-window-resize-direction="SouthWest"] {
+  left: 0;
+}
+
+[data-window-resize-direction="NorthEast"],
+[data-window-resize-direction="SouthEast"] {
+  right: 0;
+}
+
+[data-window-resize-direction="NorthWest"],
+[data-window-resize-direction="SouthEast"] {
+  cursor: nwse-resize;
+}
+
+[data-window-resize-direction="NorthEast"],
+[data-window-resize-direction="SouthWest"] {
+  cursor: nesw-resize;
+}
+
+/* Grow into the next pane so the preceding pane's scrollbar stays at its edge. */
+.resize-handle {
+  position: absolute;
+  z-index: 20;
+  touch-action: none;
+  user-select: none;
+}
+
+.resize-handle::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.resize-handle::after {
+  border-radius: 9999px;
+  transition: background-color var(--motion-feedback-duration)
+    var(--motion-ease-out);
+}
+
+.resize-handle:hover::after {
+  background: color-mix(
+    in srgb,
+    var(--color-foreground-subtlest) 50%,
+    transparent
+  );
+}
+
+.resize-handle:active::after,
+.resize-handle[data-dragging]::after {
+  background: var(--color-foreground-subtlest);
+}
+
+.resize-handle[data-resize-edge="left"],
+.resize-handle[data-resize-edge="right"] {
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  cursor: col-resize;
+}
+
+.resize-handle[data-resize-edge="left"] {
+  left: 0;
+}
+
+.resize-handle[data-resize-edge="right"] {
+  right: -16px;
+}
+
+.resize-handle[data-resize-edge="left"]::after,
+.resize-handle[data-resize-edge="right"]::after {
+  top: 50%;
+  left: -1px;
+  width: 4px;
+  height: 56px;
+  transform: translateY(-50%);
+}
+
+.resize-handle[data-resize-edge="top"],
+.resize-handle[data-resize-edge="bottom"] {
+  left: 0;
+  right: 0;
+  height: 16px;
+  cursor: row-resize;
+}
+
+.resize-handle[data-resize-edge="top"] {
+  top: 0;
+}
+
+.resize-handle[data-resize-edge="bottom"] {
+  bottom: -16px;
+}
+
+.resize-handle[data-resize-edge="top"]::after,
+.resize-handle[data-resize-edge="bottom"]::after {
+  top: -1px;
+  left: 50%;
+  width: 56px;
+  height: 4px;
+  transform: translateX(-50%);
+}
+
+.resize-handle.resize-handle-centered::after {
+  top: 6px;
+}
+
+/* Raise only the pills: the row's top clearance remains a continuous resize strip. */
+[data-project-terminal-dock="bottom"] .tab-motion {
+  height: calc(var(--spacing) * 7.5);
+  align-self: center;
+  z-index: 21;
+}
+
+.composer-toolbar {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+/* ZCode draft composer tokens, expressed in Monocode's theme colors. */
+:root {
+  --composer-input: var(--color-card);
+  --composer-surface: var(--color-surface);
+  --composer-border: var(--color-stroke);
+  --composer-border-hover: var(--color-border-hover);
+  --composer-hover: var(--color-surface);
+  --composer-muted: color-mix(in srgb, var(--color-content) 45%, transparent);
+  --composer-placeholder: color-mix(
+    in srgb,
+    var(--color-content) 30%,
+    transparent
+  );
+}
+
+html.theme-light {
+  --composer-placeholder: color-mix(
+    in srgb,
+    var(--color-content) 40%,
+    transparent
+  );
+}
+
+[data-composer-layout="desktop"] .composer-surface-with-workspace {
+  border-radius: 16px;
+  background: color-mix(
+    in srgb,
+    var(--composer-surface) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 5%),
+    0 8px 10px -6px rgb(0 0 0 / 5%);
+}
+
+[data-composer-layout="desktop"] .composer-workspace-bar {
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 6px 6px 6px 12px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+[data-composer-layout="desktop"] .composer-workspace-bar > div > button {
+  height: 28px;
+  min-width: 0;
+  gap: 6px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: var(--composer-muted);
+  transition:
+    background-color var(--motion-feedback-duration), color var(--motion-feedback-duration);
+}
+
+[data-composer-layout="desktop"] .composer-workspace-bar > div > button:hover {
+  background: var(--composer-hover);
+  color: var(--color-content);
+}
+
+[data-composer-layout="desktop"] .composer-workspace-trigger {
+  display: flex;
+  align-items: center;
+  max-width: 240px;
+  padding-left: 12px !important;
+  color: var(--color-content) !important;
+}
+
+[data-composer-layout="desktop"] .composer-workspace-trigger[data-clearable] {
+  padding-left: 32px !important;
+}
+
+[data-composer-layout="desktop"] .composer-workspace-bar > div > button.cwd-picker-clear {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  transform: translateY(-50%);
+}
+
+[data-composer-layout="desktop"] .composer-workspace-bar button span {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+[data-composer-layout="desktop"] [data-ui="message-input"] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  border-color: var(--composer-border);
+  background: color-mix(
+    in srgb,
+    var(--composer-input) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+  box-shadow: none;
+  backdrop-filter: none;
+  transition:
+    background-color var(--motion-feedback-duration), border-color var(--motion-feedback-duration);
+}
+
+[data-composer-layout="desktop"] [data-ui="message-input"]:hover,
+[data-composer-layout="desktop"] [data-ui="message-input"]:focus-within {
+  border-color: var(--composer-border-hover);
+}
+
+html.has-user-accent
+  [data-composer-layout="desktop"]
+  [data-ui="message-input"]:focus-within,
+[data-composer-layout="desktop"]
+  [data-ui="message-input"][data-composer-file-drag] {
+  border-color: var(--user-accent-color, var(--color-accent));
+}
+
+/* Desktop question panel docked above the composer. */
+.question-dock {
+  border-color: var(--composer-border);
+  border-radius: 16px;
+  background: color-mix(
+    in srgb,
+    var(--composer-input) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+  color: var(--color-content);
+}
+
+.question-dock [data-question-dock-mark] {
+  border-color: var(--composer-border);
+  background: var(--composer-surface);
+  color: var(--composer-muted);
+  transition:
+    background-color var(--motion-feedback-duration), border-color var(--motion-feedback-duration), color var(--motion-feedback-duration);
+}
+
+.question-dock [data-question-dock-option][aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-content) 5%, transparent);
+}
+
+.question-dock [data-question-dock-option][aria-pressed="true"] [data-question-dock-mark] {
+  border-color: var(--user-accent-color, var(--color-accent));
+  background: var(--user-accent-color, var(--color-accent));
+  color: #fff;
+}
+
+.question-dock .question-dock-skip {
+  border-color: var(--composer-border);
+  background: transparent;
+  color: var(--color-content);
+  transition: background-color var(--motion-feedback-duration);
+}
+
+.question-dock .question-dock-skip:enabled:hover {
+  background: var(--composer-hover);
+}
+
+.question-dock .question-dock-submit {
+  background: var(--user-accent-color, var(--color-accent));
+  color: #fff;
+  transition:
+    background-color var(--motion-feedback-duration);
+}
+
+.question-dock .question-dock-submit:enabled:hover {
+  opacity: 0.88;
+}
+
+.question-dock .question-dock-submit:disabled {
+  cursor: not-allowed;
+  background: color-mix(in srgb, var(--color-content) 18%, transparent);
+  color: color-mix(in srgb, var(--color-content) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .question-dock :is([data-question-dock-mark], .question-dock-skip, .question-dock-submit) {
+    transition: none;
+  }
+}
+
+[data-composer-layout="desktop"] [data-ui="message-input"].edit-last-turn-composer {
+  border-color: color-mix(
+    in srgb,
+    var(--user-accent-color, var(--color-accent)) 32%,
+    transparent
+  );
+}
+
+[data-composer-layout="desktop"] .composer-file-drop {
+  border-radius: inherit;
+}
+
+[data-composer-layout="desktop"] :is(.composer-field, .composer-highlight) {
+  min-height: 40px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+[data-composer-layout="desktop"] .composer-field::placeholder {
+  color: var(--composer-placeholder);
+  -webkit-text-fill-color: var(--composer-placeholder);
+}
+
+[data-composer-layout="compact"] .composer-toolbar {
+  contain: inline-size;
+}
+
+[data-composer-layout="desktop"] .composer-attachments,
+[data-composer-layout="desktop"] .composer-paste-error {
+  padding: 0;
+}
+
+/* The shell's flex gap belongs to the folding row, so it opens from zero. */
+[data-composer-layout="desktop"] .composer-attachments-collapse {
+  margin-bottom: -12px;
+}
+
+[data-composer-layout="desktop"] .composer-attachments {
+  padding-bottom: 12px;
+}
+
+[data-composer-layout="desktop"]
+  .composer-attachments
+  .attachment-chip-thumbnail,
+.assistant-attachments .attachment-chip-thumbnail {
+  width: 72px;
+  height: 72px;
+}
+
+[data-composer-layout="desktop"] .composer-footer {
+  padding: 0;
+  gap: 4px;
+  min-height: 28px;
+}
+
+[data-composer-layout="desktop"] .composer-toolbar {
+  gap: 12px;
+}
+
+[data-composer-layout="desktop"] .composer-leading-controls > button,
+[data-composer-layout="desktop"]
+  .composer-footer
+  :is(
+    [data-access-picker-trigger],
+    [data-model-picker-trigger],
+    button[data-model-control]
+  ) {
+  height: 28px;
+  gap: 4px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-content);
+  font-size: 14px;
+  line-height: 20px;
+  transition:
+    background-color var(--motion-feedback-duration), color var(--motion-feedback-duration);
+}
+
+[data-composer-layout="desktop"]
+  .composer-footer
+  :is(
+    [data-access-picker-trigger],
+    [data-model-picker-trigger],
+    button[data-model-control]
+  )
+  > span {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+[data-composer-layout="desktop"]
+  .composer-footer
+  :is(
+    [data-access-picker-trigger],
+    [data-model-picker-trigger],
+    button[data-model-control]
+  )
+  > svg:first-child {
+  width: 16px;
+  height: 16px;
+}
+
+[data-composer-layout="desktop"]
+  .composer-footer
+  :is(
+    [data-access-picker-trigger],
+    [data-model-picker-trigger],
+    button[data-model-control]
+  )
+  > svg:last-child {
+  width: 14px;
+  height: 14px;
+}
+
+[data-composer-layout="desktop"]
+  .composer-footer
+  :is(
+    [data-access-picker-trigger],
+    [data-model-picker-trigger],
+    button[data-model-control]
+  ):is(:hover, [aria-expanded="true"]) {
+  background: var(--composer-hover);
+}
+
+[data-composer-layout="desktop"] .composer-footer > div:first-child > button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-content);
+}
+
+[data-composer-layout="desktop"]
+  .composer-footer
+  > div:first-child
+  > button:is(:hover, [aria-expanded="true"]) {
+  background: var(--composer-hover);
+}
+
+[data-composer-layout="desktop"]
+  .composer-footer
+  :is(.composer-send, .composer-stop) {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+[data-composer-layout="desktop"] .composer-send > svg {
+  width: 16px;
+  height: 16px;
+}
+
+[data-composer-layout="desktop"] .composer-stop {
+  background: var(--color-selection);
+  color: var(--color-content);
+}
+
+[data-composer-layout="desktop"] .composer-stop:hover {
+  background: var(--color-selection-hover);
+}
+
+.composer-popover {
+  border: 1px solid var(--composer-border);
+  border-radius: 8px;
+  background: color-mix(
+    in srgb,
+    var(--composer-input) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+  color: var(--color-content);
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 10%),
+    0 2px 4px -2px rgb(0 0 0 / 10%);
+  opacity: 1;
+  transform: none;
+}
+
+.composer-popover.popover-open {
+  animation: none;
+}
+
+.composer-popover:is([data-fold-state="closing"], [data-fold-state="closed"]) {
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+  pointer-events: none;
+}
+
+@starting-style {
+  .composer-popover {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+.composer-popover > button,
+.composer-popover-gutter > button,
+.composer-popover button[role="menuitemradio"] {
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.composer-popover button:is(:hover, .bg-selection) {
+  background: var(--composer-hover);
+}
+
+.composer-action-menu {
+  border-radius: 16px;
+  max-height: min(480px, calc(100vh - 24px));
+  overflow-y: auto;
+}
+
+.composer-action-menu > p,
+.composer-action-menu > .composer-popover-gutter > p {
+  padding: 6px 8px;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.composer-action-menu > button,
+.composer-action-menu > .composer-popover-gutter > button {
+  min-height: 32px;
+  gap: 8px;
+  padding: 8px;
+}
+
+.composer-action-menu > button > span > span:first-child,
+.composer-action-menu > .composer-popover-gutter > button > span > span:first-child {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.composer-action-menu > button > span > span:last-child:not(:first-child),
+.composer-action-menu > .composer-popover-gutter > button > span > span:last-child:not(:first-child) {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.composer-add-reference {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  text-align: left;
+}
+
+.composer-popover[data-access-picker] > button {
+  min-height: 52px;
+  gap: 12px;
+}
+
+.composer-popover[data-access-picker] > button > svg {
+  width: 18px;
+  height: 18px;
+}
+
+.composer-popover[data-access-picker] > button > span > span:first-child {
+  font-size: 14px;
+  font-weight: var(--font-weight-normal);
+}
+
+.composer-popover[data-access-picker] > button > span > span:last-child {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+[data-composer-layout="desktop"] .composer-footer button:focus-visible {
+  outline: 1px solid var(--user-accent-color, var(--color-accent));
+  outline-offset: 2px;
+}
+
+:is(.composer-surface, .composer-toolbar)[data-inline-below~="480"] .composer-leading-controls [data-access-picker-trigger] > span,
+:is(.composer-surface, .composer-toolbar)[data-inline-below~="480"] .composer-leading-controls [data-access-picker-trigger] > svg:last-child {
+  display: none;
+}
+
+:is(.composer-surface, .composer-toolbar)[data-inline-below~="360"] .composer-model-controls > [data-model-picker-trigger] > span,
+:is(.composer-surface, .composer-toolbar)[data-inline-below~="360"] .composer-model-controls > [data-model-picker-trigger] > svg:last-child {
+  display: none;
+}
+
+[data-composer-layout="desktop"] :is(.composer-surface, .composer-toolbar)[data-inline-below~="360"] .composer-model-controls > [data-model-picker-trigger] {
+  min-width: 28px;
+  width: 28px;
+  padding: 0;
+  justify-content: center;
+}
+
+[data-composer-layout="desktop"] :is(.composer-surface, .composer-toolbar)[data-inline-below~="280"] .composer-model-controls > button[data-model-control]:has(> svg) {
+  width: 28px;
+  padding: 0;
+  justify-content: center;
+}
+
+:is(.composer-surface, .composer-toolbar)[data-inline-below~="280"] .composer-model-controls > button[data-model-control]:has(> svg) > span,
+:is(.composer-surface, .composer-toolbar)[data-inline-below~="280"] .composer-model-controls > button[data-model-control]:has(> svg) > svg:last-child {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-popover,
+  [data-composer-layout="desktop"]
+    :is(
+      [data-ui="message-input"],
+      .composer-workspace-bar button,
+      .composer-footer button
+    ) {
+    transition: none;
+  }
+}
+
+/* Keep settings readable while the model name gives up space first. */
+.composer-model-controls > [data-model-control] {
+  flex-shrink: 0;
+}
+
+.composer-model-controls > [data-model-picker-trigger] {
+  min-width: calc(var(--spacing) * 13);
+  max-width: 320px;
+  flex-shrink: 1;
+}
+
+.composer-model-controls > [data-model-picker-trigger] > .model-picker-name {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:is(.composer-surface, .composer-toolbar)[data-inline-below~="220"] [data-access-picker-trigger] > span,
+:is(.composer-surface, .composer-toolbar)[data-inline-below~="220"] [data-access-picker-trigger] > svg:last-child {
+  display: none;
+}
+
+html.theme-light [data-composer-layout="compact"] [data-composer-box] {
+  background: color-mix(
+    in srgb,
+    var(--color-background-base) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+  box-shadow:
+    0 6px 24px color-mix(in srgb, var(--color-content) 9%, transparent),
+    0 2px 6px color-mix(in srgb, var(--color-content) 6%, transparent);
+}
+
+/* Solid primary actions share the composer submit treatment. */
+/* ZCode brand: white on dark, black on light. */
+.primary-action:not(:disabled) {
+  background: var(--color-brand);
+  color: var(--color-brand-foreground);
+}
+
+.primary-action:not(:disabled):hover {
+  background: color-mix(in srgb, var(--color-brand) 80%, transparent);
+}
+
+.primary-action:disabled {
+  background: color-mix(in srgb, var(--color-brand) 30%, transparent);
+  color: color-mix(in srgb, var(--color-brand-foreground) 50%, transparent);
+}
+
+html.has-user-accent .primary-action:not(:disabled) {
+  background: var(--user-accent-color);
+  color: var(--user-accent-foreground);
+}
+
+html.has-user-accent .primary-action:not(:disabled):hover {
+  background: color-mix(
+    in srgb,
+    var(--user-accent-color) 88%,
+    var(--color-content)
+  );
+}
+
+html.has-user-accent .primary-action:disabled {
+  background: color-mix(in srgb, var(--user-accent-color) 28%, transparent);
+  color: color-mix(in srgb, var(--color-content) 35%, transparent);
+}
+
+.composer-field {
+  color: transparent;
+  caret-color: var(--color-content);
+  -webkit-text-fill-color: transparent;
+}
+
+/* Keep selected text hidden so the styled highlight layer still shows through,
+   rather than the raw `/command` and `@path` text. */
+.composer-field::selection {
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  background: color-mix(
+    in srgb,
+    var(--user-accent-color, var(--color-accent)) 30%,
+    transparent
+  );
+}
+
+.composer-field::placeholder {
+  color: color-mix(in srgb, var(--color-content) 40%, transparent);
+  -webkit-text-fill-color: color-mix(
+    in srgb,
+    var(--color-content) 40%,
+    transparent
+  );
+}
+
+[data-tauri-drag-region] button {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+[data-tauri-drag-region="false"] {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* Window drag regions use a grab cursor; keep title-bar controls on the arrow. */
+header[data-tauri-drag-region] [data-tauri-drag-region="false"],
+header[data-tauri-drag-region] [data-tauri-drag-region="false"] *,
+header[data-tauri-drag-region] button {
+  cursor: default !important;
+}
+
+.sidebar-opacity-slider {
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-content) 15%, transparent);
+  outline: none;
+}
+
+.sidebar-opacity-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--color-content);
+  cursor: pointer;
+}
+
+/* Settings slider: accent-filled track up to the value, dark round thumb. */
+.settings-slider {
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--color-accent) var(--slider-fill, 0%),
+    color-mix(in srgb, var(--color-content) 15%, transparent)
+      var(--slider-fill, 0%)
+  );
+  outline: none;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-content);
+  box-shadow: 0 0 0 2px var(--color-card);
+  cursor: pointer;
+  transition: transform var(--motion-feedback-duration) var(--motion-ease-out);
+}
+
+.settings-slider:not(:disabled):active::-webkit-slider-thumb {
+  transform: scale(1.1);
+}
+
+.settings-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 2px var(--color-card),
+    0 0 0 4px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+.settings-slider:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+}
+
+/* New split panes; same motion as the linked panel's slide. */
+
+[data-pane-enter="right"] {
+  --pane-enter-x: 100%;
+}
+
+[data-pane-enter="left"] {
+  --pane-enter-x: -100%;
+}
+
+[data-pane-enter="bottom"] {
+  --pane-enter-y: 100%;
+}
+
+[data-pane-enter="top"] {
+  --pane-enter-y: -100%;
+}
+
+[data-pane-enter="fade"] {
+  --pane-enter-opacity: 0;
+}
+
+/* Several chats side by side: each pane is a card on a tinted gutter. */
+.pane-card-gutter {
+  background: var(--color-window);
+}
+
+.pane-card {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  flex: 1 1 0%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-stroke);
+  border-radius: 12px;
+  background: var(--color-background-base);
+  transition: border-color var(--motion-feedback-duration)
+    var(--motion-ease-out);
+}
+
+.pane-card[data-focused="true"] {
+  border-color: var(--color-border-hover);
+}
+
+/* A dock shares the chat card's frame; the resize strip sits in their gutter. */
+
+.project-terminal-card-gutter > .resize-handle:is(
+  [data-resize-edge="left"], [data-resize-edge="right"]
+) {
+  width: 12px;
+}
+
+.project-terminal-card-gutter > .resize-handle[data-resize-edge="left"] {
+  left: -6px;
+}
+
+.project-terminal-card-gutter > .resize-handle[data-resize-edge="right"] {
+  right: -6px;
+}
+
+.project-terminal-card-gutter > .resize-handle:is(
+  [data-resize-edge="top"], [data-resize-edge="bottom"]
+) {
+  height: 12px;
+}
+
+.project-terminal-card-gutter > .resize-handle[data-resize-edge="top"] {
+  top: -6px;
+}
+
+.project-terminal-card-gutter > .resize-handle[data-resize-edge="bottom"] {
+  bottom: -6px;
+}
+
+.project-terminal-card-gutter > .resize-handle::after {
+  inset: 0;
+  margin: auto;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pane-card {
+    transition: none;
+  }
+}
+
+/* Split drop target: a frosted half of the pane that slides between edges. */
+
+.pane-drop-hint-target {
+  position: absolute;
+  padding: 6px;
+}
+
+.pane-drop-hint-panel {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--user-accent-color, var(--color-accent));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-background-base) 55%, transparent);
+  backdrop-filter: blur(10px) saturate(1.1);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.16);
+}
+
+.pane-drop-hint-label {
+  border-radius: 9999px;
+  background: var(--user-accent-color, var(--color-accent));
+  color: var(--user-accent-foreground, #fff);
+  padding: 5px 13px;
+  font-size: 15px;
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+}
+
+/* Follows the pointer while a sidebar conversation is dragged out. */
+.drag-label {
+  position: fixed;
+  left: 0;
+  top: 0;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  white-space: nowrap;
+  border: 1px solid var(--color-stroke);
+  border-radius: 6px;
+  background: var(--color-background-base);
+  color: var(--color-content);
+  padding: 5px 10px;
+  font-size: 13px;
+  line-height: 1.3;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.16);
+  opacity: 0;
+}
+
+.drag-label[data-visible="true"] {
+  opacity: 1;
+}
+
+/* A sidebar row lifted out of its list while dragged. */
+.drag-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
+
+.drag-ghost-card {
+  --drag-ghost-shadow:
+    0 10px 28px rgb(0 0 0 / 0.16),
+    0 2px 6px rgb(0 0 0 / 0.08);
+  position: fixed;
+  left: 0;
+  top: 0;
+  margin: 0;
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--color-content) 8%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--color-background-base) 92%,
+    var(--color-content)
+  );
+  color: var(--color-content);
+  box-shadow: var(--drag-ghost-shadow);
+}
+
+html.theme-light .drag-ghost-card {
+  background: color-mix(in srgb, var(--color-background-base) 30%, white);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drag-ghost-card {
+    transition: none;
+  }
+}
+
+.drag-label[data-target="true"] {
+  border-color: var(--user-accent-color, var(--color-accent));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pane-drop-hint {
+    animation: none;
+  }
+  .pane-drop-hint-target,
+  .drag-label {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linked-panel-slide,
+  .linked-panel-reveal,
+  [data-pane-enter] {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .composer-mode-shimmer {
+    animation: none;
+  }
+}
+
+
+.monocode-terminal {
+  box-sizing: border-box;
+  overflow: hidden;
+  /* Shell padding; full-screen TUIs use the alt buffer and drop to 0. */
+  padding: 8px 0 8px 10px;
+}
+
+.monocode-terminal--alt-screen {
+  padding: 0;
+}
+
+.monocode-terminal-renderer {
+  position: relative;
+  contain: strict;
+  transform: translateZ(0);
+}
+
+.monocode-terminal--alt-screen .monocode-terminal-host,
+.monocode-terminal--alt-screen .xterm,
+.monocode-terminal--alt-screen .xterm-viewport,
+.monocode-terminal--alt-screen .xterm-scrollable-element {
+  width: 100%;
+  height: 100%;
+}
+
+.monocode-terminal .xterm {
+  padding: 0;
+}
+
+.monocode-terminal .xterm-viewport {
+  background: transparent !important;
+  overflow: hidden;
+}
+
+.monocode-terminal .xterm-scrollable-element > .shadow {
+  display: none !important;
+}
+
+/* xterm still owns wheel/keyboard scrolling and its reserved column width.
+   The shared rail supplies the same arrows and thumb as native desktop scrollbars. */
+.monocode-terminal .xterm .xterm-scrollable-element > .scrollbar {
+  display: none !important;
+}
+.monocode-terminal-renderer > [data-ui="scrollbar"] {
+  z-index: 12;
+}
+
+.monocode-terminal .xterm-screen {
+  user-select: text;
+}
+
+.zen-fold-item.project-tree-collapse {
+  --collapse-easing: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.sidebar-transition,
+.sidebar-rail {
+  /* Motion owns the width; do not add a second CSS transition. */
+  transition: none;
+  z-index: 1;
+}
+
+/* Isolate the fixed-width sidebar's layout and paint as its viewport narrows. */
+.sidebar-transition-clip {
+  contain: layout paint;
+}
+
+.sidebar-transition[data-expanded="false"] {
+  pointer-events: none;
+}
+
+.sidebar-rail {
+  z-index: 2;
+}
+
+.sidebar-rail[data-expanded="false"] .sidebar-rail-content {
+  pointer-events: none;
+}
+
+/* Appearance controls popover background opacity in both color schemes. The
+   main window remains opaque in light mode. */
+/* ZCode menus and dialogs are solid surfaces; only native glass windows keep
+   the user's translucent popover setting. */
+/* Panel opacity fades menus and dialogs in every mode; it multiplies the
+   glass-only Popover opacity. */
+
+html.has-native-glass .popover-backdrop {
+  background: color-mix(
+    in srgb,
+    var(--color-menu)
+      calc(var(--popover-opacity) * var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+
+/* Content inside a pane (changes, terminal, workflows) fills like the
+   split-view card it sits in: solid by default, Window opacity under glass,
+   and no fill of its own over a full-window background. */
+
+/* Below full opacity the composer blurs the transcript scrolling behind it. */
+html.translucent-panels
+  [data-composer-layout="desktop"]
+  [data-ui="message-input"] {
+  backdrop-filter: blur(16px);
+}
+
+/* Animate content only; its sibling glass stays still. Finish at `none` and
+   do not retain the animation's transform/opacity compositing state with a
+   forwards fill. Hover repaints should happen in the ordinary resting state. */
+/* ZCode menu items: rounded-md rows that highlight with the menu-hover fill. */
+
+/* /btw: a sheet that morphs out of the composer box over the transcript
+   (the clip is animated from BtwSheet). Its surface is the popover glass:
+   the same tint, blur, border, and shadow. */
+/* The session composer steps aside while the glass sheet's own composer
+   sits over it, so the two never show through each other. BtwSheet fades it
+   in step with the morph; this is its resting state under an open sheet. */
+[data-session-composer][inert] {
+  opacity: 0;
+}
+
+/* Held on the first frame until the freshly mounted sheet has painted. */
+
+/* The composer's outline, carried between the session composer's box and
+   the side composer's box while their contents cross-fade inside it. */
+.btw-morph-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--color-content) 12%, transparent);
+  border-radius: var(--radius-lg, 0.5rem);
+  background: color-mix(in srgb, var(--color-content) 3%, transparent);
+}
+
+html.theme-light .btw-morph-frame {
+  background: var(--color-background-base);
+  box-shadow:
+    0 6px 24px color-mix(in srgb, var(--color-content) 9%, transparent),
+    0 2px 6px color-mix(in srgb, var(--color-content) 6%, transparent);
+}
+
+/*
+ * Opening a side question: question marks drift up out of the composer into
+ * the panel, wobbling as they rise, while the composer box glows and a sheen
+ * crosses it. The /operator sparkles' cousin, in the accent color.
+ */
+.btw-burst {
+  --burst-color: color-mix(
+    in srgb,
+    var(--user-accent-color, var(--color-accent)) 70%,
+    white
+  );
+  --burst-glow: color-mix(
+    in srgb,
+    var(--user-accent-color, var(--color-accent)) 75%,
+    transparent
+  );
+  position: absolute;
+  pointer-events: none;
+  border-radius: var(--radius-lg, 0.5rem);
+}
+
+html.theme-light .btw-burst {
+  --burst-color: var(--user-accent-color, var(--color-accent));
+  --burst-glow: color-mix(
+    in srgb,
+    var(--user-accent-color, var(--color-accent)) 45%,
+    transparent
+  );
+}
+
+.btw-burst-sheen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.btw-burst-sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    color-mix(in srgb, var(--burst-color) 30%, transparent) 50%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+}
+
+.btw-burst-mark {
+  position: absolute;
+  bottom: 45%;
+  left: var(--x);
+  width: 0;
+  height: 0;
+}
+
+.btw-burst-glyph {
+  position: absolute;
+  bottom: 0;
+  left: calc(var(--size) / -2);
+  width: var(--size);
+  color: var(--burst-color);
+  font-size: var(--size);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 0 6px var(--burst-glow);
+  transform-origin: 50% 80%;
+}
+
+.btw-burst-ember {
+  left: calc(var(--size) / -2);
+  height: var(--size);
+  border-radius: 9999px;
+  background: radial-gradient(circle, white, var(--burst-color) 70%);
+  box-shadow: 0 0 6px var(--burst-glow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btw-burst {
+    display: none;
+  }
+}
+
+.btw-sheet {
+  top: clamp(2.5rem, 18%, 12rem);
+}
+
+/* Match the composer box it morphs out of. */
+.btw-sheet-glass {
+  border: 1px solid color-mix(in srgb, var(--color-content) 10%, transparent);
+  border-bottom: 0;
+  border-radius: var(--radius-lg, 0.5rem) var(--radius-lg, 0.5rem) 0 0;
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+/* Tabs and messages arrive once the panel has mostly opened; the composer
+   is where the morph starts, so it stays put. */
+
+.btw-overlay[data-state="closed"] {
+  pointer-events: none;
+}
+
+/* On close the side composer gives way to the session composer beneath
+   right away, while the panel is still folding down. */
+
+@media (prefers-reduced-motion: reduce) {
+  .btw-sheet-body,
+  .btw-overlay[data-state="closed"] .btw-sheet-body,
+  .btw-overlay[data-state="closed"] .btw-sheet-composer {
+    animation: none;
+  }
+}
+
+.btw-error {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 11px;
+  border: 1px solid color-mix(in srgb, #f87171 24%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, #f87171 7%, transparent);
+}
+
+/* The selected project mascot turns banked resets into a tiny status scene. */
+.reset-mascot-scene {
+  position: absolute;
+  right: 8px;
+  bottom: 5px;
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.reset-mascot-glow {
+  position: absolute;
+  inset: 14px 8px 3px;
+  z-index: -1;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.14;
+  filter: blur(12px);
+}
+
+.reset-mascot-sprite {
+  width: 56px;
+  height: 56px;
+  overflow: visible;
+  filter: drop-shadow(0 5px 6px rgb(0 0 0 / 0.18));
+  transform-origin: 50% 100%;
+}
+
+.reset-mascot-spark {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  transform: rotate(45deg);
+}
+
+.reset-mascot-spark-a {
+  top: 8px;
+  right: 7px;
+}
+
+.reset-mascot-spark-b {
+  top: 19px;
+  left: 3px;
+  width: 3px;
+  height: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reset-mascot-sprite,
+  .reset-mascot-spark {
+    animation: none !important;
+  }
+}
+
+/* Centered modals: lift the content inside the stationary glass frame. */
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .modal-panel {
+    animation: none;
+  }
+}
+
+/* Scope node cutouts to graph SVGs; badge icons keep their own strokes. */
+.is-resizing .git-history-panel {
+  transition: none;
+}
+
+.git-history-item .git-history-graph {
+  display: block;
+  overflow: visible;
+}
+.git-history-item .git-history-graph circle {
+  stroke: var(--color-background-base);
+}
+.git-history-item:hover .git-history-graph circle:first-of-type {
+  stroke: transparent;
+}
+.git-history-item:hover .git-history-graph circle:nth-of-type(2) {
+  stroke: color-mix(
+    in srgb,
+    var(--color-content) 5%,
+    var(--color-background-base)
+  );
+}
+.git-history-item.is-selected .git-history-graph circle:nth-of-type(2) {
+  stroke: color-mix(
+    in srgb,
+    var(--color-content) 10%,
+    var(--color-background-base)
+  );
+}
+.git-history-item.is-head .git-history-graph circle:last-child {
+  fill: var(--color-background-base);
+}
+.git-history-item.is-head:hover .git-history-graph circle:last-child {
+  fill: color-mix(
+    in srgb,
+    var(--color-content) 5%,
+    var(--color-background-base)
+  );
+}
+.git-history-item.is-head.is-selected .git-history-graph circle:last-child {
+  fill: color-mix(
+    in srgb,
+    var(--color-content) 10%,
+    var(--color-background-base)
+  );
+}

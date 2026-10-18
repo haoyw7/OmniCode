@@ -1,0 +1,371 @@
+.mobile-sheet[data-detents] {
+  --mobile-sheet-content-offset: max(0px, calc(50dvh - var(--mobile-safe-top) - 12px));
+  height: calc(100dvh - var(--mobile-safe-top) - 12px);
+  max-height: none;
+}
+.mobile-sheet[data-detents][data-detent="full"] {
+  --mobile-sheet-content-offset: 0px;
+}
+/* Content-height sheets switch to the full-height layout while pulled above
+   their rest stop; sheetDrag.ts offsets the switch so nothing jumps. */
+.mobile-sheet[data-expanded] {
+  height: calc(100% - var(--mobile-safe-top) - 12px);
+  max-height: none;
+}
+/* The panel is translated below the viewport at half height. Keep its scroll
+   area inside the visible portion so even the last list item stays reachable.
+   sheetDrag prepares full-height content once on expansion and restores this
+   inset after landing at half. Never animate the margin: that would relayout
+   all sheet content on every frame of the compositor's transform spring. */
+.mobile-sheet[data-detents] > .mobile-sheet-content {
+  margin-bottom: var(--mobile-sheet-content-offset);
+}
+.mobile-sheet-header {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: 48px minmax(0, 1fr) 48px;
+  align-items: center;
+  padding: 2px 4px 12px;
+}
+.mobile-sheet-backdrop[data-placement="bottom"] .mobile-sheet-header {
+  touch-action: none;
+}
+.mobile-sheet-header-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-m-ink);
+}
+.mobile-sheet-header-button:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-sheet-header-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  text-align: center;
+}
+.mobile-sheet-title,
+.mobile-sheet-header-title strong {
+  font-size: var(--mobile-font-xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+}
+.mobile-sheet-header-title strong {
+  overflow-wrap: anywhere;
+}
+.mobile-sheet:has(> .mobile-sheet-content > .mobile-tool-sheet),
+.mobile-sheet-pages .mobile-page-layer:has(.mobile-tool-sheet) {
+  --mobile-popup-font-step: 0px;
+}
+.mobile-sheet-header-title small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-m-ink-tertiary);
+  font-size: calc(var(--mobile-font-lg) + var(--mobile-popup-font-step, 0px));
+}
+.mobile-file-sheet-header .mobile-sheet-header-title strong {
+  max-width: 100%;
+}
+.mobile-file-sheet-header .mobile-sheet-header-title small {
+  font-size: var(--mobile-font-sm);
+}
+.mobile-file-sheet-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.mobile-file-sheet-name > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* File previews share one reading surface from the header to the safe area. */
+.mobile-sheet:has(> .mobile-sheet-content > .mobile-file-sheet) {
+  padding-inline: 0;
+  padding-bottom: var(--mobile-safe-bottom);
+  border: 0;
+}
+.mobile-sheet:has(> .mobile-sheet-content > .mobile-file-sheet),
+.mobile-sheet-pages .mobile-page-layer:has(> .mobile-sheet-page-scroll > .mobile-file-sheet) {
+  --mobile-popup-font-step: 0px;
+  background: var(--color-m-app);
+}
+.mobile-file-sheet-header {
+  padding-inline: 12px;
+  border-bottom: 1px solid var(--color-stroke);
+}
+.mobile-sheet-content:has(> .mobile-file-sheet),
+.mobile-sheet-page-scroll:has(> .mobile-file-sheet) {
+  flex: 1;
+  padding: 0;
+  background: var(--color-m-app);
+}
+.mobile-sheet[data-detents] .mobile-tool-sheet,
+.mobile-sheet[data-detents] .mobile-activity-sheet,
+.mobile-sheet[data-detents] .mobile-file-sheet {
+  gap: 18px;
+  padding: 0 12px 12px;
+}
+.mobile-sheet-content:has(> .mobile-tool-sheet, > .mobile-file-sheet) {
+  padding-inline: 0;
+}
+.mobile-sheet[data-detents] .mobile-file-sheet {
+  padding-inline: 4px;
+}
+.mobile-tool-sheet > .mobile-tool-diff {
+  margin-inline: -12px;
+}
+.mobile-tool-diff .file-preview-list {
+  border-inline: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.mobile-tool-diff .file-preview-list > button:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-sheet[data-detents] .mobile-detail-section h3 {
+  font-size: calc(var(--mobile-font-lg) + var(--mobile-popup-font-step, 0px));
+  font-weight: var(--font-weight-medium);
+}
+.mobile-sheet[data-detents] .mobile-detail-pre {
+  max-height: none;
+  /* The reading sheet owns scrolling; an unbounded inner scroller would
+     swallow swipes over long command output without moving either surface. */
+  overflow: visible;
+  overscroll-behavior: auto;
+  margin-top: 6px;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--mobile-fill);
+  font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px));
+}
+.mobile-sheet[data-detents] .mobile-file-sheet .mobile-file-plain {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-inline: 0;
+  background: var(--color-card);
+}
+/* Source previews read edge to edge like the tool sheet's diff, not as a card. */
+.mobile-sheet[data-detents] .mobile-file-sheet[data-view="source"] {
+  min-height: 100%;
+  padding: 0;
+}
+/* The virtual editor owns scrolling and fills either sheet detent. Markdown
+   and short highlighted files keep the outer reading surface's scrolling. */
+:is(.mobile-sheet-content, .mobile-sheet-page-scroll):has(> .mobile-file-sheet > .readonly-text-view) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.mobile-sheet[data-detents] .mobile-file-sheet:has(> .readonly-text-view),
+.mobile-file-sheet > .readonly-text-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.mobile-file-sheet > .readonly-text-view {
+  border: 0;
+  border-radius: 0;
+}
+.mobile-file-sheet > .readonly-text-view > .readonly-text-toolbar {
+  flex-shrink: 0;
+}
+.mobile-file-sheet > .readonly-text-view > .readonly-text-viewport,
+.mobile-file-sheet > .readonly-text-view.readonly-text-viewport {
+  flex: 1;
+  height: 0;
+  min-height: 0;
+}
+.mobile-sheet[data-detents] .mobile-file-sheet[data-view="source"] .mobile-file-plain {
+  margin-top: 0;
+  padding-block: 4px 12px;
+  border-radius: 0;
+  background: transparent;
+}
+.mobile-file-sheet[data-view="source"] .mobile-file-markdown .markdown-code-shell,
+.mobile-file-sheet[data-view="source"] [data-streamdown="code-block"] {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.mobile-file-sheet[data-view="source"] :is([data-streamdown="code-block-header"],
+  .markdown-code-icon, .markdown-code-copy, .markdown-code-path, .markdown-code-fallback-label) {
+  display: none;
+}
+.mobile-file-sheet[data-view="source"] [data-streamdown="code-block-body"] {
+  padding-block: 4px 12px;
+  border-top: 0;
+}
+.mobile-file-sheet[data-view="source"] :is(.mobile-file-plain > span,
+  [data-streamdown="code-block-body"] code > span)::before {
+  width: var(--mobile-file-gutter, 2ch);
+  margin-right: 8px;
+  padding-inline: 6px;
+  border-inline-end: 1px solid var(--color-stroke);
+  background: var(--color-m-app);
+}
+
+/* Activity and tool details navigate within one sheet, preserving its detent. */
+.mobile-sheet-content:has(> .mobile-sheet-pages) {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+}
+.mobile-sheet-pages {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+html[data-mobile-skin] .mobile-sheet-pages .mobile-page-layer {
+  background: transparent;
+}
+.mobile-sheet-page-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Touch rows are taller than desktop rows and file paths can wrap. Anchor
+   their branches to the icon's center; inline disclosures keep their own rail. */
+.mobile-desktop-transcript .zen-phase-step:has(> [data-tool-open-row])::after {
+  top: calc(50% - 8px);
+}
+.mobile-desktop-transcript .zen-phase-step:has(> [data-tool-open-row]):is(
+    :last-child,
+    :has(+ .zen-phase-step[data-waiting])
+  )::before {
+  height: calc(50% - 7px);
+}
+
+/* Invisible hit areas preserve compact control sizes. Do not change the
+   positioned attachment remove button or the floating header's anchors. */
+:is(.mobile-composer-model, .mobile-composer-workspace, .mobile-composer-project, .mobile-composer-plan,
+  .mobile-status-copy, .mobile-detail-copy, .mobile-progress-capsule),
+.mobile-header-actions > [data-ui="icon-button"],
+.mobile-error [data-ui="icon-button"],
+.mobile-composer-attachments button:not(.attachment-chip-remove),
+.mobile-desktop-transcript .user-message-actions button,
+.mobile-desktop-transcript [data-ui="response-actions"] [data-ui="response-action"],
+.mobile-desktop-transcript [data-ui="response-metrics-trigger"],
+.mobile-shared-question [data-question-collapse],
+.mobile-settings-row .mobile-select-trigger {
+  position: relative;
+}
+:is(.mobile-composer-model, .mobile-composer-workspace, .mobile-composer-project, .mobile-composer-plan,
+  .mobile-status-copy, .mobile-detail-copy, .mobile-progress-capsule)::after,
+.mobile-header-actions > [data-ui="icon-button"]::after,
+.mobile-error [data-ui="icon-button"]::after,
+.mobile-composer-attachments button::after,
+.mobile-desktop-transcript .user-message-actions button::after,
+.mobile-desktop-transcript [data-ui="response-actions"] [data-ui="response-action"]::after,
+.mobile-desktop-transcript [data-ui="response-metrics-trigger"]::after,
+:is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) .markdown-code-copy::after,
+.mobile-shared-question [data-question-collapse]::after,
+.mobile-settings-row .mobile-select-trigger::after {
+  content: "";
+  position: absolute;
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  translate: -50% -50%;
+}
+/* The front input card covers the toolbar's lower edge. Extend these compact
+   targets upward so the full 44px remains reachable above that card. */
+.mobile-composer-model::after,
+.mobile-composer-workspace::after,
+.mobile-session-progress[data-docked="true"] .mobile-progress-capsule::after {
+  top: calc(50% - 4px);
+}
+.mobile-composer-attachments .attachment-chip-remove {
+  z-index: 1;
+}
+.mobile-home-error button,
+.mobile-drawer-more,
+.mobile-drawer-more-toggle,
+button.mobile-drawer-group-status,
+.mobile-pending [data-ui="button"],
+.mobile-pairing-methods button,
+.mobile-qr-overlay [data-ui="button"],
+.mobile-shared-question [data-question-secondary] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Individual scale preserves translations used by anchored controls and row
+   reordering. Tint overlays the existing fill, including primary buttons, and
+   spreads from the centre instead of flashing the whole surface. Rows choose
+   the tint through --mobile-press-color. */
+@property --mobile-press-spread {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+:is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) button,
+.mobile-desktop-transcript [data-tool-open-row] {
+  transition:
+    background-color 120ms ease,
+    scale 120ms ease,
+    --mobile-press-spread 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) {
+  :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) button:enabled:hover {
+    background-image: linear-gradient(
+      color-mix(in srgb, currentColor 4%, transparent),
+      color-mix(in srgb, currentColor 4%, transparent));
+  }
+}
+:is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) button:enabled:active,
+.mobile-desktop-transcript [data-tool-open-row]:active {
+  /* The ellipse follows the surface's aspect and covers its corners at 71%. */
+  --mobile-press-spread: 75%;
+  background-image: radial-gradient(
+    var(--mobile-press-spread) var(--mobile-press-spread) at 50% 50%,
+    var(--mobile-press-color, color-mix(in srgb, currentColor 8%, transparent)) 96%,
+    transparent 100%);
+  scale: 0.98;
+}
+/* The shared file card has a desktop hover rule; touch keeps its resting fill. */
+@media (hover: none) {
+  :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) .attachment-chip-card:enabled {
+    background-color: var(--color-m-app);
+  }
+  :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) .markdown-code-copy:not(:focus-visible) {
+    background-color: transparent;
+    color: var(--color-m-ink-tertiary);
+  }
+  :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) .markdown-code-path-link {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) button,
+  .mobile-desktop-transcript [data-tool-open-row] {
+    transition: none;
+  }
+  :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) button:enabled:active,
+  .mobile-desktop-transcript [data-tool-open-row]:active {
+    scale: none;
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "browser": "153.0.8010.12",
+  "svgCount": 21,
+  "assets": [
+    {
+      "name": "omi-approval-black.svg",
+      "animations": 1,
+      "transparentPercent": 78
+    },
+    {
+      "name": "omi-approval-current.svg",
+      "animations": 1,
+      "transparentPercent": 78
+    },
+    {
+      "name": "omi-approval-white.svg",
+      "animations": 1,
+      "transparentPercent": 78
+    },
+    {
+      "name": "omi-connecting-black.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-connecting-current.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-connecting-white.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-done-black.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-done-current.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-done-once-black.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-done-once-current.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-done-once-white.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-done-white.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-ready-black.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-ready-current.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-ready-white.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-running-black.svg",
+      "animations": 1,
+      "transparentPercent": 77
+    },
+    {
+      "name": "omi-running-current.svg",
+      "animations": 1,
+      "transparentPercent": 77
+    },
+    {
+      "name": "omi-running-white.svg",
+      "animations": 1,
+      "transparentPercent": 77
+    },
+    {
+      "name": "omi-thinking-black.svg",
+      "animations": 4,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-thinking-current.svg",
+      "animations": 4,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-thinking-white.svg",
+      "animations": 4,
+      "transparentPercent": 79
+    }
+  ],
+  "pause": true,
+  "replay": true,
+  "manualStatic": true,
+  "systemReducedMotion": true,
+  "imgPlayback": true,
+  "bareImgReducedMotion": false,
+  "pictureReducedMotion": true,
+  "pictureManualStatic": true,
+  "mobilePreview": true
+}

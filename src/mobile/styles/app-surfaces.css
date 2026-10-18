@@ -1,0 +1,225 @@
+/* Mobile page treatment. Keep this outside desktop imports; the root marker
+   also gives lazy-loaded page styles a stable, mobile-only cascade boundary. */
+html[data-mobile-skin] {
+  --mobile-font-xs: 11px;
+  --mobile-font-sm: 13px;
+  --mobile-font-md: 15px;
+  --mobile-font-lg: 17px;
+  --mobile-font-xl: 17px;
+  --m-page-inset: 24px;
+  --m-page-radius: 18px;
+  --m-page-divider: color-mix(in srgb, var(--color-m-ink) 12%, transparent);
+}
+
+html[data-mobile-skin] .mobile-page-layer {
+  background: var(--color-m-app);
+}
+
+/* Navigation lists use bare 24px glyphs, roomy text and a quiet selected tint. */
+html[data-mobile-skin] .mobile-home-scroll {
+  padding-inline: var(--m-page-inset);
+}
+html[data-mobile-skin] .mobile-home-section-head h2,
+html[data-mobile-skin] .mobile-home-section-toggle,
+html[data-mobile-skin] .mobile-settings-group h2,
+html[data-mobile-skin] .mobile-notes-section-title {
+  font-size: var(--text-m-body);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--color-m-ink-secondary);
+}
+html[data-mobile-skin] :is(.mobile-home-project, .mobile-home-session) {
+  min-height: 52px;
+  gap: 16px;
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+html[data-mobile-skin] :is(.mobile-home-project > svg, .mobile-home-session-icon) {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-m-ink);
+}
+html[data-mobile-skin] :is(.mobile-home-project strong, .mobile-home-session > strong) {
+  font-size: var(--text-m-title);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.4;
+}
+html[data-mobile-skin] :is(.mobile-home-project small, .mobile-home-session > time) {
+  font-size: var(--text-m-label);
+}
+html[data-mobile-skin] .mobile-home-session[aria-expanded="true"] {
+  background: var(--color-m-raised-hover);
+}
+html[data-mobile-skin] .mobile-home-new,
+html[data-mobile-skin] .mobile-home:not([data-project="true"]) .mobile-home-new {
+  background: var(--m-control-primary);
+  color: var(--m-control-primary-ink);
+  font-size: var(--text-m-title);
+  font-weight: var(--font-weight-medium);
+  box-shadow: var(--m-control-shadow);
+}
+html[data-mobile-skin] .mobile-device-chips {
+  margin-inline: calc(-1 * var(--m-page-inset));
+  padding-inline: var(--m-page-inset);
+}
+html[data-mobile-skin] .mobile-device-chip[aria-checked="true"] {
+  background: var(--color-m-raised-hover);
+}
+html[data-mobile-skin] .mobile-list-row {
+  gap: 16px;
+  padding: 12px;
+  border-radius: 14px;
+}
+html[data-mobile-skin] .mobile-row-icon {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border-radius: 0;
+}
+html[data-mobile-skin] .mobile-row-text strong {
+  font-size: var(--text-m-title);
+  font-weight: var(--font-weight-normal);
+}
+html[data-mobile-skin] .mobile-row-text small {
+  font-size: var(--text-m-label);
+}
+html[data-mobile-skin] .mobile-skeleton-bar.mobile-skeleton-icon {
+  flex-basis: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+/* Settings and connections share the same page spacing and inset dividers. */
+html[data-mobile-skin] .mobile-settings {
+  --mobile-settings-inset: 16px;
+  --mobile-settings-icon: 24px;
+  --mobile-settings-gap: 16px;
+  gap: 24px;
+  padding-inline: var(--m-page-inset);
+}
+html[data-mobile-skin] .mobile-settings-card,
+html[data-mobile-skin] .mobile-connection-list {
+  border-radius: var(--m-page-radius);
+  background: var(--color-m-panel);
+}
+html[data-mobile-skin] .mobile-connection-list {
+  gap: 0;
+}
+html[data-mobile-skin] .mobile-connection-list > li {
+  border-radius: 0;
+  background: transparent;
+}
+html[data-mobile-skin] .mobile-connection-list > li + li {
+  border-top: 1px solid var(--m-page-divider);
+}
+html[data-mobile-skin] .mobile-settings-card > * + *::after {
+  background: var(--m-page-divider);
+}
+html[data-mobile-skin] .mobile-settings-row,
+html[data-mobile-skin] .mobile-app button.mobile-settings-row {
+  min-height: 56px;
+  font-size: var(--text-m-title);
+  font-weight: var(--font-weight-normal);
+}
+html[data-mobile-skin] .mobile-settings-row.mobile-connection-row {
+  min-height: 76px;
+}
+html[data-mobile-skin] .mobile-settings-row :is(small, .mobile-settings-value),
+html[data-mobile-skin] .mobile-settings-footer {
+  font-size: var(--text-m-body);
+  line-height: 1.4;
+}
+html[data-mobile-skin] .mobile-settings-hero .mobile-current-host-name {
+  font-size: var(--text-m-title);
+  font-weight: var(--font-weight-medium);
+}
+html[data-mobile-skin] .mobile-settings-hero .mobile-settings-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--color-m-raised-hover);
+}
+html[data-mobile-skin] .mobile-settings .mobile-app-updates,
+html[data-mobile-skin] :is(.mobile-defaults-status, .mobile-connection-info) {
+  border-radius: var(--m-page-radius);
+  border-color: var(--m-page-divider);
+  background: var(--color-m-panel);
+}
+
+/* Sheet geometry stays with MobileSheet, including detents and keyboard lift. */
+html[data-mobile-skin] .mobile-sheet,
+html[data-mobile-skin] .mobile-modal {
+  --radius-m-sheet: 24px;
+  --mobile-popup-stroke-step: 0;
+  --mobile-popup-line-step: 0px;
+}
+html[data-mobile-skin] .mobile-sheet-header-title strong {
+  font-size: var(--text-m-title);
+  font-weight: var(--font-weight-medium);
+}
+html[data-mobile-skin] .mobile-sheet-header-title small {
+  font-size: var(--text-m-label);
+}
+html[data-mobile-skin] .mobile-file-sheet-header {
+  border-bottom-color: var(--m-page-divider);
+}
+html[data-mobile-skin] .mobile-sheet[data-detents] .mobile-detail-section h3 {
+  font-size: var(--text-m-body);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Secondary pages use the same palette even when their styles load lazily. */
+html[data-mobile-skin] .mobile-notes-header {
+  border-bottom-color: var(--m-page-divider);
+}
+html[data-mobile-skin] .mobile-note-card,
+html[data-mobile-skin] .mobile-account-row {
+  border: 1px solid var(--m-page-divider);
+  border-radius: var(--m-page-radius);
+  background: var(--color-m-panel);
+}
+html[data-mobile-skin] :is(.mobile-note-card strong, .mobile-account-heading strong) {
+  font-size: var(--text-m-title);
+  font-weight: var(--font-weight-medium);
+}
+html[data-mobile-skin] .mobile-note-tags > span,
+html[data-mobile-skin] :is(.mobile-account-plan, .mobile-account-badge) {
+  border-radius: 10px;
+}
+html[data-mobile-skin] .mobile-account-notice {
+  border-radius: var(--m-page-radius);
+  background: var(--color-m-raised-hover);
+}
+html[data-mobile-skin] .mobile-git-file-entry {
+  border-color: var(--m-page-divider);
+}
+html[data-mobile-skin] .mobile-git-file-row {
+  min-height: 48px;
+  background: var(--color-m-panel);
+}
+html[data-mobile-skin] .mobile-git-file-row[aria-expanded="true"] {
+  background: var(--color-m-panel);
+  box-shadow: 0 1px var(--m-page-divider);
+}
+html[data-mobile-skin] .mobile-git-file-path {
+  font-size: var(--text-m-body);
+  font-weight: var(--font-weight-medium);
+}
+html[data-mobile-skin] .assistant-chat[data-layout="mobile"] :is(.assistant-card, .assistant-input) {
+  border-radius: var(--m-page-radius);
+  border: 1px solid var(--m-page-divider);
+  background: var(--color-m-panel);
+}
+
+@media (max-width: 359px) {
+  html[data-mobile-skin] { --m-page-inset: 16px; }
+  html[data-mobile-skin] :is(.mobile-home-project, .mobile-home-session) {
+    gap: 12px;
+    padding-inline: 8px;
+  }
+  html[data-mobile-skin] .mobile-settings { --mobile-settings-inset: 12px; }
+}

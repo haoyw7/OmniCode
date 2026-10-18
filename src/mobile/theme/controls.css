@@ -1,0 +1,58 @@
+/* Mobile control geometry and semantic colors never depend on desktop tokens.
+   Surface colors follow the mobile skin; controls keep the reference treatment. */
+:root, .mobile-skin-scope {
+  --m-control-height: 44px;
+  --m-control-small: 32px;
+  --m-control-icon: 36px;
+  --m-control-radius: 14px;
+  --m-control-pill: 999px;
+  --m-control-primary: #f5f4ed;
+  --m-control-primary-ink: #131313;
+  --m-control-ink: var(--color-m-ink);
+  --m-control-field: var(--color-m-panel);
+  --m-control-border: color-mix(in srgb, var(--color-m-ink) 30%, transparent);
+  --m-control-placeholder: var(--color-m-ink-tertiary);
+  --m-control-active: var(--color-m-raised-hover);
+  --m-control-focus: #4682d5;
+  --m-control-danger: #b53333;
+  --m-control-send: #c6613f;
+  --m-control-off: rgb(120 120 120 / 20%);
+  --m-control-shadow: 0 1.5px 3px rgb(0 0 0 / 5%);
+  --m-switch-width: 64px;
+  --m-switch-height: 28px;
+  --m-switch-thumb-width: 39px;
+  --m-switch-thumb-height: 24px;
+  --m-switch-travel: 21px;
+  --radius-m-field: var(--m-control-radius);
+  --radius-m-composer: 24px;
+}
+html.theme-light,
+.mobile-skin-scope:is([data-mobile-skin="atelier"], [data-mobile-skin="linen"], [data-mobile-skin="daylight"], [data-mobile-skin="meadow"]) {
+  --m-control-primary: #131313;
+  --m-control-primary-ink: #ffffff;
+  --m-control-ink: #141413;
+  --m-control-field: #ffffff;
+  --m-control-border: rgb(31 30 29 / 30%);
+  --m-control-placeholder: #73726c;
+  --m-control-active: #f5f4ed;
+}
+
+/* Phone reading and navigation surfaces. */
+html[data-mobile-skin] {
+  --mobile-header-height: 54px;
+  --m-message-serif: var(--font-serif);
+  --m-message-fill: var(--color-m-bubble-user);
+  --m-message-ink: var(--color-m-bubble-user-ink);
+  --m-navigation-panel: var(--color-m-panel);
+  --m-composer-fill: var(--color-m-composer);
+  --m-navigation-control: color-mix(in srgb, var(--color-m-menu) 80%, transparent);
+  --m-navigation-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
+}
+html[data-mobile-skin="daylight"] {
+  --m-composer-fill: rgb(255 255 255 / 60%);
+  --m-message-ink: var(--color-m-ink);
+  --m-navigation-control: rgb(255 255 255 / 0.6);
+}
+html[data-mobile-glass="solid"][data-mobile-skin] {
+  --m-navigation-control: var(--color-m-menu);
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "calls": {
+      "default": [],
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requestId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "input": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "action",
+          "requestId",
+          "input"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "final": {
+      "type": "string",
+      "maxLength": 20000
+    }
+  },
+  "required": [
+    "calls"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-motion omi-motion-done omi-once" role="img" aria-label="Omi · 完成" data-state="done" data-duration="2.4">
+  <style>
+@keyframes omi-done-body { 0%,20%,100% {transform:translateY(0)} 10% {transform:translateY(-5px)} }
+@keyframes omi-done-check { 0% {opacity:0;stroke-dashoffset:1} 10%,90% {opacity:1;stroke-dashoffset:0} 100% {opacity:0;stroke-dashoffset:0} }
+@keyframes omi-done-check-once { from {opacity:0;stroke-dashoffset:1} to {opacity:1;stroke-dashoffset:0} }
+.omi-motion-done .omi-body{animation:omi-done-body 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-done .omi-check{stroke-dasharray:1;stroke-dashoffset:0;animation:omi-done-check 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-done.omi-once .omi-body{animation:omi-done-body 2.4s cubic-bezier(.22,1,.36,1) 1 both}.omi-motion-done.omi-once .omi-check{animation:omi-done-check-once .24s cubic-bezier(.22,1,.36,1) 1 both}
+.omi-motion-done .omi-a {transform-box:view-box}
+.omi-motion-done[data-paused="true"] .omi-a {animation-play-state:paused}
+.omi-motion-done[data-motion="off"] .omi-a {animation:none!important}
+@media (prefers-reduced-motion:reduce) {.omi-motion-done .omi-a {animation:none!important}}</style>
+  <g fill="currentColor" stroke="currentColor"><g transform="translate(32 32)"><g class="omi-a omi-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omi-a omi-face"><path d="M 79 131 Q 90 109 101 131 M 150 131 Q 161 109 172 131" fill="none" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/></g></g></g><path class="omi-a omi-check" pathLength="1" d="M 263 261 L 274 272 L 296 246" fill="none" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/></g>
+</svg>

@@ -1,0 +1,61 @@
+OmniCode · 透明 SVG 短动画
+
+基于已确认的极简矢量标志制作，所有图形沿用 ../svg/ 的母版。
+纯 SVG + CSS，透明背景，无位图、无字体、无外部动画库；SVG 内不包含脚本。
+本轮没有接入应用或替换生产资源。
+
+查看
+preview.html：内联动画总览，提供暂停/继续、从头播放、深浅背景、透明网格和静态预览。
+embedding.html：使用 picture 嵌入外部 SVG 的示例，可验证静态替代资源切换。
+preview-light.png / preview-dark.png：静态预览截图，不是动画文件。
+
+动画文件
+omi-ready-{black,white,current}.svg：2.88 秒循环，轻浮动与眨眼。
+omi-thinking-{black,white,current}.svg：视线 2.4 秒循环，思考点 0.72 秒循环。
+omi-running-{black,white,current}.svg：1.2 秒循环，不定进度线；不代表实际完成百分比。
+omi-done-{black,white,current}.svg：2.4 秒循环，轻点头并绘制勾线。
+omi-done-once-{black,white,current}.svg：单次播放，勾线约 0.24 秒绘制，身体约 0.48 秒归位，此后保持完成姿态；整个时间线 2.4 秒结束。
+omi-approval-{black,white,current}.svg：2.4 秒循环，确认气泡柔和明暗变化。
+omi-connecting-{black,white,current}.svg：0.96 秒循环，两点交替。
+合计 21 个动态 SVG，另有 static/ 下 18 个配套静态 SVG。
+
+使用方式
+black：固定 #151515，适合浅色背景。
+white：固定 #ffffff，适合深色背景。
+current：使用 currentColor，适合内联 SVG。通过 img 引用时不会继承宿主 color。
+所有素材 viewBox 为 0 0 320 320，建议内容插画显示为 48–160 CSS px。
+窗口标题、托盘及小尺寸应用图标建议继续使用原静态素材。
+六种状态都应配合文字说明，尤其是等待确认、连接及执行状态。
+
+减少动态效果与暂停
+内联 SVG 通过 prefers-reduced-motion 自动停用动画，并显示有意义的静态姿态。
+内联 SVG 根元素设置 data-paused="true" 可暂停，设置为 false 可继续。
+内联 SVG 根元素设置 data-motion="off" 可直接显示静态姿态，移除属性即可恢复。
+preview.html 在页面隐藏期间暂停动画，用户手动暂停状态会被保留。
+
+外部 img 的重要区别
+在本次 Chromium 实测中，直接 img 加载 SVG 可以播放 CSS 动画，但不能可靠地随宿主的减少动态效果偏好切换。
+因此外部图片应使用 picture + source，在宿主中选择明确的静态替代文件；embedding.html 提供可直接复制的示例。
+
+<picture>
+  <source media="(prefers-reduced-motion: reduce)"
+          srcset="static/omi-thinking-black.svg">
+  <img src="omi-thinking-black.svg" width="80" height="80" alt="Omi · 思考">
+</picture>
+
+对于 done-once 文件，对应静态替代为 static/omi-done-black.svg（颜色按需选择）。
+仅导入矢量轮廓的编辑器可能不播放 CSS 动画；请在浏览器中打开 SVG 或预览页查看。
+
+源文件与验证
+generate.mjs：Node.js 标准库生成器，无须额外依赖；从同级 ../svg/ 读取已确认的静态路径。
+执行：node design/omnicode-brand-v10/animated/generate.mjs
+动画缓动统一为 cubic-bezier(.22,1,.36,1)。短位移/气泡变化使用 0.24 秒段落，循环包含停留时间。
+verification.json：实际检查记录。
+已在 Chromium 153.0.8010.12 检查 21 个 SVG 的多时间点动画变化、透明像素、边界、单次完成姿态。
+已检查预览页暂停、重播、静态模式、系统减少动态效果、390px 页面宽度及外部 picture 资源切换。
+已目视检查深浅背景。未在原生桌面 WebView、Safari、Firefox 或移动端运行时验收。
+
+实现参考
+https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Element/style
+https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media/prefers-reduced-motion
+https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/animation-play-state

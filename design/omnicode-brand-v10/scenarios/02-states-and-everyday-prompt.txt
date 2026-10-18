@@ -1,0 +1,21 @@
+Use case: logo-brand / ui-mockup.
+Reference is the APPROVED minimalist OmniCode identity. Create its second application sheet, focusing on assistant states and useful in-product scenes. Preserve EXACT same original near-square open O silhouette, single lower-right gap, thick stroke with rounded ends, and default chevron > plus horizontal dash inside. No new character, no color, no 3D, no material texture, no shading, no gradients. Flat black and white with light neutral gray UI separators only.
+IMPORTANT BRAND RULE: official logo in headers and icons is ALWAYS original immutable > plus dash face. Only the in-content assistant illustrations may vary expression slightly; outer O contour remains exactly identical.
+
+Create one high-resolution LANDSCAPE minimal editorial board, spacious, elegant, Chinese short captions. Top heading exact "OmniCode · 状态与日常场景". Small subtitle "02 / 助手表达与品牌延展".
+Top 40%: ONE evenly spaced row of SIX expressive FLAT assistant states on plain white. Same O outline geometry in every state, clear spacing. Keep ORIGINAL chevron and dash in first four; express states through subtle position and external tiny marks, not unrelated face replacements.
+- "待命": original default mark > and dash, perfectly still, no external decoration.
+- "思考": same face shifted slightly upward within O; three tiny dots just above right side, NO question mark or sweat.
+- "执行": original mark and a short tiny progress bar directly below character, NO spinning O, no rotated outer contour.
+- "完成": outer O unchanged; internal marks become two small relaxed happy curves, with a SEPARATE tiny check beside it. Clear deliberate assistant illustration variant.
+- "等待确认": original face, small separate speech chip with ellipsis beside it, no warning/error symbol. Calm and respectful.
+- "连接中": original mark with two small separate offset dots nearby, no new ring or antenna. This is just a static storyboard, not a claim of implemented animation.
+Small note beneath row exact "标志固定，表情仅用于助手插画". Never label 24px or claim validated sizes.
+
+Lower 60%: FOUR clean scenes in a balanced 2x2 layout; each a restrained UI crop or brand application, no extra screens.
+A. "新项目 · 空状态": light workspace content crop, small original Omi centered, heading exact "从一个想法开始", simple action button "打开项目". No long fake paragraphs.
+B. "任务完成 · 通知": a dark desktop notification card with immutable small white OmniCode logo and exact wordmark in its header, a small separate check status, concise exact message "任务已完成", secondary line "查看结果", one quiet action button. Brand logo and task success icon must remain distinguishable.
+C. "连接中断 · 恢复": a light mobile-width message crop with small original assistant mark, heading exact "连接已断开", short line "重新连接后继续会话", button "重新连接". Show a calm practical state, not a sad crying mascot; no warning red.
+D. "项目主页 · 文档封面": a simple project README/documentation header mockup, large exact immutable black logo plus wordmark OmniCode, short plain description "多智能体编程工作区", two restrained link-like labels "快速开始" and "使用文档", and one simple outlined code block containing only "OmniCode". No invented install commands, no third-party badges, no fake GitHub stars, no giant website screenshot.
+Footer exact "场景概念稿 · 非已实现界面".
+Keep main visual rigorously monochrome, adequate whitespace, modest humanist sans Chinese/Latin typography, proportions appropriate for professional software. No unnecessary decorations, merchandise, stickers, UI redrawing beyond these small scenarios, no branding changes. All repeated marks must match approved reference silhouette. One polished complete application board.

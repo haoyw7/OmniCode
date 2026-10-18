@@ -1,0 +1,378 @@
+{
+  "revision": "f30ccf22b4e2617fab32958d4c03f5c1f2e7dfcf",
+  "files": [
+    {
+      "upstream_path": "api-bank/apis/api.py",
+      "upstream_sha256": "7e06f974c433e207bc012db4b46aac5de0baff1e959fa0004274b2036e5b58fd",
+      "vendored_path": "vendor/apis/api.py",
+      "vendored_sha256": "7e06f974c433e207bc012db4b46aac5de0baff1e959fa0004274b2036e5b58fd",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/add_agenda.py",
+      "upstream_sha256": "8c930c082b4c411f2f6951cb69217d10ebffa27c0a375261c687366937255dc1",
+      "vendored_path": "vendor/apis/add_agenda.py",
+      "vendored_sha256": "461d6bf33a0c69672fa9de857589bc1b3b6d77f9d833c23784d040a3a7258eb6",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/add_alarm.py",
+      "upstream_sha256": "8f033dc9bed764abc8000ceb3d5a93e480085f1b0ef9f69e0dbc263303fc988c",
+      "vendored_path": "vendor/apis/add_alarm.py",
+      "vendored_sha256": "55c057d13e69576ad3fa63a78cc763019c7612748024cb0a841ce96fe5480965",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/add_meeting.py",
+      "upstream_sha256": "51e2ffc14861f4f8fa7fcfe084c33735a49ffd7522b9572ad133c90d3bfbd2d8",
+      "vendored_path": "vendor/apis/add_meeting.py",
+      "vendored_sha256": "7e3e5a5403830955f376705e84cf7e7e0d45a91e411bc1b5459faa64342e7b68",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/add_reminder.py",
+      "upstream_sha256": "d75901872aeee2fe304a640926e313994b608d598173d541d64fe91e5a4de459",
+      "vendored_path": "vendor/apis/add_reminder.py",
+      "vendored_sha256": "83252ecd948ae0f1cedc060c02664c79656d699d6a08ae46cdc962344b574258",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/book_hotel.py",
+      "upstream_sha256": "d1c578a3e853df74bce54af6426e49ef43b4d5a388bf87f4c7fed53ba1c0d0a5",
+      "vendored_path": "vendor/apis/book_hotel.py",
+      "vendored_sha256": "915b24e9c1e09113908d4b89a6a907916afea9af50bbd5f69ff92a89a0b1de95",
+      "changes": [
+        "package-relative API import",
+        "removed unreachable filesystem dump_database method"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/calculator.py",
+      "upstream_sha256": "4052e743ec52c02c76b53a8557aba310370fe98542180752800320dcc4a82605",
+      "vendored_path": "vendor/apis/calculator.py",
+      "vendored_sha256": "4052e743ec52c02c76b53a8557aba310370fe98542180752800320dcc4a82605",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/cancel_registration.py",
+      "upstream_sha256": "f9aac2d59a0c703fafa0a0a6f496f67cd35c47c3e4674698e18ca624b848a8d9",
+      "vendored_path": "vendor/apis/cancel_registration.py",
+      "vendored_sha256": "c774084766cea53d9da95dc8d6a3201e5a7ad2bdde2611994ad00505be45af54",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/cancel_timed_switch.py",
+      "upstream_sha256": "65dd9ad19befdc4344d0dedc74519bb52ce2bd5cbc01849b878c3a964594f6a4",
+      "vendored_path": "vendor/apis/cancel_timed_switch.py",
+      "vendored_sha256": "f3e930249408a61b3e392363dce238f2dbce2134b1f51bdda2aef0e57f830eea",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/check_token.py",
+      "upstream_sha256": "31acf7aba7b01e4993d4eb4de55df074baebba5fc87592dab6635d914a4611c7",
+      "vendored_path": "vendor/apis/check_token.py",
+      "vendored_sha256": "0517a346a5d8f468745b11fa83d141ace387793848a58cd20e12fd25c2754950",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/delete_agenda.py",
+      "upstream_sha256": "87e643ea0185c0ea3a44fe3609ac2660f737c943810101137aa575d3eeffc461",
+      "vendored_path": "vendor/apis/delete_agenda.py",
+      "vendored_sha256": "a85f8773bfe6a6766a8cd549cc370cb6a7d693bfbc0889c4b63e0be635596649",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/delete_alarm.py",
+      "upstream_sha256": "2eab319cfb2b96db0f87b5bbee41d2767e732a1a08a697bbc814818f4831b172",
+      "vendored_path": "vendor/apis/delete_alarm.py",
+      "vendored_sha256": "d3c3e5c4c9519bd71ee885804cff2611542f30aac2e5a46ac95703088cd99b24",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/delete_meeting.py",
+      "upstream_sha256": "f071059e500655494f8822ff625e0ef28597c833b98a4371c76b902398dc7f0b",
+      "vendored_path": "vendor/apis/delete_meeting.py",
+      "vendored_sha256": "58d5af1c2457bd0696ed81b8105feff016d264c59e72690065b91dd2a68b30b0",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/delete_reminder.py",
+      "upstream_sha256": "cdbe7269513c9b2a0cd9356286df50e9ea7a52e7d85d149e283cfa4e5be7c8cc",
+      "vendored_path": "vendor/apis/delete_reminder.py",
+      "vendored_sha256": "c738d433e789d52d4381c2e5f2ea861f12c61a0efb213ca84391e1228cfc9f03",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/delete_scene.py",
+      "upstream_sha256": "638966b258c6ac287652652c4c61cf49354694aa267f4025c5218a8d2ba74bf0",
+      "vendored_path": "vendor/apis/delete_scene.py",
+      "vendored_sha256": "5227448d4efc2bcd09a111d64e3b0005a14216b92324bfcdaf9d6e10e7972d2d",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/document_qa.py",
+      "upstream_sha256": "aa69a3250e07d4fbcfbb7252aecf77e6b32a968db17f37c7b450c63b0fa779d7",
+      "vendored_path": "vendor/apis/document_qa.py",
+      "vendored_sha256": "726824782c069f55da6d7da980b05ca1a309240c70a800f7c7afe2aa5d2ab93e",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/emergency_knowledge.py",
+      "upstream_sha256": "c48c22af86f9ffa24fbb4472bfbb71d29b50c16d45dcf1acb1e7d4f6bdefde7b",
+      "vendored_path": "vendor/apis/emergency_knowledge.py",
+      "vendored_sha256": "f9834b1f2e9ca6ac5cdd6d7f69b525c278b8313b807bfd4b1d3eb15a5a33319d",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/get_user_token.py",
+      "upstream_sha256": "c37aafe5ed930ff0b0ef0343073d8b13d573d9e2b676df24a067fc809532fc44",
+      "vendored_path": "vendor/apis/get_user_token.py",
+      "vendored_sha256": "e4cfdb249d7c125f50632210ebf6b56e3bc74fd2eec0ca42e14cbee02a982e08",
+      "changes": [
+        "package-relative API import",
+        "removed unreachable filesystem dump_database method"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/image_caption.py",
+      "upstream_sha256": "1c7cdb64ebd214a1ac79a5452b9ba0c3fb2e5f9c1fa5cb6db3d74d9e054e8e61",
+      "vendored_path": "vendor/apis/image_caption.py",
+      "vendored_sha256": "1ec6b9f83ced3a5eae889d7848370d2701c4387dbcc6f5bc59a225b8fa265d43",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/modify_agenda.py",
+      "upstream_sha256": "fab163b32b0e0741fb9dd1ac969b2350a190102337b931d8e3dd8aed05919bdb",
+      "vendored_path": "vendor/apis/modify_agenda.py",
+      "vendored_sha256": "f65cbbe77b299d208e4a4e23a3b8eff2daf4a072834723de747f73ce87db1f46",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/modify_alarm.py",
+      "upstream_sha256": "7beaa794842ab22c6929b6990c0246e064f17005de9778180d60e5b2a58db042",
+      "vendored_path": "vendor/apis/modify_alarm.py",
+      "vendored_sha256": "52c189a06aa985cb6d842d6c302ec64420a866946f331d32bfb34ff3e159c975",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/modify_meeting.py",
+      "upstream_sha256": "1d8aaa63119060ccffc155fd2b3f3399d9630fa1cdd45526c2db175e79a5205a",
+      "vendored_path": "vendor/apis/modify_meeting.py",
+      "vendored_sha256": "89a44f77964603360fd142ba4af23e61d34dbe69020c5c8fd15fb025e154cd11",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/modify_registration.py",
+      "upstream_sha256": "9ea5c27f4a5bee604f7f9ef9396fb0f9be91c6fa5682c0b27fce83b7b8f6fa35",
+      "vendored_path": "vendor/apis/modify_registration.py",
+      "vendored_sha256": "07afa19bbc7be385d16e03c1ca8a29f0d1bd36cd72ade02844dbdf046f2b47bf",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/modify_reminder.py",
+      "upstream_sha256": "43a7377b07afc7080e254d4f8e34a6766460840fe85ace129495881b577c9810",
+      "vendored_path": "vendor/apis/modify_reminder.py",
+      "vendored_sha256": "300a6f774365305cf97642bca8f3354adea255c262f8633cb0e6a1ca31689a98",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/play_music.py",
+      "upstream_sha256": "60f96c0393b3d9fa1bc3bd860ccc601e0e3fc5da994671c8c0da570886c6a64a",
+      "vendored_path": "vendor/apis/play_music.py",
+      "vendored_sha256": "89fb6dde874c070d7260e4afa4fa4e032ecc0ed9ef4776309f47bbc9d57fc954",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/query_agenda.py",
+      "upstream_sha256": "1d4a163ba1c1aa406b7dbaf6f5464b32c5b863c08720de67f51c13a9c953e5f2",
+      "vendored_path": "vendor/apis/query_agenda.py",
+      "vendored_sha256": "d9c27ff65ff6c7c60cf661eb05fbcead954be7ec3ea39d77a2a6e8be346365ae",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/query_alarm.py",
+      "upstream_sha256": "8a9fd25da2a5aadcdaa4e5c1c815ceff7429ffbdcac790f8accb0bb330d9314d",
+      "vendored_path": "vendor/apis/query_alarm.py",
+      "vendored_sha256": "3cc9889cd99f6bf2170583f24ff421f26306b7436b41b722202c18f94ee01d36",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/query_balance.py",
+      "upstream_sha256": "e89e171d091c79b97f2e438e2ae8fb2d6b0de92383a8953cf630f2868475e3a0",
+      "vendored_path": "vendor/apis/query_balance.py",
+      "vendored_sha256": "6bbc569e6b5a830efa57094471777360c54803a68171f225036d8a783869bd35",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/query_health_data.py",
+      "upstream_sha256": "aee36bebcd4bd7015438516994b3ea70d679feeb4bb784bfdf97a4a7263a7eda",
+      "vendored_path": "vendor/apis/query_health_data.py",
+      "vendored_sha256": "a19334a6b0982b54f13fef98a13198d5e33e7b3e3f849088d2608955dadc0b6e",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/query_history_today.py",
+      "upstream_sha256": "0d25f38b43cce3bb53edbe1c4f7d65b54031b2a3d627b36cfeab579a4aec1b47",
+      "vendored_path": "vendor/apis/query_history_today.py",
+      "vendored_sha256": "a2208efcc6cf36f2b577b770ef3051110934f4774ce84b1b486ab33cc7a9f3e7",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/query_meeting.py",
+      "upstream_sha256": "28d18dac8b6daeeec727cb43d44b537b9a6addec57eb736eb5fcb2cd5581fbcd",
+      "vendored_path": "vendor/apis/query_meeting.py",
+      "vendored_sha256": "7b6eccb3f861a3d34e6a442db7a15899e1edfc9aa836f8c2246dd25057c01543",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/query_registration.py",
+      "upstream_sha256": "5e9ad256d8bea57edac8e84c61127b9734b67a253d42ec8877c000286bb21c19",
+      "vendored_path": "vendor/apis/query_registration.py",
+      "vendored_sha256": "a396563689304a32a202dfcbed91f5d01db519b2c4e348122506c47b1c8930b4",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/query_reminder.py",
+      "upstream_sha256": "477ec6c6f678df2736489b57c832bc11bb12fc4503840b54fa2802daaca8b62a",
+      "vendored_path": "vendor/apis/query_reminder.py",
+      "vendored_sha256": "8f73207ba8a899ffa34be49f46092d783af0cf1caa430170f03d5daaf43dac9a",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/query_scene.py",
+      "upstream_sha256": "d3418c056325a5a421ba4ceacfd176030cd4d3b5ca53c4d86aeee1298c736fb4",
+      "vendored_path": "vendor/apis/query_scene.py",
+      "vendored_sha256": "41cef8491105bd2c8114915e368decfb32771e481314e104dc7ae43ef4562e9e",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/query_stock.py",
+      "upstream_sha256": "b8d6d747e8900d5bd2d106ed24a6051d538cf3338cbf0e33cfcb9d058c60debd",
+      "vendored_path": "vendor/apis/query_stock.py",
+      "vendored_sha256": "07ec1d63ca862b57643fd9a34b263584bdca617bc0299863486b3bc15180c3d2",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/record_health_data.py",
+      "upstream_sha256": "cad80607a5e63da30ca9fd2530f1237670d45e5e19df55e7df01bb776610b3d9",
+      "vendored_path": "vendor/apis/record_health_data.py",
+      "vendored_sha256": "a352fbcf649c849d409cf23060ae36e9494d98daf5ba08c5880855b864a0dbf9",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/speech_recognition.py",
+      "upstream_sha256": "73651ab632b3bbb2edd749c516f8c38bb717125ae37227ec4d039a71ffbc28e1",
+      "vendored_path": "vendor/apis/speech_recognition.py",
+      "vendored_sha256": "4a9c2f9b84cddb76d398280448b1a353fe021d44fa7698efa69e4d8c4a3ab0ba",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/symptom_search.py",
+      "upstream_sha256": "dd011e578667170b5d8a3bc2c6047fdd7bfdacdfef91d1358ca11fc62f150ad5",
+      "vendored_path": "vendor/apis/symptom_search.py",
+      "vendored_sha256": "5d19a421f9dd836fde26d88cdcee129ce59a8aa1c0f6ca8f00b43c314ab001cf",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/timed_switch.py",
+      "upstream_sha256": "cc60d2bfc4c0cda974e6169739d608c8c0b75a2b9505c98b700911062710e3ae",
+      "vendored_path": "vendor/apis/timed_switch.py",
+      "vendored_sha256": "b62c9e71f302ccf093f9638b1837695dfc05096a81761658a37aed7543532f9e",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/apis/wiki.py",
+      "upstream_sha256": "030e0b501a05beb6d278fdbb0a36b6ccdd0d70d5168e7bdeaaf87c2b519e38d7",
+      "vendored_path": "vendor/apis/wiki.py",
+      "vendored_sha256": "3910b8213b86a0a46d3b1a92d87e382ef0c14104e26fe77a4ca9f66bbfe69245",
+      "changes": [
+        "package-relative API import"
+      ]
+    },
+    {
+      "upstream_path": "api-bank/tool_manager.py",
+      "upstream_sha256": "06c31264f9402b8627b7b009703c7dd8b97751f900395a5785d2d4bcc330718c",
+      "vendored_path": "vendor/tool_manager.py",
+      "vendored_sha256": "0f51e462c713a59456ba1a4d5b7ea63e0c9f5bfc14ec42c299332795670bcfa9",
+      "changes": [
+        "constructor uses explicit audited registry and per-instance deep copied fixtures; no dynamic imports/CWD dependence",
+        "retain five dispatch/initialization/description methods verbatim; omit CLI, parser, ToolSearcher imports",
+        "fixture reads resolve through the locked external eval data cache"
+      ]
+    }
+  ]
+}

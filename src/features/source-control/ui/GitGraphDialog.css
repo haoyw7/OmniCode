@@ -1,0 +1,19 @@
+.git-graph-table {
+  min-width: 820px;
+}
+
+.git-graph-ref {
+  display: inline-flex;
+  height: 22px;
+  min-width: 0;
+  max-width: 160px;
+  flex-shrink: 1;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--color-stroke);
+  border-radius: 6px;
+  padding-inline: 6px;
+  color: color-mix(in srgb, var(--color-content) 65%, transparent);
+  background: color-mix(in srgb, var(--color-content) 4%, transparent);
+  white-space: nowrap;
+}

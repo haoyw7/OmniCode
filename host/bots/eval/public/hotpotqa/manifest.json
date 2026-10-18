@@ -1,0 +1,473 @@
+{
+  "source": "hotpotqa",
+  "status": "executable_offline_adapter",
+  "variant": "offline_distractor_tools_v1",
+  "upstream_records_seen": 7405,
+  "imported_original_records": 48,
+  "executable_variants": 48,
+  "distinct_upstream_ids": 48,
+  "source_data": {
+    "official_url": "http://curtis.ml.cmu.edu/datasets/hotpot/hotpot_dev_distractor_v1.json",
+    "official_https_url": "https://curtis.ml.cmu.edu/datasets/hotpot/hotpot_dev_distractor_v1.json",
+    "official_homepage": "https://hotpotqa.github.io/",
+    "download_url": "https://huggingface.co/datasets/hotpotqa/hotpot_qa/resolve/1908d6afbbead072334abe2965f91bd2709910ab/distractor/validation-00000-of-00001.parquet",
+    "revision": "1908d6afbbead072334abe2965f91bd2709910ab",
+    "sha256": "c20b638ca82b21d04fe12e14ff417ad05153d4d215a65de54497fca4e972f7c6",
+    "bytes": 27452575,
+    "split": "dev",
+    "mirror_split": "validation",
+    "setting": "distractor",
+    "license": "CC-BY-SA-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "retrieved_utc_date": "2026-10-09",
+    "official_json_byte_identity_verified": false,
+    "fallback_reason": "Official CMU HTTPS failed TLS unexpected EOF; HTTP requests timed out after 12 and 20 seconds. Used pinned public hotpotqa/hotpot_qa parquet mirror with SHA256 matching HF LFS metadata."
+  },
+  "official_grader": {
+    "repository": "https://github.com/hotpotqa/hotpot",
+    "revision": "3635853403a8735609ee997664e1528f4480762a",
+    "file": "hotpot_evaluate_v1.py",
+    "license": "Apache-2.0",
+    "copyright": "Copyright 2018 Zhilin Yang, Peng Qi, Saizheng Zhang",
+    "sha256": "d35fc91a6db21d791dbdda11daf3856e9359f5701d54e3eefba20d88fecc02c0",
+    "local_patch": "Only replace import ujson as json with import json; all metric functions and original CLI preserved.",
+    "audit": "Reviewed complete 130-line evaluator: normalization, answer/support set metrics, scalar joint calculation, file reads confined to opt-in CLI. No network, models, subprocesses or mutations. Imported module does not run CLI."
+  },
+  "selection": {
+    "input_records": 7405,
+    "input_distribution": {
+      "bridge/hard": 5918,
+      "comparison/hard": 1487
+    },
+    "duplicate_rows_removed": 0,
+    "excluded_records": 61,
+    "exclusions": [
+      {
+        "upstream_id": "5a73595055429901807dafd6",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a76394c5542994ccc918725",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a78dc4d55429970f5fffdb6",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a7a5aea5542996c55b2dd6f",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a7af08655429931da12c989",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a7cd66a554299452d57ba90",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a836ce55542993344746012",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a83ed9b55429933447460b8",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a84be845542991dd0999dcf",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a86458b5542991e771815ec",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a87954f5542996e4f308856",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a88a1475542997e5c09a646",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a8a49cd55429930ff3c0d71",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a8aee3d55429950cd6afc01",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a8b036d55429971feec45fe",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a8cfee555429941ae14df5c",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a8dfae55542995085b3736b",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5a8e08d35542995085b37395",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab1d7ac554299449642c7e6",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab26a4b55429970612095fc",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab2bc80554299194fa934d7",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab3c7df55429969a97a81be",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab4f7fc5542991779162d43",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab6006a554299110f2199b5",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab61cf5554299637185c668",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab6369655429953192ad2a1",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab672165542995eadeeffe0",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab67ce2554299710c8d1ead",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab680d15542995eadef0011",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab69f13554299710c8d1ef3",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab6d04c554299710c8d1f70",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab6dbc15542995eadef00cd",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab82bbb5542990e739ec84c",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab8f4ee5542991b5579f091",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ab938fb554299131ca422ce",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5abae1055542996cc5e49ec9",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5abbf8bc5542993f40c73c35",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5abc7bc45542993a06baf8ef",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5abd259d55429924427fcf1a",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5abffd10554299012d1db556",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ac082535542992a796ded2f",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ac274fc55429963665199c1",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ac2a3c7554299218029dadb",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ac2ed41554299218029db96",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ac3ac8255429939154138ad",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5adbe9fa55429944faac23ba",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5adc65e85542996e68525350",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5adcd4325542994d58a2f6ed",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5add64065542995b365fab25",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ade28b15542997c77aded83",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ade3e69554299728e26c68d",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ade82ba5542992fa25da7a3",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5adeb95d5542992fa25da827",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5adf39295542992d7e9f92df",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ae0e183554299422ee9953f",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ae14cf05542990adbacf742",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ae40a2955429970de88d8a3",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ae473545542995dadf2433d",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ae4bcfc55429913cc2044eb",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      },
+      {
+        "upstream_id": "5ae61bfd5542992663a4f261",
+        "reasons": [
+          "invalid_gold_support_index_or_title"
+        ]
+      },
+      {
+        "upstream_id": "5ae6529a55429929b0807b32",
+        "reasons": [
+          "requires_exactly_10_distinct_passages"
+        ]
+      }
+    ],
+    "eligible_distribution": {
+      "bridge/hard": 5898,
+      "comparison/hard": 1446
+    },
+    "selected_distribution": {
+      "bridge/hard": 24,
+      "comparison/hard": 24
+    },
+    "seed": 17,
+    "per_category": 24,
+    "algorithm": "Sort by (upstream ID, canonical SHA256), remove duplicate IDs/canonical row SHA256/content SHA256 excluding ID, filter invalid gold references or non-10-distinct context, then Python Random(17).sample 24 per sorted type/level category; sort selected rows by ID within category.",
+    "difficulty_limit": "All 7405 official dev/distractor mirror rows have level=hard. No easy or medium records exist in this split; no difficulty labels are invented."
+  },
+  "transformation": "HF parquet row preserved in original/hf_records.json; lossless field reconstruction: id -> _id, supporting_facts.title/sent_id -> ordered pairs, context.title/sentences -> ordered pairs. Question, answer, type, level and all original sentence strings retained without rewriting. Episode prompt adds local tool/output-format instructions and unlabelled titles; complete context is exposed by read_passage. Gold answer and support labels are private. Local final JSON uses answer/supporting_facts; valid existing, unique and actually-read citations are additional local hard checks. CMU JSON byte identity was not verified; this is a pinned HF mirror reconstruction.",
+  "env_requirement": "Python 3.10+ standard library; no network, model, credentials, external tools or persistent mutation at runtime",
+  "rebuild_requirement": "pyarrow==23.0.1 only for opt-in parquet import; isolated /tmp installation used, no model framework installed",
+  "scoring": {
+    "official": [
+      "em",
+      "f1",
+      "prec",
+      "recall",
+      "sp_em",
+      "sp_f1",
+      "sp_prec",
+      "sp_recall",
+      "joint_em",
+      "joint_f1",
+      "joint_prec",
+      "joint_recall"
+    ],
+    "local": [
+      "JSON format",
+      "existing citation title and sentence",
+      "unique citations",
+      "cited passages actually read in this Episode and matching trace"
+    ],
+    "passed": "All local hard checks and official joint_em == 1; report official metrics separately, unmodified by local read failures.",
+    "llm_judge": "not used",
+    "reference": "Gold oracle scripts validate harness only; not an agent benchmark result."
+  },
+  "limits": [
+    "48-record balanced subset, not full official benchmark",
+    "Only upstream hard difficulty available in dev",
+    "Offline distractor grounding; no fullwiki retrieval or real-time web research",
+    "HF mirror reconstructed fields; CMU original byte identity unverified",
+    "Human answer/support annotations may contain ambiguity; exact match is intentionally strict"
+  ],
+  "files": {
+    "cases.jsonl": "58b626f66284bbbb46c71900047e830583493b1890591c0c546d1464c056e412",
+    "original/hf_records.json": "e8dc15907ca55c993ab7a61b0944efafcc980f4bcd87b9be9a19a8fd28622921",
+    "original/records.json": "5c0511ca3498b46b505213710be252ec7b0893deb34abb6d3f3079cecaf9484c",
+    "original/HF_DATASET_CARD.md": "3cfab003a856275d3198b031c6b2ac46c63178fb462a4123705f652b71b22813",
+    "original/HF_FILES.json": "125e400713122e24c48be1f5626894d50133ff0bcb0266e441bfdc8d6c1b0b29",
+    "LICENSE-CC-BY-SA-4.0.txt": "28a9529c7d0bb4dc51f4bf5c116a3d16ef247a052f7591466768ddf563fd1cf5",
+    "vendor/hotpot_evaluate_v1.py": "d35fc91a6db21d791dbdda11daf3856e9359f5701d54e3eefba20d88fecc02c0",
+    "vendor/hotpot_evaluate_v1_stdlib.py": "5043e0ed0599e0210d66f1bb7ef6933a1f5500a9c1c800d70c68e461cf497418",
+    "vendor/LICENSE.txt": "9c264489d021e5905c0544f75e292c63f78dca56acd2aec395dd36dcc41940c7",
+    "adapter.py": "3780ed9b5cbe669d63208a1f127fb7ae3dc4740f2667bba61201938378b9d799",
+    "import_subset.py": "441ec86fd2536ad5cf28df2aa2fd1c6f5be200c524c747912f5c66a19f3f4dd6"
+  }
+}

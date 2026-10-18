@@ -1,0 +1,203 @@
+.astra-welcome {
+  --star-color: #d8c9a2;
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+  container-type: size;
+}
+
+.astra-welcome-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 82% 12%, #d8c9a226, transparent 48%),
+    radial-gradient(ellipse at 100% 0%, #d8c9a212, transparent 65%),
+    radial-gradient(ellipse at 15% 75%, #d8c9a214, transparent 60%);
+  box-shadow: inset 0 0 45px #d8c9a208;
+}
+
+/* Keep the solar focal point small and above the composer, even in splits. */
+.astra-solar-system {
+  position: absolute;
+  left: 82%;
+  top: clamp(58px, 15%, 120px);
+  width: clamp(46px, 10cqw, 86px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+
+.astra-solar-core {
+  position: absolute;
+  inset: 28%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 35%,
+    #f5f0e4,
+    #d8c9a2 35%,
+    #a89560 75%
+  );
+  box-shadow:
+    0 0 16px #d8c9a290,
+    0 0 42px #d8c9a245;
+}
+
+.astra-solar-core::after {
+  content: "";
+  position: absolute;
+  inset: -65%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #d8c9a21f, transparent 70%);
+}
+
+.astra-solar-corona {
+  position: absolute;
+  inset: -90%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    #d8c9a238 0deg 2deg,
+    transparent 2deg 15deg
+  );
+  mask-image: radial-gradient(
+    circle,
+    transparent 12%,
+    #000 22%,
+    transparent 65%
+  );
+}
+
+.astra-solar-wave {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--star-color);
+  border-radius: 50%;
+}
+
+.astra-solar-orbit {
+  position: absolute;
+  inset: -45%;
+  transform: rotate(-28deg) scaleY(0.38);
+}
+
+.astra-solar-orbit-outer {
+  inset: -70%;
+  transform: rotate(48deg) scaleY(0.32);
+}
+
+.astra-solar-orbit > span {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #d8c9a235;
+  border-radius: 50%;
+}
+
+.astra-solar-orbit > span::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--star-color);
+  box-shadow: 0 0 8px var(--star-color);
+}
+
+.astra-solar-orbit-outer > span {
+  border-color: #d8c9a230;
+}
+
+.astra-sparkle {
+  position: absolute;
+  left: var(--spark-x);
+  top: var(--spark-y);
+  width: var(--spark-size);
+  height: var(--spark-size);
+  border-radius: 50%;
+  background: var(--star-color);
+  box-shadow: 0 0 7px var(--star-color);
+  opacity: 0;
+}
+
+.astra-sparkle-cross {
+  border-radius: 0;
+  background: linear-gradient(transparent, #f5f0e4, transparent);
+  clip-path: polygon(
+    50% 0,
+    61% 38%,
+    100% 50%,
+    61% 61%,
+    50% 100%,
+    38% 61%,
+    0 50%,
+    38% 38%
+  );
+}
+
+.astra-star-flight {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.astra-star {
+  position: absolute;
+  left: var(--star-x);
+  top: var(--star-y);
+  width: var(--star-length);
+  height: var(--star-width);
+  border-radius: 100%;
+  background: linear-gradient(
+    to right,
+    #f5f0e4,
+    var(--star-color) 12%,
+    transparent
+  );
+  box-shadow: 0 0 8px color-mix(in srgb, var(--star-color) 35%, transparent);
+  transform: rotate(-55deg);
+  transform-origin: left center;
+}
+
+.astra-star::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -1px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #f5f0e4;
+  box-shadow: 0 0 6px 1px var(--star-color);
+}
+
+html.theme-light .astra-star {
+  background: linear-gradient(
+    to right,
+    #806c3b,
+    var(--star-color) 12%,
+    transparent
+  );
+}
+
+html.theme-light .astra-sparkle {
+  background: #806c3b;
+  box-shadow: 0 0 5px #a8956040;
+}
+
+html.theme-light .astra-solar-core {
+  box-shadow:
+    0 0 0 1px #a8956033,
+    0 0 24px #a8956050;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .astra-welcome {
+    display: none;
+  }
+  .astra-welcome,
+  .astra-welcome * {
+    animation: none;
+  }
+}

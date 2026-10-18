@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="launch">
+    <dependencies><deployment identifier="iOS"/><plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17105"/></dependencies>
+    <scenes><scene sceneID="launch-scene"><objects>
+        <viewController id="launch" sceneMemberID="viewController">
+            <view key="view" contentMode="scaleToFill" id="launch-view">
+                <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                <subviews><imageView contentMode="scaleAspectFit" image="Splash" translatesAutoresizingMaskIntoConstraints="NO" id="launch-logo">
+                    <rect key="frame" x="155.5" y="301.5" width="64" height="64"/>
+                    <constraints><constraint firstAttribute="width" constant="64" id="logo-width"/><constraint firstAttribute="height" constant="64" id="logo-height"/></constraints>
+                </imageView></subviews>
+                <color key="backgroundColor" red="0.027" green="0.027" blue="0.027" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                <constraints><constraint firstItem="launch-logo" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" id="logo-center-x"/><constraint firstItem="launch-logo" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" id="logo-center-y"/></constraints>
+            </view>
+        </viewController><placeholder placeholderIdentifier="IBFirstResponder" id="launch-responder" sceneMemberID="firstResponder"/>
+    </objects></scene></scenes>
+    <resources><image name="Splash" width="1024" height="1024"/></resources>
+</document>

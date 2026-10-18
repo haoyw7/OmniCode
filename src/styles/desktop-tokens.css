@@ -1,0 +1,212 @@
+/* Measured desktop geometry. Mobile removes data-skin before applying its theme. */
+/* Keep the drag value untyped: WebKitGTK 2.52 applies native page zoom twice to
+   registered <length> values when they are substituted into width. */
+@property --sidebar-resize-width {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --tools-width {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --explorer-tree-width {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --chat-background-left {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+@property --chat-background-top {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+@property --chat-background-width {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+@property --chat-background-height {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+
+html[data-skin] {
+  --scrollbar-size: 7px;
+  --scrollbar-arrow-size: 6px;
+  --scrollbar-vertical-button-size: 9px;
+  --scrollbar-inset: 1.5px;
+  --scrollbar-edge-inset: 1px;
+  --scrollbar-button-display: block;
+  --desktop-sidebar-session-row: 52px;
+  --text-desktop-h1: var(--text-heading-xl);
+  --text-desktop-h2: 22px;
+  --text-desktop-h3: 15px;
+  --text-desktop-body: var(--text-body-md);
+  --text-desktop-ui: var(--text-body-sm);
+  --text-desktop-label: 13px;
+  --text-desktop-caption: var(--text-body-xs);
+  /* Shared control scale: compact toolbars, ordinary actions, prominent actions. */
+  --desktop-control-xs: 24px;
+  --desktop-control-sm: 28px;
+  --desktop-control-md: 32px;
+  --desktop-control-lg: 36px;
+  --desktop-control-xl: 40px;
+  --desktop-control-pad-sm: 8px;
+  --desktop-control-pad-md: 10px;
+  --desktop-control-pad-lg: 12px;
+  --desktop-control-pad-xl: 14px;
+  --desktop-control-gap: 8px;
+  --desktop-menu-gutter: 4px;
+  --desktop-disabled-opacity: .5;
+  --desktop-icon-xs: 20px;
+  --desktop-icon-sm: 28px;
+  --desktop-icon-md: var(--desktop-control-md);
+  --desktop-icon-lg: var(--desktop-control-xl);
+  --desktop-radius-field: 8px;
+  --desktop-radius-card: 10px;
+  --desktop-radius-dialog: 16px;
+  --desktop-radius-tile: 10px;
+  --desktop-radius-bubble: 12px;
+  --desktop-radius-composer: 16px;
+  --desktop-border: 0.5px;
+  --desktop-switch-width: 36px;
+  --desktop-switch-height: 20px;
+  --desktop-switch-thumb: 16px;
+  --desktop-switch-travel: 16px;
+  --desktop-checkbox-size: 16px;
+  --desktop-checkbox-radius: 4px;
+  --desktop-settings-nav: 192px;
+  --desktop-settings-toolbar-height: 56px;
+  --desktop-sidebar-width: 256px;
+  --desktop-navigation-row-height: 26px;
+  --desktop-titlebar-action-width: 34px;
+  --desktop-titlebar-action-height: 26px;
+  --desktop-titlebar-action-gap: 8px;
+  --desktop-titlebar-action-radius: 5px;
+  --desktop-titlebar-icon: 16px;
+  --desktop-pane-toolbar-icon: 16px;
+  --desktop-pane-toolbar-action: 24px;
+  --desktop-pane-toolbar-gap: 3px;
+  --desktop-pane-toolbar-inset: 6px;
+  --desktop-sidebar-inset: 8px;
+  --desktop-sidebar-row-inset: 8px;
+  --desktop-sidebar-icon: 16px;
+  --desktop-sidebar-toolbar-action: 24px;
+  --desktop-sidebar-action-inset: 2px;
+  --desktop-sidebar-action-gap: 4px;
+  --desktop-conversation-min-width: 420px;
+  /* Side-by-side chats that cannot all fit the minimum above share the row down to this. */
+  --desktop-conversation-compact-min-width: 240px;
+  /* Session status cards: width, edge inset and the gap kept before the conversation. */
+  --desktop-status-rail-reserve: calc(16.75rem + 24px);
+  --desktop-pane-min-width: 280px;
+  --desktop-transcript-edge-height: 20px;
+  --desktop-transcript-edge-blur: 4px;
+  --desktop-tile-gap: 12px;
+  --desktop-feedback: 60ms;
+  --desktop-feedback-normal: 120ms;
+  --desktop-popup-duration: 200ms;
+  --desktop-popup-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Forms geometry and semantic colors; custom accents remain configurable. */
+  --desktop-button-height: 36px;
+  --desktop-button-small-height: 32px;
+  --desktop-button-padding: 16px;
+  --desktop-button-small-padding: 12px;
+  --desktop-field-height: 32px;
+  --desktop-field-large-height: 40px;
+  --desktop-focus-shadow: 0 0 0 2px var(--desktop-focus-gap), 0 0 0 3.5px var(--desktop-focus-info);
+  --desktop-primary: var(--color-ink);
+  --desktop-on-primary: var(--color-app);
+  --desktop-control-track: #ffffff26;
+  --desktop-control-checked: #4682d5;
+  --desktop-control-knob: #151515;
+  --desktop-control-disabled: #89878126;
+  --desktop-popup-x: 0px;
+  --desktop-popup-y: 0px;
+  --desktop-menu-row: 24px;
+  --desktop-menu-font: 14px;
+  --desktop-menu-leading: 20px;
+  --desktop-menu-pad-y: 2px;
+  --desktop-menu-pad-x: 10px;
+  --desktop-menu-radius: 8px;
+  --desktop-menu-icon: 20px;
+  --desktop-project-menu-icon: 16px;
+  --desktop-menu-gap: 8px;
+  --desktop-menu-panel-radius: 12px;
+  --cds-fill-ghost-hover: rgb(255 255 255 / 7.5%);
+  --cds-fill-ghost-selected: rgb(255 255 255 / 15%);
+  --shadow-panel: 0 0 0 0.5px var(--color-composer-ring), 0 8px 24px rgb(0 0 0 / 24%);
+  --radius-composer: var(--desktop-radius-composer);
+  --radius-sheet: var(--desktop-radius-dialog);
+  --radius-row: 8px;
+  --row-h: 32px;
+  --row-h-compact: 24px;
+  --glass-filter: none;
+  --shadow-sheet: 0 0 0 0.5px var(--color-composer-ring), 0 2px 8px rgb(0 0 0 / 20%);
+  --desktop-control-surface: var(--color-card);
+  --desktop-control-ink: var(--color-ink);
+  --desktop-control-placeholder: var(--color-ink-tertiary);
+  --desktop-control-border: var(--color-composer-ring);
+  --desktop-focus-gap: var(--color-card);
+  --desktop-focus-info: rgb(70 130 213 / 60%);
+  --desktop-danger: var(--color-danger);
+  --desktop-on-danger: var(--color-danger-ink);
+  --desktop-focus-danger: color-mix(in srgb, var(--desktop-danger) 50%, transparent);
+  --desktop-shadow-composer: 0 2px 8px rgb(0 0 0 / 16%);
+  --desktop-shadow-card: 0 1px 2px rgb(0 0 0 / 5%);
+}
+
+html[data-skin].theme-light {
+  --cds-fill-ghost-hover: rgb(11 11 11 / 5%);
+  --cds-fill-ghost-selected: rgb(11 11 11 / 10%);
+  --shadow-panel: 0 0 0 0.5px var(--color-composer-ring), 0 8px 24px rgb(0 0 0 / 8%);
+  --desktop-control-knob: #ffffff;
+  --desktop-control-disabled: #8987811a;
+  --shadow-sheet: 0 0 0 0.5px var(--color-composer-ring), 0 2px 8px rgb(0 0 0 / 5%);
+  --desktop-shadow-composer: 0 2px 8px rgb(0 0 0 / 8%);
+  --desktop-primary: #141413;
+  --desktop-on-primary: #ffffff;
+  --desktop-danger: #b53333;
+  --desktop-on-danger: #ffffff;
+  --desktop-control-surface: #ffffff;
+  --desktop-control-ink: #141413;
+  --desktop-control-placeholder: #73726c;
+  --desktop-control-border: rgb(31 30 29 / 30%);
+  --desktop-control-track: #faf9f5;
+  --desktop-focus-gap: #ffffff;
+  --desktop-focus-info: rgb(50 102 173 / 50%);
+}
+
+
+html[data-skin].has-user-accent {
+  --desktop-primary: var(--color-accent);
+  --desktop-on-primary: var(--color-accent-ink);
+  --desktop-control-checked: var(--color-accent);
+  --desktop-focus-info: color-mix(in srgb, var(--color-focus) 50%, transparent);
+}
+
+html[data-skin] {
+  --app-header-height: 52px;
+  --app-header-fullscreen-height: 64px;
+  --app-skeleton-size: 32px;
+  --app-skeleton-fullscreen-size: 44px;
+}
+html[data-skin][data-desktop-mode] {
+  --desktop-pane-outer: 12px;
+  --desktop-pane-half-gap: 6px;
+  --desktop-conversation-width: 720px;
+  --desktop-conversation-inset: 24px;
+}

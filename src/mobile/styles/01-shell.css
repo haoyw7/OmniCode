@@ -1,0 +1,209 @@
+/* Mobile owns its palette, typography and controls; content renderers and
+   icons are shared without importing desktop chrome. */
+/* The page frame never scrolls; clipping keeps the WebView's reveal of a
+   focused field from scrolling it anyway. */
+body,
+#root {
+  overflow: clip;
+}
+/* Root tokens also reach sheets and previews that portal outside the shell. */
+:root {
+  --scrollbar-scale: 1;
+  --scrollbar-min-size: 0px;
+  --readonly-scrollbar-width: thin;
+  --mobile-font-xs: 11px;
+  --mobile-font-sm: 12px;
+  --mobile-font-md: 13px;
+  --mobile-font-lg: 15px;
+  --mobile-font-xl: 17px;
+}
+.mobile-app {
+  --mobile-safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --mobile-safe-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --mobile-safe-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+  --mobile-safe-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  position: relative;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  font-size: var(--mobile-font-md);
+  padding-inline: var(--mobile-safe-left) var(--mobile-safe-right);
+  background: var(--color-m-app);
+  color: var(--color-m-ink);
+  /* Controls draw their own :active states; the WebView's rectangular tap
+     flash ignores capsule corners and lands a frame late. */
+  -webkit-tap-highlight-color: transparent;
+}
+/* This visibility wrapper belongs to the shell, including before Assistant loads. */
+.mobile-assistant-background {
+  display: contents;
+}
+/* Page-level aliases for the skin tokens. On :root so sheets and popovers
+   that portal to <body> resolve them too. A chosen accent color already
+   replaces --color-m-accent (theme/skins.css). */
+:root {
+  --mobile-accent: var(--color-m-accent);
+  --mobile-accent-foreground: var(--color-m-accent-ink);
+  --mobile-card: var(--color-m-card);
+  --mobile-fill: var(--color-m-control);
+  --mobile-separator: var(--color-m-hairline);
+  --mobile-selected: var(--color-m-raised-hover);
+  --mobile-card-radius: calc(var(--radius-m-xl) + 4px);
+}
+/* Content scrolls behind the status bar on edge-to-edge screens; this scrim
+   keeps system icons readable without reserving an opaque strip. */
+.mobile-app::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  height: calc(var(--mobile-safe-top) * 1.5);
+  z-index: 15;
+  pointer-events: none;
+  background: linear-gradient(
+    var(--color-m-app) 66%,
+    color-mix(in srgb, var(--color-m-app) 0%, transparent)
+  );
+}
+.mobile-app * {
+  box-sizing: border-box;
+}
+.mobile-app button,
+.mobile-app input,
+.mobile-app textarea,
+.mobile-app select {
+  font: inherit;
+}
+/* Image previews portal to body, outside the shell's mobile-safe variables. */
+.image-lightbox {
+  padding-top: calc(24px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  padding-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(24px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  padding-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+}
+.image-lightbox-close {
+  top: calc(16px + var(--safe-area-inset-top, env(safe-area-inset-top, 0px)));
+  right: calc(16px + var(--safe-area-inset-right, env(safe-area-inset-right, 0px)));
+  width: 44px;
+  height: 44px;
+}
+.image-lightbox-close > svg {
+  width: 20px;
+  height: 20px;
+}
+/* One font step for sheets, dialogs and shared popovers, including body portals.
+   Fixed sizes opt in below; inherited text grows once at the surface root. */
+:is(.mobile-sheet, .mobile-modal, .mobile-notices, .fixed[role="alert"],
+  [role="dialog"], [data-popover-side]) {
+  --mobile-popup-font-step: 2px;
+  --mobile-popup-line-step: 0.5px;
+  --text-xs: calc(0.75rem + var(--mobile-popup-font-step));
+  --text-sm: calc(0.875rem + var(--mobile-popup-font-step));
+  --text-base: calc(1rem + var(--mobile-popup-font-step));
+  --text-lg: calc(1.125rem + var(--mobile-popup-font-step));
+  --text-xl: calc(1.25rem + var(--mobile-popup-font-step));
+  --text-2xl: calc(1.5rem + var(--mobile-popup-font-step));
+}
+/* Shared content uses Tailwind borders. Preserve the popover frame's measured
+   border; its glass rim below supplies the extra visual weight. */
+:where(.mobile-sheet, .mobile-modal, [role="dialog"], [data-popover-side])
+  [class~="border"]:not([data-popover-side], [class*="border-0"],
+    [class*="border-t-0"], [class*="border-b-0"], [class*="border-l-0"], [class*="border-r-0"]),
+[role="dialog"][class~="border"]:not([data-popover-side], [class*="border-0"],
+  [class*="border-t-0"], [class*="border-b-0"], [class*="border-l-0"], [class*="border-r-0"]),
+.fixed[role="alert"][class~="border"]:not([class*="border-0"],
+  [class*="border-t-0"], [class*="border-b-0"], [class*="border-l-0"], [class*="border-r-0"]) {
+  border-width: calc(1px + var(--mobile-popup-line-step, 0px));
+}
+:where(.mobile-sheet, .mobile-modal, [role="dialog"], [data-popover-side])
+  [class~="border-t"]:not([class*="border-0"], [class*="border-t-0"]) {
+  border-top-width: calc(1px + var(--mobile-popup-line-step, 0px));
+}
+:where(.mobile-sheet, .mobile-modal, [role="dialog"], [data-popover-side])
+  [class~="border-b"]:not([class*="border-0"], [class*="border-b-0"]) {
+  border-bottom-width: calc(1px + var(--mobile-popup-line-step, 0px));
+}
+:where(.mobile-sheet, .mobile-modal, [role="dialog"], [data-popover-side])
+  [class~="border-l"]:not([class*="border-0"], [class*="border-l-0"]) {
+  border-left-width: calc(1px + var(--mobile-popup-line-step, 0px));
+}
+:where(.mobile-sheet, .mobile-modal, [role="dialog"], [data-popover-side])
+  [class~="border-r"]:not([class*="border-0"], [class*="border-r-0"]) {
+  border-right-width: calc(1px + var(--mobile-popup-line-step, 0px));
+}
+:where([role="dialog"]:not([data-popover-side] [role="dialog"],
+    [role="dialog"] [role="dialog"]), body > [data-popover-side]) {
+  font-size: calc(1em + var(--mobile-popup-font-step));
+}
+/* Shared components also use fixed Tailwind sizes. The fallback keeps text
+   outside popups at its existing size. */
+[class~="text-[9px]"] {
+  font-size: calc(9px + var(--mobile-popup-font-step, 0px));
+}
+[class~="text-[10px]"] {
+  font-size: calc(10px + var(--mobile-popup-font-step, 0px));
+}
+[class~="text-[11px]"] {
+  font-size: calc(var(--mobile-font-xs) + var(--mobile-popup-font-step, 0px));
+}
+[class~="text-[11.5px]"] {
+  font-size: calc(var(--mobile-font-sm) + var(--mobile-popup-font-step, 0px));
+}
+[class~="text-[12px]"] {
+  font-size: calc(var(--mobile-font-sm) + var(--mobile-popup-font-step, 0px));
+}
+[class~="text-[12.5px]"] {
+  font-size: calc(12.5px + var(--mobile-popup-font-step, 0px));
+}
+[class~="text-[13px]"] {
+  font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px));
+}
+[class~="text-[14px]"] {
+  font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px));
+}
+[class~="text-[15px]"] {
+  font-size: calc(var(--mobile-font-lg) + var(--mobile-popup-font-step, 0px));
+}
+.mobile-app button {
+  cursor: pointer;
+}
+.mobile-app button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+.mobile-app button:focus-visible,
+.mobile-app a:focus-visible,
+.mobile-app input:focus-visible,
+.mobile-app textarea:focus-visible,
+.mobile-app select:focus-visible {
+  outline: 2px solid var(--color-m-focus);
+  outline-offset: 2px;
+}
+.mobile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--color-stroke);
+  flex-shrink: 0;
+}
+/* Controls float independently, leaving content visible between them. */
+.mobile-header[data-floating="true"] {
+  position: absolute;
+  top: var(--mobile-safe-top);
+  inset-inline: var(--mobile-safe-left) var(--mobile-safe-right);
+  height: var(--mobile-header-height);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  z-index: 20;
+  pointer-events: none;
+}
+.mobile-header[data-floating="true"] > * {
+  position: absolute;
+  top: 12px;
+  pointer-events: auto;
+}

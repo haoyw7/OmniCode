@@ -1,0 +1,18 @@
+Contains source code, task definitions, policies and synthetic database fixtures
+from Sierra's tau-bench repository:
+https://github.com/sierra-research/tau-bench
+Revision: 59a200c6d575d595120f1cb70fea53cef0632f6b
+Copyright (c) 2024 Sierra. Distributed under the MIT License; see LICENSE.
+
+The repository-wide MIT License covers the bundled source and data. No separate
+data license or restrictive data notice was found in this fixed snapshot. The
+retail data/readme.md additionally states: "Feel free to use some of the data for
+other purposes." The mock data generation notes are retained verbatim.
+
+This local adapter is an adaptation, not an official tau-bench distribution or
+an official leaderboard score. It replaces the LLM user simulator with a fully
+disclosed instruction brief and advance authorization. It adds strict argument
+validation, JSON result wrapping, transactional rollback on tool errors, bounded
+calculator evaluation, and a nonempty final-response check. Native tools and
+fixtures are retained unmodified as reference source files. The fixed upstream
+README warns that its task versions are outdated.

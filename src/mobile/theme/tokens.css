@@ -1,0 +1,109 @@
+/* Mobile design tokens. Everything is namespaced `m-` so the phone shell never
+   collides with the desktop palette (`--color-accent`, `--color-panel`, …).
+   Values here are Midnight's and only matter before a skin is applied; every
+   skin in skins.css redeclares all colors and the skin-dependent radii.
+
+   Utilities: bg-m-app, text-m-ink, border-m-hairline, rounded-m-xl,
+   rounded-m-composer, size-m-hit, text-m-body, … */
+@theme {
+  --color-m-context-messages: #2f80ed;
+  --color-m-context-tools: #f27337;
+  --color-m-context-mcp: #18ad81;
+  --color-m-context-muted: #91918a;
+  --color-m-context-buffer: #bcbcb1;
+  --color-m-app: #070707;
+  --color-m-panel: #111111;
+  --color-m-raised: #2f2f2f;
+  --color-m-raised-hover: #3d3d3d;
+  --color-m-card: #262626;
+  --color-m-menu: #262626;
+  --color-m-composer: #2f2f2f;
+  --color-m-composer-ring: transparent;
+  --color-m-inset: #191919;
+  --color-m-control: #2f2f2f;
+  --color-m-hairline: #333333;
+  --color-m-ink: #fcfcfc;
+  --color-m-ink-secondary: #fcfcfc99;
+  --color-m-ink-tertiary: #fcfcfc90;
+  --color-m-accent: #1084fe;
+  --color-m-accent-border: #459ffe;
+  --color-m-accent-text: #7fc0ff;
+  --color-m-accent-ink: #ffffff;
+  --color-m-focus: #459ffe;
+  --color-m-bubble-user: #5a5a5a;
+  --color-m-bubble-user-ink: #fcfcfc;
+  --color-m-success: #38d591;
+  --color-m-success-ink: #072114;
+  --color-m-danger: #ff5667;
+  --color-m-danger-ink: #ffffff;
+  --color-m-warning: #ff9800;
+
+  --radius-m-lg: 0.5rem;
+  --radius-m-xl: 0.75rem;
+  --radius-m-composer: 22px;
+  --radius-m-sheet: 20px;
+  --radius-m-bubble: 20px;
+  --radius-m-field: 10px;
+
+  /* Minimum touch target and the common control heights. */
+  --spacing-m-hit: 44px;
+  --spacing-m-control: 36px;
+  --spacing-m-pill: 28px;
+
+  --text-m-title: 17px;
+  --text-m-title--line-height: 22px;
+  --text-m-body: 15px;
+  --text-m-body--line-height: 22px;
+  --text-m-label: 13px;
+  --text-m-label--line-height: 18px;
+  --text-m-meta: 12px;
+  --text-m-meta--line-height: 16px;
+  --text-m-caption: 11px;
+  --text-m-caption--line-height: 14px;
+
+  --ease-m-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+}
+
+/* Tokens no utility generates, kept outside @theme so they are never
+   tree-shaken and skins may redeclare them. */
+:root {
+  --m-hit: 44px;
+  --m-control: 36px;
+  --m-pill: 28px;
+  --m-space-1: 8px;
+  --m-space-2: 12px;
+  --m-space-3: 16px;
+  --m-space-4: 20px;
+  --m-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --m-ease-spring: cubic-bezier(0.32, 1.25, 0.6, 1);
+  --m-duration-msg: 0.18s;
+  --m-duration-pop: 0.2s;
+  --m-duration-panel: 0.24s;
+  /* Frosted material: a translucent raised tone over a blurred backdrop.
+     glassSettings.ts rewrites the fill/blur for Settings → Glass. */
+  --m-material-fill: 78%;
+  --m-material-panel-fill: 88%;
+  --m-material-blur: 20px;
+  --m-material-saturate: 140%;
+  --m-material: color-mix(in srgb, var(--color-m-raised) var(--m-material-fill), transparent);
+  --m-material-panel: color-mix(in srgb, var(--color-m-menu) var(--m-material-panel-fill), transparent);
+  --m-material-filter: blur(var(--m-material-blur)) saturate(var(--m-material-saturate));
+  --m-shadow-float: 0 8px 28px rgb(0 0 0 / 0.28), 0 1px 3px rgb(0 0 0 / 0.18);
+}
+html.theme-light {
+  --m-shadow-float: 0 8px 28px rgb(0 0 0 / 0.1), 0 1px 3px rgb(0 0 0 / 0.08);
+}
+html[data-mobile-glass="solid"] {
+  --m-material: var(--color-m-raised);
+  --m-material-panel: var(--color-m-menu);
+  --m-material-filter: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --m-duration-msg: 0s;
+    --m-duration-pop: 0s;
+    --m-duration-panel: 0s;
+  }
+}

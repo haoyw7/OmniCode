@@ -1,0 +1,15 @@
+.skills-page-layout {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, var(--skills-preview-track, 0fr));
+}
+
+@container skills (min-width: 48rem) {
+  .skills-page-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, var(--skills-preview-track, 0fr));
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
+html.is-resizing .skills-page-layout {
+  transition: none;
+}

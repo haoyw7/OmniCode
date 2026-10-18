@@ -1,0 +1,40 @@
+/* Every floating surface and popup shares one material: the skin's raised
+   tone, translucent over a blurred backdrop (Frosted) or opaque (Solid).
+   Settings → Glass writes data-mobile-glass and the --m-material-* values on
+   <html>; the tokens live on :root because shared popovers portal outside the
+   app. No rims, bevels or refraction: surfaces read as flat skin colour. */
+.mobile-header[data-floating="true"] > .mobile-header-search,
+.mobile-composer,
+.mobile-jump,
+.mobile-queue-pill,
+.mobile-progress-capsule,
+.mobile-glass-preview-chip,
+.mobile-drawer,
+.mobile-sheet,
+.mobile-shared-question,
+html .popover-backdrop.popover-backdrop {
+  border: 1px solid var(--color-stroke);
+  background-color: var(--m-material);
+  -webkit-backdrop-filter: var(--m-material-filter);
+  backdrop-filter: var(--m-material-filter);
+  box-shadow: var(--m-shadow-float);
+}
+.mobile-progress-capsule {
+  box-shadow: none;
+}
+/* Panels hold rows of text, so they use the denser menu tone. */
+.mobile-drawer,
+.mobile-sheet,
+.mobile-shared-question,
+html .popover-backdrop.popover-backdrop {
+  background-color: var(--m-material-panel);
+}
+/* Shared popovers already draw their frame border. */
+html .popover-backdrop.popover-backdrop {
+  border-width: 1px;
+  border-color: transparent;
+}
+.mobile-header[data-floating="true"] > .mobile-header-search,
+.mobile-composer {
+  border-radius: var(--mobile-capsule-radius, 999px);
+}

@@ -1,0 +1,22 @@
+.terminal-spinner-window {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  animation-play-state: inherit;
+}
+
+.terminal-spinner-strip {
+  display: flex;
+  width: 1000%;
+  animation: terminal-spinner-frames 0.8s steps(10, end) infinite;
+  animation-play-state: inherit;
+}
+
+.terminal-spinner-strip > span {
+  flex: 0 0 10%;
+  text-align: center;
+}
+
+@keyframes terminal-spinner-frames {
+  to { transform: translateX(-100%); }
+}

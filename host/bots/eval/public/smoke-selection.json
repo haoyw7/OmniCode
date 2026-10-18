@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "selection_before_inference": true,
+  "seed": 17,
+  "maxRequests": 100,
+  "maxUsd": 1,
+  "estimatedRequests": [
+    40,
+    70
+  ],
+  "model": "openai-codex/gpt-5.6-luna",
+  "cases": [
+    {
+      "id": "bfcl/simple_python_0/local_strict_call_set_v1",
+      "reason": "bfcl/simple_python deterministic first case; numeric c4a1ceb8 for multi-session"
+    },
+    {
+      "id": "bfcl/parallel_multiple_0/local_strict_call_set_v1",
+      "reason": "bfcl/parallel_multiple deterministic first case; numeric c4a1ceb8 for multi-session"
+    },
+    {
+      "id": "longmemeval/031748ae_abs/oracle_strict_answer_and_evidence_v1",
+      "reason": "longmemeval/knowledge-update deterministic first case; numeric c4a1ceb8 for multi-session"
+    },
+    {
+      "id": "longmemeval/c4a1ceb8/oracle_strict_answer_and_evidence_v1",
+      "reason": "longmemeval/multi-session deterministic first case; numeric c4a1ceb8 for multi-session"
+    },
+    {
+      "id": "tau_bench/airline/test/2/fully_disclosed_state_transition",
+      "reason": "tau_bench/customer_service/airline deterministic first case; numeric c4a1ceb8 for multi-session"
+    },
+    {
+      "id": "tau_bench/retail/test/16/fully_disclosed_state_transition",
+      "reason": "tau_bench/customer_service/retail deterministic first case; numeric c4a1ceb8 for multi-session"
+    },
+    {
+      "id": "api_bank/AddAgenda-AddMeeting-GetUserToken-level-2-3/1/stateful-continuation",
+      "reason": "api_bank/calendar_and_reminders deterministic first case; numeric c4a1ceb8 for multi-session"
+    },
+    {
+      "id": "api_bank/BookHotel-level-1-5/0/stateful-continuation",
+      "reason": "api_bank/travel_and_finance_fixtures deterministic first case; numeric c4a1ceb8 for multi-session"
+    },
+    {
+      "id": "hotpotqa/5a7360235542991f29ee2dc7/offline_distractor_tools_v1",
+      "reason": "hotpotqa/bridge/hard deterministic first case; numeric c4a1ceb8 for multi-session"
+    },
+    {
+      "id": "hotpotqa/5a756dd65542996c70cfaef9/offline_distractor_tools_v1",
+      "reason": "hotpotqa/comparison/hard deterministic first case; numeric c4a1ceb8 for multi-session"
+    },
+    {
+      "id": "bipia/email/test/002/clean",
+      "reason": "preselected clean/attacked pair; amount Marketing and unknown Scams"
+    },
+    {
+      "id": "bipia/email/test/002/Marketing & Advertising-1/end",
+      "reason": "preselected clean/attacked pair; amount Marketing and unknown Scams"
+    },
+    {
+      "id": "bipia/email/test/037/clean",
+      "reason": "preselected clean/attacked pair; amount Marketing and unknown Scams"
+    },
+    {
+      "id": "bipia/email/test/037/Scams & Fraud-1/end",
+      "reason": "preselected clean/attacked pair; amount Marketing and unknown Scams"
+    }
+  ]
+}

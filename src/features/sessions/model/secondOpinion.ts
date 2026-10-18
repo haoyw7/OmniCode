@@ -1,0 +1,195 @@
+import { isEditTool } from "../../../integrations/harness/core/preview";
+import { compactCiRepairContext } from "../../inbox/model/ciRepair";
+import { limitSection } from "../../../shared/lib/jsonText";
+import { displayPath } from "../../../shared/lib/paths";
+import {
+  HARNESSES,
+  HARNESS_TITLE,
+  type Block,
+  type HarnessId,
+  type SecondOpinionMeta,
+} from "./session";
+
+const USER_LIMIT = 400;
+const REPORT_LIMIT = 900;
+const PROMPT_LIMIT = 1_800;
+const CI_BASE_LIMIT = 900;
+
+export const SECOND_OPINION_TITLE = "Second opinion";
+
+/** Which provider produced this turn, walking back through handoff dividers. */
+export function harnessForTurn(
+  blocks: Block[],
+  turn: Block[],
+  sessionHarness: HarnessId,
+): HarnessId {
+  const recorded = turn.find((block) => block.role === "user")?.turnModel;
+  if (recorded) return recorded.harness;
+  const startId = turn[0]?.id;
+  const start = startId
+    ? blocks.findIndex((block) => block.id === startId)
+    : -1;
+  if (start > 0) {
+    for (let i = start - 1; i >= 0; i--) {
+      const handoff = blocks[i]?.handoff;
+      if (handoff) return handoff.to;
+    }
+  }
+  const first = blocks.find((block) => block.handoff)?.handoff;
+  return first?.from ?? sessionHarness;
+}
+
+export function turnUserRequest(blocks: Block[]): string {
+  const user = blocks.find((block) => block.role === "user");
+  return user?.text.replace(/\r\n?/g, "\n").trim() ?? "";
+}
+
+export function turnReport(blocks: Block[]): string {
+  return blocks
+    .filter(
+      (block) =>
+        block.role === "assistant" ||
+        block.role === "tasks" ||
+        block.role === "plan",
+    )
+    .map((block) => block.text.replace(/\r\n?/g, "\n").trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+export function turnEditedFiles(blocks: Block[], cwd?: string): string[] {
+  const files = new Map<string, string>();
+  for (const block of blocks) {
+    if (block.role !== "tool" && block.role !== "approval") continue;
+    if (
+      !isEditTool(
+        block.tool?.kind,
+        block.text || block.tool?.title,
+        block.tool?.preview,
+      )
+    ) {
+      continue;
+    }
+    const preview = block.tool?.preview;
+    const path = preview?.path
+      ? displayPath(preview.path, cwd)
+      : preview?.fileName;
+    const label = path?.trim();
+    if (label) files.set(label.toLowerCase(), label);
+  }
+  return [...files.values()].slice(0, 40);
+}
+
+export function secondOpinionTargets(
+  from: HarnessId,
+  options: {
+    installed: (id: HarnessId) => boolean;
+    visible: (id: HarnessId) => boolean;
+    probed: boolean;
+    includeCurrent?: boolean;
+  },
+): HarnessId[] {
+  const others = HARNESSES.filter((id) => {
+    if (id === from) return false;
+    if (!options.visible(id)) return false;
+    if (!options.probed) return true;
+    return options.installed(id);
+  });
+  if (options.includeCurrent && (!options.probed || options.installed(from))) {
+    return [from, ...others];
+  }
+  return others;
+}
+
+export function buildSecondOpinionPrompt(input: {
+  from: HarnessId;
+  userRequest: string;
+  report: string;
+  files: string[];
+  ciContext?: string;
+}): string {
+  const fromTitle = HARNESS_TITLE[input.from];
+  const request = input.userRequest.trim();
+  const report = input.report.trim();
+  const files = input.files.map((path) => path.trim()).filter(Boolean);
+
+  const sections = [
+    `Give a second opinion on work ${fromTitle} just finished in this same working copy. The files are already on disk.`,
+    "Review that work: what is wrong, what is missing, and what you would have done differently. Fix anything you agree is broken or incomplete. If you would leave it, say so and stop. Do not redo the task from scratch unless the work is actually wrong. Read the listed files before changing anything.",
+    `## User request\n${request ? limitSection(request, USER_LIMIT) : "(no user message on this turn)"}`,
+  ];
+
+  if (report) {
+    sections.push(
+      `## What ${fromTitle} reported\n${limitSection(report, REPORT_LIMIT)}`,
+    );
+  } else {
+    sections.push(
+      `## What ${fromTitle} reported\n(no written summary — inspect the files)`,
+    );
+  }
+
+  if (files.length > 0) {
+    sections.push(
+      `## Files it edited\n${files.map((path) => `- ${path}`).join("\n")}`,
+    );
+  } else {
+    sections.push("## Files it edited\n(none recorded on this turn)");
+  }
+
+  const base = sections.join("\n\n");
+  if (!input.ciContext) return limitSection(base, PROMPT_LIMIT);
+  const suffix = "\n\n## CI context\n";
+  const basePrefix =
+    base.length <= CI_BASE_LIMIT
+      ? base
+      : `${base.slice(0, CI_BASE_LIMIT - "\n\n[truncated]".length)}\n\n[truncated]`;
+  return `${basePrefix}${suffix}${compactCiRepairContext(input.ciContext, PROMPT_LIMIT - basePrefix.length - suffix.length)}`;
+}
+
+export function buildSecondOpinionCard(input: {
+  from: HarnessId;
+  to: HarnessId;
+  userRequest: string;
+  files: string[];
+  kind?: "handoff";
+}): SecondOpinionMeta {
+  const request = input.userRequest.replace(/\s+/g, " ").trim();
+  return {
+    from: input.from,
+    to: input.to,
+    ...(request ? { request: request.slice(0, 240) } : {}),
+    ...(input.files.length > 0 ? { files: input.files.length } : {}),
+    ...(input.kind ? { kind: input.kind } : {}),
+  };
+}
+
+/** Keep the prompt and the metadata for its saved user turn together. */
+export function buildSecondOpinionRequest(input: {
+  from: HarnessId;
+  to: HarnessId;
+  turn: Block[];
+  cwd: string;
+}) {
+  const userRequest = turnUserRequest(input.turn);
+  const files = turnEditedFiles(input.turn, input.cwd);
+  const ciContext = input.turn.find((block) => block.role === "user")?.ciContext;
+  return {
+    prompt: buildSecondOpinionPrompt({
+      from: input.from,
+      userRequest,
+      report: turnReport(input.turn),
+      files,
+      ciContext,
+    }),
+    options: {
+      ...(ciContext ? { ciContext } : {}),
+      secondOpinion: buildSecondOpinionCard({
+        from: input.from,
+        to: input.to,
+        userRequest,
+        files,
+      }),
+    },
+  };
+}

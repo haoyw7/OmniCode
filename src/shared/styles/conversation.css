@@ -1,0 +1,2000 @@
+@import "../ui/scrollbar.css";
+
+/* Shared content rendering only. Platform controls and palettes live in their own entries. */
+/* Settings → Appearance: conversation and document text follow the content
+   font and size; code inside them and diffs follow the code size. */
+.agent-transcript,
+.markdown-preview,
+.whats-new-md,
+.inbox-comment-md {
+  --font-scale: var(--content-font-scale, 1);
+  /* `font-sans` text inside (prose, user messages) uses the content font. */
+  --font-sans: var(--user-content-font,) var(--user-ui-font,)
+    var(--font-content-default);
+  font-family: var(--font-content);
+  font-weight: var(--content-font-weight, var(--default-content-font-weight, 500));
+}
+
+/* Sans `pre` (user messages, thinking) is prose kept verbatim, not code. */
+:is(.agent-transcript, .markdown-preview, .whats-new-md, .inbox-comment-md)
+  :where(pre:not(.font-sans), code),
+.unified-diff,
+.inbox-pr-diff {
+  --font-scale: var(--code-font-scale, 1);
+  font-weight: var(--code-font-weight, var(--default-code-font-weight, 500));
+}
+
+.chat-pane-background::before {
+  content: "";
+  position: absolute;
+  left: var(--chat-background-left, 0);
+  top: var(--chat-background-top, 0);
+  width: var(--chat-background-width, 100%);
+  height: var(--chat-background-height, 100%);
+  z-index: -1;
+  background-image: var(--chat-background-image, none);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transition-property: opacity;
+  pointer-events: none;
+}
+
+/* Each masked copy samples the same artwork; only the image is blurred. */
+.gradient-blur-background {
+  --gradient-blur-soft: 7px;
+  --gradient-blur-strong: 18px;
+  --gradient-blur-soft-mask: linear-gradient(
+    to bottom,
+    transparent 18%,
+    #000 60%
+  );
+  --gradient-blur-strong-mask: linear-gradient(
+    to bottom,
+    transparent 28%,
+    #000 76%
+  );
+  --gradient-blur-overlay: linear-gradient(
+    to bottom,
+    transparent 16%,
+    color-mix(in srgb, var(--color-background-base) 26%, transparent) 38%,
+    color-mix(in srgb, var(--color-background-base) 55%, transparent) 55%,
+    color-mix(in srgb, var(--color-background-base) 78%, transparent) 75%
+  );
+  --gradient-blur-mask: linear-gradient(
+    to bottom,
+    #000 0 19%,
+    rgb(0 0 0 / 94%) 30%,
+    rgb(0 0 0 / 72%) 42%,
+    rgb(0 0 0 / 42%) 54%,
+    rgb(0 0 0 / 16%) 66%,
+    rgb(0 0 0 / 4%) 78%,
+    transparent 90%
+  );
+  overflow: hidden;
+  pointer-events: none;
+  background-image: var(--chat-background-image, none);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  -webkit-mask-image: var(--gradient-blur-mask);
+  mask-image: var(--gradient-blur-mask);
+}
+
+.gradient-blur-preview {
+  --gradient-blur-soft: 2px;
+  --gradient-blur-strong: 5px;
+}
+
+.gradient-blur-background > span {
+  position: absolute;
+  inset: 0;
+  background-image: var(--chat-background-image, none);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.gradient-blur-background-soft {
+  filter: blur(var(--gradient-blur-soft));
+  -webkit-mask-image: var(--gradient-blur-soft-mask);
+  mask-image: var(--gradient-blur-soft-mask);
+}
+
+.gradient-blur-background-strong {
+  filter: blur(var(--gradient-blur-strong));
+  -webkit-mask-image: var(--gradient-blur-strong-mask);
+  mask-image: var(--gradient-blur-strong-mask);
+}
+
+.gradient-blur-background::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-background-base) 36%, transparent) 0 1px,
+      transparent 1px 3px
+    ),
+    var(--gradient-blur-overlay);
+}
+
+.chat-pane-background > .gradient-blur-background {
+  display: none;
+  position: absolute;
+  left: var(--chat-background-left, 0);
+  top: var(--chat-background-top, 0);
+  width: var(--chat-background-width, 100%);
+  height: var(--chat-background-height, 100%);
+  z-index: -1;
+  opacity: 0;
+  transition-property: opacity;
+}
+
+/* Keep the active transcript clear of the wide blurred haze used by the empty hero. */
+.chat-pane-background[data-session-empty="false"] > .gradient-blur-background {
+  --gradient-blur-soft: 5px;
+  --gradient-blur-strong: 12px;
+  --gradient-blur-soft-mask: linear-gradient(
+    to bottom,
+    transparent 18%,
+    #000 70%
+  );
+  --gradient-blur-strong-mask: linear-gradient(
+    to bottom,
+    transparent 22%,
+    #000 76%
+  );
+  --gradient-blur-overlay: linear-gradient(
+    to bottom,
+    transparent 15%,
+    color-mix(in srgb, var(--color-background-base) 70%, transparent) 76%
+  );
+  --gradient-blur-mask: linear-gradient(to bottom, #000 0 18%, transparent 76%);
+}
+
+html.chat-background-gradient-blur
+  .chat-pane-background[data-project-chat-background="false"]
+  > .gradient-blur-background,
+.chat-pane-background[data-project-background-effect="gradient-blur"]
+  > .gradient-blur-background {
+  display: block;
+}
+
+html.has-chat-background.chat-background-effect-ready.chat-background-gradient-blur
+  .chat-pane-background[data-project-chat-background="false"]
+  > .gradient-blur-background,
+.chat-pane-background[data-project-background-effect="gradient-blur"]
+  > .gradient-blur-background {
+  opacity: var(--chat-background-empty-opacity);
+}
+
+html.has-chat-background.chat-background-effect-ready.chat-background-gradient-blur
+  .chat-pane-background[data-project-chat-background="false"][data-session-empty="false"]
+  > .gradient-blur-background,
+.chat-pane-background[data-project-background-effect="gradient-blur"][data-session-empty="false"]
+  > .gradient-blur-background {
+  opacity: var(--chat-background-session-opacity);
+}
+
+html.has-chat-background.chat-background-effect-ready:not(
+    .chat-background-gradient-blur
+  )
+  .chat-pane-background[data-project-chat-background="false"]::before,
+.chat-pane-background[data-project-chat-background="true"]:not(
+    [data-project-background-effect="gradient-blur"]
+  )::before {
+  opacity: var(--chat-background-empty-opacity);
+}
+
+html.has-chat-background.chat-background-effect-ready:not(
+    .chat-background-gradient-blur
+  )
+  .chat-pane-background[data-project-chat-background="false"][data-session-empty="false"]::before,
+.chat-pane-background[data-project-chat-background="true"]:not(
+    [data-project-background-effect="gradient-blur"]
+  )[data-session-empty="false"]::before {
+  opacity: var(--chat-background-session-opacity);
+}
+
+/*
+ * Sending the first message eases the background into its session look (or
+ * out entirely when it only shows on empty sessions) alongside the composer.
+ */
+.chat-pane-background[data-session-empty="false"]::before {
+  transition-duration: 600ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-pane-background::before,
+  .chat-pane-background[data-session-empty="false"]::before {
+    transition-duration: 0ms;
+  }
+}
+
+html.has-chat-background.chat-background-effect-ready:not(
+    .chat-background-gradient-blur
+  ).chat-background-empty-only
+  .chat-pane-background[data-project-chat-background="false"][data-session-empty="false"]::before,
+.chat-pane-background[data-project-chat-background="true"][data-project-background-scope="empty"][data-session-empty="false"]::before {
+  opacity: 0;
+}
+
+/* Scope and visibility follow the same rules as the existing image layer. */
+html.has-chat-background.chat-background-effect-ready.chat-background-gradient-blur.chat-background-empty-only
+  .chat-pane-background[data-project-chat-background="false"][data-session-empty="false"]
+  > .gradient-blur-background,
+.chat-pane-background[data-project-background-scope="empty"][data-session-empty="false"]
+  > .gradient-blur-background {
+  opacity: 0;
+}
+
+.chat-pane-background[data-session-empty="false"] > .gradient-blur-background {
+  transition-duration: 600ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-pane-background > .gradient-blur-background {
+    transition-duration: 0ms;
+  }
+}
+
+/* History is paged by turn. Lay out each loaded page at its real height:
+   estimated offscreen heights change the scroll range during a gesture and
+   require scrollTop corrections as the reader moves back through history. */
+.transcript-turn {
+  content-visibility: visible;
+}
+
+.agent-transcript
+  [data-transcript-search-current="true"]
+  .user-message-bubble
+  pre.line-clamp-4 {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+
+/* Touch layouts keep actions in flow. Desktop places them in the existing
+ * turn gap so revealing the controls never shifts or over-spaces the chat. */
+.user-message-actions {
+  width: fit-content;
+}
+
+/* ZCode user bubble: rounded-xl with a tight top-right corner, 1px border,
+   surface fill. */
+:where(.user-message-row:not(.mobile-desktop-transcript *)) .user-message-bubble {
+  min-height: 38px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-stroke);
+  border-radius: 12px 2px 12px 12px;
+}
+
+:where(.user-message-row:not(.mobile-desktop-transcript *)) .user-message-bubble:not([data-draft="true"]) {
+  background: var(--color-surface);
+}
+
+.user-message-row .user-message-bubble > pre,
+.user-message-row .user-message-with-link {
+  font-size: var(--text-ui-base);
+  line-height: 1.6;
+}
+
+.user-message-row .user-message-actions {
+  width: max-content;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  padding: 3px 4px 0;
+  gap: 2px;
+}
+
+.user-message-row .user-message-actions time {
+  font-size: 11px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .user-message-hover-zone {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .user-message-actions {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  .user-message-row:hover .user-message-actions,
+  .user-message-row:focus-within .user-message-actions {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .user-message-actions {
+    transition: none;
+  }
+}
+
+.user-message-with-link {
+  display: block;
+}
+
+html.has-user-accent .user-message-bubble {
+  background: color-mix(in srgb, var(--user-accent-color) 24%, transparent);
+  border-color: color-mix(in srgb, var(--user-accent-color) 30%, transparent);
+}
+
+html.has-user-accent
+  .user-message-row
+  .user-message-bubble:not([data-draft="true"]) {
+  background: color-mix(in srgb, var(--user-accent-color) 22%, transparent);
+}
+
+/*
+ * A freshly sent /operator turn lights up once: the bubble blooms with a warm
+ * halo, a golden sheen sweeps across it, and sparkles drift up from a glow at
+ * its base, twinkling as they rise and fading out past the top edge.
+ */
+.monocode-sparkles {
+  --sparkle-color: #fde68a;
+  --sparkle-glow: rgb(251 191 36 / 0.9);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+html.theme-light .monocode-sparkles {
+  --sparkle-color: #f59e0b;
+  --sparkle-glow: rgb(217 119 6 / 0.55);
+}
+
+.monocode-sparkles::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgb(254 243 199 / 0.5) 48%,
+    rgb(251 191 36 / 0.35) 52%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+}
+
+.monocode-sparkles::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 70% at 50% 100%,
+    rgb(251 191 36 / 0.35),
+    transparent 70%
+  );
+}
+
+.monocode-sparkle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--x);
+  z-index: 1;
+  width: 0;
+}
+
+.monocode-sparkle-glyph {
+  position: absolute;
+  bottom: calc(var(--size) * -1);
+  left: calc(var(--size) / -2);
+  width: var(--size);
+  height: var(--size);
+  color: var(--sparkle-color);
+  filter: drop-shadow(0 0 3px var(--sparkle-glow));
+}
+
+.monocode-sparkle-ember {
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fffbeb, var(--sparkle-color) 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monocode-sparkles {
+    display: none;
+  }
+}
+
+/*
+ * Plan and Orchestrator turns share the /operator bloom and upward exit.
+ * Numbered plan marks and a small agent network keep their own shapes and
+ * colors as they travel from the bottom of the bubble past its top edge.
+ */
+.plan-steps,
+.orchestrator-constellation {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.plan-steps::before,
+.orchestrator-constellation::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    color-mix(in srgb, var(--mode-color) 32%, transparent) 48%,
+    color-mix(in srgb, var(--mode-glow) 28%, transparent) 52%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+}
+
+.plan-steps::after,
+.orchestrator-constellation::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 70% at 50% 100%,
+    color-mix(in srgb, var(--mode-glow) 35%, transparent),
+    transparent 70%
+  );
+}
+
+.plan-steps {
+  --mode-color: #fde047;
+  --mode-glow: rgb(250 204 21 / 0.85);
+  --mode-ink: #422006;
+}
+
+html.theme-light .plan-steps {
+  --mode-color: #ca8a04;
+  --mode-glow: rgb(202 138 4 / 0.55);
+  --mode-ink: #fff;
+}
+
+.plan-step {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--x);
+  z-index: 2;
+  width: 0;
+}
+
+.plan-step-dot {
+  position: absolute;
+  bottom: -16px;
+  left: -8px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--mode-color);
+  border-radius: 9999px;
+  color: var(--mode-color);
+  font-size: 8.5px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  box-shadow: 0 0 8px var(--mode-glow);
+}
+
+.plan-step-number,
+.plan-step-check {
+  grid-area: 1 / 1;
+}
+
+.plan-step-check {
+  width: 10px;
+  height: 10px;
+  fill: none;
+  stroke: var(--mode-ink);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 10;
+}
+
+.plan-step-ember {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--x);
+  z-index: 1;
+  width: 0;
+}
+
+.plan-step-ember-glyph {
+  --spin: 0deg;
+  position: absolute;
+  bottom: calc(var(--size) * -1);
+  left: calc(var(--size) / -2);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fefce8, var(--mode-color) 70%);
+  box-shadow: 0 0 5px var(--mode-glow);
+}
+
+.orchestrator-constellation {
+  --mode-color: #f0abfc;
+  --mode-glow: rgb(232 121 249 / 0.85);
+  --mode-spark: #fdf4ff;
+}
+
+html.theme-light .orchestrator-constellation {
+  --mode-color: #c026d3;
+  --mode-glow: rgb(192 38 211 / 0.5);
+  --mode-spark: #f5d0fe;
+}
+
+.orchestrator-network {
+  position: absolute;
+  inset: 0;
+}
+
+.orchestrator-edges {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: visible;
+}
+
+.orchestrator-edge,
+.orchestrator-pulse {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.orchestrator-edge {
+  stroke: color-mix(in srgb, var(--mode-color) 60%, transparent);
+  stroke-width: 1.25;
+  stroke-dasharray: var(--length);
+}
+
+/* A bright head rides the tip of each edge as it draws out. */
+.orchestrator-pulse {
+  stroke: var(--mode-spark);
+  stroke-width: 2.5;
+  stroke-dasharray: 6 var(--length);
+  filter: drop-shadow(0 0 3px var(--mode-glow));
+}
+
+.orchestrator-hub,
+.orchestrator-node {
+  position: absolute;
+  z-index: 2;
+  width: var(--size);
+  height: var(--size);
+  margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--mode-spark), var(--mode-color) 70%);
+  box-shadow: 0 0 8px var(--mode-glow);
+}
+
+.orchestrator-hub::after,
+.orchestrator-node::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--mode-color);
+  border-radius: inherit;
+  opacity: 0;
+}
+
+.orchestrator-hub {
+  --size: 8px;
+}
+
+.orchestrator-node {
+  --size: 6px;
+}
+
+.orchestrator-node[data-child="true"] {
+  --size: 4.5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-steps,
+  .orchestrator-constellation {
+    display: none;
+  }
+}
+
+.edit-last-turn-composer {
+  border-style: dashed;
+  border-color: color-mix(
+    in srgb,
+    var(--user-accent-color, var(--color-accent)) 32%,
+    transparent
+  );
+}
+
+.edit-last-turn-bubble {
+  outline: 1px dashed
+    color-mix(
+      in srgb,
+      var(--user-accent-color, var(--color-accent)) 45%,
+      transparent
+    );
+  outline-offset: 1px;
+}
+
+.edit-last-turn-button {
+  color: var(--user-accent-color, var(--color-accent));
+  background: color-mix(
+    in srgb,
+    var(--user-accent-color, var(--color-accent)) 10%,
+    transparent
+  );
+}
+
+.user-message-bubble[data-draft="true"] {
+  background: color-mix(in srgb, var(--color-content) 4%, transparent);
+}
+
+html.has-user-accent .user-message-bubble[data-draft="true"] {
+  background: color-mix(in srgb, var(--user-accent-color) 8%, transparent);
+  border-color: color-mix(in srgb, var(--user-accent-color) 38%, transparent);
+}
+
+.user-link-preview {
+  display: inline;
+  white-space: normal;
+}
+
+.user-link-preview-title {
+  display: inline;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * After a send, the live turn fills the transcript viewport so the prompt sits
+ * at the top (`syncTranscriptViewport` sets its min-height). Switching tabs
+ * keeps this. Closing the tab drops it, so opening that conversation again
+ * uses the true bottom (latest reply on the composer).
+ */
+
+/* A message the Host has not recorded yet stays tinted and inert. */
+.user-message-row[data-sending] .user-message-bubble,
+.user-message-row[data-sending] .user-message-media {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* While a sent prompt rises into place, the rest of its turn waits for it.
+   Disclosures reveal their inner content: animating the collapse itself would
+   override its opening animation, then restart it when the reveal clears. */
+.transcript-turn[data-prompt-rise="rising"] > :not(.zen-fold-item):not(:has([data-prompt-anchor])),
+.transcript-turn[data-prompt-rise="rising"] > .zen-fold-item:not(:has([data-prompt-anchor])) > div {
+  opacity: 0;
+}
+
+textarea,
+input,
+.agent-transcript,
+.markdown-preview,
+.whats-new-md,
+.inbox-pr-diff,
+.unified-diff,
+.inbox-comment-md,
+.monocode-terminal,
+.monocode-terminal .xterm,
+.monocode-terminal .xterm-viewport {
+  user-select: text;
+}
+
+.markdown-view-actions {
+  top: 0.5rem;
+}
+
+.markdown-view-shell:has([data-file-preview-search-open])
+  > .markdown-view-actions,
+.markdown-view-shell:has(> [data-markdown-view-active] .cm-panel.cm-find)
+  > .markdown-view-actions {
+  top: calc(35px + 0.5rem);
+}
+
+.inbox-comment-md.agent-markdown p:first-child,
+.inbox-comment-md.agent-markdown li:first-child,
+.inbox-comment-md.agent-markdown blockquote:first-child {
+  margin-top: 0;
+}
+
+.inbox-comment-md.agent-markdown p:last-child,
+.inbox-comment-md.agent-markdown li:last-child,
+.inbox-comment-md.agent-markdown blockquote:last-child {
+  margin-bottom: 0;
+}
+
+.agent-markdown [data-streamdown="blockquote"] {
+  padding-left: 0;
+  padding-inline-start: 1rem;
+  border-left: 0;
+  border-inline-start: 4px solid
+    color-mix(in srgb, var(--color-content) 20%, transparent);
+}
+
+.agent-markdown [data-streamdown="ordered-list"],
+.agent-markdown [data-streamdown="unordered-list"] {
+  list-style-position: outside;
+  padding-left: 0;
+  padding-inline-start: 1.5rem;
+}
+
+.agent-markdown li > [data-streamdown="ordered-list"],
+.agent-markdown li > [data-streamdown="unordered-list"] {
+  padding-left: 0;
+  padding-inline-start: 1.5rem;
+}
+
+.inbox-comment-md.agent-markdown blockquote {
+  margin: 0.4em 0;
+  padding: 0.15em 0;
+  padding-inline-start: 0.75em;
+  border: 0;
+  border-inline-start: 2px solid
+    color-mix(in srgb, var(--color-content) 16%, transparent);
+  color: color-mix(in srgb, var(--color-content) 55%, transparent);
+}
+
+.markdown-source-heading {
+  color: var(--color-markdown-heading);
+}
+
+.markdown-source-field {
+  color: transparent;
+  caret-color: var(--color-content);
+  -webkit-text-fill-color: transparent;
+}
+
+.markdown-source-field::placeholder {
+  color: color-mix(in srgb, var(--color-content) 35%, transparent);
+  -webkit-text-fill-color: color-mix(
+    in srgb,
+    var(--color-content) 35%,
+    transparent
+  );
+}
+
+.composer-toolbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.material-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.agent-markdown [data-streamdown="code-block"],
+.agent-markdown [data-streamdown="table-wrapper"] {
+  gap: 0;
+  padding: 0;
+  border-color: var(--color-stroke);
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--color-card) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+
+.markdown-card {
+  background: color-mix(
+    in srgb,
+    var(--color-card) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+
+/* ZCode inline code: rounded-md chip at ui-sm. */
+.agent-markdown [data-streamdown="inline-code"] {
+  border-radius: 6px;
+  padding: 2px 6px;
+  background: var(--color-surface-hover);
+  font-size: var(--text-ui-sm);
+  letter-spacing: normal;
+}
+
+.agent-markdown [data-streamdown="code-block-body"],
+.agent-markdown pre {
+  letter-spacing: normal;
+}
+
+.agent-markdown [data-streamdown="code-block"] {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.agent-markdown [data-streamdown="table-wrapper"] {
+  overflow: hidden;
+}
+
+.agent-markdown .markdown-code-shell {
+  position: relative;
+  margin-block: 16px;
+  min-width: 0;
+  max-width: 100%;
+  unicode-bidi: isolate;
+}
+
+.agent-markdown a[dir],
+.agent-markdown code[dir] {
+  unicode-bidi: isolate;
+}
+
+.agent-markdown .markdown-code-shell [data-streamdown="code-block"] {
+  margin-block: 0;
+}
+
+.agent-markdown .markdown-code-copy {
+  appearance: none;
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  right: 8px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  outline: none;
+  background: transparent;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--color-content) 45%, transparent);
+  transition:
+    color 160ms ease, background-color 160ms ease;
+}
+
+.agent-markdown .markdown-code-copy:hover {
+  background: color-mix(in srgb, var(--color-content) 10%, transparent);
+  color: var(--color-content);
+}
+
+.agent-markdown .markdown-code-copy:focus-visible {
+  background: color-mix(in srgb, var(--color-content) 10%, transparent);
+  color: var(--color-content);
+}
+
+.agent-markdown .markdown-code-copy svg {
+  width: 15px;
+  height: 15px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.agent-markdown .markdown-code-copy-pages,
+.agent-markdown .markdown-code-copy-check {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.agent-markdown .markdown-code-icon {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  height: 16px;
+}
+
+.agent-markdown .markdown-code-path {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  left: 34px;
+  right: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  color: color-mix(in srgb, var(--color-content) 65%, transparent);
+  pointer-events: none;
+}
+
+.agent-markdown
+  .markdown-code-shell:has(.markdown-code-copy)
+  .markdown-code-path {
+  right: 42px;
+}
+
+.agent-markdown .markdown-code-path-link {
+  pointer-events: auto;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agent-markdown .markdown-code-path-link:hover {
+  color: var(--link-color);
+  text-decoration: underline;
+}
+
+.agent-markdown
+  .markdown-code-shell:has(.markdown-code-path)
+  [data-streamdown="code-block-header"]
+  > span {
+  visibility: hidden;
+}
+
+.agent-markdown .markdown-code-fallback-label {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  left: 34px;
+  right: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: var(--font-weight-medium);
+  text-transform: lowercase;
+  color: color-mix(in srgb, var(--color-content) 65%, transparent);
+  pointer-events: none;
+}
+
+/* highlightLanguageFor swaps text/plaintext/txt/untagged fences to the "js"
+   grammar so Shiki still colors them, but Streamdown's own header reuses
+   that same value as its visible label. Hide the vendor label here and show
+   the real fence language via .markdown-code-fallback-label instead. */
+.agent-markdown
+  .markdown-code-shell:has(.markdown-code-fallback-label)
+  [data-streamdown="code-block-header"]
+  > span {
+  visibility: hidden;
+}
+
+.agent-markdown
+  .markdown-code-shell:has(.markdown-code-fallback-label:empty)
+  [data-streamdown="code-block-header"] {
+  display: none;
+}
+
+.agent-markdown
+  .markdown-code-shell:has(.markdown-code-fallback-label:empty)
+  [data-streamdown="code-block-header"]
+  + [data-streamdown="code-block-body"] {
+  border-top: 0;
+}
+
+/* ZCode headings: semibold, sized on the ui scale, 24px above / 16px below. */
+.agent-markdown
+  :is(
+    [data-streamdown="heading-1"],
+    [data-streamdown="heading-2"],
+    [data-streamdown="heading-3"],
+    [data-streamdown="heading-4"]
+  ) {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content);
+}
+
+.agent-markdown
+  :is(
+    [data-streamdown="heading-1"],
+    [data-streamdown="heading-2"],
+    [data-streamdown="heading-3"],
+    [data-streamdown="heading-4"]
+  ):first-child {
+  margin-top: 0;
+}
+
+.agent-markdown [data-streamdown="heading-1"] {
+  font-size: var(--text-ui-xl);
+}
+
+.agent-markdown [data-streamdown="heading-2"] {
+  font-size: var(--text-ui-lg);
+}
+
+.agent-markdown [data-streamdown="heading-3"],
+.agent-markdown [data-streamdown="heading-4"] {
+  font-size: var(--text-ui-base);
+}
+
+.whats-new-md.agent-markdown [data-streamdown="heading-3"] {
+  margin-top: 1.15rem;
+  margin-bottom: 0.35rem;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-content) 55%, transparent);
+}
+
+.whats-new-md.agent-markdown [data-streamdown="heading-3"]:first-child {
+  margin-top: 0;
+}
+
+.whats-new-md.agent-markdown ul {
+  margin-top: 0.15rem;
+}
+
+.update-notes-md.agent-markdown {
+  font-size: 14px;
+  line-height: 1.75;
+  letter-spacing: normal;
+}
+
+.update-notes-md.agent-markdown [data-streamdown^="heading-"] {
+  margin-top: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 16px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-content);
+}
+
+.update-notes-md.agent-markdown > :first-child [data-streamdown^="heading-"] {
+  margin-top: 0;
+}
+
+.update-notes-md.agent-markdown li::marker {
+  color: color-mix(in srgb, var(--color-content) 40%, transparent);
+}
+
+.agent-markdown [data-streamdown="code-block-header"] {
+  height: auto;
+  min-height: 36px;
+  padding: 8px 12px;
+  color: var(--color-foreground-subtle);
+}
+
+.agent-markdown [data-streamdown="code-block-header"] > span {
+  margin-left: 0;
+  font-size: var(--text-ui-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: lowercase;
+}
+
+.agent-markdown .markdown-code-shell [data-streamdown="code-block-header"] {
+  padding-left: 34px;
+}
+
+.agent-markdown [data-streamdown="code-block-header"]:has(span:empty) {
+  display: none;
+}
+
+.agent-markdown
+  .markdown-code-shell:has(.markdown-code-copy)
+  [data-streamdown="code-block-header"]:has(span:empty) {
+  display: flex;
+}
+
+.agent-markdown [data-streamdown="code-block-body"] {
+  padding: 10px 8px 10px 0;
+  border: 0;
+  border-top: 1px solid var(--color-stroke);
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--text-ui-caption);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.agent-markdown
+  [data-streamdown="code-block-header"]:has(span:empty)
+  + [data-streamdown="code-block-body"] {
+  border-top: 0;
+}
+
+.agent-markdown [data-streamdown="code-block-body"] pre {
+  margin: 0;
+  white-space: pre;
+  width: max-content;
+  min-width: 100%;
+}
+
+.agent-markdown [data-streamdown="code-block-body"] code > span {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  white-space: pre;
+}
+
+.agent-markdown [data-streamdown="code-block-body"] code > span::before {
+  width: 24px;
+  margin-right: 8px;
+  color: color-mix(in srgb, var(--color-content) 35%, transparent);
+  font-size: 10px;
+}
+
+.markdown-code-numbered-line::before {
+  content: counter(line);
+  counter-increment: line;
+  display: inline-block;
+  text-align: right;
+  user-select: none;
+}
+
+.markdown-code-token {
+  color: var(--sdm-c, inherit);
+  background-color: var(--sdm-tbg, transparent);
+}
+
+html:not(.theme-light) .markdown-code-token {
+  color: var(--shiki-dark, var(--sdm-c, inherit));
+  background-color: var(--shiki-dark-bg, var(--sdm-tbg, transparent));
+}
+
+.agent-markdown [data-streamdown="table-wrapper"] > div {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.agent-markdown [data-streamdown="table"] > :not(:last-child),
+.agent-markdown [data-streamdown="table-body"] > :not(:last-child) {
+  border-color: color-mix(in srgb, var(--color-content) 5%, transparent);
+}
+
+.agent-markdown [data-streamdown="table-header-cell"],
+.agent-markdown [data-streamdown="table-cell"] {
+  padding: 8px 10px;
+  font-size: 12px;
+  /* Keep columns readable; narrow panes use the table's existing scroller. */
+  min-width: 10rem;
+  vertical-align: top;
+}
+
+.agent-markdown [data-streamdown="horizontal-rule"] {
+  border: 0;
+  border-top: 1px solid
+    color-mix(in srgb, var(--color-content) 10%, transparent);
+}
+
+.agent-markdown p,
+.agent-markdown li {
+  color: color-mix(in srgb, var(--color-content) 92%, transparent);
+}
+
+/* AgentMarkdown passes dir="auto", so every block sits in its own
+   <div dir="..." class="agent-markdown-block"> wrapper (a real block box, not
+   Streamdown's display:contents one, so triple-click stops at the block; #496).
+   The wrapper carries no margin of its own: Streamdown's `space-y-4` on the
+   root would otherwise space every wrapper, including empty ones, and override
+   the tighter list gap below. Headings, blockquotes and rules keep their
+   spacing because their margin sits on the element itself (mt-6/mb-2, my-4,
+   my-6) and collapses through the wrapper; paragraphs and lists carry none, so
+   every "\n\n" would start a new <p> with no visible gap (#218).
+   Put the gap back on the block inside the wrapper, top side only, so a reply
+   never ends with a trailing gap. Ignore empty wrappers before the first
+   visible block, and keep lists closer to the paragraph that introduces them. */
+.agent-markdown > .agent-markdown-block {
+  margin: 0;
+}
+
+.agent-markdown > div:not(:empty) ~ div > p {
+  margin-top: 1rem;
+}
+
+/* Nested blocks do not get Streamdown's root spacing. Keep blank-line
+   paragraphs inside a quote distinct without adding space above the first. */
+.agent-markdown [data-streamdown="blockquote"] > p:not(:first-child) {
+  margin-top: 1rem;
+}
+
+.agent-markdown > div:not(:empty) ~ div > [data-streamdown="unordered-list"],
+.agent-markdown > div:not(:empty) ~ div > [data-streamdown="ordered-list"] {
+  margin-top: 0.5rem;
+}
+
+.agent-markdown p strong,
+.agent-markdown p em,
+.agent-markdown p [data-streamdown="strong"] {
+  color: var(--color-content) !important;
+  opacity: 1;
+}
+
+.agent-markdown li strong,
+.agent-markdown li em,
+.agent-markdown li [data-streamdown="strong"] {
+  color: var(--color-content) !important;
+  opacity: 1;
+}
+
+.agent-reasoning.agent-markdown p,
+.agent-reasoning.agent-markdown li {
+  color: color-mix(in srgb, var(--color-content) 48%, transparent);
+}
+
+.agent-reasoning.agent-markdown p strong,
+.agent-reasoning.agent-markdown p em,
+.agent-reasoning.agent-markdown p [data-streamdown="strong"],
+.agent-reasoning.agent-markdown li strong,
+.agent-reasoning.agent-markdown li em,
+.agent-reasoning.agent-markdown li [data-streamdown="strong"] {
+  color: color-mix(in srgb, var(--color-content) 62%, transparent) !important;
+}
+
+.agent-markdown .mermaid-block svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-inline: auto;
+}
+
+.agent-markdown .inbox-media {
+  vertical-align: middle;
+}
+
+.agent-markdown .inbox-media img,
+.agent-markdown .inbox-media video {
+  vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linked-activity-notice {
+    animation: none;
+  }
+}
+
+.shimmer-text {
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent calc(50% - var(--spread)),
+      var(--color-content) calc(50%),
+      transparent calc(50% + var(--spread))
+    ),
+    linear-gradient(
+      hsl(
+        var(--theme-hue) var(--theme-saturation) var(--content-lightness) / 0.4
+      ),
+      hsl(
+        var(--theme-hue) var(--theme-saturation) var(--content-lightness) / 0.4
+      )
+    );
+  background-size:
+    250% 100%,
+    auto;
+  background-repeat: no-repeat, padding-box;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: shimmer-text var(--shimmer-duration, 2s) linear infinite;
+}
+
+/* usePauseOffscreenAnimation: hidden/reduced-motion loops stop ticking.
+   Include pseudo-elements so transform-based skeleton sweeps pause too. */
+
+/* One light sweep across a composer mode command as it appears. */
+.composer-mode-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    currentColor 0 40%,
+    color-mix(in srgb, currentColor 25%, white) 50%,
+    currentColor 60% 100%
+  );
+  background-size: 300% 100%;
+  background-position: 0% 0;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/*
+ * Zen mode's activity phases: a run of related tool calls under the line the
+ * agent wrote to introduce it, on a rail, folding back to that line when the
+ * agent moves on.
+ */
+.zen-phase-body {
+  min-width: 0;
+}
+
+.zen-detail-panel,
+.zen-phase-body > .zen-fold-item > div > div {
+  min-width: 0;
+  margin-block: 4px;
+  border: 1px solid var(--color-stroke);
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--color-panel) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+  padding: 12px 16px;
+  color: var(--color-foreground-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--text-ui-sm);
+  line-height: 1.75;
+}
+
+/* A group's steps hang off the rail on the page itself, without a panel. */
+.zen-phase-body > .zen-fold-item > div > div {
+  margin-block: 2px;
+  padding: 4px 0 4px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.zen-disclosure-chevron {
+  color: var(--color-foreground-subtlest);
+  opacity: 0;
+}
+
+.group:is(:hover, :focus-within) .zen-disclosure-chevron,
+.zen-disclosure-chevron[data-expanded] {
+  opacity: 1;
+}
+
+/*
+ * Live phase: a short window so a long run does not push the turn off
+ * the screen. `overflow: auto` must override the hidden shorthand above —
+ * WebKit will not scroll if overflow-x stays hidden and only overflow-y
+ * flips to auto. The class stays on while the group is closed so settling
+ * a turn collapses from the window, not a flash of the full list.
+ */
+.zen-phase-body .zen-phase-live {
+  max-height: min(17.5rem, 45vh);
+}
+
+.zen-phase-body[data-open="true"] .zen-phase-live {
+  overflow: auto;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+}
+
+/*
+ * The window scrolls only vertically. Clipping its column, rather than setting
+ * overflow-x on the scroller itself, keeps a stray wide row from adding a
+ * horizontal scrollbar without the WebKit problem above.
+ */
+.zen-phase-body .zen-phase-live > * {
+  overflow-x: clip;
+}
+
+/*
+ * The rail: a spine down the group with a step branching off it on a curve,
+ * drawn on the step itself so it follows however tall that step turns out to
+ * be. The curve is a quarter circle, tangent to the spine at the top and to
+ * the row at the bottom, so nothing turns a hard corner.
+ */
+.zen-phase-step {
+  position: relative;
+  padding-left: 20px;
+  /*
+   * Opaque, not translucent: the curve leaves the spine on a tangent, so the
+   * two run along each other for a pixel or two. A translucent rail stacks
+   * there and lights up; the same colour painted twice does not.
+   */
+  --zen-rail: color-mix(
+    in srgb,
+    var(--color-content) 14%,
+    var(--color-background-base)
+  );
+}
+
+.zen-phase-step::before,
+.zen-phase-step::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+}
+
+/*
+ * A height, not top/bottom, so the spine can grow down past a step when the
+ * next one lands under it.
+ */
+.zen-phase-step::before {
+  top: 0;
+  height: 100%;
+  width: 1px;
+  background: var(--zen-rail);
+}
+
+/* The last step is where the spine leaves off, curve and all. */
+.zen-phase-step:last-child::before {
+  height: 7px;
+}
+
+.zen-phase-step::after {
+  top: 6px;
+  width: 8px;
+  height: 8px;
+  border-left: 1px solid var(--zen-rail);
+  border-bottom: 1px solid var(--zen-rail);
+  border-bottom-left-radius: 8px;
+}
+
+/*
+ * The connector: a line dropping out of the chevron and curving into the first
+ * thing the fold holds, so opened work reads as hanging off that line rather
+ * than running on from the answer below it. Same geometry as the phase rail —
+ * 23px is the chevron's own centre (16px of row padding plus half a 14px
+ * icon), and the curve is a quarter circle tangent to both.
+ */
+@container (min-width: 28rem) {
+  .transcript-turn {
+    --transcript-rail-left: 31px;
+  }
+}
+
+/* Desktop transcript boxes classify their width at the existing 28rem
+   breakpoint. Moving dividers no longer invalidate a CSS size-query subtree. */
+:where([data-transcript-inline-size][data-inline-at-least~="28"]) .transcript-turn {
+  --transcript-rail-left: 31px;
+}
+
+:where([data-transcript-inline-size][data-inline-at-least~="28"]) .\@md\:px-6 {
+  padding-inline: calc(var(--spacing) * 6);
+}
+
+:where([data-transcript-inline-size][data-inline-at-least~="28"]) .\@md\:pr-6 {
+  padding-right: calc(var(--spacing) * 6);
+}
+
+.zen-fold-drop,
+.zen-fold-rail {
+  position: relative;
+  --zen-rail: color-mix(
+    in srgb,
+    var(--color-content) 14%,
+    var(--color-background-base)
+  );
+}
+
+/* Out of the chevron, down through the gap to the row below. */
+.zen-fold-drop::after {
+  content: "";
+  position: absolute;
+  left: var(--transcript-rail-left, 23px);
+  top: 22px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--zen-rail);
+}
+
+/* The spine, carried by every row so it follows however tall they turn out. */
+.zen-fold-rail::before {
+  content: "";
+  position: absolute;
+  left: var(--transcript-rail-left, 23px);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--zen-rail);
+}
+
+/* The last row is where the spine ends, at its final branch. */
+.zen-fold-tail::before {
+  bottom: auto;
+  height: 7px;
+}
+
+/* Every row branches off the spine on the same curve as an activity step. */
+.zen-fold-rail::after {
+  content: "";
+  position: absolute;
+  left: var(--transcript-rail-left, 23px);
+  top: 6px;
+  width: 8px;
+  height: 8px;
+  border-left: 1px solid var(--zen-rail);
+  border-bottom: 1px solid var(--zen-rail);
+  border-bottom-left-radius: 8px;
+}
+
+/*
+ * Prose the fold holds is the agent talking while it works — process, not
+ * result. It stays readable at one notch quieter: muted ink, headings
+ * demoted to bold lines, and tighter spacing, so a mid-run note never poses
+ * as the answer it led to.
+ */
+.zen-fold-prose .agent-markdown > :not(:last-child) {
+  margin-block-end: 0.5rem;
+}
+
+.zen-fold-prose .agent-markdown p,
+.zen-fold-prose .agent-markdown li {
+  color: color-mix(in srgb, var(--color-content) 78%, transparent);
+}
+
+.zen-fold-prose .agent-markdown p strong,
+.zen-fold-prose .agent-markdown p em,
+.zen-fold-prose .agent-markdown p [data-streamdown="strong"],
+.zen-fold-prose .agent-markdown li strong,
+.zen-fold-prose .agent-markdown li em,
+.zen-fold-prose .agent-markdown li [data-streamdown="strong"] {
+  color: color-mix(in srgb, var(--color-content) 92%, transparent) !important;
+}
+
+/* A heading in a work note is a bold line, not a display size. */
+.zen-fold-prose .agent-markdown [data-streamdown="heading-1"],
+.zen-fold-prose .agent-markdown [data-streamdown="heading-2"],
+.zen-fold-prose .agent-markdown [data-streamdown="heading-3"],
+.zen-fold-prose .agent-markdown [data-streamdown="heading-4"],
+.zen-fold-prose .agent-markdown [data-streamdown="heading-5"],
+.zen-fold-prose .agent-markdown [data-streamdown="heading-6"] {
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: color-mix(in srgb, var(--color-content) 80%, transparent);
+}
+
+.zen-fold-prose .agent-markdown [data-streamdown="blockquote"],
+.zen-fold-prose .agent-markdown .markdown-code-shell {
+  margin-block: 0.5rem;
+}
+
+.zen-fold-prose .agent-markdown [data-streamdown="code-block"],
+.zen-fold-prose .agent-markdown [data-streamdown="table-wrapper"] {
+  border-color: color-mix(in srgb, var(--color-content) 8%, transparent);
+  background: color-mix(in srgb, var(--color-content) 4%, transparent);
+}
+
+.zen-fold-prose .agent-markdown [data-streamdown="table-header-cell"],
+.zen-fold-prose .agent-markdown [data-streamdown="table-cell"] {
+  color: color-mix(in srgb, var(--color-content) 65%, transparent);
+}
+
+.zen-fold-prose .agent-markdown [data-streamdown="horizontal-rule"] {
+  margin-block: 0.75rem;
+}
+
+.zen-fold-item,
+.animated-collapse-size {
+  --collapse-duration: 340ms;
+  --collapse-easing: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Respond on the first frame instead of slowly accelerating after a click. */
+.zen-fold-item.composer-attachments-collapse {
+  --collapse-easing: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Leaving chips are positioned against the list while they fade. */
+.attachment-list-animated {
+  position: relative;
+}
+
+.attachment-presence {
+  display: flex;
+  min-width: 0;
+}
+
+/* The sidebar fades as it tucks under the rail and returns while it slides out. */
+
+.zen-fold-item[data-fold-state="closed"] {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.zen-fold-item[data-fold-state="open"] {
+  /* Match Grid's non-collapsing margins without participating in Grid sizing. */
+  display: flow-root;
+}
+
+/*
+ * Expanded rows stay in ordinary block flow so text rewraps naturally when a
+ * pane is resized. Grid exists only during the fold animation, then gets out
+ * of the layout again.
+ */
+.zen-fold-item[data-fold-state="opening"],
+.zen-fold-item[data-fold-state="closing"] {
+  display: grid;
+}
+
+.zen-fold-item[data-fold-state="closing"] {
+  pointer-events: none;
+  user-select: none;
+}
+
+.zen-fold-item:is([data-fold-state="opening"], [data-fold-state="closing"]) > *,
+.zen-fold-item[data-fold-state="closed"] > * {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Pixel-height motion keeps the contents in block flow throughout the fold. */
+.zen-fold-item[data-collapse-motion="height"] {
+  display: flow-root;
+  opacity: 1;
+  animation: none;
+}
+
+.zen-fold-item[data-collapse-motion="height"]:not([data-fold-state="open"]) {
+  overflow: hidden;
+}
+
+.zen-fold-item[data-collapse-motion="height"][data-fold-state="closed"] {
+  height: 0;
+}
+
+.zen-fold-item[data-collapse-motion="height"] > div {
+  display: flow-root;
+}
+
+/*
+ * A live step arrives in beats over its --step-ms: its slot opens and pushes
+ * what is below down while the spine runs on past the step above into the
+ * gap and the branch curves off it. Only once the branch is drawn does the
+ * row rise into the room, revealed from the bottom up by a soft-edged mask. The next step in a burst
+ * waits for the last beat. The slot clips while it opens, so the row's rise
+ * never adds scrollable overflow to the pinned live window.
+ */
+
+/* A wipe from the top-left traces the quarter curve in order. */
+
+/*
+ * The mask is three times the row's height: clear on top, a soft ramp, then
+ * solid. Sliding it up from the clear third to the solid one sweeps the ramp
+ * over the row from its bottom edge to its top.
+ */
+
+/*
+ * The step above lengthening its spine once it is no longer the last, at its
+ * own pace: steps next to each other in a burst are paced alike.
+ */
+
+/*
+ * A step queued behind others is out of the layout until its turn, and the
+ * step above keeps the short spine of a last step until then too, so no rail
+ * hangs into a gap that is not there yet.
+ */
+.zen-phase-step[data-waiting] {
+  display: none;
+}
+
+.zen-phase-step:has(+ .zen-phase-step[data-waiting])::before {
+  height: 7px;
+}
+
+.zen-phase-step[data-entering] {
+  display: grid;
+  overflow: clip;
+}
+
+.zen-phase-step[data-entering]:is(
+    :last-child,
+    :has(+ .zen-phase-step[data-waiting])
+  )::before {
+  transform-origin: top;
+}
+
+.zen-phase-step[data-entering] > * {
+  min-height: 0;
+}
+
+@keyframes streaming-text-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.agent-markdown [data-word-fade] {
+  animation: streaming-text-fade 200ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes zen-thinking-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* The thinking line breathes while reasoning streams in. */
+.zen-thinking-pulse {
+  animation: zen-thinking-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes zen-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The dashed ring on a running tool turns slowly, so the line reads as live. */
+.zen-tool-spin {
+  animation: zen-spin 3.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-markdown [data-word-fade],
+  .zen-phase-step[data-entering],
+  .zen-phase-step[data-entering]::before,
+  .zen-phase-step[data-entering]::after,
+  .zen-tool-spin,
+  .zen-thinking-pulse {
+    animation: none;
+  }
+
+  .zen-phase-step[data-live]::before,
+  .zen-phase-body {
+    transition: none;
+  }
+
+  /*
+   * No fade means no animationend to settle on, so the arriving step drops
+   * straight into its settled layout.
+   */
+  .zen-phase-step[data-entering] {
+    display: block;
+    overflow: visible;
+  }
+
+  .zen-phase-step[data-entering] > * {
+    animation: none;
+  }
+
+  .zen-fold-item[data-fold-state="opening"] {
+    display: flow-root;
+    animation: none;
+  }
+
+  .zen-fold-item[data-fold-state="closing"] {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    animation: none;
+  }
+}
+.popover-backdrop {
+  background: color-mix(
+    in srgb,
+    var(--color-menu) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+.content-surface {
+  background: var(--color-background-base);
+}
+
+html.has-native-glass:not(.theme-light) .content-surface {
+  background: color-mix(
+    in srgb,
+    var(--color-background-base) calc(var(--window-opacity) * 100%),
+    transparent
+  );
+}
+
+html.chat-background-window.has-chat-background.chat-background-effect-ready
+  .content-surface {
+  background: transparent;
+}
+
+/* Sticky headers over scrolling content are panels: they fade with Panel
+   opacity and blur what scrolls beneath instead of letting it read through. */
+.content-sticky {
+  background: color-mix(
+    in srgb,
+    var(--color-background-base) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+
+html.translucent-panels .content-sticky {
+  backdrop-filter: blur(16px);
+}
+
+/* Shared panel fills for cards, menus and floating blocks: Panel opacity
+   fades them; menus also blur what is behind once they are translucent. */
+.panel-card {
+  background: color-mix(
+    in srgb,
+    var(--color-card) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+
+.panel-fill {
+  background: color-mix(
+    in srgb,
+    var(--color-panel) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+
+.panel-base {
+  background: color-mix(
+    in srgb,
+    var(--color-background-base) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+
+.panel-menu {
+  background: color-mix(
+    in srgb,
+    var(--color-menu) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+
+/* Gutters stay put over horizontally scrolled code; tooltips, find panels
+   and toasts float over content. */
+html.translucent-panels
+  :is(
+    .panel-menu,
+    .composer-popover,
+    .status-toast,
+    .cm-tooltip,
+    .cm-panels,
+    .readonly-text-view .cm-gutters
+  ) {
+  backdrop-filter: blur(16px);
+}
+
+/* Settings: the page panel and its grouped cards. */
+.settings-panel {
+  background: color-mix(
+    in srgb,
+    var(--color-background-base) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+
+.settings-card {
+  background: color-mix(
+    in srgb,
+    var(--color-card) calc(var(--panel-opacity) * 100%),
+    transparent
+  );
+}
+[data-popover-side]
+  :is(
+    [role="menuitem"],
+    [role="menuitemradio"],
+    [role="menuitemcheckbox"],
+    [role="option"]
+  ) {
+  border-radius: 6px;
+}
+
+[data-popover-side]
+  :is(
+    [role="menuitem"],
+    [role="menuitemradio"],
+    [role="menuitemcheckbox"],
+    [role="option"]
+  ):is(:hover, [data-highlighted], [aria-selected="true"]):not(
+    :disabled,
+    [aria-disabled="true"]
+  ) {
+  background: var(--color-menu-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover-open {
+    animation: none;
+  }
+}
+
+/* Sent images form a wrapping row above the caption, never composer chips. */
+.user-message-media .attachment-chip-image {
+  max-width: 100%;
+}
+.user-message-media .attachment-chip-image button {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 19px;
+}
+.user-message-media .attachment-chip-thumbnail {
+  width: 7.5rem;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, var(--color-content) 10%, transparent);
+}
+/* Sent files render as cards: a tinted icon box beside the name and type. */
+.attachment-chip-file {
+  max-width: 100%;
+}
+.attachment-chip-card {
+  display: flex;
+  width: 16rem;
+  max-width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px 8px 8px;
+  border: 1px solid color-mix(in srgb, var(--color-content) 10%, transparent);
+  border-radius: 16px;
+  background: var(--color-background-base);
+  color: var(--color-content);
+  text-align: left;
+  transition: background-color 150ms ease;
+}
+.attachment-chip-card:enabled:hover {
+  background: color-mix(in srgb, var(--color-content) 4%, var(--color-background-base));
+}
+.attachment-chip-card-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-content) 6%, var(--color-background-base));
+}
+.attachment-chip-card-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.attachment-chip-card-name {
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attachment-chip-card-type {
+  font-size: 12px;
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--color-content) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-text,
+  .transcript-live-footer .transcript-live-status { animation: none; }
+}
+
+/* Pause retained CSS loading loops, including pseudo-elements. */
+[data-animation-paused],
+html.is-native-window-resizing *,
+html.is-native-window-resizing *::before,
+html.is-native-window-resizing *::after,
+[data-animation-paused]::before,
+[data-animation-paused]::after,
+[data-animation-paused] *,
+[data-animation-paused] *::before,
+[data-animation-paused] *::after {
+  animation-play-state: paused !important;
+}
+
+@keyframes shimmer-text {
+  from {
+    background-position: 100% center;
+  }
+  to {
+    background-position: 0% center;
+  }
+}

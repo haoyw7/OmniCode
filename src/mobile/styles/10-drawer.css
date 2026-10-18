@@ -1,0 +1,417 @@
+.mobile-queue {
+  margin: 0 8px 8px;
+}
+.mobile-queue-pills {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+  max-height: min(160px, 20dvh);
+  overflow-y: auto;
+  /* Reordering owns the scroll position while the rows slide into place. */
+  overflow-anchor: none;
+}
+.mobile-queue-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: min(100%, 320px);
+  position: relative;
+  padding: 8px 12px;
+  border-radius: 999px;
+  /* Keep the glass gradients, rim and refraction without a tinted fill or shadow. */
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--color-m-ink);
+}
+.mobile-queue-pill:active {
+  --mobile-press-color: var(--color-selection-subtle);
+}
+.mobile-queue-pill[data-sortable="true"] {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.mobile-queue-pill[data-dragging="true"] {
+  opacity: 0.35;
+  border-color: var(--color-m-accent);
+}
+.mobile-queue-drag-preview {
+  position: fixed;
+  z-index: 40;
+  pointer-events: none;
+  transform: scale(1.03);
+  will-change: transform;
+}
+.mobile-queue-pill svg {
+  flex-shrink: 0;
+}
+.mobile-queue-pill span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--mobile-font-md);
+}
+.mobile-queue-paused {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: var(--mobile-font-sm);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-queue-paused button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-m-ink);
+}
+.mobile-queue-remove,
+.mobile-queue-error {
+  color: var(--color-m-danger);
+}
+.mobile-queue-error {
+  margin: 6px 0;
+  font-size: var(--mobile-font-sm);
+  overflow-wrap: anywhere;
+}
+
+/* Drawer: projects and conversation history slide over the chat. */
+/* Written on every frame of a drawer drag. Only the dimming layer explicitly
+   inherits it, so moving the drawer does not restyle every session row. */
+@property --mobile-drawer-progress {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+/* Settles on the shared spring; a released drag swaps in a spring launched
+   at the finger's speed for that one transition (MobileDrawer). */
+.mobile-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  /* Horizontal pushes reach JavaScript to close the drawer. */
+  touch-action: pan-y;
+}
+/* Fade a separate layer: animating the full-screen background color rerasterizes
+   the backdrop throughout both opening and closing, underneath the glass. */
+.mobile-drawer-backdrop::before {
+  --mobile-drawer-progress: inherit;
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 0.4);
+  opacity: var(--mobile-drawer-progress, 0);
+  pointer-events: none;
+  will-change: opacity;
+}
+/* Closed and settled: invisible and untouchable, but kept mounted so a
+   finger can pull it out from the conversation. */
+.mobile-drawer-backdrop[data-settled-closed]:not([data-dragging]) {
+  visibility: hidden;
+  pointer-events: none;
+}
+.mobile-drawer-backdrop[data-dragging],
+.mobile-drawer-backdrop[data-dragging]::before {
+  transition: none;
+}
+.mobile-drawer {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: min(320px, 85vw);
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--mobile-safe-top) + 12px) 10px
+    max(12px, var(--mobile-safe-bottom))
+    calc(10px + var(--mobile-safe-left));
+  border-block: 0;
+  border-inline-start: 0;
+  border-radius: 0 var(--mobile-card-radius) var(--mobile-card-radius) 0;
+  /* The drawer is the panel tier: opaque, like a sidebar. */
+  background-color: var(--color-m-panel);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: 8px 0 40px rgb(0 0 0 / 0.2);
+  outline: none;
+  touch-action: pan-y;
+  transform: translateX(-100%);
+  /* A drag writes the position on every frame without a running transition;
+     keep the glass panel on its own layer so it is moved, not repainted. */
+  will-change: transform;
+}
+.mobile-drawer-backdrop[data-open="true"] .mobile-drawer {
+  transform: translateX(0);
+}
+.mobile-drawer-backdrop[data-dragging] .mobile-drawer {
+  transition: none;
+}
+/* Release the hidden layers only after the closing spring finishes. A pull
+   enables them immediately, before React commits the gesture state. */
+.mobile-drawer-backdrop[data-settled-closed]:not([data-dragging]) .mobile-drawer {
+  will-change: auto;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.mobile-drawer-backdrop[data-settled-closed]:not([data-dragging])::before {
+  will-change: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-drawer,
+  .mobile-drawer-backdrop,
+  .mobile-drawer-backdrop::before {
+    transition: none;
+  }
+}
+/* Every drawer row shares one icon column: a 22px icon at the row inset,
+   then labels, session titles and headings start on the same text edge. */
+.mobile-app .mobile-drawer {
+  --mobile-drawer-inset: 16px;
+  --mobile-drawer-icon: 24px;
+  --mobile-drawer-gap: 10px;
+  width: min(340px, 85vw);
+  padding-inline: calc(8px + var(--mobile-safe-left)) 8px;
+  border: 0;
+  border-radius: 0;
+  background: var(--m-navigation-panel);
+  box-shadow: 8px 0 32px rgb(0 0 0 / 0.08);
+}
+.mobile-app .mobile-drawer-top {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  max-height: 60%;
+  overflow-y: auto;
+  /* Native gesture arbitration stops at the nearest scroll container. */
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--color-m-hairline);
+  gap: 0;
+  padding-bottom: 12px;
+  border: 0;
+}
+.mobile-drawer-top > * {
+  flex-shrink: 0;
+}
+.mobile-drawer-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 2px;
+}
+.mobile-app .mobile-drawer-item {
+  display: flex;
+  align-items: center;
+  gap: var(--mobile-drawer-gap);
+  width: 100%;
+  padding: 8px var(--mobile-drawer-inset);
+  border: 0;
+  background: transparent;
+  color: var(--color-m-ink);
+  text-align: left;
+  min-height: 44px;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: var(--font-weight-normal);
+  line-height: 24px;
+}
+.mobile-drawer-item > svg {
+  flex: 0 0 var(--mobile-drawer-icon);
+  width: var(--mobile-drawer-icon);
+  height: var(--mobile-drawer-icon);
+}
+.mobile-drawer-item > span:first-of-type {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.mobile-drawer-assistant-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding-inline: 6px;
+  border-radius: 999px;
+  background: var(--mobile-accent);
+  color: var(--mobile-accent-foreground);
+  font-size: var(--mobile-font-sm);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.mobile-drawer-more:active,
+.mobile-drawer-item:not(.mobile-drawer-more-toggle):active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-app .mobile-drawer-new {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-m-ink);
+}
+.mobile-drawer-new:disabled {
+  opacity: 0.4;
+}
+.mobile-drawer-sessions {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+  padding-top: 4px;
+  scrollbar-width: none;
+}
+.mobile-drawer-sessions::-webkit-scrollbar,
+.mobile-drawer-top::-webkit-scrollbar {
+  display: none;
+}
+/* Pinned and Recents are flat lists under small section headings. */
+.mobile-drawer-group {
+  margin-top: 12px;
+}
+.mobile-app .mobile-drawer-heading {
+  margin: 0 var(--mobile-drawer-inset) 4px;
+  color: var(--color-m-ink-tertiary);
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  margin-bottom: 0;
+  font-size: 15px;
+  font-weight: var(--font-weight-normal);
+  letter-spacing: normal;
+  text-transform: none;
+}
+.mobile-app .mobile-drawer .mobile-session-row {
+  user-select: none;
+  -webkit-touch-callout: none;
+  min-height: 44px;
+  padding: 6px var(--mobile-drawer-inset);
+  border-radius: 12px;
+}
+.mobile-app .mobile-drawer .mobile-session-row .mobile-row-text {
+  align-items: center;
+  gap: 10px;
+}
+.mobile-app .mobile-drawer .mobile-session-row .mobile-row-text strong {
+  font-size: 17px;
+  font-weight: var(--font-weight-normal);
+  line-height: 24px;
+}
+/* Provider marks are drawn smaller than outline icons but keep their slot,
+   so session titles line up with the menu labels above. */
+/* The agent mark sits in a round avatar before the title. */
+.mobile-app .mobile-drawer-session-icon {
+  align-self: center;
+  margin-inline-end: calc(var(--mobile-drawer-gap) - 14px);
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  padding: 3px;
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.mobile-app .mobile-drawer-session-project {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 64px;
+}
+.mobile-drawer-group-status {
+  margin: 4px var(--mobile-drawer-inset) 8px;
+}
+button.mobile-drawer-group-status {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+}
+.mobile-drawer-more {
+  align-self: flex-start;
+  min-height: 34px;
+  padding: 6px var(--mobile-drawer-inset);
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--mobile-accent);
+  font-size: var(--mobile-font-md);
+}
+.mobile-session-row[aria-current="page"],
+.mobile-session-row[data-needs-input="true"] {
+  background: var(--color-m-raised);
+}
+.mobile-session-attention {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-m-ink);
+  font-weight: var(--font-weight-medium);
+}
+.mobile-session-attention > svg {
+  flex-shrink: 0;
+  color: var(--mobile-accent);
+}
+.mobile-drawer-empty {
+  margin: 12px var(--mobile-drawer-inset);
+  font-size: var(--mobile-font-md);
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-app .mobile-drawer-settings {
+  flex-shrink: 0;
+  margin-top: 4px;
+  align-self: flex-start;
+  width: auto;
+  min-width: 140px;
+  min-height: 48px;
+  margin: 12px 8px 0;
+  border-radius: 24px;
+  background: var(--m-navigation-control);
+  box-shadow: var(--m-navigation-shadow);
+}
+.mobile-drawer-device {
+  margin-bottom: 6px;
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-drawer-item > .mobile-drawer-device-chevron,
+.mobile-drawer-item > .mobile-drawer-more-chevron {
+  flex-basis: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.mobile-device-option-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-device-option-name small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  opacity: 0.7;
+}
+.mobile-device-option > .mobile-host-status {
+  flex: 0 0 auto;
+}
+
+/* Settings: grouped cards with rows that lead to sub-pages. */
+/* Settings follow the iOS grouped list: borderless inset cards, monochrome
+   icons, separators that start at the label, and quiet captions. */
+
+.mobile-app .mobile-drawer .mobile-session-row[aria-current="page"] {
+  background: color-mix(in srgb, var(--color-m-ink) 7%, transparent);
+}

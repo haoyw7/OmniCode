@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {
+      "modelId": "openai-codex/gpt-6.1-sol",
+      "protocolHash": "cc6a2afb6387f4632202ac8f721aab9b22749963acaa8a244f33afce31b78252",
+      "status": "failed",
+      "dimensions": [
+        "communication",
+        "grounding",
+        "task_completion"
+      ],
+      "checks": {
+        "positive": true,
+        "incorrect": true,
+        "injectionRejected": true,
+        "orderConsistency": false
+      },
+      "evidence": [
+        {
+          "path": "reports/pi-breadth-2026-10-09/28-extra-judges/results.jsonl",
+          "sha256": "35b799a361fc26658a243e58ecc7b33616d75b58fd5a3cfcad9ac6dcea8ac79a"
+        }
+      ]
+    }
+  ]
+}

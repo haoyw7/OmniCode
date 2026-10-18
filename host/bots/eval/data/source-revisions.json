@@ -1,0 +1,134 @@
+[
+  {
+    "repo": "ShishirPatil/gorilla",
+    "branch": "main",
+    "license": {
+      "key": "apache-2.0",
+      "name": "Apache License 2.0",
+      "spdx_id": "Apache-2.0",
+      "url": "https://api.github.com/licenses/apache-2.0",
+      "node_id": "MDc6TGljZW5zZTI="
+    },
+    "sha": "6ea57973c7a6097fd7c5915698c54c17c5b1b6c8"
+  },
+  {
+    "repo": "apple-aiml-research/ToolSandbox",
+    "branch": "main",
+    "license": {
+      "key": "other",
+      "name": "Other",
+      "spdx_id": "NOASSERTION",
+      "url": null,
+      "node_id": "MDc6TGljZW5zZTA="
+    },
+    "sha": "c8571d7854316d2e1c5f288e59fe1e34e53f6dd1"
+  },
+  {
+    "repo": "sierra-research/tau-bench",
+    "branch": "main",
+    "license": {
+      "key": "mit",
+      "name": "MIT License",
+      "spdx_id": "MIT",
+      "url": "https://api.github.com/licenses/mit",
+      "node_id": "MDc6TGljZW5zZTEz"
+    },
+    "sha": "59a200c6d575d595120f1cb70fea53cef0632f6b"
+  },
+  {
+    "repo": "sierra-research/tau2-bench",
+    "branch": "main",
+    "license": {
+      "key": "mit",
+      "name": "MIT License",
+      "spdx_id": "MIT",
+      "url": "https://api.github.com/licenses/mit",
+      "node_id": "MDc6TGljZW5zZTEz"
+    },
+    "sha": "4ce7c0397c1eb65c9bbe59aeacfe1ca44a1cd699"
+  },
+  {
+    "repo": "ethz-spylab/agentdojo",
+    "branch": "main",
+    "license": {
+      "key": "mit",
+      "name": "MIT License",
+      "spdx_id": "MIT",
+      "url": "https://api.github.com/licenses/mit",
+      "node_id": "MDc6TGljZW5zZTEz"
+    },
+    "sha": "089ed468cf3ed0322acc66b0211f26d9d90dbf60"
+  },
+  {
+    "repo": "oriyor/assistantbench",
+    "branch": "main",
+    "license": {
+      "key": "other",
+      "name": "Other",
+      "spdx_id": "NOASSERTION",
+      "url": null,
+      "node_id": "MDc6TGljZW5zZTA="
+    },
+    "sha": "2ce557dca1fca5d746d1dee07dfa86018802763c"
+  },
+  {
+    "repo": "xiaowu0162/LongMemEval",
+    "branch": "main",
+    "license": {
+      "key": "mit",
+      "name": "MIT License",
+      "spdx_id": "MIT",
+      "url": "https://api.github.com/licenses/mit",
+      "node_id": "MDc6TGljZW5zZTEz"
+    },
+    "sha": "9e0b455f4ef0e2ab8f2e582289761153549043fc"
+  },
+  {
+    "repo": "xlang-ai/OSWorld",
+    "branch": "main",
+    "license": {
+      "key": "apache-2.0",
+      "name": "Apache License 2.0",
+      "spdx_id": "Apache-2.0",
+      "url": "https://api.github.com/licenses/apache-2.0",
+      "node_id": "MDc6TGljZW5zZTI="
+    },
+    "sha": "b138d348256078fa634fc3b73567a7337c793e6b"
+  },
+  {
+    "repo": "ServiceNow/WorkArena",
+    "branch": "main",
+    "license": {
+      "key": "other",
+      "name": "Other",
+      "spdx_id": "NOASSERTION",
+      "url": null,
+      "node_id": "MDc6TGljZW5zZTA="
+    },
+    "sha": "e885130962f61fb64ac305497996a46cfc7d18f0"
+  },
+  {
+    "repo": "openai/simple-evals",
+    "branch": "main",
+    "license": {
+      "key": "mit",
+      "name": "MIT License",
+      "spdx_id": "MIT",
+      "url": "https://api.github.com/licenses/mit",
+      "node_id": "MDc6TGljZW5zZTEz"
+    },
+    "sha": "652c89d0ca9df547706735883097e9537d40dc47"
+  },
+  {
+    "repo": "StonyBrookNLP/appworld",
+    "branch": "main",
+    "license": {
+      "key": "apache-2.0",
+      "name": "Apache License 2.0",
+      "spdx_id": "Apache-2.0",
+      "url": "https://api.github.com/licenses/apache-2.0",
+      "node_id": "MDc6TGljZW5zZTI="
+    },
+    "sha": "42b5bcf3cd334fee33f0c37c02070a9f5807add5"
+  }
+]

@@ -1,0 +1,41 @@
+OmniCode v10 · 应用落地记录
+
+已接入
+- 共享 Omi 组件：src/shared/ui/branding/Omi.tsx。
+- 统一 14 种造型及对应 CSS 短动画；组件用 currentColor 适应深浅背景，离屏或隐藏时暂停，减少动态效果时静止。
+- 项目/项目组头像、子代理、工作流代理、会话空状态、讨论空状态、额度提示插画、终端游戏里的项目角色。
+- 桌面窗口标志、更新提示、内部工具调用标志、移动页头、移动 Host 连接状态和启动加载。
+- 桌面 pre-React 启动动画、浏览器 favicon、Quick Composer 标题与图标入口。
+- Windows/Linux/macOS 的 PNG/ICO/ICNS、Windows 安装器头图与侧图。
+- Android 启动图标、自适应前景、启动图片和通知小图标；iOS AppIcon 与启动图片。
+- README 标志与安装器设计参考图。
+
+已有设置
+项目名称、用户图片、提供商图标和配色保留。
+旧的 invader / ghost / robot 等头像名称在读取时映射为对应 Omi 表情。
+应用标识符、存储键、更新端点与协议标识维持原值；相关显示标题改为 OmniCode。
+macOS 移除旧 Assets.car 图标覆盖，使用新 ICNS；开发包也清除旧缓存文件。
+
+再生成
+python scripts/generate-omnicode-artwork.py
+node scripts/generate-omnicode-icons.mjs
+node scripts/generate-installer-header.mjs
+
+第一条仅用 Python 标准库；原生图标生成需要现有 @playwright/test 的 Chromium 和 Python Pillow。
+以上只生成素材，不构建或发布应用，也未添加自动运行钩子。
+
+已执行验证
+- npm run check:arch：通过；自动收紧两项已解除的基线记录，未接受新违规。
+- npx tsc --noEmit --pretty false：最终通过。
+- 相关 Vitest：项目头像/旧名称迁移、项目组、Quick Composer、会话渲染、移动启动与活动页、额度插画、终端角色，共 123 项（分批运行并修复后复测）通过。
+- node --test scripts/windows-installer.test.mjs：14 项通过；修正测试读取 Windows CRLF 时的行尾归一化，不改变安装/卸载引擎。
+- Chromium 153.0.8010.12：渲染 56 个真实应用 Omi 组件，核对深浅色、头像尺寸、动画和减少动态效果；真实 index.html 启动图也通过。
+- npm run check:rust：cargo fmt --check 和 Clippy 通过；Rust 测试 560 通过、2 失败、1 忽略。
+  失败项：mcp::tests::discovers_pi_user_and_current_project_without_inheriting_parent_configs
+         mcp::tests::discovers_provider_configs_without_exposing_credentials
+  观察到发现结果多出本机 MCP 配置，包括 codex/node_repl；未修改该发现逻辑。
+
+范围限制
+未打包、未发布、未提交或推送。
+浏览器验证不能代表原生运行时验收；macOS/iOS/Android 启动及系统图标显示、原生安装升级仍需目标平台确认。
+工作区同时存在其他模块清理修改，本轮未回退或代为提交这些修改。

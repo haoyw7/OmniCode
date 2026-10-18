@@ -1,0 +1,934 @@
+.mobile-desktop-transcript {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  user-select: text;
+}
+.mobile-desktop-transcript > .agent-transcript {
+  /* Only history follows its eventual scroll displacement. Bottom controls
+     must follow the full keyboard travel even when history cannot scroll. */
+  --mobile-keyboard-offset: inherit;
+  --mobile-keyboard-follow: inherit;
+  transform: translateY(calc(var(--mobile-keyboard-offset) * var(--mobile-keyboard-follow) * -1));
+  /* Keep positioned images and message controls below the floating jump. */
+  isolation: isolate;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  touch-action: pan-y;
+  padding-top: calc(var(--mobile-header-height) + var(--mobile-safe-top));
+  scroll-padding-top: calc(var(--mobile-header-height) + var(--mobile-safe-top));
+}
+/* Sheet headers occupy layout space; their conversations have no composer dock. */
+.mobile-desktop-transcript[data-embedded] > :is(.agent-transcript, .mobile-jump) {
+  transform: none;
+}
+.mobile-desktop-transcript > .mobile-jump {
+  --mobile-keyboard-offset: inherit;
+  --mobile-keyboard: inherit;
+  --mobile-keyboard-layout: inherit;
+  --mobile-composer-safe-gap: inherit;
+  transform: translateY(calc(
+    0px - var(--mobile-keyboard-offset) +
+    min(var(--mobile-composer-safe-gap), var(--mobile-keyboard)) -
+    min(var(--mobile-composer-safe-gap), var(--mobile-keyboard-layout))
+  ));
+}
+.mobile-desktop-transcript[data-embedded] > .agent-transcript {
+  padding-top: 12px;
+  scroll-padding-top: 12px;
+}
+.mobile-desktop-transcript .markdown-code-shell {
+  max-width: 100%;
+}
+/* Touching live tool rows scrolls the conversation, not a nested desktop
+   window. Keep the disclosure wrapper responsible for its closing clip. */
+.mobile-desktop-transcript .zen-phase-body .zen-phase-live {
+  max-height: none;
+}
+.mobile-desktop-transcript .zen-phase-body[data-open="true"] .zen-phase-live {
+  overflow: visible;
+  overscroll-behavior: auto;
+}
+.mobile-desktop-transcript .agent-markdown table {
+  display: block;
+  overflow-x: auto;
+}
+.mobile-desktop-transcript [data-streamdown="code-block-body"],
+.mobile-desktop-transcript [data-streamdown="table-wrapper"] > div,
+.mobile-desktop-transcript .agent-markdown table,
+.mobile-desktop-transcript .mermaid-block {
+  scrollbar-width: none;
+}
+.mobile-desktop-transcript button {
+  min-height: 32px;
+}
+
+/* Phone reading rhythm: slightly larger body text, tighter blocks, and
+   headings scaled to a narrow column instead of a desktop page. */
+.mobile-desktop-transcript .agent-markdown {
+  font-size: 15px;
+  line-height: 1.6;
+}
+.mobile-desktop-transcript .agent-markdown p,
+.mobile-desktop-transcript .agent-markdown [data-streamdown="unordered-list"],
+.mobile-desktop-transcript .agent-markdown [data-streamdown="ordered-list"] {
+  margin-block: 0.55em;
+}
+.mobile-desktop-transcript .agent-markdown li + li {
+  margin-top: 0.3em;
+}
+.mobile-desktop-transcript .agent-markdown [data-streamdown="heading-1"] {
+  font-size: var(--mobile-font-xl);
+}
+.mobile-desktop-transcript .agent-markdown [data-streamdown="heading-2"] {
+  font-size: var(--mobile-font-xl);
+}
+.mobile-desktop-transcript .agent-markdown [data-streamdown="heading-3"],
+.mobile-desktop-transcript .agent-markdown [data-streamdown="heading-4"] {
+  font-size: var(--mobile-font-lg);
+}
+.mobile-desktop-transcript .agent-markdown [data-streamdown^="heading-"] {
+  margin-top: 1.1em;
+  margin-bottom: 0.4em;
+  line-height: 1.35;
+}
+.mobile-desktop-transcript .agent-markdown > :first-child,
+.mobile-desktop-transcript .agent-markdown > div > :first-child {
+  margin-top: 0;
+}
+
+/* Inline code flows with the sentence. The shared inline-flex chip cannot
+   wrap, so on a narrow screen it pushed trailing punctuation onto its own line. */
+.mobile-desktop-transcript .agent-markdown code[dir]:not([data-block]) {
+  display: inline;
+  min-height: 0;
+  padding: 0.12em 0.36em;
+  border-radius: 5px;
+  font-size: 0.84em;
+  line-height: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.mobile-desktop-transcript .agent-markdown code[dir]:not([data-block]) > span[aria-hidden] {
+  display: inline-block;
+  margin-right: 3px;
+  vertical-align: -2px;
+}
+.mobile-app .mobile-desktop-transcript .user-message-bubble {
+  min-height: 38px;
+  max-width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 24px;
+  box-shadow: none;
+  color: var(--m-message-ink);
+  background: var(--m-message-fill);
+}
+html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble:not([data-draft="true"]) {
+  color: var(--m-message-ink);
+  background: var(--m-message-fill);
+}
+.mobile-app .mobile-desktop-transcript .user-message-bubble[data-draft="true"] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--color-m-hairline);
+  color: var(--color-m-ink);
+}
+.mobile-desktop-transcript .user-message-bubble > button {
+  min-height: 0;
+}
+/* Many sent images stay on one line and scroll horizontally instead of wrapping.
+   Start alignment keeps the first image reachable when the row overflows; the
+   fit-content row is still right-aligned by its parent. */
+.mobile-desktop-transcript .user-message-media {
+  max-width: 100%;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.mobile-desktop-transcript .user-message-media::-webkit-scrollbar {
+  display: none;
+}
+.mobile-desktop-transcript .user-message-media > * {
+  flex: 0 0 auto;
+}
+.mobile-desktop-transcript .user-message-actions {
+  padding: 3px 4px 0;
+  column-gap: 18px;
+}
+.mobile-desktop-transcript .user-message-actions button {
+  min-height: 28px;
+}
+.mobile-desktop-transcript .user-message-actions time {
+  font-size: var(--mobile-font-xs);
+}
+/* The actions row is sized against the bubble; with overflow-wrap: anywhere a
+   short message squeezed the clock into one character per line. */
+.mobile-app .mobile-desktop-transcript .user-message-actions {
+  width: max-content;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  position: static;
+  gap: 8px;
+  padding: 5px 0 0;
+  max-width: 100%;
+  opacity: 1;
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-app .mobile-desktop-transcript .user-message-bubble pre,
+.mobile-app .mobile-desktop-transcript .user-message-with-link {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+/* Tool and thinking rows are tap targets that open details. */
+.mobile-desktop-transcript [data-tool-open-row] {
+  min-height: 44px;
+  margin-inline: -6px;
+  padding-inline: 6px;
+  border-radius: 10px;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-desktop-transcript [data-tool-open-row]:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-app .mobile-desktop-transcript .agent-reasoning {
+  color: var(--color-m-ink-secondary);
+  border-left: 2px solid var(--color-stroke);
+  padding-left: 10px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+.mobile-desktop-transcript .agent-markdown a {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 2px;
+}
+
+/* Tool and file detail sheets. */
+.mobile-activity-sheet,
+.mobile-tool-sheet,
+.mobile-file-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 6px 4px;
+}
+.mobile-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.mobile-detail-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.mobile-detail-title strong {
+  font-size: calc(var(--mobile-font-lg) + var(--mobile-popup-font-step, 0px));
+  font-weight: var(--font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+.mobile-detail-title strong.mobile-detail-mono {
+  font-family: var(--font-mono);
+  font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px));
+}
+.mobile-detail-title small {
+  font-size: calc(var(--mobile-font-sm) + var(--mobile-popup-font-step, 0px));
+  color: var(--color-m-ink-tertiary);
+  overflow-wrap: anywhere;
+}
+.mobile-detail-title small[data-state="rejected"] {
+  color: var(--color-m-danger);
+}
+.mobile-detail-section {
+  min-width: 0;
+}
+/* A whole plan reads like a document, with its actions above the text. */
+.mobile-plan-sheet {
+  min-width: 0;
+  padding: 0 16px 16px;
+}
+.mobile-plan-sheet-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+/* A group's steps hang off one rail, each opening its own details. */
+.mobile-activity-steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mobile-activity-step {
+  position: relative;
+}
+.mobile-activity-step + .mobile-activity-step::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  height: 16px;
+  inset-inline-start: 22px;
+  border-inline-start: 1px solid var(--mobile-separator);
+}
+.mobile-activity-step button,
+.mobile-activity-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--color-m-ink);
+  text-align: left;
+}
+.mobile-activity-step button:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-activity-note {
+  color: var(--color-m-ink-secondary);
+}
+.mobile-activity-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-activity-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px));
+}
+.mobile-activity-text.mobile-detail-mono {
+  font-family: var(--font-mono);
+  font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px));
+}
+.mobile-activity-step button > svg:last-child {
+  flex-shrink: 0;
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-activity-step button > .mobile-activity-failed {
+  color: var(--color-m-danger);
+}
+.mobile-activity-diff {
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: var(--mobile-font-sm);
+}
+.mobile-activity-diff [data-kind="add"] {
+  color: var(--color-m-success);
+}
+.mobile-activity-diff [data-kind="del"] {
+  color: var(--color-m-danger);
+}
+.mobile-detail-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mobile-detail-section h3 {
+  margin: 0;
+  font-size: calc(var(--mobile-font-sm) + var(--mobile-popup-font-step, 0px));
+  font-weight: var(--font-weight-medium);
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-detail-copy {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--color-m-ink-secondary);
+  background: transparent;
+}
+.mobile-detail-copy:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-detail-pre {
+  margin: 0;
+  max-height: 45dvh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-selection-subtle);
+  border: calc(1px + var(--mobile-popup-line-step, 0px)) solid var(--color-stroke);
+  font-family: var(--font-mono);
+  font-size: calc(var(--mobile-font-sm) + var(--mobile-popup-font-step, 0px));
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  scrollbar-width: none;
+}
+.mobile-detail-note {
+  margin: 4px 2px;
+  font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px));
+}
+.mobile-read-notice {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--color-selection-subtle);
+  color: var(--color-m-ink-secondary);
+  line-height: 1.5;
+}
+.mobile-read-notice > span {
+  display: block;
+}
+.mobile-detail-action {
+  align-self: stretch;
+}
+.mobile-file-sheet .mobile-file-plain {
+  max-height: none;
+  white-space: pre;
+  counter-reset: line;
+}
+.mobile-file-plain > span {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+}
+.mobile-file-plain > span::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 3ch;
+  box-sizing: content-box;
+  padding-right: 6px;
+  text-align: right;
+  color: var(--color-m-ink-tertiary);
+  user-select: none;
+}
+/* An opaque gutter stays readable as source scrolls beneath it. */
+.mobile-file-plain > span::before,
+.mobile-file-markdown [data-streamdown="code-block-body"] code > span::before {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-card);
+  vertical-align: top;
+}
+.mobile-file-plain > span[data-current="true"] {
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+.mobile-file-markdown {
+  font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px));
+  line-height: 1.6;
+  min-width: 0;
+}
+.mobile-file-markdown .markdown-code-shell {
+  margin-block: 0;
+}
+.mobile-file-markdown [data-streamdown="code-block-body"] {
+  padding-right: 4px;
+}
+.mobile-file-markdown [data-streamdown="code-block-body"] code > span {
+  /* Resolve the row height before the gutter's smaller font inherits it. */
+  line-height: 1lh;
+}
+.mobile-file-markdown [data-streamdown="code-block-body"] code > span::before {
+  box-sizing: content-box;
+  margin-right: 0;
+  padding-right: 6px;
+  line-height: inherit;
+}
+/* Markdown inside a detail sheet has fixed sizes in the shared stylesheet. */
+:is(.mobile-sheet, .mobile-modal, [role="dialog"], [data-popover-side])
+  .agent-markdown [data-streamdown="heading-1"] {
+  font-size: calc(22px + var(--mobile-popup-font-step));
+}
+:is(.mobile-sheet, .mobile-modal, [role="dialog"], [data-popover-side])
+  .agent-markdown [data-streamdown="heading-2"] {
+  font-size: calc(var(--mobile-font-xl) + var(--mobile-popup-font-step));
+}
+:is(.mobile-sheet, .mobile-modal, [role="dialog"], [data-popover-side])
+  .agent-markdown :is(.markdown-code-path, .markdown-code-fallback-label,
+    [data-streamdown="code-block-header"] > span,
+    [data-streamdown="code-block-body"], [data-streamdown="table-header-cell"],
+    [data-streamdown="table-cell"]) {
+  font-size: calc(var(--mobile-font-sm) + var(--mobile-popup-font-step));
+}
+:is(.mobile-sheet, .mobile-modal, [role="dialog"], [data-popover-side])
+  .agent-markdown [data-streamdown="code-block-body"] code > span::before {
+  font-size: calc(10px + var(--mobile-popup-font-step));
+}
+.mobile-file-image-frame {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-m-ink) 4%, transparent);
+}
+.mobile-file-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 60dvh;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.mobile-jump {
+  position: absolute;
+  z-index: 11;
+  pointer-events: auto;
+  touch-action: manipulation;
+  right: 18px;
+  bottom: 12px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  opacity: 0;
+}
+.mobile-jump[data-open="true"] {
+  opacity: 1;
+}
+.mobile-app .mobile-jump[data-open="false"] {
+  /* Override the generic disabled opacity so closing can fade fully out. */
+  opacity: 0;
+  pointer-events: none;
+}
+.mobile-jump[data-fold-state="closed"] {
+  visibility: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-jump[data-open] {
+    transition: none;
+    translate: none;
+  }
+}
+/* The pending question floats above the composer as a glass panel with the
+   same rows and actions as sheets: its header and actions stay put while only
+   the prompt and options scroll. */
+/* Collapsing the panel folds its grid track to zero; the form stays mounted so
+   partial answers survive, and its card in the transcript reopens it. */
+.mobile-shared-question-dock {
+  display: grid;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.mobile-shared-question-clip {
+  min-height: 0;
+  min-width: 0;
+}
+.mobile-shared-question-dock:not([data-fold-state="open"]) > .mobile-shared-question-clip {
+  overflow: hidden;
+}
+.mobile-shared-question-dock[data-open="false"] > .mobile-shared-question-clip {
+  opacity: 0;
+}
+
+.mobile-shared-question {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: 55dvh;
+  margin: 0 8px 8px;
+  padding: 0;
+  border-radius: var(--mobile-card-radius);
+  color: var(--color-m-ink);
+}
+.mobile-chat > .mobile-shared-question-dock > .mobile-shared-question-clip > .mobile-shared-question {
+  max-height: min(calc(var(--mobile-viewport-full, 100dvh) * 0.55), var(--mobile-question-max-height));
+}
+.mobile-shared-question [data-question-form] {
+  flex: 1 1 auto;
+  padding: 0;
+}
+/* The bottom sheet supplies the surface for a resumed question. */
+.mobile-sheet .mobile-shared-question {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.mobile-sheet .mobile-shared-question::before {
+  display: none;
+}
+.mobile-shared-question [data-question-card] {
+  flex: 1 1 auto;
+  padding: 12px 10px 10px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+.mobile-shared-question [data-question-header] {
+  gap: 8px;
+  padding-inline: 6px 0;
+}
+.mobile-shared-question [data-question-header] > svg {
+  width: 16px;
+  height: 16px;
+}
+.mobile-shared-question [data-question-title] {
+  font-size: var(--mobile-font-md);
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-shared-question [data-question-navigation] > span,
+.mobile-shared-question [data-question-hint] {
+  font-size: var(--mobile-font-md);
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-shared-question [data-question-navigation] {
+  gap: 0;
+}
+.mobile-shared-question [data-question-collapse] {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: var(--color-m-ink-secondary);
+  touch-action: manipulation;
+}
+.mobile-shared-question [data-question-collapse] > svg {
+  width: 20px;
+  height: 20px;
+}
+.mobile-shared-question [data-question-collapse]:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-shared-question [data-question-navigation] > button {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  color: var(--mobile-accent);
+  touch-action: manipulation;
+}
+.mobile-shared-question [data-question-navigation] > button > svg {
+  width: 18px;
+  height: 18px;
+}
+.mobile-shared-question [data-question-navigation] > button:active:not(:disabled) {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-shared-question [data-question-secondary] {
+  height: auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--mobile-accent);
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-medium);
+}
+.mobile-shared-question [data-question-secondary]:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-shared-question [data-question-body] {
+  overflow-y: auto;
+  margin-top: 6px;
+  overscroll-behavior: contain;
+}
+.mobile-shared-question [data-question-prompt] {
+  padding-inline: 6px;
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
+}
+.mobile-shared-question [data-question-prompt] + [data-question-hint] {
+  margin-top: 2px;
+  padding-inline: 6px;
+}
+.mobile-shared-question [data-question-options] {
+  max-height: none;
+  overflow: visible;
+  margin-top: 10px;
+  gap: 6px;
+}
+.mobile-shared-question [data-question-option] {
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-m-inset);
+  transition: background-color 150ms var(--m-ease), box-shadow 150ms var(--m-ease);
+}
+.mobile-shared-question [data-question-option][aria-pressed="true"] {
+  background: var(--color-m-raised);
+  box-shadow: inset 0 0 0 1.5px var(--color-m-accent);
+}
+.mobile-shared-question [data-question-option]:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-shared-question [data-question-mark] {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-width: 1.5px;
+}
+.mobile-shared-question [data-question-option][aria-pressed="true"] [data-question-mark] {
+  border-color: var(--mobile-accent);
+  background: var(--mobile-accent);
+  color: var(--mobile-accent-foreground);
+}
+.mobile-shared-question [data-question-mark] > svg {
+  width: 13px;
+  height: 13px;
+}
+.mobile-shared-question [data-question-label] {
+  font-size: var(--mobile-font-lg);
+  line-height: 1.35;
+}
+.mobile-shared-question [data-question-description] {
+  margin-top: 2px;
+  font-size: var(--mobile-font-md);
+  line-height: 1.4;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-shared-question [data-question-options] input,
+.mobile-shared-question [data-question-body] > fieldset > :is(input, textarea) {
+  margin-top: 6px;
+}
+.mobile-shared-question :is(input, textarea):focus-visible {
+  outline: none;
+}
+.mobile-shared-question [data-question-footer] {
+  margin-top: 10px;
+  padding-inline: 6px 0;
+}
+/* Matches [data-ui="button"][data-variant="primary"]. */
+.mobile-shared-question [data-question-submit] {
+  height: auto;
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--mobile-accent);
+  color: var(--mobile-accent-foreground);
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-shared-question [data-question-submit]:active {
+  --mobile-press-color: rgb(0 0 0 / 0.15);
+}
+.mobile-app-updates {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-stroke);
+}
+.mobile-app-updates h2 {
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 18px;
+}
+.mobile-app-updates dl {
+  margin: 0;
+  font-size: var(--mobile-font-sm);
+}
+.mobile-app-updates dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  font-size: var(--mobile-font-lg);
+}
+.mobile-app-updates dl > div + div {
+  border-top: 0.5px solid var(--mobile-separator);
+}
+.mobile-app-updates dt {
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-app-updates dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.mobile-update-source {
+  font-family: var(--font-mono);
+}
+.mobile-update-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.mobile-update-actions [data-ui="button"] {
+  flex: 1;
+  white-space: nowrap;
+}
+.mobile-app-updates progress {
+  width: 100%;
+  margin-top: 14px;
+  accent-color: var(--color-accent);
+}
+.mobile-update-hint {
+  font-size: var(--mobile-font-xs);
+  line-height: 1.6;
+  margin-top: 16px;
+  color: var(--color-m-ink-tertiary);
+}
+ .mobile-native-readonly,
+ .mobile-execution-notice {
+  margin: 0;
+  padding: 8px 14px;
+  font-size: var(--mobile-font-sm);
+  line-height: 1.5;
+  opacity: 0.65;
+}
+
+/* Uploaded images stay compact inside user messages; full images open in the lightbox. */
+.user-message-bubble .mobile-host-image {
+  flex: 0 0 96px;
+  width: 96px;
+  height: 96px;
+  margin: 0;
+  gap: 0;
+}
+.user-message-bubble .mobile-host-image-preview {
+  height: 96px;
+  border-radius: 8px;
+  cursor: zoom-in;
+}
+.user-message-bubble .mobile-host-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.user-message-bubble .mobile-host-image-caption {
+  display: none;
+}
+.user-message-bubble .mobile-host-image-placeholder {
+  box-sizing: border-box;
+  height: 96px;
+  min-height: 96px;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 8px;
+  font-size: 9px;
+  overflow: hidden;
+}
+
+/* Queued messages use compact bubbles; touch actions live in an anchored menu. */
+/* The typing indicator after a sent message, aligned with the agent's reply. It
+   stands in for the live status line until the agent's first output. */
+.transcript-turn-live:has(.mobile-typing-bubble) .transcript-live-footer {
+  display: none;
+}
+.mobile-typing-bubble { width: 100%; }
+/* Pending approvals use their shared semantic markers at touch size. */
+.mobile-desktop-transcript [data-approval-controls] {
+  gap: 8px;
+  margin-top: 8px;
+}
+.mobile-desktop-transcript [data-approval-controls] > button {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-desktop-transcript [data-approval="allow"] {
+  background: var(--color-m-accent);
+  color: var(--color-m-accent-ink);
+}
+.mobile-desktop-transcript [data-approval="deny"] {
+  border: 1px solid var(--color-m-hairline);
+  background: transparent;
+  color: var(--color-m-ink);
+}
+.mobile-app .mobile-desktop-transcript [data-assistant-message] {
+  padding-inline: 16px;
+  padding-block: 8px;
+}
+
+.mobile-app .mobile-desktop-transcript [data-assistant-message] .agent-markdown {
+  font-family: var(--m-message-serif);
+  font-size: 17px;
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
+  color: var(--color-m-ink);
+}
+
+.mobile-app .mobile-desktop-transcript [data-assistant-message] .agent-markdown p {
+  margin-block: 0.75em;
+}
+
+.mobile-app .mobile-desktop-transcript [data-assistant-message] .agent-markdown > div:first-child > :first-child {
+  margin-top: 0;
+}
+
+.mobile-app .mobile-desktop-transcript .user-message-row,
+.mobile-app .mobile-desktop-transcript[data-layout="full"] .user-message-row {
+  padding: 8px 16px 16px;
+}
+
+.mobile-app .mobile-desktop-transcript .user-message-hover-zone {
+  max-width: min(312px, 85%);
+}
+
+.mobile-app .mobile-desktop-transcript [data-transcript-turn-footer] {
+  min-height: 44px;
+  padding: 4px 16px 12px;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--color-m-ink-tertiary);
+}
+
+.mobile-app .mobile-desktop-transcript [data-ui="response-action-group"],
+.mobile-app .mobile-desktop-transcript [data-ui="response-metadata"] {
+  gap: 8px;
+}
+
+.mobile-app .mobile-desktop-transcript [data-ui="response-metrics"] {
+  margin-left: 0;
+}
+
+.mobile-app .mobile-desktop-transcript [data-ui="response-actions"] [data-ui="response-action"],
+.mobile-app .mobile-desktop-transcript [data-ui="response-metrics-trigger"] {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 4px;
+}
+
+.mobile-app .mobile-desktop-transcript [data-ui="response-actions"] [data-ui="response-action"] {
+  color: var(--color-m-ink-secondary);
+}
+
+/* Provider identity and status text come from shared transcript behavior. */
+html[data-mobile-skin] [data-ui="assistant-status"] {
+  min-height: 44px;
+  padding: 0 16px;
+  gap: 12px;
+  color: var(--color-m-ink);
+}
+html[data-mobile-skin] [data-ui="assistant-status-icon"] { width: 24px; height: 24px; }
+html[data-mobile-skin] [data-ui="assistant-status"] .transcript-live-status { font-family: var(--font-serif); font-style: italic; font-size: 15px; line-height: 1.5; }

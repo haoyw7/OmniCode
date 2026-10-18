@@ -1,0 +1,8 @@
+Source: LongMemEval, xiaowu0162/longmemeval-cleaned.
+Pinned dataset revision: 98d7416c24c778c2fee6e6f3006e7a073259d48f.
+Dataset license: MIT as declared by the preserved DATASET_CARD.md.
+https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/blob/98d7416c24c778c2fee6e6f3006e7a073259d48f/README.md
+The separately preserved UPSTREAM_CODE_LICENSE is not a dataset-license substitute.
+Local additions: neutral session handles, read-only memory tools, strict answer/
+evidence assertions, four abstention cases, and three retrieval-only variants.
+This does not execute the official LongMemEval evaluator or long-memory setting.

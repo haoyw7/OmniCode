@@ -1,0 +1,97 @@
+{
+  "thefuzz": {
+    "version": "0.22.1",
+    "project_urls": {
+      "Homepage": "https://github.com/seatgeek/thefuzz"
+    },
+    "downloads": [
+      {
+        "filename": "thefuzz-0.22.1-py3-none-any.whl",
+        "url": "https://files.pythonhosted.org/packages/82/4f/1695e70ceb3604f19eda9908e289c687ea81c4fecef4d90a9d1d0f2f7ae9/thefuzz-0.22.1-py3-none-any.whl",
+        "sha256": "59729b33556850b90e1093c4cf9e618af6f2e4c985df193fdf3c5b5cf02ca481"
+      }
+    ]
+  },
+  "rapidfuzz": {
+    "version": "3.14.1",
+    "project_urls": {
+      "Changelog": "https://github.com/rapidfuzz/RapidFuzz/blob/main/CHANGELOG.rst",
+      "Documentation": "https://rapidfuzz.github.io/RapidFuzz/",
+      "Homepage": "https://github.com/rapidfuzz/RapidFuzz",
+      "Issues": "https://github.com/rapidfuzz/RapidFuzz/issues",
+      "Repository": "https://github.com/rapidfuzz/RapidFuzz.git"
+    },
+    "downloads": [
+      {
+        "filename": "rapidfuzz-3.14.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+        "url": "https://files.pythonhosted.org/packages/11/bf/afb76adffe4406e6250f14ce48e60a7eb05d4624945bd3c044cfda575fbc/rapidfuzz-3.14.1-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl",
+        "sha256": "5967d571243cfb9ad3710e6e628ab68c421a237b76e24a67ac22ee0ff12784d6"
+      }
+    ]
+  },
+  "vendored_files": [
+    {
+      "upstream_path": "rapidfuzz/fuzz_py.py",
+      "path": "_vendor/rapidfuzz/fuzz_py.py",
+      "upstream_sha256": "a5ad94b0617b096f9f3b221c1a0bff94fb4b07a7956ee52a1a5200e2ec7660ac",
+      "local_sha256": "435853c537c7801c96758a4dcf2e24bd52205bf8bbce199db8a3187af5ad40f4",
+      "transformation": "namespace-only import rewrite; force pure-Python RapidFuzz scorer/utils; algorithms unchanged"
+    },
+    {
+      "upstream_path": "rapidfuzz/_common_py.py",
+      "path": "_vendor/rapidfuzz/_common_py.py",
+      "upstream_sha256": "c5b7230cfd60f3e5e4f08907c08a7f09de1ea7f2b71d2c0571b87348a6f98e21",
+      "local_sha256": "c5b7230cfd60f3e5e4f08907c08a7f09de1ea7f2b71d2c0571b87348a6f98e21",
+      "transformation": "namespace-only import rewrite; force pure-Python RapidFuzz scorer/utils; algorithms unchanged"
+    },
+    {
+      "upstream_path": "rapidfuzz/_utils.py",
+      "path": "_vendor/rapidfuzz/_utils.py",
+      "upstream_sha256": "4ae2b532b977305842391149be972b4eacd4aa488bb4d8954f8d89fe6e52c069",
+      "local_sha256": "4ae2b532b977305842391149be972b4eacd4aa488bb4d8954f8d89fe6e52c069",
+      "transformation": "namespace-only import rewrite; force pure-Python RapidFuzz scorer/utils; algorithms unchanged"
+    },
+    {
+      "upstream_path": "rapidfuzz/distance/Indel_py.py",
+      "path": "_vendor/rapidfuzz/distance/Indel_py.py",
+      "upstream_sha256": "a04fa199bf76a3e6b9c585376e3e9442dbd496327809fe956235c02304adcd60",
+      "local_sha256": "18429c66d077a22a00a6646a45e4a771b2dabe9d7ffeac9f7278afffb375975e",
+      "transformation": "namespace-only import rewrite; force pure-Python RapidFuzz scorer/utils; algorithms unchanged"
+    },
+    {
+      "upstream_path": "rapidfuzz/distance/LCSseq_py.py",
+      "path": "_vendor/rapidfuzz/distance/LCSseq_py.py",
+      "upstream_sha256": "987dc95cabd79655d7dd3b3a75a19f7432865a8e55d711e423d472586555c391",
+      "local_sha256": "63aac7d3e354a4440f1f257cfadbd4840cd2f09c193b244903cc83e5bd701f33",
+      "transformation": "namespace-only import rewrite; force pure-Python RapidFuzz scorer/utils; algorithms unchanged"
+    },
+    {
+      "upstream_path": "rapidfuzz/distance/_initialize_py.py",
+      "path": "_vendor/rapidfuzz/distance/_initialize_py.py",
+      "upstream_sha256": "23fcfee786af0fce041351c0eca8d3f1a9dde061ce408fa8dad2bd646e9e62c2",
+      "local_sha256": "d4f5dfad89ce7fd0bf2c7ead99486eef5af4fc2d1d0432be652b26f9335b00d2",
+      "transformation": "namespace-only import rewrite; force pure-Python RapidFuzz scorer/utils; algorithms unchanged"
+    },
+    {
+      "upstream_path": "rapidfuzz/utils_py.py",
+      "path": "_vendor/rapidfuzz/utils_py.py",
+      "upstream_sha256": "a0feb180eb28a644743613637f7bbac79e60c34dcb50c275ce1d85608b319e8e",
+      "local_sha256": "a0feb180eb28a644743613637f7bbac79e60c34dcb50c275ce1d85608b319e8e",
+      "transformation": "namespace-only import rewrite; force pure-Python RapidFuzz scorer/utils; algorithms unchanged"
+    },
+    {
+      "upstream_path": "thefuzz/fuzz.py",
+      "path": "_vendor/thefuzz/fuzz.py",
+      "upstream_sha256": "f35824d5647b972abcba962bebce8f8c6881abea7ccb847f25f60b3a2c687590",
+      "local_sha256": "6463913b34aed0d0164ce77edecd02ba20f03890e260fc382d73da8354a2e59e",
+      "transformation": "namespace-only import rewrite; force pure-Python RapidFuzz scorer/utils; algorithms unchanged"
+    },
+    {
+      "upstream_path": "thefuzz/utils.py",
+      "path": "_vendor/thefuzz/utils.py",
+      "upstream_sha256": "0760830e2a6c6013c8aba870d6430c043bbb36f812f6fa1ebc9e8db5859202ba",
+      "local_sha256": "3848d82f5296783396a494a421923d3b56ef44ccdabb572018a5093cf979f48e",
+      "transformation": "namespace-only import rewrite; force pure-Python RapidFuzz scorer/utils; algorithms unchanged"
+    }
+  ]
+}

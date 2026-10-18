@@ -1,0 +1,19 @@
+{
+  "name": "monocode-im",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "OmniCode IM channels and lazy platform adapter factories",
+  "exports": "./index.ts",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@amatsuka/chat-adapter-qq": "0.1.13",
+    "@chat-adapter/telegram": "4.41.1",
+    "@larksuite/vercel-chat-adapter": "0.3.0",
+    "@larksuiteoapi/node-sdk": "1.74.0",
+    "chat": "4.41.1",
+    "chat-adapter-weixin": "0.1.4"
+  }
+}

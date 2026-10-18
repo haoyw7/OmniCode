@@ -1,0 +1,135 @@
+{
+  "browser": "153.0.8010.12",
+  "svgCount": 24,
+  "assets": [
+    {
+      "name": "omi-curious-black.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-curious-current.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-curious-white.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-encouraging-black.svg",
+      "animations": 3,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-encouraging-current.svg",
+      "animations": 3,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-encouraging-white.svg",
+      "animations": 3,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-error-black.svg",
+      "animations": 1,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-error-current.svg",
+      "animations": 1,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-error-white.svg",
+      "animations": 1,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-focused-black.svg",
+      "animations": 1,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-focused-current.svg",
+      "animations": 1,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-focused-white.svg",
+      "animations": 1,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-inspired-black.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-inspired-current.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-inspired-white.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-joyful-black.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-joyful-current.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-joyful-white.svg",
+      "animations": 2,
+      "transparentPercent": 79
+    },
+    {
+      "name": "omi-sleepy-black.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-sleepy-current.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-sleepy-white.svg",
+      "animations": 2,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-surprised-black.svg",
+      "animations": 3,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-surprised-current.svg",
+      "animations": 3,
+      "transparentPercent": 80
+    },
+    {
+      "name": "omi-surprised-white.svg",
+      "animations": 3,
+      "transparentPercent": 80
+    }
+  ],
+  "pause": true,
+  "replay": true,
+  "manualStatic": true,
+  "systemReducedMotion": true,
+  "imgPlayback": true,
+  "bareImgReducedMotion": false,
+  "pictureReducedMotion": true,
+  "pictureManualStatic": true,
+  "mobilePreview": true
+}

@@ -1,0 +1,1148 @@
+html[data-skin]:not(.has-user-accent) .primary-action:not(:disabled):hover {
+  background: var(--color-accent);
+  filter: brightness(1.08);
+}
+
+html[data-skin]:not(.has-user-accent) .primary-action:not(.composer-send):not(.composer-stop):not(:disabled) {
+  border-color: transparent;
+  background: var(--color-accent);
+  color: var(--color-accent-ink, #fff);
+}
+
+html[data-skin]:not(.has-user-accent) :where(.user-message-row:not(.mobile-desktop-transcript *)) .user-message-bubble:not([data-draft="true"]) {
+  background: var(--color-bubble-user);
+  color: var(--color-bubble-user-ink);
+  border-color: transparent;
+}
+
+html[data-skin] :where(.user-message-row:not(.mobile-desktop-transcript *)) .user-message-bubble:not([data-draft="true"]) {
+  border-color: transparent;
+}
+
+html[data-skin] .question-dock {
+  border-color: var(--color-composer-ring);
+  border-radius: var(--desktop-radius-composer);
+  background: var(--color-composer);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-panel);
+}
+
+html[data-skin] .question-dock [data-question-dock-mark] {
+  border-color: var(--color-hairline);
+  background: var(--color-inset);
+  color: var(--color-ink-tertiary);
+}
+
+html[data-skin] .question-dock [data-question-dock-option][aria-pressed="true"] [data-question-dock-mark] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+html[data-skin] .question-dock .question-dock-skip {
+  border-color: var(--color-hairline);
+  color: var(--color-ink);
+}
+
+html[data-skin] .question-dock .question-dock-submit:enabled {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+html[data-skin] .question-dock .question-dock-submit:disabled {
+  background: var(--color-control);
+  color: var(--color-ink-tertiary);
+}
+
+html[data-skin] [data-question-title],
+html[data-skin] [data-question-hint] {
+  color: var(--color-ink-tertiary);
+}
+
+html[data-skin] [data-question-option][aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--color-raised);
+  box-shadow: inset 0 0 0 1.5px var(--color-accent);
+}
+
+html[data-skin] [data-question-option][aria-pressed="true"] [data-question-mark] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+html[data-skin] :is([data-question-submit], [data-approval="allow"]) {
+  border: 0;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+html[data-skin] :is([data-question-secondary], [data-approval="deny"]) {
+  border: 0;
+  background: transparent;
+  color: var(--color-accent-text);
+}
+
+html[data-skin] :is([data-question-secondary], [data-approval="deny"]):enabled:hover {
+  background: var(--color-hover-fill);
+  color: var(--color-accent-text);
+}
+
+html[data-skin] :is([data-question-submit], [data-approval="allow"]):disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+html[data-skin] .approval-toast > div:has([data-approval]) {
+  justify-content: flex-end;
+  border-top-color: var(--color-hairline);
+}
+
+html[data-skin] .approval-toast :is([data-approval="allow"], [data-approval="deny"]) {
+  flex: none;
+}
+
+html[data-skin] .approval-toast [data-approval="deny"] {
+  order: 1;
+}
+
+html[data-skin] .approval-toast [data-approval="allow"] {
+  order: 2;
+}
+
+html[data-skin] [data-empty-state] > p {
+  color: var(--color-ink-tertiary);
+}
+
+html[data-skin] [data-session-surface-tabs] .surface-tab {
+  color: var(--color-ink-secondary);
+}
+
+html[data-skin] [data-session-surface-tabs] .surface-tab:hover {
+  background: color-mix(in srgb, var(--color-raised) 65%, transparent);
+  color: var(--color-ink);
+}
+
+html[data-skin] [data-session-surface-tabs] .surface-tab:is([aria-selected="true"], [data-selected="true"]) {
+  background: var(--color-raised);
+  color: var(--color-ink);
+}
+
+html[data-skin] [data-session-surface-tabs] [data-tab-slot-id]::after {
+  display: none;
+}
+
+html[data-skin] [data-session-surface-tabs] :is([data-session-tool-toggle], [data-session-overflow-menu]) {
+  color: var(--color-ink-secondary);
+}
+
+html[data-skin] [data-session-surface-tabs] :is([data-session-tool-toggle], [data-session-overflow-menu]):hover,
+html[data-skin] [data-session-surface-tabs] [data-session-tool-toggle][aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-raised) 55%, transparent);
+  color: var(--color-ink);
+}
+
+/*
+ * Beside the status cards the conversation stays centered in the whole pane
+ * until it would come within the gap of the cards, then shifts left inside the
+ * scroller and composer lane (percentages resolve against the pane width), so
+ * the scrollbar stays at the pane edge. Jump-to-latest centers on the composer.
+ */
+[data-status-rail] .agent-transcript:not(.agent-transcript *),
+[data-status-rail] .desktop-composer-lane,
+[data-status-rail] .desktop-jump-lane {
+  padding-right: clamp(
+    0px,
+    calc(
+      2 * var(--desktop-status-rail-reserve) +
+        var(--desktop-conversation-width, calc(56rem - 32px)) + 32px - 100%
+    ),
+    var(--desktop-status-rail-reserve)
+  );
+}
+
+html[data-skin] [data-session-status] [data-status-card] {
+  border-color: var(--color-hairline);
+  border-radius: var(--desktop-radius-card);
+  background: var(--color-card);
+}
+
+html[data-skin] [data-question-card] {
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: var(--glass-filter);
+  color: var(--color-ink);
+  background: color-mix(in srgb, var(--color-panel) 88%, transparent);
+  border-color: var(--color-hairline);
+  padding: 12px 10px 10px;
+  border-radius: var(--desktop-radius-card);
+}
+
+html[data-skin] [data-question-header] {
+  gap: 6px;
+  padding-inline-start: 6px;
+}
+
+html[data-skin] :is([data-question-title], [data-question-hint], [data-question-navigation] > span) {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+html[data-skin] [data-question-prompt] {
+  padding-inline: 6px;
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
+}
+
+html[data-skin] [data-question-options] {
+  gap: 6px;
+}
+
+html[data-skin] [data-question-option] {
+  background: var(--color-inset);
+  border-color: transparent;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+html[data-skin] [data-question-label] {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+html[data-skin] [data-question-description] {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+html[data-skin] [data-question-card] :is(input, textarea) {
+  color: var(--color-ink);
+  background: var(--color-inset);
+  border-color: var(--color-hairline);
+  min-height: var(--desktop-icon-md);
+  padding: 4px 12px;
+  border-radius: var(--desktop-radius-field);
+  font-size: 13px;
+}
+
+html[data-skin] [data-question-collapse] {
+  width: var(--desktop-icon-md);
+  height: var(--desktop-icon-md);
+  border-radius: 999px;
+}
+
+html[data-skin] [data-question-collapse] svg {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-skin] [data-question-navigation] > button {
+  width: var(--desktop-icon-md);
+  height: var(--desktop-icon-md);
+  border-radius: 999px;
+}
+
+html[data-skin] [data-question-navigation] > button svg {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-skin] [data-question-footer] {
+  margin-top: 10px;
+  padding-inline-start: 6px;
+}
+
+html[data-skin] [data-tool-renderer]:has([data-approval-controls]),
+html[data-skin] [data-monocode-tool-call]:has([data-approval-controls]),
+html[data-skin] [data-approval-host]:has([data-approval-controls]) {
+  color: var(--color-ink);
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  margin-block: 4px;
+  padding: 12px 10px 10px 16px;
+  border-radius: var(--desktop-radius-card);
+}
+
+html[data-skin] [data-approval-controls] {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+html[data-skin] .approval-toast {
+  backdrop-filter: none;
+  box-shadow: 0 12px 32px color-mix(in srgb, black 28%, transparent);
+  color: var(--color-ink);
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--desktop-radius-card);
+}
+
+html[data-skin] :has(> [data-jump-to-bottom]) {
+  bottom: 12px;
+}
+
+html[data-skin] [data-jump-to-bottom] {
+  width: var(--desktop-icon-md);
+  height: var(--desktop-icon-md);
+  border-radius: 999px;
+  box-shadow: var(--shadow-panel);
+}
+
+html[data-skin] [data-jump-to-bottom] svg {
+  width: 18px;
+  height: 18px;
+}
+
+html[data-skin] .agent-markdown img {
+  max-width: 100%;
+  max-height: 300px;
+  width: auto;
+  height: auto;
+}
+
+html[data-skin] .agent-markdown p > img:only-child {
+  border-radius: 8px;
+}
+
+html[data-skin] .user-message-media .attachment-chip-image button {
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-skin] [data-composer-layout="desktop"] [data-send-kick] > :is(.composer-send, .composer-stop) {
+    animation: none;
+  }
+}
+
+/* Claude Desktop reference geometry, applied to the retained MonoCode surfaces.
+ * html scope also reaches pooled transcripts and picker portals. Editor, diff
+ * and xterm content keep their own measured typography and virtual row sizes.
+ */
+html[data-skin][data-desktop-mode] .desktop-session-pane {
+  background-color: var(--color-app);
+}
+
+.composer-git-controls,
+.composer-current-branch { display: contents; }
+.composer-project-picker { min-width: 0; }
+.composer-project-picker[data-picker-hidden] { display: none; }
+.composer-context-controls { margin-left: auto; }
+[data-composer-layout="desktop"] .composer-project-picker .cwd-picker-clear {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  transform: translateY(-50%);
+}
+
+html[data-skin][data-desktop-mode] .desktop-composer-dock {
+  width: calc(100% - var(--desktop-conversation-inset) * 2);
+  max-width: calc(var(--desktop-conversation-width) + 32px);
+  padding-bottom: 8px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] {
+  padding: 0;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-surface {
+  position: relative;
+  contain: inline-size;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] [data-ui="message-input"] {
+  gap: 0;
+  padding: 12px;
+  border: var(--desktop-border) solid var(--color-composer-ring);
+  border-radius: var(--desktop-radius-composer);
+  background: var(--color-composer);
+  box-shadow: var(--desktop-shadow-composer);
+  backdrop-filter: none;
+  transition: border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.composer-field, .composer-highlight) {
+  display: block;
+  min-height: 43px;
+  max-height: 220px;
+  padding: 4px;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 22px;
+}
+
+/* Match the empty field's font metrics so the smaller hint stays centered. */
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-field:placeholder-shown {
+  font-size: 13px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-field::placeholder {
+  font-size: 13px;
+  color: var(--color-foreground-subtlest);
+  -webkit-text-fill-color: var(--color-foreground-subtlest);
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-attachments-collapse {
+  margin-bottom: 0;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-attachments {
+  padding: 0 0 6px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-footer {
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px;
+  min-height: 32px;
+  margin: 0;
+  padding: 0;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 8px 8px 0;
+  font-size: 13px;
+  line-height: 1.4615384615;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-workspace-bar {
+  min-height: 24px;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 4px;
+  padding: 0;
+  background: transparent;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-toolbar {
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-model-controls {
+  order: 1;
+  margin-left: 0;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-leading-controls {
+  order: 2;
+  flex-wrap: wrap;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.composer-meta button, .composer-meta button span) {
+  font-size: 13px;
+  line-height: 1.4615384615;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.composer-workspace-bar > div > button, .composer-leading-controls > button, .composer-meta [data-model-picker-trigger], .composer-meta button[data-model-control], .composer-meta [data-access-picker-trigger]) {
+  height: auto;
+  min-height: 24px;
+  gap: 4px;
+  padding: 2.5px 4px;
+  border-radius: 6px;
+  color: var(--color-foreground-subtle);
+  background: transparent;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-workspace-trigger {
+  padding-left: 4px !important;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-workspace-trigger[data-clearable] {
+  padding-left: 24px !important;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-footer > div:first-child > button {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  margin: 0;
+  border-radius: 8px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-footer > div:first-child > button {
+  background: transparent;
+  color: var(--color-content);
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.composer-send, .composer-stop) {
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  min-height: 26px;
+  margin: 0;
+  border-radius: 8px;
+  border: var(--desktop-border) solid transparent;
+  background: transparent;
+  color: var(--color-content);
+  box-shadow: none;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.composer-send, .composer-stop):not(:disabled):is(:hover, :focus-visible) {
+  background: var(--color-control);
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-plus > svg {
+  width: 14px;
+  height: 14px;
+}
+
+html[data-skin][data-desktop-mode] .desktop-empty-content {
+  max-width: calc(var(--desktop-conversation-width) + var(--desktop-conversation-inset) * 2);
+  padding: 0 var(--desktop-conversation-inset) 8px;
+  justify-content: flex-end;
+  gap: 24px;
+}
+
+html[data-skin][data-desktop-mode] .desktop-empty-greeting {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+}
+
+/* Keep the reading boundaries fixed while the transcript scrolls underneath. */
+html[data-skin][data-desktop-mode] [data-transcript-viewport] .agent-transcript {
+  /* Fade the content itself so the boundary remains visible even when the
+     WebView cannot sample the scrolling layer for backdrop blur. */
+  --transcript-edge-mask: linear-gradient(
+    to bottom,
+    transparent,
+    #000 var(--desktop-transcript-edge-height),
+    #000 calc(100% - var(--desktop-transcript-edge-height)),
+    transparent
+  );
+  -webkit-mask-image: var(--transcript-edge-mask);
+  mask-image: var(--transcript-edge-mask);
+}
+
+html[data-skin][data-desktop-mode] [data-transcript-viewport]::before,
+html[data-skin][data-desktop-mode] [data-transcript-viewport]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: var(--desktop-transcript-edge-height);
+  z-index: 2;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--color-app) 12%, transparent);
+  -webkit-backdrop-filter: blur(var(--desktop-transcript-edge-blur));
+  backdrop-filter: blur(var(--desktop-transcript-edge-blur));
+}
+
+html[data-skin][data-desktop-mode] [data-transcript-viewport]::before {
+  top: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+  mask-image: linear-gradient(to bottom, #000, transparent);
+}
+
+html[data-skin][data-desktop-mode] [data-transcript-viewport]::after {
+  bottom: 0;
+  -webkit-mask-image: linear-gradient(to top, #000, transparent);
+  mask-image: linear-gradient(to top, #000, transparent);
+}
+
+html[data-skin][data-desktop-mode] .desktop-transcript-content {
+  width: calc(100% - var(--desktop-conversation-inset) * 2);
+  max-width: var(--desktop-conversation-width);
+  padding-top: clamp(24px, 6vh, 80px);
+  padding-bottom: 24px;
+}
+
+html[data-skin][data-desktop-mode] .agent-transcript {
+  --font-sans: var(--user-content-font,) var(--user-ui-font,) "Source Sans 3", var(--font-system-sans);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.4285714286;
+}
+
+html[data-skin][data-desktop-mode] [data-assistant-message],
+html[data-skin][data-desktop-mode] .desktop-activity-phases,
+html[data-skin][data-desktop-mode] .desktop-work-fold-line,
+html[data-skin][data-desktop-mode] [data-live-footer],
+html[data-skin][data-desktop-mode] [data-ui="response-actions"],
+html[data-skin][data-desktop-mode] .user-message-actions {
+  padding-inline: 0;
+}
+
+/* Align button boundaries with the message edge and keep timestamps clear. */
+html[data-skin][data-desktop-mode] [data-ui="response-actions"] [data-ui="response-action"],
+html[data-skin][data-desktop-mode] .user-message-actions [data-ui="response-action"] {
+  margin-inline: 0;
+}
+
+/* Desktop rows share the content edge; the rail follows the 14px fold icon.
+   Keep the opened work's 20px branch inset clear of the connector. */
+html[data-skin][data-desktop-mode] .transcript-turn {
+  --transcript-rail-left: 7px;
+}
+
+/* Keep the row's space so revealing actions does not move the conversation. */
+@media (hover: hover) and (pointer: fine) {
+  html[data-skin][data-desktop-mode] .transcript-turn:not([data-latest-assistant-turn]) [data-ui="response-actions"] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  html[data-skin][data-desktop-mode] .transcript-turn:not([data-latest-assistant-turn]):is(:hover, :focus-within) [data-ui="response-actions"],
+  html[data-skin][data-desktop-mode] .transcript-turn:not([data-latest-assistant-turn]) [data-ui="response-actions"]:has([aria-expanded="true"]) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  html[data-skin][data-desktop-mode] .user-message-actions {
+    pointer-events: none;
+  }
+
+  html[data-skin][data-desktop-mode] .user-message-row:is(:hover, :focus-within) .user-message-actions {
+    pointer-events: auto;
+  }
+}
+
+html[data-skin][data-desktop-mode] .user-message-row {
+  padding-right: 0;
+  padding-left: 0;
+  padding-bottom: 24px;
+}
+
+html[data-skin][data-desktop-mode] .user-message-hover-zone {
+  max-width: min(80%, 640px);
+}
+
+html[data-skin][data-desktop-mode] .user-message-bubble {
+  max-width: 100%;
+  padding: 12px 16px 12px 12px;
+  border-radius: var(--desktop-radius-bubble);
+  font-size: 16px;
+  line-height: 22px;
+}
+
+html[data-skin][data-desktop-mode] .user-message-bubble:not([data-draft="true"]) {
+  border: 0;
+  border-radius: var(--desktop-radius-bubble);
+  background: var(--color-bubble-user);
+  color: var(--color-bubble-user-ink);
+}
+
+[data-pane-background-geometry],
+.desktop-session-pane.chat-pane-background,
+.desktop-session-pane.chat-pane-background::before,
+.desktop-session-pane.chat-pane-background > .gradient-blur-background {
+  --chat-background-left: inherit;
+  --chat-background-top: inherit;
+  --chat-background-width: inherit;
+  --chat-background-height: inherit;
+}
+
+/* Keep the conversation readable while sibling tools cover its excess width.
+   Grid tracks still shrink to zero for maximize/full-view transitions. */
+html[data-skin][data-desktop-mode] [data-pane-tree-layout][data-chat-overlap] {
+  isolation: isolate;
+  overflow: clip;
+}
+
+html[data-skin][data-desktop-mode] [data-chat-overlap] > [data-pane-chat-edge][aria-hidden="false"] {
+  width: 100%;
+  justify-self: start;
+  z-index: 0;
+}
+
+html[data-skin][data-desktop-mode] [data-chat-overlap] > [data-pane-chat-edge="right"][aria-hidden="false"] {
+  justify-self: end;
+}
+
+html[data-skin][data-desktop-mode] [data-chat-overlap] > [data-pane-id]:not([data-pane-chat-edge]) {
+  z-index: 1;
+}
+
+/* Side-by-side chats stay inside their own slots and never cover each other;
+   only tools keep a minimum width that may extend over a neighbouring chat. */
+html[data-skin][data-desktop-mode] [data-pane-tree-layout][data-chat-tiles] {
+  isolation: isolate;
+  overflow: clip;
+}
+
+html[data-skin][data-desktop-mode] [data-chat-tiles] > [data-pane-id]:not([data-pane-chat]) {
+  z-index: 1;
+}
+
+/* Both modes share card frames, headers and transcript presentation. */
+html[data-skin][data-desktop-mode] .pane-card {
+  border-radius: var(--desktop-radius-card);
+  background: var(--color-card);
+  border: var(--desktop-border) solid var(--color-composer-ring);
+}
+
+html[data-skin][data-desktop-mode] [data-pane-floating] {
+  pointer-events: none;
+}
+
+html[data-skin][data-desktop-mode] [data-pane-floating] > [data-pane-background-geometry] {
+  visibility: hidden;
+}
+
+html[data-skin][data-desktop-mode] .pane-insertion-line {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 2px;
+  background: var(--color-accent);
+}
+
+html[data-skin][data-desktop-mode] .pane-drag-ghost > .drag-ghost-card {
+  /* The clone includes layout gutters; only the retained inner card is lifted. */
+  border-radius: 0;
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-skin][data-desktop-mode] .pane-drag-ghost [data-pane-card-frame] {
+  box-shadow: var(--drag-ghost-shadow);
+}
+
+/* A single conversation stays borderless even beside file or terminal cards. */
+html[data-skin][data-desktop-mode] [data-pane-chat-edge] > div > [data-pane-card-frame] {
+  border: 0;
+}
+
+html[data-skin][data-desktop-mode] [data-workspace-tab] > .pane-card,
+html[data-skin][data-desktop-mode] [data-fixture-main-card] {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-skin][data-desktop-mode] [data-session-surface-tabs] {
+  background: var(--color-app);
+}
+
+html[data-skin][data-desktop-mode] [data-surface-tab-strip],
+html[data-skin][data-desktop-mode] [data-session-pane-header] {
+  height: 32px;
+  min-height: 32px;
+  font-size: 13px;
+  line-height: 1.4615384615;
+}
+
+html[data-skin][data-desktop-mode] [data-surface-tab-strip] .surface-tab {
+  height: 26px;
+  min-height: 26px;
+  padding: 0 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.4615384615;
+}
+
+/* Keep title suffixes clear of the absolutely positioned close button. */
+html[data-skin][data-desktop-mode] [data-surface-tab-strip] .surface-tab[data-closable] {
+  padding-right: 28px;
+}
+
+html[data-skin][data-desktop-mode] [data-session-surface-tabs] :is([data-session-tool-toggle], [data-session-overflow-menu]) {
+  border-radius: 6px;
+}
+
+html[data-skin][data-desktop-mode] [data-assistant-message] .agent-markdown {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: 0;
+}
+
+html[data-skin][data-desktop-mode] .user-message-bubble :is(pre[data-selectable-agent-response], .user-message-with-link) {
+  font-size: 16px;
+  line-height: 22px;
+}
+
+/* One input row (+, field, send) with every environment and model control in
+ * a single row below it. Keeping the retained nodes in place makes mode
+ * changes preserve drafts and menus. */
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] [data-ui="message-input"] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 6px;
+  padding: 3px 4px;
+  border-radius: 12px;
+  box-shadow: var(--desktop-shadow-composer);
+  /* The row sets the height, so + and send share the text line's center. */
+  min-height: 0;
+}
+
+/* Attachments, notices and handoff cards span the box above the input row. */
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] [data-ui="message-input"] > :not(.composer-editor, .composer-footer) {
+  grid-column: 1 / -1;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-footer {
+  display: contents;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-plus-container {
+  order: 1;
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  height: 26px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-editor {
+  order: 2;
+  grid-column: 2;
+  min-width: 0;
+  align-self: center;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-submit-controls {
+  order: 3;
+  grid-column: 3;
+  height: 26px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.composer-field, .composer-highlight) {
+  min-height: 26px;
+  max-height: 160px;
+  /* Center the line box without a font-specific baseline offset. Keep the
+   * textarea and highlight layer aligned for both empty and populated input. */
+  padding: 2px;
+  font-size: var(--text-desktop-label);
+  line-height: 22px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  /* Column-align the first and last icons with + and send above. */
+  padding: 8px 9px 0 4px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-workspace-bar {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 2px;
+  min-height: 24px;
+  padding: 0;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-toolbar {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  justify-content: space-between;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-context-controls {
+  margin: 0 2px 0 4px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-environment-picker {
+  display: inline-flex;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-environment-badge {
+  font-family: var(--font-sans);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-ink-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: none;
+}
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-environment-badge svg { width: 14px; height: 14px; }
+html[data-skin][data-desktop-mode] .composer-environment-menu [data-ui="select-option"] {
+  font-size: 14px;
+}
+html[data-skin][data-desktop-mode] .composer-environment-menu [data-ui="select-check"] {
+  color: var(--color-accent);
+}
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-project-picker[data-picker-hidden] { display: block; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .cwd-picker-full-label { display: none; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .cwd-picker-short-label { display: inline; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-workspace-trigger[data-clearable] { padding-left: 6px !important; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-project-picker [data-cwd-clear] { opacity: 0; left: 3px; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-project-picker:has([data-cwd-clear]):is(:hover, :focus-within) .cwd-picker-project-icon { opacity: 0; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-project-picker:is(:hover, :focus-within) [data-cwd-clear] { opacity: 1; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-workspace-bar > div > button,
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-workspace-trigger,
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-current-branch > div > button,
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-base > button {
+  min-height: 24px;
+  height: auto;
+  max-width: 240px;
+  margin: 0;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-ink-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+  box-shadow: none;
+}
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls { display: flex; min-width: 0; align-items: center; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-current-branch { display: block; min-width: 0; order: 0; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-base { order: 0; min-width: 0; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-workspace-mode-menu { display: contents; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-workspace-mode-trigger { display: none; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox {
+  display: inline-flex;
+  order: 1;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
+  background: transparent;
+  color: var(--color-ink-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox input { --desktop-checkbox-size: 16px; --desktop-checkbox-radius: 4px; margin: 0; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox input:disabled { opacity: 1; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox:has(input:disabled) { opacity: .5; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls .composer-current-branch > div > button,
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls .composer-worktree-base > button { border-radius: 6px 0 0 6px; border-right: 0; box-shadow: none; }
+/* Each half has a rounded hover fill inside the continuous outer border. */
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls :is(.composer-current-branch > div > button, .composer-worktree-base > button, .composer-worktree-checkbox) {
+  position: relative;
+  isolation: isolate;
+}
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls :is(.composer-current-branch > div > button, .composer-worktree-base > button, .composer-worktree-checkbox)::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: 4px;
+  background: var(--color-control);
+  opacity: 0;
+  pointer-events: none;
+}
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls :is(.composer-current-branch > div > button, .composer-worktree-base > button):not(:disabled):is(:hover, :focus-visible)::before,
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox:has(input:enabled):is(:hover, :has(input:focus-visible))::before { opacity: 1; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-menu-trigger {
+  display: grid;
+  order: 2;
+  place-items: center;
+  width: 26px;
+  height: 24px;
+  margin-left: 6px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--color-ink-secondary);
+  background: transparent;
+}
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-menu-trigger svg { width: 14px; height: 14px; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-model-controls { margin-left: auto; }
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-leading-controls { flex-wrap: nowrap;
+  order: 0;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.composer-meta button, .composer-meta button span) {
+  font-size: 12px;
+  line-height: 1.3333333333;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-workspace-bar :is(button, button span) {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.composer-toolbar button, .composer-footer > div:first-child > button) {
+  min-height: 22px;
+  height: auto;
+  padding-block: 3px;
+  border-radius: 4px;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-footer > div:first-child > button {
+  /* Matches the send button so both hover fills are the same size. */
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  width: 26px;
+  min-width: 26px;
+  border-radius: 8px;
+}
+
+/* The action row sits 2px below its grid track; align it with sibling cards. */
+html[data-skin][data-desktop-mode] [data-pane-chat-edge] > div > [data-pane-card-frame] :is(.desktop-composer-dock, .desktop-empty-content) {
+  padding-bottom: 2px;
+}
+
+html[data-skin][data-desktop-mode] .project-terminal-card-gutter {
+  padding-right: var(--desktop-pane-outer);
+  padding-bottom: var(--desktop-pane-outer);
+}
+
+html[data-skin][data-desktop-mode] .composer-popover {
+  --desktop-menu-row: 24px;
+  --desktop-menu-font: 13px;
+  --desktop-menu-leading: 19px;
+  --desktop-menu-pad-y: 2.5px;
+  --desktop-menu-pad-x: 8px;
+  --desktop-menu-radius: 6px;
+  --desktop-menu-icon: 16px;
+  --desktop-menu-gap: 6px;
+  --desktop-menu-panel-radius: 10px;
+}
+
+html[data-skin][data-desktop-mode] .composer-popover:is([data-model-picker], [data-model-control], [data-access-picker]) :is(button[role="option"], button[role="menuitemradio"], button[role="menuitem"]) {
+  height: auto;
+  min-height: 24px;
+  font-size: 13px;
+  line-height: 1.4615384615;
+}
+
+html[data-skin][data-desktop-mode] .composer-popover [data-menu-row="description"] {
+  min-height: 24px;
+  padding: 2.5px 8px;
+}
+html[data-skin][data-desktop-mode] .composer-popover [data-menu-description] { display: none; }
+html[data-skin][data-desktop-mode] .composer-popover [data-menu-option] { min-height: 0; padding: 0; font-size: inherit; line-height: inherit; }
+
+/* Choice panels inherit the same menu density as reasoning and other controls. */
+html[data-skin][data-desktop-mode] .composer-popover.composer-menu-panel [role="listbox"] button[data-menu-option] {
+  min-height: 0;
+  padding: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+html[data-skin][data-desktop-mode] .composer-popover.composer-menu-panel :is([role="listbox"] [data-menu-row], button[role="option"][data-menu-row]) {
+  min-height: var(--desktop-menu-row);
+  padding: var(--desktop-menu-pad-y) var(--desktop-menu-pad-x);
+  gap: var(--desktop-menu-gap);
+  font-size: var(--desktop-menu-font);
+  line-height: var(--desktop-menu-leading);
+  border-radius: var(--desktop-menu-radius);
+  align-items: center;
+}
+html[data-skin] .composer-popover.composer-menu-panel[data-access-picker] button[role="option"] { align-items: center; }
+html[data-skin] .composer-popover.composer-menu-panel[data-access-picker] button[role="option"] > svg { margin-top: 0; }
+
+/* Adjacent model controls share a line box instead of centering only Latin caps. */
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"]
+  .composer-model-controls .model-picker-trigger-text {
+  padding-block: 0;
+  text-box: normal;
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"]
+  .composer-model-controls > [data-model-picker-trigger] > [data-ui-icon="ChevronDown"],
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"]
+  .composer-model-controls > button[data-model-control] > svg {
+  display: none;
+}
+
+/* Keep trigger feedback above the desktop controls' resting backgrounds. */
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(
+  .composer-environment-badge,
+  .composer-workspace-bar > div[aria-label]
+):hover {
+  border-radius: 6px;
+  background: var(--color-control);
+}
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(
+  .composer-workspace-bar > div > button,
+  .composer-workspace-trigger,
+  .composer-worktree-menu-trigger,
+  .composer-meta [data-model-picker-trigger],
+  .composer-meta button[data-model-control],
+  .composer-meta [data-access-picker-trigger],
+  .composer-plus
+):not(:disabled, [aria-disabled="true"]):is(:hover, :focus-visible, [aria-expanded="true"]) {
+  background: var(--color-control);
+}
+
+html[data-skin][data-desktop-mode] .composer-surface[data-inline-below~="480"] .composer-meta {
+  column-gap: 4px;
+}
+
+@media (max-width: 900px) {
+  html[data-skin][data-desktop-mode] {
+    --desktop-conversation-inset: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] [data-ui="message-input"] {
+    transition: none;
+  }
+}
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-send:disabled { opacity: .5; }
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-send-arrow { display: none; }
+
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-send-return { display: block; width: 16px; height: 16px; }
+/* Expanded context accounting in the existing session status rail. */
+[data-session-status] [data-ui="context-breakdown"] {
+  padding: 0 8px 4px;
+  font-size: var(--text-ui-caption);
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+[data-session-status] .context-breakdown-summary { display: flex; justify-content: space-between; gap: 8px; }
+[data-session-status] .context-breakdown-summary > :last-child,
+[data-session-status] .context-breakdown-tokens,
+[data-session-status] .context-breakdown-footer { color: var(--color-foreground-subtle); }
+[data-session-status] .context-breakdown-bar { display: flex; height: 4px; margin: 6px 0 8px; overflow: hidden; border-radius: 2px; background: var(--context-usage-free); }
+[data-session-status] .context-breakdown-bar > span { flex-shrink: 0; }
+[data-session-status] .context-breakdown-row { display: grid; grid-template-columns: 8px minmax(0, 1fr) 3.3em 3.5em; gap: 7px; align-items: baseline; padding: 3px 0; }
+[data-session-status] .context-breakdown-name { min-width: 0; overflow-wrap: anywhere; }
+[data-session-status] .context-breakdown-swatch { width: 8px; height: 10px; border-radius: 2px; }
+[data-session-status] .context-breakdown-tokens,
+[data-session-status] .context-breakdown-percent { text-align: right; white-space: nowrap; }
+[data-session-status] .context-breakdown-row[data-deferred] { opacity: 0.65; }
+[data-session-status] [data-tone="messages"] { background: var(--context-usage-messages); }
+[data-session-status] [data-tone="tools"] { background: var(--context-usage-tools); }
+[data-session-status] [data-tone="mcp"] { background: var(--context-usage-mcp); }
+[data-session-status] [data-tone="muted"] { background: var(--context-usage-muted); }
+[data-session-status] [data-tone="buffer"] { background: var(--context-usage-buffer); }
+[data-session-status] [data-tone="free"] { background: var(--context-usage-free); }
+[data-session-status] .context-breakdown-toggle { display: flex; align-items: center; width: 100%; gap: 6px; padding: 8px 0; text-align: left; }
+[data-session-status] .context-breakdown-toggle > :last-child { margin-left: auto; color: var(--color-foreground-subtle); }
+[data-session-status] .context-breakdown-toggle:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; border-radius: 4px; }
+[data-session-status] .context-breakdown-tool-list { max-height: 220px; overflow-y: auto; }
+[data-session-status] .context-breakdown-tool-list .context-breakdown-row { font-size: 0.9em; }
+[data-session-status] .context-breakdown-footer { margin-top: 8px; font-size: 0.9em; }
+[data-session-status] .context-breakdown-footer p + p { margin-top: 4px; }

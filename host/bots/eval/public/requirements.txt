@@ -1,0 +1,2 @@
+# Adapter bridge only; source-specific runtime code is stdlib or vendored.
+jsonschema==4.19.2

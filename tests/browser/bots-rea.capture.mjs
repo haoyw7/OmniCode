@@ -1,0 +1,27 @@
+// Record before edits and after edits using the same server, viewport and synthetic data.
+import { chromium, expect } from '@playwright/test';
+import fs from 'node:fs/promises';
+const phase = process.argv[2] ?? 'before';
+const browser = await chromium.launch({executablePath:process.env.CHROME_PATH || '/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
+const page = await browser.newPage({viewport:{width:1280,height:800},deviceScaleFactor:1,colorScheme:'light',timezoneId:'UTC'});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://127.0.0.1:1436/tests/browser/bots-rea.html');
+await page.locator('.assistant-compose textarea:visible').waitFor(); await page.waitForTimeout(1500);
+const metrics = {phase, browser:browser.version(),viewport:{width:1280,height:800},dpr:1,zoom:1,theme:'light',errors};
+metrics.geometry = await page.evaluate(()=>Object.fromEntries(['.desktop-bots-navigation','.desktop-bots-contact-main','.assistant-header','.assistant-compose','.assistant-message-assistant'].map(s=>{const e=document.querySelector(s),r=e.getBoundingClientRect(),c=getComputedStyle(e);return [s,{width:r.width,height:r.height,padding:c.padding,font:c.font,borderRadius:c.borderRadius}]})));
+await page.screenshot({path:`build/bots-rea/${phase}-light.png`});
+await page.getByRole('button',{name:'Bot details',exact:true}).click();await page.waitForTimeout(450);await page.screenshot({path:`build/bots-rea/${phase}-settings.png`});
+await page.getByRole('button',{name:'Hide bot details',exact:true}).click();await page.waitForTimeout(450);
+await page.evaluate(async()=>{document.documentElement.classList.remove('theme-light');(await import('/src/shared/theme/desktopSkin.ts')).applyDesktopSkin();});await page.waitForTimeout(400);
+metrics.darkUserBubble=await page.locator('.assistant-message-user').first().evaluate(e=>({background:getComputedStyle(e).backgroundColor,color:getComputedStyle(e).color}));
+expect(metrics.darkUserBubble).toEqual({background:'rgb(90, 90, 90)',color:'rgb(252, 252, 252)'});
+await page.screenshot({path:`build/bots-rea/${phase}-dark.png`});
+await page.evaluate(async()=>{document.documentElement.classList.add('theme-light');(await import('/src/shared/theme/desktopSkin.ts')).applyDesktopSkin();});
+const cdp=await page.context().newCDPSession(page);await cdp.send('Performance.enable');
+await page.evaluate(()=>window.botsFixture.long()); await page.waitForTimeout(2300);
+const initial=await cdp.send('Performance.getMetrics');
+metrics.frames=await page.evaluate(async()=>{const frames=[];let last=performance.now();const end=last+4000;window.botsFixture.stream();await new Promise(resolve=>{const tick=now=>{frames.push(now-last);last=now;const log=document.querySelector('.assistant-messages');log.scrollTop=(Math.sin(now/500)+1)*log.scrollHeight/2;if(now<end)requestAnimationFrame(tick);else resolve();};requestAnimationFrame(tick)});frames.sort((a,b)=>a-b);return {count:frames.length,p95:frames[Math.floor(frames.length*.95)],over50:frames.filter(n=>n>50).length};});
+const final=await cdp.send('Performance.getMetrics');metrics.performance=Object.fromEntries(['TaskDuration','LayoutDuration','RecalcStyleDuration','LayoutCount','RecalcStyleCount'].map(name=>[name,final.metrics.find(m=>m.name===name).value-initial.metrics.find(m=>m.name===name).value]));
+await page.screenshot({path:`build/bots-rea/${phase}-long.png`});
+await page.setViewportSize({width:680,height:800});await page.waitForTimeout(500);await page.screenshot({path:`build/bots-rea/${phase}-narrow.png`});
+await fs.writeFile(`build/bots-rea/${phase}.json`,JSON.stringify(metrics,null,2));console.log(JSON.stringify(metrics));await browser.close();

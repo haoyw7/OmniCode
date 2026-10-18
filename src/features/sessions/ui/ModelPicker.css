@@ -1,0 +1,149 @@
+.composer-popover[data-model-picker]
+  :is(input, button[role="option"], button[role="menuitemradio"]),
+.composer-popover[data-model-control] button[role="menuitemradio"] {
+  font-size: var(--text-ui-base);
+  line-height: 20px;
+}
+
+.composer-popover[data-model-picker] .model-picker-group-label,
+.composer-popover[data-model-control] [role="group"] > div:first-child {
+  font-size: var(--text-ui-sm);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.composer-popover[data-model-picker] .surface-tab {
+  border-radius: 8px;
+}
+
+/* Rows own hover/highlight; the check mark marks the current model. */
+.composer-popover[data-model-picker] [role="listbox"] button[role="option"] {
+  background: transparent;
+}
+
+.codex-effort-option {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.codex-effort-option > .codex-effort-tiles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(32, minmax(0, 1fr));
+  grid-template-rows: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  padding: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  /* Feather all four sides so the tiles dissolve into the row instead of
+     stopping hard at its edge; intersecting the two fades rounds the corners. */
+  -webkit-mask-image:
+    linear-gradient(
+      to right,
+      transparent,
+      #000 28px,
+      #000 calc(100% - 28px),
+      transparent
+    ),
+    linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(
+      to right,
+      transparent,
+      #000 28px,
+      #000 calc(100% - 28px),
+      transparent
+    ),
+    linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+  mask-composite: intersect;
+}
+
+.codex-effort-option::after {
+  box-sizing: border-box;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  content: "";
+  pointer-events: none;
+  opacity: 0;
+}
+
+.codex-effort-option > :not(.codex-effort-tiles) {
+  position: relative;
+  z-index: 1;
+}
+
+.codex-effort-option[data-effort-tone="ultra"] {
+  --codex-effort-color: #a855f7;
+}
+
+.codex-effort-option[data-effort-tone="max"] {
+  --codex-effort-color: #f4b942;
+}
+
+.codex-effort-tile {
+  box-sizing: border-box;
+  background-color: transparent;
+  box-shadow: inset -1px -1px 0
+    color-mix(in srgb, var(--codex-effort-color) 32%, transparent);
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+  .codex-effort-tile--filled {
+  background-color: color-mix(in srgb, var(--codex-effort-color) 32%, transparent);
+}
+
+.codex-effort-option:is(:hover, :focus-visible, .bg-selection)::after {
+  will-change: box-shadow, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .codex-effort-option > .codex-effort-tiles {
+    transition: none;
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+    > .codex-effort-tiles {
+    animation: none;
+    opacity: 0.72;
+    visibility: visible;
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)::after {
+    animation: none;
+    opacity: 0.42;
+    box-shadow: none;
+    will-change: auto;
+  }
+
+  .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+    .codex-effort-tile--filled {
+    animation: none;
+    background-color: var(--codex-effort-color);
+    will-change: auto;
+  }
+}
+
+/* UI fonts sit Latin caps below the line box's centre (about 1px in
+   WebKitGTK), so the label reads lower than the agent icon. Trim the box to
+   cap height so it centres like the icon; padding keeps descenders visible
+   inside the truncating span. */
+.model-picker-trigger-text {
+  padding-block: 0.3em;
+  text-box: trim-both cap alphabetic;
+}
+
+/* Provider tabs scroll sideways without a visible scrollbar. */
+.model-picker-providers {
+  scrollbar-width: none;
+}
+
+.model-picker-providers::-webkit-scrollbar {
+  display: none;
+}

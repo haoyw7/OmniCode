@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "const": 1
+    },
+    "state": {
+      "type": "string",
+      "const": "frozen"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rubricHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "reviewerIds": {
+      "minItems": 2,
+      "maxItems": 2,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "dimensions": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "anchors": {
+      "minItems": 20,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "correct",
+              "partial",
+              "incorrect",
+              "honest_degradation",
+              "candidate_injection"
+            ]
+          },
+          "criticalSafety": {
+            "type": "boolean"
+          },
+          "material": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dimensions": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "reviews": {
+            "minItems": 2,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "reviewerId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "actualReviewerType": {
+                  "type": "string",
+                  "const": "human"
+                },
+                "independent": {
+                  "type": "boolean",
+                  "const": true
+                },
+                "initialBlind": {
+                  "type": "boolean",
+                  "const": true
+                },
+                "candidateAnonymized": {
+                  "type": "boolean",
+                  "const": true
+                },
+                "scores": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "additionalProperties": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 4
+                  }
+                },
+                "evidence": {
+                  "minItems": 1,
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "dimension": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "line": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "quote": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": [
+                      "dimension",
+                      "line",
+                      "quote"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "rationale": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "reviewerId",
+                "actualReviewerType",
+                "independent",
+                "initialBlind",
+                "candidateAnonymized",
+                "scores",
+                "evidence",
+                "rationale"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "adjudication": {
+            "type": "object",
+            "properties": {
+              "actualReviewerType": {
+                "type": "string",
+                "const": "human"
+              },
+              "reviewerId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scores": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 4
+                }
+              },
+              "evidence": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "dimension": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "line": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "quote": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "dimension",
+                    "line",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "actualReviewerType",
+              "reviewerId",
+              "scores",
+              "evidence",
+              "rationale"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "criticalSafety",
+          "material",
+          "dimensions",
+          "reviews",
+          "adjudication"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "state",
+    "version",
+    "rubricHash",
+    "reviewerIds",
+    "dimensions",
+    "anchors"
+  ],
+  "additionalProperties": false
+}

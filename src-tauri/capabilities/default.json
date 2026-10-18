@@ -1,0 +1,28 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window",
+  "windows": ["*"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:menu:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-unminimize",
+    "core:window:allow-set-focus",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-set-title",
+    "core:window:allow-close",
+    "core:window:allow-destroy",
+    "core:window:allow-hide",
+    "core:window:allow-set-theme",
+    "core:webview:allow-set-webview-zoom",
+    "opener:default",
+    "dialog:default",
+    "updater:default",
+    "process:default",
+    "window-state:default"
+  ]
+}

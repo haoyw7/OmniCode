@@ -1,0 +1,323 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "number",
+          "const": 1
+        },
+        "caseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "caseHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "caseHashMethod": {
+          "type": "string",
+          "enum": [
+            "case-schema-json",
+            "json-record-json"
+          ]
+        },
+        "sourceLineSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sourceFileSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "issueKind": {
+          "type": "string",
+          "enum": [
+            "prompt_ambiguity",
+            "payee_attribution"
+          ]
+        },
+        "evidencePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceLines": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "pairId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewerIds": {
+          "maxItems": 2,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "opinions": {
+          "maxItems": 2,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "reviewerId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "actualReviewerType": {
+                "type": "string",
+                "const": "human"
+              },
+              "independent": {
+                "type": "boolean",
+                "const": true
+              },
+              "initialBlind": {
+                "type": "boolean",
+                "const": true
+              },
+              "candidateAnonymized": {
+                "type": "boolean",
+                "const": true
+              },
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "ambiguous",
+                  "sound",
+                  "unsupported_gold"
+                ]
+              },
+              "evidenceLines": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reviewerId",
+              "actualReviewerType",
+              "independent",
+              "initialBlind",
+              "candidateAnonymized",
+              "verdict",
+              "evidenceLines",
+              "rationale"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "type": "string",
+          "const": "pending"
+        },
+        "disposition": {
+          "type": "string",
+          "const": "preserve_pending"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "caseId",
+        "caseHash",
+        "caseHashMethod",
+        "sourceLineSha256",
+        "sourceFileSha256",
+        "issueKind",
+        "evidencePath",
+        "evidenceLines",
+        "reviewerIds",
+        "opinions",
+        "rationale",
+        "state",
+        "disposition"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "number",
+          "const": 1
+        },
+        "caseId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "caseHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "caseHashMethod": {
+          "type": "string",
+          "enum": [
+            "case-schema-json",
+            "json-record-json"
+          ]
+        },
+        "sourceLineSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sourceFileSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "issueKind": {
+          "type": "string",
+          "enum": [
+            "prompt_ambiguity",
+            "payee_attribution"
+          ]
+        },
+        "evidencePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidenceLines": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "pairId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewerIds": {
+          "minItems": 2,
+          "maxItems": 2,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "opinions": {
+          "minItems": 2,
+          "maxItems": 2,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "reviewerId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "actualReviewerType": {
+                "type": "string",
+                "const": "human"
+              },
+              "independent": {
+                "type": "boolean",
+                "const": true
+              },
+              "initialBlind": {
+                "type": "boolean",
+                "const": true
+              },
+              "candidateAnonymized": {
+                "type": "boolean",
+                "const": true
+              },
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "ambiguous",
+                  "sound",
+                  "unsupported_gold"
+                ]
+              },
+              "evidenceLines": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "reviewerId",
+              "actualReviewerType",
+              "independent",
+              "initialBlind",
+              "candidateAnonymized",
+              "verdict",
+              "evidenceLines",
+              "rationale"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "type": "string",
+          "const": "adjudicated"
+        },
+        "disposition": {
+          "type": "string",
+          "enum": [
+            "keep_original_gold",
+            "exclude_adjudicated_subset"
+          ]
+        },
+        "adjudicationRationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "caseId",
+        "caseHash",
+        "caseHashMethod",
+        "sourceLineSha256",
+        "sourceFileSha256",
+        "issueKind",
+        "evidencePath",
+        "evidenceLines",
+        "reviewerIds",
+        "opinions",
+        "rationale",
+        "state",
+        "disposition",
+        "adjudicationRationale"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

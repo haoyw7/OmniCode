@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OmniCode</string>
+    <string name="title_activity_main">OmniCode</string>
+    <string name="package_name">com.monocode.mobile</string>
+    <string name="custom_url_scheme">com.monocode.mobile</string>
+</resources>

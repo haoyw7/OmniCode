@@ -1,0 +1,1100 @@
+import { loadSharedAgentDefaults, updateSharedAgentDefault } from "../../settings/model/agentPreferences";
+import { preferenceStorage } from "../../settings/model/sharedPreferences";
+import type { HarnessId } from "./session";
+import { HARNESSES } from "./session";
+import { loadProjectProviderSettings } from "./projectProviders";
+import {
+  hasProbedHarnessAvailability,
+  isHarnessAvailable,
+} from "../../../integrations/harness/core/availabilityState";
+
+export type ModelSettingChoice = {
+  value: string;
+  label: string;
+};
+
+export type ModelSetting = {
+  id: string;
+  label: string;
+  kind: "select" | "toggle";
+  value: string;
+  options: ModelSettingChoice[];
+  description?: string;
+};
+
+/** Live choices belong to one session and one model, never the global catalog. */
+export type SessionModelSettings = { model: string; settings: ModelSetting[] };
+
+export function withSessionModelSettings(
+  model: AgentModel,
+  session?: SessionModelSettings,
+  selectedModel = model.id,
+): AgentModel {
+  return session?.model === selectedModel ? { ...model, settings: session.settings } : model;
+}
+
+export type AgentModel = {
+  id: string;
+  harness: HarnessId;
+  name: string;
+  nativeId?: string;
+  /** Upstream provider inside a multi-provider harness such as Pi or OpenCode. */
+  provider?: {
+    id: string;
+    name: string;
+  };
+  settings?: ModelSetting[];
+  /** Context window, when the harness catalog reports one. */
+  contextWindow?: number;
+};
+
+export const MODELS: AgentModel[] = [
+  {
+    id: "claude:sonnet-5",
+    harness: "claude",
+    name: "Claude Sonnet 5",
+    nativeId: "claude-sonnet-5",
+  },
+  {
+    id: "claude:opus-5",
+    harness: "claude",
+    name: "Claude Opus 5",
+    nativeId: "claude-opus-5",
+  },
+  {
+    id: "claude:opus-5-5",
+    harness: "claude",
+    name: "Claude Opus 5.5",
+    nativeId: "claude-opus-5-5",
+  },
+  {
+    id: "claude:fable-5",
+    harness: "claude",
+    name: "Claude Fable 5",
+    nativeId: "claude-fable-5",
+  },
+  {
+    id: "claude:opus-4.6",
+    harness: "claude",
+    name: "Opus 4.6",
+    nativeId: "claude-opus-4-6",
+  },
+  {
+    id: "claude:sonnet-4.6",
+    harness: "claude",
+    name: "Sonnet 4.6",
+    nativeId: "claude-sonnet-4-6",
+  },
+  {
+    id: "claude:haiku-4.5",
+    harness: "claude",
+    name: "Haiku 4.5",
+    nativeId: "claude-haiku-4-5",
+  },
+  {
+    id: "claude:opus-4.5",
+    harness: "claude",
+    name: "Opus 4.5",
+    nativeId: "claude-opus-4-5",
+  },
+
+  {
+    id: "cursor:composer-2.5",
+    harness: "cursor",
+    name: "Composer 2.5",
+    nativeId: "composer-2.5",
+  },
+  {
+    id: "cursor:gpt-5.4",
+    harness: "cursor",
+    name: "GPT-5.4",
+    nativeId: "gpt-5.4",
+  },
+  {
+    id: "cursor:claude-sonnet-4-6",
+    harness: "cursor",
+    name: "Sonnet 4.6",
+    nativeId: "claude-sonnet-4-6",
+  },
+  {
+    id: "cursor:grok-4.6",
+    harness: "cursor",
+    name: "Cursor Grok 4.6",
+    nativeId: "grok-4.6",
+  },
+
+  {
+    id: "grok:grok-4.6",
+    harness: "grok",
+    name: "Grok 4.6",
+    nativeId: "grok-4.6",
+    contextWindow: 500_000,
+    settings: [
+      {
+        id: "effort",
+        label: "Reasoning",
+        kind: "select",
+        value: "high",
+        options: [
+          { value: "xhigh", label: "Extra High" },
+          { value: "high", label: "High" },
+          { value: "medium", label: "Medium" },
+          { value: "low", label: "Low" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "grok:grok-4.5",
+    harness: "grok",
+    name: "Grok 4.5",
+    nativeId: "grok-4.5",
+    contextWindow: 500_000,
+    settings: [
+      {
+        id: "effort",
+        label: "Reasoning",
+        kind: "select",
+        value: "high",
+        options: [
+          { value: "high", label: "High" },
+          { value: "medium", label: "Medium" },
+          { value: "low", label: "Low" },
+        ],
+      },
+    ],
+  },
+
+  { id: "opencode:glm-5", harness: "opencode", name: "GLM 5" },
+  { id: "opencode:minimax-m2.5", harness: "opencode", name: "MiniMax M2.5" },
+  { id: "opencode:kimi-k2.5", harness: "opencode", name: "Kimi K2.5" },
+  {
+    id: "opencode:deepseek-v4-flash",
+    harness: "opencode",
+    name: "DeepSeek V4 Flash",
+  },
+  { id: "opencode:qwen-3.5", harness: "opencode", name: "Qwen 3.5" },
+  { id: "opencode:grok-4.5", harness: "opencode", name: "Grok 4.5" },
+  {
+    id: "opencode:claude-sonnet-4.6",
+    harness: "opencode",
+    name: "Claude Sonnet 4.6",
+  },
+  { id: "opencode:gpt-5.4", harness: "opencode", name: "GPT-5.4" },
+  {
+    id: "pi:default",
+    harness: "pi",
+    name: "Default",
+    nativeId: "",
+  },
+  {
+    id: "omp:default",
+    harness: "omp",
+    name: "Default",
+    nativeId: "",
+  },
+  {
+    id: "fx:zai/glm-5.2-fast",
+    harness: "fx",
+    name: "GLM 5.2 Fast",
+    nativeId: "zai/glm-5.2-fast",
+  },
+  {
+    id: "hermes:default",
+    harness: "hermes",
+    name: "Configured model",
+    nativeId: "",
+  },
+  {
+    id: "antigravity:gemini-3.8-flash-high",
+    harness: "antigravity",
+    name: "Gemini 3.8 Flash (High)",
+    nativeId: "gemini-3.8-flash-high",
+  },
+];
+
+export const DEFAULT_MODEL_ID: Record<HarnessId, string> = {
+  claude: "claude:sonnet-5",
+  codex: "",
+  cursor: "cursor:composer-2.5",
+  grok: "grok:grok-4.6",
+  opencode: "opencode:glm-5",
+  pi: "pi:default",
+  omp: "omp:default",
+  fx: "fx:zai/glm-5.2-fast",
+  hermes: "hermes:default",
+  antigravity: "antigravity:gemini-3.8-flash-high",
+};
+
+const FAVORITES_KEY = "monocode.favoriteModels";
+const HIDDEN_PICKER_PROVIDERS_KEY = "monocode.hiddenPickerProviders";
+const LAST_MODEL_KEY = "monocode.lastModel";
+const LAST_MODEL_SETTINGS_KEY = "monocode.lastModelSettings";
+const DEFAULT_MODELS_KEY = "monocode.defaultModels";
+const RECENT_MODELS_KEY = "monocode.recentModels";
+const RECENT_MODEL_LIMIT = 6;
+const LIVE_CATALOGS_KEY = "monocode.liveModelCatalogs";
+
+export type ModelPickerTab = "favorites" | HarnessId;
+
+export type LastModelChoice = {
+  harness: HarnessId;
+  model: string;
+};
+
+const HARNESS_ORDER: HarnessId[] = [
+  "claude",
+  "codex",
+  "cursor",
+  "grok",
+  "opencode",
+  "pi",
+  "omp",
+  "fx",
+  "hermes",
+  "antigravity",
+];
+
+const EMPTY_MODELS: AgentModel[] = [];
+
+let overlays: Partial<Record<HarnessId, AgentModel[]>> = {};
+let overlayDefaults: Partial<Record<HarnessId, string>> = {};
+const freshCatalogs = new Set<HarnessId>();
+const loadingCatalogs = new Map<HarnessId, number>();
+let catalogVersion = 0;
+const listeners = new Set<() => void>();
+
+function emit() {
+  catalogVersion += 1;
+  baseByHarness = null;
+  indexById = null;
+  allCache = null;
+  for (const listener of listeners) listener();
+}
+
+export function subscribeModels(onStoreChange: () => void): () => void {
+  listeners.add(onStoreChange);
+  return () => {
+    listeners.delete(onStoreChange);
+  };
+}
+
+export function getModelSnapshot(): number {
+  return catalogVersion;
+}
+
+export function setHarnessModels(harness: HarnessId, models: AgentModel[]) {
+  if (models.length === 0) return;
+  applyOverlay(harness, models);
+  freshCatalogs.add(harness);
+  persistCatalogs();
+  emit();
+}
+
+function applyOverlay(harness: HarnessId, models: AgentModel[]) {
+  overlays = { ...overlays, [harness]: models };
+  overlayDefaults = {
+    ...overlayDefaults,
+    [harness]: pickDefaultId(harness, models),
+  };
+}
+
+/** True after a live CLI catalog, fresh or cached, replaced the fallback list. */
+export function hasLiveCatalog(harness: HarnessId): boolean {
+  return overlays[harness] != null;
+}
+
+/**
+ * True once this run has loaded the harness catalog itself. A catalog cached
+ * by an earlier run still shows at once, but is re-read in the background.
+ */
+export function hasFreshCatalog(harness: HarnessId): boolean {
+  return freshCatalogs.has(harness);
+}
+
+/** True while a catalog read for this harness is in flight. */
+export function isCatalogLoading(harness: HarnessId): boolean {
+  return (loadingCatalogs.get(harness) ?? 0) > 0;
+}
+
+/** Bracket one catalog read; overlapping reads keep the flag until the last. */
+export function beginCatalogLoad(harness: HarnessId): () => void {
+  const wasLoading = isCatalogLoading(harness);
+  loadingCatalogs.set(harness, (loadingCatalogs.get(harness) ?? 0) + 1);
+  if (!wasLoading) emit();
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    const left = (loadingCatalogs.get(harness) ?? 1) - 1;
+    if (left > 0) loadingCatalogs.set(harness, left);
+    else loadingCatalogs.delete(harness);
+    if (left <= 0) emit();
+  };
+}
+
+/** Catalog rows a harness may hold; drops anything malformed or misfiled. */
+export function validCatalogModels(
+  harness: HarnessId,
+  models: unknown[],
+): AgentModel[] {
+  return models.filter(
+    (model): model is AgentModel =>
+      !!model &&
+      typeof model === "object" &&
+      typeof (model as AgentModel).id === "string" &&
+      typeof (model as AgentModel).name === "string" &&
+      (model as AgentModel).harness === harness,
+  );
+}
+
+function persistCatalogs() {
+  try {
+    localStorage.setItem(LIVE_CATALOGS_KEY, JSON.stringify(overlays));
+  } catch {
+    // private mode / quota
+  }
+}
+
+/**
+ * Restore the catalogs the previous run discovered, so a new session shows
+ * real models immediately instead of waiting for each CLI to start.
+ */
+export function hydrateCachedModelCatalogs() {
+  let parsed: unknown;
+  try {
+    const raw = localStorage.getItem(LIVE_CATALOGS_KEY);
+    if (!raw) return;
+    parsed = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
+  let restored = false;
+  for (const [harness, models] of Object.entries(parsed)) {
+    // A catalog this run already loaded is newer than the cache.
+    if (!isHarnessId(harness) || freshCatalogs.has(harness)) continue;
+    if (!Array.isArray(models)) continue;
+    const valid = validCatalogModels(harness, models);
+    if (valid.length === 0) continue;
+    applyOverlay(harness, valid);
+    restored = true;
+  }
+  if (restored) emit();
+}
+
+/** Test seam. */
+export function resetHarnessModelOverlays() {
+  overlays = {};
+  overlayDefaults = {};
+  freshCatalogs.clear();
+  loadingCatalogs.clear();
+  try {
+    localStorage.removeItem(LIVE_CATALOGS_KEY);
+  } catch {
+    // private mode / unavailable
+  }
+  emit();
+}
+
+export function defaultModelId(harness: HarnessId): string {
+  return overlayDefaults[harness] ?? DEFAULT_MODEL_ID[harness];
+}
+
+// `modelsFor`/`findModel` sit in render bodies (every session card, every
+// provider row, the picker itself), so they must not rebuild the catalog on
+// each call. These caches are dropped in `emit()` whenever an overlay lands.
+let baseByHarness: Partial<Record<HarnessId, AgentModel[]>> | null = null;
+let allCache: AgentModel[] | null = null;
+let indexById: Map<string, AgentModel> | null = null;
+
+function baseModelsFor(harness: HarnessId): AgentModel[] {
+  if (!baseByHarness) {
+    const grouped: Partial<Record<HarnessId, AgentModel[]>> = {};
+    for (const model of MODELS) {
+      (grouped[model.harness] ??= []).push(model);
+    }
+    baseByHarness = grouped;
+  }
+  return baseByHarness[harness] ?? EMPTY_MODELS;
+}
+
+export function modelsFor(harness: HarnessId): AgentModel[] {
+  return overlays[harness] ?? baseModelsFor(harness);
+}
+
+export function allModels(): AgentModel[] {
+  return (allCache ??= HARNESS_ORDER.flatMap(modelsFor));
+}
+
+export function findModel(id: string): AgentModel | undefined {
+  if (!indexById) {
+    const index = new Map<string, AgentModel>();
+    // First writer wins, matching the previous `allModels().find(...)` order.
+    for (const model of allModels()) {
+      if (!index.has(model.id)) index.set(model.id, model);
+    }
+    indexById = index;
+  }
+  return indexById.get(id);
+}
+
+/** The bundled list never changes, so index it once for `lookupModel`. */
+const bundledById = new Map(MODELS.map((model) => [model.id, model]));
+
+/**
+ * Catalog entry for a saved model id, live list first and bundled list second.
+ *
+ * A live overlay replaces the bundled list rather than adding to it, so a
+ * model the CLI stops advertising misses `findModel` entirely. Falling back to
+ * the bundle keeps the full native id (`claude:opus-5-5` → `claude-opus-5-5`)
+ * instead of re-deriving one from the key, which strips the provider prefix
+ * and hands the CLI an id it rejects.
+ */
+function lookupModel(id: string): AgentModel | undefined {
+  return findModel(id) ?? bundledById.get(id);
+}
+
+export function resolveModel(harness: HarnessId, id?: string): AgentModel {
+  const available = modelsFor(harness);
+  if (id) {
+    const exact = findModel(id);
+    if (exact && exact.harness === harness) return exact;
+    const slug = nativeIdFrom(id);
+    const byNative = available.find(
+      (model) => (model.nativeId ?? nativeIdFrom(model.id)) === slug,
+    );
+    if (byNative) return byNative;
+    // Keep moving Claude aliases as aliases until the CLI advertises them.
+    if (harness === "claude" && /^(opus|sonnet|haiku)$/.test(slug)) {
+      return {
+        id: `claude:${slug}`,
+        harness,
+        name: `Claude ${slug.charAt(0).toUpperCase()}${slug.slice(1)}`,
+        nativeId: slug,
+      };
+    }
+    // A versioned id may differ only by Claude's provider prefix. Do not
+    // resolve it to a moving alias or another version via a prefix match.
+    const comparableSlug = comparableNativeId(harness, slug);
+    const hits = available.filter((model) => {
+      const native = model.nativeId ?? nativeIdFrom(model.id);
+      const comparableNative = comparableNativeId(harness, native);
+      return (
+        comparableNative.startsWith(comparableSlug) ||
+        comparableSlug.startsWith(comparableNative)
+      );
+    });
+    if (/\d/.test(comparableSlug)) {
+      const same = hits.find(
+        (model) =>
+          comparableNativeId(
+            harness,
+            model.nativeId ?? nativeIdFrom(model.id),
+          ) === comparableSlug,
+      );
+      if (same) return same;
+      if (
+        harness !== "claude" &&
+        hits.length === 1 &&
+        !/\d/.test(
+          comparableNativeId(
+            harness,
+            hits[0].nativeId ?? nativeIdFrom(hits[0].id),
+          ),
+        )
+      )
+        return hits[0];
+    } else if (hits.length === 1) {
+      return hits[0];
+    } else if (hits.length > 0) {
+      return hits[0];
+    }
+    const bundled = bundledById.get(id);
+    if (bundled && bundled.harness === harness) return bundled;
+
+    // A saved concrete Claude version may be absent from both catalogs.
+    // Keep the requested id so a new session does not silently switch models.
+    const requested = id.trim();
+    if (harness === "claude" && /^claude:[a-z][a-z0-9-]*-\d/.test(requested)) {
+      const nativeId = nativeIdForUnknownKey(requested);
+      return { id: requested, harness, name: nativeId, nativeId };
+    }
+  }
+  // Codex has no built-in catalog. During startup, retain the saved model
+  // until discovery finishes instead of borrowing another provider's model.
+  if (available.length === 0) {
+    const requested = id?.trim() ?? "";
+    const modelId =
+      requested &&
+      (!requested.includes(":") || requested.startsWith(`${harness}:`))
+        ? requested
+        : "";
+    const nativeId = nativeIdFrom(modelId);
+    return {
+      id: modelId,
+      harness,
+      name: nativeId
+        ? nativeId
+            .replace(/^gpt/i, "GPT")
+            .replace(
+              /-([a-z])/g,
+              (_, letter: string) => `-${letter.toUpperCase()}`,
+            )
+        : harness.charAt(0).toUpperCase() + harness.slice(1),
+      nativeId,
+    };
+  }
+  const fallbackId = defaultModelId(harness);
+  return (fallbackId ? findModel(fallbackId) : undefined) ?? available[0];
+}
+
+/** Catalog-reported context window for a model id, when known. */
+export function modelContextWindow(id: string): number | undefined {
+  const window = findModel(id)?.contextWindow;
+  return window && window > 0 ? window : undefined;
+}
+
+export function nativeModelId(model: AgentModel | string): string {
+  if (typeof model !== "string") {
+    return claudeNativeId(
+      model.harness,
+      model.nativeId ?? nativeIdFrom(model.id),
+    );
+  }
+  const found = lookupModel(model);
+  if (found) {
+    return claudeNativeId(
+      found.harness,
+      found.nativeId ?? nativeIdFrom(found.id),
+    );
+  }
+  return nativeIdForUnknownKey(model);
+}
+
+/**
+ * Last-resort native id for a saved key no catalog knows.
+ *
+ * Every concrete Claude model is `claude-` plus a digit-bearing slug
+ * (`claude:opus-5-5` → `claude-opus-5-5`); only family aliases (`opus`,
+ * `sonnet`) reach the CLI bare. Reconstructing from that convention keeps the
+ * provider prefix instead of emitting `opus-5-5`, which the CLI rejects.
+ */
+function nativeIdForUnknownKey(id: string): string {
+  const trimmed = id.trim();
+  const slug = nativeIdFrom(trimmed);
+  const colon = trimmed.indexOf(":");
+  const harness = colon >= 0 ? trimmed.slice(0, colon).toLowerCase() : "";
+  // Picker keys can use dotted versions (`opus-4.8`), while Claude's CLI
+  // expects hyphenated native ids (`claude-opus-4-8`).
+  return harness === "claude"
+    ? claudeNativeId("claude", slug.replace(/\.(?=\d)/g, "-"))
+    : slug;
+}
+
+/**
+ * Claude's CLI rejects digit-bearing slugs without the `claude-` prefix
+ * (`opus-5-5` is invalid; `claude-opus-5-5` and the alias `opus` both work).
+ * Live `list_models` can still advertise the short form as `value`.
+ */
+function claudeNativeId(harness: HarnessId, native: string): string {
+  if (harness !== "claude" || !native || native.startsWith("claude-")) {
+    return native;
+  }
+  return /\d/.test(native) ? `claude-${native}` : native;
+}
+
+export function defaultModelSettings(
+  model: AgentModel,
+): Record<string, string> {
+  const settings: Record<string, string> = {};
+  for (const setting of model.settings ?? []) {
+    settings[setting.id] = setting.value;
+  }
+  return settings;
+}
+
+export function mergeModelSettings(
+  model: AgentModel,
+  current?: Record<string, string>,
+): Record<string, string> {
+  if (modelsFor(model.harness).length === 0) return { ...current };
+  const next = defaultModelSettings(model);
+  if (!current) return next;
+  for (const setting of model.settings ?? []) {
+    const value = compatibleSettingValue(setting, current[setting.id]);
+    if (value != null) next[setting.id] = value;
+  }
+  return next;
+}
+
+const EFFORT_SETTING_IDS = new Set([
+  "effort",
+  "reasoning",
+  "reasoningEffort",
+  // Pi and OMP expose their reasoning level as a `thinking` select.
+  "thinking",
+  // OpenCode exposes reasoning levels as `variant`; treat it as effort so the
+  // standalone effort control and dedup behave like Codex/Cursor/Grok.
+  "variant",
+]);
+
+/** True for the select setting ids that control reasoning effort. */
+export function isEffortSettingId(id: string): boolean {
+  return EFFORT_SETTING_IDS.has(id);
+}
+
+/** The select setting that controls reasoning effort for this model, if any. */
+export function modelEffortSetting(
+  model: AgentModel,
+): ModelSetting | undefined {
+  return model.settings?.find(
+    (setting) =>
+      setting.kind === "select" && EFFORT_SETTING_IDS.has(setting.id),
+  );
+}
+
+export function modelEffortLabel(
+  model: AgentModel,
+  values?: Record<string, string>,
+): string | undefined {
+  const setting = modelEffortSetting(model);
+  if (!setting) return undefined;
+  const value = values?.[setting.id] ?? setting.value;
+  return (
+    setting.options.find((option) => option.value === value)?.label ?? value
+  );
+}
+
+/** Last chosen effort/fast/etc., applied to any model that supports those values. */
+export function preferredModelSettings(
+  model: AgentModel,
+  current?: Record<string, string>,
+): Record<string, string> {
+  if (modelsFor(model.harness).length === 0) return { ...current };
+  return mergeModelSettings(model, {
+    ...current,
+    ...loadLastModelSettings(),
+    ...loadSharedAgentDefaults().agents?.[model.harness]?.modelSettings,
+  });
+}
+
+export function loadLastModelSettings(): Record<string, string> {
+  try {
+    const raw = preferenceStorage.getItem(LAST_MODEL_SETTINGS_KEY);
+    if (!raw) return {};
+    return parseStringRecord(JSON.parse(raw));
+  } catch {
+    return {};
+  }
+}
+
+export function saveLastModelSettings(
+  settings: Record<string, string>,
+  mode: "overwrite" | "fill" = "overwrite",
+) {
+  const prev = loadLastModelSettings();
+  const incoming = parseStringRecord(settings);
+  const next =
+    mode === "fill" ? { ...incoming, ...prev } : { ...prev, ...incoming };
+  try {
+    preferenceStorage.setItem(LAST_MODEL_SETTINGS_KEY, JSON.stringify(next));
+    const harness = loadLastModelChoice()?.harness;
+    if (harness) updateSharedAgentDefault(harness, { modelSettings: next });
+  } catch {
+    // private mode / quota
+  }
+}
+
+/** Compound launch id, e.g. `claude-opus-4-8[effort=high,fast=false]`. */
+export function encodeModelLaunchId(
+  modelId: string,
+  settings?: Record<string, string>,
+): string {
+  const model = lookupModel(modelId);
+  const native = nativeModelId(model ?? modelId);
+  const defs = model?.settings ?? [];
+  if (!native || defs.length === 0) return native;
+  const parts = defs.map(
+    (setting) => `${setting.id}=${settings?.[setting.id] ?? setting.value}`,
+  );
+  return `${native}[${parts.join(",")}]`;
+}
+
+export function loadFavoriteModels(): string[] {
+  try {
+    const raw = preferenceStorage.getItem(FAVORITES_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((id): id is string => typeof id === "string");
+  } catch {
+    return [];
+  }
+}
+
+export function saveFavoriteModels(ids: string[]) {
+  try {
+    preferenceStorage.setItem(FAVORITES_KEY, JSON.stringify(ids));
+  } catch {
+    // private mode / quota
+  }
+}
+
+function isHarnessId(value: string): value is HarnessId {
+  return HARNESS_ORDER.includes(value as HarnessId);
+}
+
+let pickerVisibilityVersion = 0;
+const pickerVisibilityListeners = new Set<() => void>();
+
+function emitPickerVisibility() {
+  pickerVisibilityVersion += 1;
+  for (const listener of pickerVisibilityListeners) listener();
+}
+
+export function subscribePickerVisibility(
+  onStoreChange: () => void,
+): () => void {
+  pickerVisibilityListeners.add(onStoreChange);
+  return () => {
+    pickerVisibilityListeners.delete(onStoreChange);
+  };
+}
+
+export function getPickerVisibilitySnapshot(): number {
+  return pickerVisibilityVersion;
+}
+
+export function loadHiddenPickerProviders(): HarnessId[] {
+  try {
+    const raw = preferenceStorage.getItem(HIDDEN_PICKER_PROVIDERS_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (id): id is HarnessId => typeof id === "string" && isHarnessId(id),
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function isPickerProviderVisible(id: HarnessId): boolean {
+  return !loadHiddenPickerProviders().includes(id);
+}
+
+export function savePickerProviderVisible(id: HarnessId, visible: boolean) {
+  const hidden = new Set(loadHiddenPickerProviders());
+  if (visible) hidden.delete(id);
+  else hidden.add(id);
+  try {
+    preferenceStorage.setItem(
+      HIDDEN_PICKER_PROVIDERS_KEY,
+      JSON.stringify([...hidden]),
+    );
+  } catch {
+    // private mode / quota
+  }
+  emitPickerVisibility();
+}
+
+/**
+ * Installed providers the user has not hidden appear as picker tabs.
+ * Before the first probe we keep them visible so the tab strip does not
+ * collapse to Favorites and then jump once CLIs are found.
+ */
+export function showProviderInModelPicker(
+  id: HarnessId,
+  installed: boolean,
+  probed: boolean,
+): boolean {
+  if (!isPickerProviderVisible(id)) return false;
+  return !probed || installed;
+}
+
+export function modelPickerTabs(
+  available: (id: HarnessId) => boolean,
+): ModelPickerTab[] {
+  return ["favorites", ...HARNESSES.filter(available)];
+}
+
+export function coerceModelPickerTab(
+  tab: ModelPickerTab,
+  available: (id: HarnessId) => boolean,
+): ModelPickerTab {
+  const tabs = modelPickerTabs(available);
+  return tabs.includes(tab) ? tab : "favorites";
+}
+
+export function stepModelPickerTab(
+  tab: ModelPickerTab,
+  delta: -1 | 1,
+  available: (id: HarnessId) => boolean,
+): ModelPickerTab {
+  const tabs = modelPickerTabs(available);
+  if (tabs.length === 0) return tab;
+  const index = tabs.indexOf(tab);
+  const from = index < 0 ? 0 : index;
+  return tabs[(from + delta + tabs.length) % tabs.length] ?? tab;
+}
+
+export function loadDefaultModels(): Partial<Record<HarnessId, string>> {
+  const shared = Object.fromEntries(Object.entries(loadSharedAgentDefaults().agents ?? {}).flatMap(([harness, value]) => isHarnessId(harness) && value?.model ? [[harness, value.model]] : []));
+  try {
+    const raw = preferenceStorage.getItem(DEFAULT_MODELS_KEY);
+    if (!raw) return shared;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return shared;
+    }
+    const out: Partial<Record<HarnessId, string>> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (isHarnessId(key) && typeof value === "string" && value) {
+        out[key] = value;
+      }
+    }
+    return { ...out, ...shared };
+  } catch {
+    return shared;
+  }
+}
+
+export function saveDefaultModel(harness: HarnessId, model: string) {
+  updateSharedAgentDefault(harness, { model });
+  const next = { ...loadDefaultModels(), [harness]: model };
+  try {
+    preferenceStorage.setItem(DEFAULT_MODELS_KEY, JSON.stringify(next));
+  } catch {
+    // private mode / quota
+  }
+}
+
+/** User-picked model for a provider, else the catalog default. */
+export function preferredModelId(harness: HarnessId): string {
+  const saved = loadDefaultModels()[harness];
+  if (saved) return saved;
+  const last = loadLastModelChoice();
+  if (last?.harness === harness) return last.model;
+  return defaultModelId(harness);
+}
+
+/**
+ * `preferred` unless the project hides it, in which case the first provider the
+ * project still allows. Falls back to `preferred` when a project has hidden
+ * everything, so a conversation always has a provider.
+ */
+export function firstEnabledHarness(
+  cwd: string | undefined,
+  preferred: HarnessId,
+): HarnessId {
+  const hidden = new Set(loadProjectProviderSettings(cwd).hidden ?? []);
+  const enabled = (id: HarnessId) =>
+    !hidden.has(id) &&
+    showProviderInModelPicker(
+      id,
+      isHarnessAvailable(id),
+      hasProbedHarnessAvailability(),
+    );
+  if (enabled(preferred)) return preferred;
+  return HARNESSES.find(enabled) ?? preferred;
+}
+
+/** Provider + model new conversations should start with. */
+export function defaultSessionChoice(cwd?: string): LastModelChoice {
+  const project = loadProjectProviderSettings(cwd);
+  const last = loadLastModelChoice();
+  const harness = firstEnabledHarness(
+    cwd,
+    project.defaultHarness ?? last?.harness ?? "cursor",
+  );
+  const model =
+    project.models?.[harness] ??
+    (project.defaultHarness === harness ? project.defaultModel : undefined) ??
+    preferredModelId(harness);
+  return { harness, model };
+}
+
+export function loadLastModelChoice(): LastModelChoice | null {
+  const shared = loadSharedAgentDefaults();
+  if (shared.harness && isHarnessId(shared.harness) && shared.agents?.[shared.harness]?.model) return { harness: shared.harness, model: shared.agents[shared.harness]!.model! };
+  try {
+    const raw = preferenceStorage.getItem(LAST_MODEL_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      typeof parsed === "object" &&
+      parsed != null &&
+      "harness" in parsed &&
+      "model" in parsed &&
+      typeof (parsed as LastModelChoice).harness === "string" &&
+      typeof (parsed as LastModelChoice).model === "string" &&
+      isHarnessId((parsed as LastModelChoice).harness)
+    ) {
+      return parsed as LastModelChoice;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLastModelChoice(harness: HarnessId, model: string) {
+  saveDefaultModel(harness, model);
+  updateSharedAgentDefault(harness, { model }, true);
+  try {
+    preferenceStorage.setItem(LAST_MODEL_KEY, JSON.stringify({ harness, model }));
+  } catch {
+    // private mode / quota
+  }
+}
+
+export function loadRecentModelChoices(): LastModelChoice[] {
+  try {
+    const raw = preferenceStorage.getItem(RECENT_MODELS_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const seen = new Set<string>();
+    const choices: LastModelChoice[] = [];
+    for (const item of parsed) {
+      if (
+        typeof item !== "object" ||
+        item == null ||
+        !("harness" in item) ||
+        !("model" in item) ||
+        typeof (item as LastModelChoice).harness !== "string" ||
+        typeof (item as LastModelChoice).model !== "string" ||
+        !isHarnessId((item as LastModelChoice).harness)
+      ) {
+        continue;
+      }
+      const choice = item as LastModelChoice;
+      const key = `${choice.harness}\0${choice.model}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      choices.push(choice);
+      if (choices.length === RECENT_MODEL_LIMIT) break;
+    }
+    return choices;
+  } catch {
+    return [];
+  }
+}
+
+export function saveRecentModelChoice(
+  harness: HarnessId,
+  model: string,
+): LastModelChoice[] {
+  const next = [
+    { harness, model },
+    ...loadRecentModelChoices().filter(
+      (choice) => choice.harness !== harness || choice.model !== model,
+    ),
+  ].slice(0, RECENT_MODEL_LIMIT);
+  try {
+    preferenceStorage.setItem(RECENT_MODELS_KEY, JSON.stringify(next));
+  } catch {
+    // private mode / quota
+  }
+  return next;
+}
+
+function parseStringRecord(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const out: Record<string, string> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (typeof entry === "string") out[key] = entry;
+  }
+  return out;
+}
+
+/** Cursor CLI uses `extra-high`; Claude uses `xhigh`. */
+const SETTING_VALUE_ALIASES: Record<string, string> = {
+  "extra-high": "xhigh",
+  xhigh: "extra-high",
+};
+
+function compatibleSettingValue(
+  setting: ModelSetting,
+  value: string | undefined,
+): string | undefined {
+  if (value == null) return undefined;
+  if (setting.options.some((option) => option.value === value)) return value;
+  const alias = SETTING_VALUE_ALIASES[value];
+  if (alias && setting.options.some((option) => option.value === alias)) {
+    return alias;
+  }
+  return undefined;
+}
+
+function nativeIdFrom(id: string): string {
+  const trimmed = id.trim();
+  const colon = trimmed.indexOf(":");
+  const slug = colon >= 0 ? trimmed.slice(colon + 1) : trimmed;
+  const bracket = slug.indexOf("[");
+  return bracket >= 0 ? slug.slice(0, bracket) : slug;
+}
+
+/** Match Claude ids with and without the provider prefix. */
+function comparableNativeId(harness: HarnessId, id: string): string {
+  return harness === "claude" ? id.replace(/^claude-/, "") : id;
+}
+
+function pickDefaultId(harness: HarnessId, models: AgentModel[]): string {
+  if (harness === "claude") {
+    return (
+      models.find((model) => model.nativeId === "claude-sonnet-5")?.id ??
+      models.find((model) => model.nativeId === "sonnet")?.id ??
+      models.find((model) => model.id === DEFAULT_MODEL_ID.claude)?.id ??
+      models[0]?.id ??
+      DEFAULT_MODEL_ID.claude
+    );
+  }
+  if (harness === "cursor") {
+    return (
+      models.find((model) => model.nativeId === "composer-2.5")?.id ??
+      models.find(
+        (model) => model.nativeId === "default" || model.nativeId === "auto",
+      )?.id ??
+      models[0]?.id ??
+      DEFAULT_MODEL_ID.cursor
+    );
+  }
+  if (harness === "codex") {
+    return models[0]?.id ?? "";
+  }
+  if (harness === "grok") {
+    return (
+      models.find((model) => model.nativeId === "grok-4.6")?.id ??
+      models.find((model) => model.id === DEFAULT_MODEL_ID.grok)?.id ??
+      models[0]?.id ??
+      DEFAULT_MODEL_ID.grok
+    );
+  }
+  if (harness === "fx") {
+    const preferred = [
+      "zai/glm-5.2-fast",
+      "zai/glm-5.2",
+      "zai/glm-4.7-flash",
+      "zai/glm-4.7",
+      "openai/gpt-5.2",
+    ];
+    for (const nativeId of preferred) {
+      const hit = models.find((model) => model.nativeId === nativeId);
+      if (hit) return hit.id;
+    }
+    return (
+      models.find((model) => model.id === DEFAULT_MODEL_ID.fx)?.id ??
+      models[0]?.id ??
+      DEFAULT_MODEL_ID.fx
+    );
+  }
+  return (
+    models.find((model) => model.id === DEFAULT_MODEL_ID[harness])?.id ??
+    models[0]?.id ??
+    DEFAULT_MODEL_ID[harness]
+  );
+}
+
+hydrateCachedModelCatalogs();

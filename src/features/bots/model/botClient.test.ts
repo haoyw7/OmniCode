@@ -1,0 +1,41 @@
+import { expect, it, vi } from "vitest";
+import { migrateDefaultBotCache, scopedBotRpc } from "./botClient";
+import { botCacheKey } from "./bots";
+import { BotClient } from "./botRpc";
+
+it("routes chat and attachment commands to an unforgeable scope without changing Host navigation", async () => {
+  const rpc = vi.fn(async () => ({}));
+  const scoped = scopedBotRpc(rpc as never, { botId: "a", threadId: "t" }, false);
+  await scoped("assistant.send", { botId: "wrong", threadId: "wrong", commandId: "same", text: "Hi" });
+  expect(rpc).toHaveBeenLastCalledWith("botThreads.send", { botId: "a", threadId: "t", commandId: "same", text: "Hi" });
+  await scoped("assistant.configure", { patch: { name: "A" } });
+  expect(rpc).toHaveBeenLastCalledWith("bots.configure", { botId: "a", patch: { name: "A" } });
+  await scoped("attachments.read", { messageId: "m", id: "file" });
+  expect(rpc).toHaveBeenLastCalledWith("attachments.read", { botId: "a", threadId: "t", messageId: "m", id: "file" });
+  await scoped("sessions.get", { sessionId: "external" });
+  expect(rpc).toHaveBeenLastCalledWith("sessions.get", { sessionId: "external" });
+  await expect(scoped("im.get")).rejects.toThrow("unavailable");
+  await expect(scoped("assistant.unknown")).rejects.toThrow("unavailable");
+});
+it("keeps pending sends independent and migrates only the default scope once", async () => {
+  const saved = new Map<string, string>();
+  const storage = { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => { saved.set(key, value); }, removeItem: (key: string) => { saved.delete(key); } };
+  const a = botCacheKey("host", { botId: "a", threadId: "one" });
+  const b = botCacheKey("host", { botId: "a", threadId: "two" });
+  saved.set("monocode.assistant-draft:host", "Legacy draft");
+  migrateDefaultBotCache("host", a, storage);
+  expect(storage.getItem(`monocode.assistant-draft:${a}`)).toBe("Legacy draft");
+  expect(storage.getItem(`monocode.assistant-draft:${b}`)).toBeNull();
+  storage.setItem(`monocode.assistant-draft:${a}`, "");
+  migrateDefaultBotCache("host", a, storage);
+  expect(storage.getItem(`monocode.assistant-draft:${a}`)).toBe("");
+  expect(storage.getItem("monocode.assistant-draft:host")).toBe("Legacy draft");
+  const failing = vi.fn(async () => { throw new Error("offline"); });
+  const one = new BotClient(a, failing, storage);
+  const two = new BotClient(b, failing, storage);
+  await expect(one.send("one")).rejects.toThrow("offline");
+  await expect(two.send("two")).rejects.toThrow("offline");
+  expect(one.pending()?.text).toBe("one");
+  expect(two.pending()?.text).toBe("two");
+  expect(one.pending()?.commandId).not.toBe(two.pending()?.commandId);
+});

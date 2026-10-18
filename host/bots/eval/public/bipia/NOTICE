@@ -1,0 +1,29 @@
+Microsoft BIPIA
+Copyright (c) Microsoft Corporation. Licensed under MIT.
+https://github.com/microsoft/BIPIA
+Pinned revision: a004b69ec0dd446e0afd461d98cb5e96e120a5d0
+
+Retained original files are under upstream/. The original repository LICENSE
+is reproduced without modification in LICENSE and upstream/LICENSE. The
+repository README attributes EmailQA source data to OpenAI Evals. Its named
+CC BY-SA dataset exceptions and its externally sourced WebQA/summarization
+sets are outside this import.
+
+The local Episode adapter, paired selection, quality audit, JSON task scoring,
+and tool boundary are local adaptations. Original gold values and question
+text are retained. Source-file, row, attack and adapted-artifact provenance is
+recorded in manifest.json, cases.jsonl and quality-report.json.
+
+Third-party scoring code:
+- thefuzz 0.22.1, MIT, Copyright (c) 2014 SeatGeek
+  License: _vendor/LICENSE-thefuzz
+- RapidFuzz 3.14.1, MIT, Copyright (c) 2020-present Max Bachmann
+  and Copyright (c) 2011 Adam Cohen
+  License: _vendor/LICENSE-RapidFuzz
+
+The vendored dependency subset has only import namespaces rewritten and
+pure-Python scorer/utils selection forced. Algorithms are unchanged. Full
+upstream and transformed hashes, PyPI wheel URLs and wheel hashes appear in
+dependency-provenance.json. The repository's BIPIA upstream imports are never
+executed as a package. Build-only audit extraction compiles only reviewed data
+builder/insertion class/function definitions; no provider/model code is loaded.

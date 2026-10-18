@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": [
+    "../../src",
+    "./desktop-visual.tsx",
+    "./desktop-pages.tsx",
+    "./desktop-tools.tsx"
+  ],
+  "exclude": ["../../src/**/*.test.ts"],
+  "references": [{ "path": "../../tsconfig.node.json" }]
+}

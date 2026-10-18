@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "OmniCode",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 520,
+        "decorations": false,
+        "transparent": true,
+        "backgroundColor": "#151515",
+        "backgroundThrottling": "throttle",
+        "shadow": true
+      }
+    ]
+  },
+  "bundle": {
+    "targets": [
+      "nsis"
+    ],
+    "createUpdaterArtifacts": false,
+    "category": "DeveloperTool",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "template": "installer/installer.nsi",
+        "installerHooks": "installer/pixel-ui.nsh",
+        "headerImage": "installer/omnicode-header.bmp",
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico",
+        "languages": ["English", "SimpChinese"]
+      }
+    },
+    "resources": {
+      "../build/desktop-host/": "desktop-host/"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "source": "longmemeval",
+  "version": 1,
+  "status": "executable_offline_oracle_adapter",
+  "revision": "98d7416c24c778c2fee6e6f3006e7a073259d48f",
+  "license": "MIT (dataset card, separate from code license)",
+  "license_url": "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/blob/98d7416c24c778c2fee6e6f3006e7a073259d48f/README.md",
+  "official_url": "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned",
+  "upstream_source_sha256": "821a2034d219ab45846873dd14c14f12cfe7776e73527a483f9dac095d38620c",
+  "source_subset_sha256": "ab031dac03d6bd8fa2ada6801bf43e30db2830b3cc92ebf5a531c3691ecb989d",
+  "source_manifest_sha256": "723f57b25fc0564f9dd4fe46876a8595fc37cf1feded0d931832845b757df22d",
+  "dataset_card_sha256": "fe31783d4e5d132681a25e4192e85def8edd214094939879f5283818c0a4a3e0",
+  "source_originals": "../../data/upstream/longmemeval-oracle-sample",
+  "imported_original_records": 18,
+  "unique_original_records": 18,
+  "executable_variants": 18,
+  "objective_answer_cases": 15,
+  "abstention_cases": 4,
+  "evidence_retrieval_only_cases": 3,
+  "categories": {
+    "knowledge-update": 3,
+    "multi-session": 3,
+    "single-session-assistant": 3,
+    "single-session-preference": 3,
+    "single-session-user": 3,
+    "temporal-reasoning": 3
+  },
+  "cases_sha256": "55778decee03653d3348aaf79405fdc9931cf2564246abcaed1652af0fe43447",
+  "selection": "three per six question types; include abstention where available and integer answers where available; fill by SHA256(seed:question_id) order",
+  "deduplication": "upstream ID and canonical record SHA256 checked before adapter generation",
+  "seed": 17,
+  "excluded_records": [],
+  "official_longmemeval_score": false,
+  "runtime_dependencies": [
+    "Python 3 standard library"
+  ],
+  "limitations": [
+    "Oracle sessions are a gold-selected small pool, not the official S/M memory setting.",
+    "All source answer sessions happen to be in this oracle pool; citation-set matching has limited discrimination.",
+    "15 cases use strict normalized answers/abstention plus actual reads and evidence sets; this is not semantic grading.",
+    "Three preference paragraphs are unsuitable for deterministic answer grading; answerSemantics:not_graded and retrieval-only metrics.",
+    "Upstream original IDs and has_answer fields are hidden from prompts/tools; neutral session handles are local."
+  ]
+}

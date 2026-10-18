@@ -1,0 +1,18 @@
+{
+  "license": "OFL-1.1",
+  "version": "4.005",
+  "files": [
+    {
+      "source": "https://raw.githubusercontent.com/adobe-fonts/source-serif/2823e993c53fca27c5c8749f529b56a5a7c77b6b/WOFF2/VAR/SourceSerif4Variable-Roman.ttf.woff2",
+      "sha256": "940a76eda1388de39d38c8e7a79bf6ea058a387faee0a9f33c8d25c6ba05e1be",
+      "file": "SourceSerif4Variable-Roman.ttf.woff2"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/adobe-fonts/source-serif/2823e993c53fca27c5c8749f529b56a5a7c77b6b/WOFF2/VAR/SourceSerif4Variable-Italic.ttf.woff2",
+      "sha256": "9d28b5749a1ad096a295cb607c521bd1af4cd9979b6f37332daf70143149fb44",
+      "file": "SourceSerif4Variable-Italic.ttf.woff2"
+    }
+  ],
+  "upstream": "https://github.com/adobe-fonts/source-serif/tree/2823e993c53fca27c5c8749f529b56a5a7c77b6b",
+  "family": "Source Serif 4"
+}

@@ -1,0 +1,649 @@
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { setUiLanguage } from "../../../shared/i18n/language";
+import {
+  AUTOSAVE_DEFAULT,
+  searchSettings,
+  SETTINGS_INDEX,
+  settingsSectionsByGroup,
+  MODEL_CONTROLS_DEFAULT,
+  DIFF_VIEWER_DEFAULT,
+  FORMAT_ON_SAVE_DEFAULT,
+  FILE_TAB_MODE_DEFAULT,
+  FOLLOW_UP_BEHAVIOR_DEFAULT,
+  KEYBINDINGS,
+  LIVE_AGENTS_ENABLED_DEFAULT,
+  TAB_ANIMATIONS_ENABLED_DEFAULT,
+  loadAutosave,
+  loadModelControls,
+  loadDiffViewer,
+  loadKeybindingOverrides,
+  loadFormatOnSave,
+  loadFileTabMode,
+  loadFollowUpBehavior,
+  loadLiveAgentsEnabled,
+  loadNotesEnabled,
+  keybindingPressed,
+  matchCustomKeybinding,
+  loadQuickComposerShortcut,
+  loadTabAnimationsEnabled,
+  NOTES_ENABLED_DEFAULT,
+  saveAutosave,
+  saveModelControls,
+  saveDiffViewer,
+  saveFormatOnSave,
+  saveFileTabMode,
+  saveFollowUpBehavior,
+  saveLiveAgentsEnabled,
+  saveNotesEnabled,
+  saveKeybindingOverride,
+  type KeybindingOverride,
+  saveQuickComposerShortcut,
+  saveTabAnimationsEnabled,
+} from "./settings";
+import { IS_MAC, MOD, SHIFT } from "../../../platform/tauri/platform";
+
+const MODEL_CONTROLS_KEY = "monocode.modelControls";
+const LEGACY_EFFORT_VISIBLE_KEY = "monocode.composerEffortVisible";
+const NOTES_KEY = "monocode.notesEnabled";
+const KEYBINDING_OVERRIDES_KEY = "monocode.keybindingOverrides";
+const QUICK_COMPOSER_SHORTCUT_KEY = "monocode.quickComposerShortcut";
+const LIVE_AGENTS_KEY = "monocode.liveAgentsEnabled";
+const DIFF_VIEWER_KEY = "monocode.diffViewer";
+const FORMAT_ON_SAVE_KEY = "monocode.formatOnSave";
+const AUTOSAVE_KEY = "monocode.autosave";
+const FILE_TAB_MODE_KEY = "monocode.fileTabMode";
+const FOLLOW_UP_BEHAVIOR_KEY = "monocode.followUpBehavior";
+const TAB_ANIMATIONS_KEY = "monocode.tabAnimationsEnabled";
+
+describe("follow-up behavior setting", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    localStorage.removeItem(FOLLOW_UP_BEHAVIOR_KEY);
+  });
+
+  it("defaults to steer", () => {
+    expect(FOLLOW_UP_BEHAVIOR_DEFAULT).toBe("steer");
+    expect(loadFollowUpBehavior()).toBe("steer");
+  });
+
+  it("persists queue behavior", () => {
+    saveFollowUpBehavior("queue");
+    expect(loadFollowUpBehavior()).toBe("queue");
+  });
+
+  it("ignores unknown stored values", () => {
+    localStorage.setItem(FOLLOW_UP_BEHAVIOR_KEY, "interrupt");
+    expect(loadFollowUpBehavior()).toBe("steer");
+  });
+});
+
+function mockLocalStorage() {
+  const data = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      data.set(key, value);
+    },
+    removeItem: (key: string) => {
+      data.delete(key);
+    },
+    clear: () => {
+      data.clear();
+    },
+    key: (index: number) => [...data.keys()][index] ?? null,
+    get length() {
+      return data.size;
+    },
+  };
+  Object.defineProperty(globalThis, "localStorage", {
+    value: storage,
+    configurable: true,
+  });
+}
+
+describe("model controls setting", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    localStorage.removeItem(MODEL_CONTROLS_KEY);
+    localStorage.removeItem(LEGACY_EFFORT_VISIBLE_KEY);
+  });
+
+  it("shows independent options beside the model picker by default", () => {
+    expect(MODEL_CONTROLS_DEFAULT).toBe("beside");
+    expect(loadModelControls()).toBe("beside");
+  });
+
+  it("persists the beside-picker preference", () => {
+    saveModelControls("beside");
+    expect(localStorage.getItem(MODEL_CONTROLS_KEY)).toBe("beside");
+    expect(loadModelControls()).toBe("beside");
+    saveModelControls("menu");
+    expect(loadModelControls()).toBe("menu");
+  });
+
+  it("ignores unknown stored values", () => {
+    localStorage.setItem(MODEL_CONTROLS_KEY, "everywhere");
+    expect(loadModelControls()).toBe("beside");
+  });
+
+  it("migrates the previous effort-control toggle", () => {
+    localStorage.setItem(LEGACY_EFFORT_VISIBLE_KEY, "1");
+    expect(loadModelControls()).toBe("beside");
+    localStorage.setItem(LEGACY_EFFORT_VISIBLE_KEY, "0");
+    localStorage.removeItem(MODEL_CONTROLS_KEY);
+    expect(loadModelControls()).toBe("menu");
+  });
+});
+
+describe("notes enabled setting", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    localStorage.removeItem(NOTES_KEY);
+  });
+
+  it("defaults to on", () => {
+    expect(NOTES_ENABLED_DEFAULT).toBe(true);
+    expect(loadNotesEnabled()).toBe(true);
+  });
+
+  it("persists an off switch", () => {
+    saveNotesEnabled(false);
+    expect(localStorage.getItem(NOTES_KEY)).toBe("0");
+    expect(loadNotesEnabled()).toBe(false);
+    saveNotesEnabled(true);
+    expect(loadNotesEnabled()).toBe(true);
+  });
+});
+
+describe("keybinding overrides", () => {
+  beforeEach(mockLocalStorage);
+
+  const key = (
+    code: string,
+    modifiers: Partial<{
+      metaKey: boolean;
+      ctrlKey: boolean;
+      altKey: boolean;
+      shiftKey: boolean;
+    }> = {},
+  ) => ({
+    code,
+    metaKey: false,
+    ctrlKey: false,
+    altKey: false,
+    shiftKey: false,
+    ...modifiers,
+  });
+
+  it("persists a custom shortcut and matches only that combination", () => {
+    saveKeybindingOverride("App: Search", { shortcut: "Command+Shift+KeyM" });
+    expect(localStorage.getItem(KEYBINDING_OVERRIDES_KEY)).toBe(
+      '{"App: Search":{"shortcut":"Command+Shift+KeyM"}}',
+    );
+    expect(
+      keybindingPressed(
+        "App: Search",
+        key("KeyM", { metaKey: true, shiftKey: true }),
+        true,
+      ),
+    ).toBe(true);
+    expect(
+      keybindingPressed("App: Search", key("KeyK", { metaKey: true }), true),
+    ).toBe(false);
+    expect(
+      matchCustomKeybinding(key("KeyM", { metaKey: true, shiftKey: true })),
+    ).toBe("App: Search");
+
+    saveKeybindingOverride("App: Search", {});
+    expect(localStorage.getItem(KEYBINDING_OVERRIDES_KEY)).toBeNull();
+  });
+
+  it("matches real keyboard events whose modifiers are prototype accessors", () => {
+    saveKeybindingOverride("App: Search", { shortcut: "Control+Shift+KeyM" });
+    // Browsers define metaKey/ctrlKey/altKey/shiftKey on KeyboardEvent.prototype,
+    // so they are not own properties and must be read, never spread.
+    const prototyped = Object.create({
+      code: "KeyM",
+      metaKey: false,
+      ctrlKey: true,
+      altKey: false,
+      shiftKey: true,
+    }) as Parameters<typeof keybindingPressed>[1];
+
+    expect(keybindingPressed("App: Search", prototyped, false)).toBe(true);
+    expect(matchCustomKeybinding(prototyped)).toBe("App: Search");
+  });
+
+  it("serves a cached value without letting callers mutate it", () => {
+    saveKeybindingOverride("App: Search", { shortcut: "Command+KeyY" });
+    const first = loadKeybindingOverrides();
+    (first as Record<string, KeybindingOverride>)["App: Go to File"] = {
+      disabled: true,
+    };
+    expect(loadKeybindingOverrides()["App: Go to File"]).toBeUndefined();
+  });
+
+  it("disables a shortcut and restores the default", () => {
+    saveKeybindingOverride("App: Search", { disabled: true });
+    expect(loadKeybindingOverrides()).toEqual({
+      "App: Search": { disabled: true },
+    });
+    expect(
+      keybindingPressed("App: Search", key("KeyK", { metaKey: true }), true),
+    ).toBe(false);
+  });
+
+  it("rejects a shortcut already used by another command", () => {
+    saveKeybindingOverride("App: Search", { shortcut: "Command+KeyY" });
+    expect(() =>
+      saveKeybindingOverride("App: Go to File", { shortcut: "Command+KeyY" }),
+    ).toThrow("Already used by App: Search");
+  });
+
+  it("rejects a shortcut that shadows another command's default", () => {
+    // `App: Go to File` is bound to the platform modifier, so hardcoding
+    // Control here clashes with nothing on macOS and the assertion passes
+    // vacuously.
+    const mod = IS_MAC ? "Command" : "Control";
+    expect(() =>
+      saveKeybindingOverride("App: Search", { shortcut: `${mod}+KeyP` }),
+    ).toThrow("Already used by App: Go to File");
+    expect(() =>
+      saveKeybindingOverride("Tab: New", { shortcut: "Control+Tab" }),
+    ).toThrow("Already used by Tab: Cycle Next");
+  });
+
+  it("protects every chord in the grouped tab activation range", () => {
+    const mod = IS_MAC ? "Command" : "Control";
+    for (const digit of [1, 4, 8]) {
+      expect(() =>
+        saveKeybindingOverride("App: Search", {
+          shortcut: `${mod}+Digit${digit}`,
+        }),
+      ).toThrow("Already used by Tab: Activate 1–8");
+    }
+  });
+
+  it("rejects a chord the command cannot use and invalid chords", () => {
+    expect(() =>
+      saveKeybindingOverride("Tab: Activate 1–8", { shortcut: "Control+KeyM" }),
+    ).toThrow("needs a number key");
+    expect(() =>
+      saveKeybindingOverride("App: Search", { shortcut: "KeyK" }),
+    ).toThrow("not a valid shortcut");
+  });
+
+  it("normalises modifier order when reading stored shortcuts", () => {
+    localStorage.setItem(
+      KEYBINDING_OVERRIDES_KEY,
+      JSON.stringify({ "App: Search": { shortcut: "Shift+Command+KeyM" } }),
+    );
+    expect(loadKeybindingOverrides()).toEqual({
+      "App: Search": { shortcut: "Command+Shift+KeyM" },
+    });
+  });
+
+  it.each([false, true])(
+    "migrates a legacy sidebar shortcut with precedence, reversed order: %s",
+    (reverse) => {
+      const entries = [
+        ["App: Toggle Session Sidebar", { shortcut: "Shift+Control+KeyM" }],
+        ["App: Toggle Sidebar", { shortcut: "Control+KeyY" }],
+      ];
+      const raw = JSON.stringify(
+        Object.fromEntries(reverse ? entries.reverse() : entries),
+      );
+      localStorage.setItem(KEYBINDING_OVERRIDES_KEY, raw);
+
+      const expected = {
+        "App: Toggle Sidebar": { shortcut: "Control+Shift+KeyM" },
+      };
+      expect(loadKeybindingOverrides()).toEqual(expected);
+      expect(loadKeybindingOverrides()).toEqual(expected);
+      expect(localStorage.getItem(KEYBINDING_OVERRIDES_KEY)).toBe(raw);
+
+      // A future explicit save contains only current ids and parses identically.
+      localStorage.setItem(KEYBINDING_OVERRIDES_KEY, JSON.stringify(expected));
+      expect(loadKeybindingOverrides()).toEqual(expected);
+    },
+  );
+
+  it("drops a disabled legacy sidebar override and keeps the toggle available", () => {
+    localStorage.setItem(
+      KEYBINDING_OVERRIDES_KEY,
+      JSON.stringify({
+        "App: Toggle Session Sidebar": {
+          disabled: true,
+          shortcut: "Control+Shift+KeyM",
+        },
+      }),
+    );
+    expect(loadKeybindingOverrides()).toEqual({});
+    expect(keybindingPressed("App: Toggle Sidebar", key("KeyB"), true)).toBe(
+      true,
+    );
+  });
+
+  it("preserves a current sidebar override when the legacy value is invalid", () => {
+    localStorage.setItem(
+      KEYBINDING_OVERRIDES_KEY,
+      JSON.stringify({
+        "App: Toggle Session Sidebar": { shortcut: "KeyM" },
+        "App: Toggle Sidebar": { shortcut: "Control+KeyY" },
+      }),
+    );
+    expect(loadKeybindingOverrides()).toEqual({
+      "App: Toggle Sidebar": { shortcut: "Control+KeyY" },
+    });
+  });
+
+  it("ignores malformed, unknown, and invalid stored overrides", () => {
+    localStorage.setItem(
+      KEYBINDING_OVERRIDES_KEY,
+      JSON.stringify({
+        "Unknown: Command": { disabled: true },
+        "App: Search": { shortcut: "KeyK" },
+        "Tab: New": { shortcut: "Command+KeyT" },
+      }),
+    );
+    expect(loadKeybindingOverrides()).toEqual({
+      "Tab: New": { shortcut: "Command+KeyT" },
+    });
+    localStorage.setItem(KEYBINDING_OVERRIDES_KEY, "not-json");
+    expect(loadKeybindingOverrides()).toEqual({});
+  });
+});
+
+describe("quick composer shortcut setting", () => {
+  beforeEach(mockLocalStorage);
+
+  it("defaults to the existing shortcut and persists a custom binding", () => {
+    expect(loadQuickComposerShortcut()).toBe("Command+Shift+Space");
+    saveQuickComposerShortcut("Command+Option+KeyK");
+    expect(localStorage.getItem(QUICK_COMPOSER_SHORTCUT_KEY)).toBe(
+      "Command+Option+KeyK",
+    );
+    expect(loadQuickComposerShortcut()).toBe("Command+Option+KeyK");
+  });
+
+  it("ignores malformed stored bindings", () => {
+    localStorage.setItem(QUICK_COMPOSER_SHORTCUT_KEY, "Shift+Space");
+    expect(loadQuickComposerShortcut()).toBe("Command+Shift+Space");
+  });
+});
+
+describe("live agents enabled setting", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    localStorage.removeItem(LIVE_AGENTS_KEY);
+  });
+
+  it("defaults to on", () => {
+    expect(LIVE_AGENTS_ENABLED_DEFAULT).toBe(true);
+    expect(loadLiveAgentsEnabled()).toBe(true);
+  });
+
+  it("persists an off switch", () => {
+    saveLiveAgentsEnabled(false);
+    expect(localStorage.getItem(LIVE_AGENTS_KEY)).toBe("0");
+    expect(loadLiveAgentsEnabled()).toBe(false);
+    saveLiveAgentsEnabled(true);
+    expect(loadLiveAgentsEnabled()).toBe(true);
+  });
+});
+
+describe("workspace navigation keybindings", () => {
+  it("keeps a single sidebar toggle on the primary B chord", () => {
+    expect(
+      KEYBINDINGS.filter((row) =>
+        ["App: Toggle Sidebar", "App: Toggle Session Sidebar"].includes(
+          row.command,
+        ),
+      ),
+    ).toEqual([
+      { command: "App: Toggle Sidebar", keys: `${MOD}B`, when: "Always" },
+    ]);
+  });
+  it("documents the command palette and reload shortcuts", () => {
+    expect(
+      KEYBINDINGS.filter((row) =>
+        ["App: Command Palette", "View: Reload"].includes(row.command),
+      ),
+    ).toEqual([
+      {
+        command: "App: Command Palette",
+        keys: `${MOD}${SHIFT}P`,
+        when: "Always",
+      },
+      {
+        command: "View: Reload",
+        keys: `${MOD}${SHIFT}R`,
+        when: "Always",
+      },
+    ]);
+  });
+  it("documents the draft workspace toggle", () => {
+    expect(
+      KEYBINDINGS.find((row) => row.command === "Composer: Toggle Workspace"),
+    ).toEqual({
+      command: "Composer: Toggle Workspace",
+      keys: `${MOD}${SHIFT}G`,
+      when: "Draft session composer",
+    });
+  });
+  it("documents session and project cycling in the shortcut list", () => {
+    const rows = KEYBINDINGS.filter((row) =>
+      /^(Session|Project): (Previous|Next)$/.test(row.command),
+    );
+    expect(rows.map((row) => row.command)).toEqual([
+      "Session: Previous",
+      "Session: Next",
+      "Project: Previous",
+      "Project: Next",
+    ]);
+    expect(
+      rows.every(
+        (row) => row.when === "!overlay && (!textFocus || emptyComposer)",
+      ),
+    ).toBe(true);
+  });
+  it("documents same-tab session switching", () => {
+    expect(
+      KEYBINDINGS.filter((row) => row.command.includes("in Current Tab")),
+    ).toEqual([
+      {
+        command: "Session: Previous in Current Tab",
+        keys: `${MOD}↑`,
+        when: "!overlay && (!textFocus || emptyComposer)",
+      },
+      {
+        command: "Session: Next in Current Tab",
+        keys: `${MOD}↓`,
+        when: "!overlay && (!textFocus || emptyComposer)",
+      },
+    ]);
+  });
+});
+
+describe("format on save setting", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    localStorage.removeItem(FORMAT_ON_SAVE_KEY);
+  });
+
+  it("defaults to on", () => {
+    expect(FORMAT_ON_SAVE_DEFAULT).toBe(true);
+    expect(loadFormatOnSave()).toBe(true);
+  });
+
+  it("persists an off switch", () => {
+    saveFormatOnSave(false);
+    expect(localStorage.getItem(FORMAT_ON_SAVE_KEY)).toBe("0");
+    expect(loadFormatOnSave()).toBe(false);
+    saveFormatOnSave(true);
+    expect(loadFormatOnSave()).toBe(true);
+  });
+});
+
+describe("autosave setting", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+  });
+
+  it("defaults to off and persists changes", () => {
+    expect(AUTOSAVE_DEFAULT).toBe(false);
+    expect(loadAutosave()).toBe(false);
+    saveAutosave(true);
+    expect(localStorage.getItem(AUTOSAVE_KEY)).toBe("1");
+    expect(loadAutosave()).toBe(true);
+  });
+});
+
+describe("diff viewer setting", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    localStorage.removeItem(DIFF_VIEWER_KEY);
+  });
+
+  it("defaults to the editor layout", () => {
+    expect(DIFF_VIEWER_DEFAULT).toBe("editor");
+    expect(loadDiffViewer()).toBe("editor");
+  });
+
+  it("persists the unified layout", () => {
+    saveDiffViewer("unified");
+    expect(localStorage.getItem(DIFF_VIEWER_KEY)).toBe("unified");
+    expect(loadDiffViewer()).toBe("unified");
+    saveDiffViewer("editor");
+    expect(loadDiffViewer()).toBe("editor");
+  });
+
+  it("ignores unknown stored values", () => {
+    localStorage.setItem(DIFF_VIEWER_KEY, "split");
+    expect(loadDiffViewer()).toBe("editor");
+  });
+});
+
+describe("file tab mode setting", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    localStorage.removeItem(FILE_TAB_MODE_KEY);
+  });
+
+  it("opens files beside chat by default", () => {
+    expect(FILE_TAB_MODE_DEFAULT).toBe("pane");
+    expect(loadFileTabMode()).toBe("pane");
+  });
+
+  it("persists top-level file tabs", () => {
+    saveFileTabMode("workspace");
+    expect(localStorage.getItem(FILE_TAB_MODE_KEY)).toBe("workspace");
+    expect(loadFileTabMode()).toBe("workspace");
+  });
+
+  it("ignores unknown stored values", () => {
+    localStorage.setItem(FILE_TAB_MODE_KEY, "window");
+    expect(loadFileTabMode()).toBe("pane");
+  });
+});
+
+describe("tab animations setting", () => {
+  beforeEach(mockLocalStorage);
+  afterEach(() => {
+    localStorage.removeItem(TAB_ANIMATIONS_KEY);
+  });
+
+  it("defaults to on", () => {
+    expect(TAB_ANIMATIONS_ENABLED_DEFAULT).toBe(true);
+    expect(loadTabAnimationsEnabled()).toBe(true);
+  });
+
+  it("persists an off switch", () => {
+    saveTabAnimationsEnabled(false);
+    expect(localStorage.getItem(TAB_ANIMATIONS_KEY)).toBe("0");
+    expect(loadTabAnimationsEnabled()).toBe(false);
+    saveTabAnimationsEnabled(true);
+    expect(loadTabAnimationsEnabled()).toBe(true);
+  });
+});
+
+describe("settings navigation", () => {
+  it("lists every section under exactly one rail group", () => {
+    const groups = settingsSectionsByGroup();
+    expect(groups.flatMap((group) => group.sections.map((s) => s.id))).toEqual([
+      "general",
+      "connections",
+      "appearance",
+      "keybindings",
+      "chat",
+      "providers",
+      "import",
+      "mcp",
+      "skills",
+      "inbox",
+      "archive",
+      "worktrees",
+    ]);
+  });
+
+  it("points every indexed setting at a real section", () => {
+    const sections = new Set(
+      settingsSectionsByGroup().flatMap((group) =>
+        group.sections.map((section) => section.id),
+      ),
+    );
+    for (const entry of SETTINGS_INDEX) {
+      expect(sections.has(entry.section), entry.id).toBe(true);
+    }
+  });
+});
+
+describe("settings search", () => {
+  // Labels and keywords are the English source strings.
+  beforeAll(() => setUiLanguage("en"));
+  it("returns nothing for an empty query", () => {
+    expect(searchSettings("   ")).toEqual([]);
+  });
+
+  it("ranks label matches over keyword matches, and pages last", () => {
+    expect(searchSettings("glass").map((result) => result.label)).toEqual([
+      "Main pane glass",
+      "Blur radius",
+      "Desktop transparency",
+      "Popover transparency",
+      "Sidebar transparency",
+      "Appearance",
+    ]);
+  });
+
+  it("finds a setting by a word that is not in its label", () => {
+    expect(searchSettings("steer")[0]).toMatchObject({
+      section: "chat",
+      sectionLabel: "Chat",
+      settingId: "follow-up",
+      label: "Follow-up behavior",
+    });
+
+    expect(searchSettings("prettier")[0]).toMatchObject({
+      section: "chat",
+      settingId: "format-on-save",
+      label: "Format on save",
+    });
+  });
+
+  it("returns a whole page with no setting id", () => {
+    expect(searchSettings("skills")).toEqual([
+      {
+        section: "skills",
+        sectionLabel: "Skills",
+        settingId: null,
+        label: "Skills",
+      },
+    ]);
+  });
+
+  it("caps the result list", () => {
+    expect(searchSettings("e", 4)).toHaveLength(4);
+  });
+});

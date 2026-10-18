@@ -1,0 +1,223 @@
+@property --mobile-keyboard {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+/* Native motion is copied to its consumers by keyboardMotion.ts. Keeping its
+   inputs local prevents a keyboard event from restyling the entire history. */
+@property --mobile-keyboard-height {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --mobile-keyboard-layout {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+/* Hold the larger obstruction until motion settles so tall cards cannot grow
+   underneath the header while the keyboard is still leaving. */
+@property --mobile-keyboard-clearance {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --mobile-keyboard-duration {
+  syntax: "<time>";
+  inherits: false;
+  initial-value: 0ms;
+}
+@property --mobile-keyboard-easing {
+  syntax: "*";
+  inherits: false;
+  initial-value: linear;
+}
+@property --mobile-keyboard-follow {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+@property --mobile-assistant-keyboard-follow {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+/* Derived animated values must not invalidate every message descendant. */
+@property --mobile-keyboard-offset {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+/* The form sheet alone consumes its backdrop's animated lift. Do not carry
+   each keyboard frame through the sheet's fields and scrollable content. */
+@property --mobile-sheet-keyboard-lift {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --mobile-dock-inset {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --mobile-composer-safe-gap {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+/* Composer motion publishes its target once; other resizes publish per frame.
+   Only the dock's layout consumers inherit it; transcript text must not be
+   restyled with each change. */
+@property --mobile-dock-height {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+.mobile-chat > *,
+.mobile-desktop-transcript > .agent-transcript,
+.mobile-desktop-transcript > .mobile-jump,
+.mobile-composer-dock > .mobile-command-suggestions {
+  --mobile-dock-height: inherit;
+}
+.mobile-composer-dock,
+.mobile-assistant-compose-dock,
+.assistant-chat[data-layout="mobile"] .assistant-messages,
+.mobile-shared-question,
+.mobile-shared-question-dock,
+.mobile-desktop-transcript,
+.mobile-sheet-backdrop,
+.mobile-modal-backdrop {
+  --mobile-keyboard: var(--mobile-keyboard-height, 0px);
+  --mobile-keyboard-offset: var(--mobile-keyboard);
+}
+.mobile-desktop-transcript,
+.assistant-chat[data-layout="mobile"] .assistant-messages,
+.mobile-shared-question,
+.mobile-shared-question-dock {
+  --mobile-keyboard-offset: max(0px, var(--mobile-keyboard) - var(--mobile-keyboard-layout));
+}
+/* The input card floats over the transcript; reserve its measured height so
+   the latest message can scroll clear of the dock. */
+.mobile-composer-dock {
+  --mobile-dock-inset: max(8px, var(--mobile-safe-bottom) - var(--mobile-keyboard-height));
+  position: absolute;
+  inset-inline: 0;
+  z-index: 10;
+  bottom: calc(0px - var(--mobile-keyboard-layout));
+  padding: 8px 8px 18px;
+  /* Keep keyboard travel independent of Motion's layout projection transform. */
+  translate: 0 calc(0px - var(--mobile-keyboard-offset) - var(--mobile-dock-inset) + 8px);
+  pointer-events: none;
+  /* Move the safe-area gap with the capsule. Animating padding would resize
+     the dock and republish transcript padding on every keyboard frame. */
+}
+.mobile-composer-dock > * {
+  pointer-events: auto;
+}
+.mobile-composer-dock::before {
+  content: "";
+  position: absolute;
+  inset: var(--mobile-dock-queue-height, 0px) 0 0;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  -webkit-mask-image: linear-gradient(transparent, #000 45%);
+  mask-image: linear-gradient(transparent, #000 45%);
+}
+.mobile-desktop-transcript:is(
+    :has(+ .mobile-composer-dock),
+    :has(+ .mobile-shared-question-dock[data-fold-state="closed"] + .mobile-composer-dock)
+  ) {
+  --mobile-composer-safe-gap: max(0px, var(--mobile-safe-bottom) - 8px);
+}
+.mobile-desktop-transcript:is(
+    :has(+ .mobile-composer-dock),
+    :has(+ .mobile-shared-question-dock[data-fold-state="closed"] + .mobile-composer-dock)
+  ) > .agent-transcript {
+  --mobile-keyboard-layout: inherit;
+  padding-bottom: calc(var(--mobile-dock-height, 0px) - min(max(0px, var(--mobile-safe-bottom) - 8px), var(--mobile-keyboard-layout)));
+  scroll-padding-bottom: calc(var(--mobile-dock-height, 0px) - min(max(0px, var(--mobile-safe-bottom) - 8px), var(--mobile-keyboard-layout)));
+}
+.mobile-desktop-transcript:is(
+    :has(+ .mobile-composer-dock),
+    :has(+ .mobile-shared-question-dock[data-fold-state="closed"] + .mobile-composer-dock)
+  ) > .mobile-jump {
+  --mobile-keyboard-layout: inherit;
+  bottom: calc(var(--mobile-dock-height, 0px) + 12px - min(max(0px, var(--mobile-safe-bottom) - 8px), var(--mobile-keyboard-layout)));
+}
+.mobile-chat > :not(.mobile-desktop-transcript, .mobile-shared-question-dock):has(+ .mobile-composer-dock) {
+  margin-bottom: var(--mobile-dock-height, 0px);
+}
+.mobile-chat > .mobile-shared-question-dock {
+  --mobile-question-gap: var(--mobile-dock-height, 0px);
+  --mobile-question-max-height: max(0px, calc(
+    var(--mobile-viewport-full, 100dvh) - var(--mobile-keyboard-clearance) -
+    var(--mobile-question-gap) - var(--mobile-header-height) - var(--mobile-safe-top) - 16px
+  ));
+  margin-bottom: var(--mobile-question-gap);
+  transform: translateY(calc(var(--mobile-keyboard-layout) - var(--mobile-keyboard)));
+}
+/* A folded question panel gives the floating composer back to the transcript. */
+.mobile-chat > .mobile-shared-question-dock[data-fold-state="closed"] {
+  margin-bottom: 0;
+}
+/* Answering a question lifts the question card, while the unused composer
+   stays at the full viewport bottom behind the keyboard. Keep this layout
+   between question fields and buttons, until the composer itself is focused. */
+.mobile-chat:has(> .mobile-shared-question-dock:not([data-fold-state="closed"])) > .mobile-composer-dock:not(:focus-within) {
+  translate: 0 calc(8px - var(--mobile-dock-inset));
+}
+.mobile-chat:not(:has(> .mobile-composer-dock :focus)) > .mobile-shared-question-dock:not([data-fold-state="closed"]) {
+  --mobile-question-gap: max(8px, calc(var(--mobile-dock-height, 0px) - var(--mobile-keyboard-layout)));
+  transform: translateY(min(0px, calc(var(--mobile-question-gap) - var(--mobile-keyboard-offset) - 8px)));
+}
+.mobile-composer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  margin-inline: auto;
+}
+.mobile-composer [hidden] {
+  display: none;
+}
+.mobile-composer.mobile-composer-card {
+  --mobile-composer-control: 36px;
+  --mobile-send-size: 36px;
+  --mobile-composer-input-inset: 16px;
+  --mobile-composer-surface: var(--m-composer-fill);
+  border-radius: var(--radius-m-composer);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.mobile-app .mobile-chat > .mobile-empty .mobile-empty-icon {
+  margin-bottom: 11px;
+  opacity: 1;
+  color: var(--color-m-accent);
+}
+
+.mobile-app .mobile-chat > .mobile-empty .mobile-empty-icon > svg {
+  width: 43px;
+  height: 43px;
+}
+
+.mobile-app .mobile-chat > .mobile-empty h2 {
+  max-width: 300px;
+  font-family: var(--m-message-serif);
+  font-size: 28px;
+  font-weight: var(--font-weight-normal);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.mobile-app .mobile-assistant-header .mobile-assistant-activity {
+  border-radius: 0 0 14px 14px;
+  background: var(--color-m-app);
+}

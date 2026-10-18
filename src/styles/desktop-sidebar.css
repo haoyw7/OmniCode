@@ -1,0 +1,596 @@
+html[data-skin] {
+  --desktop-sidebar-project-row: 32px;
+  --desktop-sidebar-project-pad: 0px;
+  --desktop-sidebar-row: 32px;
+  --desktop-sidebar-row-pad: 0px;
+  --desktop-sidebar-gap: 8px;
+  --desktop-sidebar-avatar: 20px;
+  --desktop-sidebar-avatar-icon: 20px;
+  --desktop-sidebar-tile-icon: 16px;
+  --desktop-sidebar-tile-radius: 8px;
+  --desktop-sidebar-group-row: 32px;
+  --desktop-sidebar-nest: 20px;
+  --desktop-sidebar-title: 14px;
+  --desktop-sidebar-title-line: 20px;
+  --desktop-sidebar-title-weight: 400;
+  --desktop-sidebar-meta: 11px;
+  --desktop-sidebar-state: 14px;
+  --desktop-sidebar-action: 20px;
+}
+
+html[data-skin] .sidebar-glass,
+html[data-skin] .shell-chrome {
+  background: var(--color-panel);
+}
+
+html[data-skin] [data-sidebar-section-header] [data-sidebar-section-toggle] > span:first-child {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-ink-tertiary);
+}
+
+html[data-skin] [data-sidebar-section-header]:hover [data-sidebar-section-toggle] > span:first-child {
+  color: var(--color-ink-secondary);
+}
+
+html[data-skin] [data-session-dense][data-session-active="true"]:not([data-session-selected="true"]) {
+  background: var(--color-raised);
+}
+
+html[data-skin] [data-session-dense]:not([data-session-active="true"]):not([data-session-selected="true"]):not([data-session-waiting="true"]):hover {
+  background: color-mix(in srgb, var(--color-raised) 45%, transparent);
+}
+
+html[data-skin] [data-session-dense][data-session-waiting="true"] {
+  box-shadow: inset 0 0 0 1px var(--color-warning);
+}
+
+html[data-skin] [data-session-card] [data-session-avatar] {
+  color: var(--color-ink);
+}
+
+html[data-skin] [data-session-dense] .bg-sky-500 {
+  background-color: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+html[data-skin] [data-session-dense] {
+    transition: none;
+  }
+}
+
+html[data-skin] [data-sidebar-search] {
+  border-bottom: 1px solid var(--color-hairline);
+  height: auto;
+  padding: 8px;
+}
+
+html[data-skin] [data-sidebar-search] > div:first-child {
+  background: var(--color-inset);
+  height: 32px;
+  border-radius: var(--desktop-radius-field);
+}
+
+html[data-skin] [data-sidebar-search] > div:first-child > svg {
+  left: 12px;
+  width: 16px;
+  height: 16px;
+}
+
+html[data-skin] [data-sidebar-search] input {
+  padding-inline: calc(12px + 16px + 10px) 12px;
+  font-size: 13px;
+}
+
+html[data-skin] [data-sidebar-search] > button {
+  width: var(--desktop-icon-md);
+  height: var(--desktop-icon-md);
+  border-radius: 999px;
+}
+
+html[data-skin] [data-sidebar-search] > button svg {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-skin] [data-project-header] {
+  align-items: center;
+  gap: var(--desktop-sidebar-gap);
+  height: auto;
+  min-height: var(--desktop-sidebar-project-row);
+  padding: var(--desktop-sidebar-project-pad) 8px;
+  border-radius: 8px;
+  transition: background-color 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-skin] [data-project-header] > [data-project-tile] {
+  color: var(--color-ink-secondary);
+  flex: 0 0 var(--desktop-sidebar-avatar);
+  width: var(--desktop-sidebar-avatar);
+  height: var(--desktop-sidebar-avatar);
+  border-radius: var(--desktop-sidebar-tile-radius);
+}
+
+html[data-skin] [data-project-header] > [data-project-tile] :is([data-project-avatar], [data-project-chevron]),
+html[data-skin] [data-project-header] [data-project-avatar] > * {
+  width: var(--desktop-sidebar-tile-icon);
+  height: var(--desktop-sidebar-tile-icon);
+}
+
+html[data-skin] [data-project-header] [data-project-select] {
+  padding-inline-start: 0;
+}
+
+html[data-skin] [data-project-header] .project-name {
+  font-size: var(--desktop-sidebar-title);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--desktop-sidebar-title-line);
+}
+
+html[data-skin] [data-project-header] [data-project-machine] {
+  color: var(--color-ink-tertiary);
+  font-size: var(--desktop-sidebar-meta);
+  line-height: 16px;
+}
+
+html[data-skin] [data-session-group-row] {
+  gap: var(--desktop-sidebar-gap);
+  height: var(--desktop-sidebar-group-row);
+  padding-inline: calc(8px + var(--desktop-sidebar-nest)) 8px;
+  border-radius: 8px;
+}
+
+html[data-skin] [data-session-group-row] > span:first-child {
+  width: var(--desktop-sidebar-avatar);
+}
+
+html[data-skin] [data-session-group-row] > span:nth-child(2) {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+html[data-skin] [data-session-dense] {
+  transition: background-color var(--desktop-feedback-normal) var(--motion-ease-out);
+  align-items: center;
+  gap: var(--desktop-sidebar-gap);
+  height: auto;
+  min-height: var(--desktop-sidebar-row);
+  padding: var(--desktop-sidebar-row-pad) 8px;
+  border-radius: 8px;
+}
+
+html[data-skin] [data-session-dense]:not([data-session-shortcut]) {
+  padding-inline-start: calc(8px + var(--desktop-sidebar-nest));
+}
+
+html[data-skin] [data-session-dense][data-density="compact"]:not([data-session-shortcut]) {
+  padding-inline-start: calc(8px + 2 * var(--desktop-sidebar-nest));
+}
+
+html[data-skin] [data-session-dense] [data-session-select] > span {
+  gap: var(--desktop-sidebar-gap);
+}
+
+html[data-skin] [data-session-dense] [data-session-avatar] {
+  display: grid;
+  flex: 0 0 var(--desktop-sidebar-avatar);
+  width: var(--desktop-sidebar-avatar);
+  height: var(--desktop-sidebar-avatar);
+  padding: 0;
+  place-items: center;
+  border-radius: 999px;
+}
+
+html[data-skin] [data-session-dense] [data-session-avatar] svg {
+  width: var(--desktop-sidebar-avatar-icon);
+  height: var(--desktop-sidebar-avatar-icon);
+}
+
+html[data-skin] [data-session-dense] [data-session-select] .text-ui-caption {
+  color: var(--color-ink);
+  font-size: var(--desktop-sidebar-title);
+  font-weight: var(--desktop-sidebar-title-weight);
+  line-height: var(--desktop-sidebar-title-line);
+}
+
+html[data-skin] [data-session-dense] [data-session-select] > span > svg {
+  width: 14px;
+  height: 14px;
+}
+
+html[data-skin] [data-session-dense] [data-session-select] > span > span:last-child {
+  gap: 6px;
+}
+
+html[data-skin] [data-session-dense] [data-session-select] > span > span:last-child > :is(svg, [role="img"]) {
+  width: var(--desktop-sidebar-state);
+  height: var(--desktop-sidebar-state);
+}
+
+html[data-skin] [data-session-dense] [data-session-select] > span > span:last-child > [role="img"] > * {
+  width: var(--desktop-sidebar-state);
+  height: var(--desktop-sidebar-state);
+  font-size: var(--desktop-sidebar-state);
+}
+
+html[data-skin] [data-session-dense] [data-session-time] {
+  color: var(--color-ink-tertiary);
+  flex-shrink: 0;
+  font-size: var(--desktop-sidebar-meta);
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-skin] [data-session-dense] > [role="img"][aria-label] {
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+}
+
+html[data-skin] [data-session-dense]:has([data-session-archive]):is(:hover, :focus-within) [data-session-time] {
+  opacity: 0;
+}
+
+html[data-skin] [data-session-dense] :is([data-session-actions], [data-session-action-buttons]) {
+  position: static;
+}
+
+html[data-skin] [data-session-dense] [data-session-archive] {
+  position: absolute;
+  inset-block-start: 50%;
+  /* Dense cards retain their 1px border inside the shared action column. */
+  inset-inline-end: calc(var(--desktop-sidebar-action-inset) - 1px);
+  transform: translateY(-50%);
+}
+
+html[data-skin] [data-session-dense] :is([data-session-archive], [data-orchestration-icon]) svg {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-skin] [data-session-dense] [data-orchestration-icon] {
+  width: var(--desktop-sidebar-action);
+  height: var(--desktop-sidebar-action);
+  border-radius: 999px;
+}
+
+html[data-skin] [data-sidebar-list-toggle] {
+  min-height: var(--desktop-sidebar-group-row);
+  padding-inline-start: calc(8px + var(--desktop-sidebar-avatar) + var(--desktop-sidebar-gap));
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+html[data-skin] [data-sidebar-list-toggle][data-indented] {
+  padding-inline-start: calc(8px + var(--desktop-sidebar-nest) + var(--desktop-sidebar-avatar) + var(--desktop-sidebar-gap));
+}
+
+html[data-skin] [data-desktop-sidebar] {
+  --desktop-sidebar-project-row: 32px;
+  --desktop-sidebar-project-pad: 0px;
+  --desktop-sidebar-row: 32px;
+  --desktop-sidebar-row-pad: 0px;
+  --desktop-sidebar-gap: 8px;
+  --desktop-sidebar-avatar: 20px;
+  --desktop-sidebar-avatar-icon: var(--desktop-sidebar-icon);
+  --desktop-sidebar-tile-icon: var(--desktop-sidebar-icon);
+  --desktop-sidebar-action: 20px;
+  --desktop-sidebar-nest: 20px;
+  --desktop-sidebar-title: 14px;
+  --desktop-sidebar-title-line: 20px;
+  --desktop-sidebar-title-weight: 400;
+  --desktop-sidebar-group-row: 32px;
+  padding-inline: var(--desktop-sidebar-inset) 0;
+  background: var(--color-panel);
+  font-size: 14px;
+  line-height: 21px;
+}
+/* Compact sidebar keeps the same hierarchy with shorter rows and smaller icons. */
+html[data-skin].compact-sidebar [data-desktop-sidebar] {
+  --desktop-sidebar-project-row: var(--desktop-control-sm);
+  --desktop-sidebar-row: var(--desktop-control-sm);
+  --desktop-sidebar-group-row: var(--desktop-control-xs);
+  --desktop-sidebar-avatar: 16px;
+  --desktop-sidebar-avatar-icon: 14px;
+  --desktop-sidebar-tile-icon: 14px;
+  --desktop-sidebar-session-row: 42px;
+}
+html[data-skin].compact-sidebar [data-desktop-sidebar] [data-session-layout="two-line"] {
+  padding-block: 2px;
+}
+html[data-skin].compact-sidebar [data-desktop-sidebar] [data-session-project] {
+  margin-block-start: 0;
+  line-height: 18px;
+}
+
+/* The sidebar ends at its divider; the drag target overlays the workspace edge. */
+html[data-skin] [data-desktop-sidebar]::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  width: 0.5px;
+  background: var(--color-composer-ring);
+  pointer-events: none;
+}
+
+html[data-skin] [data-sidebar-chrome-divider] {
+  position: absolute;
+  inset-block: 0;
+  width: 0.5px;
+  margin-left: -0.5px;
+  background: var(--color-composer-ring);
+  pointer-events: none;
+}
+
+html[data-skin] .sidebar-transition:has([data-desktop-sidebar]) > .resize-handle[data-resize-edge="right"] {
+  right: calc(-1 * var(--desktop-sidebar-inset));
+  width: var(--desktop-sidebar-inset);
+}
+
+html[data-skin] .sidebar-transition:has([data-desktop-sidebar]) > .resize-handle[data-resize-edge="right"]::after {
+  left: 0;
+}
+
+.sidebar-transition:not([data-fold-state="open"]),
+.sidebar-rail {
+  /* Fixed-width children must stay inside the animated viewport. Once open,
+     allow the sidebar's resize target to extend into the trailing gutter. */
+  overflow: clip;
+}
+
+/* Pointer resizing owns the width until release; disclosure motion owns it otherwise. */
+.sidebar-transition[data-resizing] {
+  width: var(--sidebar-resize-width) !important;
+}
+
+html[data-skin] .sidebar-transition[data-resizing]:has([data-desktop-sidebar]) {
+  width: max(0px, calc(var(--sidebar-resize-width) - var(--desktop-sidebar-inset))) !important;
+}
+
+html[data-skin] [data-desktop-sidebar-header] {
+  display: flex;
+  height: 52px;
+  min-height: 52px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 2px;
+  user-select: none;
+}
+html[data-skin] [data-desktop-sidebar-header] > button {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+html[data-skin] [data-desktop-sidebar-header] > button svg {
+  width: 20px;
+  height: 20px;
+}
+html[data-skin] [data-desktop-sidebar-mode] {
+  display: flex;
+  width: 70px;
+  height: 28px;
+  flex: 0 0 70px;
+  align-items: center;
+}
+html[data-skin].is-mac [data-desktop-sidebar-header] {
+  height: 76px;
+  min-height: 76px;
+  padding-top: 28px;
+}
+
+/* Sidebar actions share one rounded rectangular hover surface. */
+html[data-skin] [data-desktop-sidebar] [data-ui="icon-button"][data-sidebar-toolbar-action] {
+  width: var(--desktop-sidebar-toolbar-action);
+  height: var(--desktop-sidebar-toolbar-action);
+  min-height: var(--desktop-sidebar-toolbar-action);
+  padding: 0;
+  border-radius: 6px;
+}
+html[data-skin] [data-desktop-sidebar] [data-ui="icon-button"][data-sidebar-row-action] {
+  position: absolute;
+  inset-inline-end: var(--desktop-sidebar-action-inset);
+  display: none;
+}
+html[data-skin] [data-desktop-sidebar] [data-ui="icon-button"][data-sidebar-row-action="secondary"] {
+  inset-inline-end: calc(var(--desktop-sidebar-action-inset) + var(--desktop-sidebar-toolbar-action) + var(--desktop-sidebar-action-gap));
+}
+html[data-skin] [data-desktop-sidebar] .group:is(:hover, :has(:focus-visible)) > [data-ui="icon-button"][data-sidebar-row-action] {
+  display: inline-flex;
+}
+html[data-skin] [data-desktop-sidebar] [data-ui="icon-button"][data-sidebar-toolbar-action] > svg {
+  width: var(--desktop-sidebar-icon);
+  height: var(--desktop-sidebar-icon);
+  flex-shrink: 0;
+}
+html[data-skin] [data-desktop-sidebar] [data-project-list-scroll] {
+  gap: .5px;
+  /* Keep a real gutter before the sidebar divider, outside the native rail.
+     Deduct it from content padding so session rows keep their current width. */
+  margin-inline-end: var(--scrollbar-edge-inset);
+  padding-inline-end: calc(var(--desktop-sidebar-inset) - var(--scrollbar-edge-inset));
+}
+html[data-skin] [data-desktop-sidebar] [data-project-list] [data-project-section] {
+  margin-block-end: 12px;
+}
+html[data-skin] [data-desktop-sidebar] :is([data-project-rows], [data-chat-project-children]) {
+  padding-inline: 0;
+}
+html[data-skin] [data-desktop-sidebar] [data-sidebar-section-header] {
+  padding-inline-start: 6px;
+  padding-inline-end: var(--desktop-sidebar-action-inset);
+}
+html[data-skin] [data-desktop-sidebar] [data-sidebar-section-toggle] {
+  padding-inline: 0;
+  font-size: 12px;
+  line-height: 16px;
+}
+html[data-skin] [data-desktop-sidebar] [data-project-header] .project-name {
+  font-size: var(--desktop-sidebar-title);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--desktop-sidebar-title-line);
+  /* Centre the visible glyphs; preserve descenders inside the truncation box. */
+  text-box: trim-both cap alphabetic;
+  padding-block: 0.3em;
+}
+html[data-skin] [data-desktop-sidebar] .project-tree-header {
+  min-height: var(--desktop-sidebar-project-row);
+  height: var(--desktop-sidebar-project-row);
+  padding-inline: var(--desktop-sidebar-row-inset) 2px;
+  border-radius: 8px;
+}
+html[data-skin] [data-desktop-sidebar] .project-tree-header [data-project-tile] {
+  width: var(--desktop-sidebar-avatar);
+  height: var(--desktop-sidebar-avatar);
+  align-self: center;
+  flex: 0 0 var(--desktop-sidebar-avatar);
+}
+html[data-skin] [data-desktop-sidebar] .project-tree-header [data-project-select] {
+  padding-inline-start: 0;
+}
+html[data-skin] [data-desktop-sidebar="code"] :is(
+  [data-session-list],
+  [data-session-list] ul,
+  [data-project-section="pinned"] [data-project-rows]
+) {
+  row-gap: 1.5px;
+  padding-block-start: 1.5px;
+}
+html[data-skin] [data-desktop-sidebar] [data-session-dense] {
+  min-height: var(--desktop-sidebar-row);
+  height: var(--desktop-sidebar-row);
+  padding-block: 0;
+  /* Account for the card border so root icons share the project/nav axis. */
+  padding-inline: calc(var(--desktop-sidebar-row-inset) - 1px) 2px;
+  gap: var(--desktop-sidebar-gap);
+  border-radius: 8px;
+}
+html[data-skin] [data-desktop-sidebar] [data-session-dense]:not([data-session-shortcut]) {
+  padding-inline-start: calc(var(--desktop-sidebar-row-inset) + var(--desktop-sidebar-nest) - 1px);
+}
+html[data-skin] [data-desktop-sidebar] [data-session-dense][data-density="compact"]:not([data-session-shortcut]) {
+  padding-inline-start: calc(var(--desktop-sidebar-row-inset) + 2 * var(--desktop-sidebar-nest) - 1px);
+}
+html[data-skin] [data-desktop-sidebar] [data-session-avatar] {
+  width: var(--desktop-sidebar-avatar);
+  height: var(--desktop-sidebar-avatar);
+  flex: 0 0 var(--desktop-sidebar-avatar);
+}
+html[data-skin] [data-desktop-sidebar] [data-session-avatar] > * {
+  width: var(--desktop-sidebar-avatar-icon);
+  height: var(--desktop-sidebar-avatar-icon);
+}
+html[data-skin] [data-desktop-sidebar] .desktop-sidebar-session-title {
+  font-size: var(--desktop-sidebar-title);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--desktop-sidebar-title-line);
+}
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] {
+  height: var(--desktop-sidebar-session-row);
+  min-height: var(--desktop-sidebar-session-row);
+  padding-block: 4px;
+}
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] [data-session-select] {
+  padding-inline-end: var(--desktop-sidebar-toolbar-action);
+}
+html[data-skin] [data-desktop-sidebar] [data-session-project] {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  margin-block-start: 2px;
+  padding-inline-start: calc(var(--desktop-sidebar-avatar) + var(--desktop-sidebar-gap));
+  color: var(--color-ink-tertiary);
+  font-size: 13px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-skin] [data-desktop-sidebar] [data-session-menu] {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: calc(var(--desktop-sidebar-action-inset) - 1px);
+}
+html[data-skin] [data-desktop-sidebar] [data-session-card]:is([data-session-active="true"], [data-session-selected="true"]) [data-session-menu] {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* Archive sits just before the actions menu; the title yields its room only while it shows. */
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] [data-session-archive] {
+  inset-block-start: 0;
+  inset-inline-end: calc(var(--desktop-sidebar-action-inset) - 1px + var(--desktop-sidebar-toolbar-action));
+  transform: none;
+}
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-archive]):is(:hover, :focus-within) [data-session-select] {
+  padding-inline-end: calc(var(--desktop-sidebar-toolbar-action) * 2);
+}
+html[data-skin] [data-desktop-sidebar] [data-session-rename-row][data-session-layout="two-line"] {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+}
+/* Chats sharing the page, centered under the agent icon in the label's indent. */
+html[data-skin] [data-desktop-sidebar] [data-session-page-count] {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block: 0;
+  width: var(--desktop-sidebar-avatar);
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  text-align: center;
+}
+html[data-skin] [data-desktop-sidebar] [data-session-rename-row] [data-session-project] {
+  padding-inline-start: 8px;
+}
+html[data-skin] [data-desktop-sidebar] [data-workflow-sidebar] {
+  padding-inline: 0;
+}
+html[data-skin] [data-desktop-sidebar] [data-workflow-conversation] {
+  padding: 0;
+}
+html[data-skin] [data-desktop-sidebar] [data-workflow-conversation-select] {
+  min-height: var(--desktop-sidebar-session-row);
+  padding: 4px var(--desktop-sidebar-action-inset) 4px var(--desktop-sidebar-row-inset);
+}
+html[data-skin] [data-desktop-sidebar] [data-workflow-conversation] [data-workflow-run-lines] {
+  padding: 0 var(--desktop-sidebar-row-inset) 4px;
+}
+html[data-skin] [data-desktop-sidebar] [data-workflow-conversation] [data-workflow-run-line] {
+  margin-inline-start: 0;
+  padding-inline: 0;
+}
+html[data-skin] [data-desktop-sidebar] :is([data-session-group-row], [data-project-group-header]) {
+  height: var(--desktop-sidebar-group-row);
+  padding-block: 0;
+}
+html[data-skin] [data-desktop-sidebar] [data-project-group-header] > button > div:first-child {
+  width: var(--desktop-sidebar-avatar);
+  flex: 0 0 var(--desktop-sidebar-avatar);
+}
+html[data-skin] [data-desktop-sidebar] :is([data-sidebar-list-toggle], [data-session-list-toggle]) {
+  min-height: var(--desktop-sidebar-group-row);
+  height: var(--desktop-sidebar-group-row);
+  font-size: 13px;
+}
+html[data-skin] [data-project-tools-panel] {
+  background: var(--color-panel, var(--color-surface));
+  font-size: 13px;
+  line-height: 19px;
+}
+html[data-skin] [data-project-tools-context] {
+  min-height: 32px;
+  border-bottom: var(--desktop-border) solid var(--color-hairline);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-skin] [data-desktop-sidebar] .project-tree-header [data-project-select] {
+    transition: none;
+  }
+}

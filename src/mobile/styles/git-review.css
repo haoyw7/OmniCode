@@ -1,0 +1,162 @@
+.mobile-git-review {
+  padding-bottom: 16px;
+}
+.mobile-sheet:has(> .mobile-sheet-content > .mobile-git-review) {
+  padding-inline: 0;
+}
+.mobile-sheet-content:has(> .mobile-git-review) {
+  padding: 0;
+}
+.mobile-git-review > :is(.mobile-git-toolbar, .mobile-git-note, .mobile-git-error) {
+  margin-inline: 16px;
+}
+.mobile-git-note {
+  padding: 8px 0;
+  color: var(--color-m-ink-secondary);
+  font-size: var(--mobile-font-md);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.mobile-git-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-size: var(--mobile-font-md);
+}
+.mobile-git-toolbar {
+  flex-wrap: wrap;
+}
+.mobile-git-toolbar > :first-child {
+  min-width: 0;
+  flex: 1;
+}
+.mobile-git-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.mobile-git-action {
+  min-width: 64px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--color-stroke);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-m-ink) 6%, transparent);
+  color: var(--color-m-ink);
+  font-size: var(--mobile-font-md);
+}
+.mobile-git-action:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-git-action:disabled {
+  opacity: 0.4;
+}
+.mobile-git-action[data-confirming] {
+  border-color: var(--color-m-danger);
+  color: var(--color-m-danger);
+}
+.mobile-git-action-error {
+  flex-basis: 100%;
+  margin: 0 0 8px;
+  color: var(--color-m-danger);
+  font-size: var(--mobile-font-sm);
+  overflow-wrap: anywhere;
+}
+.mobile-git-file-row:active {
+  --mobile-press-color: var(--color-selection);
+}
+.mobile-git-file-row:disabled {
+  opacity: 0.4;
+}
+.mobile-git-wrap[aria-pressed="true"] {
+  color: var(--color-accent);
+  background: var(--color-selection);
+}
+.mobile-git-file-entry {
+  border-block: 1px solid var(--color-stroke);
+}
+.mobile-git-file-entry + .mobile-git-file-entry {
+  margin-top: 12px;
+}
+.mobile-git-file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--color-m-ink) 3%, transparent);
+  color: var(--color-m-ink);
+  text-align: start;
+  font-size: var(--mobile-font-md);
+}
+.mobile-git-file-row[aria-expanded="true"] {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--color-m-ink) 3%, var(--color-m-app));
+  box-shadow: 0 1px var(--color-stroke);
+}
+.mobile-git-file-path {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Ellipsize the directory prefix while preserving the filename and LTR text. */
+  direction: rtl;
+  text-align: left;
+  font-size: calc(var(--mobile-font-md) + 1px);
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-git-file-row > svg {
+  flex-shrink: 0;
+}
+.mobile-git-file-chevron {
+  color: var(--color-m-ink-tertiary);
+}
+
+.mobile-git-error {
+  padding: 12px 0;
+  font-size: var(--mobile-font-md);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.mobile-git-error p {
+  color: var(--color-m-ink-secondary);
+}
+.mobile-git-file {
+  min-width: 0;
+}
+.mobile-git-file > :is(.mobile-git-note, .mobile-git-error) {
+  margin-inline: 16px;
+}
+.mobile-git-diff {
+  --diffs-font-family: var(--user-code-font, "SF Mono"), Consolas, "Liberation Mono", monospace;
+  --diffs-font-size: calc(13px * var(--code-font-scale, 1));
+  --diffs-line-height: calc(22px * var(--code-font-scale, 1));
+  min-width: 0;
+  width: 100%;
+  background: var(--color-m-app);
+  user-select: text;
+  -webkit-user-select: text;
+}
+.mobile-git-diff[data-theme="light"] {
+  --diffs-addition-color-override: #199f73;
+  --diffs-deletion-color-override: #d84444;
+}
+.mobile-diff-context-toggle {
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  min-height: 44px;
+  background: color-mix(in srgb, var(--color-m-ink) 3%, transparent);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  font-size: var(--mobile-font-md);
+  cursor: pointer;
+}

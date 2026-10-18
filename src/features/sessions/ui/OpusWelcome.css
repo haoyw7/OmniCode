@@ -1,0 +1,148 @@
+.opus-welcome {
+  --opus-clay: #d97757;
+  --opus-note: #f4ede4;
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.opus-welcome-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 82% 14%, #d9775724, transparent 46%),
+    radial-gradient(ellipse at 40% 18%, #d9775712, transparent 60%),
+    radial-gradient(ellipse at 10% 85%, #f4ede40c, transparent 55%);
+  box-shadow: inset 0 0 50px #d9775708;
+}
+
+/* Rising motes: small thoughts drifting up while the phrase is written. */
+.opus-mote {
+  position: absolute;
+  left: var(--mote-x);
+  top: var(--mote-y);
+  width: var(--mote-size);
+  height: var(--mote-size);
+  border-radius: 50%;
+  background: var(--opus-clay);
+  box-shadow: 0 0 6px #d9775780;
+  opacity: 0;
+}
+
+.opus-mote-ring {
+  width: calc(var(--mote-size) * 2.2);
+  height: calc(var(--mote-size) * 2.2);
+  background: transparent;
+  border: 1px solid #d9775799;
+  box-shadow: none;
+}
+
+/* The composition's band beside the composer; its layout is set in pixels. */
+.opus-stage {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+/* The staff rises from the lower left and runs off the right edge. */
+.opus-staff {
+  position: absolute;
+  inset: 0;
+}
+
+.opus-staff-line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /* A soft pen edge sweeps left to right, so each line writes itself. */
+  mask-image: linear-gradient(90deg, #000 42%, transparent 58%);
+  mask-size: 250% 100%;
+  mask-repeat: no-repeat;
+}
+
+.opus-staff-line path {
+  fill: none;
+  stroke: var(--opus-clay);
+  stroke-width: 1px;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.opus-staff-line:nth-child(3) path {
+  opacity: 0.8;
+}
+
+.opus-note {
+  position: absolute;
+  left: var(--note-x);
+  top: var(--note-y);
+  width: calc(var(--note-size) * 1.45);
+  height: var(--note-size);
+  translate: -50% -50%;
+  opacity: 0;
+}
+
+.opus-note-head {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--opus-note);
+  box-shadow:
+    0 0 6px #d9775799,
+    0 0 14px #d9775740;
+  transform: rotate(-22deg);
+}
+
+/* Each note rings once as it lands, like a key being struck. */
+.opus-note::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  border: 1px solid var(--opus-clay);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.opus-note::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 45%;
+  width: max(1px, calc(var(--note-size) * 0.12));
+  height: calc(var(--note-size) * 3.1);
+  border-radius: 1px;
+  background: var(--opus-note);
+  opacity: 0.85;
+}
+
+.opus-note-stem-down::after {
+  right: auto;
+  left: 0;
+  top: 45%;
+  bottom: auto;
+}
+
+html.theme-light .opus-welcome {
+  --opus-clay: #bd5d3a;
+  --opus-note: #8a4128;
+}
+
+html.theme-light .opus-note-head,
+html.theme-light .opus-mote {
+  box-shadow: 0 0 5px #bd5d3a40;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opus-welcome {
+    display: none;
+  }
+  .opus-welcome,
+  .opus-welcome * {
+    animation: none;
+  }
+}

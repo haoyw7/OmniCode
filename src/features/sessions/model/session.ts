@@ -1,0 +1,875 @@
+import type { GenerationSample } from "./generationSample";
+import { loadSharedAgentDefaults } from "../../settings/model/agentPreferences";
+import { translate } from "../../../shared/i18n/language";
+import { dropContextWindow, type ContextUsage } from "./contextUsage";
+import type { QuestionAnswer, UserQuestionPrompt, UserQuestionRecord } from "./userQuestion";
+import type { HandoffComposerCard } from "./handoff";
+import type { InboxComposerCard } from "../../inbox/model/githubTasks";
+import type { InboxAskContext } from "../../inbox/model/inboxAsk";
+import type { NoteCardMeta, NoteComposerCard } from "../../notes";
+import type { OrchestrationProposal } from "../../orchestration/model/orchestrationPlan";
+import type { LinkedWorkItemUpdateCard } from "../../inbox/model/linkedWorkItemActivity";
+import type {
+  PersistedWorktreeCreation,
+  WorktreeCreation,
+} from "../../source-control/model/worktreeCreation";
+import {
+  defaultSessionChoice,
+  firstEnabledHarness,
+  preferredModelId,
+  preferredModelSettings,
+  resolveModel,
+  type SessionModelSettings,
+} from "./models";
+import { loadProjectProviderSettings } from "./projectProviders";
+
+export type ResourceBlocker = {
+  id: string;
+  kind: string;
+  path: string;
+  ownerPid: number;
+};
+export type SessionExecutionState = {
+  runId: string;
+  phase: "waiting-resource" | "starting" | "awaiting-response" | "active" | "settling";
+  since: number;
+  /** Separate resource queue time from provider time. */
+  providerStartedAt?: number;
+  reason?: "integrating" | "removing" | "computer";
+  blockers?: ResourceBlocker[];
+};
+
+export type HarnessId =
+  | "claude"
+  | "codex"
+  | "cursor"
+  | "grok"
+  | "opencode"
+  | "pi"
+  | "omp"
+  | "fx"
+  | "hermes"
+  | "antigravity";
+
+export const HARNESSES: HarnessId[] = [
+  "claude",
+  "codex",
+  "cursor",
+  "grok",
+  "opencode",
+  "pi",
+  "omp",
+  "fx",
+  "hermes",
+  "antigravity",
+];
+
+export type BlockRole =
+  | "user"
+  | "assistant"
+  | "image"
+  | "reasoning"
+  | "tool"
+  | "approval"
+  | "tasks"
+  | "plan"
+  | "system"
+  | "handoff";
+
+export type TaskListItemStatus =
+  "pending" | "in_progress" | "completed" | "cancelled";
+
+export type TaskListItem = {
+  /** Stable provider identity, when available, for merging status-only updates. */
+  id?: string;
+  text: string;
+  status: TaskListItemStatus;
+};
+
+export type TaskListMeta = {
+  /** Provider identity for replacing later snapshots of the same list. */
+  key?: string;
+  /** Provider conversation that produced this list, when the provider scopes task ids to one. */
+  providerSessionId?: string;
+  explanation?: string;
+  items: TaskListItem[];
+};
+
+/** One-shot behavior selected in the composer for the next harness turn. */
+export type TurnIntent = "default" | "plan" | "build" | "orchestrate";
+export type EditedResendRejection = {
+  /** The provider removed the old turn, so retry as a normal unsent prompt. */
+  providerRewound: boolean;
+};
+export type ComposerTurnOptions = {
+  questionAnswer?: QuestionAnswer;
+  refreshTitle?: boolean;
+  intent?: TurnIntent;
+  resendEdited?: boolean;
+  /** Restore an edited prompt when the resend rejects asynchronously. */
+  onResendRejected?: (recovery: EditedResendRejection) => void;
+  /** Promote an existing unsent transcript block instead of appending a turn. */
+  draftBlockId?: string;
+  /** Retry an existing Host orchestration proposal using its saved request. */
+  retryProposalBlockId?: string;
+};
+
+export type PlanStatus = "streaming" | "ready" | "building" | "built";
+
+export type PlanBlockMeta = {
+  /** Provider or turn identity used to merge streamed snapshots. */
+  key?: string;
+  status: PlanStatus;
+  /** Provider-authored plan before any user edits. */
+  originalText?: string;
+  /** Exact markdown the user approved with Build. */
+  approvedText?: string;
+  edited?: boolean;
+};
+
+export type ModelTarget = {
+  harness: HarnessId;
+  model: string;
+  modelSettings: Record<string, string>;
+};
+
+export type PlanBuildTarget = ModelTarget;
+
+export type HandoffStatus = "preparing" | "ready";
+
+export type HandoffMeta = {
+  from: HarnessId;
+  to: HarnessId;
+  status: HandoffStatus;
+  /** Inject this brief into prompts to `to` until that harness accepts a turn. */
+  pending?: boolean;
+};
+
+/** One persisted question/answer in a completed turn's side conversation. */
+export type BtwMessage = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  createdAt: number;
+  /** Rich harness activity for assistant replies, when available. */
+  blocks?: Block[];
+};
+
+export type BtwThreadStatus = "running" | "ready" | "error";
+
+/** Independent, read-only "by the way" conversation anchored to a turn. */
+export type BtwThread = {
+  id: string;
+  sourceEndBlockId: string;
+  createdAt: number;
+  updatedAt: number;
+  status: BtwThreadStatus;
+  messages: BtwMessage[];
+  /** Provider that answered this side thread. */
+  harness?: HarnessId;
+  /** Selected harness model for this side thread; absent means session default. */
+  model?: string;
+  /** Provider settings selected for this side thread's model. */
+  modelSettings?: Record<string, string>;
+  /** Provider-specific side-thread id when the text runner supports resume. */
+  providerThreadId?: string;
+  error?: string;
+  /** Live harness blocks for the in-flight reply; not persisted. */
+  pendingBlocks?: Block[];
+};
+
+/** Compact transcript card for a second-opinion or split-pane handoff turn. */
+export type SecondOpinionMeta = {
+  from: HarnessId;
+  to: HarnessId;
+  request?: string;
+  files?: number;
+  /** Split-pane continue. Default is a second-opinion review. */
+  kind?: "handoff";
+};
+
+/** A mid-turn interjection the harness asked to surface, e.g. OMP advisor notes. */
+export type InterjectionSeverity = "nit" | "concern" | "blocker";
+
+export type InterjectionMeta = {
+  customType: string;
+  /** Highest severity among this interjection's retained notes, when any is known. */
+  severity?: InterjectionSeverity;
+};
+
+export type ToolPreviewKind = "read" | "write" | "shell" | "search";
+
+export type ToolPreviewLineKind = "add" | "del" | "context";
+
+export type ToolPreviewLine = {
+  number?: number;
+  kind: ToolPreviewLineKind;
+  text: string;
+};
+
+export type ToolPreview = {
+  kind: ToolPreviewKind;
+  title?: string;
+  path?: string;
+  fileName?: string;
+  startLine?: number;
+  additions?: number;
+  deletions?: number;
+  /** Write supplied new contents without the previous file to compare. */
+  contentOnly?: boolean;
+  query?: string;
+  lines?: ToolPreviewLine[];
+  output?: string;
+};
+
+/** One thing a subagent did, mirrored into the parent transcript. */
+export type AgentStepKind = "tool" | "message" | "reasoning" | "user";
+
+export type AgentStep = {
+  /** Provider step identity, so repeats merge instead of stacking up. */
+  id: string;
+  kind: AgentStepKind;
+  /** Tool label, or the prose the subagent wrote. */
+  text: string;
+  toolKind?: string;
+  status?: string;
+  detail?: string;
+  preview?: ToolPreview;
+};
+
+/**
+ * The inside of a delegated run: what the subagent is called, and the trail it
+ * left. Held on the parent Agent tool block so the transcript can open it
+ * without a second session.
+ */
+export type AgentRunMeta = {
+  /** What the subagent is called, e.g. "Correctness review". */
+  name: string;
+  /** Provider agent type, e.g. "code-reviewer". */
+  agentType?: string;
+  /** Model reported for the child, which may differ from its parent. */
+  model?: string;
+  steps: AgentStep[];
+  /** Complete captured conversation. Steps remain a bounded compatibility preview. */
+  transcript?: Block[];
+  providerSessionId?: string;
+  /** Partial means the source only supplied a tail or some events were lost. */
+  coverage?: "recorded" | "partial";
+};
+
+export type AttachmentKind = "image" | "audio" | "file";
+
+export type GeneratedImageMeta = {
+  path: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  alt?: string;
+};
+
+export type Attachment = {
+  /** Live transcript only; deliberately excluded from persisted attachments. */
+  copyFromPath?: boolean;
+  id: string;
+  name: string;
+  mimeType: string;
+  kind: AttachmentKind;
+  size: number;
+  /** Absolute path when the file lives on disk. */
+  path?: string;
+  /** Base64 payload for vision images (and pasted blobs) sent to the harness. */
+  data?: string;
+  /** Object URL for in-session thumbnails. Not persisted. */
+  previewUrl?: string;
+};
+
+export type TurnOrigin = {
+  kind: "assistant";
+  assistantId: string;
+  /** Host-signed Bot/Thread origin; absent on older Host records. */
+  botId?: string;
+  threadId?: string;
+  assistantName?: string;
+  actionId: string;
+  wakeupId: string;
+};
+
+export type QueuedMessage = {
+  /** Retained for review; skipped until a human edits or removes the item. */
+  blocked?: string;
+  id: string;
+  text: string;
+  attachments: Attachment[];
+  noteCard?: NoteComposerCard;
+  handoffCard?: HandoffComposerCard;
+  intent?: TurnIntent;
+  origin?: TurnOrigin;
+};
+
+export type MessageQueueStatus = "active" | "paused" | "resuming";
+
+/** The provider stopped the last turn at a usage limit. */
+export type UsageLimit = {
+  /** Epoch ms when the provider's window resets, once known. */
+  resetsAt?: number;
+  /** Send a continue turn once the window resets. */
+  resumeAtReset?: boolean;
+};
+
+/** Provider/model provenance captured when a user turn is submitted. */
+export type TurnModel = {
+  harness: HarnessId;
+  id: string;
+  name: string;
+};
+
+/** Provider-reported token accounting for one user turn. */
+export type TurnMetrics = {
+  /** Streaming observation, separate from provider token accounting. Null clears a stale sample. */
+  generationSample?: GenerationSample | null;
+  inputTokens?: number;
+  outputTokens?: number;
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
+  /** Provider-normalized share of input served from cache, as a percentage. */
+  cacheHitPercent?: number;
+};
+
+export type Block = {
+  id: string;
+  role: BlockRole;
+  /** Client-only copy of a user message the Host has not recorded yet. */
+  sending?: boolean;
+  origin?: TurnOrigin;
+  text: string;
+  /** Persistent clarifying question and the user's accepted answer. */
+  question?: UserQuestionRecord;
+  image?: GeneratedImageMeta;
+  attachments?: Attachment[];
+  streaming?: boolean;
+  /** Epoch ms when this message, streamed thought, or tool call started. */
+  startedAt?: number;
+  /** Epoch ms of a user send or the latest content received for an AI message. */
+  sentAt?: number;
+  /** Duration of this user turn, thought, or tool call, in ms. */
+  durationMs?: number;
+  /** Stable model label for this turn. Present on newly created user blocks. */
+  turnModel?: TurnModel;
+  /** The worktree this user message created, kept with it so its log survives. */
+  worktreeCreation?: PersistedWorktreeCreation;
+  /** Provider turn boundary used to replace this user message, when known. */
+  providerTurnId?: string;
+  /** User turn saved to the session but not submitted to the harness yet. */
+  draft?: boolean;
+  /** This user turn activated MonoCode app access for its thread. */
+  monocode?: boolean;
+  /** The Plan or Orchestrator mode this user turn was sent in. */
+  intent?: Extract<TurnIntent, "plan" | "orchestrate">;
+  /** Stable CLI request that submitted this turn, for safe retries. */
+  appRequestId?: string;
+  /** Provider-reported token metrics for this user turn, when available. */
+  turnMetrics?: TurnMetrics;
+  tool?: {
+    callId?: string;
+    title?: string;
+    kind?: string;
+    status?: string;
+    detail?: string;
+    /** Full provider request and result, independent of the short row preview. */
+    input?: string;
+    output?: string;
+    preview?: ToolPreview;
+    /** Every file in a multi-file edit, retained for checkpoint recovery. */
+    paths?: string[];
+    /** Left running by the agent when it yielded; the turn waits on it. */
+    background?: boolean;
+  };
+  approval?: {
+    requestId: number;
+    decided?: "allow" | "deny" | "cancelled";
+  };
+  /** Inner activity of a delegated run. Present on Agent/Task tool blocks. */
+  agentRun?: AgentRunMeta;
+  taskList?: TaskListMeta;
+  plan?: PlanBlockMeta;
+  orchestration?: OrchestrationProposal;
+  /** A dynamic workflow run launched from this conversation (rendered as its run card). */
+  workflowRun?: import("../../../integrations/workflow/sessionTypes").WorkflowRunBlock;
+  /** Parent conversation for an internal orchestration worker. */
+  orchestrationLeadId?: string;
+  /**
+   * A turn the app wrote on the user's behalf to keep an orchestration moving.
+   * The harness needs it; the transcript hides it, so a run reads as one
+   * conversation rather than the user narrating their own agents.
+   */
+  internal?: boolean;
+  handoff?: HandoffMeta;
+  secondOpinion?: SecondOpinionMeta;
+  /** Independent read-only side conversations anchored to this user turn. */
+  btwThreads?: BtwThread[];
+  noteCard?: NoteCardMeta;
+  /** Exact CI repair instructions and evidence supplied with this user turn. */
+  ciContext?: string;
+  /** Mid-turn interjection chrome; system blocks only. Body lives in text. */
+  interjection?: InterjectionMeta;
+  /**
+   * A system row the reader must not miss — an error or an interruption —
+   * rather than turn chrome like a status ping. Never folds into the trail.
+   */
+  notice?: "error" | "interrupt";
+  statusKey?: string;
+};
+
+export type RuntimeMode =
+  "supervised" | "auto-accept-edits" | "auto" | "full-access";
+
+/** One GitHub issue or pull request associated with a coding session. */
+export type LinkedWorkItem = {
+  kind: "issue" | "pr";
+  repo: string;
+  number: number;
+  url: string;
+};
+
+export const RUNTIME_MODES: RuntimeMode[] = [
+  "supervised",
+  "auto-accept-edits",
+  "auto",
+  "full-access",
+];
+
+export const DEFAULT_RUNTIME_MODE: RuntimeMode = "supervised";
+
+export const RUNTIME_MODE_LABEL: Record<RuntimeMode, string> = {
+  supervised: "Supervised",
+  "auto-accept-edits": "Auto-accept edits",
+  auto: "Auto",
+  "full-access": "Full access",
+};
+
+export const RUNTIME_MODE_HINT: Record<RuntimeMode, string> = {
+  supervised: "Ask before commands and file changes.",
+  "auto-accept-edits": "Auto-approve edits, ask before other actions.",
+  auto: "An AI reviewer can approve or deny actions.",
+  "full-access":
+    "Allow commands, edits, and supported MCP confirmations in non-plan turns without prompts.",
+};
+
+export type WorkspaceMode = "current" | "worktree";
+
+export type NativeSessionLink = {
+  provider: import("../../../integrations/harness/core/nativeSessions").NativeSessionProvider;
+  providerSessionId: string;
+  /** Absent for records saved before multi-provider sync, which were all JSONL. */
+  storage?: "jsonl" | "sqlite";
+  /** Claude/Codex account profile that owns the native conversation. */
+  accountId?: string;
+  createdAt: number;
+  updatedAt: number;
+  path: string;
+  revision: string;
+  blockIds: string[];
+  /** Host-managed: set once the Host owns this conversation's lifecycle. */
+  mode?: "managed";
+  /** Resolved provider account/data directory that owns the source. */
+  dataDir?: string;
+  /** Native transcript block IDs already represented in history (Host-managed). */
+  nativeIds?: string[];
+};
+
+export type Session = {
+  /** Stored activity timestamps, retained when projecting history/Host snapshots. */
+  createdAt?: number;
+  updatedAt?: number;
+  /** Host-owned assistant brain, excluded from ordinary conversation lists. */
+  assistantOwnerId?: string;
+  titleState?: import("./titlePolicy").SessionTitleState;
+  /** Native transcript tracked by the local import/sync feature. */
+  nativeSession?: NativeSessionLink;
+  /** Host-managed native history status, copied from the Host snapshot. */
+  nativeSyncStatus?: import("../../../integrations/harness/core/nativeSessions").NativeSyncStatus;
+  /** Receipt for an acknowledged floating-composer handoff. */
+  quickLaunchAccepted?: boolean;
+  /** Internal worker: displayed in its lead's panel rather than a workspace tab. */
+  orchestrationLeadId?: string;
+  /** Dynamic workflow subagent: hidden from session lists, shown in its run's views. */
+  workflowParentId?: string;
+  /** The workflow run a subagent session belongs to. */
+  workflowRunId?: string;
+  /** Live and recent dynamic workflow runs launched from this conversation. */
+  workflowRuns?: import("../../../integrations/workflow/protocol/workflow-runs").WorkflowRunsState;
+  /** Temporary Inbox conversation: shares the runtime, never saved as a session. */
+  inboxAsk?: InboxAskContext;
+  id: string;
+  harness: HarnessId;
+  model: string;
+  modelSettings: Record<string, string>;
+  /** Live runtime capabilities, refreshed on resume/model change. */
+  modelSettingOptions?: SessionModelSettings;
+  runtimeMode: RuntimeMode;
+  title: string;
+  /** Project / working directory for this session. */
+  cwd: string;
+  blocks: Block[];
+  /** True while a harness turn is in flight. */
+  busy?: boolean;
+  executionState?: SessionExecutionState;
+  /**
+   * What the live turn is waiting on after the agent yielded with work still
+   * running in the background. In-memory only.
+   */
+  backgroundTasks?: string[];
+  /** Follow-ups waiting for the current turn. Local queues are in memory; Host queues are persisted. */
+  queuedMessages?: QueuedMessage[];
+  /** Paused after user stops current turn; resuming waits for continued turn. */
+  queueStatus?: MessageQueueStatus;
+  /** Hold an edited queue row. The Host renews and expires the editing lease. */
+  editingQueuedMessageId?: string;
+  /** Last turn hit a provider usage limit; cleared by the next send. In-memory only. */
+  usageLimit?: UsageLimit;
+  /** Provider-side conversation id (Cursor ACP session id). */
+  providerSessionId?: string;
+  /** Named local credential profile used by Claude or Codex. */
+  providerAccountId?: string;
+  /** Context-window level reported by the harness. Absent until it reports. */
+  context?: ContextUsage;
+  /**
+   * Composer switched providers, but the previous child is still live.
+   * Handoff runs on the next send, not on picker change.
+   */
+  pendingSwitch?: PendingHarnessSwitch;
+  /** Composer choice for the next send; the conversation still belongs to its current agent. */
+  pendingConfiguration?: ModelTarget & { runtimeMode: RuntimeMode };
+  /** Last known branch in the session's working copy. */
+  branch?: string;
+  /** Agent execution directory; defaults to cwd. This does not imply a Git worktree. */
+  executionCwd?: string;
+  /** Display metadata confirmed by Git; never infer it from the execution directory. */
+  linkedWorktree?: boolean;
+  /** Blank-composer choice; consumed when the first turn starts. */
+  workspaceMode?: WorkspaceMode;
+  /** Base ref for a worktree that will be created on first send. */
+  worktreeBase?: string;
+  /** Internal guard while the first turn creates its selected worktree. */
+  worktreePreparing?: boolean;
+  /** Progress card for that creation. In-memory only; never persisted. */
+  worktreeCreation?: WorktreeCreation;
+  /** Select a working copy before continuing after the previous one was deleted. */
+  worktreeRemoved?: boolean;
+  /** One-shot composer text when opening a session from Inbox. */
+  composerSeed?: string;
+  /** Inbox issue/PR chip shown above the composer. In-memory, one-shot. */
+  inboxCard?: InboxComposerCard;
+  /** GitHub issue or pull request shown on the persisted session card. */
+  linkedWorkItem?: LinkedWorkItem;
+  /** Automation that created or last launched this session. */
+  automationId?: string;
+  /** New linked-item activity shown above the composer. In-memory, one-shot. */
+  linkedWorkItemUpdateCard?: LinkedWorkItemUpdateCard;
+  /** Note chip shown above the composer. In-memory, one-shot. */
+  noteCard?: NoteComposerCard;
+  /** Handoff chip shown above the composer. In-memory, one-shot. */
+  handoffCard?: HandoffComposerCard;
+  /**
+   * Live clarifying questions from AskUserQuestion / ask_question / etc.
+   * In-memory; request ids do not survive restarts.
+   */
+  pendingQuestion?: UserQuestionPrompt;
+};
+
+export type PendingHarnessSwitch = {
+  from: HarnessId;
+  fromModel: string;
+  fromSettings: Record<string, string>;
+  fromProviderSessionId?: string;
+  fromProviderAccountId?: string;
+};
+
+export const HARNESS_LABEL: Record<HarnessId, string> = {
+  claude: "claude",
+  codex: "codex",
+  cursor: "cursor",
+  grok: "grok",
+  opencode: "opencode",
+  pi: "pi",
+  omp: "omp",
+  fx: "fx",
+  hermes: "hermes",
+  antigravity: "antigravity",
+};
+
+export const HARNESS_TITLE: Record<HarnessId, string> = {
+  claude: "Claude Code",
+  codex: "Codex",
+  cursor: "Cursor",
+  grok: "Grok Build",
+  opencode: "OpenCode",
+  pi: "Pi",
+  omp: "omp",
+  fx: "fx",
+  hermes: "Hermes Agent",
+  antigravity: "Antigravity",
+};
+
+/** fx ACP rejects attachment prompt blocks. */
+export function harnessSupportsAttachments(id: HarnessId): boolean {
+  return id !== "fx";
+}
+
+export function newSession(
+  harness: HarnessId = "claude",
+  cwd = "~",
+  model?: string,
+  runtimeMode: RuntimeMode = DEFAULT_RUNTIME_MODE,
+  modelSettings?: Record<string, string>,
+): Session {
+  const resolved = resolveModel(harness, model ?? preferredModelId(harness));
+  return {
+    id: crypto.randomUUID(),
+    harness,
+    model: resolved.id,
+    modelSettings: preferredModelSettings(resolved, modelSettings),
+    runtimeMode,
+    title: HARNESS_LABEL[harness],
+    titleState: { source: "placeholder", epoch: 0, purpose: "initial", fallbackAttempted: false },
+    cwd,
+    blocks: [],
+  };
+}
+
+/** New conversation using the Providers defaults. */
+export function newDefaultSession(
+  cwd = "~",
+  runtimeMode: RuntimeMode = loadSharedAgentDefaults().runtimeMode ?? DEFAULT_RUNTIME_MODE,
+): Session {
+  const choice = defaultSessionChoice(cwd);
+  return newSession(choice.harness, cwd, choice.model, runtimeMode);
+}
+
+/**
+ * Provider and model a seeded session should use in `cwd`. The project's own
+ * default provider and model win over the seed; when the project has neither,
+ * the seed's provider and model are carried. A provider the project hides is
+ * swapped for its first enabled one.
+ */
+function projectSessionChoice(
+  seed: Pick<Session, "harness" | "model"> | undefined,
+  cwd: string,
+): { harness: HarnessId; model?: string } {
+  const project = loadProjectProviderSettings(cwd);
+  const seedHarness = seed?.harness ?? "claude";
+  const harness = firstEnabledHarness(
+    cwd,
+    project.defaultHarness ?? seedHarness,
+  );
+  const model =
+    project.models?.[harness] ??
+    (project.defaultHarness === harness ? project.defaultModel : undefined) ??
+    (project.defaultHarness == null && harness === seedHarness
+      ? seed?.model
+      : undefined);
+  return { harness, model };
+}
+
+/**
+ * New conversation for a project. The project's default provider and model win
+ * over the seed's; a provider the project has hidden is swapped for its first
+ * enabled one.
+ */
+export function newSessionForProject(
+  seed: Session | undefined,
+  cwd: string,
+): Session {
+  const { harness, model } = projectSessionChoice(seed, cwd);
+  const carriesSeed =
+    model != null && model === seed?.model && harness === seed?.harness;
+  return newSession(
+    harness,
+    cwd,
+    model,
+    seed?.runtimeMode,
+    carriesSeed ? seed?.modelSettings : undefined,
+  );
+}
+
+/**
+ * Retarget an existing session (typically a blank one) to a project, adopting
+ * that project's provider defaults while keeping its id, blocks and composer
+ * seed.
+ */
+export function retargetSessionToProject(
+  session: Session,
+  cwd: string,
+): Session {
+  const { harness, model } = projectSessionChoice(session, cwd);
+  const resolved = resolveModel(harness, model ?? preferredModelId(harness));
+  const carriesSeed =
+    model != null && model === session.model && harness === session.harness;
+  return {
+    ...session,
+    cwd,
+    harness,
+    model: resolved.id,
+    modelSettings: preferredModelSettings(
+      resolved,
+      carriesSeed ? session.modelSettings : undefined,
+    ),
+    title: HARNESS_LABEL[harness],
+    titleState: { source: "placeholder", epoch: (session.titleState?.epoch ?? 0) + 1, purpose: "initial", fallbackAttempted: false },
+    ...(harness === session.harness
+      ? {}
+      : { providerSessionId: undefined, providerAccountId: undefined }),
+    // The account was chosen for the old project. The new project reads its
+    // own stored choice, so a stamp carried over would show the wrong account.
+    ...(cwd === session.cwd ? {} : { providerAccountId: undefined }),
+    ...(resolved.id === session.model
+      ? {}
+      : { context: dropContextWindow(session.context) }),
+  };
+}
+
+/** New conversation carrying another session's harness, model and settings. */
+export function newSessionLike(
+  seed: Session | undefined,
+  cwd: string,
+): Session {
+  return newSession(
+    seed?.harness ?? "claude",
+    cwd,
+    seed?.model,
+    seed?.runtimeMode,
+    seed?.modelSettings,
+  );
+}
+
+/**
+ * A session that still looks like an untouched draft the user never typed in:
+ * no messages, no composer seed, no pending card, not bound to a provider thread.
+ * Safe to reuse when the user asks for a new session in the same project.
+ */
+export function isReusableDraftSession(session: Session): boolean {
+  if (session.blocks.length !== 0) return false;
+  if (session.busy || session.worktreePreparing) return false;
+  if (session.pendingSwitch) return false;
+  if (session.worktreeRemoved) return false;
+  if (session.providerSessionId) return false;
+  if (session.nativeSession) return false;
+  if (session.assistantOwnerId) return false;
+  if (session.orchestrationLeadId) return false;
+  if (session.workflowParentId) return false;
+  if (session.inboxAsk) return false;
+  if (session.composerSeed) return false;
+  if (session.inboxCard) return false;
+  if (session.noteCard) return false;
+  if (session.linkedWorkItem) return false;
+  if (session.linkedWorkItemUpdateCard) return false;
+  if (session.handoffCard) return false;
+  if (session.pendingQuestion) return false;
+  if ((session.queuedMessages?.length ?? 0) > 0) return false;
+  if (session.titleState && session.titleState.source !== "placeholder")
+    return false;
+  return true;
+}
+
+/** First line of a prompt, truncated for the tab strip. */
+export function titleFromPrompt(
+  prompt: string,
+  harness: HarnessId,
+  attachments: Attachment[] = [],
+): string {
+  const line = prompt.trim().split(/\r?\n/)[0]?.trim() ?? "";
+  const fromFiles =
+    !line && attachments.length > 0
+      ? attachments
+          .map((file) => file.name)
+          .filter(Boolean)
+          .slice(0, 3)
+          .join(", ")
+      : "";
+  const seed = line || fromFiles;
+  if (!seed) return HARNESS_LABEL[harness];
+  const max = 72;
+  const short = seed.length > max ? `${seed.slice(0, max - 1)}…` : seed;
+  return formatSessionTitle(harness, short);
+}
+
+export function formatSessionTitle(harness: HarnessId, title: string): string {
+  const trimmed = title.trim();
+  if (!trimmed) return HARNESS_LABEL[harness];
+  return `${HARNESS_LABEL[harness]} · ${trimmed}`;
+}
+
+/** True when the stored title is still a placeholder the LLM may replace. */
+export function canReplaceSessionTitle(
+  current: string,
+  harness: HarnessId,
+  seed: string,
+): boolean {
+  return (
+    current === seed ||
+    current === HARNESS_LABEL[harness] ||
+    current === HARNESS_TITLE[harness]
+  );
+}
+
+export function hasPendingApproval(blocks: Block[]): boolean {
+  return blocks.some((block) => block.approval && !block.approval.decided);
+}
+
+export function sessionNeedsInput(session: Session): boolean {
+  return (
+    !session.worktreeRemoved &&
+    (hasPendingApproval(session.blocks) || session.pendingQuestion != null)
+  );
+}
+
+/** The single unsent user turn held by a session, when present. */
+export function sessionDraftBlock(
+  session: Pick<Session, "blocks">,
+): Block | undefined {
+  return session.blocks.find((block) => block.role === "user" && block.draft);
+}
+
+/** Remove one saved draft without disturbing the conversation before it. */
+export function removeSessionDraft(
+  session: Session,
+  draftBlockId: string,
+): Session | undefined {
+  const draft = session.blocks.find(
+    (block) =>
+      block.id === draftBlockId && block.role === "user" && block.draft,
+  );
+  if (!draft) return undefined;
+  const blocks = session.blocks.filter((block) => block.id !== draftBlockId);
+  const draftTitle = titleFromPrompt(
+    draft.text,
+    session.harness,
+    draft.attachments,
+  );
+  return {
+    ...session,
+    blocks,
+    title:
+      blocks.length === 0 && session.title === draftTitle
+        ? HARNESS_LABEL[session.harness]
+        : session.title,
+  };
+}
+
+/** Title without the harness prefix stored for the tab strip. */
+export function sessionDisplayTitle(title: string, harness: HarnessId): string {
+  const prefix = `${HARNESS_LABEL[harness]} · `;
+  if (title.startsWith(prefix)) return title.slice(prefix.length);
+  if (title === HARNESS_LABEL[harness] || title === HARNESS_TITLE[harness]) {
+    return translate("New session");
+  }
+  return title;
+}
+
+/** Actual execution directory, independent of Git worktree registration. */
+export function sessionExecutionCwd(session: {
+  cwd: string;
+  executionCwd?: string;
+}): string {
+  return session.executionCwd || session.cwd;
+}

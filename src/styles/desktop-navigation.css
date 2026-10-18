@@ -1,0 +1,652 @@
+/* Measured shell geometry; desktop-only so shared controls retain mobile sizing. */
+html[data-skin] [data-sidebar-rail] [data-activity-bar="rail"] {
+  width: 52px;
+  padding-inline: 8px;
+}
+
+html[data-skin] [data-activity-bar="sidebar-footer"] {
+  border-top: 1px solid var(--color-hairline);
+  padding-block: 4px 8px;
+}
+
+html[data-skin] [data-desktop-sidebar] > [data-activity-bar="sidebar-footer"] {
+  margin-inline-start: calc(-1 * var(--desktop-sidebar-inset));
+  padding-inline-start: var(--desktop-sidebar-inset);
+}
+
+html[data-skin] [data-activity-bar="sidebar-footer"] [data-activity-settings] > [data-ui="activity-action"] {
+  width: fit-content;
+  max-width: 100%;
+}
+
+html[data-skin] [data-activity-bar="sidebar-footer"] [data-ui="icon-button"][data-sidebar-footer-search] svg {
+  width: var(--desktop-sidebar-icon);
+  height: var(--desktop-sidebar-icon);
+}
+
+html[data-skin][data-desktop-mode] .desktop-navigation {
+  padding: 8px var(--desktop-sidebar-inset) 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+html[data-skin][data-desktop-mode] [data-sidebar-primary-action] {
+  padding-bottom: 4px;
+}
+html[data-skin][data-desktop-mode] [data-project-list-scroll] > .desktop-navigation {
+  padding: 0 0 4px;
+}
+html[data-skin][data-desktop-mode] .desktop-navigation button {
+  color: var(--color-ink-secondary);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+html[data-skin][data-desktop-mode] [data-ui="navigation-item"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  min-height: 36px;
+  flex-shrink: 0;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 20px;
+}
+html[data-skin][data-desktop-mode] .desktop-navigation [data-ui="navigation-item"] {
+  height: var(--desktop-navigation-row-height);
+  min-height: var(--desktop-navigation-row-height);
+}
+html[data-skin][data-desktop-mode] .desktop-navigation [data-ui="navigation-item"] [data-ui="navigation-icon"] {
+  height: var(--desktop-navigation-row-height);
+}
+html[data-skin][data-desktop-mode] [data-ui="navigation-item"]:hover,
+html[data-skin][data-desktop-mode] [data-ui="navigation-item"][aria-current] {
+  background: var(--color-raised);
+  color: var(--color-ink);
+}
+html[data-skin][data-desktop-mode] [data-ui="navigation-icon"] {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+html[data-skin][data-desktop-mode] [data-ui="navigation-icon"] svg {
+  width: var(--desktop-sidebar-icon);
+  height: var(--desktop-sidebar-icon);
+  transition: rotate 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+html[data-skin][data-desktop-mode] .desktop-more-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5px;
+  padding-left: 12px;
+}
+html[data-skin][data-desktop-mode] [data-ui="navigation-dot"] {
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+html[data-skin][data-desktop-mode] .desktop-mode-toggle {
+  display: flex;
+  width: 70px;
+  height: 28px;
+  padding: 1px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--color-control);
+  flex-shrink: 0;
+}
+html[data-skin][data-desktop-mode] .desktop-mode-toggle button {
+  width: var(--desktop-titlebar-action-width);
+  height: var(--desktop-titlebar-action-height);
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  border-radius: var(--desktop-titlebar-action-radius);
+  color: var(--color-ink-tertiary);
+  cursor: pointer;
+}
+html[data-skin][data-desktop-mode]
+  .desktop-mode-toggle
+  button[aria-pressed="true"] {
+  background: var(--color-card);
+  color: var(--color-ink);
+  box-shadow: 0 1px 2px #00000014;
+}
+html[data-skin][data-desktop-mode] .desktop-mode-toggle svg {
+  width: var(--desktop-titlebar-icon);
+  height: var(--desktop-titlebar-icon);
+}
+html[data-skin][data-desktop-mode] [data-window-drag-bar] {
+  background: var(--color-panel);
+}
+html[data-skin][data-desktop-mode] [data-window-session-header] [data-session-surface-tabs] {
+  background: transparent;
+  border: 0;
+}
+html[data-skin][data-desktop-mode] [data-window-session-header] [data-surface-tab-strip] {
+  border-bottom: 0;
+}
+html[data-skin][data-desktop-mode] [data-window-page-header] [data-app-page-header] {
+  height: 32px;
+  min-height: 32px;
+  border: 0;
+}
+html[data-skin][data-desktop-mode] .desktop-titlebar-navigation {
+  display: flex;
+  align-items: center;
+  width: max(228px, calc(var(--desktop-sidebar-chrome-width, var(--desktop-sidebar-width)) - 20px));
+  max-width: 100%;
+  gap: var(--desktop-titlebar-action-gap);
+  flex-shrink: 0;
+}
+html[data-skin][data-desktop-mode] .desktop-titlebar-navigation [data-window-visit-nav] {
+  flex: 0 0 auto;
+  min-width: 0;
+  gap: var(--desktop-titlebar-action-gap);
+}
+/* Anchor to the sidebar edge in window chrome, independent of nav flex sizing. */
+html[data-skin][data-desktop-mode] .desktop-titlebar-mode-slot {
+  position: absolute;
+  left: calc(var(--desktop-sidebar-chrome-width, var(--desktop-sidebar-width)) - 80px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 70px;
+}
+html[data-skin][data-desktop-mode] .desktop-titlebar-navigation [data-ui="icon-button"] {
+  width: var(--desktop-titlebar-action-height);
+  height: var(--desktop-titlebar-action-height);
+  min-height: var(--desktop-titlebar-action-height);
+  border-radius: var(--desktop-titlebar-action-radius);
+  color: var(--color-ink);
+}
+html[data-skin][data-desktop-mode] .desktop-titlebar-navigation [data-ui="icon-button"][aria-disabled="true"] {
+  color: var(--color-ink-tertiary);
+  opacity: 1;
+}
+html[data-skin][data-desktop-mode] .desktop-titlebar-navigation [data-ui="icon-button"] svg {
+  width: var(--desktop-titlebar-icon);
+  height: var(--desktop-titlebar-icon);
+}
+html[data-skin][data-desktop-mode] [data-window-drag-bar] > div:has(> .desktop-titlebar-navigation) {
+  padding-inline: 10px;
+}
+html[data-skin][data-desktop-mode] [data-menu-bar]:has(.desktop-titlebar-navigation) {
+  padding-left: 10px;
+}
+html[data-skin][data-desktop-mode] [data-menu-bar] .desktop-titlebar-navigation {
+  margin-right: 10px;
+}
+html[data-skin][data-desktop-mode].is-mac [data-window-drag-bar] > div:has(> .desktop-titlebar-navigation) {
+  padding-left: 78px;
+}
+html[data-skin][data-desktop-mode].is-mac .desktop-titlebar-navigation {
+  width: max(228px, calc(var(--desktop-sidebar-chrome-width, var(--desktop-sidebar-width)) - 88px));
+}
+html[data-skin][data-desktop-mode].is-mac .desktop-titlebar-mode-slot {
+  left: max(236px, calc(var(--desktop-sidebar-chrome-width, var(--desktop-sidebar-width)) - 80px));
+}
+html[data-skin][data-desktop-mode] .desktop-tools-layout {
+  position: relative;
+  container-type: inline-size;
+  isolation: isolate;
+  overflow: clip;
+  display: grid;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  transition: grid-template-columns var(--collapse-duration) cubic-bezier(0.22, 1, 0.36, 1),
+    grid-template-rows var(--collapse-duration) cubic-bezier(0.22, 1, 0.36, 1);
+}
+html[data-skin][data-desktop-mode] .desktop-tools-layout[data-resizing],
+html.is-resizing .desktop-tools-layout {
+  transition: none;
+}
+html[data-skin][data-desktop-mode] .desktop-tools-workspace {
+  grid-area: workspace;
+  z-index: 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+html[data-skin][data-desktop-mode] .desktop-tools-layout:is([data-tools-side="left"], [data-tools-side="right"]) > .desktop-tools-workspace:has([data-pane-chat-edge]) {
+  width: 100%;
+  min-width: var(--desktop-conversation-min-width);
+  justify-self: start;
+}
+html[data-skin][data-desktop-mode] .desktop-tools-layout[data-tools-side="left"] > .desktop-tools-workspace:has([data-pane-chat-edge]) {
+  justify-self: end;
+}
+html[data-skin][data-desktop-mode] .desktop-tools-divider {
+  grid-area: divider;
+  z-index: 2;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+/* The preceding card owns the gutter. Keep the zero-sized divider's hit
+   target in that space instead of adding a second gap between panels. */
+html[data-skin][data-desktop-mode] .desktop-tools-divider > [data-resize-edge="left"] {
+  left: calc(-1 * var(--desktop-pane-outer));
+  width: var(--desktop-pane-outer);
+}
+html[data-skin][data-desktop-mode] .desktop-tools-divider > [data-resize-edge="top"] {
+  top: calc(-1 * var(--desktop-pane-outer));
+  height: var(--desktop-pane-outer);
+}
+html[data-skin][data-desktop-mode] .desktop-tools-divider > .resize-handle::after {
+  inset: 0;
+  margin: auto;
+  transform: none;
+}
+html[data-skin][data-desktop-mode] .desktop-tools-panel {
+  grid-area: tools;
+  z-index: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  margin: 0 var(--desktop-pane-outer) var(--desktop-pane-outer) 0;
+  overflow: hidden;
+  background: var(--color-card);
+  border: 1px solid var(--color-hairline);
+  box-shadow: var(--shadow-panel);
+}
+html[data-skin][data-desktop-mode] .desktop-tools-panel[hidden] {
+  display: none;
+}
+html[data-skin][data-desktop-mode] .desktop-tools-heading {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  flex-shrink: 0;
+}
+html[data-skin][data-desktop-mode] .desktop-tools-heading > button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-ink-secondary);
+  margin-right: 3px;
+}
+html[data-skin][data-desktop-mode] .desktop-tools-heading > button:hover {
+  background: var(--color-control);
+}
+html[data-skin][data-desktop-mode] .desktop-tools-heading > button svg {
+  width: 16px;
+  height: 16px;
+}
+html[data-skin][data-desktop-mode] .desktop-tools-heading > .desktop-tools-move {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: calc(50% - 22px);
+  width: 44px;
+  height: 12px;
+  margin: 0;
+  padding: 0;
+  border-radius: 5px;
+  background: transparent;
+  opacity: 0;
+  cursor: grab;
+  touch-action: none;
+  transition: opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+html[data-skin][data-desktop-mode] .desktop-tools-move > span {
+  width: 32px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-ink-tertiary);
+}
+html[data-skin][data-desktop-mode] .desktop-tools-heading:hover > .desktop-tools-move,
+html[data-skin][data-desktop-mode] .desktop-tools-heading > .desktop-tools-move:focus-visible,
+html[data-skin][data-desktop-mode] .desktop-tools-layout[data-moving] .desktop-tools-move {
+  opacity: 1;
+}
+html[data-skin][data-desktop-mode] .desktop-tools-move:active {
+  cursor: grabbing;
+}
+/* Drag feedback must not blur/repaint the editor and terminal behind it. */
+html[data-skin][data-desktop-mode] .desktop-tools-drop-hint .pane-drop-hint-panel {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+html[data-skin][data-desktop-mode] .drag-ghost > .desktop-tools-heading {
+  will-change: transform;
+  contain: layout paint;
+  border: 1px solid var(--color-hairline);
+  border-radius: 8px;
+}
+html[data-skin][data-desktop-mode] .desktop-projects-page {
+  padding: 24px 40px 40px;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  overflow: auto;
+  color: var(--color-ink);
+  background: var(--color-app);
+}
+html[data-skin][data-desktop-mode] .desktop-collection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  min-height: 32px;
+}
+html[data-skin][data-desktop-mode] .desktop-collection-header h1 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: var(--font-weight-medium);
+}
+html[data-skin][data-desktop-mode] .desktop-collection-create {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  line-height: 20px;
+  min-height: 32px;
+  border: var(--desktop-border) solid var(--color-accent-border);
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  font-size: 14px;
+  cursor: pointer;
+}
+html[data-skin][data-desktop-mode] .desktop-collection-create svg {
+  width: 16px;
+  height: 16px;
+}
+html[data-skin][data-desktop-mode] .desktop-collection-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+  min-height: 36px;
+}
+html[data-skin][data-desktop-mode] .desktop-collection-tabs {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+html[data-skin][data-desktop-mode] .desktop-collection-tabs button {
+  min-height: 32px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--color-ink-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+html[data-skin][data-desktop-mode]
+  .desktop-collection-tabs
+  button[aria-selected="true"] {
+  color: var(--color-ink);
+  background: var(--color-raised);
+}
+html[data-skin][data-desktop-mode] .desktop-collection-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 100%;
+  gap: 8px;
+}
+html[data-skin][data-desktop-mode] .desktop-collection-search {
+  display: flex;
+  align-items: center;
+  width: 200px;
+  height: 32px;
+  padding: 0 8px;
+  gap: 6px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 8px;
+}
+html[data-skin][data-desktop-mode] .desktop-collection-search svg {
+  width: 16px;
+  height: 16px;
+  color: var(--color-ink-tertiary);
+}
+html[data-skin][data-desktop-mode] .desktop-collection-search input {
+  padding: 0;
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  font-size: 14px;
+}
+html[data-skin][data-desktop-mode] .desktop-collection-filters select {
+  width: auto;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 8px;
+  background: var(--color-card);
+  font-size: 13px;
+}
+html[data-skin][data-desktop-mode] .desktop-project-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+html[data-skin][data-desktop-mode] .desktop-project-card {
+  position: relative;
+  min-width: 0;
+  height: auto;
+  border-radius: var(--desktop-radius-card);
+  background: var(--color-card);
+  box-shadow: none;
+  min-height: 148px;
+  border: var(--desktop-border) solid var(--color-composer-ring);
+}
+html[data-skin][data-desktop-mode] .desktop-project-card:hover {
+  background: var(--color-card);
+  box-shadow: var(--desktop-shadow-card);
+  border-color: var(--color-focus);
+}
+html[data-skin][data-desktop-mode] .desktop-project-open {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 24px;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: var(--desktop-radius-card);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+html[data-skin][data-desktop-mode] .desktop-project-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-control);
+  color: var(--color-ink-secondary);
+}
+html[data-skin][data-desktop-mode] .desktop-project-icon svg {
+  width: 20px;
+  height: 20px;
+}
+html[data-skin][data-desktop-mode] .desktop-project-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  font-size: 16px;
+  line-height: 20px;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html[data-skin][data-desktop-mode] .desktop-project-name svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--color-accent);
+}
+html[data-skin][data-desktop-mode] .desktop-project-path {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--color-ink-tertiary);
+}
+html[data-skin][data-desktop-mode] .desktop-project-more {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-ink-secondary);
+  opacity: 0;
+  cursor: pointer;
+}
+html[data-skin][data-desktop-mode] .desktop-project-more svg {
+  width: 18px;
+  height: 18px;
+}
+html[data-skin][data-desktop-mode]
+  .desktop-project-card:hover
+  .desktop-project-more,
+html[data-skin][data-desktop-mode]
+  .desktop-project-card:focus-within
+  .desktop-project-more {
+  opacity: 1;
+}
+html[data-skin][data-desktop-mode] .desktop-project-menu {
+  padding: 4px;
+}
+html[data-skin][data-desktop-mode] .desktop-project-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-ink);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+html[data-skin][data-desktop-mode] .desktop-project-menu button:hover {
+  background: var(--color-control);
+}
+html[data-skin][data-desktop-mode] .desktop-project-menu svg {
+  width: 16px;
+  height: 16px;
+}
+html[data-skin][data-desktop-mode] .desktop-collection-empty {
+  padding: 40px 0;
+  color: var(--color-ink-secondary);
+  font-size: 14px;
+}
+@media (max-width: 1000px) {
+  html[data-skin][data-desktop-mode] .desktop-projects-page {
+    padding-inline: 24px;
+  }
+  html[data-skin][data-desktop-mode] .desktop-project-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 767px) {
+  html[data-skin][data-desktop-mode] .desktop-projects-page {
+    padding-inline: 16px;
+  }
+  html[data-skin][data-desktop-mode] .desktop-collection-filters {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+  html[data-skin][data-desktop-mode] .desktop-collection-search {
+    width: 160px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-skin][data-desktop-mode] .desktop-tools-layout,
+  html[data-skin][data-desktop-mode] .desktop-tools-move,
+  html[data-skin][data-desktop-mode] [data-ui="navigation-icon"] svg {
+    transition: none;
+  }
+}
+html[data-reduced-motion="on"] .desktop-tools-layout,
+html[data-reduced-motion="on"] .desktop-tools-move,
+html[data-reduced-motion="on"] [data-ui="navigation-icon"] svg {
+  transition: none !important;
+}
+
+html[data-skin] [data-desktop-sidebar-mode] {
+  margin-right: 1.5px;
+}
+
+html[data-skin] [data-menu-density="compact"] [role^="menuitem"] {
+  height: auto;
+}
+html[data-skin]
+  [data-menu-density="compact"]
+  [role^="menuitem"]
+  > span
+  > span:first-child {
+  line-height: var(--desktop-menu-leading);
+}
+
+/* Native traffic lights stay at the viewport origin when the sidebar folds. */
+html[data-skin].is-mac .sidebar-rail [data-activity-bar="rail"] {
+  padding-top: 44px;
+}
+
+/* Keep the native controls outside the scrollable application menu at minimum window sizes. */
+html[data-skin][data-desktop-mode] [data-menu-bar].relative {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+html[data-skin][data-desktop-mode] [data-menu-bar] > div:first-child {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+html[data-skin][data-desktop-mode] [data-menu-bar] > div:first-child > button {
+  flex-shrink: 0;
+}
+html[data-skin] .sidebar-rail [data-activity-bar="rail"] { width: var(--sidebar-rail-width); padding: 0 8px 12px; background: var(--color-panel); box-shadow: inset -0.5px 0 var(--color-composer-ring); }
+html[data-skin] .sidebar-rail [data-activity-bar="rail"] > div { gap: 8px; }
+html[data-skin] .sidebar-rail [data-activity-bar="rail"] button[aria-pressed] { width: 36px; height: 36px; border-radius: 8px; }
+html[data-skin] .sidebar-rail [data-activity-bar="rail"] button[aria-pressed] > svg { width: 20px; height: 20px; }

@@ -1,0 +1,1103 @@
+{
+  "source": "tau_bench",
+  "official_url": "https://github.com/sierra-research/tau-bench",
+  "revision": "59a200c6d575d595120f1cb70fea53cef0632f6b",
+  "upstream_version": "0.1.0",
+  "license": "MIT",
+  "license_url": "https://github.com/sierra-research/tau-bench/blob/59a200c6d575d595120f1cb70fea53cef0632f6b/LICENSE",
+  "license_evidence": "Repository LICENSE applies to source and bundled mock data; no separate data license or data restriction found. Retail data/readme.md explicitly permits reuse. Copyright 2024 Sierra retained.",
+  "imported_original_records": 165,
+  "original_counts_by_domain": {
+    "retail": 115,
+    "airline": 50
+  },
+  "selected_distinct_original_records": 24,
+  "executable_variants": 24,
+  "variant_counts": {
+    "fully_disclosed_state_transition": 24
+  },
+  "selected_counts_by_domain": {
+    "airline": 12,
+    "retail": 12
+  },
+  "eligible_counts_by_domain": {
+    "retail": 88,
+    "airline": 27
+  },
+  "seed": 17,
+  "split": "test",
+  "selection": "AST-extract all pinned test records, deduplicate by ID and canonical record SHA256 before selection; exclude three documented compensation/protocol mismatches; replay references on full databases; exclude reference errors and unchanged database. Per domain shuffle seed17 then greedy cover action names (weight10), action-sequence signatures (weight4), output-bearing record (weight6), capped sequence length (weight1,max4); select12. Fixed sorted source order breaks equal scores via seeded shuffle.",
+  "exclusions": [
+    {
+      "upstream_id": "retail/test/2",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "get_product_details",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: product not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/3",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "get_product_details",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: product not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/4",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "get_product_details",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: product not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/10",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "retail/test/12",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "return_delivered_order_items",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: payment method should be either the original payment method or a gift card"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/13",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "return_delivered_order_items",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: payment method should be either the original payment method or a gift card"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/21",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "get_product_details",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: product not found"
+          }
+        },
+        {
+          "action": "get_product_details",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: product not found"
+          }
+        },
+        {
+          "action": "get_product_details",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: product not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/24",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "retail/test/25",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "retail/test/35",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "find_user_id_by_email",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: user not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/36",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "find_user_id_by_email",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: user not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/37",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "find_user_id_by_email",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: user not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/38",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "find_user_id_by_email",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: user not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/39",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "find_user_id_by_name_zip",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: user not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/46",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "get_order_details",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: order not found"
+          }
+        },
+        {
+          "action": "get_order_details",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: order not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/47",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "get_order_details",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: order not found"
+          }
+        },
+        {
+          "action": "get_order_details",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: order not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/50",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "retail/test/54",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "find_user_id_by_email",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: user not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/55",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "find_user_id_by_email",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: user not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/57",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "retail/test/62",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "retail/test/64",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "exchange_delivered_order_items",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: non-delivered order cannot be exchanged"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/65",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "retail/test/67",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "find_user_id_by_name_zip",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: user not found"
+          }
+        },
+        {
+          "action": "find_user_id_by_name_zip",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: user not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/68",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "find_user_id_by_name_zip",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: user not found"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "retail/test/95",
+      "reason": "duplicate_id_or_record_sha256"
+    },
+    {
+      "upstream_id": "retail/test/106",
+      "reason": "upstream_reference_error",
+      "evidence": [
+        {
+          "action": "exchange_delivered_order_items",
+          "error": {
+            "code": "upstream_error",
+            "message": "Error: insufficient gift card balance to pay for the price difference"
+          }
+        }
+      ]
+    },
+    {
+      "upstream_id": "airline/test/12",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/13",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/15",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/16",
+      "reason": "semantic_or_interactive_protocol_mismatch",
+      "evidence": "Reference issues delay compensation without the policy-required reservation change/cancellation; instruction requests compensation but no change/cancellation."
+    },
+    {
+      "upstream_id": "airline/test/17",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/18",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/21",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/24",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/29",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/35",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/36",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/37",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/38",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/39",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/40",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/41",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/42",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/44",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/45",
+      "reason": "semantic_or_interactive_protocol_mismatch",
+      "evidence": "Reference issues delay compensation without explicit compensation request or policy-required reservation change/cancellation; conversational correction timing is also absent locally."
+    },
+    {
+      "upstream_id": "airline/test/46",
+      "reason": "semantic_or_interactive_protocol_mismatch",
+      "evidence": "Reference issues delay compensation without explicit compensation request or policy-required reservation change/cancellation; mid-booking topic-switch behavior needs native interactive user simulator."
+    },
+    {
+      "upstream_id": "airline/test/47",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/48",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "airline/test/49",
+      "reason": "no_database_change_excluded_from_state_transition_subset"
+    },
+    {
+      "upstream_id": "retail/test/77",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/103",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/72",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/110",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/99",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/97",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/73",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/75",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/33",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/84",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/29",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/111",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/93",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/83",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/9",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/69",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/107",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/5",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/14",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/86",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/17",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/23",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/19",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/108",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/88",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/92",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/0",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/102",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/101",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/61",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/109",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/104",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/53",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/32",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/41",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/1",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/30",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/80",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/82",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/66",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/15",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/112",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/85",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/44",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/79",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/100",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/8",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/90",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/114",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/7",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/98",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/70",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/81",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/22",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/63",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/28",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/34",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/96",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/11",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/76",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/60",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/89",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/48",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/113",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/74",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/45",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/6",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/20",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/52",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/94",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/31",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/56",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/71",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/58",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/78",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "retail/test/91",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/43",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/10",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/1",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/20",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/6",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/7",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/0",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/3",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/8",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/25",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/5",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/11",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/9",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/19",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    },
+    {
+      "upstream_id": "airline/test/23",
+      "reason": "not_selected_by_seed17_action_coverage_quota"
+    }
+  ],
+  "exclusion_counts": {
+    "upstream_reference_error": 19,
+    "no_database_change_excluded_from_state_transition_subset": 27,
+    "duplicate_id_or_record_sha256": 1,
+    "semantic_or_interactive_protocol_mismatch": 3,
+    "not_selected_by_seed17_action_coverage_quota": 91
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "243d23d45b80122b5ac575586ccef352fdc9c45e6d7d2605449aca8a17478b42",
+      "bytes": 1063
+    },
+    {
+      "path": "README.md",
+      "sha256": "1a4b1b00634fe46fd677dd11dfa25a9bf357b5d7c3d726ff83025e8f104329f9",
+      "bytes": 8447
+    },
+    {
+      "path": "setup.py",
+      "sha256": "e7d62c0ec936ef64301f5219a61f01acd3a472c1a442f5bfd55f592afefdd4fc",
+      "bytes": 524
+    },
+    {
+      "path": "tau_bench/envs/airline/data/__init__.py",
+      "sha256": "eca21174cec321e2c3e0438e9bf67035dbb3a8551dc2a1d3a793b4395d8192c1",
+      "bytes": 564
+    },
+    {
+      "path": "tau_bench/envs/airline/data/flights.json",
+      "sha256": "444d7565c68434a3e3fb72efd717f9f9cd5c56dce227f6f56e078f1cb0ed233a",
+      "bytes": 2114218
+    },
+    {
+      "path": "tau_bench/envs/airline/data/reservations.json",
+      "sha256": "1cf0bbc58ad984be9de7c24dba6dd27393f94cdbd482d8524f6a54db1f561a8c",
+      "bytes": 2325594
+    },
+    {
+      "path": "tau_bench/envs/airline/data/users.json",
+      "sha256": "bd264e2a31e0fa35cdfef8987e70a0dd3776828b582fe90e7a44823a12eb4cea",
+      "bytes": 595947
+    },
+    {
+      "path": "tau_bench/envs/airline/env.py",
+      "sha256": "e198f7f9d9f516df164ac990df38bb9b4fe26035bd25fcfb5dac696394bdd413",
+      "bytes": 1234
+    },
+    {
+      "path": "tau_bench/envs/airline/rules.py",
+      "sha256": "da3d5a5db6ddbf3d0071e5ece8d9297ccf89914ded93c8187043c5eecf58adfc",
+      "bytes": 31
+    },
+    {
+      "path": "tau_bench/envs/airline/tasks_test.py",
+      "sha256": "14cdb6b4fe810faac9a0cc8395d3c7b32c883a979d1cde8c8003ae25a93d2ff3",
+      "bytes": 67250
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/__init__.py",
+      "sha256": "98cbafc429cf917a088112b652ec6ef8641b509f0981c04047875f90ec4967f3",
+      "bytes": 1088
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/book_reservation.py",
+      "sha256": "927ca66e6bf289d27582c939d7300ee028ed0a237e2592afed160265f9953304",
+      "bytes": 10282
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/calculate.py",
+      "sha256": "3be497428304817e4dae17222dc9d1d41a27d28bf0abc2a613687a6e890d70fe",
+      "bytes": 1266
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/cancel_reservation.py",
+      "sha256": "5dd83916f9dce20a4bac6ecf45c2f4555ae28f0981339c7d237d3f98af2e6b98",
+      "bytes": 1528
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/get_reservation_details.py",
+      "sha256": "3c45957d9489e4226000de99f015c67ca5cc920f867c5a5739edba20cd920b6b",
+      "bytes": 1082
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/get_user_details.py",
+      "sha256": "50cd80bee1fa2da99852ebd37289964f0b5f34994d9f34104f7d6953216fa7c4",
+      "bytes": 1028
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/list_all_airports.py",
+      "sha256": "8c6921b793ce6e93bfa18024e40fa1136f8c4e8204f8fa6f0248beaf674651ba",
+      "bytes": 1633
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/search_direct_flight.py",
+      "sha256": "ca64bab422da436c0ab9e3a77135f786ca934e8cb917d502f0dbab2847716c78",
+      "bytes": 2014
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/search_onestop_flight.py",
+      "sha256": "205b32a28de70bff29f8846c875964af78c6d6d94685bf79579861b3308efa3d",
+      "bytes": 3240
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/send_certificate.py",
+      "sha256": "d067a526d0a3579cd4a814fa14d231a62da4854520124ff2af8969f16715a773",
+      "bytes": 1765
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/think.py",
+      "sha256": "ff2b17409d3d6fade8657e2ada46b0b50e33c6570502cba4ec0202652c51ffa5",
+      "bytes": 980
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/transfer_to_human_agents.py",
+      "sha256": "d3f105f8a8efc11e8dbb039b12e9e1d86d7c1f1ae16a26bd2bbf41cde2b21db6",
+      "bytes": 1144
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/update_reservation_baggages.py",
+      "sha256": "5b72dc0fcd0a2ae21bb116ddc0a76dcc5d2fc2c71dec1fae75942f24f5d6eafd",
+      "bytes": 3268
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/update_reservation_flights.py",
+      "sha256": "58ef41d20d5ba53782dce1bbcbd514aaa6fcb0670980f54070d8263ab9f8b985",
+      "bytes": 6070
+    },
+    {
+      "path": "tau_bench/envs/airline/tools/update_reservation_passengers.py",
+      "sha256": "6ed46b57dc3c6c487219720a10f116774686046f11868c747493ae9a703d2957",
+      "bytes": 2712
+    },
+    {
+      "path": "tau_bench/envs/airline/wiki.md",
+      "sha256": "56c335801c16e26b54f600f9db99eb04d31db477e86eb160341d5c66b796c5c8",
+      "bytes": 6155
+    },
+    {
+      "path": "tau_bench/envs/base.py",
+      "sha256": "1ad0402073f0ac9ca6b527efa0706e2aa8836dd2e5c1d453ed414ecb768c6d21",
+      "bytes": 5688
+    },
+    {
+      "path": "tau_bench/envs/retail/data/__init__.py",
+      "sha256": "aaa0bc456497d79438c5c7602194444d2774f6d225ece1e9d3ad91e03bc1d288",
+      "bytes": 544
+    },
+    {
+      "path": "tau_bench/envs/retail/data/orders.json",
+      "sha256": "2598a12586d28f2d6bd16bc86f4c800029b6af18e0abb5c475ef5c869c11ced1",
+      "bytes": 1810945
+    },
+    {
+      "path": "tau_bench/envs/retail/data/products.json",
+      "sha256": "a9eabcc1a9742c5f5288c2779acce52b9308423383ed24706bbaf0889f762a0f",
+      "bytes": 172258
+    },
+    {
+      "path": "tau_bench/envs/retail/data/readme.md",
+      "sha256": "448640f4b5e104f15e4476e2aa10f3b6616181135dc38262a86e71ed1b30737d",
+      "bytes": 1420
+    },
+    {
+      "path": "tau_bench/envs/retail/data/users.json",
+      "sha256": "6f4fd104cc5e80b92166c4035315c31532c6cea52a90dcdf18425ee7f87c2b82",
+      "bytes": 322932
+    },
+    {
+      "path": "tau_bench/envs/retail/env.py",
+      "sha256": "4d97b3f69c703d85665b5110ce75e4c1841f7c3064dbf0b7991606da9b32c516",
+      "bytes": 1445
+    },
+    {
+      "path": "tau_bench/envs/retail/rules.py",
+      "sha256": "f4450639d5a21713953685e0a430b8cfd4f359db3fdd4de45ff228449b05c812",
+      "bytes": 970
+    },
+    {
+      "path": "tau_bench/envs/retail/tasks_test.py",
+      "sha256": "6f09468923c6cfb6162e94fe659264d6aee70816c18d51278fb4a581db7765a4",
+      "bytes": 169476
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/__init__.py",
+      "sha256": "db8f1252a01eaa333ee409d78858d5dcf5cdc2f27c24bc6d941615ccd2ac54df",
+      "bytes": 1302
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/calculate.py",
+      "sha256": "2c3380802673493843ef6d7f3e569e2aed52265ca0b9f7ac248346828d0c75f7",
+      "bytes": 1324
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/cancel_pending_order.py",
+      "sha256": "c33151a896b62ac87ed1bcbcbd62dabcd47c8c1eaf47bbb5e2f15f8b6283b19d",
+      "bytes": 3320
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/exchange_delivered_order_items.py",
+      "sha256": "d547d44b28e97513d4a15714d4bd2bbca13f76827bfe06b71e1b51a742f44489",
+      "bytes": 5370
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/find_user_id_by_email.py",
+      "sha256": "a289f00eb689146f102d97951d6e7b29c9c639314c203efbfcd888f893d91560",
+      "bytes": 1132
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/find_user_id_by_name_zip.py",
+      "sha256": "22c176ffc285b25db573e0e38d82d678e2641298c6d1318f69d2582d52eb7433",
+      "bytes": 2013
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/get_order_details.py",
+      "sha256": "ca6c23cc89c1e981251b9adb1e6d705e364ff942aee986b12335b36e94281056",
+      "bytes": 1087
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/get_product_details.py",
+      "sha256": "9578fb31b5e092361a5d0e5d4a8e2afe4b8fb4a96d279d031b01266d9b5c768d",
+      "bytes": 1104
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/get_user_details.py",
+      "sha256": "f22b59126c2a2aaa102f39dea778653a9298d1902477dd5246509d019318e8d3",
+      "bytes": 1021
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/list_all_product_types.py",
+      "sha256": "63b9f562f893bab36fc6fb91da92978ba9c106f2d6fad88aee3ca20801e4a2e3",
+      "bytes": 1035
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/modify_pending_order_address.py",
+      "sha256": "8f23d24511078ca10818fac8501db358ad699584952233d696a695e78993d001",
+      "bytes": 3212
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/modify_pending_order_items.py",
+      "sha256": "f1a39d42e42c162dc961afa7f1b4d29c73c5a3710a3b9dff318a076213b6c858",
+      "bytes": 5707
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/modify_pending_order_payment.py",
+      "sha256": "6c2d4c329fae0d66d50bd48cb6ae9520167137f8b20d3385fa407aa5b03d2fe5",
+      "bytes": 4364
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/modify_user_address.py",
+      "sha256": "b1f8ac2141056ccee668824d6ab124ce659ea3574e7b186b39af3f558c07ac61",
+      "bytes": 2920
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/return_delivered_order_items.py",
+      "sha256": "7d92e8962c17e5fa9c8e3240d21e31fc1adf5e68100c92bb0f67e0a67ea5b7bf",
+      "bytes": 3632
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/think.py",
+      "sha256": "9d9423922fcdc98578c1d6544f35d28ff155e9a5a172355b662db326ef7eb1fc",
+      "bytes": 1160
+    },
+    {
+      "path": "tau_bench/envs/retail/tools/transfer_to_human_agents.py",
+      "sha256": "2b6d4685da53f72709b28b60e14e1897947ac366bc7ecee6d2b7c7169a3d95a6",
+      "bytes": 1200
+    },
+    {
+      "path": "tau_bench/envs/retail/wiki.md",
+      "sha256": "d539fd2a46a8b8dd2e934ff9ed92f43e9f6b56bc7a718db8d2803ba8ad8f6bf7",
+      "bytes": 5718
+    },
+    {
+      "path": "tau_bench/envs/tool.py",
+      "sha256": "0a158be298092fc64862ae8843f35f57cfba139aa02c2ee8fbe87b1e4a1de0fc",
+      "bytes": 233
+    },
+    {
+      "path": "tau_bench/types.py",
+      "sha256": "38c2e79f48f9ac87fbdd7bb763c3ef7e8a825cd3de3998f51b12ecf55733b9db",
+      "bytes": 1823
+    }
+  ],
+  "cases_sha256": "724bffa35b6f197ed545c98f9f618c98b9a9980636f9f29dcc6cc8619cf89ccf",
+  "original_records_sha256": "ff8da67f6a6d36338f4c931832aeaee90d11ee9383e1413e03fe7978e252afee",
+  "execution_status": "offline_executable_local_adaptation",
+  "native_scope": "All native domain tools and full original mock databases; calculate replaced. Native to_hashable/consistent_hash equality of final entire database after reference action replay, and required output substring rule.",
+  "local_metric": "local_state_transition_accuracy = native_state_match AND native_outputs_match AND nonempty_final; final is the sole assistant response considered for required outputs",
+  "official_tau_score": false,
+  "limitations": [
+    "Pinned upstream README says these tasks are outdated and points to tau2-bench/tau3; this is versioned legacy tau-bench, not current tau3.",
+    "Fully disclosed simulator instructions and pre-authorization remove interactive elicitation and confirmation evaluation; not comparable with published tau scores/pass^k.",
+    "Native mock API bugs are preserved (for example flight update does not set cabin, and flight seat database updates are omitted upstream). State equality measures the pinned implementation rather than all policy semantics.",
+    "Selection favors executable mutation/action coverage; no representativeness or complete policy-compliance claim. No-op, transfer-only, and pure informational tasks are excluded.",
+    "No model calls or live user simulator; reference scripts validate harness only. No LLM judge is used or trusted.",
+    "Local defenses reject unknown fields and resource-heavy arithmetic, wrap results in JSON, and roll back tool failures. These boundary behaviors differ from native Env.step."
+  ]
+}

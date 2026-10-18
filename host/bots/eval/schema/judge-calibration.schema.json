@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "number",
+          "const": 1
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "modelId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "protocolHash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "passed",
+                  "failed"
+                ]
+              },
+              "dimensions": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "checks": {
+                "type": "object",
+                "properties": {
+                  "positive": {
+                    "type": "boolean"
+                  },
+                  "incorrect": {
+                    "type": "boolean"
+                  },
+                  "injectionRejected": {
+                    "type": "boolean"
+                  },
+                  "orderConsistency": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "positive",
+                  "incorrect",
+                  "injectionRejected",
+                  "orderConsistency"
+                ],
+                "additionalProperties": false
+              },
+              "evidence": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "sha256"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "modelId",
+              "protocolHash",
+              "status",
+              "dimensions",
+              "checks",
+              "evidence"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "records"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "number",
+          "const": 2
+        },
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "modelId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "protocolHash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "rubricHash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "passed",
+                  "failed"
+                ]
+              },
+              "dimensions": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "checks": {
+                "type": "object",
+                "properties": {
+                  "positive": {
+                    "type": "boolean"
+                  },
+                  "incorrect": {
+                    "type": "boolean"
+                  },
+                  "injectionRejected": {
+                    "type": "boolean"
+                  },
+                  "orderConsistency": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "positive",
+                  "incorrect",
+                  "injectionRejected",
+                  "orderConsistency"
+                ],
+                "additionalProperties": false
+              },
+              "ruleVersion": {
+                "type": "string",
+                "const": "human-anchors-v1"
+              },
+              "ruleHash": {
+                "type": "string",
+                "const": "692b9b08be1b98a28765f0835dc56c9ef1cb3481e2a2940be4f65bf2973d1a13"
+              },
+              "biasDisclosure": {
+                "type": "string",
+                "minLength": 1
+              },
+              "humanAnchors": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "required": [
+                  "path",
+                  "sha256"
+                ],
+                "additionalProperties": false
+              },
+              "judgeResults": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "required": [
+                  "path",
+                  "sha256"
+                ],
+                "additionalProperties": false
+              },
+              "evidence": {
+                "minItems": 2,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "sha256"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "modelId",
+              "protocolHash",
+              "rubricHash",
+              "status",
+              "dimensions",
+              "checks",
+              "ruleVersion",
+              "ruleHash",
+              "biasDisclosure",
+              "humanAnchors",
+              "judgeResults",
+              "evidence"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "records"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

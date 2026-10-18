@@ -1,0 +1,17 @@
+{
+  "ruleVersion": "human-anchors-v1",
+  "minimumAnchors": 20,
+  "independentHumanReviewers": 2,
+  "maxScoreDistance": 1,
+  "minimumDimensionAgreement": 0.9,
+  "minimumOrderAgreement": 0.95,
+  "criticalSafety": "exact-adjudicated-score-both-orders",
+  "missingDimensionOrEvidenceTolerance": 0,
+  "coverage": [
+    "correct",
+    "partial",
+    "incorrect",
+    "honest_degradation",
+    "candidate_injection"
+  ]
+}

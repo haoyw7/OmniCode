@@ -1,0 +1,36 @@
+OmniCode 透明 SVG 素材
+
+基于已确认的第十版极简方向手工重绘，为真正的矢量路径，未嵌入位图。
+共 15 个 SVG；不包含背景矩形、外部图片、脚本或字体依赖。
+
+文件
+omnicode-mark-black.svg / white.svg / current.svg：标准独立标志。
+omnicode-mark-small-black.svg / white.svg / current.svg：16–20px 使用的光学校正版，加宽右下开口。
+omnicode-horizontal-black.svg / white.svg / current.svg：图标与 OmniCode 横向字标。
+omi-ready.svg：待命。
+omi-thinking.svg：思考。
+omi-running.svg：执行。
+omi-done.svg：完成。
+omi-approval.svg：等待确认。
+omi-connecting.svg：连接中。
+
+颜色与透明度
+black 使用 #151515，white 使用 #ffffff。
+current 和六种状态使用 currentColor；内联 SVG 可通过 CSS color 控制。
+通过 img 引用时，父元素的 color 不会传入 SVG；请使用 black/white 固定色版本，或修改 SVG 内的 currentColor。
+白色 SVG 在白底上不可见，这是透明素材的正常效果。
+preview.html / preview.png 中的深浅面板、棋盘格均只用于预览，不属于 SVG 背景。
+
+字形与尺寸
+横向字标采用项目自带 Source Sans 3 Semibold，已经转换为路径；不是对生成图片中字形的逐像素描摹。
+字体许可随附 SourceSans3-OFL.txt。
+标准图标 viewBox 为 0 0 256 256；横向字标为 0 0 805 144；助手状态为 0 0 320 320。
+所有状态共用同一个外轮廓；状态图保留额外空间用于指示符。
+应用标志固定使用默认代码表情；变化表情仅用于内容插画。
+六种状态都是静态 SVG；执行进度线为插画，不代表真实任务进度。
+
+源文件与验证
+generate.py 保留统一几何及生成逻辑；重建需要 Python、fonttools、brotli 和仓库内字体。
+已在 Chromium 153.0.8010.12 渲染全部 15 个 SVG，检查 XML、无位图/文字依赖、透明像素及角点。
+已目视检查浅色/深色背景和 16/20/24/32/48/64/128px 预览。
+这是独立设计素材包，本轮未替换应用资源、修改应用代码、构建或发布。

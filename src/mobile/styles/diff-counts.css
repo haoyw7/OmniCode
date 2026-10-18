@@ -1,0 +1,12 @@
+.mobile-git-counts {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.mobile-git-counts [data-kind="add"] {
+  color: var(--color-m-success);
+}
+.mobile-git-counts [data-kind="del"] {
+  color: var(--color-m-danger);
+}

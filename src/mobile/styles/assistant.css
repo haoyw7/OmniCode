@@ -1,0 +1,1036 @@
+/* Assistant chat follows the phone's inset cards and floating controls. */
+.mobile-assistant-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+}
+.assistant-chat[data-layout="mobile"] {
+  position: relative;
+  font-size: var(--mobile-font-lg);
+  padding-inline: var(--mobile-safe-left) var(--mobile-safe-right);
+}
+.assistant-chat[data-layout="mobile"],
+.assistant-chat[data-layout="mobile"] * {
+  scrollbar-width: none;
+}
+.assistant-chat[data-layout="mobile"]::-webkit-scrollbar,
+.assistant-chat[data-layout="mobile"] *::-webkit-scrollbar {
+  display: none;
+}
+.assistant-chat[data-layout="mobile"] .assistant-availability {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  font-size: var(--mobile-font-md);
+  text-align: center;
+  opacity: 0.65;
+}
+.mobile-header.mobile-assistant-header[data-floating="true"]
+  > .mobile-header-title[data-capsule="true"] {
+  display: block;
+  padding: 0;
+  border-radius: 24px;
+}
+.mobile-assistant-profile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 6px 16px;
+}
+.mobile-assistant-activity {
+  padding: 8px 14px 12px;
+  border-top: 1px solid var(--mobile-separator);
+}
+.mobile-assistant-activity-label {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  margin: 0;
+  font-size: var(--mobile-font-sm);
+  line-height: 18px;
+  text-align: center;
+}
+.mobile-assistant-header .mobile-assistant-identity {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  font-size: 10px;
+  line-height: 15px;
+}
+.mobile-assistant-identity > span:first-child {
+  min-width: 0;
+  max-width: 55%;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.mobile-assistant-identity > span:last-child {
+  flex-shrink: 0;
+}
+.mobile-assistant-agent {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 4px;
+}
+.mobile-assistant-agent > svg,
+.mobile-assistant-agent > img,
+.mobile-assistant-agent > span[aria-hidden] {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.mobile-assistant-identity [data-lifecycle]::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-inline-end: 4px;
+  border-radius: 50%;
+  background: var(--color-m-ink-tertiary);
+  vertical-align: 1px;
+}
+.mobile-assistant-identity [data-lifecycle="idle"]::before {
+  background: var(--color-m-success);
+}
+.mobile-assistant-identity [data-lifecycle="running"]::before {
+  background: var(--mobile-accent);
+}
+.mobile-assistant-identity
+  :is([data-lifecycle="backoff"], [data-lifecycle="paused"])::before {
+  background: var(--color-m-warning);
+}
+.mobile-assistant-identity
+  :is([data-lifecycle="failed"], [data-lifecycle="interrupted"])::before {
+  background: var(--color-m-danger);
+}
+/* Only the scroll container consumes the animated dock height. Message text
+   must not inherit a new custom-property value on every resize frame. */
+@property --mobile-assistant-dock-height {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 76px;
+}
+.assistant-chat[data-layout="mobile"] .assistant-conversation {
+  position: relative;
+}
+html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assistant-messages {
+  --mobile-assistant-dock-height: inherit;
+  /* Match the scroll that the local layout will apply, without resizing the
+     conversation and running its ResizeObserver on every keyboard frame. */
+  transform: translateY(calc(var(--mobile-keyboard-offset) * var(--mobile-assistant-keyboard-follow, 0) * -1));
+  min-height: 0;
+  padding: calc(var(--mobile-header-height) + var(--mobile-safe-top) + 12px)
+    18px calc(var(--mobile-assistant-dock-height, 76px) + 20px - min(max(0px, var(--mobile-safe-bottom) - 14px), var(--mobile-keyboard-height)));
+  scroll-padding-top: calc(
+    var(--mobile-header-height) + var(--mobile-safe-top) + 12px
+  );
+  scroll-padding-bottom: calc(var(--mobile-assistant-dock-height, 76px) + 20px - min(max(0px, var(--mobile-safe-bottom) - 14px), var(--mobile-keyboard-height)));
+  gap: 12px;
+  overflow-anchor: none;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+  overflow-x: hidden;
+  overscroll-behavior-x: contain;
+  /* Reserve horizontal drags across bubbles and gaps for message gestures. */
+  touch-action: pan-y pinch-zoom;
+  padding-inline: 16px;
+}
+.assistant-chat[data-layout="mobile"] .assistant-message-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 100%;
+}
+.assistant-chat[data-layout="mobile"] .assistant-message-row-user {
+  align-items: flex-end;
+}
+.assistant-message-reply-context {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 88%;
+  margin: 4px 4px 6px;
+  color: var(--color-foreground-subtle);
+  font-size: var(--mobile-font-sm);
+  line-height: 18px;
+}
+.assistant-message-reply-context > svg {
+  flex-shrink: 0;
+}
+.assistant-message-reply-context > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.assistant-chat[data-layout="mobile"] .assistant-message-row-status {
+  align-items: center;
+}
+html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assistant-message-row > .assistant-message-user {
+  width: fit-content;
+  max-width: min(312px, 85%);
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 24px;
+  background: var(--m-message-fill);
+  color: var(--m-message-ink);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.assistant-chat[data-layout="mobile"] .assistant-message-row > .assistant-message-assistant {
+  width: 100%;
+  max-width: 100%;
+}
+.assistant-chat[data-layout="mobile"] .assistant-message-row > :not(.assistant-swipe-time, .assistant-swipe-reply) {
+  transform: translateX(0);
+}
+.assistant-swipe-time {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 76px;
+  color: var(--color-foreground-subtle);
+  font-size: var(--mobile-font-sm);
+  line-height: 20px;
+  text-align: right;
+  white-space: nowrap;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(94px);
+}
+.assistant-swipe-reply {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-top: -16px;
+  border-radius: 50%;
+  color: var(--color-foreground-subtle);
+  pointer-events: none;
+  opacity: 0;
+  transition: background 160ms ease;
+}
+[data-reply-ready="true"] > .assistant-swipe-reply {
+  color: var(--mobile-accent);
+  background: var(--mobile-fill);
+}
+.assistant-message-row[data-message-swipe="time"] > .assistant-swipe-time {
+  visibility: visible;
+}
+.assistant-chat[data-layout="mobile"] .assistant-message-row[data-message-swipe] > * {
+  transition: none;
+  will-change: transform, opacity;
+}
+/* Auxiliary panels keep their space below the floating controls. */
+.assistant-chat[data-layout="mobile"]:has(
+  > .assistant-error,
+  > .assistant-details .assistant-worker,
+  .mobile-assistant-notices
+) .assistant-heading {
+  min-height: calc(var(--mobile-header-height) + var(--mobile-safe-top));
+}
+.assistant-chat[data-layout="mobile"]:has(
+  > .assistant-error,
+  > .assistant-details .assistant-worker,
+  .mobile-assistant-notices
+) .assistant-messages {
+  padding-top: 12px;
+  scroll-padding-top: 12px;
+}
+.assistant-chat[data-layout="mobile"] .assistant-message {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: var(--radius-m-bubble);
+  font-size: 15px;
+  line-height: 22px;
+  flex-shrink: 0;
+}
+.assistant-chat[data-layout="mobile"] .assistant-message-assistant {
+  align-self: flex-start;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-m-ink);
+}
+.assistant-chat[data-layout="mobile"] :is(.assistant-message-assistant, .assistant-message-user) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.assistant-chat[data-layout="mobile"] .assistant-message-user {
+  border-bottom-right-radius: 6px;
+  background: var(--color-m-bubble-user);
+  color: var(--color-m-bubble-user-ink);
+}
+.assistant-chat[data-layout="mobile"] .assistant-message-status {
+  align-self: center;
+  text-align: center;
+  padding: 4px 12px;
+  font-size: var(--mobile-font-sm);
+}
+.assistant-chat[data-layout="mobile"] :is(.assistant-card, .assistant-input) {
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+  padding: 16px;
+  border: 0;
+  border-radius: 25px;
+  background: var(--mobile-fill);
+  gap: 10px;
+  overflow-wrap: anywhere;
+}
+.assistant-chat[data-layout="mobile"] .assistant-card {
+  width: 88%;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 18px;
+  gap: 6px 8px;
+}
+.assistant-chat[data-layout="mobile"] .assistant-card > p {
+  grid-column: 1 / -1;
+}
+.assistant-chat[data-layout="mobile"] .assistant-card-heading {
+  font-size: var(--mobile-font-md);
+  gap: 8px;
+}
+.assistant-chat[data-layout="mobile"] .assistant-card-context {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--mobile-font-xs);
+  line-height: 1.5;
+}
+.assistant-card-project {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 40%;
+}
+.assistant-card-project > svg,
+.assistant-card-provider {
+  flex-shrink: 0;
+}
+.assistant-card-provider {
+  display: inline-flex;
+  align-items: center;
+}
+.assistant-card-project > span,
+.assistant-card-model {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.assistant-chat[data-layout="mobile"] :is(.assistant-card-title strong, .assistant-card-context) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.assistant-chat[data-layout="mobile"] .assistant-card [role="status"] {
+  padding: 3px 6px;
+  border-radius: 20px;
+  background: var(--mobile-card);
+  font-size: 10px;
+  flex-shrink: 0;
+  opacity: 1;
+}
+.assistant-chat[data-layout="mobile"]
+  .assistant-card[data-status="completed"]
+  [role="status"] {
+  color: var(--color-m-success);
+}
+.assistant-chat[data-layout="mobile"]
+  .assistant-card[data-status="running"]
+  [role="status"] {
+  color: var(--mobile-accent);
+}
+.assistant-chat[data-layout="mobile"]
+  .assistant-card[data-status="failed"]
+  [role="status"] {
+  color: var(--color-m-danger);
+}
+.assistant-chat[data-layout="mobile"] .assistant-card button {
+  grid-area: 1 / 2;
+  width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 22px;
+  background: transparent;
+  padding: 0;
+}
+.assistant-chat[data-layout="mobile"] .assistant-input button {
+  min-height: 44px;
+  border-radius: 16px;
+}
+.mobile-assistant-welcome {
+  margin: auto;
+  max-width: 265px;
+  text-align: center;
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-assistant-welcome > span {
+  display: inline-flex;
+  margin-bottom: 18px;
+  color: var(--mobile-accent);
+}
+.mobile-assistant-welcome h2 {
+  font-size: 22px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-m-ink);
+}
+.mobile-assistant-welcome p {
+  margin-top: 10px;
+  line-height: 1.65;
+  font-size: var(--mobile-font-md);
+}
+.mobile-assistant-notices {
+  display: grid;
+  gap: 4px;
+  padding: 4px 20px 8px;
+  font-size: var(--mobile-font-sm);
+  opacity: 0.65;
+}
+.assistant-chat[data-layout="mobile"] .assistant-error {
+  flex-shrink: 0;
+  max-height: 25%;
+  overflow: auto;
+  margin: 4px 18px 8px;
+  padding: 12px 8px 12px 16px;
+  border-radius: 20px;
+  font-size: var(--mobile-font-md);
+}
+.assistant-chat[data-layout="mobile"] .assistant-error button {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+}
+.assistant-chat[data-layout="mobile"]
+  .assistant-error
+  .composer-notice-dismiss {
+  width: 44px;
+  height: 44px;
+}
+.mobile-assistant-overlay .mobile-assistant-disable {
+  color: var(--color-m-danger);
+}
+.mobile-assistant-compose-dock {
+  --mobile-dock-inset: max(14px, var(--mobile-safe-bottom) - var(--mobile-keyboard-height));
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(0px - var(--mobile-keyboard-layout));
+  z-index: 1;
+  padding: 8px 20px 14px;
+  transform: translateY(calc(0px - var(--mobile-keyboard-offset) - var(--mobile-dock-inset) + 14px));
+  background: transparent;
+  pointer-events: none;
+}
+.mobile-assistant-compose-dock > * {
+  pointer-events: auto;
+}
+.assistant-chat[data-layout="mobile"] .mobile-assistant-compose-dock > .assistant-error {
+  margin: 0 0 12px;
+  max-height: 25dvh;
+  background: color-mix(in srgb, var(--color-m-danger) 10%, var(--color-m-card));
+}
+.assistant-chat[data-layout="mobile"] .mobile-assistant-reply-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--color-m-app) 20%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.assistant-chat[data-layout="mobile"] .mobile-assistant-reply-backdrop[data-active="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+.mobile-assistant-reply-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0 16px;
+}
+.mobile-assistant-reply-preview blockquote {
+  width: fit-content;
+  max-width: 88%;
+  min-width: 0;
+  max-height: min(200px, 24dvh);
+  margin: 0;
+  padding: 13px 16px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-radius: 25px;
+  background: var(--mobile-fill);
+  font-size: var(--mobile-font-lg);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.assistant-chat[data-layout="mobile"] .mobile-assistant-reply-cancel {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--mobile-card);
+  color: var(--color-foreground-subtle);
+}
+html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-compose {
+  width: 100%;
+  /* The card is opaque; a backdrop filter only made every keystroke repaint
+     through blur and refraction. */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  min-height: 52px;
+  padding: 8px;
+  border: 0;
+  border-radius: 26px;
+  background: var(--m-composer-fill);
+  box-shadow: var(--m-navigation-shadow);
+}
+.mobile-assistant-compose-row {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  align-items: center;
+}
+.mobile-assistant-attachments.mobile-composer-attachments {
+  /* Keep thumbnails and the remove buttons' touch targets inside the scroller. */
+  padding: 10px 10px 12px;
+}
+.mobile-assistant-attachments .attachment-chip-thumbnail {
+  object-fit: contain;
+}
+html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-compose textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 28px;
+  max-height: min(168px, 25dvh);
+  height: 28px;
+  width: auto;
+  border: 0;
+  border-radius: 0;
+  transition: none;
+  font-size: 16px;
+  line-height: 24px;
+  caret-color: var(--m-control-ink);
+  margin-block: 0;
+  padding: 2px 5px;
+}
+html[data-mobile-skin] .assistant-chat[data-layout="mobile"]
+  :is(.mobile-assistant-add, .mobile-assistant-send) {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  padding: 0;
+  background: transparent;
+  width: var(--m-control-icon);
+  height: var(--m-control-icon);
+  min-height: var(--m-control-icon);
+  border-radius: var(--m-control-pill);
+}
+html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-send {
+  background: var(--m-control-send);
+  color: #fff;
+}
+.assistant-chat[data-layout="mobile"] .mobile-assistant-send:disabled {
+  background: var(--mobile-fill);
+  color: var(--color-m-ink);
+}
+.assistant-chat[data-layout="mobile"] .mobile-assistant-send[aria-busy="true"] {
+  background: var(--mobile-accent);
+  color: var(--mobile-accent-foreground);
+  opacity: 1;
+}
+.mobile-assistant-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+.assistant-chat[data-layout="mobile"] .mobile-assistant-retry {
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 8px;
+  border-radius: 22px;
+  color: var(--mobile-accent);
+}
+/* Sheets portal beside the chat, so settings styles use their own roots. */
+.mobile-sheet:has(> .mobile-sheet-content > .mobile-assistant-settings-page) {
+  /* Keep the top fixed through native resize at the end of keyboard motion. */
+  height: max(0px, calc(100% - max(
+    calc(var(--mobile-viewport-full, 100dvh) * 0.1),
+    calc(var(--mobile-safe-top) + 12px)
+  )));
+  max-height: 100%;
+  padding: 8px 0 0;
+}
+.mobile-sheet-content:has(> .mobile-assistant-settings-page) {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+}
+.mobile-assistant-settings-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding-inline: var(--mobile-safe-left) var(--mobile-safe-right);
+}
+.mobile-assistant-settings-header {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 8px;
+  flex-shrink: 0;
+}
+.mobile-assistant-settings-header [data-ui="icon-button"] {
+  border-radius: 50%;
+  padding: 0;
+  background: var(--mobile-card);
+}
+.mobile-assistant-settings-header strong {
+  text-align: center;
+  font-size: var(--mobile-font-xl);
+}
+.mobile-assistant-settings-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-body {
+  padding: 8px 12px 16px;
+  gap: 12px;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-section {
+  padding: 0;
+  border: 0;
+  gap: 10px;
+}
+/* Collapsible sections keep their spacing inside the fold (see assistant.css). */
+.assistant-settings[data-layout="mobile"] .assistant-settings-section[data-open] {
+  gap: 0;
+}
+.assistant-settings[data-layout="mobile"]
+  .assistant-settings-section
+  > .zen-fold-item
+  > *::before {
+  height: 22px;
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-section > header {
+  padding-inline: 4px;
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-section h3 {
+  font-size: var(--mobile-font-md);
+  font-weight: var(--font-weight-medium);
+  opacity: 0.6;
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-section > p {
+  margin: 0;
+  padding-inline: 4px;
+}
+.assistant-settings[data-layout="mobile"]
+  label:not(.assistant-check, .assistant-chip) {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--mobile-card);
+  font-size: var(--mobile-font-md);
+  color: var(--color-m-ink-secondary);
+  gap: 8px;
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-row {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.assistant-settings[data-layout="mobile"] .assistant-field {
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: var(--mobile-card);
+}
+.assistant-settings[data-layout="mobile"]
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  min-height: 46px;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 8px 10px;
+  outline: none;
+  background: var(--mobile-fill);
+  font-size: var(--mobile-font-xl);
+  line-height: 1.5;
+  color: var(--color-m-ink);
+  transition: border-color 160ms ease;
+}
+.assistant-settings[data-layout="mobile"]
+  :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus {
+  border-color: color-mix(in srgb, var(--color-m-ink) 28%, transparent);
+}
+.assistant-settings[data-layout="mobile"]
+  :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea)[aria-invalid="true"] {
+  border-color: var(--color-m-danger);
+}
+.assistant-settings[data-layout="mobile"]
+  :is(input, textarea)::placeholder {
+  color: var(--color-m-ink-tertiary);
+}
+.assistant-settings[data-layout="mobile"] select {
+  padding-inline-end: 20px;
+}
+.assistant-settings[data-layout="mobile"] select option {
+  color: var(--color-m-ink);
+  background: var(--color-m-app);
+}
+.assistant-settings[data-layout="mobile"] textarea {
+  min-height: 96px;
+  max-height: 240px;
+  field-sizing: content;
+  overflow-y: auto;
+  resize: none;
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-disclosure {
+  flex: 1;
+  min-height: 44px;
+  font-size: var(--mobile-font-lg);
+  font-weight: var(--font-weight-medium);
+}
+.assistant-settings[data-layout="mobile"] .assistant-chip > span {
+  padding: 8px 10px;
+  font-size: var(--mobile-font-md);
+  background: var(--mobile-fill);
+  border-color: transparent;
+}
+.assistant-settings[data-layout="mobile"] .assistant-chip > input:checked + span {
+  background: var(--mobile-accent);
+  color: var(--mobile-accent-foreground);
+}
+.mobile-assistant-settings-actions {
+  flex-shrink: 0;
+  --collapse-easing: var(--mobile-keyboard-easing, ease);
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-footer {
+  padding: 8px 12px max(12px, var(--mobile-safe-bottom));
+  flex-wrap: wrap;
+  border: 0;
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-footer > button {
+  min-height: 44px;
+}
+.assistant-settings[data-layout="mobile"]
+  .assistant-settings-footer
+  button[type="submit"] {
+  flex: 1;
+  min-height: 48px;
+  border-radius: 24px;
+  background: var(--mobile-accent);
+  color: var(--mobile-accent-foreground);
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-group {
+  min-width: 0;
+  gap: 10px;
+  padding: 8px 0;
+}
+.assistant-settings[data-layout="mobile"] .assistant-settings-group-title {
+  padding-inline: 4px;
+  font-size: var(--mobile-font-md);
+  opacity: 0.6;
+}
+.assistant-settings[data-layout="mobile"] .assistant-check-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.assistant-settings[data-layout="mobile"] .assistant-check {
+  min-height: 46px;
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: var(--mobile-card);
+  font-size: var(--mobile-font-md);
+  overflow-wrap: anywhere;
+}
+.assistant-settings[data-layout="mobile"] .assistant-check input[type="checkbox"] {
+  appearance: none;
+  flex-shrink: 0;
+  width: 44px;
+  height: 26px;
+  border-radius: 15px;
+  background: var(--mobile-fill);
+  position: relative;
+  transition: background 180ms ease;
+  cursor: pointer;
+}
+.assistant-settings[data-layout="mobile"]
+  .assistant-check
+  input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px #0002;
+}
+.assistant-settings[data-layout="mobile"]
+  .assistant-check
+  input[type="checkbox"]:checked {
+  background: var(--mobile-accent);
+}
+.assistant-settings[data-layout="mobile"]
+  .assistant-check
+  input[type="checkbox"]:checked::after {
+  transform: translateX(18px);
+}
+.assistant-settings[data-layout="mobile"] small {
+  font-size: var(--mobile-font-sm);
+  line-height: 1.5;
+}
+.assistant-chat[data-layout="mobile"] .assistant-worker {
+  height: min(45dvh, 420px);
+  font-size: var(--mobile-font-md);
+}
+.assistant-chat[data-layout="mobile"] .assistant-worker > header {
+  gap: 6px;
+  padding: 10px 16px;
+}
+.assistant-chat[data-layout="mobile"] .assistant-worker > header strong {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.assistant-chat[data-layout="mobile"] .assistant-worker > header button {
+  min-width: 44px;
+  min-height: 44px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-header.mobile-assistant-header[data-floating="true"]
+    > .mobile-header-title[data-capsule="true"] {
+    transform: none;
+    transition: none;
+  }
+  .assistant-chat[data-layout="mobile"] .assistant-message-row > * {
+    transition: none;
+  }
+  .mobile-assistant-activity-label {
+    animation: none;
+  }
+  .mobile-assistant-overlay,
+  .mobile-assistant-compose-dock,
+  .assistant-chat[data-layout="mobile"] .mobile-assistant-reply-backdrop,
+  .assistant-settings[data-layout="mobile"]
+    :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+  .assistant-settings[data-layout="mobile"] .assistant-check input[type="checkbox"],
+  .assistant-settings[data-layout="mobile"]
+    .assistant-check
+    input[type="checkbox"]::after {
+    transition: none;
+  }
+}
+
+/* Settings pickers open a bottom sheet instead of the native select. */
+.mobile-assistant-select {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.mobile-assistant-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 12px 0 14px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--mobile-card);
+  color: var(--color-m-ink);
+  font: inherit;
+  font-size: var(--mobile-font-lg);
+  text-align: start;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.mobile-assistant-select-trigger:active:not(:disabled) {
+  --mobile-press-color: var(--mobile-fill);
+}
+.mobile-assistant-select-trigger:disabled {
+  opacity: 0.5;
+}
+.mobile-assistant-select-trigger:focus-visible {
+  outline: 2px solid var(--mobile-accent);
+  outline-offset: 1px;
+}
+.mobile-assistant-select-label {
+  flex-shrink: 0;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mobile-assistant-select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-assistant-select-value[data-empty] {
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-assistant-select-trigger > svg {
+  flex-shrink: 0;
+  opacity: 0.45;
+}
+.mobile-assistant-select-hint {
+  padding-inline: 14px;
+  font-size: var(--mobile-font-sm);
+  line-height: 1.5;
+  opacity: 0.6;
+}
+/* Inside another card (the interval unit), the row drops its own surface. */
+.mobile-assistant-select[data-compact] .mobile-assistant-select-trigger {
+  min-height: 36px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.mobile-assistant-select[data-compact] .mobile-assistant-select-value {
+  text-align: start;
+  color: var(--color-m-ink);
+}
+.mobile-assistant-select-search {
+  width: 100%;
+  min-height: 40px;
+  margin-bottom: 6px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--mobile-fill);
+  color: inherit;
+  font: inherit;
+  font-size: var(--mobile-font-xl);
+}
+.mobile-assistant-select-options {
+  display: grid;
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.mobile-assistant-select-empty {
+  padding: 12px;
+  font-size: var(--mobile-font-md);
+  opacity: 0.6;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-assistant-select-trigger {
+    transition: none;
+  }
+}
+
+.mobile-assistant-memory-detail {
+  display: grid;
+  gap: 12px;
+  padding: 4px 16px calc(16px + var(--mobile-safe-bottom));
+}
+.mobile-assistant-memory-detail textarea {
+  min-height: 140px;
+  max-height: 50vh;
+  padding: 12px;
+  border: 1px solid var(--mobile-separator);
+  border-radius: 12px;
+  background: var(--mobile-card);
+  color: inherit;
+  font-size: var(--mobile-font-lg);
+  line-height: 1.5;
+  resize: none;
+  overflow-wrap: anywhere;
+}
+.mobile-assistant-memory-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.mobile-assistant-memory-forget {
+  color: var(--color-m-danger);
+}
+.mobile-assistant-memory-actions [data-ui="button"]:disabled {
+  opacity: 0.45;
+}
+
+/* Watched conversations keep touch-sized rows and controls on phones. */
+.assistant-settings[data-layout="mobile"] .assistant-watched-session {
+  min-height: 44px;
+  font-size: var(--mobile-font-md);
+}
+.assistant-settings[data-layout="mobile"] .assistant-watched-session > button {
+  width: 36px;
+  height: 36px;
+}
+.assistant-settings[data-layout="mobile"]
+  :is(.assistant-watch-bulk-actions, .assistant-watch-project-picker)
+  > button {
+  min-height: 36px;
+  padding-inline: 12px;
+}
+.assistant-settings[data-layout="mobile"] .assistant-watch-project {
+  min-height: 44px;
+}
+
+html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assistant-message-assistant .agent-markdown {
+  font-family: var(--m-message-serif);
+  font-size: 17px;
+  font-weight: var(--font-weight-normal);
+  line-height: 1.5;
+  color: var(--color-m-ink);
+}
+html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-send[data-stop="true"] {
+  background: var(--m-control-primary);
+  color: var(--m-control-primary-ink);
+}

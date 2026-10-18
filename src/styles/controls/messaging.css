@@ -1,0 +1,95 @@
+/* Explicit component identities keep app cards independent of questions/tools. */
+html[data-skin] [data-ui="app-surface"] {
+  border: .5px solid var(--messaging-border);
+  border-radius: 10px;
+  background: var(--color-card);
+}
+html[data-skin] [data-ui="app-header"] {
+  min-height: var(--app-header-height);
+  padding-inline: 12px;
+  gap: 8px;
+  border-bottom: .5px solid var(--messaging-divider);
+}
+html[data-skin] [data-ui="app-header"][data-size="fullscreen"] {
+  min-height: var(--app-header-fullscreen-height);
+  padding: 16px 17px;
+}
+html[data-skin] [data-ui="app-name"] {
+  gap: 8px;
+  font-size: var(--text-body-sm);
+  line-height: var(--text-body-sm--line-height);
+  color: var(--color-ink);
+}
+html[data-skin] [data-ui="app-icon"] {
+  width: 20px;
+  height: 20px;
+  border: .5px solid var(--messaging-divider);
+  border-radius: 4px;
+  background: var(--color-card);
+}
+html[data-skin] [data-ui="app-metadata"] {
+  font-size: var(--text-body-xs);
+  line-height: 17px;
+  color: var(--color-ink-tertiary);
+}
+html[data-skin] [data-ui="app-skeleton"] {
+  --skeleton-size: var(--app-skeleton-size);
+  gap: 20px;
+  padding: 24px 20px;
+}
+html[data-skin] [data-ui="app-skeleton"][data-size="fullscreen"] {
+  --skeleton-size: var(--app-skeleton-fullscreen-size);
+}
+html[data-skin] [data-ui="app-skeleton-row"] {
+  gap: 20px;
+  opacity: .2;
+}
+html[data-skin] :is([data-ui="app-skeleton-avatar"], [data-ui="app-skeleton-cell"]) {
+  height: var(--skeleton-size);
+  background: var(--messaging-skeleton);
+}
+html[data-skin] [data-ui="app-skeleton-avatar"] {
+  width: var(--skeleton-size);
+}
+html[data-skin] [data-ui="navigation-item"][data-compact] {
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+}
+html[data-skin] [data-ui="navigation-item"][data-compact] [data-ui="navigation-icon"] {
+  width: 20px;
+  height: 20px;
+}
+
+html[data-skin] [data-ui="app-surface"] > [data-ui="app-skeleton"] {
+  gap: 24px;
+  padding: 24px;
+}
+html[data-skin] [data-ui="message-input-field"] {
+  min-width: 0;
+  width: 100%;
+  resize: none;
+  background: transparent;
+  outline: none;
+  font: 400 16px/22px var(--font-sans);
+  color: var(--color-ink);
+}
+html[data-skin] [data-ui="message-input-field"]::placeholder {
+  color: var(--color-ink-tertiary);
+  opacity: .75;
+}
+html[data-skin] [data-ui="message-input"][data-layout="multiline"] > [data-ui="message-input-field"] {
+  display: block;
+  min-height: 55px;
+  padding: 16px 20px;
+}
+html[data-skin] [data-ui="message-input-actions"] {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 12px;
+}
+html[data-skin] [data-ui="message-input"]:focus-within {
+  border-color: var(--color-ink-tertiary);
+}

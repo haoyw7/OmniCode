@@ -1,0 +1,28 @@
+/* Import directly from the component: Tailwind's Lightning CSS optimizer warns
+ * on valid ::highlight() selectors. Vite's CSS pipeline preserves these rules.
+ * https://github.com/parcel-bundler/lightningcss/issues/1300 */
+::highlight(monocode-transcript-search-match) {
+  background-color: color-mix(in srgb, #e2c08d 46%, transparent);
+}
+
+::highlight(monocode-transcript-search-current) {
+  background-color: color-mix(in srgb, var(--color-accent) 62%, transparent);
+}
+/* A sent bubble already shares the transcript's scroll curve. Keep the
+   mobile row entrance from adding a second, faster movement or replaying. */
+.agent-transcript .transcript-turn .user-message-row[data-prompt-motion="smooth"] {
+  animation: none;
+}
+
+/* Keep status attached to the AI turn. Only automatic following engages the
+   bottom sticky edge; a reader's scroll restores ordinary document flow. */
+.agent-transcript[data-follow-latest="true"] .transcript-live-footer-collapse {
+  position: sticky;
+  bottom: 2rem;
+  z-index: 1;
+}
+/* Fast output can grow ahead of the scroll curve. Clip that pending content
+   at the status edge so the plain status text never overlaps the reply. */
+.agent-transcript[data-follow-latest="true"] [data-live-footer-clipped] {
+  clip-path: inset(0 0 var(--live-footer-clip-bottom) 0);
+}

@@ -1,0 +1,88 @@
+/* Shared prompt bar above a composer (ComposerNotice.tsx), desktop and mobile.
+ * Base rules sit in :where() so surfaces can still position and size them. */
+:where(.composer-notice) {
+  --composer-notice-tint: #e04844;
+  --composer-notice-text: #d75555;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--composer-notice-tint) 20%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--composer-notice-tint) 8%, transparent);
+  color: var(--composer-notice-text);
+  line-height: 1.5;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+:where(.composer-notice[data-tone="warning"]) {
+  --composer-notice-tint: #f59e0b;
+  --composer-notice-text: #d99a1e;
+}
+:where(.composer-notice[data-tone="info"]) {
+  --composer-notice-tint: var(--color-accent);
+  --composer-notice-text: var(--color-content);
+}
+:where(.composer-notice[data-size="compact"]) {
+  gap: 8px;
+  padding: 4px 4px 4px 10px;
+  border-radius: 10px;
+  font-size: var(--text-ui-sm);
+}
+:where(.composer-notice-icon) {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  color: var(--composer-notice-tint);
+}
+:where(.composer-notice-message) {
+  flex: 1;
+  min-width: 0;
+}
+:where(.composer-notice-detail) {
+  margin-inline-start: 8px;
+  opacity: 0.7;
+}
+:where(.composer-notice-action, .composer-notice-dismiss) {
+  flex-shrink: 0;
+  border-radius: 8px;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    opacity 140ms ease;
+}
+:where(.composer-notice-action) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--composer-notice-tint) 14%, transparent);
+  white-space: nowrap;
+}
+:where(.composer-notice[data-size="compact"] .composer-notice-action) {
+  padding: 3px 8px;
+}
+:where(.composer-notice-dismiss) {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+}
+:where(.composer-notice[data-size="compact"] .composer-notice-dismiss) {
+  width: 24px;
+  height: 24px;
+}
+:where(.composer-notice-action, .composer-notice-dismiss):not(:disabled):hover {
+  background: color-mix(in srgb, var(--composer-notice-tint) 22%, transparent);
+}
+:where(.composer-notice-action, .composer-notice-dismiss):disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+:where(.composer-notice-action, .composer-notice-dismiss):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--composer-notice-tint) 60%, transparent);
+  outline-offset: 1px;
+}

@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101b2e" />
+    <meta
+      name="description"
+      content="OmniCode，把编程智能体、项目和日常工作放在一起。开源的桌面与移动工作区，支持 Claude Code、Codex、OpenCode、Pi 与 omp。"
+    />
+    <title>OmniCode — 你的智能体，你的工作区</title>
+    <link rel="icon" href="assets/mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main" data-en="Skip to content">跳转到正文</a>
+    <svg
+      class="icon-definitions"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <symbol id="arrow" viewBox="0 0 24 24">
+          <path d="M5 12h14m-6-6 6 6-6 6" />
+        </symbol>
+        <symbol id="download" viewBox="0 0 24 24">
+          <path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4" />
+        </symbol>
+        <symbol id="code" viewBox="0 0 24 24">
+          <path d="m8 7-5 5 5 5m8-10 5 5-5 5M14 4l-4 16" />
+        </symbol>
+        <symbol id="branch" viewBox="0 0 24 24">
+          <circle cx="6" cy="5" r="2" />
+          <circle cx="18" cy="6" r="2" />
+          <circle cx="6" cy="19" r="2" />
+          <path d="M6 7v10m12-9c0 6-12 3-12 9" />
+        </symbol>
+        <symbol id="spark" viewBox="0 0 24 24">
+          <path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z" />
+        </symbol>
+        <symbol id="terminal" viewBox="0 0 24 24">
+          <path d="m4 6 6 6-6 6m9 0h7" />
+        </symbol>
+        <symbol id="check" viewBox="0 0 24 24">
+          <path d="m5 12 4 4L19 6" />
+        </symbol>
+        <symbol id="copy" viewBox="0 0 24 24">
+          <rect x="8" y="8" width="12" height="12" rx="2" />
+          <path d="M15 8V4H4v11h4" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div class="hero-background" aria-hidden="true"></div>
+    <header class="header wrap">
+      <a
+        class="brand"
+        href="#"
+        aria-label="OmniCode 首页"
+        data-en-aria="OmniCode home"
+        ><img src="assets/wordmark.svg" alt="OmniCode" width="156" height="28"
+      /></a>
+      <nav aria-label="主导航" data-en-aria="Main navigation">
+        <a href="#workspace" data-en="Workspace">工作区</a>
+        <a href="#features" data-en="Features">功能</a>
+        <a
+          href="https://github.com/yyy0107/ohmymonocode/blob/main/CONTRIBUTING.md"
+          data-en="Contributing"
+          >开发指南</a
+        >
+        <a class="nav-github" href="https://github.com/yyy0107/ohmymonocode"
+          >GitHub <span aria-hidden="true">↗</span></a
+        >
+      </nav>
+      <div class="language" role="group" aria-label="语言 / Language">
+        <button type="button" data-language="zh-CN" aria-pressed="true">
+          中</button
+        ><button type="button" data-language="en" aria-pressed="false">
+          EN
+        </button>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div class="eyebrow">
+          <span class="status-dot"></span
+          ><span data-en="OPEN SOURCE. OPEN POSSIBILITIES."
+            >开源，向更多可能开放</span
+          >
+        </div>
+        <h1 id="hero-title">
+          OmniCode<br /><span data-en="Your agents. Your workspace."
+            >你的智能体，你的工作区。</span
+          >
+        </h1>
+        <p
+          class="hero-description"
+          data-en="From writing code to getting everyday work done. Bring your favorite agents, projects, and ideas together in one place."
+        >
+          从编写代码，到处理日常工作。<br />让你熟悉的智能体、项目与想法，在同一个地方协作。
+        </p>
+        <div class="hero-actions">
+          <a
+            class="button button-light"
+            href="https://github.com/yyy0107/ohmymonocode/releases"
+            ><svg><use href="#download" /></svg
+            ><span data-en="Get OmniCode">下载 OmniCode</span></a
+          ><a class="text-link" href="#workspace"
+            ><span data-en="Explore the workspace">探索工作区</span
+            ><svg><use href="#arrow" /></svg
+          ></a>
+        </div>
+        <p
+          class="hero-note"
+          data-en="Desktop & mobile · Bring your own agent CLI"
+        >
+          桌面与移动端 · 使用你已安装的智能体 CLI
+        </p>
+
+        <div class="workspace-preview" id="workspace">
+          <div class="window-bar">
+            <div class="window-dots" aria-hidden="true">
+              <i></i><i></i><i></i>
+            </div>
+            <span>OmniCode</span
+            ><span class="preview-label" data-en="Illustrative workspace"
+              >工作区示意</span
+            >
+          </div>
+          <div class="workspace-body">
+            <aside
+              class="demo-sidebar"
+              aria-label="工作区示意导航"
+              data-en-aria="Illustrative workspace navigation"
+            >
+              <img
+                src="assets/wordmark.svg"
+                alt="OmniCode"
+                width="126"
+                height="23"
+              />
+              <div class="demo-new">
+                <span>＋</span><span data-en="New conversation">新建会话</span>
+              </div>
+              <div class="demo-nav">
+                <svg><use href="#spark" /></svg
+                ><span data-en="Personal assistant">个人助理</span>
+              </div>
+              <div class="demo-nav">
+                <svg><use href="#terminal" /></svg
+                ><span data-en="Automations">自动化</span>
+              </div>
+              <div class="sidebar-label" data-en="PROJECTS">项目</div>
+              <div class="project-name">
+                <svg><use href="#code" /></svg>omnicode <span>⌄</span>
+              </div>
+              <div class="session active">
+                <span class="agent-symbol codex" aria-label="Codex">◈</span
+                ><span data-en="Build the next idea">实现下一个想法</span>
+              </div>
+              <div class="session">
+                <span class="agent-symbol claude" aria-label="Claude Code"
+                  >✳</span
+                ><span data-en="Review workspace changes">审查工作区改动</span>
+              </div>
+              <div class="session">
+                <span class="agent-symbol pi" aria-label="Pi">π</span
+                ><span data-en="Explore project structure">了解项目结构</span>
+              </div>
+              <div class="sidebar-bottom">
+                <img
+                  src="assets/omi.svg"
+                  width="44"
+                  height="44"
+                  alt="Omi"
+                /><span data-en="Ready when you are.">准备好，和你一起。</span>
+              </div>
+            </aside>
+            <div class="demo-conversation">
+              <div class="pane-title">
+                <span
+                  ><span class="agent-symbol codex">◈</span>
+                  <span data-en="Build the next idea"
+                    >实现下一个想法</span
+                  ></span
+                ><svg><use href="#branch" /></svg>
+              </div>
+              <div class="conversation-content">
+                <div
+                  class="user-message"
+                  data-en="Help me build a homepage for this project."
+                >
+                  帮我为这个项目做一个官网。
+                </div>
+                <div class="assistant-identity">
+                  <img
+                    src="assets/mark.svg"
+                    width="22"
+                    height="22"
+                    alt=""
+                  /><strong>OmniCode</strong
+                  ><span data-en="Workspace">工作区</span>
+                </div>
+                <p
+                  class="assistant-lead"
+                  data-en="Let's turn your idea into something real."
+                >
+                  让想法，成为可以看见的作品。
+                </p>
+                <p
+                  class="assistant-copy"
+                  data-en="Understand the project, write the code, and review each change — without leaving your workspace."
+                >
+                  从了解项目、编写代码，到检查每一次改动，都可以在这个工作区里完成。
+                </p>
+                <div class="activity">
+                  <svg><use href="#check" /></svg
+                  ><span data-en="Explore project files">了解项目文件</span
+                  ><span>README.md</span>
+                </div>
+                <div class="activity">
+                  <svg><use href="#check" /></svg
+                  ><span data-en="Create the homepage">创建官网页面</span
+                  ><span>index.html</span>
+                </div>
+                <div class="change-summary">
+                  <svg><use href="#code" /></svg
+                  ><span>website / index.html</span
+                  ><span class="added">+128</span
+                  ><span class="removed">−6</span>
+                </div>
+              </div>
+              <div class="demo-composer">
+                <span data-en="What should we build next?"
+                  >下一个想法，一起实现。</span
+                >
+                <div>
+                  <span
+                    >＋ <svg><use href="#branch" /></svg> main</span
+                  ><span>Codex <span class="send-indicator">↑</span></span>
+                </div>
+              </div>
+            </div>
+            <aside
+              class="demo-editor"
+              aria-label="代码示意"
+              data-en-aria="Illustrative code"
+            >
+              <div class="pane-title">
+                <span
+                  ><svg><use href="#code" /></svg> index.html</span
+                ><span class="added">+128</span>
+              </div>
+              <div class="editor-code">
+                <div>
+                  <b>01</b
+                  ><span class="syntax-muted">&lt;!doctype html&gt;</span>
+                </div>
+                <div>
+                  <b>02</b
+                  ><span>&lt;<em>html</em> lang=<i>"zh-CN"</i>&gt;</span>
+                </div>
+                <div>
+                  <b>03</b><span>&nbsp;&nbsp;&lt;<em>main</em>&gt;</span>
+                </div>
+                <div class="code-added">
+                  <b>04</b
+                  ><span
+                    >&nbsp;&nbsp;&nbsp;&nbsp;&lt;<em>h1</em>&gt;Hello,
+                    idea.&lt;/<em>h1</em>&gt;</span
+                  >
+                </div>
+                <div class="code-added">
+                  <b>05</b
+                  ><span
+                    >&nbsp;&nbsp;&nbsp;&nbsp;&lt;<em>p</em>&gt;Built with
+                    you.&lt;/<em>p</em>&gt;</span
+                  >
+                </div>
+                <div>
+                  <b>06</b><span>&nbsp;&nbsp;&lt;/<em>main</em>&gt;</span>
+                </div>
+                <div><b>07</b><span>&lt;/<em>html</em>&gt;</span></div>
+              </div>
+              <div class="terminal-demo">
+                <div>
+                  <svg><use href="#terminal" /></svg
+                  ><span data-en="Terminal">终端</span>
+                </div>
+                <p>
+                  <span>~/omnicode</span>
+                  <span class="syntax-muted">on</span> main
+                </p>
+                <p><span class="added">❯</span> git diff --stat</p>
+                <p class="syntax-muted">website/index.html | 134</p>
+                <p>
+                  <span class="added">❯</span> <span class="cursor">▍</span>
+                </p>
+              </div>
+            </aside>
+          </div>
+        </div>
+        <div class="providers">
+          <p data-en="FAMILIAR AGENTS. ONE PLACE TO WORK.">
+            熟悉的智能体，同一个工作区
+          </p>
+          <div>
+            <span><b class="claude">✳</b> Claude Code</span
+            ><span><b>◈</b> Codex</span><span><b>⌘</b> OpenCode</span
+            ><span><b class="pi">π</b> Pi</span><span><b>›_</b> omp</span>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="features wrap"
+        id="features"
+        aria-labelledby="features-title"
+      >
+        <div class="section-heading">
+          <span class="kicker" data-en="BUILT AROUND YOUR WORK"
+            >围绕你的工作展开</span
+          >
+          <h2 id="features-title" data-en="Less switching. More creating.">
+            少一点切换，多一点创造。
+          </h2>
+          <p
+            data-en="From the first conversation to the next commit, keep your context close."
+          >
+            从第一句对话，到下一次提交，让工作始终连贯。
+          </p>
+        </div>
+        <article class="feature-wide">
+          <div class="feature-copy">
+            <span class="feature-number">01 / WORKSPACE</span>
+            <h3 data-en="A place for the whole project.">
+              一个项目，<br />一个完整的工作现场。
+            </h3>
+            <p
+              data-en="Conversations, files, terminals, Git branches, and worktrees stay together. Keep the tools you need side by side."
+            >
+              会话、文件、终端、Git 分支与
+              worktree，在同一个工作区各就各位。自由分屏，让需要的内容并排呈现。
+            </p>
+            <a
+              class="text-link"
+              href="https://github.com/yyy0107/ohmymonocode"
+              ><span data-en="Meet OmniCode">了解项目</span
+              ><svg><use href="#arrow" /></svg
+            ></a>
+          </div>
+        </article>
+        <div class="feature-grid">
+          <article class="feature-card assistant-card">
+            <span class="feature-number">02 / ASSISTANT</span>
+            <h3 data-en="Make room for the bigger picture.">
+              写代码之外，也照顾日常。
+            </h3>
+            <p
+              data-en="Delegate tasks, follow conversations, manage reminders, and edit memories. Keep your assistant close to the work that matters."
+            >
+              委派任务、关注会话、管理提醒和编辑记忆。让个人助理与你的项目一起，融入每天的工作。
+            </p>
+            <div class="assistant-visual">
+              <div class="orbit orbit-one"></div>
+              <div class="orbit orbit-two"></div>
+              <img
+                src="assets/omi.svg"
+                alt="Omi 吉祥物"
+                data-en-alt="Omi mascot"
+                width="112"
+                height="112"
+              /><span class="orbit-label label-one" data-en="Notes">笔记</span
+              ><span class="orbit-label label-two" data-en="Reminders"
+                >提醒</span
+              ><span class="orbit-label label-three" data-en="Memory">记忆</span
+              ><span class="orbit-label label-four" data-en="Inbox"
+                >收件箱</span
+              >
+            </div>
+          </article>
+          <article class="feature-card mobile-card">
+            <div>
+              <span class="feature-number">03 / CONNECTED</span>
+              <h3 data-en="Your workspace, within reach.">
+                离开桌面，工作仍在身边。
+              </h3>
+              <p
+                data-en="Connect desktop and mobile through a shared Host. Access your project conversations wherever you pick up your work."
+              >
+                通过共享
+                Host，在桌面与移动端访问项目会话。换一块屏幕，也能接上之前的思路。
+              </p>
+              <a
+                class="text-link"
+                href="https://github.com/yyy0107/ohmymonocode/blob/main/mobile/README.md"
+                ><span data-en="Connect your devices">连接设备</span
+                ><svg><use href="#arrow" /></svg
+              ></a>
+            </div>
+          </article>
+        </div>
+        <div class="workflow-strip">
+          <svg><use href="#branch" /></svg>
+          <div>
+            <h3 data-en="Build your own rhythm.">把重复的工作，交给工作流。</h3>
+            <p
+              data-en="Notes, inbox, automations, and workflows — connected to your everyday projects."
+            >
+              笔记、收件箱、自动化与工作流，让日常任务有序推进。
+            </p>
+          </div>
+          <a
+            class="text-link"
+            href="https://github.com/yyy0107/ohmymonocode/blob/main/CONTRIBUTING.md"
+            ><span data-en="Read the contribution guide">阅读开发指南</span
+            ><svg><use href="#arrow" /></svg
+          ></a>
+        </div>
+      </section>
+
+      <section
+        class="developer wrap"
+        id="developers"
+        aria-labelledby="developer-title"
+      >
+        <div class="section-heading">
+          <span class="kicker" data-en="OPEN SOURCE, IN YOUR HANDS"
+            >开源，也由你掌握</span
+          >
+          <h2 id="developer-title" data-en="Start with an idea. Make it yours.">
+            从一个想法开始，构建你的版本。
+          </h2>
+          <p
+            data-en="Explore the source, shape the experience, and make OmniCode part of your workflow."
+          >
+            查看源码，按自己的习惯调整，让 OmniCode 成为你的工作方式。
+          </p>
+        </div>
+        <div class="setup-grid">
+          <div class="setup-copy">
+            <h3 data-en="Run from source">从源码运行</h3>
+            <p
+              data-en="Install and sign in to a supported agent CLI first. Source development requires Node.js 24+, stable Rust, and your platform's Tauri dependencies."
+            >
+              先安装并登录一个支持的智能体 CLI。源码开发需要 Node.js 24+、稳定版
+              Rust 与对应平台的 Tauri 原生依赖。
+            </p>
+            <a
+              class="text-link"
+              href="https://github.com/yyy0107/ohmymonocode/blob/main/CONTRIBUTING.md#development"
+              ><span data-en="Read the setup guide">阅读安装指南</span
+              ><svg><use href="#arrow" /></svg
+            ></a>
+          </div>
+          <div class="code-block">
+            <div class="code-heading">
+              <span
+                ><svg><use href="#terminal" /></svg
+                ><span data-en="Your terminal">你的终端</span></span
+              ><button type="button" id="copy-command">
+                <svg><use href="#copy" /></svg><span data-en="Copy">复制</span>
+              </button>
+            </div>
+            <pre><code id="install-command">git clone https://github.com/yyy0107/ohmymonocode.git
+cd ohmymonocode
+npm ci
+npm run tauri dev</code></pre>
+            <span
+              id="copy-status"
+              class="copy-status"
+              role="status"
+              aria-live="polite"
+            ></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="closing wrap">
+        <img src="assets/mark.svg" width="58" height="58" alt="" />
+        <h2 data-en="Your next idea starts here.">下一个想法，从这里开始。</h2>
+        <p data-en="Bring your favorite agents. Make something that matters.">
+          带上你熟悉的智能体，一起做点有意思的事。
+        </p>
+        <div class="hero-actions">
+          <a
+            class="button button-light"
+            href="https://github.com/yyy0107/ohmymonocode/releases"
+            ><svg><use href="#download" /></svg
+            ><span data-en="Get OmniCode">下载 OmniCode</span></a
+          ><a
+            class="button button-outline"
+            href="https://github.com/yyy0107/ohmymonocode"
+            ><span data-en="View on GitHub">在 GitHub 查看</span
+            ><span aria-hidden="true">↗</span></a
+          >
+        </div>
+        <p
+          class="download-note"
+          data-en="Available versions and platforms are listed in GitHub Releases."
+        >
+          可下载版本与支持平台，以 GitHub Releases 附件为准。
+        </p>
+      </section>
+    </main>
+    <footer class="footer wrap">
+      <div>
+        <a href="#" aria-label="OmniCode 首页" data-en-aria="OmniCode home"
+          ><img
+            src="assets/wordmark.svg"
+            alt="OmniCode"
+            width="130"
+            height="24"
+        /></a>
+        <p
+          data-en="An independently maintained fork of MonoCode. Built with gratitude to its contributors."
+        >
+          基于 MonoCode 的个人维护分支，感谢上游作者与贡献者。
+        </p>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/yyy0107/ohmymonocode/blob/main/LICENSE"
+          >MIT License</a
+        ><a
+          href="https://github.com/yyy0107/ohmymonocode/blob/main/NOTICE"
+          data-en="Acknowledgements"
+          >开源致谢</a
+        ><a
+          href="https://github.com/yyy0107/ohmymonocode/issues"
+          data-en="Feedback"
+          >问题反馈</a
+        >
+      </div>
+    </footer>
+  </body>
+</html>

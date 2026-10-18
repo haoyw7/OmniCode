@@ -1,0 +1,142 @@
+.mobile-content.mobile-settings-accounts {
+  /* Keep the scroll area below the floating navigation controls. */
+  margin-top: calc(var(--mobile-header-height) + var(--mobile-safe-top));
+  padding-top: 12px;
+  scroll-padding-top: 12px;
+}
+.mobile-provider-accounts {
+  display: grid;
+  flex-shrink: 0;
+  gap: 18px;
+  min-width: 0;
+}
+.mobile-account-toolbar,
+.mobile-account-provider,
+.mobile-account-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mobile-account-toolbar {
+  justify-content: space-between;
+  margin: 0 2px;
+}
+.mobile-account-toolbar p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--mobile-font-md);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-account-toolbar [data-ui="icon-button"] {
+  background: var(--mobile-card);
+  border-radius: 50%;
+}
+.mobile-account-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--mobile-fill);
+  font-size: var(--mobile-font-md);
+  line-height: 1.6;
+}
+.mobile-account-notice > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--mobile-accent);
+}
+.mobile-account-notice strong {
+  font-weight: var(--font-weight-semibold);
+}
+.mobile-account-notice p {
+  margin-top: 4px;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-settings-group h2.mobile-account-provider {
+  margin: 0 4px 10px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-account-list {
+  display: grid;
+  gap: 10px;
+}
+.mobile-account-row {
+  min-width: 0;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--mobile-card);
+}
+.mobile-account-heading {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.mobile-account-heading strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: var(--font-weight-semibold);
+  margin-right: auto;
+}
+.mobile-account-plan,
+.mobile-account-badge {
+  flex-shrink: 0;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: var(--mobile-font-xs);
+  line-height: 1.6;
+}
+.mobile-account-plan {
+  color: var(--color-m-ink-secondary);
+  background: var(--mobile-fill);
+}
+.mobile-account-badge {
+  color: var(--mobile-accent);
+  background: var(--mobile-selected);
+}
+.mobile-account-identity {
+  max-width: 100%;
+  font-size: var(--mobile-font-md);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.mobile-account-detail {
+  margin-top: 3px;
+  font-size: var(--mobile-font-sm);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-account-status {
+  margin-top: 10px;
+  max-width: 100%;
+  font-size: var(--mobile-font-sm);
+}
+.mobile-account-updated {
+  margin-top: 12px;
+  font-size: var(--mobile-font-xs);
+  color: var(--color-m-ink-tertiary);
+}
+.mobile-account-meters {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+}
+.mobile-account-meter > div:first-child {
+  font-size: var(--mobile-font-sm);
+  line-height: 16px;
+}
+.mobile-account-meter [role="progressbar"] {
+  height: 5px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-provider-accounts [role="progressbar"] > span {
+    transition: none;
+  }
+  .mobile-provider-accounts .animate-spin,
+  .mobile-provider-accounts .animate-pulse {
+    animation: none;
+  }
+}
