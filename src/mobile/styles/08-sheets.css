@@ -459,23 +459,32 @@
 .mobile-status {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 4px 10px 8px;
+  gap: 14px;
+  padding: 4px 10px 12px;
 }
 
-.mobile-status-context { border: 1px solid var(--color-m-hairline); border-radius: 12px; padding: 0 10px; }
-.mobile-status-context-toggle { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; text-align: left; }
-.mobile-status-context-toggle > :last-child { margin-left: auto; color: var(--color-m-ink-secondary); }
-.mobile-status [data-ui="context-breakdown"] { padding-bottom: 10px; font-size: var(--mobile-font-md); line-height: 1.4; font-variant-numeric: tabular-nums; }
-.mobile-status .context-breakdown-summary { display: flex; justify-content: space-between; gap: 8px; }
-.mobile-status .context-breakdown-summary > :last-child,
+.mobile-status-context { display: flex; flex-direction: column; min-width: 0; }
+.mobile-status-context-toggle { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 36px; text-align: left; }
+.mobile-status-context-toggle strong { margin-right: auto; font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px)); font-weight: var(--font-weight-semibold); }
+.mobile-status-context-toggle > span,
+.mobile-status-context-toggle > svg,
+.mobile-status-context-total { color: var(--color-m-ink-secondary); }
+.mobile-status-context-toggle > span { font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px)); font-variant-numeric: tabular-nums; }
+.mobile-status-context > .context-breakdown-bar { margin: 4px 0 8px; }
+.mobile-status-context-total { font-size: calc(var(--mobile-font-sm) + var(--mobile-popup-font-step, 0px)); font-variant-numeric: tabular-nums; }
+.mobile-status-context-details { padding-top: 10px; }
+.mobile-status-context-details > p { font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px)); color: var(--color-m-ink-secondary); }
+/* The header already shows the summary and bar; the details list the categories. */
+.mobile-status-context-details [data-ui="context-breakdown"] > .context-breakdown-summary,
+.mobile-status-context-details [data-ui="context-breakdown"] > .context-breakdown-bar { display: none; }
+.mobile-status [data-ui="context-breakdown"] { font-size: var(--mobile-font-md); line-height: 1.4; font-variant-numeric: tabular-nums; }
 .mobile-status .context-breakdown-tokens,
 .mobile-status .context-breakdown-footer { color: var(--color-m-ink-secondary); }
-.mobile-status .context-breakdown-bar { display: flex; height: 4px; margin: 6px 0 8px; overflow: hidden; border-radius: 2px; background: var(--color-m-hairline); }
+.mobile-status .context-breakdown-bar { display: flex; height: 6px; overflow: hidden; border-radius: 3px; background: var(--color-m-hairline); }
 .mobile-status .context-breakdown-bar > span { flex-shrink: 0; }
-.mobile-status .context-breakdown-row { display: grid; grid-template-columns: 8px minmax(0, 1fr) 3.3em 3.5em; gap: 7px; align-items: baseline; padding: 4px 0; }
-.mobile-status .context-breakdown-name { min-width: 0; overflow-wrap: anywhere; }
-.mobile-status .context-breakdown-swatch { width: 8px; height: 10px; border-radius: 2px; }
+.mobile-status .context-breakdown-row { display: grid; grid-template-columns: 8px minmax(0, 1fr) 3.6em 3.6em; gap: 10px; align-items: center; padding: 5px 0; }
+.mobile-status .context-breakdown-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mobile-status .context-breakdown-swatch { width: 8px; height: 8px; border-radius: 50%; }
 .mobile-status .context-breakdown-tokens,
 .mobile-status .context-breakdown-percent { text-align: right; white-space: nowrap; }
 .mobile-status .context-breakdown-row[data-deferred] { opacity: 0.65; }
@@ -485,6 +494,7 @@
 .mobile-status [data-tone="muted"] { background: var(--color-m-context-muted); }
 .mobile-status [data-tone="buffer"] { background: var(--color-m-context-buffer); }
 .mobile-status [data-tone="free"] { background: var(--color-m-hairline); }
+.mobile-status .context-breakdown-group { border-top: 1px solid var(--color-m-hairline); margin-top: 6px; }
 .mobile-status .context-breakdown-toggle { display: flex; align-items: center; width: 100%; gap: 6px; min-height: 44px; text-align: left; }
 .mobile-status .context-breakdown-toggle > :last-child { margin-left: auto; color: var(--color-m-ink-secondary); }
 .mobile-status-context-toggle:focus-visible,

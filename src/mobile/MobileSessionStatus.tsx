@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useId, useState, type RefObject } from "react";
 import { Check, Copy } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import type {
@@ -8,12 +8,17 @@ import type {
 import {
   contextPercent,
 } from "../features/sessions/model/contextUsage";
+import {
+  contextBreakdownRows,
+  formatContextTokens,
+} from "../features/sessions/model/contextBreakdown";
 import { MobileSheet } from "./MobileSheet";
 import { MobileHostStatus } from "./MobileHostStatus";
 import { mobileTranscriptPlatform } from "./transcriptPlatform";
 import type { HostConnectionStatus } from "./client";
 import { mobileContextUsage } from "./contextUsage";
 import { ContextUsageDetails } from "../features/sessions/ui/ContextUsageDetails";
+import { ContextBreakdownBar } from "../shared/ui/messaging/ContextBreakdown";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
 import { DisclosureChevron } from "../shared/ui/DisclosureChevron";
 import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
@@ -96,9 +101,19 @@ export function MobileSessionStatus({
   const { t } = useTranslation();
   const session = snapshot.session;
   const [contextExpanded, setContextExpanded] = useState(false);
+  const contextDetailsId = useId();
   const directory = session.executionCwd || session.cwd;
   const context = mobileContextUsage(session, catalog);
   const percent = contextPercent(context);
+  const contextRows = context ? contextBreakdownRows(context) : [];
+  const contextSegments = contextRows.length
+    ? contextRows.map((row) => ({
+        tone: row.tone,
+        fraction: row.percent === null ? undefined : row.percent / 100,
+      }))
+    : percent === null
+      ? []
+      : [{ tone: "messages", fraction: percent / 100 }];
   const configuration = configurationForSession(snapshot);
   const { modelName, effort } = configurationLabels(
     catalog,
@@ -137,14 +152,48 @@ export function MobileSessionStatus({
         </div>
         <div className="mobile-menu-divider" role="separator" />
         <section className="mobile-status-context">
-          <button type="button" className="mobile-status-context-toggle" aria-expanded={contextExpanded}
-            onClick={() => setContextExpanded((value) => !value)}>
+          <button
+            type="button"
+            className="mobile-status-context-toggle"
+            aria-expanded={contextExpanded}
+            aria-controls={contextDetailsId}
+            onClick={() => setContextExpanded((value) => !value)}
+          >
             <strong>{t("Context")}</strong>
-            <DisclosureChevron expanded={contextExpanded} className="size-3 shrink-0" />
-            <span>{percent === null ? "—" : `${percent}%`}</span>
+            <span>
+              {percent === null ? "—" : t("{percent}% used", { percent })}
+            </span>
+            <DisclosureChevron
+              expanded={contextExpanded}
+              direction="down"
+              className="size-4 shrink-0"
+            />
           </button>
+          {context && (
+            <>
+              {contextSegments.length > 0 && (
+                <ContextBreakdownBar segments={contextSegments} />
+              )}
+              <small className="mobile-status-context-total">
+                {context.window
+                  ? t("{used} / {window} tokens", {
+                      used: formatContextTokens(context.used),
+                      window: formatContextTokens(context.window),
+                    })
+                  : t("{tokens} tokens", {
+                      tokens: formatContextTokens(context.used),
+                    })}
+              </small>
+            </>
+          )}
           <AnimatedCollapse expanded={contextExpanded}>
-            {context ? <ContextUsageDetails usage={context} /> : <p>{t("Not reported by this agent yet")}</p>}
+            <div id={contextDetailsId} className="mobile-status-context-details">
+              {context ? (
+                <ContextUsageDetails usage={context} />
+              ) : (
+                <p>{t("Not reported by this agent yet")}</p>
+              )}
+            </div>
           </AnimatedCollapse>
         </section>
         <StatusField

@@ -20,18 +20,23 @@ export function ContextBreakdown({ summary, total, rows, groups, footer }: {
   groups: { name: string; rows: ContextBreakdownRow[] }[];
   footer: ReactNode;
 }) {
-  const totalFraction = Math.max(1, rows.reduce((sum, row) => sum + (row.fraction ?? 0), 0));
   return <div data-ui="context-breakdown">
     <div className="context-breakdown-summary"><span>{summary}</span><span>{total}</span></div>
-    <div className="context-breakdown-bar" aria-hidden="true">
-      {rows.map((row, index) => row.fraction ? <span key={index} data-tone={row.tone}
-        style={{ width: `${row.fraction / totalFraction * 100}%` }} /> : null)}
-    </div>
+    <ContextBreakdownBar segments={rows} />
     <div className="context-breakdown-rows">
       {rows.map((row, index) => <UsageRow key={index} row={row} />)}
     </div>
     {groups.map((group) => <ToolGroup key={group.name} {...group} />)}
     <div className="context-breakdown-footer">{footer}</div>
+  </div>;
+}
+
+/** Proportional usage bar; segments share one denominator capped at the window. */
+export function ContextBreakdownBar({ segments }: { segments: Pick<ContextBreakdownRow, "fraction" | "tone">[] }) {
+  const totalFraction = Math.max(1, segments.reduce((sum, row) => sum + (row.fraction ?? 0), 0));
+  return <div className="context-breakdown-bar" aria-hidden="true">
+    {segments.map((row, index) => row.fraction ? <span key={index} data-tone={row.tone}
+      style={{ width: `${row.fraction / totalFraction * 100}%` }} /> : null)}
   </div>;
 }
 
