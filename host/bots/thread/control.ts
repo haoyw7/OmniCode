@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { enforceBotRouting } from "./routing";
 import { currentMachineIO, localMachineIO, machineFs, machinePath, withMachineIO } from "../../machine-io";
 import { parseProjectMachine, projectMachineKey } from "../../../src/integrations/harness/core/machine";
 import type { BotThreadRuntime } from "./index";
@@ -63,7 +64,8 @@ const aliases: Record<string, string> = {
   "files.delete": "delete_path",
 };
 const mutationFields: Record<string, string[]> = {
-  "sessions.create": ["harness", "model", "modelSettings", "runtimeMode"],
+  "sessions.create": ["harness", "model", "modelSettings", "runtimeMode", "executionCwd", "workspace", "sharedReason"],
+  "sessions.integrate": ["verification"],
   "sessions.send": ["text", "attachments", "intent", "playbooks"],
   "sessions.steer": ["text", "runId", "playbooks"],
   "sessions.configure": ["model", "modelSettings", "runtimeMode"],
@@ -721,6 +723,9 @@ async function executeMachineBotAction(
     if (previous.state !== "failed") return readableResult(assistant, previous);
   }
   const wakeup = assistant.currentWakeup();
+  if (["sessions.create", "sessions.send", "sessions.steer"].includes(action) ||
+    (action === "sessions.queue" && ["edit", "steer"].includes(String(input.action))))
+    enforceBotRouting(wakeup, action, session?.session.id, store.actions());
   const resourceOwner = assistant.currentRun?.id ?? `assistant-action:${randomUUID()}`;
   const record: BotAction = {
     id: randomUUID(),
@@ -739,6 +744,7 @@ async function executeMachineBotAction(
       wakeupId: wakeup.id,
     },
     state: "executing",
+    createdAt: Date.now(),
     ...(session
       ? {
           targetRef: {
@@ -766,6 +772,7 @@ async function executeMachineBotAction(
   const persistResult = (result: unknown) => {
     const completed: BotAction = {
       ...record,
+      ...(store.action(requestId)?.worktree ? { worktree: store.action(requestId)!.worktree } : {}),
       state: external ? "accepted" : "completed",
       result: result ?? null,
     };
@@ -916,10 +923,22 @@ async function executeMachineBotAction(
               };
     } else if (action === "sessions.create") {
       if (!projectId) throw new Error("Choose a project");
-      result = await withValidatedHostWorktree(engine.store.project(projectId).cwd, input.executionCwd, () => engine.store.transaction(() => {
+      if (input.workspace !== undefined && !["isolated", "shared"].includes(String(input.workspace))) throw new Error("Invalid task workspace");
+      const { workspace, sharedReason, ...createInput } = input;
+      if (workspace === "shared") id(sharedReason, "shared workspace reason", 1000);
+      else {
+        record.worktree = await engine.botTaskWorktrees.prepare({ botId: store.botId, threadId: store.threadId, requestId }, projectId,
+          input.executionCwd, cwd => engine.generateWorktreeName(projectId, cwd, input.harness, wakeup.text.slice(0, 100000)), () => {
+            additional.add("git.write"); requireAccess();
+          });
+        if (record.worktree) createInput.executionCwd = record.worktree.path;
+      }
+      requireAccess();
+      result = await withValidatedHostWorktree(engine.store.project(projectId).cwd, createInput.executionCwd, () => engine.store.transaction(() => {
+        requireAccess();
         const accepted = engine.assistantCommand(
           {
-            ...input,
+            ...createInput,
             type: "create",
             commandId: `assistant:${record.id}`,
             runtimeMode: input.runtimeMode ?? config.targetRuntimeMode,
@@ -936,6 +955,16 @@ async function executeMachineBotAction(
         store.followCreatedSession(session.projectId, session.session.id);
         return persistResult(accepted);
       }));
+    } else if (action === "sessions.integrate") {
+      if (!session || !store.createdSession(session.session.id)) throw new Error("Only Bot-created tasks can be integrated");
+      additional.add("sessions.read"); requireAccess();
+      const verification = object(input.verification);
+      fields(verification, ["runId", "blockIds", "summary"]);
+      if (!Array.isArray(verification.blockIds) || verification.blockIds.length > 100) throw new Error("Invalid verification evidence");
+      result = await engine.botTaskWorktrees.integrate(session.session.id, {
+        runId: id(verification.runId), summary: id(verification.summary, "verification summary", 4000),
+        blockIds: verification.blockIds.map(value => id(value)),
+      }, requireAccess);
     } else if (action === "sessions.update") {
       if (!session) throw new Error("Choose a session");
       const {
@@ -1079,7 +1108,12 @@ async function executeMachineBotAction(
         "orchestration",
         "queue",
       ].includes(type);
+      const queuedReason = action === "sessions.send" ? engine.assistantAdmission(session, record.origin) : undefined;
       result = engine.assistantCommand(command, record.origin);
+      if (queuedReason) {
+        store.message({ id: `queued:${record.id}`, kind: "status", wakeupId: wakeup.id, code: "task-queued", text: queuedReason });
+        result = { ...(result as object), queued: true, reason: queuedReason };
+      }
     } else {
       fields(input, ["projectId", "command", "args"]);
       if (!projectId) throw new Error("Choose a project");
@@ -1156,6 +1190,7 @@ async function executeMachineBotAction(
     if (!recorded)
       store.putAction({
         ...record,
+        ...(store.action(requestId)?.worktree ? { worktree: store.action(requestId)!.worktree } : {}),
         state: external ? "unknown" : "failed",
         error: error instanceof Error ? error.message : String(error),
       });

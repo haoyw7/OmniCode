@@ -1545,7 +1545,9 @@ it("advertises assistant RPC, enforces device auth and hides the private brain",
   await engine.ready;
   engine.assistant.setCatalog(async () => ["codex"], async () => ({ models: { codex: [{ id: "test", name: "Test" }] }, errors: {} }));
   expect((await call("environment.describe")).value.result.capabilities)
-    .toEqual(expect.arrayContaining(["assistant.v1", "assistant.history", "bots.shell.v1", "bots.v1", "botThreads.v1"]));
+    .toEqual(expect.arrayContaining(["assistant.v1", "assistant.history", "assistant.timeline", "bots.shell.v1", "bots.v1", "botThreads.v1"]));
+  expect((await call("assistant.timeline")).value.result).toEqual({ tasks: [] });
+  expect((await call("assistant.timeline", { limit: 1000 })).value.error).toBeTruthy();
   expect((await call("assistant.get")).value.result).toBeNull();
   expect((await call("assistant.messages", { latest: true })).value.result)
     .toMatchObject({ assistant: null, entries: [], hasMore: false });
@@ -1585,6 +1587,7 @@ it("advertises assistant RPC, enforces device auth and hides the private brain",
   store.revokeToken(first.token);
   expect((await call("assistant.get")).status).toBe(401);
   expect((await call("assistant.messages", { latest: true })).status).toBe(401);
+  expect((await call("assistant.timeline")).status).toBe(401);
   expect((await call("assistant.memoryTopic", { topic: "deploys" })).status).toBe(401);
 });
 

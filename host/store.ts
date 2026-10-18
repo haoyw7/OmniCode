@@ -283,6 +283,14 @@ export class HostStore {
 
   /** Whether a stored session has queued messages, without parsing it. */
   hasQueuedMessages(id: string): boolean {
+    return this.queueIds().has(id);
+  }
+
+  queuedSessionIds(): string[] {
+    return [...this.queueIds()];
+  }
+
+  private queueIds(): Set<string> {
     // Seeded once by a text search: JSON escapes quotes inside strings, so the
     // unescaped key only matches a non-empty queue. Saves keep it current.
     this.queuedSessions ??= new Set(
@@ -291,7 +299,7 @@ export class HostStore {
         .all()
         .map((row) => String(row.id)),
     );
-    return this.queuedSessions.has(id);
+    return this.queuedSessions;
   }
 
   /** The public RPC privacy guard also checks retained retired rows. */

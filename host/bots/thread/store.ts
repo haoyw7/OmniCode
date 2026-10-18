@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import type { BotRouting } from "../../../src/integrations/harness/core/botAutonomy";
 import { botNotificationActivity } from "../../../src/features/bots/model/botNotifications";
 import { followSession } from "../../../src/features/bots/model/botSessions";
 import type { HostStore } from "../../store";
@@ -44,6 +45,9 @@ export type BotThreadRecord = BotConfiguration & {
   sourceCursor: number;
 };
 export type Wakeup = {
+  routing?: BotRouting;
+  /** Frozen at receipt time; later tasks must not retarget an explicit continuation. */
+  routingSessionId?: string;
   id: string;
   kind: "user" | "event" | "schedule";
   text: string;
@@ -327,7 +331,7 @@ export class BotThreadStore {
     text: string,
     attachments: RemoteAttachment[],
     source: WakeupSource = { kind: "client" },
-    { enqueue = true }: { enqueue?: boolean } = {},
+    { enqueue = true, routing, routingSessionId }: { enqueue?: boolean; routing?: BotRouting; routingSessionId?: string } = {},
   ): BotReceipt {
     return this.host.transaction(() => {
       const sig = receiveSignature(text, attachments, source),
@@ -361,6 +365,7 @@ export class BotThreadStore {
           attempts: 0,
           attachments,
           source,
+          ...(routing ? { routing, routingSessionId } : {}),
         },
         `user:${commandId}`,
       );
@@ -447,6 +452,7 @@ export class BotThreadStore {
         (w) =>
           w.id !== id &&
           w.kind === wakeup.kind &&
+          !w.routing && !wakeup.routing &&
           w.state === "pending" &&
           !skip.has(w.id) &&
           (wakeup.kind === "user"

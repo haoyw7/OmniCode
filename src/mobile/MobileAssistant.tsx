@@ -32,6 +32,7 @@ import type {
   BotMessageMenuProps as AssistantMessageMenuProps,
   BotSelectProps as AssistantSelectProps,
   BotSettingsPanelProps as AssistantSettingsPanelProps,
+  BotTimelineProps,
 } from "../features/bots/ui/BotChatChrome";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
 import { Shimmer } from "../shared/ui/Shimmer";
@@ -59,6 +60,7 @@ import { preserveInputFocus, usePreserveInputFocusOnTouch } from "./inputFocus";
 import { useMobileTextareaAutosize } from "./useMobileTextareaAutosize";
 import { keyboardHeight, keyboardMotionRemaining, onKeyboardMotion } from "./keyboardMotion";
 import "./styles/assistant.css";
+import { MobileAssistantTimeline } from "./MobileAssistantTimeline";
 
 const BackHandlers = createContext(new Map<number, () => void>());
 function useAssistantBack(priority: number, open: boolean, close: () => void) {
@@ -81,6 +83,7 @@ function MobileAssistantHeader({
   lifecycle,
   busy,
   onSettings,
+  onTimeline,
   onClose,
   controls,
 }: AssistantHeaderProps) {
@@ -165,6 +168,9 @@ function MobileAssistantHeader({
         align="end"
         onClose={() => setMenuOpen(false)}
       >
+        {onTimeline && <button type="button" className="mobile-sheet-row" onClick={() => action(onTimeline)}>
+          <span>{t("Work history")}</span><ChevronRight size={18} />
+        </button>}
         <button
           type="button"
           className="mobile-sheet-row"
@@ -303,6 +309,9 @@ function useMobileAssistantComposerController({
   const dock = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const files = useRef<HTMLInputElement>(null);
+  const addButton = useRef<HTMLButtonElement>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  useAssistantBack(2, addOpen, () => setAddOpen(false));
   const form = useRef<HTMLFormElement>(null);
   const stoppable = !!onStop && !sending && !draft.trim() && !attachments.length;
   const [renderedAttachments, setRenderedAttachments] = useState(attachments);
@@ -339,6 +348,9 @@ function useMobileAssistantComposerController({
   }, []);
   useMobileTextareaAutosize(input, draft, { minHeight: 28, viewportHeightRatio: 0.25 });
   return {
+    addButton,
+    addOpen,
+    setAddOpen,
     attachDisabled,
     attachments,
     busy,
@@ -373,6 +385,9 @@ type MobileAssistantComposerViewModel = ReturnType<typeof useMobileAssistantComp
 
 function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewModel }) {
   const {
+    addButton,
+    addOpen,
+    setAddOpen,
     attachDisabled,
     attachments,
     busy,
@@ -404,6 +419,14 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
   return (
     <div ref={dock} className="mobile-assistant-compose-dock">
       {errorNotice}
+      <MobileSheet open={addOpen} title="Composer options" placement="anchor" anchor={addButton} width={SHEET_WIDTH.menu} onClose={() => setAddOpen(false)}>
+        <button type="button" className="mobile-sheet-row" disabled={attachDisabled} onClick={() => { setAddOpen(false); files.current?.click(); }}>{t("Attach files")}</button>
+        {["Continue the last task", "Start a separate task"].map(phrase => <button key={phrase} type="button" className="mobile-sheet-row" disabled={inputDisabled} onClick={() => {
+          onDraftChange(`${t(phrase)}${draft.trim() ? `\n${draft}` : ""}`);
+          setAddOpen(false);
+          input.current?.focus();
+        }}>{t(phrase)}</button>)}
+      </MobileSheet>
       <AnimatedCollapse expanded={replyText !== undefined} className="mobile-assistant-reply-collapse">
         <div className="mobile-assistant-reply-preview" aria-label={t("Replying to")}>
           <blockquote>{replyText ?? lastReply.current}</blockquote>
@@ -460,11 +483,13 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
         </AnimatedCollapse>
         <div className="mobile-assistant-compose-row">
           <button
+            ref={addButton}
             type="button"
             className="mobile-assistant-add"
-            aria-label={t("Attach files")}
-            disabled={attachDisabled}
-            onClick={() => files.current?.click()}
+            aria-label={t("Composer options")}
+            aria-expanded={addOpen}
+            disabled={inputDisabled}
+            onClick={() => setAddOpen(open => !open)}
           >
             <Plus size={22} />
           </button>
@@ -782,7 +807,13 @@ function MobileAssistantFeedback({ messages, historyIds, active, busy, scope }: 
   return null;
 }
 
+function MobileAssistantWorkHistory(props: BotTimelineProps) {
+  useAssistantBack(2, props.open, props.onClose);
+  return <MobileAssistantTimeline {...props} />;
+}
+
 const chrome: AssistantChatChrome = {
+  Timeline: MobileAssistantWorkHistory,
   Feedback: MobileAssistantFeedback,
   onSendFeedback: (success) => { void (success ? lightImpact() : attentionHaptic()); },
   Header: MobileAssistantHeader,

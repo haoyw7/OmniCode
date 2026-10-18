@@ -1,6 +1,7 @@
+import type { BotTask } from "../../../integrations/harness/core/botAutonomy";
 import type { ClipboardEventHandler, ComponentType, DragEventHandler, ReactNode } from "react";
 import type { RemoteAttachment, RemoteProvider } from "../../connections/model/protocol";
-import type { BotLifecycle, BotMessage } from "../model/botView";
+import type { BotLifecycle, BotMessage, SessionReference } from "../model/botView";
 
 /** Presentation slots keep Host state and command ownership in AssistantChat. */
 export type BotHeaderProps = {
@@ -17,6 +18,7 @@ export type BotHeaderProps = {
   settingsOpen: boolean;
   busy: boolean;
   onSettings?: () => void;
+  onTimeline?: () => void;
   onClose?: () => void;
   controls?: BotControlsProps;
 };
@@ -69,6 +71,7 @@ export type BotFeedbackProps = {
   scope: string;
 };
 export type BotChatChrome = {
+  Timeline?: ComponentType<BotTimelineProps>;
   Feedback?: ComponentType<BotFeedbackProps>;
   onSendFeedback?: (success: boolean) => void;
   Header: ComponentType<BotHeaderProps>;
@@ -82,6 +85,16 @@ export type BotChatChrome = {
   Select?: ComponentType<BotSelectProps>;
   /** Opens one remembered fact in a panel; desktop falls back to a dialog. */
   MemoryDetail?: ComponentType<BotMemoryDetailProps>;
+};
+export type BotTimelineProps = {
+  open: boolean;
+  tasks: BotTask[];
+  loading: boolean;
+  error?: string;
+  hasMore: boolean;
+  onMore: () => void;
+  onClose: () => void;
+  onViewSession: (ref: SessionReference) => void;
 };
 export type BotMemoryDetailProps = {
   open: boolean;

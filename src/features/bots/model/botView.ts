@@ -5,6 +5,7 @@ import type {
 } from "../../connections/model/protocol";
 import type { UserQuestionPrompt } from "../../sessions/model/userQuestion";
 import type { BotHabit } from "./botHabits";
+import type { BotManagedWorktree } from "../../../integrations/harness/core/botAutonomy";
 
 export const BOT_PERMISSIONS = [
   "catalog.read",
@@ -139,6 +140,8 @@ export type BotConfiguration = {
   modelSettings: Record<string, string>;
   /** Defaults to three concurrent Threads; each Thread still runs one turn at a time. */
   maxConcurrentRuns?: number;
+  /** Idle retention after verified integration, independent of task continuation. Zero disables cleanup. */
+  worktreeIdleMinutes?: number;
   /** Optional absolute execution directory, separate from the Bot memory workspace. */
   workingDirectory?: string;
   tools?: BotToolConfiguration;
@@ -204,6 +207,7 @@ export type BotPatch = Partial<
     | "model"
     | "modelSettings"
     | "maxConcurrentRuns"
+    | "worktreeIdleMinutes"
     | "tools"
     | "callableBotIds"
     | "runtimeMode"
@@ -296,4 +300,6 @@ export type BotAction = {
   result?: unknown;
   error?: string;
   targetRef?: SessionReference;
+  createdAt?: number;
+  worktree?: BotManagedWorktree;
 };

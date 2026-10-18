@@ -26,6 +26,7 @@ type MessageActions = {
   /** Opens a sent non-image file in its own tab, where the client has tabs. */
   onOpenAttachment?: (messageId: string, file: RemoteAttachment) => void;
   onOpen: (ref: SessionReference) => void;
+  onTimeline?: (ref: SessionReference) => void;
   onRespond: (
     message: Extract<BotMessage, { kind: "input" }>,
     answer: object,
@@ -46,6 +47,7 @@ const BotMessageRow = memo(function BotMessageRow({
   busy,
   pending,
   onOpen,
+  onTimeline,
   onRespond,
   bindReply,
   readImage,
@@ -104,6 +106,7 @@ const BotMessageRow = memo(function BotMessageRow({
             key={message.id}
             message={message}
             onOpen={onOpen}
+            onTimeline={onTimeline}
             accessible={accessible}
             mobile={mobile}
           />,

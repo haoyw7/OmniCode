@@ -4,6 +4,8 @@ import type {
   BotPersonaPreset,
   BotReminder,
 } from "../../../src/features/bots/model/botView";
+import type { BotTask } from "../../../src/integrations/harness/core/botAutonomy";
+import { BOT_CONTINUATION_MS, BOT_PARALLEL_LIMIT, canContinueBotTask } from "../../../src/integrations/harness/core/botAutonomy";
 import type { BotThreadRecord, Wakeup } from "./store";
 import type { BotHabit } from "../../../src/features/bots/model/botHabits";
 import { conversationBrief } from "./rotation";
@@ -124,6 +126,7 @@ function personaText(persona: BotPersona | undefined): string {
 }
 
 export type BrainPromptInput = {
+  tasks?: BotTask[];
   config: BotThreadRecord;
   launcher: string;
   actions: readonly string[];
@@ -146,6 +149,7 @@ export type BrainPromptInput = {
 };
 
 export function buildBrainPrompt({
+  tasks = [],
   config,
   launcher,
   actions,
@@ -201,6 +205,11 @@ export function buildBrainPrompt({
       ? `Your previous chat message with the user was ${relativeGap(now - lastExchange.createdAt)}.`
       : "This is your first conversation with the user.",
     `Tasks you delegated: ${running} running, ${queued} queued.`,
+    `Current tasks (reference data): ${JSON.stringify(tasks.map(({ ref, projectName, request, status, activityAt, commit, worktree }) => ({ ref, projectName, request: request.slice(0, 300), status, activityAt, continuable: canContinueBotTask({ status, activityAt }, now), committed: !!commit, worktree })))}`,
+    `Route same-goal corrections and additions to the existing task while running/queued or within ${BOT_CONTINUATION_MS / 3600000} hour of last activity. A quoted task/message takes priority. Prefer sessions.steer or sessions.send (which queues) while it runs. New project, unrelated completed goal, unavailable/archived session, or activity older than the continuation window: create a task. When uncertain, reuse and tell the user briefly that you are continuing the previous work. Independent tasks may run in parallel up to ${BOT_PARALLEL_LIMIT}; excess work queues and you must tell the user. Never run two writers in the same working copy.`,
+    "Code changes default to isolated worktrees through sessions.create. Host uses OmniCode's existing task name generator and worktree creation rules, deriving from the chosen source checkout HEAD. Supply executionCwd only for an existing source worktree; omit it for the project checkout. Reuse the same task and checkout for continuations. For read-only or explicitly shared work use workspace:'shared' with sharedReason. Normal task derivation does not inherit dirty source files; if those are required, explain the constraint and use an explicitly shared task or the existing orchestration mechanism instead of inventing a copy strategy.",
+    "Tell delegated coding agents to validate changes and commit their task output, but not merge, push, delete worktrees or switch the target branch themselves. After a successful completed turn, inspect sessions.get and call sessions.integrate {projectId,sessionId,verification:{runId,blockIds,summary}} with successful verification tool blocks from that latest turn and the checks actually run. This serially integrates committed output into the recorded creation-time target. Conflicts, a changed target branch, dirty target or missing verification preserve output; report the reason and never force/reset. Only confirmed merged, clean and idle Bot-owned checkouts are reclaimed after their separate configured retention window; branches and history remain.",
+    ...(wakeup.routing ? [`HARD ROUTING REQUIREMENT for this input: ${wakeup.routing === "new" ? "Create a new session; never send this input to a pre-existing session." : `Reuse exactly session ${wakeup.routingSessionId ?? "(no previous task available; explain this and ask the user)"}; do not create a replacement. Running tasks receive steering or queued input.`}`] : []),
     reminders.length
       ? `Follow-ups you already promised:\n${reminders.join("\n")}`
       : "You have no pending follow-ups.",

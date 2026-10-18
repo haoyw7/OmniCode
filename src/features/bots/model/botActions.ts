@@ -12,6 +12,7 @@ export const BOT_ACTIONS = [
   "sessions.get",
   "sessions.activity",
   "sessions.create",
+  "sessions.integrate",
   "sessions.send",
   "sessions.steer",
   "sessions.configure",

@@ -3,7 +3,6 @@ import { Button } from "../../shared/ui/forms/Button";
 import { IconButton } from "../../shared/ui/forms/IconButton";
 import { MobileSpinner } from "../MobileSpinner";
 import { saveConnectionAppearance } from "../connectionAppearance";
-import { resolveBotTarget as resolveAssistantTarget } from "../../features/bots/model/botNavigation";
 import { delegateSession } from "../../features/bots/model/delegateSession";
 import { MobileEmpty } from "../MobileEmpty";
 import {
@@ -323,8 +322,8 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           rpc={assistantRpc}
           foreground={foreground}
           onClose={() => setAssistantOpen(false)}
-          onOpen={async ref => {
-            const target = await resolveAssistantTarget(client.connection!.environmentId, ref, assistantRpc);
+          // Only the work-history sheet's advanced entry reaches this callback.
+          onOpen={async (ref, target) => {
             if (target.session.session.orchestrationLeadId) throw new Error("Open orchestration worker details on desktop");
             await openSession(ref.sessionId, ref.projectId);
             setAssistantOpen(false);

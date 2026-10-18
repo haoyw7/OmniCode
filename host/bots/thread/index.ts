@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { currentBotTasks, readBotTimeline } from "./timeline";
+import { detectBotRouting } from "./routing";
 import { mkdir, realpath, stat } from "node:fs/promises";
 import { dirname, isAbsolute, join } from "node:path";
 import type { HostEngine } from "../../engine";
@@ -269,6 +271,10 @@ export class BotThreadRuntime {
         raw.limit === undefined ? 50 : Number(raw.limit),
       );
     }
+    if (method === "assistant.timeline") {
+      fields(raw, ["cursor", "limit", "sessionId"]);
+      return readBotTimeline(this.store, raw, (id, read) => this.engine.machines ? this.engine.machines.forSession(id, read) : read());
+    }
     if (method === "assistant.memory") {
       fields(raw, []);
       if (!this.store.get()) return null;
@@ -336,7 +342,10 @@ export class BotThreadRuntime {
       return receipt;
     }
     resolveAttachments(this.engine.store, attachments);
-    const receipt = this.store.receive(id(raw.commandId), text, attachments, source);
+    const routing = detectBotRouting(text);
+    const routingSessionId = routing === "reuse-last"
+      ? currentBotTasks(this.store).sort((a, b) => b.activityAt - a.activityAt)[0]?.ref.sessionId : undefined;
+    const receipt = this.store.receive(id(raw.commandId), text, attachments, source, { routing, routingSessionId });
     if (!config.paused && ["interrupted", "failed"].includes(config.lifecycle))
       this.store.update({ lifecycle: "idle", error: undefined, brainSessionId: undefined, brainBaseline: undefined, brainGeneration: config.brainGeneration + 1 });
     this.syncQueuedRuns();
@@ -664,6 +673,11 @@ export class BotThreadRuntime {
         text: `The user handed this conversation to you: projectId=${projectId}, sessionId=${sessionId}. It is now followed and can use the permissions enabled in your settings. Start from its latest page (sessions.get with latest:true) and page back through earlier blocks (smaller offsets) only until the user's goals and the current state are clear, then continue those goals. Handle its messages, approvals and questions within your configured permissions. Do not invent a new task if the conversation is already complete.`,
         rootCauseId: wakeupId, state: "pending", createdAt: Date.now(), attempts: 0, refs: [sessionId],
       }, `delegate:${commandId}`);
+      this.store.message({ id: `delegated:${wakeupId}`, kind: "session-card", wakeupId,
+        actionId: `delegate:${commandId}`, ref: { environmentId: this.engine.store.environmentId, projectId, sessionId },
+        title: session.session.title, projectName: this.engine.store.project(projectId).name,
+        harness: session.session.harness as RemoteProvider, model: session.session.model,
+        status: session.status === "running" ? "running" : "accepted" });
       const receipt = { commandId, revision: this.store.get()!.revision, wakeupId };
       this.store.recordReceipt(commandId, sig, receipt);
       return receipt;
@@ -693,6 +707,7 @@ export class BotThreadRuntime {
       "watches",
       "maxAutoTurns",
       "chainWindowMinutes",
+      "worktreeIdleMinutes",
     ]);
     if (patch.name !== undefined) id(patch.name, "name", 100);
     if (patch.avatar !== undefined) {
@@ -738,6 +753,8 @@ export class BotThreadRuntime {
       new Intl.DateTimeFormat("en", {
         timeZone: id(patch.timezone, "timezone"),
       });
+    if (patch.worktreeIdleMinutes !== undefined && (!Number.isSafeInteger(patch.worktreeIdleMinutes) || Number(patch.worktreeIdleMinutes) < 0 || Number(patch.worktreeIdleMinutes) > 10080))
+      throw new Error("Invalid worktree idle retention (0–10080 minutes)");
     if (patch.harness !== undefined && !isRemoteProvider(patch.harness))
       throw new Error("Agent is unavailable");
     if (patch.model !== undefined) id(patch.model, "model", 200);
@@ -1341,6 +1358,7 @@ export class BotThreadRuntime {
         // The claimed wakeup also carries queued messages merged into it.
         wakeup: this.active.kind === "event" ? this.withEventBriefs(this.active, config) : this.active,
         messages,
+        tasks: currentBotTasks(this.store),
         ledger,
         now: Date.now(),
         fresh,
@@ -1637,6 +1655,7 @@ export class BotThreadRuntime {
       active?.kind !== "user" ||
       config.lifecycle !== "running" ||
       incoming?.state !== "pending" ||
+      incoming.routing || active.routing ||
       signature(wakeupSource(active)) !== signature(wakeupSource(incoming))
     )
       return;

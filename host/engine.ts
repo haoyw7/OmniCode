@@ -6,6 +6,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { HostOrchestration, type HostOrchestrationOptions } from "./orchestration";
 import type { BotThreadRuntime } from "./bots/thread";
 import { BotManager } from "./bots/manager";
+import { BOT_PARALLEL_LIMIT } from "../src/integrations/harness/core/botAutonomy";
+import { BotTaskWorktrees } from "./bots/taskWorktrees";
 import { HostImService, type HostImOptions } from "./im-service";
 import { HostWorkflows } from "./workflows/service";
 import type { WorkflowWorkerPort } from "./workflows/driver";
@@ -390,6 +392,7 @@ export class HostEngine {
   /** Keep/Undo checkpoints for edits made by ordinary Host conversations. */
   readonly checkpoints: SessionCheckpoints;
   readonly machines?: HostMachines;
+  readonly botTaskWorktrees: BotTaskWorktrees;
   /** Paths of structured edits that started in each running turn, by tool call. */
   private checkpointCalls = new Map<string, Map<string, string[]>>();
   private checkpointStatusReads = new Map<string, { cwd: string; revision: number; promise: ReturnType<SessionCheckpoints["status"]> }>();
@@ -542,6 +545,19 @@ export class HostEngine {
       ...(options.entry ? { entry: options.entry } : {}),
       ...(options.node ? { node: options.node } : {}),
     });
+    this.botTaskWorktrees = new BotTaskWorktrees(store,
+      (projectId, operation) => {
+        const machine = store.project(projectId).machine;
+        if (machine && !this.machines) throw new Error("The execution machine is unavailable");
+        return this.machines ? this.machines.run(machine, operation) : operation();
+      },
+      (botId, threadId, projectId) => {
+        const config = this.bots?.store.record({ botId, threadId });
+        if (!config?.enabled || config.paused || !config.policy.permissions["git.write"]) return 0;
+        if (config.policy.allowedProjects !== "all" && !config.policy.allowedProjects.includes(projectId)) return 0;
+        return config.worktreeIdleMinutes;
+      },
+      id => this.stopManaged(id));
     this.bots = new BotManager(this, Object.keys(providers) as RemoteProvider[], this.orchestration.ready, options);
     this.assistant = this.bots.defaultAssistant;
     this.im = new HostImService(store, this.assistant, options.im);
@@ -1063,6 +1079,28 @@ export class HostEngine {
     return this.applyCommand(raw, false, undefined, origin, snapshot);
   }
 
+  /** All provider runtime modes can write; shared tasks therefore serialize too. */
+  assistantAdmission(value: HostSession, origin?: import("../src/features/sessions/model/session").TurnOrigin): string | undefined {
+    if (!origin || value.session.assistantOwnerId) return;
+    const running = this.store.runningSessionDirectories().map(entry => this.store.session(entry.id))
+      .filter(entry => !entry.session.assistantOwnerId && entry.session.id !== value.session.id);
+    const owned = running.filter(entry => entry.session.blocks.findLast(block => block.role === "user")?.origin?.assistantId === origin.assistantId);
+    if (value.status !== "running" && owned.length >= BOT_PARALLEL_LIMIT) return "Assistant task queued: the 10-session parallel limit is reached.";
+    const key = projectMachineKey(this.store.project(value.projectId).machine);
+    const cwd = checkoutPath(sessionExecutionCwd(value.session));
+    if (running.some(entry => projectMachineKey(this.store.project(entry.projectId).machine) === key &&
+      checkoutPathsOverlap(checkoutPath(sessionExecutionCwd(entry.session)), cwd)))
+      return "Assistant task queued: another task is writing in this working copy.";
+  }
+
+  resumeAssistantQueues(): void {
+    if (this.closing) return;
+    for (const id of this.store.queuedSessionIds()) {
+      const value = this.store.session(id);
+      if (value.session.queuedMessages?.[0]?.origin && value.status !== "running") this.dispatchQueue(id);
+    }
+  }
+
   stopAssistantBrain(id: string): Promise<void> { return this.stopManaged(id); }
 
   /** Deliver a user follow-up into the assistant brain's running turn; false when it cannot be steered. */
@@ -1314,6 +1352,11 @@ export class HostEngine {
         };
       } else {
         value = this.store.session(command.sessionId);
+        if (command.type === "send" && !value.session.assistantOwnerId) {
+          this.botTaskWorktrees.touch(value.session.id);
+          if ((command.draftBlockId || command.planBlockId || command.queuedMessageId) && this.assistantAdmission(value, origin))
+            throw new Error(this.assistantAdmission(value, origin));
+        }
         if (this.retiring.has(command.sessionId)) throw new Error("This legacy conversation is being deleted");
         assertCheckoutAvailable(this.store, sessionExecutionCwd(value.session));
         if (!managed) this.orchestration.assertSessionWrite(command.sessionId, command.type);
@@ -1384,7 +1427,7 @@ export class HostEngine {
           !command.queuedMessageId &&
           !command.draftBlockId &&
           !command.planBlockId &&
-          (value.status === "running" || value.session.queuedMessages?.length || nativeHolding(value))
+          (value.status === "running" || value.session.queuedMessages?.length || nativeHolding(value) || this.assistantAdmission(value, origin))
         ) {
           const attachments = resolveAttachments(
             this.store,
@@ -1862,6 +1905,7 @@ export class HostEngine {
     )
       return;
     const row = queuedHead(value.session)!;
+    if (this.assistantAdmission(value, row.origin)) return;
     if (row.origin && !this.authorizeAssistantQueued?.(row.origin, value.projectId, value.session.id)) {
       const remaining = value.session.queuedMessages!.map(q => q.id === row.id ? { ...q, blocked: "Assistant message blocked because its permission was revoked." } : q);
       this.save({ ...value, session: { ...value.session, queuedMessages: remaining,
@@ -2443,6 +2487,7 @@ export class HostEngine {
 
   async close(): Promise<void> {
     this.closing = true;
+    await this.botTaskWorktrees.close();
     for (const active of this.running.values()) active.abort.abort();
     this.resourceWaiter.close();
     this.nativeSessions.close();

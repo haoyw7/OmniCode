@@ -1,3 +1,5 @@
+import { Switch } from "../../../shared/ui/forms/Switch";
+import { BOT_WORKTREE_IDLE_MINUTES } from "../../../integrations/harness/core/botAutonomy";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Input } from "../../../shared/ui/forms/Input";
 import {
@@ -335,6 +337,7 @@ export function BotSettings({
   habits,
   im,
   personaSupported = true,
+  autonomySupported = false,
   mobile = false,
   panel = "all",
   submitLabel,
@@ -356,6 +359,7 @@ export function BotSettings({
   im?: { rpc: BotRpc; supported: boolean; active: boolean; assistantEnabled: boolean };
   /** Older Hosts reject personality and time zone fields. */
   personaSupported?: boolean;
+  autonomySupported?: boolean;
   /** Cancels a follow-up the assistant promised; omitted on older Hosts. */
   onCancelReminder?: (reminderId: string) => Promise<void>;
   /** Platform picker; omitted on desktop, which uses the searchable select. */
@@ -396,6 +400,7 @@ export function BotSettings({
   // Permissions and wakeups default sensibly, so they stay folded away.
   const [permissionsOpen, setPermissionsOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
+  const [sessionOptionsOpen, setSessionOptionsOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [habitsOpen, setHabitsOpen] = useState(false);
@@ -479,6 +484,7 @@ export function BotSettings({
       watches: sourceWatches,
       maxAutoTurns,
       chainWindowMinutes,
+      worktreeIdleMinutes,
     } = source;
     const sourceSchedules = schedules ?? [
       value?.schedules[0] ?? defaults.schedule,
@@ -505,6 +511,7 @@ export function BotSettings({
       watches: sourceWatches ?? watches,
       ...(maxAutoTurns ? { maxAutoTurns } : {}),
       ...(chainWindowMinutes ? { chainWindowMinutes } : {}),
+      ...(mobile && autonomySupported && worktreeIdleMinutes !== undefined ? { worktreeIdleMinutes } : {}),
     };
     if (section === "automation") return {
       triggers: result.triggers, schedules: result.schedules, watches: result.watches,
@@ -541,6 +548,8 @@ export function BotSettings({
     chainWindow: section !== "settings" && !inRange(chainWindow, 1, 1440)
       ? "Enter 1–1440 minutes"
       : undefined,
+    worktreeIdle: mobile && autonomySupported && !inRange(draft.worktreeIdleMinutes ?? BOT_WORKTREE_IDLE_MINUTES, 0, 10080)
+      ? "Enter 0–10080 minutes" : undefined,
   };
   const invalid = Object.values(errors).some(Boolean);
   const canSave = !busy && (section === "automation" || (!!draft.harness && !!draft.model)) && dirty;
@@ -568,7 +577,7 @@ export function BotSettings({
       ],
     });
   const revealErrors = () => {
-    const advanced = !!(errors.maxAutoTurns || errors.chainWindow);
+    const advanced = !!(errors.maxAutoTurns || errors.chainWindow || errors.worktreeIdle);
     if (errors.interval || errors.timezone || advanced) {
       setEventsOpen(true);
     }
@@ -678,6 +687,21 @@ export function BotSettings({
             (key) => policy.permissions[key],
           ).length;
           const all = count === group.keys.length;
+          if (mobile && group.label === "Conversations") return (
+            <div className="assistant-settings-group" key={group.label}>
+              <label className="assistant-settings-group-title">
+                {t("Allow the assistant to work for me")}
+                <Switch checked={count > 0} onCheckedChange={checked => setPermissions(group.keys, checked)} />
+              </label>
+              <button type="button" className="assistant-link-button" aria-expanded={sessionOptionsOpen} onClick={() => setSessionOptionsOpen(open => !open)}>{t("More options")}</button>
+              <AnimatedCollapse expanded={sessionOptionsOpen}>
+                <div className="assistant-check-grid">{group.keys.map(key => <label className="assistant-check" key={key}>
+                  <input data-ui="checkbox" type="checkbox" checked={policy.permissions[key]} onChange={e => setPermissions([key], e.target.checked)} />
+                  {t(key === "sessions.create" ? "Start work" : labels[key])}
+                </label>)}</div>
+              </AnimatedCollapse>
+            </div>
+          );
           return (
             <div className="assistant-settings-group" key={group.label}>
               <div className="assistant-settings-group-title">
@@ -1044,7 +1068,16 @@ export function BotSettings({
                 {fieldError(errors.chainWindow)}
               </label>
             </div>
+            {mobile && autonomySupported && <label>
+              {t("Reclaim completed workspaces after (minutes)")}
+              <Input type="number" min={0} max={10080} value={draft.worktreeIdleMinutes ?? BOT_WORKTREE_IDLE_MINUTES}
+                aria-invalid={!!errors.worktreeIdle || undefined}
+                onChange={event => patch({ worktreeIdleMinutes: Number(event.target.value) })} />
+              {fieldError(errors.worktreeIdle)}
+              <small>{t("Only clean, integrated workspaces are reclaimed. 0 keeps them indefinitely.")}</small>
+            </label>}
             <WatchedSessions
+              scopeOnly={mobile}
               active={advancedOpen}
               policy={policy}
               watches={watches}
@@ -1320,6 +1353,7 @@ export function BotSettings({
 }
 
 export function WatchedSessions({
+  scopeOnly = false,
   active,
   policy,
   watches,
@@ -1329,6 +1363,7 @@ export function WatchedSessions({
   onRemove,
   onFollowScope,
 }: {
+  scopeOnly?: boolean;
   active: boolean;
   policy: BotPolicy;
   watches: BotWatch[];
@@ -1427,8 +1462,8 @@ export function WatchedSessions({
     <div className="assistant-field assistant-watch">
       <div className="assistant-watch-header">
         <span className="assistant-field-label">
-          {t("Watched conversations")}
-          {options.length > 0 && (
+          {t(scopeOnly ? "Follow work by scope" : "Watched conversations")}
+          {!scopeOnly && options.length > 0 && (
             <small className="assistant-settings-group-count">
               {options.length}
             </small>
@@ -1571,6 +1606,7 @@ export function WatchedSessions({
           ) : null}
         </>
       )}
+      {!scopeOnly && <>
       {(options.length > 10 || query) && (
         <Input
           type="search"
@@ -1645,6 +1681,7 @@ export function WatchedSessions({
           </button>
         )}
       </div>
+      </>}
       <small className="assistant-watch-note">
         {onFollowScope &&
           `${t(

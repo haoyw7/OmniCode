@@ -309,48 +309,6 @@ html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assist
   border-radius: 18px;
   gap: 6px 8px;
 }
-.assistant-chat[data-layout="mobile"] .assistant-card > p {
-  grid-column: 1 / -1;
-}
-.assistant-chat[data-layout="mobile"] .assistant-card-heading {
-  font-size: var(--mobile-font-md);
-  gap: 8px;
-}
-.assistant-chat[data-layout="mobile"] .assistant-card-context {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--mobile-font-xs);
-  line-height: 1.5;
-}
-.assistant-card-project {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-  max-width: 40%;
-}
-.assistant-card-project > svg,
-.assistant-card-provider {
-  flex-shrink: 0;
-}
-.assistant-card-provider {
-  display: inline-flex;
-  align-items: center;
-}
-.assistant-card-project > span,
-.assistant-card-model {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.assistant-chat[data-layout="mobile"] :is(.assistant-card-title strong, .assistant-card-context) {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow-wrap: normal;
-}
 .assistant-chat[data-layout="mobile"] .assistant-card [role="status"] {
   padding: 3px 6px;
   border-radius: 20px;
@@ -375,12 +333,12 @@ html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assist
   color: var(--color-m-danger);
 }
 .assistant-chat[data-layout="mobile"] .assistant-card button {
-  grid-area: 1 / 2;
-  width: 44px;
+  grid-column: 1 / -1;
+  width: 100%;
   min-height: 44px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 6px;
   border-radius: 22px;
   background: transparent;
@@ -1046,3 +1004,10 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   background: var(--m-control-primary);
   color: var(--m-control-primary-ink);
 }
+
+.mobile-assistant-timeline { padding: 16px; overflow-wrap: anywhere; }
+.mobile-assistant-task { padding-block: 12px; border-bottom: 1px solid var(--mobile-fill); }
+.mobile-assistant-task h3 { font-size: var(--mobile-font-md); font-weight: 600; }
+.mobile-assistant-task time, .mobile-assistant-task footer { font-size: var(--mobile-font-xs); opacity: .75; }
+.mobile-assistant-task p, .mobile-assistant-task ol { margin-block: 8px; }
+.mobile-assistant-task footer { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }

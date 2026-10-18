@@ -225,6 +225,7 @@ export function createHostServer(
       "sessions.orchestration",
       "assistant.v1",
       "assistant.history",
+      "assistant.timeline",
       "assistant.persona",
       "bots.shell.v1",
       "bots.v1",
@@ -748,6 +749,7 @@ export function createHostServer(
           case "assistant.get":
           case "assistant.configure":
           case "assistant.messages":
+          case "assistant.timeline":
           case "assistant.send":
           case "assistant.control":
           case "assistant.respond":

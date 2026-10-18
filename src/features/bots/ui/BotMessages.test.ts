@@ -17,6 +17,20 @@ vi.mock("../../sessions/ui/useTranscriptRenderingPlatform", () => ({
   AfterTextReveal: ({ children }: { children: React.ReactNode }) => children,
 }));
 let root: Root, node: HTMLDivElement;
+
+it.each([true, false])("keeps mobile progress separate from desktop session navigation (%s)", async mobile => {
+  const onOpen = vi.fn(), onTimeline = vi.fn();
+  const ref = { environmentId: "host", projectId: "project", sessionId: "session" };
+  act(() => root.render(createElement(BotMessages, {
+    messages: [{ id: "card", revision: 1, createdAt: 1, kind: "session-card", ref,
+      title: "Task", projectName: "Project", harness: "codex", model: "test", actionId: "action", status: "completed" }],
+    mobile, canRead: true, allowedProjects: "all", busy: false,
+    onOpen, onTimeline, onRespond: vi.fn(), bindReply: () => ({}),
+  })));
+  await act(async () => node.querySelector<HTMLElement>(mobile ? ".assistant-card button > span" : ".assistant-card button")!.click());
+  expect(onOpen).toHaveBeenCalledTimes(mobile ? 0 : 1);
+  expect(onTimeline).toHaveBeenCalledTimes(mobile ? 1 : 0);
+});
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   startMotionClock();

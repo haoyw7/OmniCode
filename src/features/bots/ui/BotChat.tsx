@@ -43,6 +43,7 @@ import { AnimatedCollapse, useCollapseMotion } from "../../../shared/ui/Animated
 import { BotWorkerDetails } from "./BotWorkerDetails";
 import { resolveBotTarget, type BotTarget } from "../model/botNavigation";
 import { botActivityLabel } from "../model/botActivity";
+import type { BotTask, BotTimeline } from "../../../integrations/harness/core/botAutonomy";
 import type {
   BotChatChrome,
   BotControlsProps,
@@ -325,6 +326,55 @@ export function BotChat({
   const [supported, setSupported] = useState<boolean>();
   const [botsShellSupported, setBotsShellSupported] = useState(false);
   const mobile = !!chrome;
+  const [timelineSupported, setTimelineSupported] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelineRef, setTimelineRef] = useState<SessionReference>();
+  const [timelineTasks, setTimelineTasks] = useState<BotTask[]>([]);
+  const [timelineCursor, setTimelineCursor] = useState<string>();
+  const [timelinePageCount, setTimelinePageCount] = useState(1);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [timelineError, setTimelineError] = useState<string>();
+  const [timelineRefresh, setTimelineRefresh] = useState(0);
+  const showTimeline = useCallback((ref?: SessionReference) => {
+    setTimelineRef(ref);
+    setTimelineTasks([]);
+    setTimelinePageCount(1);
+    setTimelineCursor(undefined);
+    setTimelineOpen(true);
+  }, []);
+  useEffect(() => { setTimelineOpen(false); setTimelineSupported(false); }, [rpc]);
+  useEffect(() => {
+    if (!mobile || !timelineOpen || !timelineSupported || !visible) return;
+    let current = true;
+    setTimelineLoading(true);
+    setTimelineError(undefined);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const readPages = async () => {
+      const pages: BotTimeline[] = [];
+      let cursor: string | undefined;
+      for (let index = 0; index < timelinePageCount && current; index++) {
+        const page = await rpc<BotTimeline>("assistant.timeline", {
+          ...(timelineRef ? { sessionId: timelineRef.sessionId } : {}),
+          ...(cursor ? { cursor } : {}),
+        });
+        pages.push(page);
+        cursor = page.nextCursor;
+        if (!cursor) break;
+      }
+      return pages;
+    };
+    void readPages().then(pages => {
+      if (!current) return;
+      setTimelineTasks([...new Map(pages.flatMap(page => page.tasks).map(task => [task.id, task])).values()]);
+      setTimelineCursor(pages.at(-1)?.nextCursor);
+    }).catch(error => { if (current) setTimelineError(botErrorMessage(error)); })
+      .finally(() => {
+        if (!current) return;
+        setTimelineLoading(false);
+        timer = setTimeout(() => setTimelineRefresh(value => value + 1), 2000);
+      });
+    return () => { current = false; clearTimeout(timer); };
+  }, [mobile, timelineOpen, timelineSupported, timelineRef, timelinePageCount, timelineRefresh, rpc, visible]);
   const botsLayout = desktopBots && !mobile && botsShellSupported;
   const composerReadOnly = botsLayout ? botReadOnlyReason : undefined;
   // Personality, local time and promised follow-ups need a newer Host.
@@ -447,6 +497,7 @@ export function BotChat({
         const available =
           descriptor.capabilities?.includes("assistant.v1") ?? false;
         setSupported(available);
+        setTimelineSupported(descriptor.capabilities?.includes("assistant.timeline") ?? false);
         setBotsShellSupported(descriptor.capabilities?.includes("bots.shell.v1") ?? false);
         setPersonaSupported(
           descriptor.capabilities?.includes("assistant.persona") ?? false,
@@ -793,7 +844,7 @@ export function BotChat({
     event.preventDefault();
     attach(files);
   };
-  const activity = botActivityLabel(assistant?.activity);
+  const activity = botActivityLabel(assistant?.activity, mobile);
   const workingLabel = t(activity.key, activity.params);
   const ui = chrome ?? (botsLayout ? desktopBotsChrome : desktopBotsLegacyChrome);
   const replying = mobile && replyText !== undefined;
@@ -916,6 +967,7 @@ export function BotChat({
             settingsOpen={settingsOpen}
             busy={busy}
             onSettings={assistant ? openSettings : undefined}
+            onTimeline={mobile && timelineSupported && assistant?.policy.permissions["sessions.read"] ? () => showTimeline() : undefined}
             onClose={onClose}
             controls={controls}
           />
@@ -973,6 +1025,16 @@ export function BotChat({
             data-bot-details={botsLayout ? settingsShown : undefined}
             data-bot-setup={botsLayout && !assistant || undefined}
           >
+            {mobile && chrome?.Timeline && <chrome.Timeline
+              open={timelineOpen && timelineSupported}
+              tasks={timelineTasks.filter(task => assistant?.policy.permissions["sessions.read"] && (assistant.policy.allowedProjects === "all" || assistant.policy.allowedProjects.includes(task.ref.projectId)))}
+              loading={timelineLoading}
+              error={timelineError}
+              hasMore={!!timelineCursor}
+              onMore={() => { if (timelineCursor) setTimelinePageCount(count => count + 1); }}
+              onClose={() => setTimelineOpen(false)}
+              onViewSession={ref => { setTimelineOpen(false); void open(ref); }}
+            />}
             <SettingsPanel
               open={settingsShown}
               initialSetup={!assistant}
@@ -1010,6 +1072,7 @@ export function BotChat({
                 MemoryDetail={ui.MemoryDetail}
                 Actions={ui.SettingsActions}
                 personaSupported={personaSupported}
+                autonomySupported={timelineSupported}
                 im={{
                   rpc,
                   supported: imSupported,
@@ -1137,6 +1200,7 @@ export function BotChat({
                     mobile={mobile}
                     busy={busy}
                     onOpen={open}
+                    onTimeline={mobile && timelineSupported ? showTimeline : undefined}
                     onRespond={respond}
                     bindReply={replyMenu.bind}
                   />

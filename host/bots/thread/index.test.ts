@@ -1,6 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { execFileSync } from "node:child_process";
 import { afterEach, expect, it, vi } from "vitest";
 import { HostStore } from "../../store";
 import { HostEngine } from "../../engine";
@@ -12,6 +13,99 @@ import type { SendTurnInput } from "../../../src/integrations/harness/core/types
 import { removeWatchedSession } from "../../../src/features/bots/model/botSessions";
 import { fullBotPolicy } from "../../../src/features/bots/model/botView";
 const cleanup: (() => Promise<void>)[] = [];
+it("creates parallel coding tasks through the existing naming and worktree entry points", async () => {
+  const { engine, store, project, directory } = await setup();
+  const git = (...args: string[]) => execFileSync("git", args, { cwd: directory, stdio: "pipe" });
+  git("init", "-q"); git("checkout", "-qb", "feature/source");
+  writeFileSync(join(directory, "base.txt"), "base"); git("add", ".");
+  git("-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-qm", "base");
+  const generate = vi.spyOn(engine.titleModel, "generateBranch").mockResolvedValue("fix-task");
+  const targets = await Promise.all(["isolate-a", "isolate-b"].map(request => executeBotAction(engine.assistant, request, "sessions.create",
+    { projectId: project.id, harness: "codex", model: "test" }, () => true))) as { sessionId: string }[];
+  expect(generate).toHaveBeenCalledTimes(2);
+  expect(targets.map(target => store.session(target.sessionId).session.branch)).toEqual(["mc/fix-task", "mc/fix-task-2"]);
+  for (let i = 0; i < targets.length; i++) await executeBotAction(engine.assistant, `isolated-send-${i}`, "sessions.send", { projectId: project.id, sessionId: targets[i].sessionId, text: "Work" }, () => true);
+  expect(targets.map(target => store.session(target.sessionId).status)).toEqual(["running", "running"]);
+  expect(engine.assistant.store.action("isolate-a")?.worktree).toMatchObject({ targetBranch: "feature/source", state: "working" });
+});
+it("persists edge routing without steering or merging it into another input", async () => {
+  const { engine, provider } = await setup({ steer: true });
+  const receipt = await engine.assistant.rpc("assistant.send", { commandId: "force-new", text: "新开一个，修复登录" }) as { wakeupId: string };
+  expect(engine.assistant.store.wakeup(receipt.wakeupId)).toMatchObject({ routing: "new", state: "pending", text: "新开一个，修复登录" });
+  expect(provider.steer).not.toHaveBeenCalled();
+});
+it("enforces explicit continuation and separation through real control calls", async () => {
+  const { engine, project, turns } = await setup();
+  const original = await executeBotAction(engine.assistant, "original-task", "sessions.create", { projectId: project.id, harness: "codex", model: "test" }, () => true) as { sessionId: string };
+  turns[0].finish();
+  await vi.waitFor(() => expect(engine.assistant.store.get()?.lifecycle).toBe("idle"));
+  const reuse = await engine.assistant.rpc("assistant.send", { commandId: "continue-exact", text: "接着上次那个继续，补测试" }) as { wakeupId: string };
+  await vi.waitFor(() => expect(engine.assistant.store.wakeup(reuse.wakeupId)?.state).toBe("running"));
+  expect(engine.assistant.store.wakeup(reuse.wakeupId)?.routingSessionId).toBe(original.sessionId);
+  await expect(executeBotAction(engine.assistant, "wrong-replacement", "sessions.create", { projectId: project.id, harness: "codex", model: "test" }, () => true)).rejects.toThrow("reuse-required");
+  await vi.waitFor(() => expect(turns).toHaveLength(2));
+  turns[1].finish();
+  await vi.waitFor(() => expect(engine.assistant.store.get()?.lifecycle).toBe("idle"));
+  const fresh = await engine.assistant.rpc("assistant.send", { commandId: "separate-exact", text: "另起一条，修登录" }) as { wakeupId: string };
+  await vi.waitFor(() => expect(engine.assistant.store.wakeup(fresh.wakeupId)?.state).toBe("running"));
+  await expect(executeBotAction(engine.assistant, "wrong-send", "sessions.send", { projectId: project.id, sessionId: original.sessionId, text: "New task" }, () => true)).rejects.toThrow("new-required");
+  expect(engine.assistant.store.action("wrong-send")).toBeUndefined();
+  const created = await executeBotAction(engine.assistant, "separated", "sessions.create", { projectId: project.id, harness: "codex", model: "test" }, () => true) as { sessionId: string };
+  await expect(executeBotAction(engine.assistant, "correct-send", "sessions.send", { projectId: project.id, sessionId: created.sessionId, text: "New task" }, () => true)).resolves.toMatchObject({ sessionId: created.sessionId });
+});
+
+it("queues the eleventh independent task and resumes it after a slot is released", async () => {
+  const { engine, store, directory, turns } = await setup();
+  const targets: string[] = [];
+  for (let index = 0; index < 11; index++) {
+    const cwd = join(directory, `project-${index}`); mkdirSync(cwd);
+    const project = store.addProject(cwd, `P${index}`);
+    const target = await executeBotAction(engine.assistant, `cap-create-${index}`, "sessions.create", { projectId: project.id, harness: "codex", model: "test" }, () => true) as { sessionId: string };
+    targets.push(target.sessionId);
+    await executeBotAction(engine.assistant, `cap-send-${index}`, "sessions.send", { projectId: project.id, sessionId: target.sessionId, text: `Task ${index}` }, () => true);
+  }
+  expect(targets.filter(id => store.session(id).status === "running")).toHaveLength(10);
+  expect(store.session(targets[10]).session.queuedMessages).toHaveLength(1);
+  expect(engine.assistant.store.latestMessages()).toContainEqual(expect.objectContaining({ code: "task-queued" }));
+  turns.find(turn => turn.input.sessionId === targets[0])!.finish();
+  await vi.waitFor(() => expect(store.session(targets[0]).status).toBe("idle"));
+  engine.resumeAssistantQueues();
+  await vi.waitFor(() => expect(store.session(targets[10]).status).toBe("running"));
+  expect(targets.filter(id => store.session(id).status === "running")).toHaveLength(10);
+});
+
+it("serializes two explicitly shared writers in the same checkout", async () => {
+  const { engine, project, store, turns } = await setup();
+  const targets: string[] = [];
+  for (let index = 0; index < 2; index++) {
+    const target = await executeBotAction(engine.assistant, `shared-create-${index}`, "sessions.create", { projectId: project.id, harness: "codex", model: "test", workspace: "shared", sharedReason: "Explicit shared directory task" }, () => true) as { sessionId: string };
+    targets.push(target.sessionId);
+    await executeBotAction(engine.assistant, `shared-send-${index}`, "sessions.send", { projectId: project.id, sessionId: target.sessionId, text: "Work" }, () => true);
+  }
+  expect(store.session(targets[1]).status).toBe("idle");
+  expect(store.session(targets[1]).session.queuedMessages).toHaveLength(1);
+  await vi.waitFor(() => expect(turns.some(turn => turn.input.sessionId === targets[0])).toBe(true));
+  turns.find(turn => turn.input.sessionId === targets[0])!.finish();
+  await vi.waitFor(() => expect(store.session(targets[0]).status).toBe("idle"));
+  engine.resumeAssistantQueues();
+  await vi.waitFor(() => expect(store.session(targets[1]).status).toBe("running"));
+});
+it("pages read-only task history and filters revoked project access", async () => {
+  const { engine, project, store } = await setup();
+  for (let i = 0; i < 3; i++) await executeBotAction(engine.assistant, `timeline-${i}`, "sessions.create",
+    { projectId: project.id, harness: "codex", model: "test" }, () => true);
+  const before = engine.assistant.store.get()!.chatRevision;
+  const page = await engine.assistant.rpc("assistant.timeline", { limit: 2 }) as any;
+  expect(page.tasks).toHaveLength(2);
+  const rest = await engine.assistant.rpc("assistant.timeline", { limit: 2, cursor: page.nextCursor }) as any;
+  expect(rest.tasks).toHaveLength(1);
+  expect(new Set([...page.tasks, ...rest.tasks].map(task => task.id)).size).toBe(3);
+  expect(engine.assistant.store.get()!.chatRevision).toBe(before);
+  await expect(engine.assistant.rpc("assistant.timeline", { cursor: "invalid" })).rejects.toThrow("cursor");
+  const config = engine.assistant.store.get()!;
+  store.transaction(() => engine.assistant.store.update({ policy: { ...config.policy, allowedProjects: [] } }));
+  expect(await engine.assistant.rpc("assistant.timeline", {})).toEqual({ tasks: [] });
+});
 afterEach(async () => {
   for (const fn of cleanup.splice(0)) await fn();
 });

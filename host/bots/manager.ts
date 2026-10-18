@@ -201,6 +201,8 @@ export class BotManager {
 
   private tick(): void {
     if (this.closing) return;
+    this.engine.resumeAssistantQueues();
+    void this.engine.botTaskWorktrees.sweep().catch(error => console.error("Bot worktree maintenance failed", error));
     this.delegations.reconcile();
     this.rooms.reconcile();
     for (const runtime of this.runtimes.values()) void runtime.managedTick();

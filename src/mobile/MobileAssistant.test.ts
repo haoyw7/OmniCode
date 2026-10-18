@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SurfaceVisibilityContext } from "../shared/ui/SurfaceVisibility";
 import { MobileAssistant, type MobileAssistantHandle } from "./MobileAssistant";
+import { botTasks } from "../integrations/harness/core/botAutonomy";
 import {
   fullBotPolicy as fullAssistantPolicy,
   type BotMessage as AssistantMessage,
@@ -41,7 +42,7 @@ async function flush() {
     for (let i = 0; i < 30; i++) await Promise.resolve();
   });
 }
-function fixture() {
+function fixture(timeline = false) {
   let view: AssistantView = {
     id: "a",
     name: "Assistant",
@@ -76,7 +77,8 @@ function fixture() {
   let failSend = false;
   const rpc = vi.fn(async (method: string, params?: any) => {
     if (method === "environment.describe")
-      return { capabilities: ["assistant.v1"] };
+      return { capabilities: ["assistant.v1", ...(timeline ? ["assistant.timeline"] : [])] };
+    if (method === "assistant.timeline") return { tasks: botTasks(messages) };
     if (method === "assistant.get") return view;
     if (method === "assistant.messages")
       return {
@@ -139,10 +141,10 @@ function type(field: HTMLInputElement | HTMLTextAreaElement, text: string) {
     field.dispatchEvent(new Event("input", { bubbles: true }));
   });
 }
-async function mount() {
-  const data = fixture(),
+async function mount(timeline = false) {
+  const data = fixture(timeline),
     ref = createRef<MobileAssistantHandle>(),
-    close = vi.fn();
+    close = vi.fn(), openSession = vi.fn();
   act(() =>
     root.render(
       createElement(MobileAssistant, {
@@ -150,14 +152,41 @@ async function mount() {
         hostName: "Host",
         rpc: data.rpc as AssistantRpc,
         ref,
-        onOpen: () => {},
+        onOpen: openSession,
         onClose: close,
       }),
     ),
   );
   await flush();
-  return { ...data, ref, close };
+  return { ...data, ref, close, openSession };
 }
+
+it("opens read-only work history from a card without resolving or opening its session", async () => {
+  const data = await mount(true);
+  data.messages([{ id: "task", revision: 1, createdAt: 1, kind: "session-card", ref: { environmentId: "host", projectId: "project", sessionId: "task" },
+    projectName: "Project", title: "Task", harness: "codex", model: "test", actionId: "a", status: "completed" }]);
+  await advanceMotionTimers(2000); await flush();
+  act(() => button("View progress").click()); await flush();
+  expect(document.querySelector('[role="dialog"]')?.textContent).toContain("Work history");
+  expect(document.querySelector('[role="dialog"]')?.textContent).toContain("View in conversation");
+  expect(data.openSession).not.toHaveBeenCalled();
+  expect(data.rpc.mock.calls.some(([method]) => method === "sessions.get")).toBe(false);
+  expect(data.rpc.mock.calls.filter(([method]) => method === "assistant.timeline")).toHaveLength(1);
+  act(() => data.ref.current!.back()); await advanceMotionTimers(350);
+  expect(document.querySelector('.mobile-assistant-timeline')).toBeNull();
+  expect(data.close).not.toHaveBeenCalled();
+});
+it("inserts routing shortcuts as ordinary text without changing the send protocol", async () => {
+  const data = await mount();
+  const draft = node.querySelector<HTMLTextAreaElement>('textarea[aria-label="Message assistant"]')!;
+  type(draft, "Fix login");
+  act(() => button("Composer options").click());
+  act(() => button("Start a separate task").click());
+  expect(draft.value).toBe("Start a separate task\nFix login");
+  act(() => button("Send").click()); await flush();
+  expect(data.rpc.mock.calls.find(([method]) => method === "assistant.send")?.[1]).toMatchObject({ text: "Start a separate task\nFix login" });
+  expect(data.rpc.mock.calls.find(([method]) => method === "assistant.send")?.[1]).not.toHaveProperty("routing");
+});
 
 function touch(target: Element, type: string, x: number, y = 100, pointerId = 1) {
   act(() => target.dispatchEvent(new PointerEvent(type, {
@@ -410,6 +439,11 @@ it("keeps time gestures and copy available when replies are disabled", async () 
   expect(button("Copy").disabled).toBe(false);
 });
 it("expands activity inside the center capsule and retains it through closing and rapid restart", async () => {
+  const rect = HTMLElement.prototype.getBoundingClientRect;
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function(this: HTMLElement) {
+    return this.matches(".mobile-assistant-activity-collapse, .mobile-assistant-activity-collapse > div")
+      ? { ...rect.call(this), height: 30, width: 200 } as DOMRect : rect.call(this);
+  });
   const data = await mount();
   const capsule = node.querySelector(".mobile-assistant-header > .mobile-header-title")!;
   const fold = () => capsule.querySelector<HTMLElement>(".mobile-assistant-activity-collapse");
@@ -421,7 +455,7 @@ it("expands activity inside the center capsule and retains it through closing an
   await advanceMotionTimers(2000);
   await flush();
   expect(fold()?.dataset.foldState).toBe("opening");
-  expect(fold()?.textContent).toBe("Reading pi · ncmcli");
+  expect(fold()?.textContent).toBe("Checking progress");
   expect(fold()?.inert).toBe(false);
   expect(node.querySelector(".assistant-messages .assistant-working")).toBeNull();
   data.messages([{
@@ -431,13 +465,13 @@ it("expands activity inside the center capsule and retains it through closing an
   await advanceMotionTimers(350);
   await flush();
   expect(fold()?.dataset.foldState).toBe("open");
-  expect(fold()?.textContent).toBe("Reading pi · ncmcli");
+  expect(fold()?.textContent).toBe("Checking progress");
 
   data.update({ lifecycle: "idle", activity: undefined });
   await advanceMotionTimers(250);
   await flush();
   expect(fold()?.dataset.foldState).toBe("closing");
-  expect(fold()?.textContent).toBe("Reading pi · ncmcli");
+  expect(fold()?.textContent).toBe("Checking progress");
   expect(fold()?.inert).toBe(true);
   expect(fold()?.getAttribute("aria-hidden")).toBe("true");
   await advanceMotionTimers(150);
@@ -478,7 +512,7 @@ it("localizes capsule activity and respects reduced motion", async () => {
   await flush();
   const fold = node.querySelector<HTMLElement>(".mobile-assistant-activity-collapse");
   expect(fold?.dataset.foldState).toBe("open");
-  expect(fold?.textContent).toBe("正在查看「pi · ncmcli」");
+  expect(fold?.textContent).toBe("正在查看进展");
   data.update({ lifecycle: "idle", activity: undefined });
   await advanceMotionTimers(250);
   await flush();
@@ -1014,14 +1048,9 @@ it("shows only the latest compact card for a repeated session", async () => {
   await advanceMotionTimers(2000);
   await flush();
   expect(node.querySelectorAll(".assistant-card")).toHaveLength(1);
-  expect(node.querySelector(".assistant-card-title strong")?.textContent).toBe("Task 3");
-  expect(node.querySelector(".assistant-card button")?.getAttribute("aria-label")).toBe("Open session: Task 3");
-  expect(node.querySelector(".assistant-card button")?.textContent).toBe("");
-  expect(node.querySelector(".assistant-card-project")?.textContent).toBe("Project");
-  expect(node.querySelector(".assistant-card-project svg")).not.toBeNull();
-  expect(node.querySelector(".assistant-card-provider")?.getAttribute("aria-label")).toBe("Codex");
-  expect(node.querySelector(".assistant-card-provider")?.textContent).toBe("");
-  expect(node.querySelector(".assistant-card-model")?.textContent).toBe("gpt-6.1-sol");
+  expect(node.querySelector(".assistant-card")?.textContent).toBe("Project · Completed");
+  expect(node.querySelector(".assistant-card button")).toBeNull();
+  expect(data.rpc.mock.calls.some(([method]) => method === "assistant.timeline")).toBe(false);
 });
 
 it("picks settings values from a sheet and closes it with back", async () => {

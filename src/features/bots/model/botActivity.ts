@@ -5,10 +5,15 @@ export type ActivityLabel = { key: string; params?: Record<string, string> };
 /** Describes the assistant's current platform action in plain words. */
 export function botActivityLabel(
   activity: BotActivity | undefined,
+  taskLanguage = false,
 ): ActivityLabel {
   const action = activity?.action ?? "";
   const project = activity?.projectName;
   const title = activity?.sessionTitle;
+  if (taskLanguage && action === "sessions.create") return { key: "Starting work…" };
+  if (taskLanguage && ["sessions.send", "sessions.steer", "sessions.queue"].includes(action))
+    return project ? { key: "Continuing work in {project}…", params: { project } } : { key: "Continuing the work…" };
+  if (taskLanguage && ["sessions.get", "sessions.activity"].includes(action)) return { key: "Checking progress…" };
   if (action === "sessions.create")
     return project
       ? { key: "Starting a conversation in {project}…", params: { project } }
