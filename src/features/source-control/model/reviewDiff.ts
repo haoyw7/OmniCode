@@ -69,12 +69,17 @@ function exceedsLines(text: string, limit: number) {
 }
 
 export function prepareReviewDiff(diff: ReviewDiff): ReviewLoadedDiff {
+  if (diff.binary || diff.tooLarge) return { ...diff, unified: null };
+  // Git blobs can use LF while a Windows checkout uses CRLF. Compare a
+  // consistent text snapshot, also shared by Pierre and hunk staging so their
+  // character offsets stay aligned. Preserve other whitespace and EOF newlines.
+  const original = diff.original.replace(/\r\n/g, "\n");
+  const current = diff.current.replace(/\r\n/g, "\n");
   return {
     ...diff,
-    unified:
-      diff.binary || diff.tooLarge
-        ? null
-        : buildUnifiedFile(diff.original, diff.current),
+    original,
+    current,
+    unified: buildUnifiedFile(original, current),
   };
 }
 

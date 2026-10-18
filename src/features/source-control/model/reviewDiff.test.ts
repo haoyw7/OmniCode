@@ -109,6 +109,44 @@ describe("review lazy cache", () => {
 });
 
 describe("Pierre line/chunk bridge", () => {
+  it.each([false, true])("ignores checkout line endings when rendering and staging a single edit (reverse: %s)", (reverse) => {
+    const before = Array.from({ length: 30 }, (_, index) => `line ${index + 1}`).join("\n") + "\n";
+    const after = before.replace("line 24\n", "changed\n");
+    const input = {
+      original: reverse ? before.replace(/\n/g, "\r\n") : before,
+      current: reverse ? after : after.replace(/\n/g, "\r\n"),
+      binary: false,
+      tooLarge: false,
+    };
+    const diff = prepareReviewDiff(input);
+    expect(diff.unified).toMatchObject({ additions: 1, deletions: 1 });
+    expect(diff.unified!.blocks.map((block) => block.kind)).toEqual(["fold", "hunk", "fold"]);
+    expect(reviewCommentLine(diff.unified!.lines, "additions", 24)).toMatchObject({
+      kind: "add", text: "changed", newNumber: 24,
+    });
+    const metadata = reviewFileMetadata("file.ts", diff)!;
+    expect(metadata.hunks).toHaveLength(1);
+    expect(metadata.hunks[0]).toMatchObject({ additionLines: 1, deletionLines: 1 });
+    expect(metadata.additionLines.join("")).not.toContain("\r");
+    const [annotation] = reviewStageAnnotations(diff.unified!.lines);
+    expect(stageChunkText(diff.original, diff.current, annotation.metadata, null, LINE_DIFF_CONFIG)).toBe(after);
+    // Preparation must not rewrite the source response or the working file.
+    expect(reverse ? input.original : input.current).toContain("\r\n");
+  });
+
+  it("ignores CRLF-only differences but preserves whitespace and final-newline changes", () => {
+    const compare = (original: string, current: string) =>
+      prepareReviewDiff({ original, current, binary: false, tooLarge: false });
+    expect(compare("one\ntwo\n", "one\r\ntwo\r\n").unified)
+      .toMatchObject({ additions: 0, deletions: 0 });
+    const changed = compare("one\ntwo\n", "one \r\ntwo\r\n");
+    expect(changed.unified).toMatchObject({ additions: 1, deletions: 1 });
+    expect(changed.unified!.lines.find((line) => line.kind === "add")?.text).toBe("one ");
+    expect(compare("one\ntwo\n", "one\r\ntwo").unified)
+      .toMatchObject({ additions: 1, deletions: 1 });
+    expect(compare("one\ntwo\n", "one\rtwo\r\n").current).toBe("one\rtwo\n");
+  });
+
   it("uses patch-only metadata for large sparse edits while preserving absolute line/chunk numbers", () => {
     const original =
       Array.from({ length: 2_000 }, (_, index) => `line ${index + 1}`).join(
