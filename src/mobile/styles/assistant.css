@@ -183,7 +183,19 @@ html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assist
   font-size: 15px;
   line-height: 1.4;
 }
-.assistant-chat[data-layout="mobile"] .assistant-message-row > .assistant-message-assistant {
+/* Assistant replies share the user bubble's shape on the card fill. Prose
+   hugs its text; code blocks and tables take the full column so they keep
+   their own horizontal scrolling instead of being squeezed. */
+html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assistant-message-row > .assistant-message-assistant {
+  width: fit-content;
+  max-width: 92%;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: 24px;
+  background: var(--m-assistant-message-fill);
+}
+html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assistant-message-row
+  > .assistant-message-assistant:has(pre, table, .markdown-code-shell, [data-streamdown="code-block"]) {
   width: 100%;
   max-width: 100%;
 }
@@ -701,11 +713,11 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   font-size: var(--mobile-font-xl);
   line-height: 1.5;
   color: var(--color-m-ink);
-  transition: border-color 160ms ease;
+  transition: border-color 160ms ease, background-color 160ms ease;
 }
 .assistant-settings[data-layout="mobile"]
   :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus {
-  border-color: color-mix(in srgb, var(--color-m-ink) 28%, transparent);
+  background: color-mix(in srgb, var(--color-m-ink) 6%, var(--mobile-fill));
 }
 .assistant-settings[data-layout="mobile"]
   :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea)[aria-invalid="true"] {
@@ -983,7 +995,7 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   min-height: 140px;
   max-height: 50vh;
   padding: 12px;
-  border: 1px solid var(--mobile-separator);
+  border: 0;
   border-radius: 12px;
   background: var(--mobile-card);
   color: inherit;

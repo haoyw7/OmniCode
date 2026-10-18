@@ -18,6 +18,9 @@
   --m-control-send: #c6613f;
   --m-control-off: rgb(120 120 120 / 20%);
   --m-control-shadow: 0 1.5px 3px rgb(0 0 0 / 5%);
+  /* Text fields are bounded by their fill, not a stroke; focus deepens it. */
+  --m-input-fill: color-mix(in srgb, var(--color-m-ink) 7%, var(--color-m-panel));
+  --m-input-fill-focus: color-mix(in srgb, var(--color-m-ink) 12%, var(--color-m-panel));
   --m-switch-width: 64px;
   --m-switch-height: 28px;
   --m-switch-thumb-width: 39px;
@@ -43,6 +46,7 @@ html[data-mobile-skin] {
   --m-message-serif: var(--font-serif);
   --m-message-fill: var(--color-m-bubble-user);
   --m-message-ink: var(--color-m-bubble-user-ink);
+  --m-assistant-message-fill: var(--color-m-card);
   --m-navigation-panel: var(--color-m-panel);
   --m-composer-fill: var(--color-m-composer);
   --m-navigation-control: color-mix(in srgb, var(--color-m-menu) 80%, transparent);

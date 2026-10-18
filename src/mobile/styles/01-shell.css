@@ -174,11 +174,14 @@ body,
 }
 .mobile-app button:focus-visible,
 .mobile-app a:focus-visible,
-.mobile-app input:focus-visible,
-.mobile-app textarea:focus-visible,
-.mobile-app select:focus-visible {
+.mobile-app input:is([type="checkbox"], [type="radio"], [type="range"]):focus-visible {
   outline: 2px solid var(--color-m-focus);
   outline-offset: 2px;
+}
+/* Text fields show their rounded fill as the boundary; a rectangular ring
+   would cut across pill and card shapes. */
+.mobile-app :is(input:not([type="checkbox"], [type="radio"], [type="range"]), textarea, select):focus-visible {
+  outline: none;
 }
 .mobile-header {
   display: flex;

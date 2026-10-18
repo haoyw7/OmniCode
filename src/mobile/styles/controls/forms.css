@@ -41,9 +41,9 @@ html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="se
   min-width: 0;
   min-height: var(--m-control-height);
   padding: 10px 16px;
-  border: .5px solid var(--m-control-border);
+  border: .5px solid transparent;
   border-radius: var(--m-control-radius);
-  background: var(--m-control-field);
+  background: var(--m-input-fill);
   color: var(--m-control-ink);
   box-shadow: var(--m-control-shadow);
   /* Keep iOS from zooming the viewport when editing. */
@@ -54,9 +54,8 @@ html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="se
 }
 html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"])::placeholder { color: var(--m-control-placeholder); opacity: 1; }
 html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]):focus {
-  border-color: var(--m-control-focus);
   outline: none;
-  box-shadow: inset 0 0 0 1.5px var(--m-control-focus), var(--m-control-shadow);
+  background: var(--m-input-fill-focus);
 }
 html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"])[aria-invalid="true"] { border-color: var(--m-control-danger); box-shadow: inset 0 0 0 1.5px var(--m-control-danger); }
 html[data-mobile-skin] [data-ui="icon-button"] {
