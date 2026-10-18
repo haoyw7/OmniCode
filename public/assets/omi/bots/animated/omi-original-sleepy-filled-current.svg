@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-sleepy" role="img" aria-label="Omi · 困倦" data-state="sleepy" data-duration="6">
+<style>@keyframes omi-expr-sleepy-body{0%,35%,70%,100%{transform:translateY(0) rotate(0deg)}10%,25%{transform:translateY(4px) rotate(-6deg)}45%,60%{transform:translateY(3px) rotate(6deg)}80%{transform:translateY(-2px) rotate(-3deg)}}
+@keyframes omi-expr-sleepy-accent{0%{opacity:0;transform:translate(0,6px)}6.666%{opacity:1;transform:translate(0,6px)}60%{opacity:1;transform:translate(4px,-6px)}66.666%,100%{opacity:0;transform:translate(4px,-6px)}}
+@keyframes omi-expr-sleepy-gaze{0%,12%,52%,100%{transform:translateX(0)}17%,28%{transform:translateX(-6px)}36%,47%{transform:translateX(6px)}}
+@keyframes omi-expr-sleepy-blink{0%,26%,31%,72%,77%,100%{transform:scaleY(1)}28%,74%{transform:scaleY(.12)}}
+.omi-expr-sleepy .omx-body{animation:omi-expr-sleepy-body 6s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-sleepy .omx-accent{animation:omi-expr-sleepy-accent 6s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-sleepy .omx-body{transform-origin:128px 132px}
+.omi-expr-sleepy .omx-gaze{animation:omi-expr-sleepy-gaze 6s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-sleepy .omx-blink{animation:omi-expr-sleepy-blink 6s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 126px}
+.omi-expr-sleepy .omx-a{transform-box:view-box}
+.omi-expr-sleepy[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-sleepy[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-sleepy .omx-a{animation:none!important}}</style>
+<g fill="currentColor" stroke="currentColor"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="currentColor" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omx-a omx-face" fill="var(--omi-face-color, #ffffff)" stroke="var(--omi-face-color, #ffffff)"><g class="omx-a omx-gaze"><g class="omx-a omx-blink"><path d="M 78 120 Q 92 138 106 120 M 150 120 Q 164 138 178 120" fill="none" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g></g><g class="omx-a omx-accent"><path d="M 258 28 H 278 L 258 48 H 278" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></g>
+</svg>

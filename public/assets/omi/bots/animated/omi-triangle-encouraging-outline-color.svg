@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-encouraging" role="img" aria-label="Omi · 鼓励" data-state="encouraging" data-duration="4.8">
+<style>@keyframes omi-expr-encouraging-body{0%,30%,65%,100%{transform:translateY(0) rotate(0deg)}5%{transform:translateY(3px) rotate(4deg)}10%{transform:translateY(-3px) rotate(0deg)}40%{transform:translateY(0) rotate(-7deg)}45%{transform:translateY(0) rotate(7deg)}80%{transform:translateY(-4px) rotate(0deg)}}
+@keyframes omi-expr-encouraging-accent{0%,30%,100%{transform:translateY(0);opacity:.55}10%,20%{transform:translateY(-5px);opacity:1}}
+@keyframes omi-expr-encouraging-wink{0%,20%,100%{transform:scaleY(1)}10%{transform:scaleY(.2)}}
+@keyframes omi-expr-encouraging-gaze{0%,12%,52%,100%{transform:translateX(0)}17%,28%{transform:translateX(-6px)}36%,47%{transform:translateX(6px)}}
+@keyframes omi-expr-encouraging-blink{0%,26%,31%,72%,77%,100%{transform:scaleY(1)}28%,74%{transform:scaleY(.12)}}
+.omi-expr-encouraging .omx-body{animation:omi-expr-encouraging-body 4.8s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 128px}
+.omi-expr-encouraging .omx-accent{animation:omi-expr-encouraging-accent 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-encouraging .omx-wink{animation:omi-expr-encouraging-wink 4.8s cubic-bezier(.22,1,.36,1) infinite;transform-origin:163px 127px}
+.omi-expr-encouraging .omx-body{transform-origin:128px 132px}
+.omi-expr-encouraging .omx-gaze{animation:omi-expr-encouraging-gaze 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-encouraging .omx-blink{animation:omi-expr-encouraging-blink 4.8s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 126px}
+.omi-expr-encouraging .omx-a{transform-box:view-box}
+.omi-expr-encouraging[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-encouraging[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-encouraging .omx-a{animation:none!important}}</style>
+<g fill="#ae5679" stroke="#ae5679"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 182 226 H 34 Q 10 226 20 206 L 112 44 Q 128 17 144 44 L 222 182" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(23 37) scale(0.82)"><g class="omx-a omx-face"><g class="omx-a omx-gaze"><g class="omx-a omx-blink"><path d="M 83 111 L 106 127 L 83 143" fill="none" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/><g class="omx-a omx-wink"><path d="M 149 130 Q 163 112 177 130" fill="none" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g></g></g></g><g class="omx-a omx-accent"><path d="M 280 256 C 267 245 259 253 263 262 C 266 269 280 278 280 278 C 280 278 294 269 297 262 C 301 253 293 245 280 256 Z" stroke="none"/></g></g>
+</svg>

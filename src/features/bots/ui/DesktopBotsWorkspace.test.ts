@@ -442,6 +442,42 @@ it("pins without duplicate rows, keeps pins searchable and drops an archived Bot
   expect(active().querySelector('.desktop-bots-pinned')).toBeNull();
 });
 
+it("finds rooms with trimmed queries without showing a false empty state", async () => {
+  roomsSupported = true;
+  await render();
+  const search = active().querySelector<HTMLInputElement>('[aria-label="Search bots"]')!;
+  act(() => setValue(search, "  DESIGN ROOM  ")); await finishMotion();
+  expect(active().querySelector('[aria-label="Design room"]')).not.toBeNull();
+  expect(active().querySelector('.desktop-bots-contact')).toBeNull();
+  expect(active().querySelector('.desktop-bots-no-results')).toBeNull();
+  act(() => setValue(search, "missing")); await finishMotion();
+  expect(active().querySelector('.desktop-bots-no-results')?.textContent).toContain("No matching conversations");
+  act(() => active().querySelector<HTMLButtonElement>('[aria-label="Clear search"]')!.click()); await finishMotion();
+  expect(search.value).toBe("");
+  expect(document.activeElement).toBe(search);
+  expect(active().querySelectorAll('.desktop-bots-contact')).toHaveLength(2);
+});
+
+it("reveals team search matches and restores the previous fold state after Escape", async () => {
+  teamsSupported = true;
+  teams.push({ ...teams[0], id: "empty-team", name: "Unrelated team", memberBotIds: [] });
+  await render();
+  const heading = () => active().querySelector<HTMLButtonElement>('[aria-label="Design team"]')!;
+  act(() => heading().click()); await finishMotion();
+  expect(heading().getAttribute("aria-expanded")).toBe("false");
+  const search = active().querySelector<HTMLInputElement>('[aria-label="Search bots"]')!;
+  act(() => setValue(search, "A-2")); await finishMotion();
+  expect(heading().getAttribute("aria-expanded")).toBe("true");
+  expect(active().querySelectorAll('.desktop-bots-contact')).toHaveLength(1);
+  expect(active().querySelector('[aria-label="Unrelated team"]')).toBeNull();
+  act(() => setValue(search, "design team")); await finishMotion();
+  expect(active().querySelectorAll('.desktop-bots-contact')).toHaveLength(2);
+  await key(search, "Escape"); await finishMotion();
+  expect(search.value).toBe("");
+  expect(heading().getAttribute("aria-expanded")).toBe("false");
+  expect(active().querySelector('.desktop-bots-contact')).toBeNull();
+});
+
 it("opens the last thread with picker arrows and Enter, filters results, and closes with Escape", async () => {
   localStorage.setItem("monocode.bot-selection:host", JSON.stringify({ botId: "A", threadId: "A-2" }));
   await render(); await select("B");

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-focused" role="img" aria-label="Omi · 专注" data-state="focused" data-duration="4.8">
+<style>@keyframes omi-expr-focused-body{0%,30%,65%,100%{transform:translateY(0) rotate(0deg)}10%{transform:translateY(2px) rotate(-4deg)}15%{transform:translateY(-2px) rotate(0deg)}45%{transform:translateY(0) rotate(5deg)}50%{transform:translateY(0) rotate(-3deg)}80%{transform:translateY(-3px) rotate(0deg)}}
+@keyframes omi-expr-focused-gaze{0%,12%,52%,100%{transform:translateX(0)}17%,28%{transform:translateX(-6px)}36%,47%{transform:translateX(6px)}}
+@keyframes omi-expr-focused-blink{0%,26%,31%,72%,77%,100%{transform:scaleY(1)}28%,74%{transform:scaleY(.12)}}
+.omi-expr-focused .omx-body{animation:omi-expr-focused-body 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-focused .omx-body{transform-origin:128px 132px}
+.omi-expr-focused .omx-gaze{animation:omi-expr-focused-gaze 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-focused .omx-blink{animation:omi-expr-focused-blink 4.8s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 126px}
+.omi-expr-focused .omx-a{transform-box:view-box}
+.omi-expr-focused[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-focused[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-focused .omx-a{animation:none!important}}</style>
+<g fill="#287f78" stroke="#287f78"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 182 226 H 34 Q 10 226 20 206 L 112 44 Q 128 17 144 44 L 222 182" fill="#287f78" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(23 37) scale(0.82)"><g class="omx-a omx-face" fill="#ffffff" stroke="#ffffff"><g class="omx-a omx-gaze"><g class="omx-a omx-blink"><path d="M 79 116 L 106 127 L 79 138 M 156 120 V 134" fill="none" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/><path d="M 78 96 L 106 102 M 148 102 L 176 96" fill="none" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g></g></g></g>
+</svg>

@@ -2,6 +2,7 @@
   <style>
 @keyframes omi-connecting-dot { 0%,100% {opacity:.25} 25%,50% {opacity:1} 75% {opacity:.25} }
 .omi-motion-connecting .omi-dot{animation:omi-connecting-dot .96s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-connecting .omi-dot-b{animation-delay:-.48s}
+
 .omi-motion-connecting .omi-a {transform-box:view-box}
 .omi-motion-connecting[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-connecting[data-motion="off"] .omi-a {animation:none!important}

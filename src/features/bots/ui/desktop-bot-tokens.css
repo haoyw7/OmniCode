@@ -8,7 +8,6 @@
   --bots-card-radius: var(--desktop-radius-card, 12px);
   --bots-bubble-radius: var(--desktop-radius-bubble, 18px);
   --bots-composer-radius: var(--desktop-radius-composer, 22px);
-  --bots-control-size: var(--desktop-icon-md, 28px);
   --bots-page-inset: 16px;
   --bots-dark-fill: var(--color-bubble-user, var(--color-brand-foreground));
   --bots-light-ink: var(--color-bubble-user-ink, var(--color-brand));

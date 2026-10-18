@@ -4,6 +4,7 @@
 @keyframes omi-done-check { 0% {opacity:0;stroke-dashoffset:1} 10%,90% {opacity:1;stroke-dashoffset:0} 100% {opacity:0;stroke-dashoffset:0} }
 @keyframes omi-done-check-once { from {opacity:0;stroke-dashoffset:1} to {opacity:1;stroke-dashoffset:0} }
 .omi-motion-done .omi-body{animation:omi-done-body 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-done .omi-check{stroke-dasharray:1;stroke-dashoffset:0;animation:omi-done-check 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-done.omi-once .omi-body{animation:omi-done-body 2.4s cubic-bezier(.22,1,.36,1) 1 both}.omi-motion-done.omi-once .omi-check{animation:omi-done-check-once .24s cubic-bezier(.22,1,.36,1) 1 both}
+
 .omi-motion-done .omi-a {transform-box:view-box}
 .omi-motion-done[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-done[data-motion="off"] .omi-a {animation:none!important}

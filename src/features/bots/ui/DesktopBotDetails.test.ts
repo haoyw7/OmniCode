@@ -34,6 +34,7 @@ it("keeps a runtime draft and command identity after an unknown response, and se
   expect(field("Concurrent runs").value).toBe("4"); expect(node.textContent).toContain("Connection lost");
   act(() => button("Save runtime settings").click()); await flush();
   expect(rpc.mock.calls).toHaveLength(2);
+  expect(rpc.mock.calls[1][1].patch).not.toHaveProperty("avatar");
   expect(rpc.mock.calls[1][1]).toMatchObject({ botId: "bot-a", expectedRevision: 5, patch: { workingDirectory: null, maxConcurrentRuns: 4 } });
   expect(rpc.mock.calls[0][1].commandId).toBe(rpc.mock.calls[1][1].commandId);
   expect(button("Save runtime settings").disabled).toBe(true);
@@ -125,36 +126,47 @@ it("omits delegation configuration and discovery when the Host lacks the capabil
 });
 
 
-it("opens avatar editing from the avatar, cancels drafts and applies changes through Save", async () => {
+const avatarOption = (label: string) => node.querySelector<HTMLInputElement>(`input[type="radio"][aria-label="${label}"]`)!;
+
+it("previews Omi choices, cancels drafts and saves the selected shape, expression, fill and color", async () => {
   const save = vi.fn().mockResolvedValue(undefined);
   act(() => root.render(createElement(BotIdentitySettings, { bot: bot(), busy: false, avatarSupported: true, onSave: save })));
-  expect(node.querySelectorAll("input")).toHaveLength(1);
   const trigger = node.querySelector<HTMLButtonElement>('[aria-label="Edit avatar"]')!;
   act(() => trigger.click()); await flush();
-  expect(document.activeElement).toBe(field("Avatar"));
-  act(() => input(field("Avatar"), "🐱"));
-  act(() => field("Avatar").dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }))); await flush();
+  expect(document.activeElement?.getAttribute("type")).toBe("radio");
+  expect(node.querySelectorAll('input:not([type="radio"])')).toHaveLength(1);
+  act(() => avatarOption("Triangle").click());
+  expect(trigger.querySelector('svg')?.getAttribute('data-shape')).toBe('triangle');
+  act(() => avatarOption("Triangle").dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }))); await flush();
   expect(document.activeElement).toBe(trigger);
   expect(node.querySelector('[role="group"]')).toBeNull();
   expect(save).not.toHaveBeenCalled();
   act(() => trigger.click()); await flush();
-  expect(field("Avatar").value).toBe("");
-  act(() => input(field("Avatar"), "🐱"));
+  act(() => { avatarOption("Square").click(); });
+  act(() => { avatarOption("Joyful").click(); });
+  act(() => { avatarOption("Filled").click(); });
+  act(() => { avatarOption("Blue").click(); });
+  expect(trigger.querySelector('svg')?.getAttribute('data-shape')).toBe('square');
+  expect(trigger.querySelector('svg')?.getAttribute('data-expression')).toBe('joyful');
+  expect(trigger.querySelector('svg')?.getAttribute('data-variant')).toBe('filled');
+  expect(trigger.querySelector('svg')?.getAttribute('style')).toContain('--color-omi-blue');
   act(() => button("Apply").click()); await flush();
-  expect(node.querySelector('.desktop-bot-avatar')?.textContent).toBe("🐱");
-  act(() => node.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))); await flush();
-  expect(save).toHaveBeenCalledWith({ name: "Test Bot", avatar: "🐱" });
+  expect(save).not.toHaveBeenCalled();
+  act(() => button("Save").click()); await flush();
+  expect(save).toHaveBeenCalledWith({ name: "Test Bot", avatar: "omi:3311" });
+  act(() => root.render(createElement(BotIdentitySettings, { key: "saved", bot: { ...bot(), avatar: "omi:3311" }, busy: false, avatarSupported: true, onSave: save })));
+  act(() => node.querySelector<HTMLButtonElement>('[aria-label="Edit avatar"]')!.click()); await flush();
+  for (const label of ["Square", "Joyful", "Filled", "Blue"]) expect(avatarOption(label).checked).toBe(true);
 });
 
-it("rejects oversized avatar drafts and keeps unsupported Hosts read-only", async () => {
+it("can reset a saved appearance and keeps unsupported Hosts read-only", async () => {
   const save = vi.fn();
-  act(() => root.render(createElement(BotIdentitySettings, { bot: bot(), busy: false, avatarSupported: true, onSave: save })));
+  act(() => root.render(createElement(BotIdentitySettings, { bot: { ...bot(), avatar: "omi:3311" }, busy: false, avatarSupported: true, onSave: save })));
   act(() => node.querySelector<HTMLButtonElement>('[aria-label="Edit avatar"]')!.click()); await flush();
-  act(() => input(field("Avatar"), "123456789"));
-  expect(button("Apply").disabled).toBe(true);
-  act(() => field("Avatar").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })));
-  expect(save).not.toHaveBeenCalled();
-  expect(field("Avatar").getAttribute("aria-invalid")).toBe("true");
+  act(() => button("Reset").click());
+  act(() => button("Apply").click()); await flush();
+  act(() => button("Save").click()); await flush();
+  expect(save).toHaveBeenCalledWith({ name: "Test Bot", avatar: "" });
   act(() => root.render(createElement(BotIdentitySettings, { bot: bot(), busy: false, avatarSupported: false, onSave: save })));
   expect(node.querySelector('[aria-label="Edit avatar"]')).toBeNull();
   expect(node.querySelectorAll("input")).toHaveLength(1);

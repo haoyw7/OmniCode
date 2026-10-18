@@ -1,9 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-error" role="img" aria-label="Omi · 出错" data-state="error" data-duration="2.4">
-<style>@keyframes omi-expr-error-body{0%,30%,100%{transform:translateX(0)}10%{transform:translateX(-4px)}20%{transform:translateX(4px)}}
-.omi-expr-error .omx-body{animation:omi-expr-error-body 2.4s cubic-bezier(.22,1,.36,1) infinite}
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-error" role="img" aria-label="Omi · 出错" data-state="error" data-duration="4.8">
+<style>@keyframes omi-expr-error-body{0%,25%,65%,100%{transform:translateY(0) rotate(0deg)}5%{transform:translateX(-3px) rotate(-6deg)}10%{transform:translateX(3px) rotate(6deg)}15%{transform:translateX(-2px) rotate(-4deg)}40%{transform:translateY(3px) rotate(0deg)}80%{transform:translateY(-2px) rotate(3deg)}}
+@keyframes omi-expr-error-gaze{0%,12%,52%,100%{transform:translateX(0)}17%,28%{transform:translateX(-6px)}36%,47%{transform:translateX(6px)}}
+@keyframes omi-expr-error-blink{0%,26%,31%,72%,77%,100%{transform:scaleY(1)}28%,74%{transform:scaleY(.12)}}
+.omi-expr-error .omx-body{animation:omi-expr-error-body 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-error .omx-body{transform-origin:128px 132px}
+.omi-expr-error .omx-gaze{animation:omi-expr-error-gaze 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-error .omx-blink{animation:omi-expr-error-blink 4.8s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 126px}
 .omi-expr-error .omx-a{transform-box:view-box}
 .omi-expr-error[data-paused="true"] .omx-a{animation-play-state:paused}
 .omi-expr-error[data-motion="off"] .omx-a{animation:none!important}
 @media(prefers-reduced-motion:reduce){.omi-expr-error .omx-a{animation:none!important}}</style>
-<g fill="currentColor" stroke="currentColor"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omx-a omx-face"><path d="M 81 115 L 103 137 M 103 115 L 81 137 M 153 115 L 175 137 M 175 115 L 153 137" fill="none" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M 113 171 Q 128 158 143 171" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g>
+<g fill="currentColor" stroke="currentColor"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omx-a omx-face"><g class="omx-a omx-gaze"><g class="omx-a omx-blink"><path d="M 81 115 L 103 137 M 103 115 L 81 137 M 153 115 L 175 137 M 175 115 L 153 137" fill="none" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></g></g><path d="M 113 171 Q 128 158 143 171" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g>
 </svg>

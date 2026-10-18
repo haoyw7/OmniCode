@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
@@ -49,14 +51,14 @@ export function DesktopBotDetails({ identity, memory, runtime, activity, automat
     }
   }}>
     <header className="desktop-bot-details-heading">
-      <button data-ui="icon-button" type="button" className="assistant-icon-button" disabled={selected === "settings"} aria-label={t("Back to settings")} onClick={() => setSelected("settings")}><ChevronLeft size={18} /></button>
+      <IconButton type="button" className="assistant-icon-button" disabled={selected === "settings"} label={t("Back to settings")} onClick={() => setSelected("settings")}><ChevronLeft size={18} /></IconButton>
       <h3 ref={heading} tabIndex={-1}>{t(label)}</h3>
     </header>
     <div className="desktop-bot-detail-pages">
       <DetailPage active={selected === "settings"} root>
         {identity}
         <nav aria-label={t("Bot details")} className="desktop-bot-settings-links">
-          {pages.map(page => <button type="button" key={page.key} onClick={() => setSelected(page.key)}>{t(page.label)}<ChevronRight size={16} /></button>)}
+          {pages.map(page => <Button variant="ghost" type="button" key={page.key} onClick={() => setSelected(page.key)}>{t(page.label)}<ChevronRight size={16} /></Button>)}
         </nav>
       </DetailPage>
       {pages.map(page => <DetailPage key={page.key} active={selected === page.key}>{page.content}</DetailPage>)}

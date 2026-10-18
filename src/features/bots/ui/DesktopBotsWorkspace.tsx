@@ -34,6 +34,8 @@ import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/
 import { useDragResize } from "../../../shared/hooks/useDragResize";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { AnimatedCollapse, useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
+import { IconButton } from "../../../shared/ui/forms/IconButton";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "../../../shared/ui/forms/InputGroup";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import { sessionDisplayTitle } from "../../sessions/model/session";
 import { Archive, Bot, ChevronRight, Loader2, Pin, Plus, Search, MessageSquare, X } from "../../../shared/ui/icons";
@@ -386,37 +388,53 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const search = query.trim().toLocaleLowerCase();
+  const clearSearch = () => { setQuery(""); searchRef.current?.focus(); };
   const visible = useSurfaceVisibility();
   const resize = useDragResize({ cssProperty: "--bots-sidebar-preference", min: 240, max: () => 400, defaultWidth: 280, initial: navigationWidth, value: navigationWidth, onCommit: onNavigationWidth });
   useEffect(() => { if (!visible) resize.finishDrag(); }, [visible, resize.finishDrag]);
   const [menu, setMenu] = useState<{ botId: string; x: number; y: number; open: boolean }>();
   useEffect(() => { if (!visible) setMenu(current => current && { ...current, open: false }); }, [visible]);
   const menuBot = snapshot?.bots.find(bot => bot.id === menu?.botId && !bot.archivedAt);
-  const matchesQuery = (bot: BotView) => `${bot.name} ${snapshot?.threads.filter(thread => thread.botId === bot.id && !thread.archivedAt).map(thread => thread.title).join(" ")}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase());
+  const threadsByBot = useMemo(() => {
+    const index = new Map<string, BotThread[]>();
+    for (const thread of snapshot?.threads ?? []) {
+      if (thread.archivedAt) continue;
+      const threads = index.get(thread.botId) ?? [];
+      threads.push(thread);
+      index.set(thread.botId, threads);
+    }
+    return index;
+  }, [snapshot?.threads]);
+  const activeTeams = teams.filter(team => !team.archivedAt);
+  const matchingTeamMembers = new Set(activeTeams.filter(team => team.name.toLocaleLowerCase().includes(search)).flatMap(team => team.memberBotIds));
+  const matchesQuery = (bot: BotView) => matchingTeamMembers.has(bot.id) || `${bot.name} ${(threadsByBot.get(bot.id) ?? []).map(thread => thread.title).join(" ")}`.toLocaleLowerCase().includes(search);
   const pinnedBots = pins.flatMap(id => { const bot = snapshot?.bots.find(bot => bot.id === id && !bot.archivedAt); return bot && matchesQuery(bot) ? [bot] : []; });
   const retainedPinned = useRef(pinnedBots);
   if (pinnedBots.length) retainedPinned.current = pinnedBots;
   const bots = snapshot?.bots.filter(bot => !bot.archivedAt && !pins.includes(bot.id) && matchesQuery(bot)) ?? [];
   const [foldedTeams, setFoldedTeams] = useState(new Set<string>());
-  const activeTeams = teams.filter(team => !team.archivedAt);
   const groups: { id: string; team?: BotTeam; bots: BotView[] }[] = activeTeams.map(team => ({ id: team.id, team, bots: bots.filter(bot => team.memberBotIds.includes(bot.id)) }));
   const ungrouped = bots.filter(bot => !activeTeams.some(team => team.memberBotIds.includes(bot.id)));
   if (ungrouped.length || !groups.length) groups.push({ id: "ungrouped", bots: ungrouped });
-  const unreadFor = (bot: BotView) => snapshot?.threads.filter(thread => thread.botId === bot.id && !thread.archivedAt).reduce((total, thread) => total + (activity.get(botCacheKey(environmentId, { botId: bot.id, threadId: thread.id }))?.count ?? 0), 0) ?? 0;
+  const matchingRooms = roomsSupported ? rooms.filter(room => !room.archivedAt && room.name.toLocaleLowerCase().includes(search)) : [];
+  const isSelected = (bot: BotView) => !draftOpen && !roomSelection && !archiveOpen && selection?.botId === bot.id;
+  const unreadFor = (bot: BotView) => (threadsByBot.get(bot.id) ?? []).reduce((total, thread) => total + (activity.get(botCacheKey(environmentId, { botId: bot.id, threadId: thread.id }))?.count ?? 0), 0);
   const renderBot = (bot: BotView, chief = false) => {
-        const threads = snapshot!.threads.filter((thread) => thread.botId === bot.id && !thread.archivedAt);
+        const threads = threadsByBot.get(bot.id) ?? EMPTY_THREADS;
         const unread = unreadFor(bot);
         const newest = threads.map((thread) => activity.get(botCacheKey(environmentId, { botId: bot.id, threadId: thread.id }))?.latest).filter((message) => !!message).sort((a, b) => b.createdAt - a.createdAt)[0];
         const at = newest?.createdAt ?? Math.max(bot.updatedAt, ...threads.map(thread => thread.updatedAt));
         return <div key={bot.id} className="desktop-bots-bot-group">
-          <div className="desktop-bots-contact" data-selected={!draftOpen && selection?.botId === bot.id} onContextMenu={event => {
+          <div className="desktop-bots-contact" data-selected={isSelected(bot)} onContextMenu={event => {
             event.preventDefault(); if (visible) setMenu({ botId: bot.id, x: event.clientX, y: event.clientY, open: true });
           }} onKeyDown={event => {
             if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
               event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setMenu({ botId: bot.id, x: rect.left + 20, y: rect.bottom, open: true });
             }
           }}>
-            <button type="button" className="desktop-bots-contact-main" onClick={() => onSelectBot(bot)} aria-label={unread ? t("{bot}, {count} unread messages", { bot: bot.name, count: unread }) : bot.name} title={bot.name} aria-current={(!draftOpen && selection?.botId === bot.id) || undefined}>
+            <button type="button" className="desktop-bots-contact-main" onClick={() => onSelectBot(bot)} aria-label={unread ? t("{bot}, {count} unread messages", { bot: bot.name, count: unread }) : bot.name} title={bot.name} aria-current={isSelected(bot) || undefined}>
               <BotAvatar bot={bot} size={36} />
               <span className="desktop-bots-contact-copy"><span className="desktop-bots-contact-title"><strong>{bot.name}</strong>{chief && <small className="desktop-bots-chief" title={t("Chief of Staff")}>{t("Chief")}</small>}<time dateTime={new Date(at).toISOString()}>{new Date(at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</time></span><span className="desktop-bots-preview">{newest && "text" in newest ? newest.text.replace(/\s+/g, " ").trim() || t("Attachments") : threads[0]?.title || t("Main thread")}</span></span>
               {unread > 0 && <span className="desktop-bots-unread" aria-hidden="true" />}
@@ -426,25 +444,36 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
   };
   const setNavigationRef = useCallback((node: HTMLElement | null) => resize.setPaneRef(node?.parentElement ?? null), [resize.setPaneRef]);
   return <nav ref={setNavigationRef} className="desktop-bots-navigation" aria-label={t("Bots")}>
-    <header className="desktop-bots-navigation-header"><span className="desktop-bots-host-name" title={hostName}>{hostName}</span><button data-ui="icon-button" type="button" className="assistant-icon-button" onClick={onNewBot} aria-label={t("New bot")} title={t("New conversation")}><Plus size={20} /></button></header>
-    <label className="desktop-bots-search"><Search size={15} aria-hidden="true" /><input data-ui="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search bots")} aria-label={t("Search bots")} /></label>
+    <header className="desktop-bots-navigation-header">
+      <div className="desktop-bots-navigation-title"><h2>{t("Bots")}</h2><span className="desktop-bots-host-name" title={hostName}>{hostName}</span></div>
+      <IconButton size="sm" onClick={onNewBot} label={t("New bot")}><Plus size={18} /></IconButton>
+    </header>
+    <div className="desktop-bots-search">
+      <InputGroup>
+        <InputGroupAddon><Search size={15} aria-hidden="true" /></InputGroupAddon>
+        <InputGroupInput ref={searchRef} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === "Escape" && query) { event.preventDefault(); event.stopPropagation(); clearSearch(); } }} placeholder={t(roomsSupported ? "Search bots and rooms" : "Search bots")} aria-label={t("Search bots")} />
+        {query && <InputGroupAddon align="inline-end"><IconButton size="xs" label={t("Clear search")} onClick={clearSearch}><X size={14} /></IconButton></InputGroupAddon>}
+      </InputGroup>
+    </div>
     <AnimatedCollapse expanded={pinnedBots.length > 0} className="desktop-bots-pinned-collapse">
-      <div className="desktop-bots-pinned" aria-label={t("Pinned bots")}>{(pinnedBots.length ? pinnedBots : retainedPinned.current).map(bot => { const unread = unreadFor(bot); return <button type="button" key={bot.id} onClick={() => onSelectBot(bot)} aria-label={unread ? t("{bot}, {count} unread messages", { bot: bot.name, count: unread }) : bot.name} title={bot.name} aria-current={(!draftOpen && selection?.botId === bot.id) || undefined}
+      <div className="desktop-bots-section-label"><Pin size={12} aria-hidden="true" /><span>{t("Pinned bots")}</span><small>{pinnedBots.length || retainedPinned.current.length}</small></div>
+      <div className="desktop-bots-pinned" aria-label={t("Pinned bots")}>{(pinnedBots.length ? pinnedBots : retainedPinned.current).map(bot => { const unread = unreadFor(bot); return <button type="button" key={bot.id} onClick={() => onSelectBot(bot)} aria-label={unread ? t("{bot}, {count} unread messages", { bot: bot.name, count: unread }) : bot.name} title={bot.name} aria-current={isSelected(bot) || undefined}
         onContextMenu={event => { event.preventDefault(); if (visible) setMenu({ botId: bot.id, x: event.clientX, y: event.clientY, open: true }); }}
         onKeyDown={event => {
           if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
             event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setMenu({ botId: bot.id, x: rect.left + 20, y: rect.bottom, open: true });
           }
-        }}><BotAvatar bot={bot} size={72} />{unread > 0 && <span className="desktop-bots-unread" aria-hidden="true" />}<span>{bot.name}</span></button>; })}</div>
+        }}><BotAvatar bot={bot} size={40} />{unread > 0 && <span className="desktop-bots-unread" aria-hidden="true" />}<span>{bot.name}</span></button>; })}</div>
     </AnimatedCollapse>
     <div className="desktop-bots-contacts">
       <AnimatedCollapse expanded={draftOpen}><button type="button" className="desktop-bots-draft-row" aria-current="page" onClick={onNewBot}><Plus size={20} /><span>{t("New")}</span></button></AnimatedCollapse>
-      {roomsSupported && rooms.some(room => !room.archivedAt) && <div className="desktop-bots-room-nav">{rooms.filter(room => !room.archivedAt && room.name.toLocaleLowerCase().includes(query.toLocaleLowerCase())).map(room => <button type="button" key={room.id} aria-label={room.name} title={room.name} aria-current={roomSelection === room.id ? "page" : undefined} onClick={() => onOpenRoom(room.id)}><MessageSquare size={16} /><span>{room.name}</span></button>)}</div>}
-      {groups.map(group => <div className="desktop-bots-team-group" key={group.id}>
-        {group.team && <button type="button" className="desktop-bots-team-heading" aria-label={group.team.name} title={group.team.name} aria-expanded={!foldedTeams.has(group.id)} onClick={() => setFoldedTeams(current => { const next = new Set(current); if (next.has(group.id)) next.delete(group.id); else next.add(group.id); return next; })}><ChevronRight size={13} /><span>{group.team.name}</span></button>}
-        <AnimatedCollapse expanded={!foldedTeams.has(group.id)}>{group.bots.map(bot => renderBot(bot, group.team?.chiefBotId === bot.id))}</AnimatedCollapse>
+      {matchingRooms.length > 0 && <div className="desktop-bots-room-nav"><div className="desktop-bots-section-label"><span>{t("Rooms")}</span><small>{matchingRooms.length}</small></div>{matchingRooms.map(room => <button type="button" key={room.id} aria-label={room.name} title={room.name} aria-current={roomSelection === room.id ? "page" : undefined} onClick={() => onOpenRoom(room.id)}><MessageSquare size={16} /><span>{room.name}</span></button>)}</div>}
+      {groups.filter(group => !search || group.bots.length > 0).map(group => <div className="desktop-bots-team-group" key={group.id}>
+        {group.team ? <button type="button" className="desktop-bots-team-heading" aria-label={group.team.name} title={group.team.name} aria-expanded={!!search || !foldedTeams.has(group.id)} disabled={!!search} onClick={() => setFoldedTeams(current => { const next = new Set(current); if (next.has(group.id)) next.delete(group.id); else next.add(group.id); return next; })}><ChevronRight size={13} /><span>{group.team.name}</span><small>{group.bots.length}</small></button>
+          : group.bots.length > 0 && <div className="desktop-bots-section-label"><span>{t(activeTeams.length ? "Other bots" : "Bots")}</span><small>{group.bots.length}</small></div>}
+        <AnimatedCollapse expanded={!!search || !foldedTeams.has(group.id)}>{group.bots.map(bot => renderBot(bot, group.team?.chiefBotId === bot.id))}</AnimatedCollapse>
       </div>)}
-      {query && !bots.length && !pinnedBots.length && <div className="desktop-bots-no-results"><p>{t("No matching bots")}</p><button type="button" onClick={() => setQuery("")}>{t("Clear")}</button></div>}
+      {search && !bots.length && !pinnedBots.length && !matchingRooms.length && <div className="desktop-bots-no-results" role="status"><Search size={22} aria-hidden="true" /><p>{t(roomsSupported ? "No matching conversations" : "No matching bots")}</p><button type="button" onClick={clearSearch}>{t("Clear")}</button></div>}
     </div>
     {(teamsSupported || roomsSupported) && <div className="desktop-bots-collaboration-nav">
       {teamsSupported && <button type="button" aria-label={t("Manage teams")} title={t("Manage teams")} onClick={() => onManage("teams")}><Bot size={16} /><span>{t("Teams")}</span></button>}

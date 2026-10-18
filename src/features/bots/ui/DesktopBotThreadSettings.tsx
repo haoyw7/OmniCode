@@ -1,3 +1,5 @@
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useEffect, useId, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import { botErrorMessage } from "../model/botErrors";
@@ -70,10 +72,10 @@ export function DesktopBotThreadSettings({ bot, thread, defaultBotId, rpc, onSav
   const harnesses = [...new Set([...(Object.keys(catalog?.models ?? {}) as RemoteProvider[]), shownOverride.harness])];
   const controls = remoteModelControls(catalog, shownOverride.harness, shownOverride.model, shownOverride.modelSettings ?? {}, base.modelOverride?.model ?? bot.model).settings;
   return <section className="desktop-bots-thread-settings">
-    <button className="desktop-bots-management-toggle" type="button" aria-expanded={open} aria-controls={disclosure} onClick={() => setOpen((value) => !value)}><span>{t("Thread settings")}</span><ChevronRight size={16} /></button>
+    <Button variant="ghost" className="desktop-bots-management-toggle" type="button" aria-expanded={open} aria-controls={disclosure} onClick={() => setOpen((value) => !value)}><span>{t("Thread settings")}</span><ChevronRight size={16} /></Button>
     <AnimatedCollapse expanded={open}><div id={disclosure}>
     <form onSubmit={(event) => { event.preventDefault(); void save(); }}>
-      <label>{t("Thread title")}<input data-ui="input" aria-label={t("Thread title")} maxLength={200} value={title} disabled={busy} onChange={(event) => setTitle(event.target.value)} /></label>
+      <label>{t("Thread title")}<Input aria-label={t("Thread title")} maxLength={200} value={title} disabled={busy} onChange={(event) => setTitle(event.target.value)} /></label>
       <label className="desktop-bots-model-follow"><input data-ui="checkbox" type="checkbox" checked={!override} disabled={busy} onChange={(event) => setOverride(event.target.checked ? undefined : { harness: bot.harness, model: bot.model, modelSettings: { ...bot.modelSettings } })} />{t("Follow bot model")}</label>
       <AnimatedCollapse expanded={!!override}>
         <div className="desktop-bots-model-override">
@@ -88,21 +90,21 @@ export function DesktopBotThreadSettings({ bot, thread, defaultBotId, rpc, onSav
           {controls.map((control) => <label key={control.id}>{t(control.label)}<select data-ui="select" aria-label={t(control.label)} value={shownOverride.modelSettings?.[control.id] ?? control.value} disabled={busy} onChange={(event) => setOverride({ ...shownOverride, modelSettings: { ...shownOverride.modelSettings, [control.id]: event.target.value } })}>
             {control.options.map((option) => <option key={option.value} value={option.value}>{t(option.label)}</option>)}
           </select></label>)}
-          {(catalogError || catalog?.errors[shownOverride.harness]) && <p role="alert">{t(catalogError ?? catalog!.errors[shownOverride.harness]!)} <button type="button" onClick={() => void loadModels()}>{t("Retry")}</button></p>}
+          {(catalogError || catalog?.errors[shownOverride.harness]) && <p role="alert">{t(catalogError ?? catalog!.errors[shownOverride.harness]!)} <Button variant="secondary" type="button" onClick={() => void loadModels()}>{t("Retry")}</Button></p>}
         </div>
       </AnimatedCollapse>
       <small>{t("Changes apply on the next turn")}</small>
       {error && <p role="alert">{t(error)}</p>}
       <div className="desktop-bots-management-actions">
-        <button type="submit" disabled={busy || !dirty || (title !== base.title && !title.trim()) || (!!override && !override.model)}>{t(busy ? "Saving…" : "Save thread")}</button>
-        <button type="button" disabled={busy || (!dirty && !error)} onClick={() => { setBase(thread); setTitle(thread.title); setOverride(thread.modelOverride); setError(undefined); command.current = undefined; }}>{t("Reset thread draft")}</button>
+        <Button variant="primary" type="submit" disabled={busy || !dirty || (title !== base.title && !title.trim()) || (!!override && !override.model)}>{t(busy ? "Saving…" : "Save thread")}</Button>
+        <Button variant="secondary" type="button" disabled={busy || (!dirty && !error)} onClick={() => { setBase(thread); setTitle(thread.title); setOverride(thread.modelOverride); setError(undefined); command.current = undefined; }}>{t("Reset thread draft")}</Button>
       </div>
     </form>
     <div className="desktop-bots-archive-actions">
       <p>{t("Archiving stops current work. Restoring keeps the conversation history.")}</p>
-      <button type="button" disabled={busy || thread.id === bot.defaultThreadId} onClick={() => void archive(onArchiveThread)}>{t("Archive thread")}</button>
+      <Button variant="secondary" type="button" disabled={busy || thread.id === bot.defaultThreadId} onClick={() => void archive(onArchiveThread)}>{t("Archive thread")}</Button>
       {thread.id === bot.defaultThreadId && <small>{t("Default thread cannot be archived")}</small>}
-      <button type="button" disabled={busy || bot.id === defaultBotId} onClick={() => void archive(onArchiveBot)}>{t("Archive bot")}</button>
+      <Button variant="secondary" type="button" disabled={busy || bot.id === defaultBotId} onClick={() => void archive(onArchiveBot)}>{t("Archive bot")}</Button>
       {bot.id === defaultBotId && <small>{t("Default bot cannot be archived")}</small>}
     </div>
     </div></AnimatedCollapse>

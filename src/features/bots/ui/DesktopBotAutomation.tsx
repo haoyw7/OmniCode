@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotPatch } from "../model/botView";
@@ -61,7 +62,7 @@ function Automation({ bot, rpc, onSaved }: Props) {
     (await rpc<HostSessionSummary[]>("sessions.list", { projectId })).map(row => ({ id: row.id, title: row.title || row.id, harness: row.harness, projectId, activityAt: row.activityAt ?? row.lastUserMessageAt ?? row.createdAt }))
   ))).flat(), [rpc]);
   return <section className="desktop-bot-automation" aria-label={t("Bot automation")}>
-    <header><button type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</button></header>
+    <header><Button variant="secondary" type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</Button></header>
     {error && <p role="alert">{t(error)}</p>}
     <BotSettings key={`${bot.id}:${version}`} panel="automation" value={base} catalog={catalog} catalogState={catalogState} onRetryCatalog={() => void load()} projects={projects} loadSessions={loadSessions} busy={busy}
       onSave={save} reminders={bot.reminders} onCancelReminder={reminderId => control({ action: "cancelReminder", reminderId })}

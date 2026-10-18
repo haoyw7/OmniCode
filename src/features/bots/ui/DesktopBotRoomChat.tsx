@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotScope, BotView } from "../model/bots";
@@ -104,34 +105,34 @@ function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Pro
   const saved = async () => { await onSaved(); await refresh(); };
   const name = (id: string) => bots.find(bot => bot.id === id)?.name ?? t("Unavailable Bot");
   return <section className="desktop-bot-room-chat" aria-label={state.room.name}>
-    <header className="desktop-bot-room-header"><div><h2>{state.room.name}</h2><small>{state.room.archivedAt ? t("Archived") : t("Room")}</small></div><button type="button" aria-label={t("Room settings")} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(value => !value)}><Settings size={16} /></button></header>
+    <header className="desktop-bot-room-header"><div><h2>{state.room.name}</h2><small>{state.room.archivedAt ? t("Archived") : t("Room")}</small></div><Button variant="ghost" type="button" aria-label={t("Room settings")} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(value => !value)}><Settings size={16} /></Button></header>
     <p className="desktop-bot-room-privacy">{t("Private threads are not automatically included in rooms.")}</p>
     <AnimatedCollapse expanded={settingsOpen} keepMounted className="desktop-bot-room-settings"><DesktopRoomEditor room={state.room} bots={bots} rpc={rpc} onSaved={saved} /></AnimatedCollapse>
-    {!!state.rounds.length && <div className="desktop-bot-room-rounds"><button type="button" aria-expanded={roundsOpen} onClick={() => setRoundsOpen(value => !value)}>{t("Room rounds")}</button>
+    {!!state.rounds.length && <div className="desktop-bot-room-rounds"><Button variant="ghost" type="button" aria-expanded={roundsOpen} onClick={() => setRoundsOpen(value => !value)}>{t("Room rounds")}</Button>
       <AnimatedCollapse expanded={roundsOpen}><div className="desktop-bot-room-round-list">{state.rounds.filter(round => round.roomId === room.id).map(round => <article key={round.id} data-round-id={round.id}>
-        <header><strong>{t(statuses[round.status])}</strong><time dateTime={new Date(round.createdAt).toISOString()}>{new Date(round.createdAt).toLocaleTimeString()}</time>{["queued", "running"].includes(round.status) && <button type="button" disabled={cancelling.has(round.id)} onClick={() => void cancel(round)}>{t("Stop round")}</button>}</header>
-        <ol>{round.speakers.map(speaker => <li key={speaker.botId}><span>{name(speaker.botId)}</span><small>{t(statuses[speaker.status])}</small>{speaker.threadId && <button type="button" aria-label={`${t("Open member thread")}: ${name(speaker.botId)}`} onClick={() => onOpenThread({ botId: speaker.botId, threadId: speaker.threadId! })}>{t("Open member thread")}</button>}{speaker.error && <p role="alert">{t(speaker.error)}</p>}</li>)}</ol>
+        <header><strong>{t(statuses[round.status])}</strong><time dateTime={new Date(round.createdAt).toISOString()}>{new Date(round.createdAt).toLocaleTimeString()}</time>{["queued", "running"].includes(round.status) && <Button variant="secondary" type="button" disabled={cancelling.has(round.id)} onClick={() => void cancel(round)}>{t("Stop round")}</Button>}</header>
+        <ol>{round.speakers.map(speaker => <li key={speaker.botId}><span>{name(speaker.botId)}</span><small>{t(statuses[speaker.status])}</small>{speaker.threadId && <Button variant="secondary" type="button" aria-label={`${t("Open member thread")}: ${name(speaker.botId)}`} onClick={() => onOpenThread({ botId: speaker.botId, threadId: speaker.threadId! })}>{t("Open member thread")}</Button>}{speaker.error && <p role="alert">{t(speaker.error)}</p>}</li>)}</ol>
       </article>)}</div></AnimatedCollapse>
     </div>}
     <div ref={log} className="desktop-bot-room-messages" role="log" aria-label={t("Room messages")} onScroll={() => { const element = log.current!; follow.current = element.scrollHeight - element.clientHeight - element.scrollTop < 30; }}>
-      {page?.hasMore && <button type="button" disabled={loadingOlder} onClick={() => void older()}>{t(loadingOlder ? "Loading…" : "Load older messages")}</button>}
+      {page?.hasMore && <Button variant="secondary" type="button" disabled={loadingOlder} onClick={() => void older()}>{t(loadingOlder ? "Loading…" : "Load older messages")}</Button>}
       {messages.map((message, index) => {
         const bot = bots.find(bot => bot.id === message.botId);
         return <Fragment key={message.id}><BotDateSeparator createdAt={message.createdAt} previousCreatedAt={messages[index - 1]?.createdAt} />
           <article className="desktop-bot-room-message" data-kind={message.kind}>
             <header>{message.botId && <span className="desktop-bots-avatar" aria-hidden="true">{bot?.avatar || <Bot size={16} />}</span>}<strong>{message.botId ? name(message.botId) : t("You")}</strong>{bot && <HarnessIcon harness={bot.harness} className="size-3.5" />}{message.status && <small>{t(statuses[message.status])}</small>}</header>
             {message.kind === "assistant" ? <AgentMarkdown text={message.text} className="assistant-markdown" hardBreaks /> : <p>{message.kind === "status" ? t(message.text) : message.text}</p>}
-            {message.botId && message.threadId && <button type="button" onClick={() => onOpenThread({ botId: message.botId!, threadId: message.threadId! })}>{t("Open member thread")}</button>}
+            {message.botId && message.threadId && <Button variant="secondary" type="button" onClick={() => onOpenThread({ botId: message.botId!, threadId: message.threadId! })}>{t("Open member thread")}</Button>}
           </article>
         </Fragment>;
       })}
       {!messages.length && <p>{t(page ? "Start a room conversation" : "Loading…")}</p>}
     </div>
     <div className="desktop-bot-room-composer">
-      {(error || pollError) && <p role="alert">{t(error ?? pollError!)} <button type="button" onClick={() => void refresh()}>{t("Refresh")}</button></p>}
-      <button type="button" aria-expanded={orderOpen} onClick={() => setOrderOpen(value => !value)}>{t("This round's speakers")}</button>
+      {(error || pollError) && <p role="alert">{t(error ?? pollError!)} <Button variant="secondary" type="button" onClick={() => void refresh()}>{t("Refresh")}</Button></p>}
+      <Button variant="ghost" type="button" aria-expanded={orderOpen} onClick={() => setOrderOpen(value => !value)}>{t("This round's speakers")}</Button>
       <AnimatedCollapse expanded={orderOpen} keepMounted><div className="desktop-bot-room-order"><label><input data-ui="checkbox" type="checkbox" checked={!customOrder} onChange={event => setCustomOrder(!event.target.checked)} />{t("Use room member order")}</label><AnimatedCollapse expanded={customOrder}><DesktopBotMembers bots={bots.filter(bot => state.room.memberIds.includes(bot.id))} ids={members} ordered onChange={setMembers} disabled={sending} /></AnimatedCollapse></div></AnimatedCollapse>
-      <form onSubmit={event => { event.preventDefault(); void send(); }}><textarea data-ui="textarea" aria-label={t("Message room")} placeholder={t("Message room")} value={draft} disabled={sending || !!state.room.archivedAt} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} /><button type="submit" aria-label={t("Send")} disabled={sending || !!state.room.archivedAt || !draft.trim() || (customOrder && !members.length)}><ArrowUp size={17} /></button></form>
+      <form onSubmit={event => { event.preventDefault(); void send(); }}><textarea data-ui="textarea" aria-label={t("Message room")} placeholder={t("Message room")} value={draft} disabled={sending || !!state.room.archivedAt} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} /><Button variant="primary" size="icon" type="submit" aria-label={t("Send")} disabled={sending || !!state.room.archivedAt || !draft.trim() || (customOrder && !members.length)}><ArrowUp size={17} /></Button></form>
     </div>
   </section>;
 }

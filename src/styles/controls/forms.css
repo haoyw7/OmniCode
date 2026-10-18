@@ -176,6 +176,13 @@ html[data-skin] [data-ui="input-group"]:has(> input) { display: flex; align-item
 html[data-skin] [data-ui="input-group"] > input { min-width: 0; font-size: inherit; line-height: inherit; }
 html[data-skin] :is([data-ui="input-group"]:has(> input:focus-visible), [data-ui="input-group"]:has([data-slot="input-group-control"]:focus-visible)) { box-shadow: var(--desktop-focus-shadow); }
 html[data-skin] [data-ui="input-group"][data-slot="input-group"] { padding: 0; }
+html[data-skin] .desktop-bots-workspace :is([data-ui="input"], [data-ui="textarea"]):focus-visible:not([aria-invalid="true"]) {
+  box-shadow: none;
+}
+html[data-skin] .desktop-bots-workspace [data-ui="input-group"]:has([data-ui="input-group-control"]:focus-visible):not(:has([aria-invalid="true"])) {
+  border-color: var(--color-input);
+  box-shadow: none;
+}
 html[data-skin] [data-slot="input-group-control"] { min-height: 30px; padding-inline: 12px; font-size: var(--text-body-sm); line-height: var(--text-body-sm--line-height); }
 html[data-skin] textarea[data-slot="input-group-control"] { min-height: 130px; padding: 16px; }
 html[data-skin] [data-desktop-select-trigger]:active { scale: none; }

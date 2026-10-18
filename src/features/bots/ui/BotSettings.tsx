@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
 import {
   Fragment,
   createContext,
@@ -815,7 +817,7 @@ export function BotSettings({
                 ))}
               </div>
               <div className="assistant-interval">
-                <input data-ui="input"
+                <Input
                   type="number"
                   min={1}
                   step={1}
@@ -865,7 +867,7 @@ export function BotSettings({
             ) : (
               <label>
                 {t("Time zone")}
-                <input data-ui="input"
+                <Input
                   value={schedule.timezone}
                   aria-invalid={!!errors.timezone || undefined}
                   onChange={(e) =>
@@ -1018,7 +1020,7 @@ export function BotSettings({
             <div className="assistant-settings-row">
               <label>
                 {t("Maximum automatic follow-ups")}
-                <input data-ui="input"
+                <Input
                   type="number"
                   min={1}
                   max={100}
@@ -1032,7 +1034,7 @@ export function BotSettings({
               </label>
               <label>
                 {t("Follow-up window (minutes)")}
-                <input data-ui="input"
+                <Input
                   type="number"
                   min={1}
                   max={1440}
@@ -1082,7 +1084,7 @@ export function BotSettings({
           {section !== "automation" && <><Section title={t("Assistant")}>
             <label>
               {t("Assistant name")}
-              <input data-ui="input"
+              <Input
                 value={draft.name ?? ""}
                 aria-invalid={!!errors.name || undefined}
                 onChange={(e) => patch({ name: e.target.value })}
@@ -1093,7 +1095,7 @@ export function BotSettings({
               <>
                 <label>
                   {t("What should it call you?")}
-                  <input data-ui="input"
+                  <Input
                     value={persona.userName ?? ""}
                     maxLength={100}
                     onChange={(e) =>
@@ -1278,7 +1280,7 @@ export function BotSettings({
                 <small className="assistant-settings-dirty" role="status">
                   {t("Unsaved changes")}
                 </small>
-                <button
+                <Button variant="secondary"
                   type="button"
                   disabled={busy}
                   onClick={() => {
@@ -1298,21 +1300,21 @@ export function BotSettings({
                   }}
                 >
                   {t("Reset")}
-                </button>
+                </Button>
               </>
             )}
             {onCancel && (
-              <button type="button" disabled={busy} onClick={onCancel}>
+              <Button variant="secondary" type="button" disabled={busy} onClick={onCancel}>
                 {t("Cancel")}
-              </button>
+              </Button>
             )}
-            <button data-ui="button" data-variant="primary"
+            <Button variant="primary"
               type="submit"
               className="assistant-primary"
               disabled={!canSave}
             >
               {t(submitLabel ?? (value ? section === "automation" ? "Save automation" : "Save settings" : "Enable assistant"))}
-            </button>
+            </Button>
           </footer>
         </Actions>
       </form>
@@ -1469,7 +1471,7 @@ export function WatchedSessions({
             <div className="assistant-watch-project-picker">
               <div className="assistant-watch-project-toolbar">
                 {projects.length > 10 && (
-                  <input data-ui="input"
+                  <Input
                     type="search"
                     aria-label={t("Search projects")}
                     placeholder={t("Search projects")}
@@ -1573,7 +1575,7 @@ export function WatchedSessions({
         </>
       )}
       {(options.length > 10 || query) && (
-        <input data-ui="input"
+        <Input
           type="search"
           aria-label={t("Search conversations…")}
           placeholder={t("Search conversations…")}

@@ -1,3 +1,4 @@
+import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
@@ -86,51 +87,47 @@ function DesktopBotsLegacyHeader({
       <div className="assistant-header-actions">
         {controls && (
           <>
-            <button data-ui="icon-button"
+            <IconButton
               type="button"
               className="assistant-icon-button"
-              aria-label={toggleLabel}
-              title={toggleLabel}
+              label={toggleLabel}
               disabled={busy}
               onClick={controls.onToggle}
             >
               {controls.continuable ? <Play size={18} /> : <Pause size={18} />}
-            </button>
-            <button data-ui="icon-button"
+            </IconButton>
+            <IconButton
               type="button"
               className="assistant-icon-button assistant-danger"
-              aria-label={t("Disable assistant")}
-              title={t("Disable assistant")}
+              label={t("Disable assistant")}
               disabled={busy || !controls.enabled}
               onClick={controls.onDisable}
             >
               <Square size={16} />
-            </button>
+            </IconButton>
           </>
         )}
         {onSettings && (
-          <button data-ui="icon-button"
+          <IconButton
             type="button"
             className="assistant-icon-button"
-            aria-label={t("Settings")}
-            title={t("Settings")}
+            label={t("Settings")}
             aria-expanded={settingsOpen}
             disabled={busy}
             onClick={onSettings}
           >
             <Settings size={18} />
-          </button>
+          </IconButton>
         )}
         {onClose && (
-          <button data-ui="icon-button"
+          <IconButton
             type="button"
             className="assistant-icon-button"
-            aria-label={t("Close")}
-            title={t("Close")}
+            label={t("Close")}
             onClick={onClose}
           >
             <X size={18} />
-          </button>
+          </IconButton>
         )}
       </div>
     </header>
@@ -201,15 +198,14 @@ function DesktopBotsLegacySettingsPanel({
     >
       <header className="assistant-settings-header">
         {!initialSetup && (
-          <button data-ui="icon-button"
+          <IconButton
             type="button"
             className="assistant-icon-button"
             onClick={onClose}
-            aria-label={t("Back")}
-            title={t("Back")}
+            label={t("Back")}
           >
             <ArrowLeft size={18} />
-          </button>
+          </IconButton>
         )}
         <strong>{title}</strong>
       </header>
@@ -334,16 +330,15 @@ export function DesktopBotsComposer({
           }}
         />
         <div className="assistant-compose-actions">
-          <button data-ui="icon-button"
+          <IconButton
             type="button"
             className="assistant-icon-button"
-            aria-label={t("Attach files")}
-            title={t("Attach files")}
+            label={t("Attach files")}
             disabled={attachDisabled}
             onClick={() => files.current?.click()}
           >
             <Plus size={18} />
-          </button>
+          </IconButton>
           <input
             ref={files}
             type="file"
@@ -362,21 +357,19 @@ export function DesktopBotsComposer({
             {t("Enter to send · Shift+Enter for a new line")}
           </small>
           {stoppable ? (
-            <button
+            <IconButton shape="round"
               type="button"
               className="assistant-send"
-              aria-label={t("Stop")}
-              title={t("Stop")}
+              label={t("Stop")}
               disabled={busy}
               onClick={onStop}
             >
               <Square size={14} fill="currentColor" aria-hidden="true" />
-            </button>
-          ) : <button
+            </IconButton>
+          ) : <IconButton shape="round"
             type="submit"
             className="assistant-send"
-            aria-label={t(sending ? "Sending..." : "Send")}
-            title={t(sending ? "Sending..." : "Send")}
+            label={t(sending ? "Sending..." : "Send")}
             aria-busy={sending || undefined}
             disabled={sendDisabled}
           >
@@ -385,7 +378,7 @@ export function DesktopBotsComposer({
             ) : (
               <ArrowUp size={18} aria-hidden="true" />
             )}
-          </button>}
+          </IconButton>}
         </div>
       </form>
     </div>

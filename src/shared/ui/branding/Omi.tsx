@@ -1,11 +1,13 @@
 import type { SVGProps } from "react";
 import { cn } from "../../lib/cn";
 import { usePauseOffscreenAnimation } from "../../hooks/usePauseOffscreenAnimation";
-import { OMI_ARTWORK, type OmiExpression } from "./omiArtwork";
+import { OMI_ARTWORK, OMI_SHAPES, type OmiExpression, type OmiShape } from "./omiArtwork";
 import "./omi.css";
 
 type Props = Omit<SVGProps<SVGSVGElement>, "children" | "ref" | "dangerouslySetInnerHTML"> & {
   expression?: OmiExpression;
+  shape?: OmiShape;
+  variant?: "outline" | "filled";
   animated?: boolean;
   compact?: boolean;
 };
@@ -21,9 +23,20 @@ function markupProp(markup: string) {
 }
 
 /** Presentation-only artwork; consumers own status, project identity and color. */
-export function Omi({ expression = "ready", animated = false, compact = false, className, ...props }: Props) {
+export function Omi({ expression = "ready", shape = "original", variant = "outline", animated = false, compact = false, className, ...props }: Props) {
   const pauseOffscreen = usePauseOffscreenAnimation<SVGSVGElement>();
   const artwork = OMI_ARTWORK[expression];
+  const contour = OMI_SHAPES[shape];
+  let markup = (compact ? artwork.compactMarkup : artwork.markup).replace(OMI_SHAPES.original.outline, contour.outline);
+  let face: string = artwork.faceMarkup;
+  if (variant === "filled") {
+    // Fill implicitly closes the interior; the open stroke retains Omi's notch.
+    markup = markup.replace(/<path\b[^>]*>/, path => path.replace('fill="none"', 'fill="currentColor"'));
+    const ink = "var(--omi-face-color, var(--color-omi-face, #ffffff))";
+    face = face.replace("<g ", `<g fill="${ink}" stroke="${ink}" `);
+  }
+  if (contour.faceTransform) face = `<g transform="${contour.faceTransform}">${face}</g>`;
+  markup = markup.replace(artwork.faceMarkup, face);
   return (
     <svg
       aria-hidden={props["aria-label"] ? undefined : true}
@@ -32,11 +45,13 @@ export function Omi({ expression = "ready", animated = false, compact = false, c
       ref={animated ? pauseOffscreen : undefined}
       data-ui="omi"
       data-expression={expression}
+      data-shape={shape}
+      data-variant={variant}
       data-animated={animated || undefined}
-      viewBox={compact ? "32 32 256 256" : "0 0 320 320"}
+      viewBox={compact ? shape === "original" ? "32 32 256 256" : "24 24 272 272" : "0 0 320 320"}
       className={cn(artwork.className, className)}
       // Only generated, repository-owned SVG paths. No user/provider markup.
-      dangerouslySetInnerHTML={markupProp(compact ? artwork.compactMarkup : artwork.markup)}
+      dangerouslySetInnerHTML={markupProp(markup)}
     />
   );
 }

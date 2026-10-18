@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotRun, BotRuns, BotScope } from "../model/bots";
@@ -63,11 +64,11 @@ function Activity({ scope, rpc }: { scope: BotScope; rpc: BotRpc }) {
     finally { inFlight.current = false; if (alive.current) setLoading(false); }
   };
   return <section className="desktop-bot-activity" aria-label={t("Bot activity")}>
-    <header><h3>{t("Activity")}</h3><button type="button" onClick={() => void refresh()}>{t("Refresh")}</button></header>
+    <header><h3>{t("Activity")}</h3><Button variant="secondary" type="button" onClick={() => void refresh()}>{t("Refresh")}</Button></header>
     {error && <p role="alert">{t(error)}</p>}
     {!runs.length && <p role="status">{t(page ? "No runs yet." : "Loading activity…")}</p>}
     <ol>{runs.map(run => <Run key={run.id} run={run} />)}</ol>
-    {page?.hasMore && <button type="button" disabled={loading} onClick={() => void more()}>{t(loading ? "Loading…" : "Load older runs")}</button>}
+    {page?.hasMore && <Button variant="secondary" type="button" disabled={loading} onClick={() => void more()}>{t(loading ? "Loading…" : "Load older runs")}</Button>}
   </section>;
 }
 function Run({ run }: { run: BotRun }) {

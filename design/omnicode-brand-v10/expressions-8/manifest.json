@@ -2,49 +2,49 @@
   {
     "id": "curious",
     "label": "疑惑",
-    "duration": 2.4,
-    "description": "挑起一边眉毛，轻轻歪头"
+    "duration": 4.8,
+    "description": "挑眉眨眼、左右歪头、轻浮回正"
   },
   {
     "id": "inspired",
     "label": "灵感",
-    "duration": 2.4,
-    "description": "视线向上，三条灵感线展开"
+    "duration": 4.8,
+    "description": "眨眼、上浮点头、兴奋摇摆与灵感闪动"
   },
   {
     "id": "focused",
     "label": "专注",
-    "duration": 2.4,
-    "description": "收紧眼神，小幅左右观察"
+    "duration": 4.8,
+    "description": "视线扫视、眨眼确认、点头与小幅转身"
   },
   {
     "id": "surprised",
     "label": "惊讶",
-    "duration": 2.4,
-    "description": "睁圆眼睛，轻轻向上弹起"
+    "duration": 4.8,
+    "description": "惊讶弹跳、快速眨眼、左右晃动"
   },
   {
     "id": "sleepy",
     "label": "困倦",
-    "duration": 3.6,
-    "description": "闭眼慢呼吸，睡眠符号缓缓上浮"
+    "duration": 6,
+    "description": "慢呼吸、困倦眨眼、低头与缓慢摇晃"
   },
   {
     "id": "joyful",
     "label": "开心",
-    "duration": 2.4,
-    "description": "眯眼笑，连续两次轻跳"
+    "duration": 4.8,
+    "description": "弯眼大笑、双弹跳、眨眼与开心摇摆"
   },
   {
     "id": "encouraging",
     "label": "鼓励",
-    "duration": 2.4,
-    "description": "眨眼点头，小爱心轻轻上浮"
+    "duration": 4.8,
+    "description": "眨眼、点头、左右摇摆与爱心轻浮"
   },
   {
     "id": "error",
     "label": "出错",
-    "duration": 2.4,
-    "description": "叉眼轻摇头，再短暂停留"
+    "duration": 4.8,
+    "description": "眨眼、左右摇头、轻叹回正"
   }
 ]

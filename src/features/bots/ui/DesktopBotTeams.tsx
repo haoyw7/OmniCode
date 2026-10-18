@@ -1,3 +1,5 @@
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotView } from "../model/bots";
@@ -15,7 +17,7 @@ export function DesktopBotTeams({ teams, bots, rpc, onSaved }: Props) {
   const open = (id: string) => { setSelected(id); setVisited(current => current.includes(id) ? current : [...current, id]); };
   const saved = async (team: BotTeam) => { await onSaved(); if (selected === "new") setVersion(value => value + 1); open(team.id); };
   return <section className="desktop-bot-directory" aria-label={t("Teams")}>
-    <header><h2>{t("Teams")}</h2><button type="button" onClick={() => open("new")}>{t("New team")}</button></header>
+    <header><h2>{t("Teams")}</h2><Button variant="secondary" type="button" onClick={() => open("new")}>{t("New team")}</Button></header>
     <div className="desktop-bot-directory-body">
       <div className="desktop-bot-directory-list">{teams.map(team => <button type="button" key={team.id} aria-pressed={selected === team.id} onClick={() => open(team.id)}><strong>{team.name}</strong><small>{team.archivedAt ? t("Archived") : `${team.memberBotIds.length} ${t("Members")}`}</small></button>)}{!teams.length && <p>{t("No teams yet")}</p>}</div>
       <div className="desktop-bot-directory-editors">{visited.map(id => {
@@ -57,14 +59,14 @@ function TeamEditor({ team, bots, rpc, onSaved }: { team?: BotTeam; bots: BotVie
   return <form className="desktop-bot-group-editor" aria-label={t(base ? "Team settings" : "New team")} onSubmit={event => { event.preventDefault(); void mutate("save"); }}>
     <h3>{t(base ? "Team settings" : "New team")}</h3>
     <fieldset disabled={busy || !!team?.archivedAt}>
-      <label>{t("Team name")}<input data-ui="input" aria-label={t("Team name")} value={name} maxLength={100} onChange={event => setName(event.target.value)} /></label>
+      <label>{t("Team name")}<Input aria-label={t("Team name")} value={name} maxLength={100} onChange={event => setName(event.target.value)} /></label>
       <DesktopBotMembers bots={bots} ids={members} onChange={ids => { setMembers(ids); if (!ids.includes(chief)) setChief(""); }} />
       <label>{t("Chief of Staff")}<select data-ui="select" aria-label={t("Chief of Staff")} value={chief} onChange={event => setChief(event.target.value)}><option value="">{t("No Chief")}</option>{members.map(id => <option key={id} value={id}>{bots.find(bot => bot.id === id)?.name ?? t("Unavailable Bot")}</option>)}</select></label>
       <small>{t("Each team has at most one Chief. Its calls still follow each Bot's permissions.")}</small>
     </fieldset>
     {error && <p role="alert">{t(error)}</p>}
-    <footer><button type="submit" disabled={busy || !!team?.archivedAt || !name.trim() || (!!base && !dirty)}>{t(base ? "Save team" : "Create team")}</button>
-      {base && <><button type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</button><button type="button" disabled={busy} onClick={() => void mutate(team?.archivedAt ? "restore" : "archive")}>{t(team?.archivedAt ? "Restore team" : "Archive team")}</button></>}
+    <footer><Button variant="primary" type="submit" disabled={busy || !!team?.archivedAt || !name.trim() || (!!base && !dirty)}>{t(base ? "Save team" : "Create team")}</Button>
+      {base && <><Button variant="secondary" type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</Button><Button variant="secondary" type="button" disabled={busy} onClick={() => void mutate(team?.archivedAt ? "restore" : "archive")}>{t(team?.archivedAt ? "Restore team" : "Archive team")}</Button></>}
     </footer>
   </form>;
 }

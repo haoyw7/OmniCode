@@ -1,0 +1,1090 @@
+[
+  {
+    "id": "ready",
+    "treatment": "filled",
+    "shape": "original",
+    "label": "经典",
+    "shapeLabel": "经典轮廓",
+    "color": "#7958ad",
+    "actions": "轻浮、左右转动、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "ready",
+    "treatment": "filled",
+    "shape": "circle",
+    "label": "经典",
+    "shapeLabel": "圆形",
+    "color": "#7958ad",
+    "actions": "轻浮、左右转动、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "ready",
+    "treatment": "filled",
+    "shape": "triangle",
+    "label": "经典",
+    "shapeLabel": "圆角三角形",
+    "color": "#7958ad",
+    "actions": "轻浮、左右转动、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "ready",
+    "treatment": "filled",
+    "shape": "square",
+    "label": "经典",
+    "shapeLabel": "圆角正方形",
+    "color": "#7958ad",
+    "actions": "轻浮、左右转动、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "ready",
+    "treatment": "outline",
+    "shape": "original",
+    "label": "经典",
+    "shapeLabel": "经典轮廓",
+    "color": "#7958ad",
+    "actions": "轻浮、左右转动、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "ready",
+    "treatment": "outline",
+    "shape": "circle",
+    "label": "经典",
+    "shapeLabel": "圆形",
+    "color": "#7958ad",
+    "actions": "轻浮、左右转动、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "ready",
+    "treatment": "outline",
+    "shape": "triangle",
+    "label": "经典",
+    "shapeLabel": "圆角三角形",
+    "color": "#7958ad",
+    "actions": "轻浮、左右转动、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "ready",
+    "treatment": "outline",
+    "shape": "square",
+    "label": "经典",
+    "shapeLabel": "圆角正方形",
+    "color": "#7958ad",
+    "actions": "轻浮、左右转动、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "curious",
+    "treatment": "filled",
+    "shape": "original",
+    "label": "好奇",
+    "shapeLabel": "经典轮廓",
+    "color": "#3c72ab",
+    "actions": "歪头、眨眼、轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "curious",
+    "treatment": "filled",
+    "shape": "circle",
+    "label": "好奇",
+    "shapeLabel": "圆形",
+    "color": "#3c72ab",
+    "actions": "歪头、眨眼、轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "curious",
+    "treatment": "filled",
+    "shape": "triangle",
+    "label": "好奇",
+    "shapeLabel": "圆角三角形",
+    "color": "#3c72ab",
+    "actions": "歪头、眨眼、轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "curious",
+    "treatment": "filled",
+    "shape": "square",
+    "label": "好奇",
+    "shapeLabel": "圆角正方形",
+    "color": "#3c72ab",
+    "actions": "歪头、眨眼、轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "curious",
+    "treatment": "outline",
+    "shape": "original",
+    "label": "好奇",
+    "shapeLabel": "经典轮廓",
+    "color": "#3c72ab",
+    "actions": "歪头、眨眼、轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "curious",
+    "treatment": "outline",
+    "shape": "circle",
+    "label": "好奇",
+    "shapeLabel": "圆形",
+    "color": "#3c72ab",
+    "actions": "歪头、眨眼、轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "curious",
+    "treatment": "outline",
+    "shape": "triangle",
+    "label": "好奇",
+    "shapeLabel": "圆角三角形",
+    "color": "#3c72ab",
+    "actions": "歪头、眨眼、轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "curious",
+    "treatment": "outline",
+    "shape": "square",
+    "label": "好奇",
+    "shapeLabel": "圆角正方形",
+    "color": "#3c72ab",
+    "actions": "歪头、眨眼、轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "focused",
+    "treatment": "filled",
+    "shape": "original",
+    "label": "专注",
+    "shapeLabel": "经典轮廓",
+    "color": "#287f78",
+    "actions": "扫视、点头、转身、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "focused",
+    "treatment": "filled",
+    "shape": "circle",
+    "label": "专注",
+    "shapeLabel": "圆形",
+    "color": "#287f78",
+    "actions": "扫视、点头、转身、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "focused",
+    "treatment": "filled",
+    "shape": "triangle",
+    "label": "专注",
+    "shapeLabel": "圆角三角形",
+    "color": "#287f78",
+    "actions": "扫视、点头、转身、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "focused",
+    "treatment": "filled",
+    "shape": "square",
+    "label": "专注",
+    "shapeLabel": "圆角正方形",
+    "color": "#287f78",
+    "actions": "扫视、点头、转身、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "focused",
+    "treatment": "outline",
+    "shape": "original",
+    "label": "专注",
+    "shapeLabel": "经典轮廓",
+    "color": "#287f78",
+    "actions": "扫视、点头、转身、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "focused",
+    "treatment": "outline",
+    "shape": "circle",
+    "label": "专注",
+    "shapeLabel": "圆形",
+    "color": "#287f78",
+    "actions": "扫视、点头、转身、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "focused",
+    "treatment": "outline",
+    "shape": "triangle",
+    "label": "专注",
+    "shapeLabel": "圆角三角形",
+    "color": "#287f78",
+    "actions": "扫视、点头、转身、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "focused",
+    "treatment": "outline",
+    "shape": "square",
+    "label": "专注",
+    "shapeLabel": "圆角正方形",
+    "color": "#287f78",
+    "actions": "扫视、点头、转身、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "joyful",
+    "treatment": "filled",
+    "shape": "original",
+    "label": "开心",
+    "shapeLabel": "经典轮廓",
+    "color": "#99651d",
+    "actions": "双弹跳、摇摆、弯眼眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "joyful",
+    "treatment": "filled",
+    "shape": "circle",
+    "label": "开心",
+    "shapeLabel": "圆形",
+    "color": "#99651d",
+    "actions": "双弹跳、摇摆、弯眼眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "joyful",
+    "treatment": "filled",
+    "shape": "triangle",
+    "label": "开心",
+    "shapeLabel": "圆角三角形",
+    "color": "#99651d",
+    "actions": "双弹跳、摇摆、弯眼眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "joyful",
+    "treatment": "filled",
+    "shape": "square",
+    "label": "开心",
+    "shapeLabel": "圆角正方形",
+    "color": "#99651d",
+    "actions": "双弹跳、摇摆、弯眼眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "joyful",
+    "treatment": "outline",
+    "shape": "original",
+    "label": "开心",
+    "shapeLabel": "经典轮廓",
+    "color": "#99651d",
+    "actions": "双弹跳、摇摆、弯眼眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "joyful",
+    "treatment": "outline",
+    "shape": "circle",
+    "label": "开心",
+    "shapeLabel": "圆形",
+    "color": "#99651d",
+    "actions": "双弹跳、摇摆、弯眼眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "joyful",
+    "treatment": "outline",
+    "shape": "triangle",
+    "label": "开心",
+    "shapeLabel": "圆角三角形",
+    "color": "#99651d",
+    "actions": "双弹跳、摇摆、弯眼眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "joyful",
+    "treatment": "outline",
+    "shape": "square",
+    "label": "开心",
+    "shapeLabel": "圆角正方形",
+    "color": "#99651d",
+    "actions": "双弹跳、摇摆、弯眼眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "encouraging",
+    "treatment": "filled",
+    "shape": "original",
+    "label": "鼓励",
+    "shapeLabel": "经典轮廓",
+    "color": "#ae5679",
+    "actions": "点头、摇摆、眨眼、爱心轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "encouraging",
+    "treatment": "filled",
+    "shape": "circle",
+    "label": "鼓励",
+    "shapeLabel": "圆形",
+    "color": "#ae5679",
+    "actions": "点头、摇摆、眨眼、爱心轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "encouraging",
+    "treatment": "filled",
+    "shape": "triangle",
+    "label": "鼓励",
+    "shapeLabel": "圆角三角形",
+    "color": "#ae5679",
+    "actions": "点头、摇摆、眨眼、爱心轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "encouraging",
+    "treatment": "filled",
+    "shape": "square",
+    "label": "鼓励",
+    "shapeLabel": "圆角正方形",
+    "color": "#ae5679",
+    "actions": "点头、摇摆、眨眼、爱心轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "encouraging",
+    "treatment": "outline",
+    "shape": "original",
+    "label": "鼓励",
+    "shapeLabel": "经典轮廓",
+    "color": "#ae5679",
+    "actions": "点头、摇摆、眨眼、爱心轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "encouraging",
+    "treatment": "outline",
+    "shape": "circle",
+    "label": "鼓励",
+    "shapeLabel": "圆形",
+    "color": "#ae5679",
+    "actions": "点头、摇摆、眨眼、爱心轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "encouraging",
+    "treatment": "outline",
+    "shape": "triangle",
+    "label": "鼓励",
+    "shapeLabel": "圆角三角形",
+    "color": "#ae5679",
+    "actions": "点头、摇摆、眨眼、爱心轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "encouraging",
+    "treatment": "outline",
+    "shape": "square",
+    "label": "鼓励",
+    "shapeLabel": "圆角正方形",
+    "color": "#ae5679",
+    "actions": "点头、摇摆、眨眼、爱心轻浮、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "sleepy",
+    "treatment": "filled",
+    "shape": "original",
+    "label": "困倦",
+    "shapeLabel": "经典轮廓",
+    "color": "#5c7c3c",
+    "actions": "慢呼吸、低头、摇晃、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "sleepy",
+    "treatment": "filled",
+    "shape": "circle",
+    "label": "困倦",
+    "shapeLabel": "圆形",
+    "color": "#5c7c3c",
+    "actions": "慢呼吸、低头、摇晃、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "sleepy",
+    "treatment": "filled",
+    "shape": "triangle",
+    "label": "困倦",
+    "shapeLabel": "圆角三角形",
+    "color": "#5c7c3c",
+    "actions": "慢呼吸、低头、摇晃、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "sleepy",
+    "treatment": "filled",
+    "shape": "square",
+    "label": "困倦",
+    "shapeLabel": "圆角正方形",
+    "color": "#5c7c3c",
+    "actions": "慢呼吸、低头、摇晃、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "sleepy",
+    "treatment": "outline",
+    "shape": "original",
+    "label": "困倦",
+    "shapeLabel": "经典轮廓",
+    "color": "#5c7c3c",
+    "actions": "慢呼吸、低头、摇晃、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "sleepy",
+    "treatment": "outline",
+    "shape": "circle",
+    "label": "困倦",
+    "shapeLabel": "圆形",
+    "color": "#5c7c3c",
+    "actions": "慢呼吸、低头、摇晃、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "sleepy",
+    "treatment": "outline",
+    "shape": "triangle",
+    "label": "困倦",
+    "shapeLabel": "圆角三角形",
+    "color": "#5c7c3c",
+    "actions": "慢呼吸、低头、摇晃、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "sleepy",
+    "treatment": "outline",
+    "shape": "square",
+    "label": "困倦",
+    "shapeLabel": "圆角正方形",
+    "color": "#5c7c3c",
+    "actions": "慢呼吸、低头、摇晃、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "inspired",
+    "treatment": "filled",
+    "shape": "original",
+    "label": "灵感",
+    "shapeLabel": "经典轮廓",
+    "color": "#7958ad",
+    "actions": "上浮、点头、摇摆、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "inspired",
+    "treatment": "filled",
+    "shape": "circle",
+    "label": "灵感",
+    "shapeLabel": "圆形",
+    "color": "#7958ad",
+    "actions": "上浮、点头、摇摆、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "inspired",
+    "treatment": "filled",
+    "shape": "triangle",
+    "label": "灵感",
+    "shapeLabel": "圆角三角形",
+    "color": "#7958ad",
+    "actions": "上浮、点头、摇摆、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "inspired",
+    "treatment": "filled",
+    "shape": "square",
+    "label": "灵感",
+    "shapeLabel": "圆角正方形",
+    "color": "#7958ad",
+    "actions": "上浮、点头、摇摆、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "inspired",
+    "treatment": "outline",
+    "shape": "original",
+    "label": "灵感",
+    "shapeLabel": "经典轮廓",
+    "color": "#7958ad",
+    "actions": "上浮、点头、摇摆、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "inspired",
+    "treatment": "outline",
+    "shape": "circle",
+    "label": "灵感",
+    "shapeLabel": "圆形",
+    "color": "#7958ad",
+    "actions": "上浮、点头、摇摆、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "inspired",
+    "treatment": "outline",
+    "shape": "triangle",
+    "label": "灵感",
+    "shapeLabel": "圆角三角形",
+    "color": "#7958ad",
+    "actions": "上浮、点头、摇摆、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "inspired",
+    "treatment": "outline",
+    "shape": "square",
+    "label": "灵感",
+    "shapeLabel": "圆角正方形",
+    "color": "#7958ad",
+    "actions": "上浮、点头、摇摆、眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "surprised",
+    "treatment": "filled",
+    "shape": "original",
+    "label": "惊讶",
+    "shapeLabel": "经典轮廓",
+    "color": "#3c72ab",
+    "actions": "弹跳、左右晃动、快速眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "surprised",
+    "treatment": "filled",
+    "shape": "circle",
+    "label": "惊讶",
+    "shapeLabel": "圆形",
+    "color": "#3c72ab",
+    "actions": "弹跳、左右晃动、快速眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "surprised",
+    "treatment": "filled",
+    "shape": "triangle",
+    "label": "惊讶",
+    "shapeLabel": "圆角三角形",
+    "color": "#3c72ab",
+    "actions": "弹跳、左右晃动、快速眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "surprised",
+    "treatment": "filled",
+    "shape": "square",
+    "label": "惊讶",
+    "shapeLabel": "圆角正方形",
+    "color": "#3c72ab",
+    "actions": "弹跳、左右晃动、快速眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "surprised",
+    "treatment": "outline",
+    "shape": "original",
+    "label": "惊讶",
+    "shapeLabel": "经典轮廓",
+    "color": "#3c72ab",
+    "actions": "弹跳、左右晃动、快速眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "surprised",
+    "treatment": "outline",
+    "shape": "circle",
+    "label": "惊讶",
+    "shapeLabel": "圆形",
+    "color": "#3c72ab",
+    "actions": "弹跳、左右晃动、快速眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "surprised",
+    "treatment": "outline",
+    "shape": "triangle",
+    "label": "惊讶",
+    "shapeLabel": "圆角三角形",
+    "color": "#3c72ab",
+    "actions": "弹跳、左右晃动、快速眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  },
+  {
+    "id": "surprised",
+    "treatment": "outline",
+    "shape": "square",
+    "label": "惊讶",
+    "shapeLabel": "圆角正方形",
+    "color": "#3c72ab",
+    "actions": "弹跳、左右晃动、快速眨眼、左右看",
+    "variants": [
+      "color",
+      "black",
+      "white",
+      "current"
+    ],
+    "viewBox": "0 0 320 320",
+    "transparent": true
+  }
+]

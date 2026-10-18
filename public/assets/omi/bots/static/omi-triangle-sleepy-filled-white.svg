@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-sleepy" role="img" aria-label="Omi · 困倦" data-state="sleepy" data-duration="6">
+
+<g fill="#ffffff" stroke="#ffffff"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 182 226 H 34 Q 10 226 20 206 L 112 44 Q 128 17 144 44 L 222 182" fill="#ffffff" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(23 37) scale(0.82)"><g class="omx-a omx-face" fill="#151515" stroke="#151515"><g class="omx-a omx-gaze"><g class="omx-a omx-blink"><path d="M 78 120 Q 92 138 106 120 M 150 120 Q 164 138 178 120" fill="none" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g></g></g><g class="omx-a omx-accent"><path d="M 258 28 H 278 L 258 48 H 278" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g></g>
+</svg>

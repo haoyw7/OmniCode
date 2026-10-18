@@ -119,7 +119,7 @@ export type BotToolConfiguration = {
 export type BotConfiguration = {
   id: string;
   name: string;
-  /** Optional short avatar text, limited to eight Unicode code points. */
+  /** Optional avatar: short text (eight Unicode code points) or omi:SEVT appearance token. */
   avatar?: string;
   persona?: BotPersona;
   /** IANA time zone used for the assistant's sense of local time. */

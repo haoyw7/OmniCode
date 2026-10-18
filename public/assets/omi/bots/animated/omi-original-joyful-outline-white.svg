@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-joyful" role="img" aria-label="Omi · 开心" data-state="joyful" data-duration="4.8">
+<style>@keyframes omi-expr-joyful-body{0%,25%,65%,100%{transform:translateY(0) rotate(0deg)}5%{transform:translateY(-8px) rotate(-5deg)}10%{transform:translateY(0) rotate(0deg)}15%{transform:translateY(-5px) rotate(5deg)}40%{transform:translateY(-2px) rotate(-9deg)}45%{transform:translateY(-2px) rotate(9deg)}80%{transform:translateY(-3px) rotate(-4deg)}}
+@keyframes omi-expr-joyful-accent{0%,40%,100%{opacity:.3}10%,30%{opacity:1}}
+@keyframes omi-expr-joyful-gaze{0%,12%,52%,100%{transform:translateX(0)}17%,28%{transform:translateX(-6px)}36%,47%{transform:translateX(6px)}}
+@keyframes omi-expr-joyful-blink{0%,26%,31%,72%,77%,100%{transform:scaleY(1)}28%,74%{transform:scaleY(.12)}}
+.omi-expr-joyful .omx-body{animation:omi-expr-joyful-body 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-joyful .omx-accent{animation:omi-expr-joyful-accent 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-joyful .omx-body{transform-origin:128px 132px}
+.omi-expr-joyful .omx-gaze{animation:omi-expr-joyful-gaze 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-joyful .omx-blink{animation:omi-expr-joyful-blink 4.8s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 126px}
+.omi-expr-joyful .omx-a{transform-box:view-box}
+.omi-expr-joyful[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-joyful[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-joyful .omx-a{animation:none!important}}</style>
+<g fill="#ffffff" stroke="#ffffff"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omx-a omx-face"><g class="omx-a omx-gaze"><g class="omx-a omx-blink"><path d="M 78 129 Q 92 103 106 129 M 150 129 Q 164 103 178 129" fill="none" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></g></g><path d="M 104 156 Q 128 188 152 156" fill="none" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></g></g></g><g class="omx-a omx-accent"><path d="M 278 245 L 288 237 M 285 259 H 298" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g></g>
+</svg>

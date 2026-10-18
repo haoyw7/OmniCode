@@ -1,3 +1,4 @@
+import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { useEffect, useId, useRef, useState } from "react";
 import type { BotView } from "../model/bots";
 import { BotAvatar } from "./BotAvatar";
@@ -52,7 +53,7 @@ export function BotRecipientPicker({ open, bots, roomsSupported, onChoose, onCre
             else if (event.key === "Tab" && !event.shiftKey && roomsSupported && highlighted && selected.length < 10) { event.preventDefault(); add(highlighted); }
           }} />
       </div>
-      <button data-ui="icon-button" type="button" className="assistant-icon-button" disabled={busy} aria-label={t("Cancel")} onClick={onClose}><X size={18} /></button>
+      <IconButton type="button" className="assistant-icon-button" disabled={busy} label={t("Cancel")} onClick={onClose}><X size={18} /></IconButton>
     </header>
     <AnimatedCollapse expanded={expanded} className="desktop-bot-recipient-dropdown">
       <div className="desktop-bot-recipient-menu">
@@ -70,7 +71,7 @@ export function BotRecipientPicker({ open, bots, roomsSupported, onChoose, onCre
         <label className="desktop-bot-recipient-hint">{t(selected.length < 2 ? "Add another Bot to start a room" : "Send a message to start a room")}</label>
         <div><textarea data-ui="textarea" rows={1} value={draft} disabled={busy} aria-label={t("Room message")} placeholder={t("Message your Bots…")} onFocus={() => setDropdown(false)} onChange={event => setDraft(event.target.value)} onKeyDown={event => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); }
-        }} /><button type="submit" className="assistant-send" aria-label={t("Send")} disabled={busy || selected.length < 2 || !draft.trim()}><ArrowUp size={18} /></button></div>
+        }} /><IconButton shape="round" type="submit" className="assistant-send" label={t("Send")} disabled={busy || selected.length < 2 || !draft.trim()}><ArrowUp size={18} /></IconButton></div>
       </form>
     </AnimatedCollapse>}
   </section>;

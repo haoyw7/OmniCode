@@ -1,0 +1,6 @@
+[
+  { "id": "original", "label": "经典轮廓", "outline": null, "faceTransform": null },
+  { "id": "circle", "label": "圆形", "outline": "M 178 214.603 A 100 100 0 1 1 214.603 178", "faceTransform": null },
+  { "id": "triangle", "label": "圆角三角形", "outline": "M 182 226 H 34 Q 10 226 20 206 L 112 44 Q 128 17 144 44 L 222 182", "faceTransform": "translate(23 37) scale(0.82)" },
+  { "id": "square", "label": "圆角正方形", "outline": "M 190 228 H 66 Q 28 228 28 190 V 66 Q 28 28 66 28 H 190 Q 228 28 228 66 V 190", "faceTransform": null }
+]

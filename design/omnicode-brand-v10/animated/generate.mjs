@@ -13,9 +13,9 @@ if (!outline || !face || !happyFace || !check) throw new Error('Static master pa
 
 const ease = 'cubic-bezier(.22,1,.36,1)';
 const states = [
-  { id:'ready', label:'待命', duration:2.88, copy:'轻浮动与眨眼', keys:`
-@keyframes omi-ready-body { 0%,66.666%,100% {transform:translateY(0)} 8.333%,58.333% {transform:translateY(-3px)} }
-@keyframes omi-ready-face { 0%,72%,84%,100% {transform:scaleY(1)} 78% {transform:scaleY(.16)} }`, rules:'.omi-body{animation:omi-ready-body 2.88s EASE infinite}.omi-face{animation:omi-ready-face 2.88s EASE infinite;transform-origin:128px 127px}', extra:'' },
+  { id:'ready', label:'待命', duration:2.88, copy:'轻浮动、左右转动与眨眼', keys:`
+@keyframes omi-ready-body { 0%,33.333%,66.666%,100% {transform:translateY(0) rotate(0deg)} 8.333%,25% {transform:translateY(-3px) rotate(-6deg)} 41.666% {transform:translateY(-2px) rotate(6deg)} 50% {transform:translateY(0) rotate(-4deg)} 83.333% {transform:translateY(-3px) rotate(3deg)} }
+@keyframes omi-ready-face { 0%,72%,84%,100% {transform:scaleY(1)} 78% {transform:scaleY(.16)} }`, rules:'.omi-body{animation:omi-ready-body 2.88s EASE infinite;transform-origin:128px 132px}.omi-face{animation:omi-ready-face 2.88s EASE infinite;transform-origin:128px 127px}', extra:'' },
   { id:'thinking', label:'思考', duration:2.4, copy:'视线微移，思考点交替', keys:`
 @keyframes omi-thinking-face { 0%,20%,70%,100% {transform:translate(0,0)} 30%,60% {transform:translate(4px,-5px)} }
 @keyframes omi-thinking-dot { 0%,66.666%,100% {opacity:.25} 33.333% {opacity:1} }`, rules:'.omi-face{animation:omi-thinking-face 2.4s EASE infinite}.omi-dot{animation:omi-thinking-dot .72s EASE infinite}.omi-dot-b{animation-delay:-.24s}.omi-dot-c{animation-delay:-.48s}', extra:'<g stroke="none"><circle class="omi-a omi-dot" cx="222" cy="23" r="5"/><circle class="omi-a omi-dot omi-dot-b" cx="241" cy="23" r="5"/><circle class="omi-a omi-dot omi-dot-c" cx="260" cy="23" r="5"/></g>' },
@@ -38,14 +38,16 @@ function make(state, color, once=false) {
     if (selector.startsWith('.omi-once ')) return `${root}.omi-once ${selector.slice(10)}{`;
     return `${root} ${selector}{`;
   });
-  const style = `${state.keys}\n${rules}
+  const gaze = state.id === 'ready' ? `@keyframes omi-ready-gaze{0%,12%,52%,100%{transform:translateX(0)}17%,28%{transform:translateX(-6px)}36%,47%{transform:translateX(6px)}}
+${root} .omi-gaze{animation:omi-ready-gaze 2.88s ${ease} infinite}` : '';
+  const style = `${state.keys}\n${rules}\n${gaze}
 ${root} .omi-a {transform-box:view-box}
 ${root}[data-paused="true"] .omi-a {animation-play-state:paused}
 ${root}[data-motion="off"] .omi-a {animation:none!important}
 @media (prefers-reduced-motion:reduce) {${root} .omi-a {animation:none!important}}`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-motion omi-motion-${state.id}${once?' omi-once':''}" role="img" aria-label="Omi · ${state.label}" data-state="${state.id}" data-duration="${state.duration}">
   <style>${style}</style>
-  <g fill="${color}" stroke="${color}"><g transform="translate(32 32)"><g class="omi-a omi-body">${outline}<g class="omi-a omi-face">${state.id==='done'?happyFace:face}</g></g></g>${state.extra}</g>
+  <g fill="${color}" stroke="${color}"><g transform="translate(32 32)"><g class="omi-a omi-body">${outline}<g class="omi-a omi-face">${state.id==='done'?happyFace:state.id==='ready'?`<g class="omi-a omi-gaze">${face}</g>`:face}</g></g></g>${state.extra}</g>
 </svg>\n`;
 }
 

@@ -4084,5 +4084,20 @@
   "Category counts are estimates.": "分类 token 数为估算值。",
   "Tool results are included in messages; separate counts were not reported.": "工具结果包含在消息中，智能体尚未提供单独统计。",
   "Updated {time}. Refreshes after each turn.": "更新于 {time}，每轮结束后刷新。",
-  "Category details have not been reported yet.": "智能体尚未提供分类明细。"
+  "Category details have not been reported yet.": "智能体尚未提供分类明细。",
+  "Search bots and rooms": "搜索 Bot 和群聊",
+  "Clear search": "清除搜索",
+  "Other bots": "其他 Bot",
+  "Original": "原版",
+  "Circle": "圆形",
+  "Triangle": "三角形",
+  "Square": "正方形",
+  "Outline": "线框",
+  "Filled": "填充",
+  "Teal": "青色",
+  "Amber": "琥珀色",
+  "Rose": "玫瑰色",
+  "Shape": "形状",
+  "Expression": "表情",
+  "Fill style": "填充方式"
 }

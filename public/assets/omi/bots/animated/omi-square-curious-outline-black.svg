@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-curious" role="img" aria-label="Omi · 疑惑" data-state="curious" data-duration="4.8">
+<style>@keyframes omi-expr-curious-body{0%,30%,65%,100%{transform:translateY(0) rotate(0deg)}5%,15%{transform:translateY(-4px) rotate(-7deg)}40%{transform:translateY(-2px) rotate(6deg)}45%{transform:translateY(0) rotate(-4deg)}80%{transform:translateY(-3px) rotate(3deg)}}
+@keyframes omi-expr-curious-accent{0%,60%,100%{opacity:.4;transform:translateY(3px)}10%,50%{opacity:1;transform:translateY(0)}}
+@keyframes omi-expr-curious-gaze{0%,12%,52%,100%{transform:translateX(0)}17%,28%{transform:translateX(-6px)}36%,47%{transform:translateX(6px)}}
+@keyframes omi-expr-curious-blink{0%,26%,31%,72%,77%,100%{transform:scaleY(1)}28%,74%{transform:scaleY(.12)}}
+.omi-expr-curious .omx-body{animation:omi-expr-curious-body 4.8s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 128px}
+.omi-expr-curious .omx-accent{animation:omi-expr-curious-accent 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-curious .omx-body{transform-origin:128px 132px}
+.omi-expr-curious .omx-gaze{animation:omi-expr-curious-gaze 4.8s cubic-bezier(.22,1,.36,1) infinite}
+.omi-expr-curious .omx-blink{animation:omi-expr-curious-blink 4.8s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 126px}
+.omi-expr-curious .omx-a{transform-box:view-box}
+.omi-expr-curious[data-paused="true"] .omx-a{animation-play-state:paused}
+.omi-expr-curious[data-motion="off"] .omx-a{animation:none!important}
+@media(prefers-reduced-motion:reduce){.omi-expr-curious .omx-a{animation:none!important}}</style>
+<g fill="#151515" stroke="#151515"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 190 228 H 66 Q 28 228 28 190 V 66 Q 28 28 66 28 H 190 Q 228 28 228 66 V 190" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omx-a omx-face"><g class="omx-a omx-gaze"><g class="omx-a omx-blink"><circle cx="92" cy="126" r="9" stroke="none"/><path d="M 151 130 L 177 123" fill="none" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/><path d="M 78 98 Q 91 89 105 96" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g></g><g class="omx-a omx-accent"><path d="M 261 30 Q 261 17 274 17 Q 288 17 288 29 Q 288 37 277 42 V 48" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="277" cy="61" r="3.5" stroke="none"/></g></g>
+</svg>

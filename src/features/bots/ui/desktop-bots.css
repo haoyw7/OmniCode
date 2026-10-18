@@ -32,7 +32,6 @@
 }
 .assistant-chat.desktop-bots-workspace .desktop-bots-host-name {
   min-width: 0;
-  max-width: 145px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -40,26 +39,7 @@
   font-size: var(--text-ui-sm);
 }
 .assistant-chat.desktop-bots-workspace .desktop-bots-search {
-  display: flex;
-  align-items: center;
-  gap: 7px;
   margin: 0 12px 12px;
-  padding: 7px 9px;
-  border: 1px solid var(--color-stroke);
-  border-radius: 8px;
-  color: var(--color-foreground-subtle);
-  background: var(--color-background-base);
-}
-.assistant-chat.desktop-bots-workspace .desktop-bots-search input {
-  min-width: 0;
-  width: 100%;
-  outline: none;
-  background: transparent;
-  color: var(--color-content);
-  font-size: var(--text-ui-sm);
-}
-.assistant-chat.desktop-bots-workspace .desktop-bots-search:focus-within {
-  border-color: var(--color-accent);
 }
 .assistant-chat.desktop-bots-workspace .desktop-bots-contacts {
   min-height: 0;
@@ -229,10 +209,6 @@
 .assistant-chat.desktop-bots-workspace .assistant-header-actions {
   align-self: center;
   gap: 3px;
-}
-.assistant-chat.desktop-bots-workspace .assistant-header-actions .assistant-icon-button {
-  padding: 6px;
-  background: transparent;
 }
 .assistant-chat.desktop-bots-workspace > .assistant-details {
   grid-column: 2;
@@ -521,14 +497,6 @@ html.is-resizing .assistant-chat.desktop-bots-workspace .assistant-body {
   gap: 14px;
   color: var(--color-foreground-subtle);
 }
-.desktop-bots-workspace .desktop-bots-empty button,
-.desktop-bots-host .desktop-bots-create-thread button {
-  padding: 7px 12px;
-  border-radius: 7px;
-  background: var(--color-surface-hover);
-  color: var(--color-content);
-  cursor: pointer;
-}
 .desktop-bots-host .desktop-bots-create-thread {
   flex-shrink: 0;
   border-top: 1px solid var(--color-stroke);
@@ -547,12 +515,6 @@ html.is-resizing .assistant-chat.desktop-bots-workspace .assistant-body {
   flex-direction: column;
   gap: 6px;
   font-size: var(--text-ui-sm);
-}
-.desktop-bots-host .desktop-bots-create-thread input {
-  border: 1px solid var(--color-stroke);
-  border-radius: 6px;
-  padding: 7px;
-  background: var(--color-background-base);
 }
 @container (max-width: 600px) {
   .desktop-bots-workspace .desktop-bots-new > span { display: none; }
@@ -608,11 +570,6 @@ html.is-resizing .assistant-chat.desktop-bots-workspace .assistant-body {
 .desktop-bots-workspace .desktop-bots-memory :is(input, select, textarea) {
   width: 100%;
   min-width: 0;
-  padding: 8px;
-  color: var(--color-content);
-  background: var(--color-background-base);
-  border: 1px solid var(--color-stroke);
-  border-radius: 6px;
 }
 .desktop-bots-workspace .desktop-bots-memory textarea {
   min-height: 260px;
@@ -622,20 +579,10 @@ html.is-resizing .assistant-chat.desktop-bots-workspace .assistant-body {
   font-size: var(--text-ui-sm);
   tab-size: 2;
 }
-.desktop-bots-workspace .desktop-bots-memory :is(button, input, select, textarea):focus-visible,
+.desktop-bots-workspace .desktop-bots-memory :is(button, input, select, textarea):not([data-ui]):focus-visible,
 .desktop-bots-workspace .desktop-bots-details-tabs [role="tab"]:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-}
-.desktop-bots-workspace .desktop-bots-memory button {
-  padding: 6px 9px;
-  border-radius: 6px;
-  background: var(--color-surface-hover);
-  cursor: pointer;
-}
-.desktop-bots-workspace .desktop-bots-memory button:disabled {
-  cursor: default;
-  opacity: 0.5;
 }
 .desktop-bots-workspace .desktop-bots-memory-toolbar,
 .desktop-bots-workspace .desktop-bots-memory-actions,
@@ -754,13 +701,6 @@ html.is-resizing .assistant-chat.desktop-bots-workspace .assistant-body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.desktop-bots-workspace .desktop-bots-archive button,
-.desktop-bots-workspace .desktop-bots-thread-settings button {
-  padding: 7px 10px;
-  border-radius: 6px;
-  background: var(--color-surface-hover);
-  cursor: pointer;
-}
 .desktop-bots-workspace .desktop-bots-thread-settings {
   display: flex;
   flex-direction: column;
@@ -788,11 +728,6 @@ html.is-resizing .assistant-chat.desktop-bots-workspace .assistant-body {
 .desktop-bots-workspace .desktop-bots-thread-settings select {
   min-width: 0;
   width: 100%;
-  border: 1px solid var(--color-stroke);
-  border-radius: 6px;
-  padding: 7px;
-  background: var(--color-background-base);
-  color: var(--color-content);
 }
 .desktop-bots-workspace .desktop-bots-thread-settings .desktop-bots-model-follow,
 .desktop-bots-workspace .desktop-bots-model-picker,

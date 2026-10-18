@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-expression omi-expr-surprised" role="img" aria-label="Omi · 惊讶" data-state="surprised" data-duration="4.8">
+
+<g fill="#151515" stroke="#151515"><g transform="translate(32 32)"><g class="omx-a omx-body"><path d="M 190 228 H 66 Q 28 228 28 190 V 66 Q 28 28 66 28 H 190 Q 228 28 228 66 V 190" fill="#151515" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omx-a omx-face" fill="#ffffff" stroke="#ffffff"><g class="omx-a omx-gaze"><g class="omx-a omx-blink"><circle cx="91" cy="122" r="11" fill="none" stroke-width="8"/><circle cx="165" cy="122" r="11" fill="none" stroke-width="8"/></g></g><circle cx="128" cy="168" r="7" fill="none" stroke-width="6"/></g></g></g><g class="omx-a omx-accent"><path d="M 279 21 V 40" fill="none" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="279" cy="53" r="3.5" stroke="none"/></g></g>
+</svg>

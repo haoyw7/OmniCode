@@ -2,6 +2,7 @@
   <style>
 @keyframes omi-approval-bubble { 0%,70%,100% {opacity:.45} 10%,60% {opacity:1} }
 .omi-motion-approval .omi-bubble{animation:omi-approval-bubble 2.4s cubic-bezier(.22,1,.36,1) infinite}
+
 .omi-motion-approval .omi-a {transform-box:view-box}
 .omi-motion-approval[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-approval[data-motion="off"] .omi-a {animation:none!important}

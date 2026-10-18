@@ -33,8 +33,17 @@ let entries: BotMessage[] = [
 const view = (id: string) => { const thread = threads.find(t => t.id === id) ?? threads[0]; return { ...bots.find(b => b.id === thread.botId)!, botId: thread.botId, threadId: id, title: thread.title, chatRevision: revision }; };
 const rpc: BotRpc = async (method, params = {}) => {
  const p = params as Record<string, any>;
- if (method === "environment.describe") return { capabilities: ["assistant.v1", "assistant.history", "bots.shell.v1", "bots.v1", "bots.management.v1"] } as never;
+ if (method === "environment.describe") return { capabilities: ["assistant.v1", "assistant.history", "bots.shell.v1", "bots.v1", "bots.management.v1", "bots.runtime.v1", ...(query.has("collaboration") ? ["bots.teams.v1", "bots.rooms.v1"] : [])] } as never;
+ if (method === "botTeams.list") return { revision: 1, teams: [{ id: "design-team", name: "Design team", memberBotIds: bots.slice(0, 4).map(bot => bot.id), chiefBotId: bots[0].id, revision: 1, createdAt: now, updatedAt: now }] } as never;
+ if (method === "botRooms.list") return { revision: 1, rooms: [{ id: "design-room", name: "Design reviews", memberIds: bots.slice(0, 4).map(bot => bot.id), memberTimeoutMs: 240000, revision: 1, chatRevision: 0, activityRevision: 0, createdAt: now, updatedAt: now }] } as never;
  if (method === "bots.list") return { revision: 1, bots, threads, defaultBotId: bots[0].id, defaultThreadId: threads[0].id } as never;
+ if (method === "bots.get") return bots.find(bot => bot.id === p.botId) as never;
+ if (method === "bots.configure") {
+  const bot = bots.find(item => item.id === p.botId)!;
+  if (p.expectedRevision !== bot.revision) throw new Error("Settings changed elsewhere. Reload before saving.");
+  Object.assign(bot, p.patch, { revision: bot.revision + 1 });
+  return { revision: bot.revision } as never;
+ }
  if (method === "botThreads.get") return view(p.threadId) as never;
  if (method === "botThreads.messages") return { assistant: view(p.threadId), entries: p.threadId !== "thread-0" ? [] : p.latest ? entries.slice(-p.limit) : entries.filter(m => m.revision > (p.afterRevision ?? 0)), nextRevision: revision, hasMore: false } as never;
  if (method === "models.list") return { models: { codex: [{ id: "default", name: "Default" }] }, errors: {} } as never;
@@ -54,4 +63,4 @@ function MemoryFixture() {
  const [open, setOpen] = useState(true);
  return <BotMemoryDialog open={open} text="Synthetic remembered preference" meta="Offline dialog verification" busy={false} error="Synthetic validation error" onClose={() => setOpen(false)} onSave={() => setOpen(false)} onForget={() => setOpen(false)} />;
 }
-createRoot(document.getElementById("root")!).render(<div style={{ height: "100vh", display: "flex", containerType: "inline-size" }}>{query.has("modal") && <MemoryFixture />}<DesktopBotsWorkspace hostKey="rea-offline" hostName="Local workspace" rpc={rpc} onOpen={() => {}} desktopBots /></div>);
+createRoot(document.getElementById("root")!).render(<div style={{ width: Number(query.get("width")) || undefined, maxWidth: "100%", height: "100vh", display: "flex", containerType: "inline-size" }}>{query.has("modal") && <MemoryFixture />}<DesktopBotsWorkspace hostKey="rea-offline" hostName="Local workspace" rpc={rpc} onOpen={() => {}} desktopBots /></div>);

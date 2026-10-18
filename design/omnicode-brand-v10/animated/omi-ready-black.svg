@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-motion omi-motion-ready" role="img" aria-label="Omi · 待命" data-state="ready" data-duration="2.88">
   <style>
-@keyframes omi-ready-body { 0%,66.666%,100% {transform:translateY(0)} 8.333%,58.333% {transform:translateY(-3px)} }
+@keyframes omi-ready-body { 0%,33.333%,66.666%,100% {transform:translateY(0) rotate(0deg)} 8.333%,25% {transform:translateY(-3px) rotate(-6deg)} 41.666% {transform:translateY(-2px) rotate(6deg)} 50% {transform:translateY(0) rotate(-4deg)} 83.333% {transform:translateY(-3px) rotate(3deg)} }
 @keyframes omi-ready-face { 0%,72%,84%,100% {transform:scaleY(1)} 78% {transform:scaleY(.16)} }
-.omi-motion-ready .omi-body{animation:omi-ready-body 2.88s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-ready .omi-face{animation:omi-ready-face 2.88s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 127px}
+.omi-motion-ready .omi-body{animation:omi-ready-body 2.88s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 132px}.omi-motion-ready .omi-face{animation:omi-ready-face 2.88s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 127px}
+@keyframes omi-ready-gaze{0%,12%,52%,100%{transform:translateX(0)}17%,28%{transform:translateX(-6px)}36%,47%{transform:translateX(6px)}}
+.omi-motion-ready .omi-gaze{animation:omi-ready-gaze 2.88s cubic-bezier(.22,1,.36,1) infinite}
 .omi-motion-ready .omi-a {transform-box:view-box}
 .omi-motion-ready[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-ready[data-motion="off"] .omi-a {animation:none!important}
 @media (prefers-reduced-motion:reduce) {.omi-motion-ready .omi-a {animation:none!important}}</style>
-  <g fill="#151515" stroke="#151515"><g transform="translate(32 32)"><g class="omi-a omi-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omi-a omi-face"><path d="M 84 109 L 109 127 L 84 145 M 153 127 H 179" fill="none" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g>
+  <g fill="#151515" stroke="#151515"><g transform="translate(32 32)"><g class="omi-a omi-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omi-a omi-face"><g class="omi-a omi-gaze"><path d="M 84 109 L 109 127 L 84 145 M 153 127 H 179" fill="none" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g></g>
 </svg>

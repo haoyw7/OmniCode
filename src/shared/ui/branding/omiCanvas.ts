@@ -223,18 +223,18 @@ export const OMI_CANVAS: Record<OmiExpression, readonly OmiCanvasPart[]> = {
       "strokeWidth": 30.0
     },
     {
-      "d": "M 103 111 L 83 126 L 103 141 M 153 111 L 173 126 L 153 141",
+      "d": "M 78 129 Q 92 103 106 129 M 150 129 Q 164 103 178 129",
       "x": 32.0,
       "y": 32.0,
       "opacity": 1.0,
-      "strokeWidth": 14.0
+      "strokeWidth": 13.0
     },
     {
-      "d": "M 111 164 Q 128 179 145 164",
+      "d": "M 104 156 Q 128 188 152 156",
       "x": 32.0,
       "y": 32.0,
       "opacity": 1.0,
-      "strokeWidth": 8.0
+      "strokeWidth": 9.0
     }
   ],
   "encouraging": [

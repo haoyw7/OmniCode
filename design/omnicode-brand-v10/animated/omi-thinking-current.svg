@@ -3,6 +3,7 @@
 @keyframes omi-thinking-face { 0%,20%,70%,100% {transform:translate(0,0)} 30%,60% {transform:translate(4px,-5px)} }
 @keyframes omi-thinking-dot { 0%,66.666%,100% {opacity:.25} 33.333% {opacity:1} }
 .omi-motion-thinking .omi-face{animation:omi-thinking-face 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-thinking .omi-dot{animation:omi-thinking-dot .72s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-thinking .omi-dot-b{animation-delay:-.24s}.omi-motion-thinking .omi-dot-c{animation-delay:-.48s}
+
 .omi-motion-thinking .omi-a {transform-box:view-box}
 .omi-motion-thinking[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-thinking[data-motion="off"] .omi-a {animation:none!important}

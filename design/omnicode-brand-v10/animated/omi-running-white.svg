@@ -2,6 +2,7 @@
   <style>
 @keyframes omi-running-line { 0% {opacity:0;transform:translateX(0)} 20% {opacity:1;transform:translateX(0)} 80% {opacity:1;transform:translateX(120px)} 100% {opacity:0;transform:translateX(120px)} }
 .omi-motion-running .omi-progress{animation:omi-running-line 1.2s cubic-bezier(.22,1,.36,1) infinite}
+
 .omi-motion-running .omi-a {transform-box:view-box}
 .omi-motion-running[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-running[data-motion="off"] .omi-a {animation:none!important}

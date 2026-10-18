@@ -1,3 +1,5 @@
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotView, BotsSnapshot } from "../model/bots";
@@ -8,8 +10,8 @@ import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import "./desktop-bot-details.css";
 
-type Fields = { avatar: string; workingDirectory: string; slots: string; custom: boolean; actions: string[]; computer: boolean; callableBotIds: string[] };
-const fields = (bot: BotView): Fields => ({ avatar: bot.avatar ?? "", workingDirectory: bot.workingDirectory ?? "", slots: String(bot.maxConcurrentRuns ?? 3), custom: bot.tools?.enabledActions !== undefined, actions: [...(bot.tools?.enabledActions ?? BOT_ACTIONS)], computer: bot.tools?.computer ?? false, callableBotIds: [...(bot.callableBotIds ?? [])].filter(id => id !== bot.id) });
+type Fields = { workingDirectory: string; slots: string; custom: boolean; actions: string[]; computer: boolean; callableBotIds: string[] };
+const fields = (bot: BotView): Fields => ({ workingDirectory: bot.workingDirectory ?? "", slots: String(bot.maxConcurrentRuns ?? 3), custom: bot.tools?.enabledActions !== undefined, actions: [...(bot.tools?.enabledActions ?? BOT_ACTIONS)], computer: bot.tools?.computer ?? false, callableBotIds: [...(bot.callableBotIds ?? [])].filter(id => id !== bot.id) });
 
 type Props = { bot: BotView; rpc: BotRpc; onSaved: () => void; delegationSupported?: boolean };
 export function DesktopBotRuntimeSettings(props: Props) {
@@ -46,11 +48,10 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
     }
   }, [bot, base.revision, dirty, busy]);
   const update = (patch: Partial<Fields>) => setDraft(value => ({ ...value, ...patch }));
-  const validAvatar = [...draft.avatar.trim()].length <= 8 && !/[\u0000-\u001f\u007f-\u009f]/u.test(draft.avatar);
   const slots = Number(draft.slots), validSlots = Number.isInteger(slots) && slots >= 1 && slots <= 10;
   const save = async () => {
-    if (busy || !dirty || conflict || !validAvatar || !validSlots) return;
-    const patch = { avatar: draft.avatar.trim(), workingDirectory: draft.workingDirectory.trim() || null, maxConcurrentRuns: slots,
+    if (busy || !dirty || conflict || !validSlots) return;
+    const patch = { workingDirectory: draft.workingDirectory.trim() || null, maxConcurrentRuns: slots,
       tools: { computer: draft.computer, ...(draft.custom ? { enabledActions: draft.actions } : {}) },
       ...(delegationSupported ? { callableBotIds: draft.callableBotIds.filter(id => id !== bot.id) } : {}) };
     const signature = JSON.stringify([bot.id, base.revision, patch]);
@@ -72,21 +73,19 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
     finally { setBusy(false); }
   };
   return <form className="desktop-bot-runtime" aria-label={t("Bot runtime settings")} onSubmit={event => { event.preventDefault(); void save(); }}>
-    <button type="button" aria-expanded={open} onClick={() => setOpen(value => !value)}>{t("Runtime")}{dirty ? " •" : ""}</button>
+    <Button variant="ghost" type="button" aria-expanded={open} onClick={() => setOpen(value => !value)}>{t("Runtime")}{dirty ? " •" : ""}</Button>
     <AnimatedCollapse expanded={open}><div>
     <p>{t("Changes apply to the next turn. Manage permissions in Bot settings.")}</p>
     <fieldset disabled={busy}>
-      <label>{t("Avatar")}<input data-ui="input" value={draft.avatar} maxLength={32} aria-invalid={!validAvatar || undefined} onChange={event => update({ avatar: event.target.value })} placeholder={t("Emoji or initials")} /></label>
-      {!validAvatar && <small role="alert">{t("Avatar must be at most 8 characters without control characters")}</small>}
-      <label>{t("Working directory")}<input data-ui="input" value={draft.workingDirectory} onChange={event => update({ workingDirectory: event.target.value })} placeholder={t("Use a separate directory for each thread")} /></label>
-      <label>{t("Concurrent runs")}<input data-ui="input" type="number" min={1} max={10} step={1} value={draft.slots} aria-invalid={!validSlots || undefined} onChange={event => update({ slots: event.target.value })} /></label>
+      <label>{t("Working directory")}<Input value={draft.workingDirectory} onChange={event => update({ workingDirectory: event.target.value })} placeholder={t("Use a separate directory for each thread")} /></label>
+      <label>{t("Concurrent runs")}<Input type="number" min={1} max={10} step={1} value={draft.slots} aria-invalid={!validSlots || undefined} onChange={event => update({ slots: event.target.value })} /></label>
       {!validSlots && <small role="alert">{t("Choose between 1 and 10 concurrent runs.")}</small>}
       <label className="desktop-bot-check"><input data-ui="checkbox" type="checkbox" checked={draft.computer} onChange={event => update({ computer: event.target.checked })} />{t("Reserve the Host computer during this Bot's runs")}</label>
       {delegationSupported && <section className="desktop-bot-callable-list" aria-label={t("Callable bots")}>
         <h3>{t("Callable bots")}</h3>
         <p>{t("Only selected Bots on this Host can be called. Bots cannot call themselves or delegate again.")}</p>
         {botsLoading && <small role="status">{t("Loading…")}</small>}
-        {botsError && <p role="alert">{t(botsError)} <button type="button" onClick={() => setBotsAttempt(value => value + 1)}>{t("Retry")}</button></p>}
+        {botsError && <p role="alert">{t(botsError)} <Button variant="secondary" type="button" onClick={() => setBotsAttempt(value => value + 1)}>{t("Retry")}</Button></p>}
         {[...new Set([...callableBots.map(item => item.id), ...draft.callableBotIds])].filter(id => id !== bot.id).map(id => {
           const target = callableBots.find(item => item.id === id);
           return <label className="desktop-bot-check" key={id}><input data-ui="checkbox" type="checkbox" checked={draft.callableBotIds.includes(id)} onChange={event => update({ callableBotIds: event.target.checked ? [...draft.callableBotIds, id] : draft.callableBotIds.filter(item => item !== id) })} /><span>{target?.name ?? t("Unavailable Bot")}</span></label>;
@@ -94,7 +93,7 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
         {!botsLoading && !botsError && !callableBots.length && !draft.callableBotIds.length && <small>{t("No other bots on this Host")}</small>}
         {!draft.callableBotIds.length && <small>{t("No bots are allowed to be called")}</small>}
       </section>}
-      <button type="button" aria-expanded={toolsOpen} onClick={() => setToolsOpen(value => !value)}>{t("Host tools")}</button>
+      <Button variant="ghost" type="button" aria-expanded={toolsOpen} onClick={() => setToolsOpen(value => !value)}>{t("Host tools")}</Button>
       <AnimatedCollapse expanded={toolsOpen}><div className="desktop-bot-tool-options">
         <p>{t("These choices restrict Host control actions. Provider tools and user MCP servers keep their own permissions.")}</p>
         <label className="desktop-bot-check"><input data-ui="checkbox" type="checkbox" checked={!draft.custom} onChange={event => update({ custom: !event.target.checked })} />{t("All permitted Host actions")}</label>
@@ -103,8 +102,8 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
     </fieldset>
     {error && <p role="alert">{t(error)}</p>}
     <footer>{dirty && <small role="status">{t("Unsaved changes")}</small>}
-      <button type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</button>
-      <button type="submit" disabled={!dirty || busy || conflict || !validAvatar || !validSlots}>{t("Save runtime settings")}</button>
+      <Button variant="secondary" type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</Button>
+      <Button variant="primary" type="submit" disabled={!dirty || busy || conflict || !validSlots}>{t("Save runtime settings")}</Button>
     </footer>
     </div></AnimatedCollapse>
   </form>;

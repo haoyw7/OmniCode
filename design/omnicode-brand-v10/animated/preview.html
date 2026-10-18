@@ -5,20 +5,23 @@
 </svg>
 </div><h1>透明短动画</h1><p class="intro">同一个轮廓，六种轻量表达。SVG 自带动画，无需脚本或动画库。</p><div class="controls"><button id="pause" aria-pressed="false">暂停</button><button id="restart">从头播放</button><button id="theme" aria-pressed="false">深色背景</button><label><input type="checkbox" id="reduce">静态预览</label><label><input type="checkbox" id="checker">透明网格</label></div><section class="grid"><article class="card"><div class="art"><svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-motion omi-motion-ready" role="img" aria-label="Omi · 待命" data-state="ready" data-duration="2.88">
   <style>
-@keyframes omi-ready-body { 0%,66.666%,100% {transform:translateY(0)} 8.333%,58.333% {transform:translateY(-3px)} }
+@keyframes omi-ready-body { 0%,33.333%,66.666%,100% {transform:translateY(0) rotate(0deg)} 8.333%,25% {transform:translateY(-3px) rotate(-6deg)} 41.666% {transform:translateY(-2px) rotate(6deg)} 50% {transform:translateY(0) rotate(-4deg)} 83.333% {transform:translateY(-3px) rotate(3deg)} }
 @keyframes omi-ready-face { 0%,72%,84%,100% {transform:scaleY(1)} 78% {transform:scaleY(.16)} }
-.omi-motion-ready .omi-body{animation:omi-ready-body 2.88s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-ready .omi-face{animation:omi-ready-face 2.88s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 127px}
+.omi-motion-ready .omi-body{animation:omi-ready-body 2.88s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 132px}.omi-motion-ready .omi-face{animation:omi-ready-face 2.88s cubic-bezier(.22,1,.36,1) infinite;transform-origin:128px 127px}
+@keyframes omi-ready-gaze{0%,12%,52%,100%{transform:translateX(0)}17%,28%{transform:translateX(-6px)}36%,47%{transform:translateX(6px)}}
+.omi-motion-ready .omi-gaze{animation:omi-ready-gaze 2.88s cubic-bezier(.22,1,.36,1) infinite}
 .omi-motion-ready .omi-a {transform-box:view-box}
 .omi-motion-ready[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-ready[data-motion="off"] .omi-a {animation:none!important}
 @media (prefers-reduced-motion:reduce) {.omi-motion-ready .omi-a {animation:none!important}}</style>
-  <g fill="currentColor" stroke="currentColor"><g transform="translate(32 32)"><g class="omi-a omi-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omi-a omi-face"><path d="M 84 109 L 109 127 L 84 145 M 153 127 H 179" fill="none" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g>
+  <g fill="currentColor" stroke="currentColor"><g transform="translate(32 32)"><g class="omi-a omi-body"><path d="M 181 212 C 166 220 145 222 124 222 C 61 222 25 191 25 132 C 25 70 61 34 124 34 C 187 34 225 68 225 130 C 225 153 221 170 212 184" fill="none" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/><g class="omi-a omi-face"><g class="omi-a omi-gaze"><path d="M 84 109 L 109 127 L 84 145 M 153 127 H 179" fill="none" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/></g></g></g></g></g>
 </svg>
-</div><div class="card-title"><h2>待命</h2><span>2.88s 循环</span></div><p>轻浮动与眨眼</p></article><article class="card"><div class="art"><svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-motion omi-motion-thinking" role="img" aria-label="Omi · 思考" data-state="thinking" data-duration="2.4">
+</div><div class="card-title"><h2>待命</h2><span>2.88s 循环</span></div><p>轻浮动、左右转动与眨眼</p></article><article class="card"><div class="art"><svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" class="omi-motion omi-motion-thinking" role="img" aria-label="Omi · 思考" data-state="thinking" data-duration="2.4">
   <style>
 @keyframes omi-thinking-face { 0%,20%,70%,100% {transform:translate(0,0)} 30%,60% {transform:translate(4px,-5px)} }
 @keyframes omi-thinking-dot { 0%,66.666%,100% {opacity:.25} 33.333% {opacity:1} }
 .omi-motion-thinking .omi-face{animation:omi-thinking-face 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-thinking .omi-dot{animation:omi-thinking-dot .72s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-thinking .omi-dot-b{animation-delay:-.24s}.omi-motion-thinking .omi-dot-c{animation-delay:-.48s}
+
 .omi-motion-thinking .omi-a {transform-box:view-box}
 .omi-motion-thinking[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-thinking[data-motion="off"] .omi-a {animation:none!important}
@@ -29,6 +32,7 @@
   <style>
 @keyframes omi-running-line { 0% {opacity:0;transform:translateX(0)} 20% {opacity:1;transform:translateX(0)} 80% {opacity:1;transform:translateX(120px)} 100% {opacity:0;transform:translateX(120px)} }
 .omi-motion-running .omi-progress{animation:omi-running-line 1.2s cubic-bezier(.22,1,.36,1) infinite}
+
 .omi-motion-running .omi-a {transform-box:view-box}
 .omi-motion-running[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-running[data-motion="off"] .omi-a {animation:none!important}
@@ -41,6 +45,7 @@
 @keyframes omi-done-check { 0% {opacity:0;stroke-dashoffset:1} 10%,90% {opacity:1;stroke-dashoffset:0} 100% {opacity:0;stroke-dashoffset:0} }
 @keyframes omi-done-check-once { from {opacity:0;stroke-dashoffset:1} to {opacity:1;stroke-dashoffset:0} }
 .omi-motion-done .omi-body{animation:omi-done-body 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-done .omi-check{stroke-dasharray:1;stroke-dashoffset:0;animation:omi-done-check 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-done.omi-once .omi-body{animation:omi-done-body 2.4s cubic-bezier(.22,1,.36,1) 1 both}.omi-motion-done.omi-once .omi-check{animation:omi-done-check-once .24s cubic-bezier(.22,1,.36,1) 1 both}
+
 .omi-motion-done .omi-a {transform-box:view-box}
 .omi-motion-done[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-done[data-motion="off"] .omi-a {animation:none!important}
@@ -51,6 +56,7 @@
   <style>
 @keyframes omi-approval-bubble { 0%,70%,100% {opacity:.45} 10%,60% {opacity:1} }
 .omi-motion-approval .omi-bubble{animation:omi-approval-bubble 2.4s cubic-bezier(.22,1,.36,1) infinite}
+
 .omi-motion-approval .omi-a {transform-box:view-box}
 .omi-motion-approval[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-approval[data-motion="off"] .omi-a {animation:none!important}
@@ -61,6 +67,7 @@
   <style>
 @keyframes omi-connecting-dot { 0%,100% {opacity:.25} 25%,50% {opacity:1} 75% {opacity:.25} }
 .omi-motion-connecting .omi-dot{animation:omi-connecting-dot .96s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-connecting .omi-dot-b{animation-delay:-.48s}
+
 .omi-motion-connecting .omi-a {transform-box:view-box}
 .omi-motion-connecting[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-connecting[data-motion="off"] .omi-a {animation:none!important}
@@ -73,6 +80,7 @@
 @keyframes omi-done-check { 0% {opacity:0;stroke-dashoffset:1} 10%,90% {opacity:1;stroke-dashoffset:0} 100% {opacity:0;stroke-dashoffset:0} }
 @keyframes omi-done-check-once { from {opacity:0;stroke-dashoffset:1} to {opacity:1;stroke-dashoffset:0} }
 .omi-motion-done .omi-body{animation:omi-done-body 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-done .omi-check{stroke-dasharray:1;stroke-dashoffset:0;animation:omi-done-check 2.4s cubic-bezier(.22,1,.36,1) infinite}.omi-motion-done.omi-once .omi-body{animation:omi-done-body 2.4s cubic-bezier(.22,1,.36,1) 1 both}.omi-motion-done.omi-once .omi-check{animation:omi-done-check-once .24s cubic-bezier(.22,1,.36,1) 1 both}
+
 .omi-motion-done .omi-a {transform-box:view-box}
 .omi-motion-done[data-paused="true"] .omi-a {animation-play-state:paused}
 .omi-motion-done[data-motion="off"] .omi-a {animation:none!important}

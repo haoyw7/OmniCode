@@ -1,3 +1,5 @@
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotView } from "../model/bots";
@@ -15,14 +17,14 @@ export function DesktopBotRooms({ rooms, bots, rpc, onSaved, onOpenRoom }: Props
   const open = (id: string) => { setSelected(id); setVisited(current => current.includes(id) ? current : [...current, id]); };
   const saved = async (room: BotRoom) => { await onSaved(); if (selected === "new") setVersion(value => value + 1); open(room.id); };
   return <section className="desktop-bot-directory" aria-label={t("Rooms")}>
-    <header><h2>{t("Rooms")}</h2><button type="button" onClick={() => open("new")}>{t("New room")}</button></header>
+    <header><h2>{t("Rooms")}</h2><Button variant="secondary" type="button" onClick={() => open("new")}>{t("New room")}</Button></header>
     <div className="desktop-bot-directory-body"><div className="desktop-bot-directory-list">
       {rooms.map(room => <button type="button" key={room.id} aria-pressed={selected === room.id} onClick={() => open(room.id)}><strong>{room.name}</strong><small>{room.archivedAt ? t("Archived") : `${room.memberIds.length} ${t("Members")}`}</small></button>)}{!rooms.length && <p>{t("No rooms yet")}</p>}
     </div><div className="desktop-bot-directory-editors">{visited.map(id => {
       const room = rooms.find(room => room.id === id), active = selected === id;
       if (id !== "new" && !room) return null;
       return <div key={id === "new" ? `new:${version}` : id} hidden={!active} inert={!active}><SurfaceVisibilityContext.Provider value={visible && active}>
-        {room && <button className="desktop-bot-open-room" type="button" onClick={() => onOpenRoom(room.id)}>{t("Open room")}</button>}
+        {room && <Button variant="secondary" className="desktop-bot-open-room" type="button" onClick={() => onOpenRoom(room.id)}>{t("Open room")}</Button>}
         <DesktopRoomEditor room={room} bots={bots} rpc={rpc} onSaved={saved} />
       </SurfaceVisibilityContext.Provider></div>;
     })}{!selected && <p>{t("Select a room or create one")}</p>}</div></div>
@@ -60,14 +62,14 @@ export function DesktopRoomEditor({ room, bots, rpc, onSaved }: { room?: BotRoom
   return <form className="desktop-bot-group-editor" aria-label={t(base ? "Room settings" : "New room")} onSubmit={event => { event.preventDefault(); void mutate("save"); }}>
     <h3>{t(base ? "Room settings" : "New room")}</h3>
     <fieldset disabled={busy || !!room?.archivedAt}>
-      <label>{t("Room name")}<input data-ui="input" aria-label={t("Room name")} value={name} maxLength={100} onChange={event => setName(event.target.value)} /></label>
+      <label>{t("Room name")}<Input aria-label={t("Room name")} value={name} maxLength={100} onChange={event => setName(event.target.value)} /></label>
       <DesktopBotMembers bots={bots} ids={members} ordered onChange={setMembers} />
       <small>{t("Choose 1–10 members. Each speaks once in the listed order.")}</small>
-      <label>{t("Member timeout (seconds)")}<input data-ui="input" type="number" min={.001} max={240} step="any" value={timeout} onChange={event => setMemberTimeout(event.target.value)} /></label>
+      <label>{t("Member timeout (seconds)")}<Input type="number" min={.001} max={240} step="any" value={timeout} onChange={event => setMemberTimeout(event.target.value)} /></label>
     </fieldset>
     {error && <p role="alert">{t(error)}</p>}
-    <footer><button type="submit" disabled={busy || !!room?.archivedAt || !valid || (!!base && !dirty)}>{t(base ? "Save room" : "Create room")}</button>
-      {base && <><button type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</button><button type="button" disabled={busy} onClick={() => void mutate(room?.archivedAt ? "restore" : "archive")}>{t(room?.archivedAt ? "Restore room" : "Archive room")}</button></>}
+    <footer><Button variant="primary" type="submit" disabled={busy || !!room?.archivedAt || !valid || (!!base && !dirty)}>{t(base ? "Save room" : "Create room")}</Button>
+      {base && <><Button variant="secondary" type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</Button><Button variant="secondary" type="button" disabled={busy} onClick={() => void mutate(room?.archivedAt ? "restore" : "archive")}>{t(room?.archivedAt ? "Restore room" : "Archive room")}</Button></>}
     </footer>
   </form>;
 }
