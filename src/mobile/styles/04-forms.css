@@ -265,7 +265,9 @@ html[data-mobile-skin] :is([data-ui="input"], [data-ui="select"]) { width: 100%;
   gap: 5px;
 }
 
+/* Settings selects size to their value instead of filling the row. */
 html[data-mobile-skin] .mobile-settings-row .mobile-select-trigger {
+  width: auto;
   min-height: var(--m-control-small);
   max-width: 60%;
   gap: 6px;
@@ -273,6 +275,12 @@ html[data-mobile-skin] .mobile-settings-row .mobile-select-trigger {
   border-radius: var(--m-control-pill);
   font-size: 14px;
   line-height: 20px;
+}
+@media (max-width: 420px) {
+  html[data-mobile-skin] .mobile-settings-row-stacked > .mobile-select-trigger {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 

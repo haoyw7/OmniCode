@@ -147,7 +147,6 @@ export function MobileAgentDefaults({
       className="mobile-settings-group"
       aria-label={t("New conversations")}
     >
-      <h2>{t("New conversations")}</h2>
       <div className="mobile-settings-card">
         <button
           ref={trigger}
@@ -268,11 +267,6 @@ export function MobileAgentDefaults({
           },
         )}
       </div>
-      <p className="mobile-settings-footer">
-        {t(
-          "Defaults for new conversations on this phone, saved separately for each Host. Accounts are managed on your computer.",
-        )}
-      </p>
       {!hostId ? (
         <p className="mobile-settings-footer">
           {t("Connect to a Host to choose defaults.")}

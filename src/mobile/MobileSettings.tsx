@@ -131,17 +131,20 @@ function AccentSelect({
 
 function Group({
   title,
+  hideTitle = false,
   footer,
   children,
 }: {
   title: string;
+  /** Subpages already show their title in the header. */
+  hideTitle?: boolean;
   footer?: string;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
   return (
     <section className="mobile-settings-group" aria-label={t(title)}>
-      <h2>{t(title)}</h2>
+      {hideTitle ? null : <h2>{t(title)}</h2>}
       <div className="mobile-settings-card">{children}</div>
       {footer ? <p className="mobile-settings-footer">{footer}</p> : null}
     </section>
@@ -260,10 +263,7 @@ function useMobileSettingsController({
     >
       {/* Root rows share the icon column; the Connections list keeps bare glyphs. */}
       {className === "mobile-settings-row" ? <SettingsIcon name="link" /> : <MobileSettingsGlyph name="link" />}
-      <span className="mobile-settings-label">
-        <span>{t("Add connection")}</span>
-        <small>{t("Scan a QR code or enter a pairing code.")}</small>
-      </span>
+      <span className="mobile-settings-label">{t("Add connection")}</span>
     </button>
   );
   const connectionList = (
@@ -385,7 +385,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
   if (page === "glass")
     return (
       <main key="glass" className="mobile-content mobile-settings">
-        <Group title="Glass">
+        <Group title="Glass" hideTitle>
           <GlassPreview
             label={glass.effect === "frosted" ? t("Frosted glass") : t("Solid")}
           />
@@ -458,7 +458,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
   if (page === "notifications")
     return (
       <main key="notifications" className="mobile-content mobile-settings">
-        <Group title="Notifications">
+        <Group title="Notifications" hideTitle>
           <div className="mobile-settings-row mobile-settings-notifications">
             <SettingsIcon name="sounds" />
             <label className="mobile-settings-label">
@@ -544,7 +544,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
   if (page === "chat")
     return (
       <main key="chat" className="mobile-content mobile-settings">
-        <Group title="Message composer">
+        <Group title="Message composer" hideTitle>
           <div className="mobile-settings-row">
             <SettingsIcon name="followUp" />
             <label className="mobile-settings-label" htmlFor="mobile-follow-up">
@@ -592,18 +592,9 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             <SettingsIcon name="layout" />
             <label className="mobile-settings-label">
               <span>{t("Anchor prompts to top")}</span>
-              <small id="mobile-transcript-anchor-description">
-                {t(
-                  "When you send, the new prompt sits at the top of the transcript and the reply grows into the space below. Turn this off to keep the classic layout, with the latest message resting on the composer.",
-                )}
-              </small>
               <Switch
                 id="mobile-transcript-anchor"
-
-
-
                 aria-label={t("Anchor prompts to top")}
-                aria-describedby="mobile-transcript-anchor-description"
                 checked={transcriptAnchor}
                 onCheckedChange={(checked) =>
                   onTranscriptAnchorChange(checked)
@@ -626,14 +617,12 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             onClick={() => onPageChange("connections")}
           >
             <SettingsIcon name={connection ? connectionAppearance.icon : "desktop"} />
-            <span className="mobile-settings-label">
-              <span>{t("Connections")}</span>
-              <small className="mobile-settings-value">
-                {connection
-                  ? `${connectionAppearance.displayName || connection.name} · ${t(hostStatusLabel(hostStatus))}`
-                  : t("Not connected")}
-              </small>
-            </span>
+            <span className="mobile-settings-label">{t("Connections")}</span>
+            <small className="mobile-settings-value">
+              {connection
+                ? `${connectionAppearance.displayName || connection.name} · ${t(hostStatusLabel(hostStatus))}`
+                : t("Not connected")}
+            </small>
             <ChevronRight size={18} />
           </button>
           {/* Without a saved Host, keep pairing one tap away on first launch. */}
@@ -665,12 +654,10 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             onClick={() => onPageChange("notifications")}
           >
             <SettingsIcon name="notifications" />
-            <span className="mobile-settings-label">
-              <span>{t("Notifications")}</span>
-              <small className="mobile-settings-value">
-                {t(activity.permission !== "unsupported" && activity.enabled ? "On" : "Off")}
-              </small>
-            </span>
+            <span className="mobile-settings-label">{t("Notifications")}</span>
+            <small className="mobile-settings-value">
+              {t(activity.permission !== "unsupported" && activity.enabled ? "On" : "Off")}
+            </small>
             <ChevronRight size={18} />
           </button>
           <button
@@ -680,12 +667,10 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             onClick={() => onPageChange("chat")}
           >
             <SettingsIcon name="followUp" />
-            <span className="mobile-settings-label">
-              <span>{t("Message composer")}</span>
-              <small className="mobile-settings-value">
-                {t(followUpBehavior === "queue" ? "Queue" : "Steer")}
-              </small>
-            </span>
+            <span className="mobile-settings-label">{t("Message composer")}</span>
+            <small className="mobile-settings-value">
+              {t(followUpBehavior === "queue" ? "Queue" : "Steer")}
+            </small>
             <ChevronRight size={18} />
           </button>
         </div>
@@ -698,12 +683,10 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           onClick={() => onPageChange("skin")}
         >
           <SettingsIcon name="appearance" />
-          <span className="mobile-settings-label">
-            <span>{t("Skin")}</span>
-            <small className="mobile-settings-value">
-              {skin === "auto" ? t("Automatic") : t(MOBILE_SKIN_INFO[skin].label)}
-            </small>
-          </span>
+          <span className="mobile-settings-label">{t("Skin")}</span>
+          <small className="mobile-settings-value">
+            {skin === "auto" ? t("Automatic") : t(MOBILE_SKIN_INFO[skin].label)}
+          </small>
           <ChevronRight size={18} />
         </button>
         {/* Color mode chooses between Midnight and Daylight for the automatic skin. */}
@@ -773,12 +756,10 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           onClick={() => onPageChange("glass")}
         >
           <SettingsIcon name="glass" />
-          <span className="mobile-settings-label">
-            <span>{t("Glass")}</span>
-            <small className="mobile-settings-value">
-              {t(glass.effect === "frosted" ? "Frosted glass" : "Solid")}
-            </small>
-          </span>
+          <span className="mobile-settings-label">{t("Glass")}</span>
+          <small className="mobile-settings-value">
+            {t(glass.effect === "frosted" ? "Frosted glass" : "Solid")}
+          </small>
           <ChevronRight size={18} />
         </button>
       </Group>
@@ -805,14 +786,12 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             onClick={() => onPageChange("updates")}
           >
             <SettingsIcon name="updates" />
-            <span className="mobile-settings-label">
-              <span>{t("App updates")}</span>
-              {appUpdates.installed ? (
-                <small className="mobile-settings-value">
-                  {appUpdates.installed.version}
-                </small>
-              ) : null}
-            </span>
+            <span className="mobile-settings-label">{t("App updates")}</span>
+            {appUpdates.installed ? (
+              <small className="mobile-settings-value">
+                {appUpdates.installed.version}
+              </small>
+            ) : null}
             {appUpdates.available ? (
               <span className="mobile-unread-dot" aria-hidden="true" />
             ) : null}

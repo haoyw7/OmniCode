@@ -291,10 +291,13 @@ button.mobile-settings-row:active {
   color: var(--color-m-ink-secondary);
   overflow-wrap: anywhere;
 }
-.mobile-settings-value {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+/* A row's current value trails its name on the same line. */
+.mobile-settings-row > .mobile-settings-value {
+  flex: 0 1 auto;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--mobile-font-md);
   color: var(--color-m-ink-secondary);
 }
@@ -362,14 +365,6 @@ button.mobile-settings-row:active {
 .mobile-current-host strong,
 .mobile-settings-label strong {
   font-weight: var(--font-weight-medium);
-}
-/* A row's current value reads as a subtitle under its name. */
-.mobile-settings-label > small.mobile-settings-value {
-  display: block;
-  gap: 0;
-  margin-top: -4px;
-  font-size: var(--mobile-font-md);
-  line-height: 1.4;
 }
 .mobile-settings .mobile-app-updates {
   margin: 0;

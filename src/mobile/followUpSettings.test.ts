@@ -166,8 +166,6 @@ describe("mobile composer settings", () => {
     expect(toggle().checked).toBe(false);
     await act(async () => setUiLanguage("zh-CN"));
     expect(toggle().getAttribute("aria-label")).toBe("将提示词固定到顶部");
-    expect(node.querySelector("#mobile-transcript-anchor-description")?.textContent)
-      .toContain("让最新消息显示在输入框上方");
     await act(async () => toggle().click());
     expect(toggle().checked).toBe(true);
     expect(loadTranscriptAnchor()).toBe(true);

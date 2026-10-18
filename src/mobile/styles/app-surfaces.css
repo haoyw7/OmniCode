@@ -94,13 +94,14 @@ html[data-mobile-skin] .mobile-skeleton-bar.mobile-skeleton-icon {
   height: 24px;
 }
 
-/* Settings and connections share the same page spacing and inset dividers. */
+/* Settings and connections share the same page spacing and inset dividers.
+   Cards carry their own inset, so the page keeps a narrower gutter. */
 html[data-mobile-skin] .mobile-settings {
   --mobile-settings-inset: 16px;
   --mobile-settings-icon: 24px;
   --mobile-settings-gap: 16px;
   gap: 24px;
-  padding-inline: var(--m-page-inset);
+  padding-inline: 12px;
 }
 html[data-mobile-skin] .mobile-settings-card,
 html[data-mobile-skin] .mobile-connection-list {
