@@ -180,7 +180,7 @@ html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assist
   border-radius: 24px;
   background: var(--m-message-fill);
   color: var(--m-message-ink);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.4;
 }
 /* Assistant replies share the user bubble's shape on the card fill. Prose
@@ -263,7 +263,7 @@ html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assist
   max-width: 80%;
   padding: 10px 14px;
   border-radius: var(--radius-m-bubble);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 22px;
   flex-shrink: 0;
 }
@@ -995,7 +995,7 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
 
 html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assistant-message-assistant .agent-markdown {
   font-family: var(--m-message-serif);
-  font-size: 17px;
+  font-size: 14px;
   font-weight: var(--font-weight-normal);
   line-height: 1.5;
   color: var(--color-m-ink);
