@@ -181,27 +181,25 @@ describe("mobile loading critical path", () => {
     expect(client.cachedSession("session")?.session.blocks).toEqual([]);
   });
 
-  it.each(["disconnect", "switch", "delete"] as const)("invalidates late session writes after %s", async (action) => {
+  it.each(["disconnect", "switch"] as const)("invalidates late session writes after %s", async (action) => {
     const sync = deferred<any>();
-    const { client } = await setup((method) => method === "sessions.delete" ? {} : sync.promise);
+    const { client } = await setup(() => sync.promise);
     const pending = client.session("session");
     if (action === "disconnect") await client.disconnect();
     if (action === "switch") await client.connect("http://second-host", "123");
-    if (action === "delete") await client.deleteSession("project", "session");
     sync.resolve({ kind: "snapshot", value: snapshot() });
     await expect(pending).rejects.toThrow();
     expect(client.cachedSession("session")).toBeUndefined();
   });
 
-  it.each(["disconnect", "switch", "delete"] as const)("discards late image hydration after %s", async (action) => {
+  it.each(["disconnect", "switch"] as const)("discards late image hydration after %s", async (action) => {
     const image = deferred<any>();
     const { client } = await setup((method) => method === "attachments.read" ? image.promise
-      : method === "sessions.delete" ? {} : { kind: "snapshot", value: snapshot() });
+      : { kind: "snapshot", value: snapshot() });
     await client.session("session");
     const pending = client.sessionPreviews("session");
     if (action === "disconnect") await client.disconnect();
     if (action === "switch") await client.connect("http://second-host", "123");
-    if (action === "delete") await client.deleteSession("project", "session");
     image.resolve({ data: "YWJj", size: 3, offset: 3 });
     expect(await pending).toBeUndefined();
     expect(client.cachedSession("session")).toBeUndefined();

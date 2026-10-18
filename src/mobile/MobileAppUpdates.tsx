@@ -281,11 +281,6 @@ export function MobileAppUpdates({
               <AgentMarkdown text={markdown} streaming={false} />
             </section>
           ) : null}
-          <p className="mobile-update-hint">
-            {t(
-              "Checks automatically when you open the app. Your computer publishes each new APK build.",
-            )}
-          </p>
         </>
       )}
     </section>

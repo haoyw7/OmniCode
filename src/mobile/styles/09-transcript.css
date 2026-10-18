@@ -760,6 +760,8 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
   border-top: 0.5px solid var(--mobile-separator);
 }
 .mobile-app-updates dt {
+  flex-shrink: 0;
+  white-space: nowrap;
   color: var(--color-m-ink-tertiary);
 }
 .mobile-app-updates dd {
@@ -769,6 +771,9 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
 }
 .mobile-update-source {
   font-family: var(--font-mono);
+  font-size: var(--mobile-font-sm);
+  line-height: 1.5;
+  color: var(--color-m-ink-secondary);
 }
 .mobile-update-actions {
   display: flex;
@@ -784,12 +789,6 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
   width: 100%;
   margin-top: 14px;
   accent-color: var(--color-accent);
-}
-.mobile-update-hint {
-  font-size: var(--mobile-font-xs);
-  line-height: 1.6;
-  margin-top: 16px;
-  color: var(--color-m-ink-tertiary);
 }
  .mobile-native-readonly,
  .mobile-execution-notice {

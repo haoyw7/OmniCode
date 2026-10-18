@@ -121,7 +121,6 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     connectionName,
     connectionRevision,
     connectionTrigger,
-    deleteCurrentSession,
     deviceConnections,
     dispatch,
     draft,
@@ -434,6 +433,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
             onQueryChange={setSearchQuery}
             onClose={() => setSearchOpen(false)}
             trigger={searchTrigger}
+            chats={homeChats}
           />
         {/* A new conversation has nothing to act on until its first message. */}
         {view === "chat" && (snapshot || loading) ? (
@@ -472,8 +472,8 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           <IconButton ref={aboutTrigger} label={t("About")} onClick={() => setAboutOpen((open) => !open)}>
             <Info size={22} />
           </IconButton>
-        ) : view === "home" && (!homeChats || searchOpen) ? (
-          <IconButton ref={homeChats ? undefined : searchTrigger} label={t(searchOpen ? "Close search" : "Search conversations")} onClick={toggleHomeSearch}>
+        ) : view === "home" ? (
+          <IconButton ref={searchTrigger} label={t(searchOpen ? "Close search" : homeChats ? "Search chats" : "Search conversations")} onClick={toggleHomeSearch}>
             {searchOpen ? <X size={22} /> : <Search size={22} />}
           </IconButton>
         ) : null}
@@ -652,9 +652,6 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
             setHomeActionSession(summary);
             onDrawerSessionActions(summary.id, trigger, point);
           }}
-          onSearch={toggleHomeSearch}
-          searchOpen={searchOpen}
-          searchTrigger={searchTrigger}
           onNewChat={chatSupported ? onNewChat : undefined}
           onNewSession={() => {
             const owner = homeProject ?? projects.find((item) => item.id === project?.id) ?? projects[0];
@@ -892,7 +889,6 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           onUpdate={(patch) =>
             updateSessionMetadata(patch, sessionActionsTarget ?? sessionId, sessionActionsSummary?.projectId ?? project?.id)
           }
-          onDelete={sessionActionsTarget ? undefined : deleteCurrentSession}
           onDelegate={client.hasCapability("assistant.v1") ? async () => {
             const targetId = sessionActionsTarget ?? sessionId;
             const targetProject = sessionActionsSummary?.projectId ?? snapshot?.projectId;

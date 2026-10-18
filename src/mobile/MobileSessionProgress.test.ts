@@ -83,12 +83,15 @@ function render(blocks: Block[], backgroundTasks?: string[], readBinaryFile?: (p
     },
   };
   const onOverlayChange = vi.fn();
+  // The composer's toolbar slot; React clears the root container on mount.
+  const progressDock = document.createElement("div");
   let props: ComponentProps<typeof MobileTranscript> = {
     snapshot,
     disabled: false,
     onCommand: vi.fn(),
     onOverlayChange,
     readBinaryFile,
+    progressDock,
   };
   const update = (changes: Partial<HostSession> = {}, active = true) => {
     snapshot = { ...snapshot, ...changes };
@@ -96,10 +99,11 @@ function render(blocks: Block[], backgroundTasks?: string[], readBinaryFile?: (p
     act(() => root.render(createElement(MobileTranscript, props)));
   };
   update();
+  app.append(progressDock);
   return { snapshot, update, onOverlayChange };
 }
 const capsule = () =>
-  app.querySelector<HTMLButtonElement>(".mobile-progress-capsule");
+  app.querySelector<HTMLButtonElement>(".mobile-progress-trigger");
 const dialog = () =>
   app.querySelector<HTMLElement>(
     '.mobile-sheet-backdrop:not([inert]) [role="dialog"]',

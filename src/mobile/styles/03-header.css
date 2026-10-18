@@ -54,9 +54,6 @@
   color: var(--color-m-ink);
   font-size: var(--mobile-font-xl);
 }
-.mobile-header-search input:focus-visible {
-  outline: none;
-}
 .mobile-header-search[data-fold-state="closing"] {
   pointer-events: none;
 }
@@ -312,4 +309,5 @@
 
 
 html[data-mobile-skin] .mobile-header-search [data-ui="input"] { min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-.mobile-header-search:focus-within { outline: 2px solid var(--m-control-focus); outline-offset: 0; }
+/* The caret marks focus; the field and its capsule draw no focus frame. */
+html[data-mobile-skin] .mobile-header-search [data-ui="input"]:is(:focus, :focus-visible) { border-color: transparent; outline: none; box-shadow: none; }

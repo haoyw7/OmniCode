@@ -19,7 +19,6 @@ import { useCollapseMotion } from "../shared/ui/AnimatedCollapse";
 export function MobileConversation({
   active = true,
   containerRef,
-  progress = false,
   embedded = false,
   notice,
   hapticsActive = active,
@@ -37,7 +36,6 @@ export function MobileConversation({
   hapticsAttention?: string;
   hapticsCompleted?: boolean;
   containerRef?: Ref<HTMLDivElement>;
-  progress?: boolean;
   embedded?: boolean;
   notice?: ReactNode;
 }) {
@@ -62,7 +60,6 @@ export function MobileConversation({
       ref={containerRef}
       className="mobile-desktop-transcript"
       data-layout={layout}
-      data-progress={progress}
       data-embedded={embedded || undefined}
       role="log"
       aria-label={t("Conversation")}

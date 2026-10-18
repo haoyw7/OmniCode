@@ -620,7 +620,6 @@
   background: linear-gradient(transparent, var(--color-m-app) 48%);
   pointer-events: none;
 }
-.mobile-home-search,
 .mobile-home[data-project="true"] .mobile-home-new {
   min-width: 0;
   min-height: 48px;
@@ -630,26 +629,6 @@
   border-radius: 999px;
   font-size: var(--mobile-font-lg);
   box-shadow: var(--m-shadow-float);
-}
-.mobile-home-search {
-  display: flex;
-  align-items: center;
-  flex: 1.6;
-  background: var(--color-m-inset);
-  color: var(--color-m-ink-tertiary);
-  text-align: left;
-}
-.mobile-home-search > svg {
-  flex-shrink: 0;
-}
-.mobile-home-search > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.mobile-home-search:active {
-  --mobile-press-color: var(--color-selection);
 }
 .mobile-home[data-project="true"] .mobile-home-new {
   flex: 1;

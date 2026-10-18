@@ -13,12 +13,15 @@ export function MobileHeaderSearch({
   onQueryChange,
   onClose,
   trigger,
+  chats = false,
 }: {
   open: boolean;
   query: string;
   onQueryChange: (query: string) => void;
   onClose: () => void;
   trigger: RefObject<HTMLButtonElement | null>;
+  /** The Chats page searches projectless chats only. */
+  chats?: boolean;
 }) {
   const { t } = useTranslation();
   const reduced = useMotionPreference();
@@ -55,8 +58,8 @@ export function MobileHeaderSearch({
           event.preventDefault();
           onClose();
         }}
-        aria-label={t("Search conversations")}
-        placeholder={t("Search conversations...")}
+        aria-label={t(chats ? "Search chats" : "Search conversations")}
+        placeholder={t(chats ? "Search chats…" : "Search conversations...")}
       />
     </motion.label>
   );

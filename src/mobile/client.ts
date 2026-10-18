@@ -833,18 +833,6 @@ export class MobileClient {
     ]);
     return latest;
   }
-  async deleteSession(projectId: string, sessionId: string): Promise<void> {
-    const epoch = this.cacheEpoch;
-    await this.rpc("sessions.delete", { projectId, sessionId });
-    if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
-    const sessions = this.cachedSessions(projectId);
-    this.nextSummaryTurn(projectId);
-    if (sessions) this.rememberSummaries(projectId, sessions.filter((item) => item.id !== sessionId));
-    this.snapshots.delete(sessionId);
-    this.previewSessions.delete(sessionId);
-    this.sessionLoads.delete(sessionId);
-    this.previewLoads.delete(sessionId);
-  }
   /** Returns the last catalog even after it expires so a new conversation can
    * render its Agent and model lists immediately while `models` refreshes. */
   cachedModels(projectId?: string): HostModelCatalog | undefined {

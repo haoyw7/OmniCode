@@ -344,12 +344,6 @@ describe("mobile session summary cache", () => {
     expect(await beforeEdit).toEqual([updated]);
     vi.advanceTimersByTime(1_000);
     expect(readSessionCache("host-1").get("project")).toEqual([updated]);
-    const beforeDelete = client.sessions("project");
-    await client.deleteSession("project", "session");
-    responses[3]([summary()]);
-    expect(await beforeDelete).toEqual([]);
-    vi.advanceTimersByTime(1_000);
-    expect(readSessionCache("host-1").get("project")).toEqual([]);
   });
 
   it("coalesces project loads and rejects an old Host response without replacing the new pending load", async () => {
@@ -623,7 +617,7 @@ describe("mobile client synchronization", () => {
     resolve({ state: "idle", path: "/native/pi.jsonl", checkedAt: 1, reason: "available" });
     await expect(check).rejects.toThrow("Host connection changed");
   });
-  it("updates session metadata on its owning project and drops deleted cached snapshots", async () => {
+  it("updates session metadata on its owning project", async () => {
     const requests: Array<{ method: string; params: Record<string, any> }> = [];
     const client = new MobileClient(
       memory(),
@@ -631,7 +625,6 @@ describe("mobile client synchronization", () => {
         requests.push({ method, params });
         if (method === "sessions.sync")
           return { kind: "snapshot", value: snapshot() };
-        if (method === "sessions.delete") return { deleted: true };
         return {
           id: "session",
           projectId: "project",
@@ -655,13 +648,6 @@ describe("mobile client synchronization", () => {
         title: "Updated",
       },
     });
-    await client.deleteSession("project", "session");
-    expect(requests.at(-1)).toEqual({
-      method: "sessions.delete",
-      params: { projectId: "project", sessionId: "session" },
-    });
-    await client.session("session");
-    expect(requests.at(-1)!.params.revision).toBeUndefined();
   });
   it("refreshes the saved hostname from the verified Host descriptor", async () => {
     const store = memory();

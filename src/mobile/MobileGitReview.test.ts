@@ -74,18 +74,22 @@ async function render(source: MobileGitSource, blocks: Block[] = [], cwd = "/rep
     },
   };
   const onOverlayChange = vi.fn();
+  // The composer's toolbar slot; React clears the root container on mount.
+  const progressDock = document.createElement("div");
   let props: ComponentProps<typeof MobileTranscript> = {
     snapshot,
     disabled: false,
     onCommand: vi.fn(),
     gitSource: source,
     onOverlayChange,
+    progressDock,
   };
   const update = async (next: Partial<typeof props>) => {
     props = { ...props, ...next };
     await act(async () => root.render(createElement(MobileTranscript, props)));
   };
   await update({});
+  app.append(progressDock);
   return { update, onOverlayChange };
 }
 const activeDialog = () =>
@@ -105,7 +109,7 @@ const click = async (button: HTMLElement) => {
 const settle = () => act(async () => vi.advanceTimersByTime(400));
 async function openReview() {
   await click(
-    app.querySelector<HTMLButtonElement>(".mobile-progress-capsule")!,
+    app.querySelector<HTMLButtonElement>(".mobile-progress-trigger")!,
   );
   await click(
     activeDialog().querySelector<HTMLButtonElement>(".mobile-progress-row")!,
@@ -221,7 +225,7 @@ describe("mobile Git review from the progress capsule", () => {
     };
     const { onOverlayChange } = await render(source);
     expect(
-      app.querySelector(".mobile-progress-capsule")?.textContent,
+      app.querySelector(".mobile-progress-trigger")?.textContent,
     ).toContain("+2−1");
     await openReview();
     expect(page().textContent).toContain("1 file changed");
@@ -276,7 +280,7 @@ describe("mobile Git review from the progress capsule", () => {
       };
       await render(source);
       expect(
-        app.querySelector(".mobile-progress-capsule")?.textContent,
+        app.querySelector(".mobile-progress-trigger")?.textContent,
       ).toContain("1 file changed");
       await openReview();
       await click(fileButton());
@@ -293,7 +297,7 @@ describe("mobile Git review from the progress capsule", () => {
     loadDiff.mockRejectedValueOnce(new Error("File changed during read"));
     await render({ loadIndex, loadDiff });
     await click(
-      app.querySelector<HTMLButtonElement>(".mobile-progress-capsule")!,
+      app.querySelector<HTMLButtonElement>(".mobile-progress-trigger")!,
     );
     expect(activeDialog().textContent).toContain("Could not load changes.");
     await click(
@@ -335,7 +339,7 @@ describe("mobile Git review from the progress capsule", () => {
     );
     expect(activeDialog().getAttribute("aria-label")).toBe("Session progress");
     expect(
-      app.querySelector(".mobile-progress-capsule")?.textContent,
+      app.querySelector(".mobile-progress-trigger")?.textContent,
     ).not.toContain("+2");
   });
 
@@ -538,7 +542,7 @@ describe("mobile session changes", () => {
     const { update } = await render({ loadIndex: vi.fn(async () => index()), loadDiff: vi.fn(async () => diff()) });
     await update({ sessionChangesSource: source });
     await settle();
-    await click(app.querySelector<HTMLButtonElement>(".mobile-progress-capsule")!);
+    await click(app.querySelector<HTMLButtonElement>(".mobile-progress-trigger")!);
     expect(activeDialog().querySelector(".mobile-progress-section h3")?.textContent).toContain("Session changes");
     await click(activeDialog().querySelector<HTMLButtonElement>(".mobile-progress-row")!);
     await settle();

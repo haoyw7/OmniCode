@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { motionGeometry, panelTransition } from "../shared/motion/tokens";
 import { useListReorderMotion } from "../shared/hooks/useListReorderMotion";
 import { MobileSpinner } from "./MobileSpinner";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type {
   HostProject,
   HostSessionSummary,
@@ -87,9 +87,6 @@ function useMobileHomeController({
   onNewChat,
   chatsPage = false,
   onChats,
-  onSearch,
-  searchOpen = false,
-  searchTrigger,
   onAddProject,
   onSessionActions,
   sessionActionsId,
@@ -122,9 +119,6 @@ function useMobileHomeController({
   chatsPage?: boolean;
   /** Opens the chats page from the Chats row atop the projects. */
   onChats?: () => void;
-  onSearch: () => void;
-  searchOpen?: boolean;
-  searchTrigger?: RefObject<HTMLButtonElement | null>;
   onAddProject: (trigger: HTMLButtonElement) => void;
   onSessionActions?: (session: HostSessionSummary, trigger: HTMLButtonElement, point?: MobileSheetPoint) => void;
   sessionActionsId?: string;
@@ -140,12 +134,6 @@ function useMobileHomeController({
 }) {
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
-  const searchButton = useRef<HTMLButtonElement | null>(null);
-  const setSearchButton = useCallback((element: HTMLButtonElement | null) => {
-    if (searchTrigger && (element || searchTrigger.current === searchButton.current))
-      searchTrigger.current = element;
-    searchButton.current = element;
-  }, [searchTrigger]);
   const chatProjects = useMemo(() => projects.filter((item) => isChatFolder(item.cwd)), [projects]);
   const owners = useMemo(() => chatsPage ? chatProjects : project ? [project] : projects,
     [chatsPage, chatProjects, project, projects]);
@@ -393,7 +381,6 @@ function useMobileHomeController({
     onNewChat,
     onNewSession,
     onProject,
-    onSearch,
     ordered,
     overview,
     overviewProjects,
@@ -408,18 +395,15 @@ function useMobileHomeController({
     projectsPage,
     projectsPending,
     projectsUnavailable,
-    query,
     recent,
     refresh,
     root,
     row,
-    searchOpen,
     sessions,
     setFilter,
     setFilterOpen,
     setPinnedOpen,
     setProjectsOpen,
-    setSearchButton,
     t,
     unavailable,
   };
@@ -455,7 +439,6 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
     onNewChat,
     onNewSession,
     onProject,
-    onSearch,
     ordered,
     overview,
     overviewProjects,
@@ -470,18 +453,15 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
     projectsPage,
     projectsPending,
     projectsUnavailable,
-    query,
     recent,
     refresh,
     root,
     row,
-    searchOpen,
     sessions,
     setFilter,
     setFilterOpen,
     setPinnedOpen,
     setProjectsOpen,
-    setSearchButton,
     t,
     unavailable,
   } = vm;
@@ -648,19 +628,6 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
       )}
       {!!projects.length && !projectsPage && (
         <div className="mobile-home-dock">
-          {chatsPage && (
-            <button
-              ref={setSearchButton}
-              type="button"
-              className="mobile-home-search"
-              aria-label={t(searchOpen ? "Close search" : chatsPage ? "Search chats" : "Search conversations")}
-              aria-expanded={searchOpen}
-              onClick={onSearch}
-            >
-              <Search size={22} />
-              <span>{query || t(chatsPage ? "Search chats" : "Search conversations")}</span>
-            </button>
-          )}
           {chatsPage ? (
             onNewChat && (
               <button
@@ -713,9 +680,6 @@ export function MobileHome(props: {
   chatsPage?: boolean;
   /** Opens the chats page from the Chats row atop the projects. */
   onChats?: () => void;
-  onSearch: () => void;
-  searchOpen?: boolean;
-  searchTrigger?: RefObject<HTMLButtonElement | null>;
   onAddProject: (trigger: HTMLButtonElement) => void;
   onSessionActions?: (session: HostSessionSummary, trigger: HTMLButtonElement, point?: MobileSheetPoint) => void;
   sessionActionsId?: string;

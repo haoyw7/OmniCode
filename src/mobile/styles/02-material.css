@@ -7,7 +7,6 @@
 .mobile-composer,
 .mobile-jump,
 .mobile-queue-pill,
-.mobile-progress-capsule,
 .mobile-glass-preview-chip,
 .mobile-drawer,
 .mobile-sheet,
@@ -18,9 +17,6 @@ html .popover-backdrop.popover-backdrop {
   -webkit-backdrop-filter: var(--m-material-filter);
   backdrop-filter: var(--m-material-filter);
   box-shadow: var(--m-shadow-float);
-}
-.mobile-progress-capsule {
-  box-shadow: none;
 }
 /* Panels hold rows of text, so they use the denser menu tone. */
 .mobile-drawer,

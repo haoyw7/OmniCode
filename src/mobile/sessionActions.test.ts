@@ -26,12 +26,12 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 function render(
-  options: { running?: boolean; pinned?: boolean; sidebar?: boolean } = {},
+  options: { pinned?: boolean; sidebar?: boolean } = {},
 ) {
   const snapshot: HostSession = {
     projectId: "project",
     revision: 1,
-    status: options.running ? "running" : "idle",
+    status: "idle",
     updatedAt: 1,
     pinned: options.pinned,
     session: {
@@ -49,7 +49,6 @@ function render(
   const trigger = document.createElement("button");
   node.append(trigger);
   const onUpdate = vi.fn(async (_patch: object) => {});
-  const onDelete = vi.fn(async () => {});
   const onMarkUnread = vi.fn(async () => {});
   const onClose = vi.fn();
   act(() =>
@@ -62,13 +61,12 @@ function render(
         anchor: { current: trigger },
         disabled: false,
         onUpdate,
-        onDelete: options.sidebar ? undefined : onDelete,
         onMarkUnread: options.sidebar ? onMarkUnread : undefined,
         onClose,
       }),
     ),
   );
-  return { onUpdate, onDelete, onClose, onMarkUnread };
+  return { onUpdate, onClose, onMarkUnread };
 }
 function button(text: string) {
   return [...node.querySelectorAll<HTMLButtonElement>("button")].find(
@@ -148,39 +146,11 @@ describe("mobile session management", () => {
     await submit();
     expect(onClose).toHaveBeenCalledOnce();
   });
-  it("requires delete confirmation, supports cancellation and deduplicates repeated taps", async () => {
-    const { onDelete, onClose } = render();
-    click("Delete");
-    expect(onDelete).not.toHaveBeenCalled();
-    click("Cancel");
-    expect(onDelete).not.toHaveBeenCalled();
-    click("Delete");
-    let finish!: () => void;
-    onDelete.mockImplementationOnce(
-      () =>
-        new Promise<void>((resolve) => {
-          finish = resolve;
-        }),
-    );
-    act(() => {
-      button("Delete").click();
-      button("Delete").click();
-    });
-    expect(onDelete).toHaveBeenCalledOnce();
-    expect(onClose).not.toHaveBeenCalled();
-    await act(async () => finish());
-    expect(onClose).toHaveBeenCalledOnce();
-  });
-  it("disables deleting a running session", () => {
-    const { onDelete } = render({ running: true });
-    expect(button("Delete").disabled).toBe(true);
-    click("Delete");
-    expect(onDelete).not.toHaveBeenCalled();
-  });
   it("offers neither GitHub linking nor a new conversation", () => {
     render();
     expect(button("Link GitHub issue or PR…")).toBeUndefined();
     expect(button("New conversation")).toBeUndefined();
+    expect(button("Delete")).toBeUndefined();
     expect(button("Rename")).toBeDefined();
   });
   it.each([

@@ -11,6 +11,7 @@ import { taskListProgressLabel } from "../features/sessions/model/taskList";
 import { TaskState } from "../features/sessions/ui/TaskListPreview";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
+import { IconButton } from "../shared/ui/forms/IconButton";
 import {
   Bot,
   CircleAlert,
@@ -29,7 +30,7 @@ const MotionChevronRight = motion.create(ChevronRight);
 import type { MobileGitIndexState } from "./useMobileGitIndex";
 import "./styles/session-progress.css";
 
-/** A compact transcript summary; its sheet uses the same data as desktop. */
+/** A single composer icon for session progress; its sheet uses the same data as desktop. */
 export function MobileSessionProgress({
   model,
   visible,
@@ -48,7 +49,7 @@ export function MobileSessionProgress({
   visible: boolean;
   open: boolean;
   sheetHost: HTMLElement | null;
-  /** Composer slot beside the model picker; without it the capsule floats below the header. */
+  /** Composer toolbar slot for the progress icon; without it only the sheet renders. */
   dock?: HTMLElement | null;
   onOpen: () => void;
   onClose: () => void;
@@ -67,39 +68,42 @@ export function MobileSessionProgress({
   const retained = useRef(model);
   if (model.hasContent) retained.current = model;
   const summaryModel = shown ? model : retained.current;
-  const capsule = (
-      <div className="mobile-session-progress" data-docked={dock ? true : undefined}>
+  const trigger = (
+      <div className="mobile-session-progress">
         <AnimatedCollapse expanded={shown} motion="height">
-          <button
-            type="button"
-            className="mobile-progress-capsule"
-            aria-label={t("Session progress")}
+          <IconButton
+            label={t("Session progress")}
+            tooltip={false}
+            shape="round"
+            className="mobile-progress-trigger"
             aria-describedby={summaryId}
             aria-haspopup="dialog"
             aria-expanded={open && shown}
+            active={open && shown}
             onClick={onOpen}
           >
-            <ProgressSummary model={summaryModel} id={summaryId} />
-            {summaryModel.git &&
-              sessionStatusSummary(summaryModel)?.kind !== "git" && (
-                <MobileDiffCounts
-                  additions={summaryModel.git.additions}
-                  deletions={summaryModel.git.deletions}
-                />
-              )}
-            {summaryModel.tasks && (
-              <span className="mobile-progress-count">
-                {taskListProgressLabel(summaryModel.tasks, t)}
-              </span>
-            )}
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
+            <span className="mobile-progress-icon" aria-hidden="true">
+              <ProgressIcon model={summaryModel} />
+            </span>
+            {/* Only the icon shows; the summary stays available to assistive tech. */}
+            <span className="sr-only" id={summaryId}>
+              <ProgressSummary model={summaryModel} />
+              {summaryModel.git &&
+                sessionStatusSummary(summaryModel)?.kind !== "git" && (
+                  <MobileDiffCounts
+                    additions={summaryModel.git.additions}
+                    deletions={summaryModel.git.deletions}
+                  />
+                )}
+              {summaryModel.tasks && ` ${taskListProgressLabel(summaryModel.tasks, t)}`}
+            </span>
+          </IconButton>
         </AnimatedCollapse>
       </div>
   );
   return (
     <>
-      {dock ? createPortal(capsule, dock) : capsule}
+      {dock && createPortal(trigger, dock)}
       {sheetHost &&
         createPortal(
           <MobileSheetPresence open={shown && open}>
@@ -125,39 +129,17 @@ export function MobileSessionProgress({
   );
 }
 
-function ProgressSummary({
-  model,
-  id,
-}: {
-  model: SessionStatusPanelModel;
-  id: string;
-}) {
-  const { t } = useTranslation();
+function ProgressIcon({ model }: { model: SessionStatusPanelModel }) {
   const summary = sessionStatusSummary(model);
-  if (!summary)
-    return (
-      <>
-        <GitCompare size={16} aria-hidden="true" />
-        <span className="mobile-progress-summary" id={id}>
-          {t("Changes")}
-        </span>
-      </>
-    );
-  let icon: ReactNode;
-  let text: string;
-  switch (summary.kind) {
+  switch (summary?.kind) {
     case "task":
-      icon = (
+      return (
         <TaskState
           status={summary.status === "current" ? "in_progress" : "completed"}
         />
       );
-      text = summary.text;
-      break;
     case "plan":
-      icon = <FileScript size={16} />;
-      text = summary.text;
-      break;
+      return <FileScript size={22} />;
     case "running": {
       const Icon =
         summary.agents && summary.background
@@ -165,51 +147,52 @@ function ProgressSummary({
           : summary.agents
             ? Bot
             : Terminal;
-      icon = <Icon size={16} />;
-      text = t("{count} running", { count: String(summary.count) });
-      break;
+      return <Icon size={22} />;
     }
     case "agents":
-      icon = <Bot size={16} />;
-      text = t(summary.count === 1 ? "{count} subagent" : "{count} subagents", { count: summary.count });
-      break;
+      return <Bot size={22} />;
     case "progress":
-      icon = <ListEnd size={16} />;
-      text = `${summary.completed}/${summary.total}`;
-      break;
+      return <ListEnd size={22} />;
+    default:
+      return <GitCompare size={22} />;
+  }
+}
+
+function ProgressSummary({ model }: { model: SessionStatusPanelModel }) {
+  const { t } = useTranslation();
+  const summary = sessionStatusSummary(model);
+  switch (summary?.kind) {
+    case "task":
+    case "plan":
+      return summary.text;
+    case "running":
+      return t("{count} running", { count: String(summary.count) });
+    case "agents":
+      return t(summary.count === 1 ? "{count} subagent" : "{count} subagents", { count: summary.count });
+    case "progress":
+      return `${summary.completed}/${summary.total}`;
     case "git":
       return (
         <>
-          <GitCompare size={16} aria-hidden="true" />
-          <span className="mobile-progress-summary" id={id}>
-            {t("Changes")}{" "}
-            {summary.additions || summary.deletions ? (
-              <MobileDiffCounts
-                additions={summary.additions}
-                deletions={summary.deletions}
-              />
-            ) : summary.files > 0 ? (
-              t(
-                summary.files === 1
-                  ? "{count} file changed"
-                  : "{count} files changed",
-                { count: summary.files },
-              )
-            ) : null}
-          </span>
+          {t("Changes")}{" "}
+          {summary.additions || summary.deletions ? (
+            <MobileDiffCounts
+              additions={summary.additions}
+              deletions={summary.deletions}
+            />
+          ) : summary.files > 0 ? (
+            t(
+              summary.files === 1
+                ? "{count} file changed"
+                : "{count} files changed",
+              { count: summary.files },
+            )
+          ) : null}
         </>
       );
+    default:
+      return t("Changes");
   }
-  return (
-    <>
-      <span className="mobile-progress-icon" aria-hidden="true">
-        {icon}
-      </span>
-      <span className="mobile-progress-summary" id={id}>
-        {text}
-      </span>
-    </>
-  );
 }
 
 function ProgressSections({

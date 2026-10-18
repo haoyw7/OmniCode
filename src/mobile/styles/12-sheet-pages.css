@@ -259,8 +259,9 @@ html[data-mobile-skin] .mobile-sheet-pages .mobile-page-layer {
 /* Invisible hit areas preserve compact control sizes. Do not change the
    positioned attachment remove button or the floating header's anchors. */
 :is(.mobile-composer-model, .mobile-composer-workspace, .mobile-composer-project, .mobile-composer-plan,
-  .mobile-status-copy, .mobile-detail-copy, .mobile-progress-capsule),
+  .mobile-status-copy, .mobile-detail-copy),
 .mobile-header-actions > [data-ui="icon-button"],
+.mobile-progress-trigger,
 .mobile-error [data-ui="icon-button"],
 .mobile-composer-attachments button:not(.attachment-chip-remove),
 .mobile-desktop-transcript .user-message-actions button,
@@ -271,8 +272,9 @@ html[data-mobile-skin] .mobile-sheet-pages .mobile-page-layer {
   position: relative;
 }
 :is(.mobile-composer-model, .mobile-composer-workspace, .mobile-composer-project, .mobile-composer-plan,
-  .mobile-status-copy, .mobile-detail-copy, .mobile-progress-capsule)::after,
+  .mobile-status-copy, .mobile-detail-copy)::after,
 .mobile-header-actions > [data-ui="icon-button"]::after,
+.mobile-progress-trigger::after,
 .mobile-error [data-ui="icon-button"]::after,
 .mobile-composer-attachments button::after,
 .mobile-desktop-transcript .user-message-actions button::after,
@@ -294,7 +296,7 @@ html[data-mobile-skin] .mobile-sheet-pages .mobile-page-layer {
    targets upward so the full 44px remains reachable above that card. */
 .mobile-composer-model::after,
 .mobile-composer-workspace::after,
-.mobile-session-progress[data-docked="true"] .mobile-progress-capsule::after {
+.mobile-progress-trigger::after {
   top: calc(50% - 4px);
 }
 .mobile-composer-attachments .attachment-chip-remove {

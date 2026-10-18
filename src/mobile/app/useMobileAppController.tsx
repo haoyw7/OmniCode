@@ -1537,26 +1537,6 @@ export function useMobileAppController() {
       setBusy(false);
     }
   };
-  const deleteCurrentSession = async () => {
-    if (!project || !sessionId) return;
-    const turn = navigation.current;
-    const id = sessionId;
-    setBusy(true);
-    try {
-      await client.deleteSession(project.id, id);
-      if (navigation.current === turn) {
-        navigate("chat");
-        setSessions((items) => items.filter((item) => item.id !== id));
-        setSessionId(undefined);
-        setSnapshot(undefined);
-        setDraft("");
-        setAttachments([]);
-        void openProject(project);
-      }
-    } finally {
-      setBusy(false);
-    }
-  };
   const removeActiveConnection = async () => {
     navigation.current += 1;
     projectGeneration.current += 1;
@@ -1987,7 +1967,6 @@ export function useMobileAppController() {
     connectionName,
     connectionRevision,
     connectionTrigger,
-    deleteCurrentSession,
     deviceConnections,
     dispatch,
     draft,

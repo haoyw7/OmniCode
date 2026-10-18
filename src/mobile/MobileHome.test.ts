@@ -1,6 +1,6 @@
 import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motionTestClock";
 // @vitest-environment happy-dom
-import { act, createElement, createRef, Fragment } from "react";
+import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -71,7 +71,6 @@ const defaults = {
   onProject: vi.fn(),
   onSession: vi.fn(),
   onNewSession: vi.fn(),
-  onSearch: vi.fn(),
   onAddProject: vi.fn(),
 };
 async function render(props: Partial<Parameters<typeof MobileHome>[0]> = {}) {
@@ -570,20 +569,6 @@ it("pauses list refresh while the retained page is hidden", async () => {
   expect(loadSessions).toHaveBeenCalledTimes(2);
 });
 
-it("does not clear the next page's search anchor when the retained chats page exits", () => {
-  const searchTrigger = createRef<HTMLButtonElement>();
-  const previous = createElement(MobileHome, { ...defaults, key: "previous", foreground: false,
-    chatsPage: true, searchTrigger });
-  const next = createElement("button", { key: "next", ref: searchTrigger, "data-next-search": true }, "Search");
-  act(() => root.render(createElement(Fragment, null, previous)));
-  expect(searchTrigger.current?.className).toBe("mobile-home-search");
-  act(() => root.render(createElement(Fragment, null, next, previous)));
-  const anchor = node.querySelector<HTMLButtonElement>("[data-next-search]");
-  expect(searchTrigger.current).toBe(anchor);
-  act(() => root.render(createElement(Fragment, null, next)));
-  expect(searchTrigger.current).toBe(anchor);
-});
-
 describe("projectless chats", () => {
   const chat: HostProject = {
     id: "chat",
@@ -603,11 +588,10 @@ describe("projectless chats", () => {
     expect(onChats).toHaveBeenCalledOnce();
   });
 
-  it("shows only chat conversations on the chats page with search and a new chat action", async () => {
+  it("shows only chat conversations on the chats page with a new chat action", async () => {
     const onNewChat = vi.fn();
     await render({ projects: [projects[0], chat], loadSessions, chatsPage: true, onNewChat });
     expect(ids(".mobile-home-recent")).toEqual(["chatting"]);
-    expect(node.querySelector(".mobile-home-search")?.textContent).toBe("Search chats");
     act(() => node.querySelector<HTMLButtonElement>('[aria-label="New chat"]')!.click());
     expect(onNewChat).toHaveBeenCalledOnce();
     expect(defaults.onNewSession).not.toHaveBeenCalled();

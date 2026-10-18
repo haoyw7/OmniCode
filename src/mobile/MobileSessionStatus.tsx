@@ -8,7 +8,7 @@ import type {
 import {
   contextPercent,
 } from "../features/sessions/model/contextUsage";
-import { MobileSheet, SHEET_WIDTH } from "./MobileSheet";
+import { MobileSheet } from "./MobileSheet";
 import { MobileHostStatus } from "./MobileHostStatus";
 import { mobileTranscriptPlatform } from "./transcriptPlatform";
 import type { HostConnectionStatus } from "./client";
@@ -115,10 +115,8 @@ export function MobileSessionStatus({
   return (
     <MobileSheet open={open} onExited={onExited}
       title="Status"
-      placement="anchor"
+      header={{ title: t("Status") }}
       anchor={anchor}
-      width={SHEET_WIDTH.list}
-      align="end"
       onClose={onClose}
     >
       <div className="mobile-status">
