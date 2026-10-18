@@ -61,10 +61,26 @@ const providerBinaryPathsPrimed = initializeProviderBinaryPaths().catch(
   () => undefined,
 );
 
+// A transferred tab should land immediately instead of replaying the intro.
+let skipSplashIntro = false;
+
+/** Resolves once the finite logo intro in index.html has played. */
+function bootSplashIntroFinished(splash: HTMLElement): Promise<unknown> {
+  if (skipSplashIntro || prefersReducedMotion() || typeof splash.getAnimations !== "function") return Promise.resolve();
+  const intro = splash
+    .getAnimations({ subtree: true })
+    .filter((animation) => animation.effect?.getComputedTiming().endTime !== Infinity);
+  return Promise.all(intro.map((animation) => animation.finished.catch(() => undefined)));
+}
+
 function dismissBootSplash() {
   const splash = document.getElementById("boot-splash");
   if (!splash || splash.dataset.dismissed === "1") return;
   splash.dataset.dismissed = "1";
+  void bootSplashIntroFinished(splash).then(() => fadeBootSplash(splash));
+}
+
+function fadeBootSplash(splash: HTMLElement) {
   activateWindowAppearance();
   void animate(splash, { opacity: 0 }, prefersReducedMotion() ? immediateTransition : defaultTransition).then(() => {
     splash.remove();
@@ -136,6 +152,7 @@ async function boot() {
     ]);
     performance.mark("omnicode:workspace-ready");
     const installedUpdate = windowTransfer ? null : consumeInstalledUpdate();
+    skipSplashIntro = Boolean(windowTransfer);
     root.render(
       <React.StrictMode>
         <BootGate>
