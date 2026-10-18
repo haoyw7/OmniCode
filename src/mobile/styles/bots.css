@@ -617,7 +617,7 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   border: 0;
   gap: 10px;
 }
-/* Collapsible sections keep their spacing inside the fold (see assistant.css). */
+/* Collapsible sections keep their spacing inside the fold (see bots.css). */
 .assistant-settings[data-layout="mobile"] .assistant-settings-section[data-open] {
   gap: 0;
 }
@@ -1005,6 +1005,9 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   color: var(--m-control-primary-ink);
 }
 
+.mobile-bots { display: flex; flex-direction: column; padding: var(--mobile-safe-top) var(--mobile-safe-right) var(--mobile-safe-bottom) var(--mobile-safe-left); }
+.mobile-bots-list { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 8px; padding: 16px; overflow-y: auto; }
+.mobile-bots-list [data-ui="navigation-item"] > [data-ui="navigation-icon"] { flex: 0 0 auto; display: flex; }
 .mobile-assistant-timeline { padding: 16px; overflow-wrap: anywhere; }
 .mobile-assistant-task { padding-block: 12px; border-bottom: 1px solid var(--mobile-fill); }
 .mobile-assistant-task h3 { font-size: var(--mobile-font-md); font-weight: 600; }

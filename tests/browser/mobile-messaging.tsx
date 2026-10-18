@@ -20,7 +20,7 @@ import "../../src/mobile/motion.css";
 const query = new URLSearchParams(location.search);
 if (query.has("assistant")) {
   await import("../../src/features/bots/ui/bots.css");
-  await import("../../src/mobile/styles/assistant.css");
+  await import("../../src/mobile/styles/bots.css");
 }
 setUiLanguage("zh-CN");
 applyMobileSkin(query.get("theme") === "dark" ? "midnight" : "daylight");

@@ -59,7 +59,7 @@ import { HARNESS_TITLE } from "../features/sessions/model/session";
 import { preserveInputFocus, usePreserveInputFocusOnTouch } from "./inputFocus";
 import { useMobileTextareaAutosize } from "./useMobileTextareaAutosize";
 import { keyboardHeight, keyboardMotionRemaining, onKeyboardMotion } from "./keyboardMotion";
-import "./styles/assistant.css";
+import "./styles/bots.css";
 import { MobileAssistantTimeline } from "./MobileAssistantTimeline";
 
 const BackHandlers = createContext(new Map<number, () => void>());

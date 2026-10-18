@@ -780,19 +780,19 @@ describe("mobile sidebar recents", async () => {
       "Show less",
     );
   });
-  it("keeps Assistant, Sessions and new conversation visible and reveals Projects under More", async () => {
+  it("keeps Bots, Sessions and new conversation visible and reveals Projects under More", async () => {
     const onAssistant = vi.fn();
     const onHome = vi.fn();
     const onAllProjects = vi.fn();
     const onNewSession = vi.fn();
     await act(async () =>
-      render(true, { projects, project, onAssistant, assistantName: "My helper", onHome, onAllProjects, onNewSession }),
+      render(true, { projects, project, onAssistant, onHome, onAllProjects, onNewSession }),
     );
     expect(node.querySelector(".mobile-drawer-project-link")).toBeNull();
     expect(node.querySelector(".mobile-drawer-all-projects")).toBeNull();
     expect(node.querySelector(".mobile-drawer-open-project")).toBeNull();
     const assistant = node.querySelector<HTMLButtonElement>(".mobile-drawer-assistant")!;
-    expect(assistant.textContent).toBe("My helper");
+    expect(assistant.textContent).toBe("Bots");
     act(() => assistant.click());
     expect(onAssistant).toHaveBeenCalledOnce();
     act(() =>
@@ -825,20 +825,20 @@ describe("mobile sidebar recents", async () => {
   });
 });
 
-it("shows the assistant unread count with its custom name and hides the badge after reading", async () => {
-  const props = { onAssistant: vi.fn(), assistantName: "My helper" };
+it("shows the Bots unread count and hides the badge after reading", async () => {
+  const props = { onAssistant: vi.fn() };
   const badge = () => node.querySelector(".mobile-drawer-assistant-badge");
   const assistant = () => node.querySelector(".mobile-drawer-assistant")!;
   render(true, { ...props, assistantUnreadCount: 3 });
   expect(badge()?.textContent).toBe("3");
-  expect(assistant().getAttribute("aria-label")).toBe("My helper, 3 unread messages");
+  expect(assistant().getAttribute("aria-label")).toBe("Bots, 3 unread messages");
   render(true, { ...props, assistantUnreadCount: 120 });
   expect(badge()?.textContent).toBe("99+");
   act(() => setUiLanguage("zh-CN"));
-  expect(assistant().getAttribute("aria-label")).toBe("My helper，120 条未读消息");
+  expect(assistant().getAttribute("aria-label")).toBe("Bots，120 条未读消息");
   render(true, props);
   expect(badge()).toBeNull();
-  expect(assistant().textContent).toBe("My helper");
+  expect(assistant().textContent).toBe("Bots");
 });
 
 it("shows the Notes entry only when supplied by a capable Host", async () => {

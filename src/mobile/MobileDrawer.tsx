@@ -105,7 +105,6 @@ function useMobileDrawerController({
   onSettings,
   onAssistant,
   onNotes,
-  assistantName,
   assistantUnreadCount = 0,
 }: {
   open: boolean;
@@ -146,7 +145,6 @@ function useMobileDrawerController({
   onSettings: () => void;
   onAssistant?: () => void;
   onNotes?: () => void;
-  assistantName?: string;
   assistantUnreadCount?: number;
 }) {
   const { language, t } = useTranslation();
@@ -541,7 +539,6 @@ function useMobileDrawerController({
     );
   };
   return {
-    assistantName,
     assistantUnreadCount,
     backdrop,
     close,
@@ -585,7 +582,6 @@ type MobileDrawerViewModel = ReturnType<typeof useMobileDrawerController>;
 
 function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
   const {
-    assistantName,
     assistantUnreadCount,
     backdrop,
     close,
@@ -674,12 +670,12 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
               type="button"
               className="mobile-drawer-item mobile-drawer-assistant"
               aria-label={assistantUnreadCount > 0 ? t("{name}, {count} unread messages", {
-                name: assistantName || t("Assistant"), count: assistantUnreadCount,
+                name: t("Bots"), count: assistantUnreadCount,
               }) : undefined}
               onClick={onAssistant}
             >
               <Bot size={22} />
-              <span>{assistantName || t("Assistant")}</span>
+              <span>{t("Bots")}</span>
               {assistantUnreadCount > 0 && (
                 <span className="mobile-drawer-assistant-badge" aria-hidden="true">
                   {assistantUnreadCount > 99 ? "99+" : assistantUnreadCount}
@@ -837,7 +833,6 @@ export const MobileDrawer = memo(function MobileDrawer(props: {
   onSettings: () => void;
   onAssistant?: () => void;
   onNotes?: () => void;
-  assistantName?: string;
   assistantUnreadCount?: number;
 }) {
   return <MobileDrawerView vm={useMobileDrawerController(props)} />;

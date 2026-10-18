@@ -189,17 +189,9 @@ export function useMobileAppController() {
   const [notesOpen, setNotesOpen] = useState(false);
   const notesPage = useRef<MobileNotesHandle>(null);
   const pageOverlayOpen = assistantOpen || notesOpen;
-  const [assistantIdentity, setAssistantIdentity] = useState<{ hostId: string; name?: string }>();
   const assistantPage = useRef<MobileAssistantHandle>(null);
   const assistantRpc = useCallback(async <T,>(method: string, params?: object) => {
-    const hostId = client.connection?.endpoint;
-    const result = await client.rpc<T>(method, params);
-    if (method === "assistant.get" && hostId && client.connection?.endpoint === hostId) {
-      const name = (result as { name?: string } | null)?.name;
-      setAssistantIdentity((current) => current?.hostId === hostId && current.name === name
-        ? current : { hostId, name });
-    }
-    return result;
+    return client.rpc<T>(method, params);
   }, []);
   const [homeProjectId, setHomeProjectId] = useState<string>();
   const [allProjectsPage, setAllProjectsPage] = useState(false);
@@ -1943,7 +1935,6 @@ export function useMobileAppController() {
     allProjectsPage,
     animateFrom,
     appUpdates,
-    assistantIdentity,
     assistantOpen,
     assistantPage,
     assistantRpc,

@@ -154,7 +154,7 @@ Bot 处理一条用户消息时，把它归入以下三种情况之一：
 | 文件 | 改动 | 风险 |
 |---|---|---|
 | `src/features/bots/ui/BotSessionCard.tsx` | 移动端卡片改为进展摘要，按钮语义从「打开会话」改为「查看进展」 | 低 |
-| `src/mobile/styles/assistant.css` | 摘要卡与时间线弹层样式，使用移动端既有 token，不引入桌面 CSS | 低 |
+| `src/mobile/styles/bots.css` | 摘要卡与时间线弹层样式，使用移动端既有 token，不引入桌面 CSS | 低 |
 | `src/features/bots/model/botActivity.ts` | 活动文案改为任务语言 | 低 |
 | `src/shared/i18n/zh-CN.json` | 新增和调整文案 | 低 |
 | `src/features/bots/ui/BotSettings.tsx` | 移动端：会话权限折叠为总开关；隐藏 `WatchedSessions` 的逐条列表 | 中（影响权限可见性，需确认不会误改已有权限） |
@@ -280,7 +280,7 @@ Host 的 worktree 回归使用本机临时真实 Git 仓库；队列/provider �
   `src/features/bots/ui/BotChat.tsx`、`BotChatChrome.ts`、`BotMessages.tsx`、`BotMessages.test.ts`、
   `BotSessionCard.tsx`、`BotSettings.tsx`。
 - 移动端与文案：`src/mobile/MobileAssistant.tsx`、`MobileAssistant.test.ts`、`MobileAssistantTimeline.tsx`、
-  `src/mobile/app/MobileAppView.tsx`、`src/mobile/styles/assistant.css`、`src/shared/i18n/zh-CN.json`。
+  `src/mobile/app/MobileAppView.tsx`、`src/mobile/styles/bots.css`、`src/shared/i18n/zh-CN.json`。
 - 说明：`docs/bot-session-autonomy.md`。
 - 原有改动独立提交：`src/mobile/MobileSessionStatus.tsx`、`src/mobile/styles/08-sheets.css`、
   `src/shared/ui/messaging/ContextBreakdown.tsx`；另一个样式提交包含

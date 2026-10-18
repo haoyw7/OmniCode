@@ -53,7 +53,7 @@ import { browseHostDirectories, client, type MobileAppViewModel } from "./useMob
 
 const MobileSettings = lazyMobilePage(async () => ({ default: (await import("../MobileSettings")).MobileSettings }));
 const MobileNotes = lazyMobilePage(async () => ({ default: (await import("../MobileNotes")).MobileNotes }));
-const MobileAssistant = lazyMobilePage(async () => ({ default: (await import("../MobileAssistant")).MobileAssistant }));
+const MobileAssistant = lazyMobilePage(async () => ({ default: (await import("../MobileBots")).MobileBots }));
 const MobileAgentDefaults = lazyMobilePage(async () => ({ default: (await import("../MobileAgentDefaults")).MobileAgentDefaults }));
 const MobileProviderAccounts = lazyMobilePage(async () => ({ default: (await import("../MobileProviderAccounts")).MobileProviderAccounts }));
 const MobileSharedConnections = lazyMobilePage(async () => ({ default: (await import("../MobileSharedConnections")).MobileSharedConnections }));
@@ -96,7 +96,6 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     allProjectsPage,
     animateFrom,
     appUpdates,
-    assistantIdentity,
     assistantOpen,
     assistantPage,
     assistantRpc,
@@ -316,6 +315,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
       {client.connection && (
         <MobileAssistant
           ref={assistantPage}
+          open={assistantOpen}
           key={client.connection.endpoint}
           hostKey={client.connection.environmentId}
           hostName={connectionName}
@@ -822,7 +822,6 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
       {!!client.connection && (
         <MobileDrawer
           key={`drawer:${client.connection?.endpoint}`}
-          assistantName={connected && assistantIdentity && assistantIdentity.hostId === connectionKey ? assistantIdentity.name : undefined}
           assistantUnreadCount={assistantUnreadCount}
           onAssistant={onDrawerAssistant}
           onNotes={client.hasCapability("notes.v1") ? onDrawerNotes : undefined}
