@@ -10,6 +10,9 @@ import {
 import { useConnectionAppearance, removeConnectionAppearance } from "../connectionAppearance";
 import { connectionErrorMessage } from "../connectionError";
 import type { MobileAssistantHandle } from "../MobileAssistant";
+import type { MobileBotSelection } from "../MobileBots";
+import type { BotTarget } from "../../features/bots/model/botNavigation";
+import type { SessionReference } from "../../features/bots/model/botView";
 import { useMobileAssistantUnread } from "../useMobileAssistantUnread";
 import { useHostQueue } from "../../features/connections/ui/useHostQueue";
 import {
@@ -137,6 +140,7 @@ function nativeWriteBlocked(
   snapshot: MobileSessionShell | undefined,
   access: NativeSessionAccess | undefined,
 ): boolean {
+  if (snapshot?.archived || snapshot?.session.orchestrationLeadId) return true;
   if (!snapshot?.session.nativeSession) return false;
   if (nativeSyncBlocked(snapshot.nativeStatus)) return true;
   return !(snapshot.status === "running" && snapshot.runId) && access?.state !== "idle";
@@ -184,9 +188,11 @@ export function useMobileAppController() {
   // Host has had a chance to restore Home or its conversation.
   const [initialRestorePending, setInitialRestorePending] = useState(true);
   // List scope survives navigation, so chat controls need their own entry source.
-  const [sessionEntrySource, setSessionEntrySource] = useState<"project" | "other">("other");
+  const [sessionEntrySource, setSessionEntrySource] = useState<"project" | "other" | "bot">("other");
   const assistantOpen = view === "bots";
   const botsReturnView = useRef<Exclude<View, "bots">>("home");
+  const botsReturnSession = useRef<{ project: HostProject; sessionId?: string; source: "project" | "other" } | undefined>(undefined);
+  const [botResume, setBotResume] = useState<MobileBotSelection>();
   const [notesOpen, setNotesOpen] = useState(false);
   const notesPage = useRef<MobileNotesHandle>(null);
   const pageOverlayOpen = notesOpen;
@@ -547,6 +553,8 @@ export function useMobileAppController() {
     setSessionStatusOpen(false);
     setAddingProject(false);
     setNotesOpen(false);
+    setBotResume(undefined);
+    botsReturnSession.current = undefined;
     setPreferencePanel(null);
     setConnected(!!connectionKey && !client.connection?.disabled);
     setView(connectionKey ? "home" : "settings");
@@ -985,14 +993,15 @@ export function useMobileAppController() {
   const openSession = async (
     id?: string,
     restoredProjectId?: string,
-    entrySource: "project" | "other" = "other",
+    entrySource: "project" | "other" | "bot" = "other",
+    resolved?: HostSession,
   ) => {
     const start = performance.now();
     appRoot.current?.removeAttribute("data-session-load-ms");
     appRoot.current?.removeAttribute("data-session-load-source");
     const turn = ++navigation.current;
     if (id) draftConfigurationChanged.current = true;
-    const known = id ? client.cachedSession(id) : undefined;
+    const known = resolved ?? (id ? client.cachedSession(id) : undefined);
     // A run that continued after this conversation was last open leaves the
     // list ahead of the snapshot. Painting it would flash long-past messages
     // before the sync replaces them, so wait for the sync instead.
@@ -1028,9 +1037,9 @@ export function useMobileAppController() {
     setError("");
     if (!id) return;
     try {
-      const result = await client.session(id);
+      const result = resolved ?? await client.session(id);
       if (navigation.current === turn) {
-        if (restoredProjectId && (result.projectId !== restoredProjectId || result.archived)) {
+        if (restoredProjectId && (result.projectId !== restoredProjectId || (result.archived && entrySource !== "bot"))) {
           const owner = projects.find((item) => item.id === restoredProjectId);
           if (owner) void openProject(owner);
           await openSession(undefined, undefined, entrySource);
@@ -1047,6 +1056,17 @@ export function useMobileAppController() {
       if (navigation.current === turn) setLoading(false);
     }
   };
+  const openBotSession = useStableCallback(async (ref: SessionReference, target: BotTarget, bot: MobileBotSelection) => {
+    if (client.connection?.environmentId !== ref.environmentId)
+      throw new Error("This conversation belongs to another Host");
+    if (view !== "bots" || target.project.id !== ref.projectId || target.session.projectId !== ref.projectId ||
+      target.session.session.id !== ref.sessionId)
+      throw new Error("Conversation is unavailable");
+    setBotResume(bot);
+    // Initialize the source project's catalog/history before showing its already verified session.
+    if (project?.id !== target.project.id) void openProject(target.project, "bots");
+    await openSession(ref.sessionId, ref.projectId, "bot", target.session);
+  });
   const activity = useMobileActivity(client, {
     snapshots: snapshotStore,
     connected,
@@ -1493,7 +1513,14 @@ export function useMobileAppController() {
     setSearchOpen(false);
     navigate("home");
   };
-  const closeBots = useStableCallback(() => navigate(botsReturnView.current));
+  const closeBots = useStableCallback(() => {
+    const previous = botsReturnSession.current;
+    if (botsReturnView.current === "chat" && previous) {
+      if (project?.id !== previous.project.id) void openProject(previous.project, "home");
+      void openSession(previous.sessionId, previous.project.id, previous.source);
+    } else navigate(botsReturnView.current);
+  });
+  const backToBot = useStableCallback(() => navigate("bots"));
   const openHome = (owner?: HostProject, allProjects = false) => {
     setHomeProjectId(owner?.id);
     setAllProjectsPage(allProjects);
@@ -1620,6 +1647,7 @@ export function useMobileAppController() {
       else if (view === "settings" && settingsPage !== "root")
         changeSettingsPage(mobileSettingsParent(settingsPage));
       else if (view === "settings" && client.connection) navigate(settingsReturnView.current);
+      else if (view === "chat" && sessionEntrySource === "bot") backToBot();
       else if (view === "chat") openHome(project);
       else if (view === "home" && homeProjectId) openHome();
       else void App.exitApp();
@@ -1629,6 +1657,7 @@ export function useMobileAppController() {
     };
   }, [
     assistantOpen,
+    sessionEntrySource,
     notesOpen,
     view,
     connected,
@@ -1829,7 +1858,11 @@ export function useMobileAppController() {
   );
   const onDrawerSettings = useStableCallback(() => navigate("settings"));
   const onDrawerAssistant = useStableCallback(() => {
-    if (view !== "bots") botsReturnView.current = view;
+    if (view !== "bots" && sessionEntrySource !== "bot") {
+      botsReturnView.current = view;
+      botsReturnSession.current = view === "chat" && project ? { project, sessionId, source: sessionEntrySource } : undefined;
+    }
+    setBotResume(undefined);
     navigate("bots");
   });
   const onDrawerNotes = useStableCallback(() => {
@@ -2082,6 +2115,9 @@ export function useMobileAppController() {
     setAddingProject,
     setAppRoot,
     closeBots,
+    botResume,
+    openBotSession,
+    backToBot,
     setComposerPanel,
     setDrawerOpen,
     setFollowUpBehavior,

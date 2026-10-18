@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { BotMessage } from "../model/botView";
 import { BotMessages } from "./BotMessages";
+import { BotSessionCard } from "./BotSessionCard";
 import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
 import { quoteBotReply, splitBotReply } from "../model/botReply";
 
@@ -18,7 +19,7 @@ vi.mock("../../sessions/ui/useTranscriptRenderingPlatform", () => ({
 }));
 let root: Root, node: HTMLDivElement;
 
-it.each([true, false])("keeps mobile progress separate from desktop session navigation (%s)", async mobile => {
+it.each([true, false])("opens the exact source session on mobile and desktop (%s)", async mobile => {
   const onOpen = vi.fn(), onTimeline = vi.fn();
   const ref = { environmentId: "host", projectId: "project", sessionId: "session" };
   act(() => root.render(createElement(BotMessages, {
@@ -27,9 +28,40 @@ it.each([true, false])("keeps mobile progress separate from desktop session navi
     mobile, canRead: true, allowedProjects: "all", busy: false,
     onOpen, onTimeline, onRespond: vi.fn(), bindReply: () => ({}),
   })));
-  await act(async () => node.querySelector<HTMLElement>(mobile ? ".assistant-card button > span" : ".assistant-card button")!.click());
-  expect(onOpen).toHaveBeenCalledTimes(mobile ? 0 : 1);
-  expect(onTimeline).toHaveBeenCalledTimes(mobile ? 1 : 0);
+  expect(node.textContent).toContain("Project");
+  if (mobile) expect(node.querySelector('[role="img"][aria-label="Codex"]')).not.toBeNull();
+  else expect(node.textContent).toContain("Codex");
+  expect(node.textContent).toContain("test");
+  expect(node.textContent).toContain("Task");
+  await act(async () => node.querySelector<HTMLElement>(".assistant-card button")!.click());
+  expect(onOpen).toHaveBeenCalledWith(ref);
+  expect(onTimeline).not.toHaveBeenCalled();
+  if (mobile) {
+    expect(node.textContent).toContain("session");
+    await act(async () => [...node.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent === "View progress")!.click());
+    expect(onTimeline).toHaveBeenCalledWith(ref);
+  }
+});
+it("shows jump loading, suppresses repeated opens, and reports a failed historical target", async () => {
+  let reject!: (error: Error) => void;
+  const onOpen = vi.fn(() => new Promise<void>((_, fail) => { reject = fail; }));
+  act(() => root.render(createElement(BotSessionCard, {
+    mobile: true, onOpen, message: { id: "legacy", revision: 1, createdAt: 1, kind: "session-card",
+      ref: { environmentId: "host", projectId: "project", sessionId: "source-id" },
+      title: "Source", projectName: "Execution project", harness: "codex", model: "codex:gpt-test", actionId: "old", status: "running" },
+  })));
+  const jump = node.querySelector<HTMLButtonElement>('[aria-label="Open session"]')!;
+  expect(node.textContent).toContain("gpt-test");
+  expect(node.textContent).not.toContain("codex:gpt-test");
+  act(() => { jump.click(); jump.click(); });
+  expect(jump.disabled).toBe(true);
+  expect(jump.getAttribute("aria-busy")).toBe("true");
+  expect(jump.querySelector(".animate-spin")).not.toBeNull();
+  expect(onOpen).toHaveBeenCalledOnce();
+  await act(async () => reject(new Error("Conversation is unavailable")));
+  expect(node.querySelector('[role="alert"]')?.textContent).toBe("Conversation is unavailable");
+  expect(jump.disabled).toBe(false);
+  expect(jump.hasAttribute("aria-busy")).toBe(false);
 });
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

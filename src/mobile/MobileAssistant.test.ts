@@ -176,6 +176,33 @@ it("opens read-only work history from a card without resolving or opening its se
   expect(document.querySelector('.mobile-assistant-timeline')).toBeNull();
   expect(data.close).not.toHaveBeenCalled();
 });
+it.each(["valid", "foreign-host", "deleted", "wrong-project", "revoked"])("opens a historical card without timeline support or reports its %s reference", async kind => {
+  const data = await mount(false);
+  const original = data.rpc.getMockImplementation()!;
+  data.rpc.mockImplementation(async (method: string, params?: any) => {
+    if (method === "sessions.get") {
+      if (kind === "deleted") throw new Error("Conversation is unavailable");
+      return { projectId: kind === "wrong-project" ? "other" : "project", session: { id: "task", harness: "codex" } };
+    }
+    return original(method, params);
+  });
+  data.messages([{ id: "legacy-card", revision: 1, createdAt: 1, kind: "session-card",
+    ref: { environmentId: kind === "foreign-host" ? "other-host" : "host", projectId: "project", sessionId: "task" },
+    projectName: "Project", title: "Task", harness: "codex", model: "test", actionId: "old", status: "running" }]);
+  await advanceMotionTimers(2000); await flush();
+  if (kind === "revoked") data.update({ policy: { ...data.view().policy, permissions: { ...data.view().policy.permissions, "sessions.read": false } } });
+  act(() => button("Open session").click()); await flush();
+  if (kind === "valid") expect(data.openSession).toHaveBeenCalledWith(
+    { environmentId: "host", projectId: "project", sessionId: "task" },
+    expect.objectContaining({ project: expect.objectContaining({ id: "project" }) }),
+  );
+  else {
+    expect(data.openSession).not.toHaveBeenCalled();
+    expect(node.textContent).toContain(kind === "foreign-host" ? "This conversation belongs to another Host"
+      : kind === "revoked" ? "This conversation is outside the assistant's current permissions." : "Conversation is unavailable");
+  }
+  expect(data.rpc.mock.calls.some(([method]) => method === "assistant.timeline")).toBe(false);
+});
 it("inserts routing shortcuts as ordinary text without changing the send protocol", async () => {
   const data = await mount();
   const draft = node.querySelector<HTMLTextAreaElement>('textarea[aria-label="Message assistant"]')!;
@@ -1048,8 +1075,12 @@ it("shows only the latest compact card for a repeated session", async () => {
   await advanceMotionTimers(2000);
   await flush();
   expect(node.querySelectorAll(".assistant-card")).toHaveLength(1);
-  expect(node.querySelector(".assistant-card")?.textContent).toBe("Project · Completed");
-  expect(node.querySelector(".assistant-card button")).toBeNull();
+  expect(node.querySelector(".assistant-card")?.textContent).toContain("Task 3");
+  expect(node.querySelector(".assistant-card")?.textContent).toContain("Project");
+  expect(node.querySelector('.assistant-card [role="img"][aria-label="Codex"]')).not.toBeNull();
+  expect(node.querySelector(".assistant-card")?.textContent).toContain("Session: task");
+  expect(node.querySelector(".assistant-card")?.textContent).toContain("Completed");
+  expect(node.querySelector('.assistant-card button[aria-label="Open session"]')).not.toBeNull();
   expect(data.rpc.mock.calls.some(([method]) => method === "assistant.timeline")).toBe(false);
 });
 

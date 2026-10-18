@@ -76,6 +76,7 @@ export function selectSessionShell(snapshot: Snapshot, outgoing?: OutgoingMessag
   const native = session.nativeSession;
   return {
     projectId: snapshot.projectId,
+    archived: snapshot.archived,
     status: snapshot.status,
     runId: snapshot.runId,
     supportsQueue: snapshot.supportsQueue,
@@ -98,6 +99,7 @@ export function selectSessionShell(snapshot: Snapshot, outgoing?: OutgoingMessag
       harness: session.harness,
       cwd: session.cwd,
       executionCwd: session.executionCwd,
+      orchestrationLeadId: session.orchestrationLeadId,
       pendingConfiguration: session.pendingConfiguration,
       pendingQuestion: session.pendingQuestion,
       nativeSession: native ? {

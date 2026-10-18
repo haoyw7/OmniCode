@@ -1012,6 +1012,14 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
 .mobile-bots-list { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 8px; padding: 16px var(--m-page-inset, 24px); overflow-y: auto; }
 .mobile-bots-list > [data-ui="navigation-item"] { gap: 12px; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: inherit; font-size: var(--mobile-font-lg); line-height: 24px; }
 .mobile-bots-list [data-ui="navigation-icon"] { flex: 0 0 auto; display: flex; }
+.assistant-chat[data-layout="mobile"] .assistant-task-identity { display: flex; flex-direction: column; min-width: 0; gap: 4px; }
+.assistant-task-context { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.assistant-task-harness { display: inline-flex; flex-shrink: 0; }
+.assistant-task-model { overflow-wrap: anywhere; }
+.assistant-task-identity > [role="status"] { align-self: flex-start; }
+.assistant-chat[data-layout="mobile"] .assistant-task-summary > [data-ui="icon-button"] { grid-column: 2; grid-row: 1; width: 44px; justify-content: center; align-self: start; }
+.assistant-task-identity small { overflow-wrap: anywhere; }
+.assistant-task-summary > [role="alert"] { grid-column: 1 / -1; }
 .mobile-assistant-timeline { padding: 16px; overflow-wrap: anywhere; }
 .mobile-assistant-task { padding-block: 12px; border-bottom: 1px solid var(--mobile-fill); }
 .mobile-assistant-task h3 { font-size: var(--mobile-font-md); font-weight: 600; }

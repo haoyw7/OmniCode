@@ -244,6 +244,9 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     setAddingProject,
     setAppRoot,
     closeBots,
+    botResume,
+    openBotSession,
+    backToBot,
     setComposerPanel,
     setDrawerOpen,
     setFollowUpBehavior,
@@ -318,7 +321,9 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
       <div className="mobile-assistant-background" inert={pageOverlayOpen} aria-hidden={pageOverlayOpen || undefined}>
       {view !== "bots" && <>
       <header ref={header} className="mobile-header" data-floating={floatingHeader} data-project={view === "home" && homePageOpen} data-search={view === "home" && searchOpen} inert={drawerOpen || pageOverlayOpen || hostPickerOpen}>
-        {view === "chat" && sessionEntrySource === "project" ? (
+        {view === "chat" && sessionEntrySource === "bot" ? (
+          <IconButton label={t("Back to Bot conversation")} onClick={backToBot}><ArrowLeft size={22} /></IconButton>
+        ) : view === "chat" && sessionEntrySource === "project" ? (
           <IconButton label={t("Back")} onClick={() => project && isChatFolder(project.cwd)
             ? openChats()
             : openHome(projects.find((item) => item.id === project?.id))}>
@@ -501,10 +506,8 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           rpc={assistantRpc}
           foreground={foreground}
           onClose={closeBots}
-          onOpen={async (ref, target) => {
-            if (target.session.session.orchestrationLeadId) throw new Error("Open orchestration worker details on desktop");
-            await openSession(ref.sessionId, ref.projectId);
-          }}
+          initialSelection={botResume}
+          onOpen={openBotSession}
         />
       ) : initialRestorePending && view === "settings" ? (
         <div className="mobile-loading" role="status"><Omi expression="connecting" animated width={72} height={72} />{t("Loading…")}</div>
@@ -708,7 +711,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               animateFrom={animateFrom}
               readBinaryFile={readHostImage}
               resolveNoteImage={client.hasCapability("notes.v1") ? resolveNoteImage : undefined}
-              disabled={busy || !!pending || !sessionConfirmed}
+              disabled={busy || !!pending || !sessionConfirmed || nativeReadOnly}
               onCommand={onTranscriptCommand}
               questionOpen={questionOpen}
               onQuestionOpenChange={onQuestionOpenChange}
@@ -748,7 +751,8 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
             </MobileEmpty>
           )}
           {nativeReadOnly ? <p className="mobile-native-readonly" role="status">
-            {nativeSyncNotice(snapshot?.nativeStatus) ?? nativeAccessNotice(nativeAccess)}
+            {snapshot?.archived ? t("Archived") : snapshot?.session.orchestrationLeadId ? t("This worker is managed by its lead. Use desktop orchestration controls.")
+              : nativeSyncNotice(snapshot?.nativeStatus) ?? nativeAccessNotice(nativeAccess)}
           </p> : null}
           {project && <MobileDraftComposer
             progressSlot={setProgressDock}

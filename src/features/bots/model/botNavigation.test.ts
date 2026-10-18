@@ -35,3 +35,10 @@ it("refuses a disconnected Host and unavailable or replaced target", async () =>
     /unavailable/,
   );
 });
+it("rejects malformed historical references and missing session payloads explicitly", async () => {
+  const rpc = vi.fn();
+  await expect(resolveBotTarget("host-a", { ...ref, sessionId: "" }, rpc)).rejects.toThrow("Conversation is unavailable");
+  expect(rpc).not.toHaveBeenCalled();
+  rpc.mockResolvedValueOnce([{ id: "project-a" }]).mockResolvedValueOnce({ projectId: "project-a" });
+  await expect(resolveBotTarget("host-a", ref, rpc)).rejects.toThrow("Conversation is unavailable");
+});

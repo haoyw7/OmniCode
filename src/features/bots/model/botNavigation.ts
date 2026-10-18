@@ -11,18 +11,20 @@ export async function resolveBotTarget(
   ref: SessionReference,
   rpc: BotRpc,
 ): Promise<BotTarget> {
+  if (!ref?.environmentId || !ref.projectId || !ref.sessionId)
+    throw new Error("Conversation is unavailable");
   if (ref.environmentId !== environmentId)
     throw new Error("This conversation belongs to another Host");
   const [projects, session] = await Promise.all([
     rpc<HostProject[]>("projects.list"),
     rpc<HostSession>("sessions.get", { sessionId: ref.sessionId }),
   ]);
-  const project = projects.find((p) => p.id === ref.projectId);
+  const project = Array.isArray(projects) ? projects.find((p) => p.id === ref.projectId) : undefined;
   if (
     !project ||
     !session ||
     session.projectId !== ref.projectId ||
-    session.session.id !== ref.sessionId ||
+    session.session?.id !== ref.sessionId ||
     session.session.assistantOwnerId
   )
     throw new Error("Conversation is unavailable");

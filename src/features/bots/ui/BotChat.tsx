@@ -753,14 +753,14 @@ export function BotChat({
           "This conversation is outside the assistant's current permissions.",
         );
       const target = await resolveBotTarget(hostKey, ref, rpc);
-      if (target.session.session.orchestrationLeadId) {
+      if (!mobile && target.session.session.orchestrationLeadId) {
         setWorker(ref);
         setWorkerOpen(true);
       } else await onOpen(ref, target);
     } catch (e) {
       setError(botErrorMessage(e));
     }
-  }, [hostKey, rpc, onOpen]);
+  }, [hostKey, rpc, onOpen, mobile]);
   const labels = {
     idle: "Ready",
     running: "Working",

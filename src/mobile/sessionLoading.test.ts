@@ -9,6 +9,7 @@ import { setUiLanguage } from "../shared/i18n/language";
 import { NATIVE_SESSION_PROVIDERS, type NativeSessionAccess, type NativeSessionProvider } from "../integrations/harness/core/nativeSessions";
 import * as attachmentFiles from "./attachments";
 import type { Attachment } from "../features/sessions/model/session";
+import { fullBotPolicy } from "../features/bots/model/botView";
 
 const host = vi.hoisted(() => ({
   connection: { endpoint: "http://computer:3774", environmentId: "host", name: "Computer" },
@@ -261,6 +262,64 @@ describe("mobile conversation loading UI", () => {
     await advanceMotionTimers(500);
     expect(transcript()?.textContent).toBe("one revision 1");
     expect(node.querySelector(".mobile-bots, .mobile-bot-chat-page")).toBeNull();
+  });
+  it.each(["task", "worker", "archived"])("opens a %s card in its exact project and returns to the originating non-default Bot", async kind => {
+    const owner = { id: "execution", cwd: "/execution", name: "Execution Project" };
+    const projects = [{ id: "project", cwd: "/project", name: "Project" }, owner];
+    host.projects.mockResolvedValue(projects);
+    host.sessions.mockImplementation(async projectId => projectId === owner.id
+      ? [{ id: "task", projectId: owner.id, title: "Source task", harness: "codex", revision: 1, updatedAt: 1, status: "idle" }]
+      : ["one", "two"].map(id => ({ id, projectId: "project", title: id, harness: "codex", revision: 1, updatedAt: 1, status: "idle" })));
+    const target = { ...snapshot("task"), projectId: owner.id, archived: kind === "archived",
+      session: { ...snapshot("task").session, cwd: owner.cwd, executionCwd: "/worktrees/task",
+        ...(kind === "worker" ? { orchestrationLeadId: "lead" } : {}) } };
+    host.session.mockImplementation(async id => id === "task" ? target : snapshot(id));
+    const config = { id: "b", name: "Bot B", enabled: true, revision: 1, chatRevision: 1, lifecycle: "idle",
+      harness: "claude", model: "claude-model", modelSettings: {}, policy: fullBotPolicy(), policyVersion: 1,
+      triggers: { user: true, event: true, schedule: true }, watches: [], schedules: [], brainGeneration: 1 };
+    host.rpc.mockImplementation(async (method: string) => {
+      if (method === "environment.describe") return { capabilities: ["bots.v1", "assistant.v1"] };
+      if (method === "bots.list") return { bots: [{ ...config, defaultThreadId: "b-thread" }], threads: [], defaultBotId: "a", defaultThreadId: "a-thread" };
+      if (method === "botThreads.get") return config;
+      if (method === "botThreads.messages") return { entries: [{ id: "old-card", revision: 1, createdAt: 1, kind: "session-card",
+        ref: { environmentId: "host", projectId: owner.id, sessionId: "task" }, projectName: owner.name,
+        title: "Codex · Source task", harness: "codex", model: "existing", actionId: "old-action", status: "running" }], nextRevision: 1, hasMore: false };
+      if (method === "projects.list") return projects;
+      if (method === "models.list") return catalog;
+      if (method === "sessions.get") return target;
+      return null;
+    });
+    await mount(); await open("one"); await advanceMotionTimers(500);
+    await act(async () => node.querySelector<HTMLButtonElement>('header [aria-label="Menu"]')!.click());
+    await act(async () => node.querySelector<HTMLButtonElement>(".mobile-drawer-assistant")!.click());
+    await act(async () => vi.dynamicImportSettled()); await advanceMotionTimers(500);
+    await act(async () => activePage().querySelector<HTMLButtonElement>('[data-ui="navigation-item"]')!.click());
+    await advanceMotionTimers(500);
+    const card = activePage().querySelector(".assistant-card")!;
+    expect(card.textContent).toContain("Execution Project");
+    expect(card.querySelector('[role="img"][aria-label="Codex"]')).not.toBeNull();
+    expect(card.textContent).toContain("existing");
+    expect(card.textContent).toContain("Source task");
+    expect(card.textContent).toContain("Session: task");
+    expect(card.textContent).toContain("Running");
+    expect(card.textContent).not.toContain("Claude");
+    await act(async () => card.querySelector<HTMLButtonElement>("button")!.click());
+    await advanceMotionTimers(500);
+    expect(host.rpc).toHaveBeenCalledWith("sessions.get", { sessionId: "task" });
+    expect(transcript()?.textContent).toBe("task revision 1");
+    expect(node.querySelector("header")?.textContent).toContain(owner.name);
+    expect(host.models).toHaveBeenCalledWith(owner.id);
+    expect(composer().disabled).toBe(kind !== "task");
+    await act(async () => node.querySelector<HTMLButtonElement>('[aria-label="Back to Bot conversation"]')!.click());
+    await advanceMotionTimers(500);
+    expect(activePage().querySelector(".mobile-assistant-header")?.textContent).toContain("Bot B");
+    expect(activePage().querySelector(".assistant-card")?.textContent).toContain("Source task");
+    expect(node.querySelector("[data-transcript]")).toBeNull();
+    await act(async () => activePage().querySelector<HTMLButtonElement>('.mobile-assistant-header [aria-label="Back"]')!.click());
+    await advanceMotionTimers(500);
+    await act(async () => activePage().querySelector<HTMLButtonElement>('.mobile-bots header [aria-label="Back"]')!.click());
+    await advanceMotionTimers(500);
+    expect(transcript()?.textContent).toBe("one revision 1");
   });
   it("shares fresh lists across Home and the drawer without extra requests on either handoff", async () => {
     await mount();

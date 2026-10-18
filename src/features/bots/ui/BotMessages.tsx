@@ -25,7 +25,7 @@ type MessageActions = {
   readImage?: ReadBotImage;
   /** Opens a sent non-image file in its own tab, where the client has tabs. */
   onOpenAttachment?: (messageId: string, file: RemoteAttachment) => void;
-  onOpen: (ref: SessionReference) => void;
+  onOpen: (ref: SessionReference) => Promise<void> | void;
   onTimeline?: (ref: SessionReference) => void;
   onRespond: (
     message: Extract<BotMessage, { kind: "input" }>,

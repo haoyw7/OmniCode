@@ -15,20 +15,24 @@ import { MobileSpinner } from "./MobileSpinner";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { MobilePageTransition } from "./MobilePageTransition";
 
-type Props = ComponentProps<typeof MobileAssistant>;
-type Entry = { id: string; name: string; avatar?: string; threadId?: string; defaultScope: boolean };
+export type MobileBotSelection = { id: string; name: string; avatar?: string; threadId?: string; defaultScope: boolean };
+type Props = Omit<ComponentProps<typeof MobileAssistant>, "onOpen"> & {
+  initialSelection?: MobileBotSelection;
+  onOpen: (...args: [...Parameters<ComponentProps<typeof MobileAssistant>["onOpen"]>, MobileBotSelection]) => Promise<void> | void;
+};
+type Entry = MobileBotSelection;
 
 /** Selection is local navigation, never restored from the desktop Bot selection. */
-export function MobileBots({ ref, ...props }: Props) {
+export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
   const { t } = useTranslation();
   const surfaceVisible = useSurfaceVisibility();
   const visible = surfaceVisible && props.foreground !== false;
   const [entries, setEntries] = useState<Entry[]>();
-  const [selected, setSelected] = useState<Entry>();
+  const [selected, setSelected] = useState<Entry | undefined>(initialSelection);
   const [error, setError] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   const chat = useRef<MobileAssistantHandle>(null);
-  useEffect(() => { if (!surfaceVisible) setSelected(undefined); }, [surfaceVisible]);
+  useEffect(() => { setSelected(surfaceVisible ? initialSelection : undefined); }, [surfaceVisible, initialSelection]);
   useEffect(() => {
     if (!visible || selected) return;
     let disposed = false;
@@ -68,6 +72,7 @@ export function MobileBots({ ref, ...props }: Props) {
   }, [props.rpc, selected]);
   return <MobilePageTransition route={{ key: selected ? `bot:${selected.id}` : "bots:list", section: "bots", depth: selected ? 1 : 0 }}>
   {selected ? <MobileAssistant {...props} ref={chat} rpc={rpc}
+    onOpen={(ref, target) => onOpen(ref, target, selected)}
     cacheKey={selected.defaultScope || !selected.threadId ? props.hostKey : botCacheKey(props.hostKey, { botId: selected.id, threadId: selected.threadId })}
     onClose={() => setSelected(undefined)} /> :
   <main className="mobile-bots" inert={!visible} aria-hidden={!visible || undefined}

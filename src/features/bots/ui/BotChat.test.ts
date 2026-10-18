@@ -92,6 +92,28 @@ it.each([false, true])("gates shared Feishu settings on the Host capability (%s)
     expect(node.textContent).toContain("This Host does not support Feishu.");
   }
 });
+it("keeps desktop orchestration cards opening their existing worker details", async () => {
+  const onOpen = vi.fn();
+  const view = { id: "a", name: "Assistant", lifecycle: "idle", revision: 1, enabled: true,
+    triggers: { user: true, event: true, schedule: true }, brainGeneration: 1, policy: fullBotPolicy() };
+  const rpc = vi.fn(async (method: string) => {
+    if (method === "environment.describe") return { capabilities: ["assistant.v1"] };
+    if (method === "assistant.get") return view;
+    if (method === "assistant.messages") return { entries: [{ id: "worker-card", revision: 1, createdAt: 1, kind: "session-card",
+      ref: { environmentId: "host", projectId: "project", sessionId: "worker" }, projectName: "Project", title: "Worker",
+      harness: "codex", model: "test", actionId: "action", status: "completed" }], nextRevision: 1, hasMore: false };
+    if (method === "models.list") return { models: {}, errors: {} };
+    if (method === "projects.list") return [{ id: "project", cwd: "/project", name: "Project" }];
+    if (method === "sessions.get") return { projectId: "project", session: { id: "worker", orchestrationLeadId: "lead" } };
+    return null;
+  });
+  act(() => root.render(createElement(BotChat, { hostKey: "host", hostName: "Host", rpc: rpc as any, onOpen })));
+  await flush();
+  act(() => node.querySelector<HTMLButtonElement>(".assistant-card button")!.click());
+  await flush();
+  expect(node.textContent).toContain("Read-only worker");
+  expect(onOpen).not.toHaveBeenCalled();
+});
 it("renders only public replies and one updated card without transcript logs", async () => {
   const card: BotMessage = {
     kind: "session-card",
