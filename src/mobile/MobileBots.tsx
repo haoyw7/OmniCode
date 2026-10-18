@@ -13,12 +13,13 @@ import { ArrowLeft, ChevronRight } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { MobileSpinner } from "./MobileSpinner";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
+import { MobilePageTransition } from "./MobilePageTransition";
 
-type Props = ComponentProps<typeof MobileAssistant> & { open: boolean };
+type Props = ComponentProps<typeof MobileAssistant>;
 type Entry = { id: string; name: string; avatar?: string; threadId?: string; defaultScope: boolean };
 
 /** Selection is local navigation, never restored from the desktop Bot selection. */
-export function MobileBots({ ref, open, ...props }: Props) {
+export function MobileBots({ ref, ...props }: Props) {
   const { t } = useTranslation();
   const surfaceVisible = useSurfaceVisibility();
   const visible = surfaceVisible && props.foreground !== false;
@@ -27,9 +28,9 @@ export function MobileBots({ ref, open, ...props }: Props) {
   const [error, setError] = useState<string>();
   const [attempt, setAttempt] = useState(0);
   const chat = useRef<MobileAssistantHandle>(null);
-  useEffect(() => { if (!open || !surfaceVisible) setSelected(undefined); }, [open, surfaceVisible]);
+  useEffect(() => { if (!surfaceVisible) setSelected(undefined); }, [surfaceVisible]);
   useEffect(() => {
-    if (!open || !visible || selected) return;
+    if (!visible || selected) return;
     let disposed = false;
     setEntries(undefined);
     setError(undefined);
@@ -48,7 +49,7 @@ export function MobileBots({ ref, open, ...props }: Props) {
       if (!disposed) setError(botErrorMessage(cause));
     });
     return () => { disposed = true; };
-  }, [open, visible, selected, attempt, props.rpc]);
+  }, [visible, selected, attempt, props.rpc]);
   const back = () => {
     if (selected) chat.current?.back();
     else props.onClose?.();
@@ -65,21 +66,23 @@ export function MobileBots({ ref, open, ...props }: Props) {
       return { ...descriptor, capabilities: descriptor.capabilities?.filter(item => item !== "assistant.timeline") };
     }) as typeof props.rpc;
   }, [props.rpc, selected]);
-  if (selected) return <MobileAssistant {...props} ref={chat} rpc={rpc}
+  return <MobilePageTransition route={{ key: selected ? `bot:${selected.id}` : "bots:list", section: "bots", depth: selected ? 1 : 0 }}>
+  {selected ? <MobileAssistant {...props} ref={chat} rpc={rpc}
     cacheKey={selected.defaultScope || !selected.threadId ? props.hostKey : botCacheKey(props.hostKey, { botId: selected.id, threadId: selected.threadId })}
-    onClose={() => setSelected(undefined)} />;
-  return <aside className="mobile-assistant-overlay mobile-bots" inert={!visible} aria-hidden={!visible || undefined}
+    onClose={() => setSelected(undefined)} /> :
+  <main className="mobile-bots" inert={!visible} aria-hidden={!visible || undefined}
     onKeyDown={event => { if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); back(); } }}>
     <header className="mobile-header">
       <IconButton label={t("Back")} onClick={props.onClose}><ArrowLeft size={22} /></IconButton>
       <div className="mobile-header-title"><strong role="heading" aria-level={1}>{t("Bots")}</strong></div>
     </header>
-    <nav className="mobile-bots-list" aria-label={t("Bots")}>
+    <nav className="mobile-bots-list" data-mobile-page-scroll aria-label={t("Bots")}>
       {error ? <div className="assistant-availability" role="alert"><p>{t(error)}</p><Button onClick={() => setAttempt(value => value + 1)}>{t("Retry")}</Button></div>
         : !entries ? <div className="assistant-availability" role="status"><MobileSpinner size={20} className="animate-spin motion-reduce:animate-none" /><span>{t("Loading…")}</span></div>
         : entries.length === 0 ? <p className="assistant-availability">{t("No bots yet")}</p>
-        : entries.map(bot => <NavigationItem key={bot.id} className="mobile-drawer-item" icon={<BotAvatar bot={bot} size={36} />}
+        : entries.map(bot => <NavigationItem key={bot.id} icon={<BotAvatar bot={bot} size={36} />}
           trailing={<ChevronRight size={18} />} onClick={() => setSelected(bot)}>{bot.name}</NavigationItem>)}
     </nav>
-  </aside>;
+  </main>}
+  </MobilePageTransition>;
 }

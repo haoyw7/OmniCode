@@ -53,7 +53,7 @@ import { browseHostDirectories, client, type MobileAppViewModel } from "./useMob
 
 const MobileSettings = lazyMobilePage(async () => ({ default: (await import("../MobileSettings")).MobileSettings }));
 const MobileNotes = lazyMobilePage(async () => ({ default: (await import("../MobileNotes")).MobileNotes }));
-const MobileAssistant = lazyMobilePage(async () => ({ default: (await import("../MobileBots")).MobileBots }));
+const MobileBots = lazyMobilePage(async () => ({ default: (await import("../MobileBots")).MobileBots }));
 const MobileAgentDefaults = lazyMobilePage(async () => ({ default: (await import("../MobileAgentDefaults")).MobileAgentDefaults }));
 const MobileProviderAccounts = lazyMobilePage(async () => ({ default: (await import("../MobileProviderAccounts")).MobileProviderAccounts }));
 const MobileSharedConnections = lazyMobilePage(async () => ({ default: (await import("../MobileSharedConnections")).MobileSharedConnections }));
@@ -96,7 +96,6 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     allProjectsPage,
     animateFrom,
     appUpdates,
-    assistantOpen,
     assistantPage,
     assistantRpc,
     assistantUnreadCount,
@@ -244,7 +243,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     setAddingConnection,
     setAddingProject,
     setAppRoot,
-    setAssistantOpen,
+    closeBots,
     setComposerPanel,
     setDrawerOpen,
     setFollowUpBehavior,
@@ -311,32 +310,13 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
       onClickCapture={(event) => interceptSearchOutside(event, true)}
       onContextMenuCapture={(event) => interceptSearchOutside(event, true)}
     >
-      <MobilePageOverlay key={`assistant:${client.connection?.endpoint}:${client.connection?.environmentId}`} open={assistantOpen && !!client.connection} keepMounted>
-      {client.connection && (
-        <MobileAssistant
-          ref={assistantPage}
-          open={assistantOpen}
-          key={client.connection.endpoint}
-          hostKey={client.connection.environmentId}
-          hostName={connectionName}
-          rpc={assistantRpc}
-          foreground={foreground}
-          onClose={() => setAssistantOpen(false)}
-          // Only the work-history sheet's advanced entry reaches this callback.
-          onOpen={async (ref, target) => {
-            if (target.session.session.orchestrationLeadId) throw new Error("Open orchestration worker details on desktop");
-            await openSession(ref.sessionId, ref.projectId);
-            setAssistantOpen(false);
-          }}
-        />
-      )}
-      </MobilePageOverlay>
       <MobilePageOverlay key={`notes:${client.connection?.endpoint}`} open={notesOpen && !!client.connection}>
         {client.connection && <MobileNotes ref={notesPage} client={client} hostKey={client.connection.endpoint} hostName={connectionName}
           projects={projects} onClose={() => setNotesOpen(false)} onAddToChat={onNoteAddToChat} />}
       </MobilePageOverlay>
       <SurfaceVisibilityContext.Provider value={!pageOverlayOpen}>
       <div className="mobile-assistant-background" inert={pageOverlayOpen} aria-hidden={pageOverlayOpen || undefined}>
+      {view !== "bots" && <>
       <header ref={header} className="mobile-header" data-floating={floatingHeader} data-project={view === "home" && homePageOpen} data-search={view === "home" && searchOpen} inert={drawerOpen || pageOverlayOpen || hostPickerOpen}>
         {view === "chat" && sessionEntrySource === "project" ? (
           <IconButton label={t("Back")} onClick={() => project && isChatFolder(project.cwd)
@@ -508,10 +488,25 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           so an in-flow banner shifted the whole page while that write settled. */}
       {!noticeError && !showPendingNotice && <SharedStateStatus pending={mobileWorkspacePending} pendingDelayMs={1500} />}
       </div>
+      </>}
 
       <MobilePageTransition key={`pages:${client.connection?.endpoint}`} route={route}
         animate={navigationReady.current} visible={!pageOverlayOpen}>
-      {initialRestorePending && view === "settings" ? (
+      {view === "bots" && client.connection ? (
+        <MobileBots
+          ref={assistantPage}
+          key={client.connection.endpoint}
+          hostKey={client.connection.environmentId}
+          hostName={connectionName}
+          rpc={assistantRpc}
+          foreground={foreground}
+          onClose={closeBots}
+          onOpen={async (ref, target) => {
+            if (target.session.session.orchestrationLeadId) throw new Error("Open orchestration worker details on desktop");
+            await openSession(ref.sessionId, ref.projectId);
+          }}
+        />
+      ) : initialRestorePending && view === "settings" ? (
         <div className="mobile-loading" role="status"><Omi expression="connecting" animated width={72} height={72} />{t("Loading…")}</div>
       ) : view === "settings" ? (
         <MobileSettings

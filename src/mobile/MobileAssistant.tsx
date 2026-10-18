@@ -862,8 +862,8 @@ function MobileAssistantView({ vm }: { vm: MobileAssistantViewModel }) {
     visible,
   } = vm;
   return (
-    <aside
-      className="mobile-assistant-overlay bg-background-base text-content"
+    <main
+      className="mobile-bot-chat-page bg-background-base text-content"
       inert={!visible}
       aria-hidden={!visible || undefined}
       onKeyDown={(e) => {
@@ -880,7 +880,7 @@ function MobileAssistantView({ vm }: { vm: MobileAssistantViewModel }) {
           </TranscriptPlatformContext.Provider>
         </BackHandlers.Provider>
       </SurfaceVisibilityContext.Provider>
-    </aside>
+    </main>
   );
 }
 

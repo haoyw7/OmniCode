@@ -144,7 +144,7 @@ function nativeWriteBlocked(
 
 export const browseHostDirectories = (path?: string) => client.browseDirectories(path);
 // Settings doubles as the connection screen before pairing.
-type View = "home" | "chat" | "settings";
+type View = "home" | "chat" | "settings" | "bots";
 
 /** A sent message shown before the Host records it. */
 type SendingMessage = {
@@ -185,10 +185,11 @@ export function useMobileAppController() {
   const [initialRestorePending, setInitialRestorePending] = useState(true);
   // List scope survives navigation, so chat controls need their own entry source.
   const [sessionEntrySource, setSessionEntrySource] = useState<"project" | "other">("other");
-  const [assistantOpen, setAssistantOpen] = useState(false);
+  const assistantOpen = view === "bots";
+  const botsReturnView = useRef<Exclude<View, "bots">>("home");
   const [notesOpen, setNotesOpen] = useState(false);
   const notesPage = useRef<MobileNotesHandle>(null);
-  const pageOverlayOpen = assistantOpen || notesOpen;
+  const pageOverlayOpen = notesOpen;
   const assistantPage = useRef<MobileAssistantHandle>(null);
   const assistantRpc = useCallback(async <T,>(method: string, params?: object) => {
     return client.rpc<T>(method, params);
@@ -545,7 +546,6 @@ export function useMobileAppController() {
     setHomeActionSession(undefined);
     setSessionStatusOpen(false);
     setAddingProject(false);
-    setAssistantOpen(false);
     setNotesOpen(false);
     setPreferencePanel(null);
     setConnected(!!connectionKey && !client.connection?.disabled);
@@ -1493,6 +1493,7 @@ export function useMobileAppController() {
     setSearchOpen(false);
     navigate("home");
   };
+  const closeBots = useStableCallback(() => navigate(botsReturnView.current));
   const openHome = (owner?: HostProject, allProjects = false) => {
     setHomeProjectId(owner?.id);
     setAllProjectsPage(allProjects);
@@ -1600,7 +1601,7 @@ export function useMobileAppController() {
       }
       else if (assistantOpen) {
         if (assistantPage.current) assistantPage.current.back();
-        else setAssistantOpen(false);
+        else closeBots();
       }
       else if (queueOverlayClose.current) queueOverlayClose.current();
       else if (sessionStatusOpen) setSessionStatusOpen(false);
@@ -1669,11 +1670,11 @@ export function useMobileAppController() {
   const homeChats = homeProjectId === CHATS_PAGE_ID;
   const homePageOpen = !!homeProject || homeChats;
   const route: MobileRoute = {
-    key: view === "settings" ? `settings:${settingsPage}` : view === "chat" ? `chat:${chatPageKey}`
+    key: view === "bots" ? "bots" : view === "settings" ? `settings:${settingsPage}` : view === "chat" ? `chat:${chatPageKey}`
       : `home:${homeProjectId ?? (allProjectsPage ? "all" : "root")}`,
     section: view,
     // Home depths are 0–2; chat is always above every list page.
-    depth: view === "settings" ? (settingsPage === "root" ? 0 : 1)
+    depth: view === "bots" ? 0 : view === "settings" ? (settingsPage === "root" ? 0 : 1)
       : view === "home" ? (homeProjectId ? 2 : allProjectsPage ? 1 : 0) : 3,
   };
   useMobileHeaderMotion(header, route, navigationReady.current);
@@ -1828,11 +1829,8 @@ export function useMobileAppController() {
   );
   const onDrawerSettings = useStableCallback(() => navigate("settings"));
   const onDrawerAssistant = useStableCallback(() => {
-    setDrawerOpen(false);
-    setComposerPanel(null);
-    setSessionStatusOpen(false);
-    setSessionActionsOpen(false);
-    setAssistantOpen(true);
+    if (view !== "bots") botsReturnView.current = view;
+    navigate("bots");
   });
   const onDrawerNotes = useStableCallback(() => {
     setDrawerOpen(false);
@@ -2083,7 +2081,7 @@ export function useMobileAppController() {
     setAddingConnection,
     setAddingProject,
     setAppRoot,
-    setAssistantOpen,
+    closeBots,
     setComposerPanel,
     setDrawerOpen,
     setFollowUpBehavior,

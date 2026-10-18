@@ -1,14 +1,17 @@
 /* Assistant chat follows the phone's inset cards and floating controls. */
-.mobile-assistant-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 100;
+.mobile-bot-chat-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
   overflow: hidden;
 }
 .assistant-chat[data-layout="mobile"] {
   position: relative;
   font-size: var(--mobile-font-lg);
-  padding-inline: var(--mobile-safe-left) var(--mobile-safe-right);
+  padding-inline: 0;
 }
 .assistant-chat[data-layout="mobile"],
 .assistant-chat[data-layout="mobile"] * {
@@ -396,7 +399,7 @@ html[data-mobile-skin] .mobile-app .assistant-chat[data-layout="mobile"] .assist
   width: 44px;
   height: 44px;
 }
-.mobile-assistant-overlay .mobile-assistant-disable {
+.mobile-bot-chat-page .mobile-assistant-disable {
   color: var(--color-m-danger);
 }
 .mobile-assistant-compose-dock {
@@ -829,7 +832,7 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   .mobile-assistant-activity-label {
     animation: none;
   }
-  .mobile-assistant-overlay,
+  .mobile-bot-chat-page,
   .mobile-assistant-compose-dock,
   .assistant-chat[data-layout="mobile"] .mobile-assistant-reply-backdrop,
   .assistant-settings[data-layout="mobile"]
@@ -1005,9 +1008,10 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   color: var(--m-control-primary-ink);
 }
 
-.mobile-bots { display: flex; flex-direction: column; padding: var(--mobile-safe-top) var(--mobile-safe-right) var(--mobile-safe-bottom) var(--mobile-safe-left); }
-.mobile-bots-list { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 8px; padding: 16px; overflow-y: auto; }
-.mobile-bots-list [data-ui="navigation-item"] > [data-ui="navigation-icon"] { flex: 0 0 auto; display: flex; }
+.mobile-bots { display: flex; flex: 1; min-height: 0; min-width: 0; flex-direction: column; padding-block: var(--mobile-safe-top) var(--mobile-safe-bottom); }
+.mobile-bots-list { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 8px; padding: 16px var(--m-page-inset, 24px); overflow-y: auto; }
+.mobile-bots-list > [data-ui="navigation-item"] { gap: 12px; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: inherit; font-size: var(--mobile-font-lg); line-height: 24px; }
+.mobile-bots-list [data-ui="navigation-icon"] { flex: 0 0 auto; display: flex; }
 .mobile-assistant-timeline { padding: 16px; overflow-wrap: anywhere; }
 .mobile-assistant-task { padding-block: 12px; border-bottom: 1px solid var(--mobile-fill); }
 .mobile-assistant-task h3 { font-size: var(--mobile-font-md); font-weight: 600; }

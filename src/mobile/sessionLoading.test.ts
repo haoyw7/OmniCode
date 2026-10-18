@@ -221,16 +221,46 @@ describe("mobile conversation loading UI", () => {
     expect(activePage().querySelector<HTMLButtonElement>("[data-attach]")!.disabled).toBe(false);
   });
 
-  it("opens the assistant from a system notification without requesting a worker session", async () => {
+  it("opens Bots as a normal page from a system notification without requesting a worker session", async () => {
+    host.rpc.mockImplementation(async (method: string) => method === "environment.describe"
+      ? { capabilities: ["bots.v1"] } : method === "bots.list" ? { bots: [], threads: [] } : null);
     await mount();
     host.session.mockClear();
     const options = host.activity.mock.calls.at(-1)![0];
     await act(async () => options.onOpen({ environmentId: "host", kind: "assistant" }));
     await act(async () => vi.dynamicImportSettled());
     expect(host.activity.mock.calls.at(-1)![0].assistantVisible).toBe(true);
-    expect(node.querySelector('.mobile-assistant-overlay[aria-hidden="true"]')).toBeNull();
-    expect(node.querySelector(".mobile-assistant-overlay")).not.toBeNull();
+    expect(activePage().querySelector(".mobile-bots")).not.toBeNull();
+    expect(node.querySelector(".mobile-page-overlay, .mobile-assistant-overlay")).toBeNull();
+    await advanceMotionTimers(500);
+    expect(node.querySelector("[data-transcript]")).toBeNull();
     expect(host.session).not.toHaveBeenCalled();
+  });
+  it("navigates from a conversation through the Bots list and Bot chat, then returns without an underlying page", async () => {
+    host.rpc.mockImplementation(async (method: string) => method === "environment.describe"
+      ? { capabilities: ["bots.v1"] } : method === "bots.list"
+        ? { bots: [{ id: "a", name: "Bot A", defaultThreadId: "a-thread" }], threads: [], defaultBotId: "a", defaultThreadId: "a-thread" }
+        : null);
+    await mount(); await open("one"); await advanceMotionTimers(500);
+    await act(async () => node.querySelector<HTMLButtonElement>('header [aria-label="Menu"]')!.click());
+    await act(async () => node.querySelector<HTMLButtonElement>(".mobile-drawer-assistant")!.click());
+    await act(async () => vi.dynamicImportSettled());
+    await advanceMotionTimers(500);
+    expect(node.querySelector("[data-transcript]")).toBeNull();
+    expect(node.querySelector(".mobile-page-overlay, .mobile-assistant-overlay")).toBeNull();
+    expect(activePage().querySelector(".mobile-bots")).not.toBeNull();
+    await act(async () => activePage().querySelector<HTMLButtonElement>('[data-ui="navigation-item"]')!.click());
+    await advanceMotionTimers(500);
+    expect(activePage().querySelector(".mobile-bot-chat-page")).not.toBeNull();
+    expect(node.querySelector(".mobile-bots-list")).toBeNull();
+    expect(node.querySelector("[data-transcript]")).toBeNull();
+    await act(async () => activePage().querySelector<HTMLButtonElement>('.mobile-assistant-header [aria-label="Back"]')!.click());
+    await advanceMotionTimers(500);
+    expect(activePage().querySelector(".mobile-bots-list")).not.toBeNull();
+    await act(async () => activePage().querySelector<HTMLButtonElement>('.mobile-bots header [aria-label="Back"]')!.click());
+    await advanceMotionTimers(500);
+    expect(transcript()?.textContent).toBe("one revision 1");
+    expect(node.querySelector(".mobile-bots, .mobile-bot-chat-page")).toBeNull();
   });
   it("shares fresh lists across Home and the drawer without extra requests on either handoff", async () => {
     await mount();
@@ -353,7 +383,7 @@ describe("mobile conversation loading UI", () => {
     expect(node.querySelector("header strong")!.textContent).toBe("Project");
   });
 
-  it("shows the configured assistant name and refreshes it through foreground polling", async () => {
+  it("keeps the Bots navigation label when the default assistant identity changes or fails to load", async () => {
     const identity = deferred<{ name: string }>();
     host.capabilities.add("assistant.v1");
     const getAssistant = vi.fn().mockReturnValue(identity.promise);
@@ -370,19 +400,19 @@ describe("mobile conversation loading UI", () => {
         .find((button) => button.textContent === "Sessions")!.click());
     };
     await openDrawer();
-    expect(assistant().textContent).toBe("Assistant");
+    expect(assistant().textContent).toBe("Bots");
     await act(async () => identity.resolve({ name: "小管家" }));
-    expect(assistant().textContent).toBe("小管家");
+    expect(assistant().textContent).toBe("Bots");
     await closeDrawer();
     getAssistant.mockResolvedValue({ name: "我的助理" });
     await openDrawer();
     await advanceMotionTimers(2000);
-    expect(assistant().textContent).toBe("我的助理");
+    expect(assistant().textContent).toBe("Bots");
     await closeDrawer();
     getAssistant.mockRejectedValue(new Error("Offline"));
     await openDrawer();
     await advanceMotionTimers(2000);
-    expect(assistant().textContent).toBe("我的助理");
+    expect(assistant().textContent).toBe("Bots");
   });
 
   it("warms models on Home without waiting for discovery or opening a conversation", async () => {

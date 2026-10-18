@@ -6,6 +6,7 @@ import { MobileBots } from "./MobileBots";
 import type { MobileAssistantHandle } from "./MobileAssistant";
 import { SurfaceVisibilityContext } from "../shared/ui/SurfaceVisibility";
 import { setUiLanguage } from "../shared/i18n/language";
+import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motionTestClock";
 
 const capture = vi.hoisted(() => ({ props: undefined as any }));
 vi.mock("./MobileAssistant", () => ({ MobileAssistant: (props: any) => {
@@ -18,10 +19,12 @@ let root: Root, node: HTMLDivElement;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   setUiLanguage("en");
+  vi.useFakeTimers();
+  startMotionClock();
   node = document.createElement("div"); document.body.append(node); root = createRoot(node);
   capture.props = undefined;
 });
-afterEach(() => { act(() => root.unmount()); node.remove(); vi.unstubAllGlobals(); });
+afterEach(() => { act(() => root.unmount()); node.remove(); stopMotionClock(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 const bot = (id: string) => ({ id, name: `Bot ${id}`, defaultThreadId: `${id}-thread` });
 function setup(bots = [bot("a")], legacy = false) {
   const rpc = vi.fn(async (method: string) => {
@@ -33,15 +36,19 @@ function setup(bots = [bot("a")], legacy = false) {
   const ref = createRef<MobileAssistantHandle>(), onClose = vi.fn();
   const render = async (visible = true, foreground = true) => {
     await act(async () => root.render(createElement(SurfaceVisibilityContext.Provider, { value: visible },
-      createElement(MobileBots, { ref, open: true, foreground, rpc: rpc as any, hostKey: "host", hostName: "Host", onClose }))));
+      createElement(MobileBots, { ref, foreground, rpc: rpc as any, hostKey: "host", hostName: "Host", onClose }))));
+    await advanceMotionTimers(500);
   };
   const click = async (text: string) => {
     await act(async () => [...node.querySelectorAll("button")].find(button => button.textContent === text)!.click());
+    await advanceMotionTimers(500);
   };
   return { rpc, ref, onClose, render, click };
 }
 it("requires selection even for one Bot, returns to the list, and reopens at the list", async () => {
   const f = setup(); await f.render();
+  expect(node.querySelector(".mobile-bots")?.closest(".mobile-page-layer")).not.toBeNull();
+  expect(node.querySelector(".mobile-page-overlay, .mobile-assistant-overlay")).toBeNull();
   expect(node.textContent).toContain("Bot a"); expect(capture.props).toBeUndefined();
   await f.click("Bot a"); expect(node.textContent).toContain("Chat back");
   await f.render(true, false); await f.render(); // App backgrounding preserves the route.

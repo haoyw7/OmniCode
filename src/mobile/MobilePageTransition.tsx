@@ -20,7 +20,7 @@ import "./styles/page-layout.css";
 export const MOBILE_PAGE_MOTION_MS = duration.panel * 1000;
 export interface MobileRoute {
   key: string;
-  section: "home" | "chat" | "settings";
+  section: "home" | "chat" | "settings" | "bots";
   depth: number;
 }
 type Direction = -1 | 0 | 1;
@@ -30,6 +30,8 @@ export function mobileRouteDirection(from: MobileRoute, to: MobileRoute): Direct
     return Math.sign(to.depth - from.depth) as Direction;
   if (to.section === "settings") return 1;
   if (from.section === "settings") return -1;
+  if (to.section === "bots") return 1;
+  if (from.section === "bots") return -1;
   return to.section === "chat" ? 1 : -1;
 }
 function pageMotionValues(direction: Direction, motion: PageMotion) {
