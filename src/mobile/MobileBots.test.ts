@@ -7,9 +7,10 @@ import type { MobileAssistantHandle } from "./MobileAssistant";
 import { SurfaceVisibilityContext } from "../shared/ui/SurfaceVisibility";
 import { setUiLanguage } from "../shared/i18n/language";
 import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motionTestClock";
+import { readBotPins, writeBotPins } from "../features/bots/model/botPins";
 
 const capture = vi.hoisted(() => ({ props: undefined as any }));
-vi.mock("./MobileAssistant", () => ({ MobileAssistant: (props: any) => {
+vi.mock("./MobileAssistant", () => ({ MobileAssistantSelect: () => null, MobileAssistant: (props: any) => {
   capture.props = props;
   useImperativeHandle(props.ref, () => ({ back: props.onClose }));
   return createElement("button", { onClick: props.onClose }, "Chat back");
@@ -23,11 +24,12 @@ beforeEach(() => {
   startMotionClock();
   node = document.createElement("div"); document.body.append(node); root = createRoot(node);
   capture.props = undefined;
+  localStorage.clear();
 });
 afterEach(() => { act(() => root.unmount()); node.remove(); stopMotionClock(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 const bot = (id: string) => ({ id, name: `Bot ${id}`, defaultThreadId: `${id}-thread` });
 function setup(bots = [bot("a")], legacy = false) {
-  const rpc = vi.fn(async (method: string) => {
+  const rpc = vi.fn(async (method: string, _params?: object): Promise<any> => {
     if (method === "environment.describe") return { capabilities: legacy ? ["assistant.v1"] : ["bots.v1", "assistant.timeline"] };
     if (method === "bots.list") return { bots, threads: [], defaultBotId: "a", defaultThreadId: "a-thread" };
     if (method === "assistant.get") return bot("a");
@@ -40,7 +42,7 @@ function setup(bots = [bot("a")], legacy = false) {
     await advanceMotionTimers(500);
   };
   const click = async (text: string) => {
-    await act(async () => [...node.querySelectorAll("button")].find(button => button.textContent === text)!.click());
+    await act(async () => [...node.querySelectorAll("button")].find(button => button.getAttribute("aria-label") === text || button.textContent === text)!.click());
     await advanceMotionTimers(500);
   };
   return { rpc, ref, onClose, render, click };
@@ -85,4 +87,112 @@ it("shows loading and a retryable list error without opening a conversation", as
   expect(node.querySelector('[role="alert"]')?.textContent).toContain("Offline");
   expect(capture.props).toBeUndefined();
   await f.click("Retry"); expect(node.textContent).toContain("Bot a");
+});
+
+it("separates stored pins, filters both sections, and closes search before leaving", async () => {
+  writeBotPins("host", ["b"]);
+  const f = setup([bot("a"), bot("b")]); await f.render();
+  expect(node.querySelector('.mobile-bots-pinned [data-bot-id="b"]')).not.toBeNull();
+  expect(node.querySelector('.mobile-bots-rows [data-bot-id="b"]')).toBeNull();
+  await f.click("Search bots");
+  const input = node.querySelector<HTMLInputElement>('input[type="search"]')!;
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "bot a");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await advanceMotionTimers(500);
+  expect(node.querySelector('[data-bot-id="a"]')).not.toBeNull();
+  expect(node.querySelector('[data-bot-id="b"]')).toBeNull();
+  await act(async () => f.ref.current!.back()); await advanceMotionTimers(500);
+  expect(f.onClose).not.toHaveBeenCalled();
+  expect(node.querySelector('.mobile-bots-pinned [data-bot-id="b"]')).not.toBeNull();
+});
+
+it("pins and unpins through the Bot actions without opening chat", async () => {
+  const f = setup([bot("a"), bot("b")]); await f.render();
+  const menu = async () => {
+    await act(async () => node.querySelector('[data-bot-id="b"]')!.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true })));
+    await advanceMotionTimers(500);
+  };
+  await menu();
+  await act(async () => [...document.querySelectorAll<HTMLButtonElement>(".mobile-sheet-row")].find(button => button.textContent === "Pin")!.click());
+  await advanceMotionTimers(500);
+  expect(readBotPins("host")).toEqual(["b"]);
+  expect(node.querySelector('.mobile-bots-pinned [data-bot-id="b"]')).not.toBeNull();
+  expect(capture.props).toBeUndefined();
+  await menu();
+  await act(async () => [...document.querySelectorAll<HTMLButtonElement>(".mobile-sheet-row")].find(button => button.textContent === "Unpin")!.click());
+  await advanceMotionTimers(500);
+  expect(readBotPins("host")).toEqual([]);
+  expect(node.querySelector('.mobile-bots-rows [data-bot-id="b"]')).not.toBeNull();
+});
+
+it("creates only on form submission and reuses the command ID after a failed request", async () => {
+  const f = setup();
+  const base = f.rpc.getMockImplementation()!;
+  let fail = true;
+  f.rpc.mockImplementation(async (method: string, ...args: any[]) => {
+    if (method === "models.list") return { models: { codex: [{ id: "model", name: "Model" }] }, errors: {} };
+    if (method === "projects.list") return [];
+    if (method === "bots.create") {
+      if (fail) throw new Error("Offline");
+      return { bot: bot("new"), thread: { id: "new-thread" } };
+    }
+    return base(method, args[0]);
+  });
+  await f.render(); await f.click("New bot");
+  expect(f.rpc.mock.calls.some(([method]) => method === "bots.create")).toBe(false);
+  await f.click("Create bot");
+  expect(node.querySelector('[role="alert"]')?.textContent).toContain("Offline");
+  fail = false;
+  await f.click("Create bot");
+  const commands = (f.rpc.mock.calls as any[]).filter(([method]) => method === "bots.create");
+  expect(commands).toHaveLength(2);
+  expect(commands[0][1].commandId).toBe(commands[1][1].commandId);
+  expect(capture.props.cacheKey).toBe(JSON.stringify(["host", "new", "new-thread"]));
+});
+
+it("keeps creation unavailable on legacy Hosts", async () => {
+  const f = setup(undefined, true); await f.render();
+  expect(node.querySelector<HTMLButtonElement>('[aria-label="New bot"]')?.disabled).toBe(true);
+});
+
+it("opens touch actions on hold, suppresses the tap, and yields to scrolling", async () => {
+  const f = setup(); await f.render();
+  const row = node.querySelector('[data-bot-id="a"]')!;
+  const pointer = (type: string, y = 40) => row.dispatchEvent(new PointerEvent(type, {
+    bubbles: true, pointerId: 1, pointerType: "touch", isPrimary: true, clientX: 40, clientY: y, button: 0,
+  }));
+  act(() => { pointer("pointerdown"); pointer("pointermove", 80); });
+  await advanceMotionTimers(500);
+  expect(document.querySelector('[aria-label="Bot options"]')).toBeNull();
+  act(() => { pointer("pointerup", 80); pointer("pointerdown"); });
+  await advanceMotionTimers(500);
+  expect(document.querySelector('[aria-label="Bot options"]')).not.toBeNull();
+  act(() => { pointer("pointerup"); (row as HTMLButtonElement).click(); });
+  expect(capture.props).toBeUndefined();
+});
+
+it("shows the latest message and timestamp while retaining the list on a refresh failure", async () => {
+  const f = setup();
+  const base = f.rpc.getMockImplementation()!;
+  let offline = false;
+  f.rpc.mockImplementation(async (method, params) => {
+    if (method === "bots.list") {
+      if (offline) throw new Error("Offline");
+      return { bots: [bot("a")], threads: [{ id: "a-thread", botId: "a", chatRevision: 1 }] };
+    }
+    if (method === "botThreads.messages") return {
+      entries: [{ id: "reply", kind: "assistant", text: "Review ready", revision: 1, createdAt: 1000 }],
+      nextRevision: 1, hasMore: false,
+    };
+    return base(method, params);
+  });
+  await f.render();
+  expect(node.querySelector('.mobile-bots-row-preview')?.textContent).toContain("Review ready");
+  expect(node.querySelector('time')?.dateTime).toBe(new Date(1000).toISOString());
+  offline = true;
+  await advanceMotionTimers(5500);
+  expect(node.querySelector('[role="alert"]')?.textContent).toContain("Offline");
+  expect(node.querySelector('[data-bot-id="a"]')).not.toBeNull();
 });

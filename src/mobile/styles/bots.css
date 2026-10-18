@@ -1009,9 +1009,67 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
 }
 
 .mobile-bots { display: flex; flex: 1; min-height: 0; min-width: 0; flex-direction: column; padding-block: var(--mobile-safe-top) var(--mobile-safe-bottom); }
-.mobile-bots-list { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 8px; padding: 16px var(--m-page-inset, 24px); overflow-y: auto; }
-.mobile-bots-list > [data-ui="navigation-item"] { gap: 12px; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: inherit; font-size: var(--mobile-font-lg); line-height: 24px; }
-.mobile-bots-list [data-ui="navigation-icon"] { flex: 0 0 auto; display: flex; }
+.mobile-app .mobile-header.mobile-bots-header { justify-content: space-between; border: 0; }
+.mobile-bots-header-actions { display: flex; align-items: center; gap: 8px; }
+.mobile-app .mobile-bots-header .mobile-bots-header-actions [data-ui="icon-button"] {
+  border-radius: 50%;
+  background: var(--mobile-fill);
+}
+.mobile-bots-search { padding: 4px var(--m-page-inset, 24px) 12px; }
+.mobile-bots-list {
+  flex: 1;
+  min-height: 0;
+  padding: 8px max(var(--m-page-inset, 24px), var(--mobile-safe-right)) 24px max(var(--m-page-inset, 24px), var(--mobile-safe-left));
+  overflow-y: auto;
+}
+.mobile-bots-pinned {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 24px) / 3);
+  gap: 12px;
+  padding-block: 20px 30px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.mobile-bots-pinned > button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 4px 0;
+  border-radius: var(--m-control-radius);
+  color: var(--color-m-ink-secondary);
+  font-size: var(--mobile-font-md);
+  line-height: 1.35;
+}
+.mobile-bots-pinned > button > span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mobile-bots-pinned .desktop-bot-avatar { max-width: 100%; }
+.mobile-bots-pinned .desktop-bot-avatar > svg { max-width: 100%; height: 100%; }
+.mobile-bots-list .desktop-bot-avatar { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.mobile-bots-rows { display: flex; flex-direction: column; gap: 8px; }
+.mobile-bots-rows > [data-ui="navigation-item"] {
+  gap: 14px;
+  min-height: 76px;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-m-ink);
+  font-size: var(--mobile-font-lg);
+}
+.mobile-bots-list [data-ui="navigation-icon"] { flex: 0 0 auto; display: flex; align-items: center; }
+.mobile-bots-row-heading, .mobile-bots-row-preview { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.mobile-bots-row-heading strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: var(--font-weight-semibold); }
+.mobile-bots-row-heading time { flex-shrink: 0; font-size: var(--mobile-font-sm); color: var(--color-m-ink-secondary); }
+.mobile-bots-row-preview { margin-top: 4px; align-items: center; color: var(--color-m-ink-secondary); font-size: var(--mobile-font-md); }
+.mobile-bots-row-preview > span:first-child { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.mobile-bots-row-preview .mobile-unread-dot { position: static; flex-shrink: 0; }
+.mobile-bots-list .assistant-availability { padding-block: 24px; text-align: center; color: var(--color-m-ink-secondary); }
+.mobile-bots-list .assistant-availability[role="status"] { display: flex; justify-content: center; align-items: center; gap: 8px; }
+.mobile-bots-create-content { flex: 1; min-height: 0; overflow-y: auto; padding: 12px var(--m-page-inset, 24px) 24px; }
+.mobile-bots-error { color: var(--color-m-danger); margin-bottom: 12px; }
 .assistant-chat[data-layout="mobile"] .assistant-task-identity { display: flex; flex-direction: column; min-width: 0; gap: 4px; }
 .assistant-task-context { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
 .assistant-task-harness { display: inline-flex; flex-shrink: 0; }

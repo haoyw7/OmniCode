@@ -688,7 +688,7 @@ function MobileAssistantMemoryDetail({
 }
 
 /** A settings row that opens a bottom sheet instead of the native picker. */
-function MobileAssistantSelect({
+export function MobileAssistantSelect({
   label,
   value,
   options,

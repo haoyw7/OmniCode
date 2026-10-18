@@ -5,6 +5,17 @@
 
    Utilities: bg-m-app, text-m-ink, border-m-hairline, rounded-m-xl,
    rounded-m-composer, size-m-hit, text-m-body, … */
+/* BotAvatar resolves these names dynamically; retain every tone in mobile. */
+:root, .mobile-skin-scope {
+  --color-omi-face: #ffffff;
+  --color-omi-violet: #8b5cf6;
+  --color-omi-blue: #2995f5;
+  --color-omi-teal: #14b8a6;
+  --color-omi-amber: #f98117;
+  --color-omi-rose: #ec4899;
+  --color-omi-green: #22c55e;
+}
+
 @theme {
   --color-m-context-messages: #2f80ed;
   --color-m-context-tools: #f27337;

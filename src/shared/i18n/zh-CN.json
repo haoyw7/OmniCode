@@ -3702,6 +3702,8 @@
   "Thread creation failed": "创建对话失败",
   "Bot": "Bot",
   "Search bots": "搜索 Bot",
+  "No messages yet": "暂无消息",
+  "Bot options": "Bot 选项",
   "No matching bots": "没有匹配的 Bot",
   "Main thread": "主对话",
   "Bot details": "Bot 详情",
