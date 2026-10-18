@@ -30,7 +30,7 @@ async function query(profile: Profile): Promise<ProviderRateLimits> {
   catch { return unavailableRateLimits("codex", "Codex CLI not found"); }
   try {
     const result = await runCodexAccountRequest<unknown>(path, homedir(), "account/rateLimits/read", {},
-      accountId, `monocode-host-usage-${randomUUID()}`);
+      accountId, `omnicode-host-usage-${randomUUID()}`);
     const parsed = parseCodexRateLimits(result);
     return parsed.session || parsed.weekly || parsed.monthly || parsed.resetCredits
       ? parsed : unavailableRateLimits("codex", "No Codex usage data");

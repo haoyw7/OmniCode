@@ -38,8 +38,8 @@ class PrepareDataTests(unittest.TestCase):
         self.root = self.directory / "cache"
         for context in (patch.object(prepare, "EVAL_ROOT", self.project),
                         patch.object(prepare, "LOCK_PATH", self.lock_path),
-                        patch.dict(os.environ, {"MONOCODE_EVAL_DATA_ROOT": str(self.root),
-                                                "MONOCODE_EVAL_ORIGINAL_SOURCE": "",
+                        patch.dict(os.environ, {"OMNICODE_EVAL_DATA_ROOT": str(self.root),
+                                                "OMNICODE_EVAL_ORIGINAL_SOURCE": "",
                                                 "XDG_DATA_HOME": str(self.directory / "user-data")})):
             context.start()
             self.addCleanup(context.stop)
@@ -119,7 +119,7 @@ class PrepareDataTests(unittest.TestCase):
             target.write_bytes(raw)
 
     def test_original_cold_cache_reads_default_external_inputs_without_generating(self):
-        source = self.directory / "user-data/monocode/eval-inputs/original"
+        source = self.directory / "user-data/omnicode/eval-inputs/original"
         self.write_original_inputs(source)
         with patch.object(prepare.subprocess, "run") as generator, patch.object(prepare.urllib.request, "urlopen") as network:
             prepare.ensure_data("original")
@@ -133,7 +133,7 @@ class PrepareDataTests(unittest.TestCase):
         source = self.directory / "custom-inputs"
         self.write_original_inputs(source)
         (source / "data/references.jsonl").write_bytes(b"changed original input")
-        with patch.dict(os.environ, {"MONOCODE_EVAL_ORIGINAL_SOURCE": str(source)}):
+        with patch.dict(os.environ, {"OMNICODE_EVAL_ORIGINAL_SOURCE": str(source)}):
             with self.assertRaisesRegex(ValueError, "locked SHA256: data/references.jsonl"):
                 prepare.ensure_data("original")
         self.assertFalse((self.root / "original").exists())
@@ -141,7 +141,7 @@ class PrepareDataTests(unittest.TestCase):
 
     def test_missing_original_source_reports_configuration_without_project_fallback(self):
         self.write_original_inputs(self.project)
-        with self.assertRaisesRegex(FileNotFoundError, "MONOCODE_EVAL_ORIGINAL_SOURCE"):
+        with self.assertRaisesRegex(FileNotFoundError, "OMNICODE_EVAL_ORIGINAL_SOURCE"):
             prepare.ensure_data("original")
         self.assertFalse((self.root / "original").exists())
 
@@ -153,7 +153,7 @@ class PrepareDataTests(unittest.TestCase):
             self.assertTrue(request.full_url.startswith(base + "/"))
             relative = request.full_url.removeprefix(base + "/")
             return io.BytesIO(self.original_contents[relative])
-        with patch.dict(os.environ, {"MONOCODE_EVAL_ORIGINAL_SOURCE": base + "/"}), \
+        with patch.dict(os.environ, {"OMNICODE_EVAL_ORIGINAL_SOURCE": base + "/"}), \
                 patch.object(prepare.urllib.request, "urlopen", side_effect=response):
             prepare.ensure_data("original")
         self.assertEqual(seen, [base + "/" + name for name in self.original_contents])
@@ -161,10 +161,10 @@ class PrepareDataTests(unittest.TestCase):
 
     def test_original_source_rejects_project_directory_and_non_https_url(self):
         with patch.object(prepare, "PROJECT_ROOT", self.project):
-            with patch.dict(os.environ, {"MONOCODE_EVAL_ORIGINAL_SOURCE": str(self.project)}):
+            with patch.dict(os.environ, {"OMNICODE_EVAL_ORIGINAL_SOURCE": str(self.project)}):
                 with self.assertRaisesRegex(ValueError, "outside the project"):
                     prepare.ensure_data("original")
-        with patch.dict(os.environ, {"MONOCODE_EVAL_ORIGINAL_SOURCE": "http://example.invalid/original"}):
+        with patch.dict(os.environ, {"OMNICODE_EVAL_ORIGINAL_SOURCE": "http://example.invalid/original"}):
             with self.assertRaisesRegex(ValueError, "HTTPS base URL"):
                 prepare.ensure_data("original")
 

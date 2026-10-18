@@ -17,12 +17,12 @@ type Pending = {
   spawning?: { sessionId: string; started?: (pid: number) => void };
 };
 
-const BINARY = process.platform === "win32" ? "monocode-supervisor.exe" : "monocode-supervisor";
+const BINARY = process.platform === "win32" ? "omnicode-supervisor.exe" : "omnicode-supervisor";
 
-/** The Rust supervisor ships next to the bundled Host. `MONOCODE_PROVIDER_SUPERVISOR`
+/** The Rust supervisor ships next to the bundled Host. `OMNICODE_PROVIDER_SUPERVISOR`
  * points at another build, or `node` keeps the per-provider Node guard. */
 export function providerSupervisorPath(): string | undefined {
-  const configured = process.env.MONOCODE_PROVIDER_SUPERVISOR?.trim();
+  const configured = process.env.OMNICODE_PROVIDER_SUPERVISOR?.trim();
   if (configured === "node") return undefined;
   if (configured) return configured;
   const bundled = join(dirname(fileURLToPath(import.meta.url)), BINARY);

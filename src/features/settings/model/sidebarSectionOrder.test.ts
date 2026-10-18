@@ -11,7 +11,7 @@ import {
 afterEach(() => localStorage.clear());
 
 it("recovers defaults from corrupt storage and fills missing sections without duplicates", () => {
-  const key = "monocode.sidebarSectionOrder.v1";
+  const key = "omnicode.sidebarSectionOrder.v1";
   localStorage.setItem(key, "invalid");
   expect(loadSidebarSectionOrder()).toEqual(DEFAULT_SIDEBAR_SECTION_ORDER);
   localStorage.setItem(
@@ -45,9 +45,9 @@ it("notifies mounted sidebars of local and cross-window changes only once", () =
   saveSidebarSectionOrder(next);
   saveSidebarSectionOrder(next);
   expect(notify).toHaveBeenCalledTimes(1);
-  localStorage.removeItem("monocode.sidebarSectionOrder.v1");
+  localStorage.removeItem("omnicode.sidebarSectionOrder.v1");
   window.dispatchEvent(
-    new StorageEvent("storage", { key: "monocode.sidebarSectionOrder.v1" }),
+    new StorageEvent("storage", { key: "omnicode.sidebarSectionOrder.v1" }),
   );
   expect(notify).toHaveBeenCalledTimes(2);
   stop();

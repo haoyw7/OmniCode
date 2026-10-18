@@ -18,7 +18,7 @@ import "./desktop-bot-collaboration.css";
 type Props = { environmentId: string; room: BotRoom; bots: BotView[]; rpc: BotRpc; onSaved: () => Promise<unknown>; onOpenThread: (scope: BotScope) => void };
 const statuses: Record<BotRoomSpeakerStatus, string> = { pending: "Pending", queued: "Queued", running: "Running", waiting_approval: "Approval needed", completed: "Completed", failed: "Failed", timed_out: "Timed out", cancelled: "Cancelled", interrupted: "Interrupted" };
 const merge = (left: BotRoomMessage[], right: BotRoomMessage[]) => [...new Map([...left, ...right].map(message => [message.id, message])).values()].sort((a, b) => a.sequence - b.sequence);
-const draftKey = (environmentId: string, roomId: string) => `monocode.bot-room-draft:${JSON.stringify([environmentId, roomId])}`;
+const draftKey = (environmentId: string, roomId: string) => `omnicode.bot-room-draft:${JSON.stringify([environmentId, roomId])}`;
 export function DesktopBotRoomChat(props: Props) { return <RoomChat key={JSON.stringify([props.environmentId, props.room.id])} {...props} />; }
 function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Props) {
   const { t } = useTranslation(), visible = useSurfaceVisibility();

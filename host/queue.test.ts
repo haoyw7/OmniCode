@@ -18,7 +18,7 @@ afterEach(async () => {
   for (const cleanup of cleanups.splice(0).reverse()) await cleanup();
 });
 function setup(harness: RemoteProvider = "pi", steer = true) {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-queue-test-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-queue-test-"));
   const store = new HostStore(join(directory, "host.db"));
   const project = store.addProject(directory, "Queue");
   const turns: { input: SendTurnInput; finish: () => void }[] = [];

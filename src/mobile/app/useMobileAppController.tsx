@@ -126,7 +126,7 @@ import { dismissImageLightbox } from "../../shared/ui/ImageLightbox";
 
 export const client = new MobileClient(mobileStorage);
 /** Home page id for the projectless chats list; never a Host project id. */
-const CHATS_PAGE_ID = "monocode:chats";
+const CHATS_PAGE_ID = "omnicode:chats";
 
 /**
  * `undefined` while checking; `null` when the Host cannot verify ownership
@@ -158,7 +158,7 @@ const message = (error: unknown) =>
   error instanceof Error
     ? translate(error.message)
     : translate("Unable to reach this Host.");
-const HOME_SCOPE_KEY = "monocode.mobile.homeScope";
+const HOME_SCOPE_KEY = "omnicode.mobile.homeScope";
 function loadHomeScope(): MobileHomeScope {
   try {
     return localStorage.getItem(HOME_SCOPE_KEY) === "all" ? "all" : "device";
@@ -343,7 +343,7 @@ export function useMobileAppController() {
       const { environmentId, endpoint } = connection;
       const status = client.getConnectionStatus();
       const cachedCapabilities = status.state !== "connected" && status.reason !== "identity" && status.reason !== "authentication"
-        && !!localStorage.getItem(`monocode.hostPreferences.v1:${environmentId}`);
+        && !!localStorage.getItem(`omnicode.hostPreferences.v1:${environmentId}`);
       const request = <T,>(method: string, params?: Record<string, unknown>): Promise<T> => {
         if (client.connection?.environmentId !== environmentId || client.connection.endpoint !== endpoint)
           return Promise.reject(new Error(t("Host connection changed.")));
@@ -734,7 +734,7 @@ export function useMobileAppController() {
       return;
     // Record committed text/layout without background-tab frame throttling.
     // Keep only the latest measure per path for local browser diagnostics.
-    const name = timing.cached ? "monocode.mobile.session.cached" : "monocode.mobile.session.network";
+    const name = timing.cached ? "omnicode.mobile.session.cached" : "omnicode.mobile.session.network";
     const end = performance.now();
     appRoot.current?.setAttribute("data-session-load-ms", (end - timing.start).toFixed(3));
     appRoot.current?.setAttribute("data-session-load-source", timing.cached ? "cache" : "network");

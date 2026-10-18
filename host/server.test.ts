@@ -44,7 +44,7 @@ afterEach(async () => {
 });
 
 async function setup(providers: RemoteProvider[] = ["codex"], discoverProviders?: () => Promise<RemoteProvider[]>) {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-server-test-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-server-test-"));
   const store = new HostStore(join(directory, "host.db"));
   let turn: SendTurnInput | undefined;
   let finish = () => {};
@@ -179,7 +179,7 @@ it("marks an existing conversation after a paired device sends without duplicati
 it("shares Host client state across devices and rejects a revoked client's writes and asset reads", async () => {
   const s = await setup();
   expect((await s.call("environment.describe")).value.result.capabilities).toContain("clientState.v1");
-  const patch = { operationId: "preferences-rpc-1", changes: { "monocode.colorScheme": "light" } };
+  const patch = { operationId: "preferences-rpc-1", changes: { "omnicode.colorScheme": "light" } };
   const saved = await s.call("preferences.patch", patch);
   expect(saved.status).toBe(200);
   expect((await s.call("preferences.read", {}, s.second.token)).value.result).toEqual(saved.value.result);
@@ -544,7 +544,7 @@ describe("remote host API", () => {
     ]));
     expect((await s.call("nativeSources.syncAll")).value.result).toEqual({ synced: 0 });
     expect(capabilities).not.toContain("sessions.refreshDesktopNative");
-    const path = join(s.directory, "monocode.db");
+    const path = join(s.directory, "omnicode.db");
     const source = new DatabaseSync(path);
     source.exec(`CREATE TABLE sessions (id TEXT PRIMARY KEY, cwd TEXT, harness TEXT, model TEXT,
       runtime_mode TEXT, title TEXT, blocks_json TEXT, created_at INTEGER, updated_at INTEGER,
@@ -1268,7 +1268,7 @@ describe("remote host API", () => {
 
   it("answers this app's file commands inside host projects only", async () => {
     const s = await setup();
-    const outside = mkdtempSync(join(tmpdir(), "monocode-outside-"));
+    const outside = mkdtempSync(join(tmpdir(), "omnicode-outside-"));
     cleanups.push(async () => rmSync(outside, { recursive: true, force: true }));
     const checkout = join(s.directory, "checkout");
     mkdirSync(join(checkout, "src"), { recursive: true });

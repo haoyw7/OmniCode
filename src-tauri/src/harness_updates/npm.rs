@@ -106,13 +106,13 @@ impl Installation {
             .truncate(false)
             .read(true)
             .write(true)
-            .open(parent.join(format!(".monocode-{name}-update.lock")))
+            .open(parent.join(format!(".omnicode-{name}-update.lock")))
             .map_err(|e| e.to_string())?;
         lock.try_lock()
             .map_err(|_| "Another update is using this npm installation".to_string())?;
         let previous = verify()
             .map_err(|e| format!("Cannot verify the installed CLI before updating: {e}"))?;
-        let backup = parent.join(format!(".monocode-{name}-backup-{}", uuid::Uuid::new_v4()));
+        let backup = parent.join(format!(".omnicode-{name}-backup-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&backup).map_err(|e| e.to_string())?;
         let paths: Vec<_> = std::iter::once(self.root.clone())
             .chain(self.launchers.clone())
@@ -229,7 +229,7 @@ mod tests {
     impl Fixture {
         fn new() -> Self {
             let directory =
-                std::env::temp_dir().join(format!("monocode-update-test-{}", uuid::Uuid::new_v4()));
+                std::env::temp_dir().join(format!("omnicode-update-test-{}", uuid::Uuid::new_v4()));
             let root = directory.join("lib/node_modules/@openai/codex");
             let launcher = directory.join("bin/codex");
             fs::create_dir_all(root.join("node_modules/native")).unwrap();

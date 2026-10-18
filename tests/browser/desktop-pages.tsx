@@ -19,8 +19,8 @@ import type { GithubWorkItem, GithubWorkItemDetails, GithubWorkItemThread } from
 import { WorkflowsView } from "../../src/features/workflows/ui/WorkflowsView";
 import { WorkflowAppContext } from "../../src/features/workflows/ui/workflowAppContext";
 import { WorkflowProjectsContext } from "../../src/features/workflows/kit/store/TabStoreProvider";
-import { monocodeAgentService, type IMonocodeAgentService } from "../../src/features/workflows/kit/_shims/services";
-import type { MonocodeSavedWorkflowRun } from "../../src/features/workflows/kit/_shims/shared";
+import { omnicodeAgentService, type IOmniCodeAgentService } from "../../src/features/workflows/kit/_shims/services";
+import type { OmniCodeSavedWorkflowRun } from "../../src/features/workflows/kit/_shims/shared";
 import { initTypography } from "../../src/features/settings/model/typography";
 import { setUiLanguage } from "../../src/shared/i18n/language";
 import { applyDesktopSkin } from "../../src/shared/theme/desktopSkin";
@@ -32,7 +32,7 @@ import "../../src/styles/index.css";
 type Page = "workflows" | "automations" | "notes" | "inbox" | "search";
 const query = new URLSearchParams(location.search);
 const initialPage = (["workflows", "automations", "notes", "inbox", "search"].includes(query.get("page") ?? "") ? query.get("page") : "workflows") as Page;
-const cwd = "/fixture/monocode";
+const cwd = "/fixture/omnicode";
 const now = Date.UTC(2026, 9, 12, 12);
 const noop = () => {};
 const rpcCalls: string[] = [];
@@ -61,9 +61,9 @@ const runs: AutomationRun[] = [
   { id: "run-failure", automationId: "automation-tests", trigger: "manual", scheduledFor: now - 7200000, createdAt: now - 7200000, startedAt: now - 7200000, completedAt: now - 7180000, status: "failed", error: "Synthetic validation failure" },
 ];
 const items: GithubWorkItem[] = [
-  { kind: "issue", number: 157, title: "Preserve drafts when switching desktop modes", url: "https://example.invalid/issues/157", state: "open", createdAt: new Date(now - 86400000).toISOString(), updatedAt: new Date(now).toISOString(), labels: [{ name: "desktop", color: "c96442" }, { name: "regression", color: "2563eb" }], assignees: [{ login: "fixture-reviewer", avatarUrl: "/omnicode.svg" }], draft: false, repo: "fixture/monocode" },
-  { kind: "pr", number: 158, title: "Align navigation, composer and shared controls", url: "https://example.invalid/pull/158", state: "open", createdAt: new Date(now - 86400000).toISOString(), updatedAt: new Date(now - 1000).toISOString(), labels: [{ name: "ui", color: "826cff" }], assignees: [], draft: false, repo: "fixture/monocode" },
-  { kind: "issue", number: 159, title: "验证中文标题与窄窗口下的详情面板", url: "https://example.invalid/issues/159", state: "open", updatedAt: new Date(now - 2000).toISOString(), labels: [], assignees: [], draft: false, repo: "fixture/monocode" },
+  { kind: "issue", number: 157, title: "Preserve drafts when switching desktop modes", url: "https://example.invalid/issues/157", state: "open", createdAt: new Date(now - 86400000).toISOString(), updatedAt: new Date(now).toISOString(), labels: [{ name: "desktop", color: "c96442" }, { name: "regression", color: "2563eb" }], assignees: [{ login: "fixture-reviewer", avatarUrl: "/omnicode.svg" }], draft: false, repo: "fixture/omnicode" },
+  { kind: "pr", number: 158, title: "Align navigation, composer and shared controls", url: "https://example.invalid/pull/158", state: "open", createdAt: new Date(now - 86400000).toISOString(), updatedAt: new Date(now - 1000).toISOString(), labels: [{ name: "ui", color: "826cff" }], assignees: [], draft: false, repo: "fixture/omnicode" },
+  { kind: "issue", number: 159, title: "验证中文标题与窄窗口下的详情面板", url: "https://example.invalid/issues/159", state: "open", updatedAt: new Date(now - 2000).toISOString(), labels: [], assignees: [], draft: false, repo: "fixture/omnicode" },
 ];
 const details: GithubWorkItemDetails = { body: "## Workspace behavior\n\nSwitching between Chat and Code should preserve the current draft, file focus and running terminal.\n\n- Check keyboard navigation\n- Verify light and dark themes\n- Keep project actions available\n\n中文说明：本页面使用离线合成数据。", author: "fixture-reviewer", authorAvatarUrl: "/omnicode.svg", baseRefName: "main", headRefName: "desktop-layout", reviewDecision: "REVIEW_REQUIRED" };
 const thread: GithubWorkItemThread = { comments: [{ id: "comment-1", kind: "issue", author: "fixture-reviewer", authorAvatarUrl: "/omnicode.svg", body: "The focused navigation checks passed. Please keep the existing workflow controls available.", createdAt: new Date(now).toISOString(), url: "https://example.invalid/comment/1", state: "", path: "", line: null, resolved: false, threadId: "", replies: [] }], commits: [], truncated: false, reviewDecision: "REVIEW_REQUIRED", baseRefName: "main", headRefName: "desktop-layout" };
@@ -88,8 +88,8 @@ Object.assign(window, { __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: 
     if (command === "automations_upsert") { const saved = { ...params.automation, createdAt: now, updatedAt: now }; automations = automations.map(item => item.id === saved.id ? saved : item); return saved; }
     if (command === "git_github_status") return { connected: true, installed: true, authenticated: true };
     if (["linear_status", "jira_status", "gitlab_status", "azure_devops_status"].includes(command)) return { connected: false };
-    if (command === "git_github_repo") return "fixture/monocode";
-    if (command === "git_github_repositories") return ["fixture/monocode"];
+    if (command === "git_github_repo") return "fixture/omnicode";
+    if (command === "git_github_repositories") return ["fixture/omnicode"];
     if (command === "git_github_work_items") return items.filter(item => item.kind === params.kind);
     if (command === "git_github_work_item") return items.find(item => item.number === params.number) ?? items[0];
     if (command === "git_github_work_item_details") return details;
@@ -106,16 +106,16 @@ Object.assign(window, { __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: 
   },
 } });
 
-const workflowRuns: MonocodeSavedWorkflowRun[] = [{ runId: "workflow-run-review", name: "review-layout", status: "completed", createdAt: now - 60000, updatedAt: now, spentTokens: 4200, parentSessionId: summary.id, cwd, args: { focus: "desktop" }, artifacts: [{ id: "report", kind: "markdown", title: "Layout review", version: 1, contentType: "text/markdown" }] }];
-const workflowService: IMonocodeAgentService = {
-  listSavedWorkflows: async target => ({ workflows: [{ name: target.scope === "global" ? "summarize-changes" : "review-layout", description: target.scope === "global" ? "Summarize recent changes with focused evidence and follow-up actions." : "Review desktop layout, draft retention, keyboard navigation, and long multilingual text.", whenToUse: "Before handing off a desktop UI change.", args: { focus: { type: "string", description: "Area to inspect", default: "desktop" }, strict: { type: "boolean", default: true } }, scope: target.scope === "global" ? "global" : "project", path: `${target.workspacePath ?? "/fixture/home"}/.monocode/workflows/review-layout.dwf.ts` }], invalid: [], dir: `${target.workspacePath ?? "/fixture/home"}/.monocode/workflows` }),
+const workflowRuns: OmniCodeSavedWorkflowRun[] = [{ runId: "workflow-run-review", name: "review-layout", status: "completed", createdAt: now - 60000, updatedAt: now, spentTokens: 4200, parentSessionId: summary.id, cwd, args: { focus: "desktop" }, artifacts: [{ id: "report", kind: "markdown", title: "Layout review", version: 1, contentType: "text/markdown" }] }];
+const workflowService: IOmniCodeAgentService = {
+  listSavedWorkflows: async target => ({ workflows: [{ name: target.scope === "global" ? "summarize-changes" : "review-layout", description: target.scope === "global" ? "Summarize recent changes with focused evidence and follow-up actions." : "Review desktop layout, draft retention, keyboard navigation, and long multilingual text.", whenToUse: "Before handing off a desktop UI change.", args: { focus: { type: "string", description: "Area to inspect", default: "desktop" }, strict: { type: "boolean", default: true } }, scope: target.scope === "global" ? "global" : "project", path: `${target.workspacePath ?? "/fixture/home"}/.omnicode/workflows/review-layout.dwf.ts` }], invalid: [], dir: `${target.workspacePath ?? "/fixture/home"}/.omnicode/workflows` }),
   listSavedWorkflowRuns: async params => ({ runs: params.scope === "global" ? [] : workflowRuns }),
-  getSavedWorkflow: async params => ({ ok: true, name: params.name, path: `${cwd}/.monocode/workflows/${params.name}.dwf.ts`, scope: params.scope === "global" ? "global" : "project", meta: { description: "Review the desktop workspace and record focused evidence.", whenToUse: "Before handing off a UI change.", args: { focus: { type: "string", default: "desktop" } } }, script: "export default async function review(ctx) {\n  return ctx.agent({ prompt: 'Review the desktop layout' });\n}\n" }),
-  updateSavedWorkflowMeta: async () => ({ ok: true, path: `${cwd}/.monocode/workflows/review-layout.dwf.ts` }),
-  deleteSavedWorkflow: async () => ({ ok: true, path: `${cwd}/.monocode/workflows/review-layout.dwf.ts` }),
-  moveSavedWorkflow: async () => ({ ok: true, from: "/fixture/home/review-layout.dwf.ts", to: `${cwd}/.monocode/workflows/review-layout.dwf.ts` }),
+  getSavedWorkflow: async params => ({ ok: true, name: params.name, path: `${cwd}/.omnicode/workflows/${params.name}.dwf.ts`, scope: params.scope === "global" ? "global" : "project", meta: { description: "Review the desktop workspace and record focused evidence.", whenToUse: "Before handing off a UI change.", args: { focus: { type: "string", default: "desktop" } } }, script: "export default async function review(ctx) {\n  return ctx.agent({ prompt: 'Review the desktop layout' });\n}\n" }),
+  updateSavedWorkflowMeta: async () => ({ ok: true, path: `${cwd}/.omnicode/workflows/review-layout.dwf.ts` }),
+  deleteSavedWorkflow: async () => ({ ok: true, path: `${cwd}/.omnicode/workflows/review-layout.dwf.ts` }),
+  moveSavedWorkflow: async () => ({ ok: true, from: "/fixture/home/review-layout.dwf.ts", to: `${cwd}/.omnicode/workflows/review-layout.dwf.ts` }),
 };
-Object.assign(monocodeAgentService, workflowService);
+Object.assign(omnicodeAgentService, workflowService);
 Object.assign(window, { desktopPagesFixture: { rpcCalls, unhandledCommands, actions } });
 
 function FeaturePagesFixture() {

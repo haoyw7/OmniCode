@@ -1,5 +1,5 @@
 [package]
-name = "monocode-process-tree"
+name = "omnicode-process-tree"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

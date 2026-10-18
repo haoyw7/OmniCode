@@ -58,9 +58,9 @@ it("masks an email when another window turns masking on", async () => {
   expect(revealButton()).toBeNull();
 
   await act(async () => {
-    localStorage.setItem("monocode.maskEmails", "1");
+    localStorage.setItem("omnicode.maskEmails", "1");
     window.dispatchEvent(
-      new StorageEvent("storage", { key: "monocode.maskEmails" }),
+      new StorageEvent("storage", { key: "omnicode.maskEmails" }),
     );
   });
 

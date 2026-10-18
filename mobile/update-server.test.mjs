@@ -8,7 +8,7 @@ import { createUpdateServer, config } from "./update-server.mjs";
 import { publishUpdate } from "./publish-update.mjs";
 
 async function fixture(context) {
-  const root = await mkdtemp(join(tmpdir(), "monocode-updates-test-"));
+  const root = await mkdtemp(join(tmpdir(), "omnicode-updates-test-"));
   context.after(() => rm(root, { recursive: true, force: true }));
   const store = join(root, "published");
   const build = async (code, data = `apk-${code}`) => {
@@ -41,7 +41,7 @@ test("publishes complete APKs and never regresses or changes a versioned downloa
     createHash("sha256").update("apk-12").digest("hex"),
   );
   assert.equal(
-    await readFile(join(store, "apk/monocode-12.apk"), "utf8"),
+    await readFile(join(store, "apk/omnicode-12.apk"), "utf8"),
     "apk-12",
   );
   await publishUpdate(await build(11), store);
@@ -54,7 +54,7 @@ test("publishes complete APKs and never regresses or changes a versioned downloa
     /different APK/,
   );
   assert.equal(
-    await readFile(join(store, "apk/monocode-12.apk"), "utf8"),
+    await readFile(join(store, "apk/omnicode-12.apk"), "utf8"),
     "apk-12",
   );
   await publishUpdate(await build(13), store);
@@ -78,7 +78,7 @@ test("parallel publications choose the largest build and leave usable immutable 
   );
   for (const code of [21, 22, 23, 24])
     assert.equal(
-      await readFile(join(store, `apk/monocode-${code}.apk`), "utf8"),
+      await readFile(join(store, `apk/omnicode-${code}.apk`), "utf8"),
       `apk-${code}`,
     );
 });

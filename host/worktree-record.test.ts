@@ -3,11 +3,11 @@ import { parseCommand } from "./engine";
 
 const record = {
   base: "main",
-  path: "/projects/monocode-worktrees/wt-mc-3f2a1b7c",
+  path: "/projects/omnicode-worktrees/wt-mc-3f2a1b7c",
   log: [
     { kind: "info", key: "Starting worktree creation" },
     { kind: "output", text: "Preparing worktree (new branch 'mc/3f2a1b7c')" },
-    { kind: "text", key: "Worktree created at {value0}", values: { value0: "/projects/monocode-worktrees/wt-mc-3f2a1b7c" } },
+    { kind: "text", key: "Worktree created at {value0}", values: { value0: "/projects/omnicode-worktrees/wt-mc-3f2a1b7c" } },
   ],
 };
 

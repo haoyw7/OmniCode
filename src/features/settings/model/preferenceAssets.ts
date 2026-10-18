@@ -2,7 +2,7 @@ import type { PreferenceRequest } from "./sharedPreferences";
 import { activePreferenceStore, preferenceStorage, SHARED_PREFERENCES_STATUS } from "./sharedPreferences";
 
 const PREFIX = "host-asset:";
-export const PREFERENCE_ASSET_READY = "monocode:preference-asset-ready";
+export const PREFERENCE_ASSET_READY = "omnicode:preference-asset-ready";
 const MAX_BYTES = 25 * 1024 * 1024;
 const CHUNK_BYTES = 512 * 1024;
 const MIME_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp"]);
@@ -16,7 +16,7 @@ let dbPromise: Promise<IDBDatabase> | undefined;
 function database(): Promise<IDBDatabase> {
   return dbPromise ??= new Promise<IDBDatabase>((resolve, reject) => {
     let blocked = false;
-    const request = indexedDB.open("monocode-host-assets", 1);
+    const request = indexedDB.open("omnicode-host-assets", 1);
     request.onupgradeneeded = () => { request.result.createObjectStore("assets", { keyPath: "key" }); };
     request.onsuccess = () => {
       if (blocked) { request.result.close(); return; }
@@ -211,9 +211,9 @@ export async function migrateLegacyPreferenceBackgrounds(): Promise<void> {
   const hostId = activePreferenceStore()?.hostId;
   if (!hostId) return;
   const { remoteProjectFor, parseRemotePath } = await import("../../connections/model/remoteProjects");
-  const global = localStorage.getItem("monocode.chatBackgroundPath")?.trim();
-  if (global) preferenceStorage.setItem("monocode.chatBackgroundAsset", await uploadPreferenceBackground(global, hostId));
-  const raw = localStorage.getItem("monocode:project-chat-backgrounds");
+  const global = localStorage.getItem("omnicode.chatBackgroundPath")?.trim();
+  if (global) preferenceStorage.setItem("omnicode.chatBackgroundAsset", await uploadPreferenceBackground(global, hostId));
+  const raw = localStorage.getItem("omnicode:project-chat-backgrounds");
   if (!raw) return;
   const previous: unknown = JSON.parse(raw);
   if (!previous || typeof previous !== "object" || Array.isArray(previous)) return;
@@ -223,7 +223,7 @@ export async function migrateLegacyPreferenceBackgrounds(): Promise<void> {
     const owner = remoteProjectFor(project)?.environmentId ?? parseRemotePath(project)?.environmentId ?? hostId;
     projects[project] = { ...value, path: await uploadPreferenceBackground(value.path, owner) };
   }
-  if (Object.keys(projects).length) preferenceStorage.setItem("monocode.projectBackgroundAssets", JSON.stringify(projects));
+  if (Object.keys(projects).length) preferenceStorage.setItem("omnicode.projectBackgroundAssets", JSON.stringify(projects));
 }
 if (typeof window !== "undefined") {
   window.addEventListener("online", () => assets.retry());

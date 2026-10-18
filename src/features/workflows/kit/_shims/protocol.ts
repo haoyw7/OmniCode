@@ -1,4 +1,4 @@
-// Monocode stand-in for `@zcode/shared/zcode-protocol-v4`: re-exports the ported
+// OmniCode stand-in for `@zcode/shared/zcode-protocol-v4`: re-exports the ported
 // workflow protocol and defines the few command/row types the workflow UI reads.
 import { z } from "zod";
 
@@ -42,7 +42,7 @@ export const BACKGROUND_WORK_CANCEL_REJECTED_FAULT_PREFIX = "fault.command.backg
 /**
  * The ZCode conversation rows the workflow views read: the launching tool call
  * (with the analysis graph) and, for user-launched runs, the launch turn.
- * Monocode builds them from the conversation's workflow run-card blocks.
+ * OmniCode builds them from the conversation's workflow run-card blocks.
  */
 export type ConversationRow =
   | {

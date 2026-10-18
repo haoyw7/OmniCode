@@ -6,7 +6,7 @@ export const MCP_COMMAND: BuiltinSkill = {
   invocation: "mcp",
   description: "Find an MCP server for this message.",
   scope: "builtin",
-  source: "monocode",
+  source: "omnicode",
 };
 
 export function isMcpCommand(text: string): boolean {

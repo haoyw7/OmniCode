@@ -13,7 +13,7 @@ import { browseHostDirectories } from "./browse";
 
 describe("host directory browser", () => {
   it("lists folders without exposing files and rejects relative paths", async () => {
-    const root = mkdtempSync(join(tmpdir(), "monocode-browse-"));
+    const root = mkdtempSync(join(tmpdir(), "omnicode-browse-"));
     try {
       mkdirSync(join(root, "repo"));
       writeFileSync(join(root, "secret.txt"), "private data");
@@ -37,8 +37,8 @@ describe("host directory browser", () => {
   it.skipIf(process.platform === "win32")(
     "includes directory symlinks, follows them without replacing their paths and ignores file/broken/loop links",
     async () => {
-      const root = mkdtempSync(join(tmpdir(), "monocode-browse-links-"));
-      const target = mkdtempSync(join(tmpdir(), "monocode-browse-target-"));
+      const root = mkdtempSync(join(tmpdir(), "omnicode-browse-links-"));
+      const target = mkdtempSync(join(tmpdir(), "omnicode-browse-target-"));
       try {
         mkdirSync(join(root, "repo"));
         mkdirSync(join(target, "child"));
@@ -70,7 +70,7 @@ describe("host directory browser", () => {
   it.skipIf(process.platform === "win32" || process.getuid?.() === 0)(
     "can list and leave the parent of an unreadable directory or directory symlink",
     async () => {
-      const root = mkdtempSync(join(tmpdir(), "monocode-browse-permissions-"));
+      const root = mkdtempSync(join(tmpdir(), "omnicode-browse-permissions-"));
       const denied = join(root, "denied");
       mkdirSync(denied);
       try {

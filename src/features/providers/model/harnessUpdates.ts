@@ -9,7 +9,7 @@ import {
 } from "../../../integrations/harness/providers/opencode/opencodeProtocol";
 
 /**
- * Harnesses with an npm version feed and a self-updater MonoCode can run.
+ * Harnesses with an npm version feed and a self-updater OmniCode can run.
  */
 export const UPDATABLE_HARNESSES: ReadonlySet<HarnessId> = new Set([
   "claude",
@@ -131,7 +131,7 @@ export type HarnessInstall = {
   alternatives: { path: string; version: string }[];
 };
 
-/** How the binary MonoCode runs for `harness` was installed. */
+/** How the binary OmniCode runs for `harness` was installed. */
 export function fetchHarnessInstall(harness: HarnessId): Promise<HarnessInstall> {
   return invoke<HarnessInstall>("harness_install_info", {
     provider: harness,

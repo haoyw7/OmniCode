@@ -148,7 +148,7 @@ export function useWorkspaceShortcuts({
         if (listNavigation) {
           const blockedTarget = Boolean(
             target?.closest(
-              'input, textarea, select, [contenteditable="true"], .cm-editor, .monocode-terminal, [role="dialog"], [data-model-picker], [data-file-picker], [data-branch-picker], [data-skill-picker], [data-mention-picker], [data-app-search]',
+              'input, textarea, select, [contenteditable="true"], .cm-editor, .omnicode-terminal, [role="dialog"], [data-model-picker], [data-file-picker], [data-branch-picker], [data-skill-picker], [data-mention-picker], [data-app-search]',
             ),
           );
           const emptyComposerTarget = Boolean(
@@ -169,7 +169,7 @@ export function useWorkspaceShortcuts({
           }
         }
         if (
-          target?.closest(".monocode-terminal") &&
+          target?.closest(".omnicode-terminal") &&
           e.ctrlKey &&
           !e.metaKey &&
           (cmd === "back" ||
@@ -218,7 +218,7 @@ export function useWorkspaceShortcuts({
         if (
           shortcut === "App: Search" &&
           e.target instanceof Element &&
-          e.target.closest(".monocode-terminal") &&
+          e.target.closest(".omnicode-terminal") &&
           e.ctrlKey &&
           !e.metaKey
         ) {

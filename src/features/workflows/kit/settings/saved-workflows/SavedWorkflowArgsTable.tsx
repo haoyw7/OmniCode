@@ -1,5 +1,5 @@
 import { Plus, X } from "../../../../../shared/ui/icons";
-import type { MonocodeSavedWorkflowArgType } from "../../_shims/shared.js";
+import type { OmniCodeSavedWorkflowArgType } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { Input } from "../../../../../shared/ui/forms/Input";
 import {
@@ -17,7 +17,7 @@ import type {
   SavedWorkflowArgRowError,
 } from "./savedWorkflowArgsForm.js";
 
-const ARG_TYPES: readonly MonocodeSavedWorkflowArgType[] = ["string", "number", "boolean", "json"];
+const ARG_TYPES: readonly OmniCodeSavedWorkflowArgType[] = ["string", "number", "boolean", "json"];
 
 /** 详情页「参数」声明表：可增删行，默认值按类型出控件。 */
 export function SavedWorkflowArgsTable({
@@ -71,7 +71,7 @@ export function SavedWorkflowArgsTable({
               <Select
                 value={row.type}
                 onValueChange={(value) =>
-                  onChange(row.key, { type: value as MonocodeSavedWorkflowArgType })
+                  onChange(row.key, { type: value as OmniCodeSavedWorkflowArgType })
                 }
               >
                 <SelectTrigger size="sm" className="h-7 w-full font-mono">

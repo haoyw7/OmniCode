@@ -2,7 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
-desktop_state_dir="${MONOCODE_DESKTOP_STATE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/monocode/desktop-updates}"
+desktop_state_dir="${OMNICODE_DESKTOP_STATE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/omnicode/desktop-updates}"
 mkdir -p "$desktop_state_dir"
 # Shared across worktrees because they publish to the same LAN feed.
 exec 9>"$desktop_state_dir/task.lock"

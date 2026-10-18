@@ -11,7 +11,7 @@ const DEFAULT_GITLAB_URL: &str = "https://gitlab.com";
 const DEFAULT_LIMIT: u32 = 40;
 const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
 const MAX_DIFF_BYTES: usize = 2 * 1024 * 1024;
-const USER_AGENT: &str = "MonoCode";
+const USER_AGENT: &str = "OmniCode";
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-const directory = await mkdtemp(join(tmpdir(), "monocode-loading-benchmark-"));
+const directory = await mkdtemp(join(tmpdir(), "omnicode-loading-benchmark-"));
 const run = promisify(execFile);
 const baselineRef = process.argv.find((arg) => arg.startsWith("--baseline="))?.slice(11) ?? "HEAD";
 const source = String.raw`
@@ -91,7 +91,7 @@ try {
   start = performance.now();
   await after.session('benchmark-two');
   const afterMs = performance.now() - start;
-  const results = { node: process.version, baseline: process.env.MONOCODE_LOADING_BASELINE, blocks: 1000,
+  const results = { node: process.version, baseline: process.env.OMNICODE_LOADING_BASELINE, blocks: 1000,
     snapshotBytes: Buffer.byteLength(JSON.stringify(store.sync('benchmark-one'))),
     localColdTextSync: summarize(cold), memoryCacheLookup: summarize(cached),
     simulatedSlowImage: { imageDelayMs: 500, beforeTextReadyMs: +beforeMs.toFixed(3), afterTextReadyMs: +afterMs.toFixed(3) } };
@@ -169,7 +169,7 @@ try {
   }
   const { spawn } = await import("node:child_process");
   const child = spawn(process.execPath, [entry, ...process.argv.slice(2)], {
-    stdio: "inherit", detached: true, env: { ...process.env, MONOCODE_LOADING_BASELINE: baseline },
+    stdio: "inherit", detached: true, env: { ...process.env, OMNICODE_LOADING_BASELINE: baseline },
   });
   const forward = () => child.kill("SIGINT");
   process.once("SIGINT", forward);

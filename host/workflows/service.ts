@@ -47,7 +47,7 @@ import {
 import type { WorkflowRunBlock, WorkflowRunSettings, WorkflowRunSource } from "../../src/integrations/workflow/sessionTypes.js";
 import { HostControl, WORKFLOW_ACTIONS } from "../control";
 import { analyze, clampRunConcurrency, compileOnce, evalSnippet, formatDiagnostics, scriptHash, validateFn, workflowConcurrencyCeiling } from "./compile.js";
-import { MonocodeWorkflowDriver, effectiveActorName, mintActorSessionId, personaRuntime, type WorkflowWorkerPort } from "./driver.js";
+import { OmniCodeWorkflowDriver, effectiveActorName, mintActorSessionId, personaRuntime, type WorkflowWorkerPort } from "./driver.js";
 import { buildImportedCache, preflightAmendImport, TERMINAL_RUN_STATUSES } from "./import.js";
 import { artifactItems, artifactsOf, readArtifactBytes } from "./artifact-queries.js";
 import { SqliteJournalStore } from "./journal.js";
@@ -123,7 +123,7 @@ type LiveRun = {
   parentSessionId: string;
   abort: AbortController;
   engine?: Pick<WorkflowEngine, "setMaxConcurrency">;
-  driver?: MonocodeWorkflowDriver;
+  driver?: OmniCodeWorkflowDriver;
   settings: WorkflowRunSettings;
   done: Promise<RunSettlement>;
 };
@@ -281,8 +281,8 @@ export class HostWorkflows {
     this.control.enable(sessionId);
     return {
       ...this.control.environment(sessionId),
-      ...(this.launcherPath ? { MONOCODE_WORKFLOW_CLI: this.launcherPath } : {}),
-      MONOCODE_WORKFLOW_SKILL_DIR: this.skillDir,
+      ...(this.launcherPath ? { OMNICODE_WORKFLOW_CLI: this.launcherPath } : {}),
+      OMNICODE_WORKFLOW_SKILL_DIR: this.skillDir,
     };
   }
 
@@ -293,13 +293,13 @@ export class HostWorkflows {
     if (!value || value.session.workflowParentId) return text;
     const request = text.replace(WORKFLOW_COMMAND, "$1").trim();
     return [
-      "<monocode-workflows>",
+      "<omnicode-workflows>",
       "The user wants this done as a OmniCode dynamic workflow: a TypeScript script that orchestrates subagents, each running on a OmniCode provider (Pi, Codex, Claude Code, omp, OpenCode…) with its own model, thinking level and speed.",
-      "Before writing the script, read the authoring guide at $MONOCODE_WORKFLOW_SKILL_DIR/SKILL.md (patterns.md and examples.md beside it go deeper).",
-      `Submit and manage runs with the workflow CLI: "$MONOCODE_WORKFLOW_CLI" workflow --help. Run \`"$MONOCODE_WORKFLOW_CLI" workflow providers --json '{}'\` to see installed providers and their models.`,
+      "Before writing the script, read the authoring guide at $OMNICODE_WORKFLOW_SKILL_DIR/SKILL.md (patterns.md and examples.md beside it go deeper).",
+      `Submit and manage runs with the workflow CLI: "$OMNICODE_WORKFLOW_CLI" workflow --help. Run \`"$OMNICODE_WORKFLOW_CLI" workflow providers --json '{}'\` to see installed providers and their models.`,
       "The run appears as a card in this conversation and in OmniCode's Workflows sidebar.",
       "Once a workflow works and the user wants to keep it, save it with `workflow save` (scope \"project\" or \"global\"); it then appears in OmniCode's saved workflows.",
-      "</monocode-workflows>",
+      "</omnicode-workflows>",
       "",
       request || "Help me design and run a dynamic workflow for this project.",
     ].join("\n");
@@ -686,7 +686,7 @@ export class HostWorkflows {
       signal: abort.signal,
       control: { bind: (engine) => { live.engine = engine; } },
       makeDriver: (sink) => {
-        const driver = new MonocodeWorkflowDriver({
+        const driver = new OmniCodeWorkflowDriver({
           runId: prepared.runId,
           parentSessionId: prepared.parentSessionId,
           cwd: prepared.cwd,
@@ -1126,7 +1126,7 @@ export class HostWorkflows {
 
   /** The Host's home for workflows saved globally. */
   static globalDirectory(): string {
-    return join(homedir(), ".monocode", "workflows");
+    return join(homedir(), ".omnicode", "workflows");
   }
 
   async close(): Promise<void> {

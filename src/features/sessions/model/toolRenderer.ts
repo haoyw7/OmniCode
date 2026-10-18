@@ -6,7 +6,7 @@ import {
   isSearchTool,
   isSkillTool,
 } from "../../../integrations/harness/core/preview";
-import { monoCodeToolCall } from "./monocodeToolCall";
+import { omniCodeToolCall } from "./omnicodeToolCall";
 import type { Block } from "./session";
 import { toolCallLabel, toolCallState } from "./transcriptActivity";
 
@@ -15,7 +15,7 @@ import { toolCallLabel, toolCallState } from "./transcriptActivity";
  * decides the summary line and what opens under it.
  */
 export type ToolRendererKind =
-  | "monocode"
+  | "omnicode"
   | "agent"
   | "question"
   | "skill"
@@ -35,7 +35,7 @@ export function resolveToolRenderer(block: Block): ToolRendererKind {
   const kind = tool?.kind;
   const title = block.text || tool?.title;
   const preview = tool?.preview;
-  if (monoCodeToolCall(block)) return "monocode";
+  if (omniCodeToolCall(block)) return "omnicode";
   if (isAgentTool(kind, title)) return "agent";
   if (isQuestionTool(kind, tool?.title ?? block.text)) return "question";
   if (isSkillTool(kind, title) || /^Skill\b/.test(toolCallLabel(block)))

@@ -532,7 +532,7 @@ describe("Composer question focus", () => {
   it("opens a searchable MCP picker and sends selected context", async () => {
     const onSubmit = vi.fn();
     const onOpen = vi.fn();
-    window.addEventListener("monocode:open-mcp-settings", onOpen);
+    window.addEventListener("omnicode:open-mcp-settings", onOpen);
     try {
       await renderComposer(
         undefined,
@@ -607,7 +607,7 @@ describe("Composer question focus", () => {
       expect(onOpen).not.toHaveBeenCalled();
       expect(textarea.value).toBe("");
     } finally {
-      window.removeEventListener("monocode:open-mcp-settings", onOpen);
+      window.removeEventListener("omnicode:open-mcp-settings", onOpen);
     }
   });
 
@@ -2344,7 +2344,7 @@ describe("Composer question focus", () => {
   it("opens the MCP picker in Save draft mode and offers Manage", async () => {
     const onSaveDraft = vi.fn();
     const onOpen = vi.fn();
-    window.addEventListener("monocode:open-mcp-settings", onOpen);
+    window.addEventListener("omnicode:open-mcp-settings", onOpen);
     try {
       await act(async () =>
         root.render(
@@ -2399,7 +2399,7 @@ describe("Composer question focus", () => {
       await act(async () => manage.click());
       expect(onOpen).toHaveBeenCalledOnce();
     } finally {
-      window.removeEventListener("monocode:open-mcp-settings", onOpen);
+      window.removeEventListener("omnicode:open-mcp-settings", onOpen);
     }
   });
 });

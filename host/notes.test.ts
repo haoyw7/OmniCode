@@ -20,7 +20,7 @@ import {
 const roots: string[] = [];
 const stores: HostNotes[] = [];
 function directory() {
-  const root = mkdtempSync(join(tmpdir(), "monocode-notes-"));
+  const root = mkdtempSync(join(tmpdir(), "omnicode-notes-"));
   roots.push(root);
   return root;
 }
@@ -184,7 +184,7 @@ describe("Host notes", () => {
   });
   it("shares the desktop WAL database and migrates only notes columns", () => {
     const desktop = directory();
-    const db = new DatabaseSync(join(desktop, "monocode.db"));
+    const db = new DatabaseSync(join(desktop, "omnicode.db"));
     try {
       db.exec(`PRAGMA journal_mode=WAL;
         CREATE TABLE sessions (id TEXT PRIMARY KEY, payload TEXT);

@@ -68,6 +68,8 @@ export function WindowControls() {
       aria-label={uiT("Window controls")}
       className="flex h-full shrink-0 items-center gap-1 px-2"
       data-tauri-drag-region="false"
+      // Native window actions must not dismiss the currently open surface.
+      onPointerDownCapture={(event) => event.stopPropagation()}
     >
       <button
         type="button"

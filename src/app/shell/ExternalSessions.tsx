@@ -37,7 +37,7 @@ function age(ms: number, now: number, locale: string): string {
 }
 
 /**
- * Sessions that a native CLI created in this project and MonoCode has not
+ * Sessions that a native CLI created in this project and OmniCode has not
  * imported yet. Selecting one imports it and opens it.
  */
 export function ExternalSessions({

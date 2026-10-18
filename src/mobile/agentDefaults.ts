@@ -16,8 +16,8 @@ import {
 } from "./MobileModelControls";
 import { activePreferenceStore, preferenceStorage } from "../features/settings/model/sharedPreferences";
 
-const KEY = "monocode.mobileAgentDefaults";
-const SHARED_KEY = "monocode.agentDefaults";
+const KEY = "omnicode.mobileAgentDefaults";
+const SHARED_KEY = "omnicode.agentDefaults";
 export const ACCOUNT_AGENTS = [
   "codex",
   "claude",
@@ -194,8 +194,8 @@ export function loadMobileProjectDefaults(host: MobileDefaultsHost | undefined, 
   if (!hostId || activePreferenceStore()?.hostId !== hostId) return defaults;
   const identity = `@project:${encodeURIComponent(hostId)}:${encodeURIComponent(projectId)}`;
   try {
-    const project = JSON.parse(preferenceStorage.getItem("monocode.projectProviderSettings.v1") ?? "{}")[identity];
-    const accounts = JSON.parse(preferenceStorage.getItem("monocode.providerAccountSelections.v1") ?? "{}")[identity];
+    const project = JSON.parse(preferenceStorage.getItem("omnicode.projectProviderSettings.v1") ?? "{}")[identity];
+    const accounts = JSON.parse(preferenceStorage.getItem("omnicode.providerAccountSelections.v1") ?? "{}")[identity];
     const agents = { ...defaults.agents };
     const harness = REMOTE_PROVIDERS.find(provider => provider === project?.defaultHarness) ?? defaults.harness;
     for (const provider of REMOTE_PROVIDERS) {

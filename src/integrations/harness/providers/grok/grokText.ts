@@ -18,7 +18,7 @@ import { abortTextPromptRace } from "../../core/abortTextPrompt";
 import { mergeStream } from "../../core/streamText";
 import type { HarnessEvent } from "../../core/types";
 
-const TEXT_CHILD_ID = "monocode-grok-text";
+const TEXT_CHILD_ID = "omnicode-grok-text";
 const INIT_TIMEOUT_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 20_000;
 
@@ -213,7 +213,7 @@ async function startLive(
       {
         protocolVersion: 1,
         clientCapabilities: CLIENT_CAPABILITIES,
-        clientInfo: { name: "monocode-text", version: "0.1.0" },
+        clientInfo: { name: "omnicode-text", version: "0.1.0" },
       },
       INIT_TIMEOUT_MS,
     );
@@ -304,7 +304,7 @@ async function deleteTextSession(session: LiveText): Promise<void> {
     undefined,
     TEXT_CHILD_ID,
   ).catch((error) =>
-    console.debug("[monocode] Grok text session cleanup", error),
+    console.debug("[omnicode] Grok text session cleanup", error),
   );
 }
 

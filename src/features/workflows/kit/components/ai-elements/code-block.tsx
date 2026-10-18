@@ -1,4 +1,4 @@
-// Monocode shim for ZCode's CodeBlock: a read-only scrollable code view.
+// OmniCode shim for ZCode's CodeBlock: a read-only scrollable code view.
 import type { HTMLAttributes } from "react";
 import { cn } from "../../../../../shared/lib/cn";
 

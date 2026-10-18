@@ -10,7 +10,7 @@ type PairingHostCandidate = {
   reachable: boolean;
 };
 
-const PAIRING_HOST_URL_KEY = "monocode.pairingHostUrl";
+const PAIRING_HOST_URL_KEY = "omnicode.pairingHostUrl";
 
 function savedHost(): string | null {
   try {

@@ -166,7 +166,7 @@ it.each([
   ["family", "topic:code"],
   ["list issues", "topic:code"],
   ["search issues", "topic:code"],
-  ["/projects/monocode", "topic:code"],
+  ["/projects/omnicode", "topic:code"],
 ])("searches Chinese and technical memory with %s", (query, file) => {
   const files = [
     { file: "topic:deploy", text: "- 2026-10-01 · 发布流程使用 GitHub Actions" },
@@ -174,7 +174,7 @@ it.each([
     { file: "memory", text: "- 2026-10-01 · SQLite 保存会话数据" },
     {
       file: "topic:code",
-      text: "- 2026-10-01 · CI 通过 piFamily.ts 调用 listIssues 和 search_issues；项目位于 /projects/monocode。",
+      text: "- 2026-10-01 · CI 通过 piFamily.ts 调用 listIssues 和 search_issues；项目位于 /projects/omnicode。",
     },
   ];
   expect(searchMemory(files, query)[0]?.file).toBe(file);

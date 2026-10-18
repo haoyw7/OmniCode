@@ -723,7 +723,7 @@
     "src/features/sessions/model/handoff.ts",
     "src/features/sessions/model/inFlight.ts",
     "src/features/sessions/model/models.ts",
-    "src/features/sessions/model/monocodeToolCall.ts",
+    "src/features/sessions/model/omnicodeToolCall.ts",
     "src/features/sessions/model/ompInterjections.ts",
     "src/features/sessions/model/plan.ts",
     "src/features/sessions/model/projectProviders.ts",

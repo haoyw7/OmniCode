@@ -73,7 +73,7 @@ function render(
 }
 
 describe("mobile prompt anchoring", () => {
-  afterEach(() => localStorage.removeItem("monocode.transcriptAnchor"));
+  afterEach(() => localStorage.removeItem("omnicode.transcriptAnchor"));
 
   it.each([false, true])("loads the saved %s preference and applies changes to current and new prompts", (enabled) => {
     saveTranscriptAnchor(enabled);

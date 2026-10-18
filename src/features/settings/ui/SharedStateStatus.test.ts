@@ -11,7 +11,7 @@ import { SharedStateStatus } from "./SharedStateStatus";
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("../../connections/model/hostWorkspace", () => ({
   hostWorkspacePending: () => false,
-  HOST_WORKSPACE_STATUS: "monocode:host-workspace-status",
+  HOST_WORKSPACE_STATUS: "omnicode:host-workspace-status",
 }));
 
 function host(id: string) {
@@ -56,13 +56,13 @@ it("does not show another Host's error or queued settings in this device's sync 
   await render();
   vi.mocked(remote.request).mockRejectedValue(new Error("Update Host to share settings."));
   await act(async () => {
-    remote.store.setItem("monocode.colorScheme", "dark");
+    remote.store.setItem("omnicode.colorScheme", "dark");
     await remote.store.sync();
   });
   expect(remote.store.error).toBe("Update Host to share settings.");
   expect(remote.store.pendingCount).toBe(1);
   expect(container.querySelector('[role="status"]')).toBeNull();
-  expect(remote.store.getItem("monocode.colorScheme")).toBe("dark");
+  expect(remote.store.getItem("omnicode.colorScheme")).toBe("dark");
 
   // Mobile supplies its own workspace journal but uses the same Host boundary.
   await render(() => false);
@@ -85,7 +85,7 @@ it("shows the active Host's errors and clears them after recovery despite anothe
 
 it("keeps this device's pending settings and workspace writes visible", async () => {
   vi.mocked(primary.request).mockImplementation(() => new Promise(() => {}));
-  primary.store.setItem("monocode.colorScheme", "dark");
+  primary.store.setItem("omnicode.colorScheme", "dark");
   await render();
   expect(container.textContent).toBe("Not yet synced");
 

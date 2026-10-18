@@ -453,7 +453,7 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
     if (canResume) {
       await repairUnsupportedFileTurn(client, openCodeSession.id).catch(
         (error: unknown) =>
-          console.debug("[monocode] opencode attachment recovery", error),
+          console.debug("[omnicode] opencode attachment recovery", error),
       );
     }
 

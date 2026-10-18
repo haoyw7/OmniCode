@@ -14,7 +14,7 @@ export function providerSessionAccessIssue(
         ? error
         : "";
   if (!message) return undefined;
-  if (message === "Native session is in use by another MonoCode instance")
+  if (message === "Native session is in use by another OmniCode instance")
     return "occupied";
   if (
     message ===

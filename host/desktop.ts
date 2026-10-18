@@ -149,7 +149,7 @@ export async function prepareDesktopHost(
   }
   const store = new HostStore(join(directory, "host.db"));
   try {
-    importDesktopSessions(store, join(desktopDirectory, "monocode.db"));
+    importDesktopSessions(store, join(desktopDirectory, "omnicode.db"));
     const credentialPath = join(
       desktopDirectory,
       "shared-host-credential.json",
@@ -176,7 +176,7 @@ export async function prepareDesktopHost(
       if (!sessions.some((row) => row.id === retired.id))
         sessions.push({ id: retired.id, cwd: retired.cwd ?? "~", deleted: true });
     }
-    const legacyPath = join(desktopDirectory, "monocode.db");
+    const legacyPath = join(desktopDirectory, "omnicode.db");
     if (existsSync(legacyPath)) {
       const sourceKey = createHash("sha256")
         .update(resolve(legacyPath))

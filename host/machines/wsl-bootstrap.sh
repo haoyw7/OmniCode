@@ -3,7 +3,7 @@ set -eu
 umask 077
 exec 3>&1 1>&2
 SOURCE=$(wslpath -u "$1")
-BASE="$HOME/.monocode/remote"
+BASE="$HOME/.omnicode/remote"
 RUN="$BASE/run"
 # During migration, the previous Host can still own rpc.sock and its database.
 SOCKET="$RUN/exec.sock"
@@ -28,7 +28,7 @@ if [ ! -f "$RUNTIME/SHA256SUMS" ]; then
     || { echo 'The OmniCode installation changed during WSL setup. Retry the connection.'; exit 1; }
   (cd "$TMP" && sha256sum --quiet -c SHA256SUMS) \
     || { echo 'The WSL execution runtime failed verification. Reinstall OmniCode.'; exit 1; }
-  chmod 755 "$TMP" "$TMP/bin" "$TMP/bin/node" "$TMP/bin/monocode-control"
+  chmod 755 "$TMP" "$TMP/bin" "$TMP/bin/node" "$TMP/bin/omnicode-control"
   chmod -R a-w "$TMP"
   mv "$TMP" "$RUNTIME"
   trap - EXIT

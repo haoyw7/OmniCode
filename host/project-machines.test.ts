@@ -6,7 +6,7 @@ import { expect, it } from "vitest";
 import { HostStore } from "./store";
 
 it("migrates existing project identities and scopes identical paths by execution machine", () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-machines-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-machines-"));
   const file = join(directory, "host.db");
   let store: HostStore | undefined;
   try {

@@ -3,8 +3,8 @@
 //! window without bringing that window forward.
 //!
 //! The panel is a WKWebView window re-classed as a non-activating `NSPanel`.
-//! A plain `NSWindow` would have to activate MonoCode to take keys, which pulls
-//! the workspace window over the browser and leaves focus with MonoCode after
+//! A plain `NSWindow` would have to activate OmniCode to take keys, which pulls
+//! the workspace window over the browser and leaves focus with OmniCode after
 //! the panel hides. A non-activating panel takes keys while the other app
 //! stays active, and it can join a full-screen Space.
 
@@ -506,7 +506,7 @@ fn toggle(app: &AppHandle) {
         }
         match build(&handle) {
             Ok(panel) => show(&handle, &panel),
-            Err(err) => eprintln!("monocode: quick composer: {err}"),
+            Err(err) => eprintln!("omnicode: quick composer: {err}"),
         }
     });
 }
@@ -556,7 +556,7 @@ fn show(app: &AppHandle, panel: &WebviewWindow) {
     let _ = panel.emit(SHOWN, ());
     if let Err(err) = git_popup::prepare(app, panel) {
         // Opening the picker retries; a failed preload must not block drafting.
-        eprintln!("monocode: prepare git picker: {err}");
+        eprintln!("omnicode: prepare git picker: {err}");
     }
 }
 
@@ -568,7 +568,7 @@ fn present(panel: &WebviewWindow) {
             ns_window.makeKeyWindow();
         }
         // Could not become a panel: an ordinary window still works, it just
-        // brings MonoCode forward with it.
+        // brings OmniCode forward with it.
         _ => {
             let _ = panel.show();
             let _ = panel.set_focus();
@@ -601,7 +601,7 @@ fn place(app: &AppHandle, panel: &WebviewWindow) {
 fn panel_class() -> Option<&'static AnyClass> {
     static CLASS: OnceLock<Option<&'static AnyClass>> = OnceLock::new();
     *CLASS.get_or_init(|| {
-        let mut builder = ClassBuilder::new(c"MonoCodeQuickComposerPanel", NSPanel::class())?;
+        let mut builder = ClassBuilder::new(c"OmniCodeQuickComposerPanel", NSPanel::class())?;
         builder.add_ivar::<Bool>(c"focusable");
         unsafe {
             // Borderless windows refuse key status by default, and the prompt
@@ -645,7 +645,7 @@ fn make_panel(window: &WebviewWindow) {
     // size is undefined behavior (and objc2 panics on it), so fall back to an
     // ordinary window if a Tao update ever changes its layout.
     if panel_class.instance_size() != ns_window.class().instance_size() {
-        eprintln!("monocode: quick composer: panel class does not match Tao's window size");
+        eprintln!("omnicode: quick composer: panel class does not match Tao's window size");
         return;
     }
     unsafe {
@@ -757,7 +757,7 @@ mod tests {
         let request: QuickLaunch = serde_json::from_value(serde_json::json!({
             "prompt": "look", "cwd": "/tmp/project", "harness": "codex", "reveal": false,
             "attachments": [{ "id": "shot", "name": "Screenshot.png", "mimeType": "image/png",
-                "kind": "image", "size": 4, "path": "/missing/monocode-test.png" }]
+                "kind": "image", "size": 4, "path": "/missing/omnicode-test.png" }]
         }))
         .unwrap();
         assert!(validate_attachments(&request.attachments, "codex").is_err());
@@ -783,7 +783,7 @@ mod tests {
         request.worktree_base = None;
         request.execution_cwd = Some(".".into());
         assert!(validate_workspace(&request).is_err());
-        request.execution_cwd = Some("/missing/monocode-worktree-test".into());
+        request.execution_cwd = Some("/missing/omnicode-worktree-test".into());
         assert!(validate_workspace(&request).is_err());
         request.execution_cwd = Some(std::env::temp_dir().to_string_lossy().into_owned());
         assert!(validate_workspace(&request).is_ok());

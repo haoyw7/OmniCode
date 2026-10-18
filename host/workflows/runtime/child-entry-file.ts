@@ -3,14 +3,14 @@
  *
  * 为什么有这个文件：Windows 的命令行上限是 32,767 字符，payload 不能再过 argv。harness 把
  * {@link import("./child-source.js").renderChildEntry} 渲染出的 ESM 写到
- * `<cwd>/.monocode/workflow-runs/<runId>.mjs`，spawn 时命令行只剩这条路径。
+ * `<cwd>/.omnicode/workflow-runs/<runId>.mjs`，spawn 时命令行只剩这条路径。
  *
  * 裁决：
- *   - 位置 `.monocode/workflow-runs/`，与项目级 saved workflow 的 `.zcode/workflows/` 同级不混放；
+ *   - 位置 `.omnicode/workflow-runs/`，与项目级 saved workflow 的 `.zcode/workflows/` 同级不混放；
  *   - 文件**保留**不删（同一 runId 原位覆写），目录兼作每次 run 实际执行体的存档；
  *   - 目录里由本模块写一份 `.gitignore`（`*`），只在缺席时写一次，绝不碰项目自己的 `.gitignore`；
  *   - 项目目录写不进（只读 checkout、cwd 不存在、`.zcode` 是个普通文件…）→ 回落到
- *     `os.tmpdir()/monocode-workflow-runs/` 并经 `onWarning` 报一声，run 照常启动。回落也失败就抛，
+ *     `os.tmpdir()/omnicode-workflow-runs/` 并经 `onWarning` 报一声，run 照常启动。回落也失败就抛，
  *     由 harness 归一成 failed 结算。
  */
 
@@ -21,7 +21,7 @@ import { join } from "node:path";
 /** harness 向调用方报告的非致命状况；bootstrap 落成 warn 日志。 */
 export interface HarnessWarning {
   kind: "entry_file_fallback";
-  /** 本想写入的项目目录（`<cwd>/.monocode/workflow-runs`）。 */
+  /** 本想写入的项目目录（`<cwd>/.omnicode/workflow-runs`）。 */
   projectDir: string;
   /** 实际回落到的目录。 */
   fallbackDir: string;
@@ -44,12 +44,12 @@ export interface ChildEntryFile {
 
 /** 项目内的入口文件目录。 */
 export function workflowRunsDir(cwd: string): string {
-  return join(cwd, ".monocode", "workflow-runs");
+  return join(cwd, ".omnicode", "workflow-runs");
 }
 
 /** 回落目录（OS 临时目录下，跨项目共用）。 */
 export function fallbackWorkflowRunsDir(): string {
-  return join(tmpdir(), "monocode-workflow-runs");
+  return join(tmpdir(), "omnicode-workflow-runs");
 }
 
 /** runId 安全字符集之外一律换成 `_`，杜绝路径分隔符之类混进文件名。 */

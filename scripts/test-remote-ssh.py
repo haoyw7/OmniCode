@@ -19,7 +19,7 @@ import time
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SYSTEM = {"Darwin": "darwin", "Linux": "linux"}[platform.system()]
 ARCH = {"arm64": "arm64", "aarch64": "arm64", "x86_64": "x64"}[platform.machine()]
-LAUNCHER = ROOT / "build" / "host-packages" / f"{SYSTEM}-{ARCH}" / "monocode-host"
+LAUNCHER = ROOT / "build" / "host-packages" / f"{SYSTEM}-{ARCH}" / "omnicode-host"
 
 
 def free_port():
@@ -32,7 +32,7 @@ def main():
     if not LAUNCHER.is_file():
         raise RuntimeError("Run npm run host:package first")
     sshd = shutil.which("sshd") or "/usr/sbin/sshd"
-    with tempfile.TemporaryDirectory(prefix="monocode-ssh-integration-") as directory:
+    with tempfile.TemporaryDirectory(prefix="omnicode-ssh-integration-") as directory:
         folder = pathlib.Path(directory)
         for key in ("host", "client"):
             subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(folder / key)], check=True)
@@ -49,9 +49,9 @@ def main():
                 raise RuntimeError(daemon.stderr.read().decode())
             # Exercise the actual desktop executable's non-GUI askpass mode.
             # Only trust the fingerprint of the disposable key created above.
-            desktop = ROOT / "target/debug/monocode"
+            desktop = ROOT / "target/debug/omnicode"
             if not desktop.is_file():
-                raise RuntimeError("Run cargo build --bin monocode first")
+                raise RuntimeError("Run cargo build --bin omnicode first")
             fingerprint = subprocess.check_output(["ssh-keygen", "-lf", str(folder / "host.pub")], text=True).split()[1]
             with socket.socket() as prompts:
                 prompts.bind(("127.0.0.1", 0))
@@ -73,14 +73,14 @@ def main():
                 worker = threading.Thread(target=answer_prompt, daemon=True)
                 worker.start()
                 result = subprocess.run(["ssh", "-F", "/dev/null", "-i", str(folder / "client"), "-p", str(ssh_port), "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=ask", "-o", f"UserKnownHostsFile={folder}/prompt_known_hosts", f"{pwd.getpwuid(os.getuid()).pw_name}@127.0.0.1", "printf", "askpass-ok"],
-                    env={**os.environ, "SSH_ASKPASS": str(desktop), "SSH_ASKPASS_REQUIRE": "force", "DISPLAY": "monocode:0", "MONOCODE_SSH_ASKPASS_ADDRESS": f"127.0.0.1:{prompts.getsockname()[1]}", "MONOCODE_SSH_ASKPASS_SECRET": secret}, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=25)
+                    env={**os.environ, "SSH_ASKPASS": str(desktop), "SSH_ASKPASS_REQUIRE": "force", "DISPLAY": "omnicode:0", "OMNICODE_SSH_ASKPASS_ADDRESS": f"127.0.0.1:{prompts.getsockname()[1]}", "OMNICODE_SSH_ASKPASS_SECRET": secret}, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=25)
                 worker.join(timeout=1)
                 assert prompt_results == [True], prompt_results
                 assert result.returncode == 0 and result.stdout == "askpass-ok", result.stderr
                 print("Native askpass verified the disposable SSH host fingerprint.")
             host("start")
             device = json.loads(host("pair", "--name", "Loopback test", "--json"))
-            env = {**os.environ, "MONOCODE_TEST_SSH_TARGET": f"{pwd.getpwuid(os.getuid()).pw_name}@127.0.0.1", "MONOCODE_TEST_SSH_PORT": str(ssh_port), "MONOCODE_TEST_HOST_PORT": str(host_port), "MONOCODE_TEST_SSH_KEY": str(folder / "client"), "MONOCODE_TEST_KNOWN_HOSTS": str(folder / "known_hosts"), "MONOCODE_TEST_TOKEN": device["token"], "MONOCODE_TEST_ENVIRONMENT": device["environmentId"]}
+            env = {**os.environ, "OMNICODE_TEST_SSH_TARGET": f"{pwd.getpwuid(os.getuid()).pw_name}@127.0.0.1", "OMNICODE_TEST_SSH_PORT": str(ssh_port), "OMNICODE_TEST_HOST_PORT": str(host_port), "OMNICODE_TEST_SSH_KEY": str(folder / "client"), "OMNICODE_TEST_KNOWN_HOSTS": str(folder / "known_hosts"), "OMNICODE_TEST_TOKEN": device["token"], "OMNICODE_TEST_ENVIRONMENT": device["environmentId"]}
             subprocess.run(["cargo", "test", "--lib", "remote_ssh::tests::loopback_transport_preserves_host_and_reconnects", "--", "--ignored"], cwd=ROOT, env=env, check=True)
             assert json.loads(host("connection-info"))["port"] == host_port
             print("Packaged host survived both native SSH tunnel closures.")

@@ -5,7 +5,7 @@ import { expect, it } from "vitest";
 import { HostStore } from "./store";
 
 it("migrates persisted execution directories without retaining the old worktree field", () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-execution-migration-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-execution-migration-"));
   const database = join(directory, "host.db");
   let store = new HostStore(database);
   try {

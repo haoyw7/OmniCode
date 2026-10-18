@@ -39,15 +39,15 @@ it("merges offline edits to different project fields across desktop and phone", 
   const phone = s.client(new MemoryStorage());
   await desktop.sync(); await phone.sync();
   s.offline();
-  desktop.setItem("monocode.projectProviderSettings.v1", JSON.stringify({ project: { defaultHarness: "codex" } }));
-  phone.setItem("monocode.projectProviderSettings.v1", JSON.stringify({ project: { defaultModel: "model-a" } }));
+  desktop.setItem("omnicode.projectProviderSettings.v1", JSON.stringify({ project: { defaultHarness: "codex" } }));
+  phone.setItem("omnicode.projectProviderSettings.v1", JSON.stringify({ project: { defaultModel: "model-a" } }));
   await desktop.sync(); await phone.sync();
   expect(desktop.pendingCount).toBe(1); expect(phone.pendingCount).toBe(1);
   s.online();
   await desktop.sync(); await phone.sync(); await desktop.sync();
   const expected = { project: { defaultHarness: "codex", defaultModel: "model-a" } };
-  expect(JSON.parse(desktop.getItem("monocode.projectProviderSettings.v1")!)).toEqual(expected);
-  expect(JSON.parse(phone.getItem("monocode.projectProviderSettings.v1")!)).toEqual(expected);
+  expect(JSON.parse(desktop.getItem("omnicode.projectProviderSettings.v1")!)).toEqual(expected);
+  expect(JSON.parse(phone.getItem("omnicode.projectProviderSettings.v1")!)).toEqual(expected);
   expect(desktop.pendingCount).toBe(0); expect(phone.pendingCount).toBe(0);
 });
 
@@ -56,17 +56,17 @@ it("retries a persisted lost acknowledgement without replacing a newer Host valu
   const first = s.client();
   await first.sync();
   s.loseResponse();
-  first.setItem("monocode.colorScheme", "dark");
+  first.setItem("omnicode.colorScheme", "dark");
   await first.sync();
   expect(first.error).toBe("response lost");
   expect(first.pendingCount).toBe(1);
   const second = s.client(new MemoryStorage());
   await second.sync();
-  second.setItem("monocode.colorScheme", "light");
+  second.setItem("omnicode.colorScheme", "light");
   await second.sync();
   const restarted = s.client();
   await restarted.sync();
-  expect(restarted.getItem("monocode.colorScheme")).toBe("light");
+  expect(restarted.getItem("omnicode.colorScheme")).toBe("light");
   expect(restarted.revision).toBe(2);
   expect(restarted.pendingCount).toBe(0);
   const firstId = s.calls.find(call => call.method === "preferences.patch")!.params.operationId;
@@ -79,18 +79,18 @@ it("keeps unsent changes durable and isolated by verified Host identity", async 
   const client = s.client();
   await client.sync();
   s.offline();
-  client.setItem("monocode.uiLanguage", "zh-CN");
+  client.setItem("omnicode.uiLanguage", "zh-CN");
   await client.sync();
   expect(client.error).toBe("offline");
   const restarted = s.client();
-  expect(restarted.getItem("monocode.uiLanguage")).toBe("zh-CN");
+  expect(restarted.getItem("omnicode.uiLanguage")).toBe("zh-CN");
   expect(restarted.pendingCount).toBe(1);
-  expect(s.client(s.disk, "host-b").getItem("monocode.uiLanguage")).toBeNull();
+  expect(s.client(s.disk, "host-b").getItem("omnicode.uiLanguage")).toBeNull();
   s.online();
   await restarted.sync();
   expect(restarted.pendingCount).toBe(0);
   expect(restarted.error).toBeUndefined();
-  expect(s.host.preferencesRead()!.values["monocode.uiLanguage"]).toBe("zh-CN");
+  expect(s.host.preferencesRead()!.values["omnicode.uiLanguage"]).toBe("zh-CN");
 });
 
 it("restores same-field offline edits in enqueue order regardless of storage enumeration or clock changes", async () => {
@@ -103,23 +103,23 @@ it("restores same-field offline edits in enqueue order regardless of storage enu
   await first.sync();
   s.offline();
   const now = vi.spyOn(Date, "now").mockReturnValue(100);
-  first.setItem("monocode.colorScheme", "dark");
+  first.setItem("omnicode.colorScheme", "dark");
   await first.sync();
-  first.setItem("monocode.colorScheme", "light");
+  first.setItem("omnicode.colorScheme", "light");
   await first.sync();
   now.mockReturnValue(50);
-  first.setItem("monocode.colorScheme", "system");
+  first.setItem("omnicode.colorScheme", "system");
   await first.sync();
 
   const restarted = s.client(disk);
-  expect(restarted.getItem("monocode.colorScheme")).toBe("system");
+  expect(restarted.getItem("omnicode.colorScheme")).toBe("system");
   expect(restarted.pendingCount).toBe(3);
   s.online();
   await restarted.sync();
   expect(restarted.pendingCount).toBe(0);
-  expect(s.host.preferencesRead()!.values["monocode.colorScheme"]).toBe("system");
+  expect(s.host.preferencesRead()!.values["omnicode.colorScheme"]).toBe("system");
   const patches = s.calls.filter(call => call.method === "preferences.patch");
-  expect(patches.map(call => (call.params.changes as Record<string, string>)["monocode.colorScheme"])).toEqual(["dark", "light", "system"]);
+  expect(patches.map(call => (call.params.changes as Record<string, string>)["omnicode.colorScheme"])).toEqual(["dark", "light", "system"]);
   expect(patches.every(call => !Object.hasOwn(call.params, "queuedAt"))).toBe(true);
 });
 
@@ -141,15 +141,15 @@ it.each(["preferences.read", "preferences.patch"])("drains edits made while %s i
   const client = new SharedPreferenceStore("host-a", s.disk, request);
   await client.sync();
   hold = true;
-  client.setItem("monocode.colorScheme", "dark");
+  client.setItem("omnicode.colorScheme", "dark");
   await requestStarted;
-  client.setItem("monocode.colorScheme", "light");
+  client.setItem("omnicode.colorScheme", "light");
   const synchronization = client.sync();
   release();
   await synchronization;
   expect(client.pendingCount).toBe(0);
   expect(client.error).toBeUndefined();
-  expect(s.host.preferencesRead()).toMatchObject({ revision: 2, values: { "monocode.colorScheme": "light" } });
+  expect(s.host.preferencesRead()).toMatchObject({ revision: 2, values: { "omnicode.colorScheme": "light" } });
 });
 
 it("notifies remote edits without creating another upload and imports release settings once", async () => {
@@ -157,30 +157,30 @@ it("notifies remote edits without creating another upload and imports release se
   const client = s.client();
   const changes = vi.fn(); client.subscribe(changes);
   const legacy = new MemoryStorage();
-  legacy.setItem("monocode.colorScheme", "light"); legacy.setItem("monocode.deviceToken", "private-token");
+  legacy.setItem("omnicode.colorScheme", "light"); legacy.setItem("omnicode.deviceToken", "private-token");
   await client.importRelease(key => legacy.getItem(key));
-  expect(s.host.preferencesRead()).toMatchObject({ imported: true, values: { "monocode.colorScheme": "light" } });
+  expect(s.host.preferencesRead()).toMatchObject({ imported: true, values: { "omnicode.colorScheme": "light" } });
   expect(JSON.stringify(s.host.preferencesRead())).not.toContain("private-token");
-  s.host.preferencesPatch({ operationId: "other-client", changes: { "monocode.colorScheme": "dark" } });
+  s.host.preferencesPatch({ operationId: "other-client", changes: { "omnicode.colorScheme": "dark" } });
   const patchCount = () => s.calls.filter(call => call.method === "preferences.patch").length;
   const before = patchCount();
   await client.sync();
-  expect(changes).toHaveBeenCalledWith(["monocode.colorScheme"]);
-  expect(client.getItem("monocode.colorScheme")).toBe("dark");
+  expect(changes).toHaveBeenCalledWith(["omnicode.colorScheme"]);
+  expect(client.getItem("omnicode.colorScheme")).toBe("dark");
   await client.importRelease(key => legacy.getItem(key));
   expect(patchCount()).toBe(before);
-  expect(client.getItem("monocode.colorScheme")).toBe("dark");
+  expect(client.getItem("omnicode.colorScheme")).toBe("dark");
 });
 
 it("keeps unsupported Host failures visible and never silently discards pending edits", async () => {
   const disk = new MemoryStorage();
   const request: PreferenceRequest = async () => { throw new Error("Unsupported host method"); };
   const client = new SharedPreferenceStore("old-host", disk, request);
-  client.setItem("monocode.colorScheme", "light");
+  client.setItem("omnicode.colorScheme", "light");
   await client.sync();
   expect(client.error).toBe("Unsupported host method");
   expect(client.pendingCount).toBe(1);
-  expect(new SharedPreferenceStore("old-host", disk, request).getItem("monocode.colorScheme")).toBe("light");
+  expect(new SharedPreferenceStore("old-host", disk, request).getItem("omnicode.colorScheme")).toBe("light");
 });
 
 it("does not acknowledge an edit that could not be persisted", async () => {
@@ -188,8 +188,8 @@ it("does not acknowledge an edit that could not be persisted", async () => {
   const client = s.client();
   await client.sync();
   vi.spyOn(s.disk, "setItem").mockImplementation(() => { throw new Error("quota exceeded"); });
-  expect(() => client.setItem("monocode.colorScheme", "light")).toThrow("quota exceeded");
-  expect(client.getItem("monocode.colorScheme")).toBeNull();
+  expect(() => client.setItem("omnicode.colorScheme", "light")).toThrow("quota exceeded");
+  expect(client.getItem("omnicode.colorScheme")).toBeNull();
   expect(client.pendingCount).toBe(0);
   expect(client.error).toBe("Could not save pending settings.");
 });
@@ -200,21 +200,21 @@ it("keeps view state on each device while still accepting it from older clients"
   vi.stubGlobal("localStorage", local);
   cleanups.push(() => { activatePreferenceStore(undefined); vi.unstubAllGlobals(); });
   // An older client still journals the formerly shared key; the Host must not reject it.
-  s.host.preferencesPatch({ operationId: "older-client", changes: { "monocode.sidebarWidth": "320", "monocode.themeHue": "40" } });
+  s.host.preferencesPatch({ operationId: "older-client", changes: { "omnicode.sidebarWidth": "320", "omnicode.themeHue": "40" } });
   const store = s.client();
   await store.sync();
   activatePreferenceStore(store);
   adoptDeviceLocalPreferences(store, false);
-  expect(local.getItem("monocode.sidebarWidth")).toBe("320");
+  expect(local.getItem("omnicode.sidebarWidth")).toBe("320");
 
-  preferenceStorage.setItem("monocode.sidebarWidth", "280");
-  preferenceStorage.setItem("monocode.themeHue", "90");
+  preferenceStorage.setItem("omnicode.sidebarWidth", "280");
+  preferenceStorage.setItem("omnicode.themeHue", "90");
   await store.sync();
-  expect(s.host.preferencesRead()!.values).toMatchObject({ "monocode.sidebarWidth": "320", "monocode.themeHue": "90" });
-  expect(preferenceStorage.getItem("monocode.sidebarWidth")).toBe("280");
+  expect(s.host.preferencesRead()!.values).toMatchObject({ "omnicode.sidebarWidth": "320", "omnicode.themeHue": "90" });
+  expect(preferenceStorage.getItem("omnicode.sidebarWidth")).toBe("280");
 
   // Adoption runs once; later Host copies never overwrite this device again.
-  local.removeItem("monocode.sidebarWidth");
+  local.removeItem("omnicode.sidebarWidth");
   adoptDeviceLocalPreferences(store, false);
-  expect(local.getItem("monocode.sidebarWidth")).toBeNull();
+  expect(local.getItem("omnicode.sidebarWidth")).toBeNull();
 });

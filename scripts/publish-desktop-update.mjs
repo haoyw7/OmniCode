@@ -67,7 +67,7 @@ export async function publishDesktopUpdate({
       const signature = (await sign(file)).trim();
       if (!signature)
         throw new Error(`Missing updater signature for ${platform}`);
-      const path = `monocode-desktop/${version}/${digest}/${filename}`;
+      const path = `omnicode-desktop/${version}/${digest}/${filename}`;
       const destination = join(output, path);
       await mkdir(dirname(destination), { recursive: true });
       await rename(file, destination);
@@ -104,7 +104,7 @@ export async function prepareDesktopUpdate({
   appimage,
   nsis,
   output = join(root, "build/desktop-update-site"),
-  key = join(homedir(), ".local/share/monocode/desktop-updates/signing.key"),
+  key = join(homedir(), ".local/share/omnicode/desktop-updates/signing.key"),
 } = {}) {
   const config = await readDesktopLanConfig(root);
   const publicKey = (await readFile(`${key}.pub`, "utf8")).trim();
@@ -114,7 +114,7 @@ export async function prepareDesktopUpdate({
     );
   }
   version ??= config.version;
-  const filename = `MonoCode_${version}_amd64`;
+  const filename = `OmniCode_${version}_amd64`;
   deb ??= join(root, "target/release/bundle/deb", `${filename}.deb`);
   appimage ??= join(
     root,
@@ -137,7 +137,7 @@ export async function prepareDesktopUpdate({
   }
   if (
     nsis &&
-    (basename(nsis) !== `MonoCode_${version}_x64-setup.exe` ||
+    (basename(nsis) !== `OmniCode_${version}_x64-setup.exe` ||
       (await readFile(nsis)).toString("ascii", 0, 2) !== "MZ")
   ) {
     throw new Error(

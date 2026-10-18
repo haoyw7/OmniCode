@@ -467,7 +467,7 @@ async function startLive(input: SendTurnInput, life: number): Promise<Live> {
       if (live || !retired()) emit({ type: "session.ended", code });
     },
     (line) => {
-      console.debug("[monocode] antigravity stderr", line);
+      console.debug("[omnicode] antigravity stderr", line);
     },
   );
 
@@ -490,7 +490,7 @@ async function startLive(input: SendTurnInput, life: number): Promise<Live> {
         {
           protocolVersion: 1,
           clientCapabilities: CLIENT_CAPABILITIES,
-          clientInfo: { name: "monocode", version: "0.1.0" },
+          clientInfo: { name: "omnicode", version: "0.1.0" },
         },
         INIT_TIMEOUT_MS,
       );

@@ -34,7 +34,7 @@ export function readLegacyRetirementManifest(
   });
   return {
     manifestId: input.manifestId,
-    sourceKey: createHash("sha256").update(resolve(join(desktopDirectory, "monocode.db"))).digest("hex"),
+    sourceKey: createHash("sha256").update(resolve(join(desktopDirectory, "omnicode.db"))).digest("hex"),
     entries,
   };
 }

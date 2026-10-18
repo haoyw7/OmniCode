@@ -95,7 +95,7 @@ describe("archive shortcut routing", () => {
     },
   );
 
-  it.each([".cm-editor", ".monocode-terminal", "input"])(
+  it.each([".cm-editor", ".omnicode-terminal", "input"])(
     "respects %s DOM focus even before workspace focus updates",
     (ancestor) => {
       const f = fixture();

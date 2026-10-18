@@ -71,9 +71,9 @@ export async function buildWindowsDesktop(
   root,
   version,
   {
-    host = process.env.MONOCODE_WINDOWS_SSH_HOST || "wy-win",
-    repository = process.env.MONOCODE_WINDOWS_REPOSITORY ||
-      "C:\\Users\\wy777\\Documents\\ohmymonocode",
+    host = process.env.OMNICODE_WINDOWS_SSH_HOST || "wy-win",
+    repository = process.env.OMNICODE_WINDOWS_REPOSITORY ||
+      "C:\\Users\\wy777\\Documents\\OmniCode",
     checkOnly = false,
     channel = "lan",
     assertUnchanged = async () => {},
@@ -157,7 +157,7 @@ export async function buildWindowsDesktop(
     throw new Error(
       "Windows build receipt does not match the requested source/version",
     );
-  const filename = `MonoCode_${version}_x64-setup.exe`;
+  const filename = `OmniCode_${version}_x64-setup.exe`;
   const nsis = join(local, filename);
   if (!checkOnly) {
     if (receipt.filename !== filename)

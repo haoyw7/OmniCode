@@ -160,7 +160,7 @@ pub struct OmpAssistantText {
     concat: String,
 }
 
-/// Recover displayed OMP custom messages that older MonoCode builds omitted
+/// Recover displayed OMP custom messages that older OmniCode builds omitted
 /// from their persisted transcript. The provider id is already stored with the
 /// session; matching the original JSONL keeps the repair deterministic instead
 /// of guessing from neighbouring reasoning text.
@@ -3307,7 +3307,7 @@ fn with_temp_markdown(
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0);
-    let path = std::env::temp_dir().join(format!("monocode-comment-{stamp}.md"));
+    let path = std::env::temp_dir().join(format!("omnicode-comment-{stamp}.md"));
     std::fs::write(&path, body).map_err(|error| error.to_string())?;
     let path_str = path.to_string_lossy().into_owned();
     let result = run(&path_str);
@@ -4239,7 +4239,7 @@ fn git_pr_create_for(root: &Path, input: &GitPrCreateInput) -> Result<String, St
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0);
-    let body_path = std::env::temp_dir().join(format!("monocode-pr-{stamp}.md"));
+    let body_path = std::env::temp_dir().join(format!("omnicode-pr-{stamp}.md"));
     std::fs::write(&body_path, input.body.trim()).map_err(|e| e.to_string())?;
     let result = gh_checked(
         root,
@@ -5634,7 +5634,7 @@ fn write_attachment_sync(name: &str, data: &str) -> Result<String, String> {
             MAX_ATTACHMENT_EMBED_BYTES / 1024 / 1024
         ));
     }
-    let dir = std::env::temp_dir().join("monocode-attachments");
+    let dir = std::env::temp_dir().join("omnicode-attachments");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let stamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -5852,7 +5852,7 @@ fn write_text_file_sync(path: &str, content: &str) -> Result<(), String> {
     let mut temporary = None;
     for attempt in 0..100 {
         let candidate = parent.join(format!(
-            ".{name}.monocode-{}-{stamp}-{attempt}.tmp",
+            ".{name}.omnicode-{}-{stamp}-{attempt}.tmp",
             std::process::id()
         ));
         match std::fs::OpenOptions::new()
@@ -5984,7 +5984,7 @@ fn rename_path_sync(path: &str, name: &str) -> Result<String, String> {
             .unwrap_or_default()
             .as_nanos();
         let tmp = parent.join(format!(
-            ".{}.monocode-rename-{stamp}",
+            ".{}.omnicode-rename-{stamp}",
             file_label(&from, "tmp")
         ));
         std::fs::rename(&from, &tmp).map_err(|e| e.to_string())?;
@@ -6501,8 +6501,8 @@ mod tests {
     #[test]
     fn project_location_follows_a_sibling_rename() {
         let parent = tmp("project-location-rename");
-        let original = parent.0.join("monocode");
-        let renamed = parent.0.join("monocode-personal");
+        let original = parent.0.join("omnicode");
+        let renamed = parent.0.join("omnicode-personal");
         std::fs::create_dir(&original).unwrap();
 
         let first = resolve_project_location_sync(&path_to_js(&original), None)
@@ -6537,7 +6537,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let dir =
-            std::env::temp_dir().join(format!("monocode-editor-{}-{stamp}", std::process::id()));
+            std::env::temp_dir().join(format!("omnicode-editor-{}-{stamp}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("example.rs");
         std::fs::write(&path, "fn old() {}\n").unwrap();
@@ -6607,7 +6607,7 @@ mod tests {
                 .as_nanos();
             let seq = TMP_SEQ.fetch_add(1, Ordering::Relaxed);
             let dir = std::env::temp_dir().join(format!(
-                "monocode-{label}-{}-{stamp}-{seq}",
+                "omnicode-{label}-{}-{stamp}-{seq}",
                 std::process::id()
             ));
             match std::fs::create_dir(&dir) {
@@ -6988,8 +6988,8 @@ mod tests {
                 return false;
             }
         }
-        git(dir, &["config", "user.name", "MonoCode"])
-            && git(dir, &["config", "user.email", "monocode@test"])
+        git(dir, &["config", "user.name", "OmniCode"])
+            && git(dir, &["config", "user.email", "omnicode@test"])
             && git(dir, &["config", "commit.gpgsign", "false"])
             && git(dir, &["config", "core.autocrlf", "false"])
     }
@@ -7027,18 +7027,18 @@ mod tests {
         Command::new("git")
             .args([
                 "-c",
-                "user.name=MonoCode",
+                "user.name=OmniCode",
                 "-c",
-                "user.email=monocode@test",
+                "user.email=omnicode@test",
                 "-c",
                 "commit.gpgsign=false",
             ])
             .args(args)
             .current_dir(dir)
-            .env("GIT_AUTHOR_NAME", "MonoCode")
-            .env("GIT_AUTHOR_EMAIL", "monocode@test")
-            .env("GIT_COMMITTER_NAME", "MonoCode")
-            .env("GIT_COMMITTER_EMAIL", "monocode@test")
+            .env("GIT_AUTHOR_NAME", "OmniCode")
+            .env("GIT_AUTHOR_EMAIL", "omnicode@test")
+            .env("GIT_COMMITTER_NAME", "OmniCode")
+            .env("GIT_COMMITTER_EMAIL", "omnicode@test")
             .status()
             .map(|status| status.success())
             .unwrap_or(false)
@@ -7352,7 +7352,7 @@ mod tests {
         let history = git_history_for(&dir.0, Some(10), false, None).unwrap();
         assert_eq!(history.commits.len(), 2);
         assert_eq!(history.commits[0].subject, "second");
-        assert_eq!(history.commits[0].author_email, "monocode@test");
+        assert_eq!(history.commits[0].author_email, "omnicode@test");
         assert_eq!(history.commits[1].subject, "init");
         assert_eq!(
             history.commits[0].parents,
@@ -8037,8 +8037,8 @@ mod tests {
                 .status()
                 .map(|status| !status.success())
                 .unwrap_or(true)
-            || !git(&b.0, &["config", "user.name", "MonoCode"])
-            || !git(&b.0, &["config", "user.email", "monocode@test"])
+            || !git(&b.0, &["config", "user.name", "OmniCode"])
+            || !git(&b.0, &["config", "user.email", "omnicode@test"])
             || !git(&b.0, &["config", "commit.gpgsign", "false"])
             || !git(&b.0, &["config", "core.autocrlf", "false"])
             || !git(&b.0, &["checkout", "--", "."])
@@ -8084,7 +8084,7 @@ mod tests {
     #[test]
     fn pr_head_filter_qualifies_branch_with_repo_owner() {
         assert_eq!(
-            github_pr_head_filter("hardbeat920/monocode", "main").as_deref(),
+            github_pr_head_filter("hardbeat920/omnicode", "main").as_deref(),
             Some("hardbeat920:main")
         );
     }
@@ -8092,27 +8092,27 @@ mod tests {
     #[test]
     fn parse_github_repositories_includes_a_forks_parent() {
         let json = r#"{
-            "nameWithOwner": "EricRasputin/monocode-eric",
+            "nameWithOwner": "EricRasputin/omnicode-eric",
             "parent": {
-                "name": "monocode",
+                "name": "omnicode",
                 "owner": { "login": "hardbeat920" }
             }
         }"#;
         assert_eq!(
             parse_github_repositories(json).unwrap(),
-            vec!["EricRasputin/monocode-eric", "hardbeat920/monocode"]
+            vec!["EricRasputin/omnicode-eric", "hardbeat920/omnicode"]
         );
     }
 
     #[test]
     fn parse_github_repositories_keeps_a_normal_repo_single() {
         let json = r#"{
-            "nameWithOwner": "hardbeat920/monocode",
+            "nameWithOwner": "hardbeat920/omnicode",
             "parent": null
         }"#;
         assert_eq!(
             parse_github_repositories(json).unwrap(),
-            vec!["hardbeat920/monocode"]
+            vec!["hardbeat920/omnicode"]
         );
     }
 
@@ -8253,10 +8253,10 @@ mod tests {
     #[test]
     fn split_github_repo_reads_owner_and_name() {
         assert_eq!(
-            split_github_repo(" hardbeat920/monocode ").unwrap(),
-            ("hardbeat920".into(), "monocode".into())
+            split_github_repo(" hardbeat920/omnicode ").unwrap(),
+            ("hardbeat920".into(), "omnicode".into())
         );
-        assert!(split_github_repo("monocode").is_err());
+        assert!(split_github_repo("omnicode").is_err());
         assert!(split_github_repo("acme/web extra").is_err());
     }
 
@@ -9042,7 +9042,7 @@ mod tests {
         for args in [
             ["config", "commit.gpgsign", "true"],
             ["config", "gpg.format", "openpgp"],
-            ["config", "gpg.program", "/nonexistent/monocode-gpg"],
+            ["config", "gpg.program", "/nonexistent/omnicode-gpg"],
         ] {
             assert!(git(&dir.0, &args));
         }

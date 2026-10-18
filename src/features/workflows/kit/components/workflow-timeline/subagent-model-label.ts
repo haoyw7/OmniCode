@@ -1,5 +1,5 @@
 // Subagent runtime labels. Adapted from ZCode (Apache-2.0): ZCode labels one
-// canonical `providerId/modelId[$level]` string per run; Monocode runs carry a
+// canonical `providerId/modelId[$level]` string per run; OmniCode runs carry a
 // runtime label per subagent ("codex · gpt-5.5 · high · fast") and, for runs
 // with run-level defaults, the same kind of label on `run.subagentModel`.
 

@@ -108,7 +108,7 @@ beforeEach(() => {
 afterEach(async () => {
   await stopOpenCodeTextPrompt();
   for (const [input] of harnessHttp.mock.calls)
-    expect(input).toMatchObject({ sessionId: "monocode-opencode-text" });
+    expect(input).toMatchObject({ sessionId: "omnicode-opencode-text" });
 });
 
 it("forwards only incremental OpenCode assistant text", async () => {

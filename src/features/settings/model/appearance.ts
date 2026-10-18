@@ -23,34 +23,34 @@ import {
   type DesktopSkinPreference,
 } from "../../../shared/theme/desktopSkin";
 
-const ACCENT_COLOR_KEY = "monocode.accentColor";
-const THEME_HUE_KEY = "monocode.themeHue";
-const THEME_SATURATION_KEY = "monocode.themeSaturation";
-const THEME_DARK_LIGHTNESS_KEY = "monocode.themeDarkLightness";
-const OPACITY_KEY = "monocode.sidebarOpacity";
-const POPOVER_OPACITY_KEY = "monocode.popoverOpacity";
-const WINDOW_OPACITY_KEY = "monocode.windowOpacity";
-const PANEL_OPACITY_KEY = "monocode.panelOpacity";
-const BLUR_KEY = "monocode.sidebarBlur";
-const PROJECT_RAIL_OPEN_KEY = "monocode.projectRailOpen";
-const SESSION_SIDEBAR_OPEN_KEY = "monocode.sessionSidebarOpen";
-const BODY_KEY = "monocode.bodyGlass";
-const COMPACT_SIDEBAR_KEY = "monocode.compactSidebar";
-const SCHEME_KEY = "monocode.colorScheme";
-const SIDEBAR_TAB_ORDER_KEY = "monocode.sidebarTabOrder";
-const SIDEBAR_WIDTH_KEY = "monocode.sidebarWidth";
-const TRANSCRIPT_LAYOUT_KEY = "monocode.transcriptLayout";
-const TRANSCRIPT_ANCHOR_KEY = "monocode.transcriptAnchor";
-const CHAT_BACKGROUND_PATH_KEY = "monocode.chatBackgroundPath";
-const CHAT_BACKGROUND_OPACITY_KEY = "monocode.chatBackgroundOpacity";
-const CHAT_BACKGROUND_EMPTY_OPACITY_KEY = "monocode.chatBackgroundEmptyOpacity";
+const ACCENT_COLOR_KEY = "omnicode.accentColor";
+const THEME_HUE_KEY = "omnicode.themeHue";
+const THEME_SATURATION_KEY = "omnicode.themeSaturation";
+const THEME_DARK_LIGHTNESS_KEY = "omnicode.themeDarkLightness";
+const OPACITY_KEY = "omnicode.sidebarOpacity";
+const POPOVER_OPACITY_KEY = "omnicode.popoverOpacity";
+const WINDOW_OPACITY_KEY = "omnicode.windowOpacity";
+const PANEL_OPACITY_KEY = "omnicode.panelOpacity";
+const BLUR_KEY = "omnicode.sidebarBlur";
+const PROJECT_RAIL_OPEN_KEY = "omnicode.projectRailOpen";
+const SESSION_SIDEBAR_OPEN_KEY = "omnicode.sessionSidebarOpen";
+const BODY_KEY = "omnicode.bodyGlass";
+const COMPACT_SIDEBAR_KEY = "omnicode.compactSidebar";
+const SCHEME_KEY = "omnicode.colorScheme";
+const SIDEBAR_TAB_ORDER_KEY = "omnicode.sidebarTabOrder";
+const SIDEBAR_WIDTH_KEY = "omnicode.sidebarWidth";
+const TRANSCRIPT_LAYOUT_KEY = "omnicode.transcriptLayout";
+const TRANSCRIPT_ANCHOR_KEY = "omnicode.transcriptAnchor";
+const CHAT_BACKGROUND_PATH_KEY = "omnicode.chatBackgroundPath";
+const CHAT_BACKGROUND_OPACITY_KEY = "omnicode.chatBackgroundOpacity";
+const CHAT_BACKGROUND_EMPTY_OPACITY_KEY = "omnicode.chatBackgroundEmptyOpacity";
 const CHAT_BACKGROUND_SESSION_OPACITY_KEY =
-  "monocode.chatBackgroundSessionOpacity";
-const CHAT_BACKGROUND_SCOPE_KEY = "monocode.chatBackgroundScope";
-const CHAT_BACKGROUND_AREA_KEY = "monocode.chatBackgroundArea";
-const NEW_THREAD_BACKGROUND_EFFECT_KEY = "monocode.newThreadBackgroundEffect";
-const CHANGES_VIEW_KEY = "monocode.changesView";
-const SHOW_EXCLUDED_FILES_KEY = "monocode.showExcludedFiles";
+  "omnicode.chatBackgroundSessionOpacity";
+const CHAT_BACKGROUND_SCOPE_KEY = "omnicode.chatBackgroundScope";
+const CHAT_BACKGROUND_AREA_KEY = "omnicode.chatBackgroundArea";
+const NEW_THREAD_BACKGROUND_EFFECT_KEY = "omnicode.newThreadBackgroundEffect";
+const CHANGES_VIEW_KEY = "omnicode.changesView";
+const SHOW_EXCLUDED_FILES_KEY = "omnicode.showExcludedFiles";
 let chatBackgroundRevision = Date.now();
 let nativeGlassReady = false;
 let glassFadeMotion: AnimationPlaybackControlsWithThen | undefined;
@@ -61,7 +61,7 @@ let appliedSidebarBlur: number | undefined;
 let appliedWindowOpacity = 1;
 
 export const CHAT_BACKGROUND_PATH_CHANGE_EVENT =
-  "monocode:chat-background-path-change";
+  "omnicode:chat-background-path-change";
 
 export type ColorScheme = "dark" | "light";
 export type ThemePreference = ColorScheme | "system";
@@ -126,7 +126,7 @@ export const ACCENT_COLOR_PRESET_LABELS = [
 ] as const;
 
 /** Fired on `window` whenever the color scheme flips (detail: ColorScheme). */
-export const SCHEME_CHANGE_EVENT = "monocode:schemechange";
+export const SCHEME_CHANGE_EVENT = "omnicode:schemechange";
 
 export const TRANSCRIPT_LAYOUT_DEFAULT: TranscriptLayout = "chat";
 
@@ -135,16 +135,16 @@ export const CHANGES_VIEW_DEFAULT: ChangesView = "list";
 export const TRANSCRIPT_ANCHOR_DEFAULT = true;
 
 /** Fired on `window` whenever prompt-to-top anchoring flips (detail: boolean). */
-export const TRANSCRIPT_ANCHOR_CHANGE_EVENT = "monocode:transcriptanchorchange";
+export const TRANSCRIPT_ANCHOR_CHANGE_EVENT = "omnicode:transcriptanchorchange";
 
 /** Fired on `window` whenever the transcript layout flips (detail: TranscriptLayout). */
-export const TRANSCRIPT_LAYOUT_CHANGE_EVENT = "monocode:transcriptlayoutchange";
+export const TRANSCRIPT_LAYOUT_CHANGE_EVENT = "omnicode:transcriptlayoutchange";
 
 export const SHOW_EXCLUDED_FILES_DEFAULT = false;
 
 /** Fired on `window` whenever the explorer excluded-files setting flips (detail: boolean). */
 export const SHOW_EXCLUDED_FILES_CHANGE_EVENT =
-  "monocode:showexcludedfileschange";
+  "omnicode:showexcludedfileschange";
 
 export type SidebarTabId = "files" | "sessions" | "changes";
 
@@ -700,7 +700,7 @@ export function applyCompactSidebar(value: boolean) {
 
 export function loadChatBackgroundPath(): string | null {
   try {
-    return preferenceStorage.getItem(activePreferenceStore() ? "monocode.chatBackgroundAsset" : CHAT_BACKGROUND_PATH_KEY)?.trim() || null;
+    return preferenceStorage.getItem(activePreferenceStore() ? "omnicode.chatBackgroundAsset" : CHAT_BACKGROUND_PATH_KEY)?.trim() || null;
   } catch {
     return null;
   }
@@ -708,7 +708,7 @@ export function loadChatBackgroundPath(): string | null {
 
 export function saveChatBackgroundPath(value: string | null) {
   try {
-    const key = activePreferenceStore() ? "monocode.chatBackgroundAsset" : CHAT_BACKGROUND_PATH_KEY;
+    const key = activePreferenceStore() ? "omnicode.chatBackgroundAsset" : CHAT_BACKGROUND_PATH_KEY;
     if (value) {
       if (activePreferenceStore() && !parsePreferenceAsset(value)) throw new Error("Upload the background to its Host before saving.");
       preferenceStorage.setItem(key, value);

@@ -361,8 +361,8 @@ export type Block = {
   providerTurnId?: string;
   /** User turn saved to the session but not submitted to the harness yet. */
   draft?: boolean;
-  /** This user turn activated MonoCode app access for its thread. */
-  monocode?: boolean;
+  /** This user turn activated OmniCode app access for its thread. */
+  omnicode?: boolean;
   /** The Plan or Orchestrator mode this user turn was sent in. */
   intent?: Extract<TurnIntent, "plan" | "orchestrate">;
   /** Stable CLI request that submitted this turn, for safe retries. */

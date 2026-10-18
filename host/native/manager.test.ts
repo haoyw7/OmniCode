@@ -7,7 +7,7 @@ import { HostEngine } from "../engine";
 import { HostStore } from "../store";
 import type { HostProvider } from "../providers";
 import type { SendTurnInput } from "../../src/integrations/harness/core/types";
-import { acquireNativeLease, IN_USE_BY_MONOCODE, nativeLockPath } from "../native-access";
+import { acquireNativeLease, IN_USE_BY_OMNICODE, nativeLockPath } from "../native-access";
 import { NativeReader } from "./read";
 
 const cleanups: Array<() => Promise<void>> = [];
@@ -27,7 +27,7 @@ function claudeRow(nativeId: string, cwd: string, uuid: string, parentUuid: stri
 type Turn = { input: SendTurnInput; finish: () => void };
 
 function setup(options: { autoSync?: boolean } = {}) {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-native-manager-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-native-manager-"));
   const store = new HostStore(join(directory, "host.db"));
   const project = store.addProject(directory, "Native");
   const turns: Turn[] = [];
@@ -315,7 +315,7 @@ describe.runIf(linux)("Host-managed native sessions", () => {
     expect(context.turns[0].input.nativeSession?.mode).toBe("managed");
     // The Host's lock is held for the turn.
     await expect(acquireNativeLease(nativeLockPath(context.directory, context.store.session(id).session.nativeSession!)))
-      .rejects.toThrow(IN_USE_BY_MONOCODE);
+      .rejects.toThrow(IN_USE_BY_OMNICODE);
     context.turns[0].input.onEvent({ type: "message.delta", text: "Host answer" });
     context.turns[0].finish();
     await vi.waitFor(() => expect(context.store.session(id).status).toBe("idle"));
@@ -508,7 +508,7 @@ describe.runIf(linux)("Host-managed native sessions", () => {
   });
 });
 
-describe.runIf(linux)("lazy identity for MonoCode-started conversations", () => {
+describe.runIf(linux)("lazy identity for OmniCode-started conversations", () => {
   function started(context: ReturnType<typeof setup>) {
     const created = context.engine.command({
       type: "create", commandId: "create-lazy", projectId: context.project.id, harness: "claude", model: "claude:test", runtimeMode: "supervised",
@@ -555,10 +555,10 @@ describe.runIf(linux)("lazy identity for MonoCode-started conversations", () => 
     context.turns[0].finish();
     await vi.waitFor(() => expect(context.store.session(id).nativeBinding?.hostRevision).toBeTruthy());
     appendFileSync(path, row("u2", "a1", "user", "External incoming update"));
-    context.engine.command({ type: "send", commandId: "switched-2", sessionId: id, text: "Back in MonoCode" });
+    context.engine.command({ type: "send", commandId: "switched-2", sessionId: id, text: "Back in OmniCode" });
     await vi.waitFor(() => expect(context.turns).toHaveLength(2));
     expect(context.store.session(id).session.blocks.slice(0, earlier.length)).toEqual(earlier);
-    expect(texts(context, id)).toEqual(["Previous provider request", "Previous provider answer", "Continue after handoff", "Incoming answer", "External incoming update", "Back in MonoCode"]);
+    expect(texts(context, id)).toEqual(["Previous provider request", "Previous provider answer", "Continue after handoff", "Incoming answer", "External incoming update", "Back in OmniCode"]);
     context.turns[1].finish();
     await vi.waitFor(() => expect(context.store.session(id).status).toBe("idle"));
     expect(context.store.session(id).session.blocks.slice(0, earlier.length)).toEqual(earlier);
@@ -590,11 +590,11 @@ describe.runIf(linux)("lazy identity for MonoCode-started conversations", () => 
     const stops = vi.mocked(context.provider.stop).mock.calls.length;
     // The user continues in the CLI.
     appendFileSync(path, row("u3", "a2", "user", "From CLI") + row("a3", "u3", "assistant", "CLI answer"));
-    context.engine.command({ type: "send", commandId: "l3", sessionId: id, text: "Back in MonoCode" });
+    context.engine.command({ type: "send", commandId: "l3", sessionId: id, text: "Back in OmniCode" });
     await vi.waitFor(() => expect(context.turns).toHaveLength(3));
     expect(vi.mocked(context.provider.stop).mock.calls.length).toBeGreaterThan(stops);
     expect(context.turns[2].input.nativeSession).toMatchObject({ mode: "managed", path });
-    expect(texts(context, id)).toEqual(["First", "First answer", "Second", "Second answer", "From CLI", "CLI answer", "Back in MonoCode"]);
+    expect(texts(context, id)).toEqual(["First", "First answer", "Second", "Second answer", "From CLI", "CLI answer", "Back in OmniCode"]);
     expect(context.store.session(id).nativeBinding).toBeUndefined();
     context.turns[2].finish();
     await vi.waitFor(() => expect(context.store.session(id).nativeStatus).toMatchObject({ state: "ready" }));

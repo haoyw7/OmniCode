@@ -7,15 +7,15 @@ import {
 } from "../../notifications/model/notificationPreferences";
 import { inboxNotificationProject } from "../../notifications/model/notificationProjects";
 
-const KEY = "monocode.sounds";
-const ENABLED_AT_KEY = "monocode.soundsEnabledAt";
+const KEY = "omnicode.sounds";
+const ENABLED_AT_KEY = "omnicode.soundsEnabledAt";
 
 export const SOUNDS_DEFAULT = true;
 
 /** Soft enough to sit in the background while a turn runs in another app. */
 export const SOUNDS_VOLUME = 0.55;
 
-export const SOUNDS_CHANGE_EVENT = "monocode:sounds-change";
+export const SOUNDS_CHANGE_EVENT = "omnicode:sounds-change";
 
 export type SoundCue =
   | "turnFinished"

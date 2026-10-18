@@ -2,7 +2,7 @@
 // pane: status, phases, agents with their runtimes, usage, artifacts) and a
 // subagent's read-only transcript.
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import type { FilePaneTab, WorkflowAgentTabSource, WorkflowRunTabSource } from "../../workspace/model/layout";
+import type { FilePaneTab, WorkflowAgentTabSource, WorkflowRunTabSource, WorkflowArtifactTabSource } from "../../workspace/model/layout";
 import { AgentTranscript } from "../../sessions/ui/AgentTranscript";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { WorkflowRunSidePane } from "../kit/app-shell/WorkflowRunSidePane";
@@ -10,6 +10,13 @@ import { TooltipProvider } from "../../../shared/ui/primitives/Tooltip";
 import type { WorkflowRunSidePaneTab } from "../kit/lib/workspaceSidePane";
 import { watchHostSession, type HostSessionLease } from "../model/workflowSessionWatch";
 import { useWorkflowApp } from "./workflowAppContext";
+import { V4PaneConversationProvider, useV4Conversation } from "../kit/v4/V4ConversationContext";
+import { useConversationProjection } from "../kit/v4/useConversationProjection";
+import { useWorkflowRunArtifacts } from "../kit/hooks/useWorkflowRunArtifacts";
+import { useWorkflowIntl } from "../kit/i18n/IntlProvider";
+import { WorkflowArtifactContent } from "../kit/app-shell/workflow-artifacts/WorkflowArtifactContent";
+import { remoteProjectFor } from "../../connections/model/remoteProjects";
+import { revealPath } from "../../../platform/tauri/fs";
 
 export function WorkflowRunTabView({ file }: { file: FilePaneTab & { workflowRun: WorkflowRunTabSource } }) {
   const app = useWorkflowApp();
@@ -32,6 +39,17 @@ export function WorkflowRunTabView({ file }: { file: FilePaneTab & { workflowRun
             tab={tab}
             {...(app
               ? {
+                  onOpenWorkflowArtifact: (request) => app.openArtifact({
+                    cwd: request.workspacePath,
+                    parentSessionId: request.parentSessionId,
+                    runId: request.runId,
+                    artifactId: request.artifactId,
+                    title: request.title,
+                    kind: request.kind,
+                    contentType: request.contentType,
+                    sourcePath: request.sourcePath,
+                    sourceFileId: file.id,
+                  }),
                   onOpenWorkflowRun: (request) => app.openRun({
                     cwd: request.workspacePath,
                     parentSessionId: request.parentSessionId,
@@ -49,6 +67,7 @@ export function WorkflowRunTabView({ file }: { file: FilePaneTab & { workflowRun
                         sessionId: request.actorSessionId,
                         title: request.actorName ?? request.siteId,
                         sourceFileId: file.id,
+                        ...(request.avatar ? { avatar: request.avatar } : {}),
                       });
                   },
                 }
@@ -61,6 +80,49 @@ export function WorkflowRunTabView({ file }: { file: FilePaneTab & { workflowRun
 }
 
 const subscribeNothing = () => () => {};
+
+type ArtifactTabFile = FilePaneTab & { workflowArtifact: WorkflowArtifactTabSource };
+
+export function WorkflowArtifactTabView({ file }: { file: ArtifactTabFile }) {
+  const scope = useMemo(() => ({ workspacePath: file.cwd }), [file.cwd]);
+  return (
+    <V4PaneConversationProvider scope={scope}>
+      <WorkflowArtifactView key={`${file.cwd}:${file.workflowArtifact.parentSessionId}:${file.workflowArtifact.runId}:${file.workflowArtifact.artifactId}`} file={file} />
+    </V4PaneConversationProvider>
+  );
+}
+
+function WorkflowArtifactView({ file }: { file: ArtifactTabFile }) {
+  const { intl } = useWorkflowIntl();
+  const { layer } = useV4Conversation();
+  const source = file.workflowArtifact;
+  // Artifact storage belongs to the Host, even when its workspace runs in WSL.
+  const storedLocally = remoteProjectFor(file.cwd)?.local === true;
+  const [lease, setLease] = useState<HostSessionLease | null>(null);
+  useEffect(() => {
+    const next = layer.acquire(source.parentSessionId);
+    setLease(next);
+    return () => next.release();
+  }, [layer, source.parentSessionId]);
+  const { snapshot } = useConversationProjection(lease);
+  const run = snapshot?.workflowRuns?.runs.find((candidate) => candidate.runId === source.runId);
+  const state = useWorkflowRunArtifacts({ sessionId: source.parentSessionId, runId: source.runId,
+    ...(run ? { live: run.artifacts } : {}) });
+  const artifact = state.artifacts.find((candidate) => candidate.id === source.artifactId);
+  const message = (name: string) => intl.formatMessage({ id: `chat.toolCall.workflow.run.artifacts.${name}` });
+  return (
+    <div className="content-surface h-full min-h-0 overflow-auto p-4" data-workflow-artifact-tab>
+      <div className="mx-auto w-full max-w-5xl" data-workflow-artifact-viewer>
+        {state.error ? <div role="alert"><p>{message("loadError")}</p><p>{state.error}</p></div>
+          : state.unavailable ? <p>{message("unavailable")}</p>
+          : !artifact ? <p role="status">{message(state.loading || !state.complete ? "loading" : "missing")}</p>
+          : <WorkflowArtifactContent key={`${artifact.id}:${artifact.version}`} artifact={artifact}
+              sessionId={source.parentSessionId} runId={source.runId} storedLocally={storedLocally}
+              {...(storedLocally ? { onRevealStoredFile: revealPath } : {})} />}
+      </div>
+    </div>
+  );
+}
 
 export function WorkflowAgentTabView({ file, visible, onOpenFile }: {
   file: FilePaneTab & { workflowAgent: WorkflowAgentTabSource };

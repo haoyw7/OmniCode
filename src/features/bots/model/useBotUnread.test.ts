@@ -27,7 +27,7 @@ beforeEach(() => {
 });
 afterEach(() => { act(() => root.unmount()); node.remove(); vi.unstubAllGlobals(); });
 it("loads a latest preview for already-read threads without reusing another thread's read cursor", async () => {
-  localStorage.setItem(`monocode.assistant-read:${botCacheKey("host", { botId: "bot", threadId: "one" })}`, "5");
+  localStorage.setItem(`omnicode.assistant-read:${botCacheKey("host", { botId: "bot", threadId: "one" })}`, "5");
   await render();
   expect(JSON.parse(node.textContent!)).toEqual([{ count: 0, latest: "one" }, { count: 1, latest: "two" }]);
   expect(rpc.mock.calls.find(([, params]) => params.threadId === "one" && !params.latest)).toBeUndefined();

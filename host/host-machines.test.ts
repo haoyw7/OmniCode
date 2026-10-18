@@ -13,7 +13,7 @@ import { WslConnection } from "./machines/wsl";
 import type { HostProvider } from "./providers";
 
 it("reads stored WSL history with the execution service offline", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "monocode-wsl-offline-"));
+  const directory = await mkdtemp(join(tmpdir(), "omnicode-wsl-offline-"));
   const store = new HostStore(join(directory, "host.db"));
   const project = store.addProject("/workspace", "Ubuntu project", undefined, { kind: "wsl", distribution: "Ubuntu" });
   const connection = new WslConnection({ distribution: "Ubuntu" });
@@ -70,7 +70,7 @@ it("does not connect a distribution when closing a backend created only to scope
 });
 
 it.skipIf(process.platform !== "win32")("prepares WSL projects and restores execution scopes without an opt-in flag", async () => {
-  vi.stubEnv("MONOCODE_WSL_SHARED_HOST", undefined);
+  vi.stubEnv("OMNICODE_WSL_SHARED_HOST", undefined);
   const request = vi.spyOn(WslConnection.prototype, "request").mockImplementation(async (op) => {
     if (op === "env.info") return { home: "/home/test", node: "/runtime/node" };
     if (op === "fs.stat") throw Object.assign(new Error("No legacy database"), { code: "ENOENT" });

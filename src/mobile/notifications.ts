@@ -65,7 +65,7 @@ export interface MobileNotificationsPlugin {
   ): Promise<PluginListenerHandle>;
 }
 export const MobileNotifications = registerPlugin<MobileNotificationsPlugin>(
-  "MonoCodeNotifications",
+  "OmniCodeNotifications",
 );
 export const nativeActivityNotifications = () =>
   Capacitor.getPlatform() === "android";

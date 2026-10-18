@@ -1,8 +1,8 @@
 import { preferenceStorage } from "../../features/settings/model/sharedPreferences";
 
 export type DesktopThemePreference = "light" | "dark" | "system";
-export const DESKTOP_SCHEME_KEY = "monocode.desktopColorScheme";
-export const DESKTOP_APPEARANCE_BACKUP_KEY = "monocode.desktopAppearanceBackup.v1";
+export const DESKTOP_SCHEME_KEY = "omnicode.desktopColorScheme";
+export const DESKTOP_APPEARANCE_BACKUP_KEY = "omnicode.desktopAppearanceBackup.v1";
 
 /** Scheme migration for stored named skins. Keep old values intact. */
 export const LEGACY_SKIN_SCHEMES: Record<string, "light" | "dark"> = {
@@ -26,14 +26,14 @@ export function loadDesktopTheme(fallback: DesktopThemePreference): DesktopTheme
     if (isThemePreference(saved)) return saved;
     // A corrupt new value must not replay an old skin migration.
     if (saved !== null) return "dark";
-    const skin = preferenceStorage.getItem("monocode.desktopSkin");
+    const skin = preferenceStorage.getItem("omnicode.desktopSkin");
     next = skin && Object.hasOwn(LEGACY_SKIN_SCHEMES, skin)
       ? LEGACY_SKIN_SCHEMES[skin]
       : skin && skin !== "auto" && skin !== "classic" ? "dark" : fallback;
     if (!preferenceStorage.getItem(DESKTOP_APPEARANCE_BACKUP_KEY)) {
       const keys = ["desktopSkin", "colorScheme", "themeHue", "themeSaturation", "themeDarkLightness", "accentColor", "typographyProfile", "appearanceProfile.light", "appearanceProfile.dark"];
       preferenceStorage.setItem(DESKTOP_APPEARANCE_BACKUP_KEY, JSON.stringify(Object.fromEntries(
-        keys.map(key => [key, preferenceStorage.getItem(`monocode.${key}`)]),
+        keys.map(key => [key, preferenceStorage.getItem(`omnicode.${key}`)]),
       )));
     }
     preferenceStorage.setItem(DESKTOP_SCHEME_KEY, next);

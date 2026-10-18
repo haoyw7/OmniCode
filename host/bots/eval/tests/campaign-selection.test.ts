@@ -6,7 +6,7 @@ import {
 } from "../src/campaignSelection";
 it("freezes balanced two-arm pairs without selecting from outcomes", () => {
   const ids = ["a", "b", "c", "d"];
-  const rows = buildPairedOrder(ids, ["control", "monocode"], 17);
+  const rows = buildPairedOrder(ids, ["control", "omnicode"], 17);
   expect(rows.map((x) => x.id).sort()).toEqual(
     ids.flatMap((id) => [id, id]).sort(),
   );
@@ -15,10 +15,10 @@ it("freezes balanced two-arm pairs without selecting from outcomes", () => {
       .filter((_, i) => i % 2 === 0)
       .map((x) => x.arm)
       .sort(),
-  ).toEqual(["control", "control", "monocode", "monocode"]);
-  expect(buildPairedOrder(ids, ["control", "monocode"], 17)).toEqual(rows);
+  ).toEqual(["control", "control", "omnicode", "omnicode"]);
+  expect(buildPairedOrder(ids, ["control", "omnicode"], 17)).toEqual(rows);
   expect(() =>
-    buildPairedOrder(["a", "a"], ["control", "monocode"], 17),
+    buildPairedOrder(["a", "a"], ["control", "omnicode"], 17),
   ).toThrow(/duplicate/i);
 });
 it("expands only previously unrun IDs and preserves paired variants", () => {

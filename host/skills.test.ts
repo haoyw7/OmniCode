@@ -17,7 +17,7 @@ afterEach(() => {
   for (const cleanup of cleanups.splice(0).reverse()) cleanup();
 });
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "monocode-skills-"));
+  const root = mkdtempSync(join(tmpdir(), "omnicode-skills-"));
   cleanups.push(() => rmSync(root, { recursive: true, force: true }));
   const cwd = join(root, "project"),
     home = join(root, "home"),

@@ -2,8 +2,8 @@ import { registerCustomTheme } from "@pierre/diffs";
 
 /** Shared by the main-thread renderer and the worker pool's resolved themes. */
 export const REVIEW_THEMES = {
-  light: "monocode-review-light",
-  dark: "monocode-review-dark",
+  light: "omnicode-review-light",
+  dark: "omnicode-review-dark",
 } as const;
 
 for (const scheme of ["light", "dark"] as const) {

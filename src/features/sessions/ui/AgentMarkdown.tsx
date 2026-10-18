@@ -71,6 +71,9 @@ import {
 } from "./wordFade";
 import { StreamingMarkdownParser } from "./streamingMarkdown";
 import { HighlightedCodeBlock } from "./HighlightedCodeBlock";
+import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
+import { Button } from "../../../shared/ui/forms/Button";
 
 const MERMAID_BASE_CONFIG = {
   startOnLoad: false,
@@ -148,15 +151,15 @@ const REVEAL_LABEL = IS_MAC
     : "Open Containing Folder";
 
 function fileLinkMenuItems(
-  canOpenInMonoCode: boolean,
+  canOpenInOmniCode: boolean,
   canCopyRelativePath: boolean,
 ): ExplorerMenuItem[] {
   return [
     {
       kind: "item",
-      id: "open-monocode",
+      id: "open-omnicode",
       label: translateUi("Open in OmniCode"),
-      disabled: !canOpenInMonoCode,
+      disabled: !canOpenInOmniCode,
     },
     {
       kind: "item",
@@ -378,7 +381,7 @@ function MarkdownCode({
     fence.language.toLowerCase(),
   );
 
-  return (
+  const content = (
     <div className="markdown-code-shell" dir="ltr">
       {iconName ? (
         <span className="markdown-code-icon" aria-hidden="true">
@@ -403,6 +406,27 @@ function MarkdownCode({
           startLine={fence.startLine}
         />
       </CodeHighlightBoundary>}
+    </div>
+  );
+  return fence.language.toLowerCase() === "workflow-result" ? (
+    <WorkflowResultDisclosure>{content}</WorkflowResultDisclosure>
+  ) : content;
+}
+
+function WorkflowResultDisclosure({ children }: { children: ReactNode }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="my-4 min-w-0" dir="ltr">
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((value) => !value)}
+      >
+        <DisclosureChevron expanded={expanded} className="size-3 shrink-0" aria-hidden="true" />
+        <span>workflow-result</span>
+      </Button>
+      <AnimatedCollapse expanded={expanded}>{children}</AnimatedCollapse>
     </div>
   );
 }
@@ -654,7 +678,7 @@ export const AgentMarkdown = memo(function AgentMarkdown({
     setFileMenu(null);
     setFileActionError(null);
 
-    if (id === "open-monocode") {
+    if (id === "open-omnicode") {
       if (fileMenu.navigation) onOpenFile?.(path, fileMenu.navigation);
       else onOpenFile?.(path);
       return;

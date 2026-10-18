@@ -33,7 +33,7 @@ const run: OrchestrationRun = {
   status: "active",
   allowedHarnesses: ["claude"],
   maxWorkers: 2,
-  cli: "monocode",
+  cli: "omnicode",
   tasks,
   continuations: 0,
   requests: {},

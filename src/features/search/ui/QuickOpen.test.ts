@@ -106,7 +106,7 @@ const SESSIONS = [
 
 const RECENTS = [
   { path: "/repo", openedAt: 2 },
-  { path: "/work/monocode", openedAt: 3 },
+  { path: "/work/omnicode", openedAt: 3 },
 ];
 
 function renderPalette(
@@ -244,14 +244,14 @@ describe("quick open command mode", () => {
       );
       expect(callbacks.onOpenFile).not.toHaveBeenCalled();
       expect(
-        JSON.parse(localStorage.getItem("monocode.quickOpen.recentCommands")!),
+        JSON.parse(localStorage.getItem("omnicode.quickOpen.recentCommands")!),
       ).toEqual(["View: Reload"]);
     },
   );
 
   it("lists recently run commands first", () => {
     localStorage.setItem(
-      "monocode.quickOpen.recentCommands",
+      "omnicode.quickOpen.recentCommands",
       JSON.stringify(["App: Settings"]),
     );
     const { dialog } = renderPalette(">");
@@ -277,7 +277,7 @@ describe("quick open session and project modes", () => {
   it("lists projects by recency, filters them and offers Open Project", () => {
     const callbacks = renderPalette("@");
     const rows = options(callbacks.dialog);
-    expect(rows[0].textContent).toContain("monocode");
+    expect(rows[0].textContent).toContain("omnicode");
     expect(rows.at(-2)!.textContent).toContain("Open Project…");
     expect(rows.at(-1)!.textContent).toContain("Search everywhere");
 

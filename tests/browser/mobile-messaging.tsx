@@ -24,7 +24,7 @@ if (query.has("assistant")) {
 }
 setUiLanguage("zh-CN");
 applyMobileSkin(query.get("theme") === "dark" ? "midnight" : "daylight");
-const project = { id: "project", name: "Monocode", cwd: "/fixture" };
+const project = { id: "project", name: "OmniCode", cwd: "/fixture" };
 const noop = () => {};
 const blocks: Block[] = [
   { id: "prompt", role: "user", text: "You're a tiny fairy who lives in a teapot. Describe your cozy home and your daily adventures in the kitchen!", startedAt: 1000, durationMs: 4000 },
@@ -48,7 +48,7 @@ function Fixture() {
   return <div className="mobile-app" data-view="chat">
     <header className="mobile-header" data-floating="true" inert={drawer}>
       <IconButton className="" label="Menu" onClick={() => setDrawer(true)}><PanelLeft size={22} /></IconButton>
-      <div className="mobile-header-title" data-capsule="true"><strong>Tiny Fairy Story</strong><div className="mobile-header-context"><span className="mobile-header-context-item"><span>Monocode</span></span></div></div>
+      <div className="mobile-header-title" data-capsule="true"><strong>Tiny Fairy Story</strong><div className="mobile-header-context"><span className="mobile-header-context-item"><span>OmniCode</span></span></div></div>
       {empty ? <IconButton className="" label="New conversation" onClick={() => setEmpty(false)}><Plus size={22} /></IconButton> :
         <div className="mobile-header-actions">
           <IconButton className="" label="Status"><Sparkles size={22} /></IconButton>

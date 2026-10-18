@@ -1,8 +1,8 @@
 import { preferenceStorage } from "../../settings/model/sharedPreferences";
 import { pathKey } from "../../../shared/lib/paths";
 
-const KEY = "monocode.projectTreeExpanded.v1";
-const CHANGED = "monocode:project-tree-expanded-changed";
+const KEY = "omnicode.projectTreeExpanded.v1";
+const CHANGED = "omnicode:project-tree-expanded-changed";
 
 function readExpanded(): Set<string> | undefined {
   try {

@@ -74,11 +74,11 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
   const [navigationWidth, setNavigationWidth] = useState(() => {
-    try { const value = Number(localStorage.getItem("monocode.bots-sidebar-width")); return value >= 240 && value <= 400 ? value : 280; } catch { return 280; }
+    try { const value = Number(localStorage.getItem("omnicode.bots-sidebar-width")); return value >= 240 && value <= 400 ? value : 280; } catch { return 280; }
   });
   const commitNavigationWidth = (width: number) => {
     setNavigationWidth(width);
-    try { localStorage.setItem("monocode.bots-sidebar-width", String(width)); } catch { /* Storage is optional. */ }
+    try { localStorage.setItem("omnicode.bots-sidebar-width", String(width)); } catch { /* Storage is optional. */ }
   };
   const [snapshot, setSnapshot] = useState<BotsSnapshot>();
   const [teams, setTeams] = useState<BotTeam[]>([]), [rooms, setRooms] = useState<BotRoom[]>([]);

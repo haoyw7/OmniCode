@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 it("uses Git registration rather than a different directory or branch to identify linked worktrees", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-worktree-status-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-worktree-status-"));
   directories.push(directory);
   const main = join(directory, "main");
   const linked = join(directory, "linked");

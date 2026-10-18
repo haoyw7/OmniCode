@@ -1,4 +1,4 @@
-// Monocode shim for ZCode's MessageResponse: Monocode's markdown renderer.
+// OmniCode shim for ZCode's MessageResponse: OmniCode's markdown renderer.
 import type { ReactNode } from "react";
 import { AgentMarkdown } from "../../../../sessions/ui/AgentMarkdown";
 

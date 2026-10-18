@@ -12,13 +12,13 @@ const body=mark.slice(mark.indexOf('<g '),mark.lastIndexOf('</svg>'));
 const svg=(content,w=256,h=w)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${content}</svg>`;
 
 async function header(browser){
-  const wordmark=await fs.readFile(path.join(design,'omnicode-horizontal-black.svg'),'utf8');
+  const wordmark=await fs.readFile(path.join(design,'omnicode-horizontal-white.svg'),'utf8');
   const page=await browser.newPage();
   try {
     const rgba=await page.evaluate(async source=>{
       const img=new Image();img.src='data:image/svg+xml;base64,'+btoa(source);await img.decode();
       const canvas=document.createElement('canvas');canvas.width=150;canvas.height=57;
-      const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,150,57);ctx.drawImage(img,6,16,138,138*144/805);
+      const ctx=canvas.getContext('2d');ctx.fillStyle='#151515';ctx.fillRect(0,0,150,57);ctx.drawImage(img,6,16,138,138*144/805);
       return Array.from(ctx.getImageData(0,0,150,57).data);
     },wordmark);
     const stride=452,bmp=Buffer.alloc(54+stride*57);
@@ -38,6 +38,7 @@ export async function generateInstallerHeader(){
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+  const windowsOnly=process.argv.includes('--windows-only');
   await fs.mkdir(work,{recursive:true});
   const app=svg(`<rect width="256" height="256" rx="56" fill="#151515"/><g transform="translate(24 24) scale(.8125)">${body}</g>`);
   const square=svg(`<rect width="256" height="256" fill="#151515"/><g transform="translate(24 24) scale(.8125)">${body}</g>`);
@@ -45,12 +46,13 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   const browser=await chromium.launch({headless:true});
   try{
     for(const [name,source,w,h] of [['mark',mark,1024,1024],['app',app,1024,1024],['square',square,1024,1024],['sidebar',sidebar,164,314]]){
+      if(windowsOnly&&name!=='app')continue;
       const page=await browser.newPage({viewport:{width:w,height:h}});
       await page.setContent(`<style>html,body{margin:0;background:transparent}svg{width:100vw;height:100vh;display:block}</style>${source}`);
       await page.screenshot({path:path.join(work,`${name}.png`),omitBackground:true});await page.close();
     }
-    await header(browser);
+    if(!windowsOnly)await header(browser);
   }finally{await browser.close();}
-  const result=spawnSync('python',[path.join(root,'scripts/generate-omnicode-native.py'),work],{stdio:'inherit',cwd:root});
+  const result=spawnSync('python',[path.join(root,'scripts/generate-omnicode-native.py'),work,...(windowsOnly?['--windows-only']:[])],{stdio:'inherit',cwd:root});
   if(result.status!==0)throw new Error('Native icon conversion failed');
 }

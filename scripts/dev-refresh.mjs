@@ -17,8 +17,8 @@ import { setTimeout as delay } from "node:timers/promises";
 import { runBuildProcess } from "./desktop-build-process.mjs";
 
 const root = realpathSync(join(dirname(fileURLToPath(import.meta.url)), ".."));
-const service = "monocode-host.service";
-const bundle = join(root, "build/host/monocode-host.mjs");
+const service = "omnicode-host.service";
+const bundle = join(root, "build/host/omnicode-host.mjs");
 const logDirectory = join(root, "build/dev-refresh");
 const desktopLog = join(logDirectory, "desktop.log");
 const help = `Usage: npm run dev:refresh [-- --dry-run]
@@ -31,11 +31,11 @@ mobile:publish. Unchanged APK sources retain the existing publication.
   --help     Show this help
 
 Requires Node 24+, installed project dependencies, the current checkout's
-monocode-host.service, and a graphical login. Run relevant checks first.
+omnicode-host.service, and a graphical login. Run relevant checks first.
 Restarting interrupts active Host turns and closes the development desktop.
 Desktop log: build/dev-refresh/desktop.log
-Host log: journalctl --user -u monocode-host.service -n 100
-Desktop startup timeout: MONOCODE_DESKTOP_START_TIMEOUT_SECONDS (default 600).
+Host log: journalctl --user -u omnicode-host.service -n 100
+Desktop startup timeout: OMNICODE_DESKTOP_START_TIMEOUT_SECONDS (default 600).
 Invoke through npm or scripts/dev-refresh.sh so publication locks are held.`;
 
 function samePath(left, right) {
@@ -90,7 +90,7 @@ export function isDesktopProcess(
     )
   )
     return false;
-  if (samePath(entry.exe, join(targetDirectory, "debug/monocode")))
+  if (samePath(entry.exe, join(targetDirectory, "debug/omnicode")))
     return entry.args.length === 1;
   const [, script, ...args] = entry.args;
   if (samePath(script, join(checkout, "node_modules/.bin/tauri")))
@@ -194,7 +194,7 @@ function preflight(dryRun) {
   if (!dryRun && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY)
     throw new Error("Run from a terminal in your graphical login.");
   const timeout = Number(
-    process.env.MONOCODE_DESKTOP_START_TIMEOUT_SECONDS ?? 600,
+    process.env.OMNICODE_DESKTOP_START_TIMEOUT_SECONDS ?? 600,
   );
   if (!Number.isFinite(timeout) || timeout <= 0)
     throw new Error("Invalid desktop startup timeout.");
@@ -202,7 +202,7 @@ function preflight(dryRun) {
   // systemd prints the Node entry in argv[]. Resolve aliases such as /projects
   // and /home/wy/projects before comparing with the checkout being rebuilt.
   const entries =
-    command.match(/\/[^\s;]*\/build\/host\/monocode-host\.mjs/g) ?? [];
+    command.match(/\/[^\s;]*\/build\/host\/omnicode-host\.mjs/g) ?? [];
   if (!entries.some((entry) => samePath(entry, bundle))) {
     throw new Error(
       `${service} must run this checkout's ${bundle}. Inspect: systemctl --user cat ${service}`,
@@ -232,7 +232,7 @@ async function restartHost() {
     () => {
       try {
         const state = JSON.parse(
-          readFileSync(join(homedir(), ".monocode-host/running.json"), "utf8"),
+          readFileSync(join(homedir(), ".omnicode-host/running.json"), "utf8"),
         );
         if (
           String(state.pid) !==
@@ -294,7 +294,7 @@ async function startDesktop({ timeout, targetDirectory }) {
           !entries.some(
             (entry) =>
               descendants.has(entry.pid) &&
-              samePath(entry.exe, join(targetDirectory, "debug/monocode")),
+              samePath(entry.exe, join(targetDirectory, "debug/omnicode")),
           )
         )
           return false;

@@ -507,8 +507,8 @@ describe("mobile sidebar sessions", async () => {
 describe("mobile sidebar recents", async () => {
   const projects = [
     { id: "android", name: "Android", cwd: "/mnt/data/Android" },
-    { id: "codex", name: "monocode", cwd: "/home/wy/Documents/Codex/monocode" },
-    { id: "project", name: "monocode", cwd: "/projects/monocode" },
+    { id: "codex", name: "omnicode", cwd: "/home/wy/Documents/Codex/omnicode" },
+    { id: "project", name: "omnicode", cwd: "/projects/omnicode" },
   ];
   const project = projects[2];
   const ids = (area = ".mobile-drawer-sessions") =>

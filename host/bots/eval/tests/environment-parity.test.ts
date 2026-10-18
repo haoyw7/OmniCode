@@ -66,7 +66,7 @@ afterEach(async () => {
   for (const cleanup of cleanups.splice(0)) await cleanup();
 });
 it("reproduces whole-query mismatch against searchMemory and temporary native Host", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-memory-parity-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-memory-parity-"));
   const store = new HostStore(join(directory, "host.db"));
   const engine = new HostEngine(store, {});
   cleanups.push(async () => {

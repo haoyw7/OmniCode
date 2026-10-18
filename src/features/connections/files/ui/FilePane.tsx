@@ -14,6 +14,7 @@ import {
   isAgentTab,
   isSubagentTab,
   isWorkflowAgentTab,
+  isWorkflowArtifactTab,
   isWorkflowRunTab,
   isAppViewTab,
   isChangesTab,
@@ -37,7 +38,7 @@ import {
   loadDiffViewer,
   subscribeDiffViewer,
 } from "../../../settings/model/settings";
-import { WorkflowAgentTabView, WorkflowRunTabView } from "../../../workflows/ui/WorkflowTabs";
+import { WorkflowAgentTabView, WorkflowRunTabView, WorkflowArtifactTabView } from "../../../workflows/ui/WorkflowTabs";
 import { AgentTabView } from "../../../sessions/ui/AgentTabView";
 import { SubagentTabView } from "../../../sessions/ui/SubagentTabView";
 import { MarkdownPreview } from "../../../sessions/ui/AgentMarkdown";
@@ -230,6 +231,8 @@ function FilePaneComponent({
                 />
               ) : isWorkflowRunTab(file) ? (
                 <WorkflowRunTabView file={file} />
+              ) : isWorkflowArtifactTab(file) ? (
+                <WorkflowArtifactTabView file={file} />
               ) : isWorkflowAgentTab(file) ? (
                 <WorkflowAgentTabView
                   file={file}

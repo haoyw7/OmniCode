@@ -13,7 +13,7 @@ const credential = (exp: number) => ({ auth_mode: "chatgpt", tokens: {
   access_token: `e30.${Buffer.from(JSON.stringify({ exp })).toString("base64url")}.signature`, refresh_token: "test-refresh",
 } });
 async function account(auth?: unknown) {
-  const home = await mkdtemp(join(tmpdir(), "monocode-refresh-test-")); directories.push(home);
+  const home = await mkdtemp(join(tmpdir(), "omnicode-refresh-test-")); directories.push(home);
   if (auth !== undefined) await writeFile(join(home, "auth.json"), JSON.stringify(auth));
   return { command: "codex", home, accountId: "named" };
 }
@@ -25,7 +25,7 @@ it("refreshes an expiring managed account on the local backend, including under 
   const result = await withMachineIO(remote, () => withProviderAccountLock(`codex:${input.home}`, () =>
     refreshCodexAccountBeforeWsl(input, { now: () => now, request })));
   expect(result).toBe("refreshed");
-  expect(request).toHaveBeenCalledWith("codex", expect.any(String), "account/read", { refreshToken: true }, "named", expect.stringMatching(/^monocode-codex-refresh-/));
+  expect(request).toHaveBeenCalledWith("codex", expect.any(String), "account/read", { refreshToken: true }, "named", expect.stringMatching(/^omnicode-codex-refresh-/));
 });
 
 it.each([

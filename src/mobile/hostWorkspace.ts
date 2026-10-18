@@ -21,7 +21,7 @@ export async function initializeMobileWorkspace(client: MobileClient): Promise<W
   if (!environmentId) return;
   if (!client.hasCapability("workspaces.read")) {
     const status = client.getConnectionStatus();
-    const cached = localStorage.getItem(`monocode.host-workspace.v1:${encodeURIComponent(environmentId)}:cache:mobile`);
+    const cached = localStorage.getItem(`omnicode.host-workspace.v1:${encodeURIComponent(environmentId)}:cache:mobile`);
     if (!cached || status.reason === "identity" || status.reason === "authentication" || status.state === "connected")
       throw new Error(translate("Update Host to share workspace state."));
   }

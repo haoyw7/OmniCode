@@ -589,7 +589,7 @@ export function Composer({
             ...(supportsBtwHarness(harness) ? [BTW_COMMAND] : []),
             ...skills.filter(
               (skill) =>
-                ![OPERATOR_COMMAND.name, "mono", "monocode"].includes(
+                ![OPERATOR_COMMAND.name, "mono", "omnicode"].includes(
                   skill.name,
                 ) &&
                 (skill.kind === "native" ||
@@ -2254,7 +2254,7 @@ export function Composer({
               onManage={() => {
                 mcpInsertAt.current = null;
                 setMcpPickerOpen(false);
-                window.dispatchEvent(new Event("monocode:open-mcp-settings"));
+                window.dispatchEvent(new Event("omnicode:open-mcp-settings"));
               }}
               onDismiss={(reason) => {
                 mcpInsertAt.current = null;

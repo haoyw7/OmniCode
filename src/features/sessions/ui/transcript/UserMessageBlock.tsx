@@ -6,7 +6,7 @@ import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { ArrowUp, CircleDashed, Bot, Trash2 } from "../../../../shared/ui/icons";
 import { useLayoutEffect, useRef, useState } from "react";
 import { AttachmentChip } from "../AttachmentChip";
-import { MonocodeSparkles } from "../MonocodeSparkles";
+import { OmniCodeSparkles } from "../OmniCodeSparkles";
 import { OrchestratorConstellation } from "../OrchestratorConstellation";
 import { PlanStepsBurst } from "../PlanStepsBurst";
 import { SecondOpinionCard } from "../SecondOpinionCard";
@@ -56,11 +56,11 @@ export function UserMessageBlock({
   const textRef = useRef<HTMLElement>(null);
   const card = block.secondOpinion;
   const note = block.noteCard;
-  const monocode = isOperatorUserTurn(block);
+  const omnicode = isOperatorUserTurn(block);
   const text =
     card && card.kind !== "handoff"
       ? ""
-      : visibleUserPrompt(monocode ? operatorUserPrompt(block) : block.text);
+      : visibleUserPrompt(omnicode ? operatorUserPrompt(block) : block.text);
   const messageLink = text ? parseUserMessageLink(text) : null;
   const displayText = messageLink
     ? `${messageLink.beforeText}${messageLink.afterText}`
@@ -162,7 +162,7 @@ export function UserMessageBlock({
           hidden={!hasBubble}
           data-bubble-layout={layout}
           data-draft={block.draft ? "true" : undefined}
-          data-monocode={monocode ? "true" : undefined}
+          data-omnicode={omnicode ? "true" : undefined}
           className={`user-message-bubble relative w-fit min-w-0 px-3 py-2 font-sans text-content transition-[background-color] duration-200 ${
             layout === "chat" ? "max-w-[min(100%,36rem)]" : "max-w-full"
           } ${
@@ -273,8 +273,8 @@ export function UserMessageBlock({
               </span>
             </div>
           ) : null}
-          {monocode ? (
-            <MonocodeSparkles blockId={block.id} startedAt={block.startedAt} />
+          {omnicode ? (
+            <OmniCodeSparkles blockId={block.id} startedAt={block.startedAt} />
           ) : block.intent === "plan" ? (
             <PlanStepsBurst blockId={block.id} startedAt={block.startedAt} />
           ) : block.intent === "orchestrate" ? (

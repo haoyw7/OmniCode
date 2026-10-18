@@ -2,8 +2,8 @@
 // 它们是普通 user message：只预填草稿、不自动发送，用户接着写要改什么 / 要建什么。
 // 「提升为全局」的文案（buildSavedWorkflowPromotePrompt）例外：它作为 createSession.firstInput
 // **自动发送**，所以是完整的指令而不是开头。
-// Monocode：每段都以 `/workflow` 开头，Host 据此注入编写指南与 workflow CLI；保存走
-// `workflow save`（ZCode 的 SaveWorkflow 工具在 Monocode 里是这个 CLI 动作）。
+// OmniCode：每段都以 `/workflow` 开头，Host 据此注入编写指南与 workflow CLI；保存走
+// `workflow save`（ZCode 的 SaveWorkflow 工具在 OmniCode 里是这个 CLI 动作）。
 
 const WORKFLOW_COMMAND = "/workflow ";
 

@@ -148,12 +148,22 @@ function naturalSize(
   frame: HTMLElement,
   content: HTMLElement | null,
 ): { width: number; height: number } {
-  const styles = content ? [frame.style, content.style] : [frame.style];
-  const caps = styles.map((style) => style.maxHeight);
-  for (const style of styles) style.maxHeight = "none";
+  const elements = content ? [frame, content] : [frame];
+  const saved = elements.map((el) => ({
+    maxHeight: el.style.maxHeight,
+    scrollTop: el.scrollTop,
+    scrollLeft: el.scrollLeft,
+  }));
+  for (const el of elements) el.style.maxHeight = "none";
   const size = { width: frame.offsetWidth, height: frame.offsetHeight };
-  styles.forEach((style, index) => {
-    style.maxHeight = caps[index];
+  elements.forEach((el, index) => {
+    el.style.maxHeight = saved[index].maxHeight;
+  });
+  // Uncapping forces layout and clamps the scroller's offset to zero. Restore
+  // it only after both height caps are back, including on content/viewport changes.
+  elements.forEach((el, index) => {
+    if (saved[index].scrollTop) el.scrollTop = saved[index].scrollTop;
+    if (saved[index].scrollLeft) el.scrollLeft = saved[index].scrollLeft;
   });
   return size;
 }
@@ -393,13 +403,20 @@ function WebPopover({
     if (rows && frame.current) {
       rows.observe(frame.current, { childList: true, subtree: true });
     }
+    const onScroll = (event: Event) => {
+      // Reading a list does not move its anchor. Remeasuring here both wastes
+      // layout work and interrupts native scrolling by temporarily uncapping it.
+      if (event.target instanceof Node && frame.current?.contains(event.target))
+        return;
+      place();
+    };
     window.addEventListener("resize", place);
-    window.addEventListener("scroll", place, true);
+    window.addEventListener("scroll", onScroll, true);
     return () => {
       observer.disconnect();
       rows?.disconnect();
       window.removeEventListener("resize", place);
-      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("scroll", onScroll, true);
     };
     // A closing surface can reopen before it unmounts. Its anchor may have
     // moved in the meantime even though the ref and menu dimensions are stable.

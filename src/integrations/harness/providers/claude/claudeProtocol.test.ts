@@ -115,7 +115,7 @@ describe("buildClaudeSpawnArgs", () => {
     const botContext = { scope: { botId: "bot", threadId: "thread", runId: "run" }, systemInstructions: "", contextFingerprint: "v1", agentsMcp: { command: "/node path", args: ["/host path", "agents-mcp"] } };
     const args = buildClaudeSpawnArgs({ botContext });
     expect(args).not.toContain("--strict-mcp-config");
-    expect(JSON.parse(args[args.indexOf("--mcp-config") + 1])).toEqual({ mcpServers: { mc_agents_thread: { type: "stdio", command: "/node path", args: ["/host path", "agents-mcp"], timeout: 250000, env: { MONOCODE_CONTROL_ENDPOINT: "${MONOCODE_CONTROL_ENDPOINT}", MONOCODE_CONTROL_TOKEN: "${MONOCODE_CONTROL_TOKEN}" } } } });
+    expect(JSON.parse(args[args.indexOf("--mcp-config") + 1])).toEqual({ mcpServers: { mc_agents_thread: { type: "stdio", command: "/node path", args: ["/host path", "agents-mcp"], timeout: 250000, env: { OMNICODE_CONTROL_ENDPOINT: "${OMNICODE_CONTROL_ENDPOINT}", OMNICODE_CONTROL_TOKEN: "${OMNICODE_CONTROL_TOKEN}" } } } });
     const isolated = buildClaudeSpawnArgs({ botContext, isolated: true });
     expect(JSON.parse(isolated[isolated.indexOf("--mcp-config") + 1])).toEqual({ mcpServers: {} });
   });

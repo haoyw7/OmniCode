@@ -121,7 +121,7 @@ export class MobileActivity {
 }
 
 const key = (environmentId: string) =>
-  `monocode.mobileActivity:${environmentId}`;
+  `omnicode.mobileActivity:${environmentId}`;
 export function loadMobileActivity(environmentId: string): MobileActivity {
   try {
     const state = JSON.parse(

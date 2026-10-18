@@ -22,8 +22,8 @@ import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { SavedWorkflowMetaSchema, type SavedWorkflowMeta } from "../../../src/integrations/workflow/savedWorkflow.js";
 
 /** frontmatter 的开启标记。必须是文件的第一段非空白内容。 */
-export const SAVED_WORKFLOW_SENTINEL = "/* monocode-workflow";
-/** Monocode also reads files saved by ZCode, whose header uses this tag. */
+export const SAVED_WORKFLOW_SENTINEL = "/* omnicode-workflow";
+/** OmniCode also reads files saved by ZCode, whose header uses this tag. */
 const LEGACY_SAVED_WORKFLOW_SENTINEL = "/* zcode-workflow";
 
 /** frontmatter 的结束标记：一行只有块注释的收尾符。 */

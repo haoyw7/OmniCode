@@ -131,7 +131,7 @@ beforeEach(() => {
     id, projectId: "project", title: id, harness: "codex", revision: 1, updatedAt: 1, status: "idle",
   })));
   localStorage.clear();
-  localStorage.setItem("monocode-mobile-last", JSON.stringify({
+  localStorage.setItem("omnicode-mobile-last", JSON.stringify({
     environmentId: "host", projectId: "project", sessionId: "one",
   }));
   setUiLanguage("en");
@@ -401,7 +401,7 @@ describe("mobile conversation loading UI", () => {
   });
 
   it("edits a home conversation in its own project and animates menu dismissal", async () => {
-    localStorage.removeItem("monocode-mobile-last");
+    localStorage.removeItem("omnicode-mobile-last");
     host.projects.mockResolvedValue([
       { id: "project", name: "Project", cwd: "/project" },
       { id: "other", name: "Other", cwd: "/other" },
@@ -448,7 +448,7 @@ describe("mobile conversation loading UI", () => {
   });
 
   it("shows a new conversation immediately while its drawer history loads", async () => {
-    localStorage.removeItem("monocode-mobile-last");
+    localStorage.removeItem("omnicode-mobile-last");
     const history = deferred<HostSessionSummary[]>();
     host.sessions.mockReturnValue(history.promise);
     await mount();
@@ -655,7 +655,7 @@ describe("mobile imported native continuation", () => {
   it.each([
     [null, "Reconnect to the Host"],
     [{ ...access("unknown"), reason: "unsupportedPlatform" }, "ownership cannot be verified on this platform"],
-    [{ ...access("unknown"), reason: "anotherMonocode" }, "OmniCode desktop is using"],
+    [{ ...access("unknown"), reason: "anotherOmniCode" }, "OmniCode desktop is using"],
     [{ ...access("unknown"), reason: "ambiguousProcess", holder: { pid: 43, provider: "pi", command: "pi" } }, "may be using this conversation"],
     [new Error("Timeout"), "Reconnect to the Host"],
     [access("idle", "/native/different.jsonl"), "Reconnect to the Host"],

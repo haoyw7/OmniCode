@@ -1302,7 +1302,7 @@ export class BotThreadRuntime {
             join(dirname(this.engine.store.attachmentDir), "assistant-control"),
             this.entry,
           )
-        : "monocode-host";
+        : "omnicode-host";
       if (
         epoch !== this.epoch ||
         !this.active ||
@@ -1356,7 +1356,7 @@ export class BotThreadRuntime {
       });
       const persona = config.persona;
       const systemInstructions = [
-        `You are ${config.name}, the user's Monocode Bot. Your identity is scoped to this Bot and Thread.`,
+        `You are ${config.name}, the user's OmniCode Bot. Your identity is scoped to this Bot and Thread.`,
         persona?.preset && persona.preset !== "custom" ? PERSONA_PRESETS[persona.preset] : "",
         persona?.style ?? "", persona?.userName ? `Address the user as ${JSON.stringify(persona.userName)}.` : "",
         memory.soul ? `User-authored Bot identity (SOUL.md):\n${memory.soul}` : "",

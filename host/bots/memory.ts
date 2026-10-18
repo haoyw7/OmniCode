@@ -92,7 +92,7 @@ export class FileMemoryService {
     if (!botId || botId === "." || botId === "..") throw new Error("Invalid Bot identity");
     let root: string;
     if (host.databasePath === ":memory:") {
-      root = temporaryRoots.get(host) ?? mkdtempSync(join(tmpdir(), "monocode-memory-"));
+      root = temporaryRoots.get(host) ?? mkdtempSync(join(tmpdir(), "omnicode-memory-"));
       temporaryRoots.set(host, root);
     } else root = realpathSync(dirname(host.databasePath));
     this.directory = join(root, "bots", encodeURIComponent(botId));

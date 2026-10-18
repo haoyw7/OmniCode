@@ -11,8 +11,8 @@ type JournalOperation = Operation & { queuedAt: number };
 type Cache = PreferenceSnapshot;
 export type PreferenceCodec = { encode(key: string, value: unknown): unknown; decode(key: string, value: unknown): unknown };
 const identity: PreferenceCodec = { encode: (_, v) => v, decode: (_, v) => v };
-export const SHARED_PREFERENCES_CHANGED = "monocode:shared-preferences-changed";
-export const SHARED_PREFERENCES_STATUS = "monocode:shared-preferences-status";
+export const SHARED_PREFERENCES_CHANGED = "omnicode:shared-preferences-changed";
+export const SHARED_PREFERENCES_STATUS = "omnicode:shared-preferences-status";
 const own = (value: object, key: string) => Object.prototype.hasOwnProperty.call(value, key);
 
 /** The same store serves desktop and mobile. Only an explicit edit enters the journal. */
@@ -26,7 +26,7 @@ export class SharedPreferenceStore {
   readonly cacheKey: string;
   readonly journalPrefix: string;
   constructor(readonly hostId: string, private disk: Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">, private request: PreferenceRequest, readonly codec: PreferenceCodec = identity) {
-    this.cacheKey = `monocode.hostPreferences.v1:${hostId}`;
+    this.cacheKey = `omnicode.hostPreferences.v1:${hostId}`;
     this.journalPrefix = `${this.cacheKey}:pending:`;
     try {
       const cache = JSON.parse(disk.getItem(this.cacheKey) ?? "null") as Cache | null;
@@ -182,7 +182,7 @@ export function activatePreferenceStore(store: SharedPreferenceStore | undefined
   stopActive = store?.subscribe(announcePreferenceChange);
   announcePreferenceChange(Object.keys(SHARED_PREFERENCE_KINDS));
 }
-const DEVICE_LOCAL_ADOPTED = "monocode.deviceLocalPreferencesAdopted.v1";
+const DEVICE_LOCAL_ADOPTED = "omnicode.deviceLocalPreferencesAdopted.v1";
 /**
  * One-time copy of the last Host-shared view state into this device, so moving
  * those keys out of the Host does not reset them. Project-keyed values need the

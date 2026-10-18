@@ -291,7 +291,7 @@ describe("harness registry", () => {
       removeItem: (key: string) => void store.delete(key),
     });
     store.set(
-      "monocode.liveModelCatalogs",
+      "omnicode.liveModelCatalogs",
       JSON.stringify({ pi: [{ id: "pi:old", harness: "pi", name: "Old" }] }),
     );
     hydrateCachedModelCatalogs();

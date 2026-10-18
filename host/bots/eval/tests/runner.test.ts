@@ -25,7 +25,7 @@ const scenario = () =>
     fixture: {},
     assertions: [{ kind: "contains", values: ["hello"] }],
     rubric: ["task_completion"],
-    provenance: { kind: "original", source: "monocode-original-v1" },
+    provenance: { kind: "original", source: "omnicode-original-v1" },
   });
 it("request reservations cap retries even when the provider reports no cost", () => {
   const b = new Budget(2, 0.2, 0.1);

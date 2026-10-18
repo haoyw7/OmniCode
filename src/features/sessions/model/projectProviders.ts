@@ -9,10 +9,10 @@ import type { HarnessId } from "./session";
  * project only stores what it actually overrides.
  */
 
-const KEY = "monocode.projectProviderSettings.v1";
+const KEY = "omnicode.projectProviderSettings.v1";
 
 /** Fired on `window` when any project's provider settings change. */
-export const PROJECT_PROVIDERS_CHANGE_EVENT = "monocode:project-providers-change";
+export const PROJECT_PROVIDERS_CHANGE_EVENT = "omnicode:project-providers-change";
 
 export type ProjectProviderSettings = {
   defaultHarness?: HarnessId;

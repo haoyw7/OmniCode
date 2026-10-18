@@ -4,8 +4,8 @@ import { resolveProjectMascotName } from "./projectMascots";
 import { TAB_GROUP_COLORS, tabGroupColor } from "../../workspace/model/tabGroups";
 import { notifyProjectPathsChanged } from "./recents";
 
-const GROUPS_KEY = "monocode.projectGroups";
-const ASSIGNMENTS_KEY = "monocode.projectGroupAssignments";
+const GROUPS_KEY = "omnicode.projectGroups";
+const ASSIGNMENTS_KEY = "omnicode.projectGroupAssignments";
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 export type ProjectGroup = {

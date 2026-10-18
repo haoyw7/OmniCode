@@ -11,11 +11,11 @@ import { useLivePhaseScroll } from "../useLivePhaseScroll";
 import { type Block } from "../../../model/session";
 import { AgentMarkdown } from "../../AgentMarkdown";
 import { proseSummary } from "../../../model/transcriptActivity";
-import { monoCodeToolCall } from "../../../model/monocodeToolCall";
+import { omniCodeToolCall } from "../../../model/omnicodeToolCall";
 import { INTERJECTION_BODY, interjectionChrome } from "../Dividers";
 import { ActivityPhaseIcon } from "./ActivityPhaseIcon";
 import { formatElapsed, useElapsedFrom } from "../transcriptClock";
-import { MonoCodeCallRow } from "../ToolCall";
+import { OmniCodeCallRow } from "../ToolCall";
 
 
 
@@ -305,10 +305,10 @@ export function ActivityToolRow({
   onOpenFile?: (path: string) => void;
   onOpenDiff?: (path: string) => void;
 }) {
-  const appCall = monoCodeToolCall(block);
+  const appCall = omniCodeToolCall(block);
   if (appCall) {
     return (
-      <MonoCodeCallRow block={block} call={appCall} onApproval={onApproval} />
+      <OmniCodeCallRow block={block} call={appCall} onApproval={onApproval} />
     );
   }
   return (

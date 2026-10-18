@@ -83,7 +83,7 @@ export interface ToolArtifactStorePort {
 }
 
 /** Directories never walked by files.glob / files.grep. */
-const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", ".monocode", "target", "dist", "build"]);
+const SKIPPED_DIRECTORIES = new Set([".git", "node_modules", ".omnicode", "target", "dist", "build"]);
 const MAX_GREP_FILE_BYTES = 2 * 1024 * 1024;
 
 async function* walk(root: string): AsyncGenerator<string> {
@@ -207,7 +207,7 @@ export const nodeExecutionPort: ExecutionPort = {
   },
 };
 
-export const WORKFLOW_ARTIFACT_URI_PREFIX = "monocode-artifact://";
+export const WORKFLOW_ARTIFACT_URI_PREFIX = "omnicode-artifact://";
 
 /** Workflow artifacts stored under the Host data directory, scoped by parent session. */
 export class FileArtifactStore implements ToolArtifactStorePort {
@@ -234,7 +234,7 @@ export class FileArtifactStore implements ToolArtifactStorePort {
   }
 
   /** Reads stored bytes for a URI this store minted, or undefined when it is not one. */
-  async read(uri: string): Promise<{ bytes: Buffer; contentType: string } | undefined> {
+  async read(uri: string): Promise<{ bytes: Buffer; contentType: string; path: string } | undefined> {
     if (!uri.startsWith(WORKFLOW_ARTIFACT_URI_PREFIX)) return undefined;
     const [sessionId, name] = uri.slice(WORKFLOW_ARTIFACT_URI_PREFIX.length).split("/");
     if (!sessionId || !name || !/^[0-9a-f]{32}(\.[a-z0-9]+)?$/.test(name)) return undefined;
@@ -242,7 +242,7 @@ export class FileArtifactStore implements ToolArtifactStorePort {
     if (!path.startsWith(resolve(this.root) + sep)) return undefined;
     try {
       const [bytes, contentType] = await Promise.all([readFile(path), readFile(`${path}.type`, "utf8").catch(() => "application/octet-stream")]);
-      return { bytes, contentType };
+      return { bytes, contentType, path };
     } catch { return undefined; }
   }
 }

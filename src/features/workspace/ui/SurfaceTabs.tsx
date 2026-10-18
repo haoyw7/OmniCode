@@ -5,6 +5,7 @@ import {
   GitCompare,
   GripVertical,
   Terminal,
+  Workflow,
   X,
 } from "../../../shared/ui/icons";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
@@ -20,6 +21,7 @@ import {
   isAgentTab,
   isSubagentTab,
   isWorkflowAgentTab,
+  isWorkflowArtifactTab,
   isWorkflowRunTab,
   isAppViewTab,
   isChangesTab,
@@ -47,6 +49,17 @@ import {
 import { FileActionError } from "../../connections/files/ui/FileActionError";
 import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { useWorkflowAgentAvatar } from "../../workflows/model/useWorkflowAgentAvatar";
+import { WorkflowAgentFace } from "../../workflows/kit/components/workflow-timeline/WorkflowAgentFace";
+import { ArtifactKindIcon } from "../../workflows/kit/app-shell/workflow-artifacts/artifactPresentation";
+
+function WorkflowAgentTabIcon({ file }: { file: FilePaneTab & { workflowAgent: NonNullable<FilePaneTab["workflowAgent"]> } }) {
+  const source = file.workflowAgent;
+  const live = useWorkflowAgentAvatar(file.cwd, source.parentSessionId, source.runId, source.sessionId);
+  const avatar = live ?? source.avatar;
+  return <WorkflowAgentFace avatarIndex={avatar?.avatarIndex} name={avatar?.name || file.path}
+    status={avatar?.status} className="size-3.5 shrink-0" />;
+}
 
 type Props = {
   files: FilePaneTab[];
@@ -137,7 +150,7 @@ export function surfaceTabPresentation(
     return {
       name: title,
       label: title,
-      iconName: file.appView.kind === "notes" ? "notes.md" : "APP_VIEW",
+      iconName: file.appView.kind === "workflows" ? "WORKFLOW" : file.appView.kind === "notes" ? "notes.md" : "APP_VIEW",
       tooltip: title,
     };
   }
@@ -173,7 +186,12 @@ export function surfaceTabPresentation(
 
   if (isWorkflowRunTab(file)) {
     const name = file.path.trim() || translateUi("Workflow");
-    return { name, label: name, iconName: "AGENT", tooltip: translateUi("{name} — workflow run", { name }) };
+    return { name, label: name, iconName: "WORKFLOW", tooltip: translateUi("{name} — workflow run", { name }) };
+  }
+
+  if (isWorkflowArtifactTab(file)) {
+    const name = file.path.trim() || file.workflowArtifact.artifactId;
+    return { name, label: name, iconName: file.workflowArtifact.sourcePath ?? name, tooltip: name };
   }
 
   if (isWorkflowAgentTab(file)) {
@@ -417,6 +435,12 @@ export function SurfaceTabs({
               >
                 {terminal ? (
                   <Terminal className="size-3.5 shrink-0" />
+                ) : iconName === "WORKFLOW" ? (
+                  <Workflow className="size-3.5 shrink-0" />
+                ) : isWorkflowArtifactTab(file) ? (
+                  <ArtifactKindIcon kind={file.workflowArtifact.kind ?? (file.workflowArtifact.contentType?.startsWith("text/markdown") ? "markdown" : "file")} className="size-3.5 shrink-0" />
+                ) : isWorkflowAgentTab(file) ? (
+                  <WorkflowAgentTabIcon file={file} />
                 ) : agent ? (
                   <HarnessIcon
                     harness={agent.harness}

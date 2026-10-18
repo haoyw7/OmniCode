@@ -1,5 +1,5 @@
 // Resolves a workflow agent's runtime (provider, model, thinking, speed) into the
-// harness, model id and model settings a Monocode session runs with.
+// harness, model id and model settings a OmniCode session runs with.
 
 import type { AgentModel, ModelSetting } from "../../features/sessions/model/models";
 import { modelEffortSetting } from "../../features/sessions/model/models";
@@ -60,7 +60,7 @@ export type WorkflowResolvedRuntime = {
   modelSettings: Record<string, string>;
 };
 
-/** Full Monocode model id (`harness:native`) for a script- or user-provided model. */
+/** Full OmniCode model id (`harness:native`) for a script- or user-provided model. */
 export function workflowModelId(harness: HarnessId, model: string): string {
   const trimmed = model.trim();
   return trimmed.startsWith(`${harness}:`) ? trimmed : `${harness}:${trimmed}`;

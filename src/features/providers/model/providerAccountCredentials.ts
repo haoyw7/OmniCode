@@ -9,7 +9,7 @@ import {
 } from "./providerAccounts";
 
 type AccountSnapshot = { revision: number; accounts: HostProviderAccounts; defaults: SharedProviderDefaults };
-const CACHE_PREFIX = "monocode.hostAccounts.cache.v1:";
+const CACHE_PREFIX = "omnicode.hostAccounts.cache.v1:";
 let loading: Promise<void> | undefined;
 let loadedIdentity: string | undefined;
 let loadedRevision: number | undefined;

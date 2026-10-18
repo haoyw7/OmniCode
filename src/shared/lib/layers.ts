@@ -5,6 +5,8 @@
  * one place instead of by whichever stray `z-50` was written last.
  */
 export const LAYER = {
+  /** Window chrome stays below both Radix surfaces (50/60) and app overlays. */
+  windowChrome: 40,
   /** Anchored menus, dropdowns, and pickers. */
   popover: 80,
   /** A flyout hung off an open popover. */
@@ -13,8 +15,6 @@ export const LAYER = {
   dialog: 90,
   /** Menus opened from controls inside a modal dialog. */
   dialogPopover: 91,
-  /** Native window dragging and controls remain available above dialogs. */
-  windowChrome: 95,
   /** Labels that follow the pointer during a drag. */
   dragLabel: 96,
   /** Drop markers stay visible above the dragged card. */

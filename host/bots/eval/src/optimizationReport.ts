@@ -201,7 +201,7 @@ export function summarizeOptimization(
     {
       bothPassed: number;
       onlyControl: number;
-      onlyMonocode: number;
+      onlyOmniCode: number;
       bothFailed: number;
       incomplete: number;
     }
@@ -214,14 +214,14 @@ export function summarizeOptimization(
     const tally = (pairs[phase] = {
       bothPassed: 0,
       onlyControl: 0,
-      onlyMonocode: 0,
+      onlyOmniCode: 0,
       bothFailed: 0,
       incomplete: 0,
     });
     for (const id of ids) {
       const pair = rows.filter((r) => r.id === id && r.phase === phase);
       const a = pair.find((r) => r.arm === "control"),
-        b = pair.find((r) => r.arm === "monocode");
+        b = pair.find((r) => r.arm === "omnicode");
       if (!a || !b || !eligible(a) || !eligible(b)) {
         tally.incomplete++;
         continue;
@@ -234,7 +234,7 @@ export function summarizeOptimization(
           : ap
             ? "onlyControl"
             : bp
-              ? "onlyMonocode"
+              ? "onlyOmniCode"
               : "bothFailed"
       ]++;
     }

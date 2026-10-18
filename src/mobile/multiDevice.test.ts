@@ -131,7 +131,7 @@ it.each([false, true])("keeps unseen replies ready for the drawer after leaving 
   await act(async () => { button("My assistant").click(); await vi.dynamicImportSettled(); });
   messages = [{ id: "seen", kind: "assistant", revision: 1, createdAt: 1, text: "Seen reply" }];
   await act(async () => vi.advanceTimersByTimeAsync(2000));
-  expect(localStorage.getItem("monocode.assistant-read:a")).toBe("1");
+  expect(localStorage.getItem("omnicode.assistant-read:a")).toBe("1");
   if (native) {
     // Android can report appStateChange before the WebView's visibility changes.
     const appState = fixture.appListener.mock.calls.find(([event]) => event === "appStateChange")![1];
@@ -139,9 +139,9 @@ it.each([false, true])("keeps unseen replies ready for the drawer after leaving 
     act(() => appState({ isActive: false }));
     messages.push({ id: "background", kind: "assistant", revision: 2, createdAt: 2, text: "Background reply" });
     await act(async () => vi.advanceTimersByTimeAsync(2000));
-    expect(localStorage.getItem("monocode.assistant-read:a")).toBe("1");
+    expect(localStorage.getItem("omnicode.assistant-read:a")).toBe("1");
     await act(async () => appState({ isActive: true }));
-    expect(localStorage.getItem("monocode.assistant-read:a")).toBe("2");
+    expect(localStorage.getItem("omnicode.assistant-read:a")).toBe("2");
   }
   await act(async () => button("Back").click());
   await act(async () => vi.advanceTimersByTimeAsync(300));
@@ -152,7 +152,7 @@ it.each([false, true])("keeps unseen replies ready for the drawer after leaving 
   messages.push({ id: "while-open", kind: "assistant", revision: 4, createdAt: 4, text: "Another reply" });
   await act(async () => vi.advanceTimersByTimeAsync(2000));
   expect(badge()?.textContent).toBe("2");
-  expect(localStorage.getItem("monocode.assistant-read:a")).toBe(native ? "2" : "1");
+  expect(localStorage.getItem("omnicode.assistant-read:a")).toBe(native ? "2" : "1");
 });
 
 it("moves the device selector above navigation, uses dots, and probes without changing the active device", async () => {
@@ -275,7 +275,7 @@ it("opens the selected device's error state on an offline launch and can switch 
     if (endpoint === a.endpoint) throw new Error("Device A offline");
     return respond(endpoint, input);
   });
-  localStorage.setItem("monocode.mobile.lastOnline:http://a", String(new Date(2026, 8, 15, 12).getTime()));
+  localStorage.setItem("omnicode.mobile.lastOnline:http://a", String(new Date(2026, 8, 15, 12).getTime()));
   await mount();
   expect(list().textContent).toContain("Couldn’t connect");
   expect(list().textContent).toContain("Last online: September 15, 2026");
@@ -312,7 +312,7 @@ it("lists every device from Home's device row and opens another device's convers
   expect(list().textContent).not.toContain("Device B conversation");
   await act(async () => chips()[0].click());
   await act(async () => vi.advanceTimersByTimeAsync(0));
-  expect(localStorage.getItem("monocode.mobile.homeScope")).toBe("all");
+  expect(localStorage.getItem("omnicode.mobile.homeScope")).toBe("all");
   expect(fixture.client!.connection?.environmentId).toBe("a");
   const remote = [...list().querySelectorAll<HTMLButtonElement>('[data-session-id="shared-session"]')]
     .find((row) => row.textContent?.includes("Device B conversation"))!;

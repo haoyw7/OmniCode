@@ -19,7 +19,7 @@ import type {
 
 /**
  * Host-side ownership for native sessions: an advisory lock file serializes
- * MonoCode writers, and a `/proc` scan keeps sessions read-only while an
+ * OmniCode writers, and a `/proc` scan keeps sessions read-only while an
  * external CLI may still be writing them.
  */
 
@@ -39,7 +39,7 @@ export function nativeLockPath(
 
 export type NativeLease = { release(): Promise<void> };
 
-export const IN_USE_BY_MONOCODE = "Native session is in use by another MonoCode instance";
+export const IN_USE_BY_OMNICODE = "Native session is in use by another OmniCode instance";
 export const OWNERSHIP_UNVERIFIED = "Native session ownership could not be verified";
 
 /**
@@ -86,7 +86,7 @@ export function acquireNativeLease(
     });
     child.on("error", () => fail(OWNERSHIP_UNVERIFIED));
     child.on("exit", (code) =>
-      fail(code === 75 ? IN_USE_BY_MONOCODE : OWNERSHIP_UNVERIFIED),
+      fail(code === 75 ? IN_USE_BY_OMNICODE : OWNERSHIP_UNVERIFIED),
     );
   });
 }
@@ -348,7 +348,7 @@ export class NativeSessionGuard {
         result = access(
           link,
           "unknown",
-          error instanceof Error && error.message === IN_USE_BY_MONOCODE ? "anotherMonocode" : "unavailable",
+          error instanceof Error && error.message === IN_USE_BY_OMNICODE ? "anotherOmniCode" : "unavailable",
         );
       }
     }
@@ -398,7 +398,7 @@ export function nativeAccessMessage(result: NativeSessionAccess): string {
     return `This conversation is open in ${LABEL[holder.provider] ?? holder.provider} (pid ${holder.pid}). Close it there before continuing here.`;
   if (holder && result.reason === "ambiguousProcess")
     return `${LABEL[holder.provider] ?? holder.provider} is running in this project (pid ${holder.pid}) and may be using this conversation. Close it before continuing here.`;
-  if (result.reason === "anotherMonocode")
+  if (result.reason === "anotherOmniCode")
     return "OmniCode desktop is using this conversation. Try again when it finishes.";
   if (result.reason === "unsupportedPlatform")
     return "Native session ownership cannot be verified on this platform.";

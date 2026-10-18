@@ -15,7 +15,7 @@ vi.mock("@formkit/auto-animate/react", () => ({ useAutoAnimate: () => [animation
 
 const A = "/work/alpha";
 const B = "/work/beta";
-const CHAT = "/home/me/Documents/ohmymonocode/2026-10-13/chat-120000-abcdef";
+const CHAT = "/home/me/Documents/omnicode/2026-10-13/chat-120000-abcdef";
 let root: Root;
 let container: HTMLDivElement;
 let props: ComponentProps<typeof ProjectsPage>;

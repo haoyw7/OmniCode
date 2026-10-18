@@ -11,7 +11,7 @@ import { REMOTE_PROVIDERS } from "../src/features/connections/model/protocol";
 it.each(["codex", "pi", "omp"] as const)(
   "uses the desktop's configured %s CLI for discovery and execution without falling back",
   async (provider) => {
-    const directory = mkdtempSync(join(tmpdir(), "monocode-desktop-cli-"));
+    const directory = mkdtempSync(join(tmpdir(), "omnicode-desktop-cli-"));
     const config = join(directory, "desktop-owner.json");
     const file = join(directory, "custom-cli.cjs");
     writeFileSync(file, "console.log('configured-cli 1.0');");
@@ -41,7 +41,7 @@ it.each(["codex", "pi", "omp"] as const)(
 it.each(["codex", "claude"])(
   "uses the existing desktop named %s account without inherited API credentials",
   async (provider) => {
-    const directory = mkdtempSync(join(tmpdir(), "monocode-shared-account-"));
+    const directory = mkdtempSync(join(tmpdir(), "omnicode-shared-account-"));
     const config = join(directory, "desktop-owner.json");
     writeFileSync(config, JSON.stringify({ desktopDirectory: directory }));
     const file = join(directory, "provider.cjs");
@@ -104,7 +104,7 @@ it.each(["codex", "claude"])(
 );
 
 it.each(["codex", "claude"].flatMap(provider => ["work", "default"].map(accountId => [provider, accountId])))("runs %s profile %s with a configured external Home without copying credentials", async (provider, accountId) => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-custom-home-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-custom-home-"));
   const home = join(directory, "external home");
   const profiles = join(directory, "provider-accounts");
   mkdirSync(home); mkdirSync(profiles);
@@ -140,7 +140,7 @@ it.each(["codex", "claude"].flatMap(provider => ["work", "default"].map(accountI
 });
 
 it("resolves every provider and runs only allowed provider commands", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-catalog-test-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-catalog-test-"));
   const file = join(directory, "provider.cjs");
   writeFileSync(file, "console.log(JSON.stringify(process.argv.slice(2)))");
   const backend = new HostChildBackend(
@@ -291,7 +291,7 @@ it("runs the resolved Claude version fallback in headless mode", async () => {
 it.each([false, true])(
   "stops a provider tree (ignores SIGTERM: %s)",
   async (stubborn) => {
-    const directory = mkdtempSync(join(tmpdir(), "monocode-provider-tree-"));
+    const directory = mkdtempSync(join(tmpdir(), "omnicode-provider-tree-"));
     const file = join(directory, "provider.cjs");
     writeFileSync(
       file,
@@ -339,8 +339,8 @@ setInterval(() => {}, 1000);
 );
 
 it.each([0, 1])("reports provider exit %s while the host stays alive", async (code) => {
-  vi.stubEnv("MONOCODE_PROVIDER_SUPERVISOR", "node");
-  const directory = mkdtempSync(join(tmpdir(), "monocode-provider-exit-"));
+  vi.stubEnv("OMNICODE_PROVIDER_SUPERVISOR", "node");
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-provider-exit-"));
   const file = join(directory, "provider.cjs");
   writeFileSync(file, `console.log('provider output'); console.error('provider diagnostic'); process.exitCode = ${code};`);
   const backend = new HostChildBackend();
@@ -366,7 +366,7 @@ it.each([0, 1])("reports provider exit %s while the host stays alive", async (co
 });
 
 it("stops a provider tree when its host IPC disconnects unexpectedly", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-provider-crash-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-provider-crash-"));
   const treeFile = join(directory, "tree.json");
   const providerFile = join(directory, "provider.cjs");
   writeFileSync(

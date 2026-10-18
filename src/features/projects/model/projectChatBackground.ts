@@ -14,12 +14,12 @@ import { activePreferenceStore, preferenceStorage, SHARED_PREFERENCES_CHANGED } 
 import { parsePreferenceAsset } from "../../settings/model/preferenceAssets";
 import { pathKey } from "../../../shared/lib/paths";
 
-const KEY = "monocode:project-chat-backgrounds";
-const SHARED_KEY = "monocode.projectBackgroundAssets";
+const KEY = "omnicode:project-chat-backgrounds";
+const SHARED_KEY = "omnicode.projectBackgroundAssets";
 const projectKey = (project: string) => activePreferenceStore() ? pathKey(project) : project;
 
 export const PROJECT_CHAT_BACKGROUND_CHANGED =
-  "monocode:project-chat-background-changed";
+  "omnicode:project-chat-background-changed";
 
 export type ProjectChatBackground = {
   path: string;

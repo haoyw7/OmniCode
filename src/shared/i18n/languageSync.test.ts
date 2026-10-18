@@ -49,7 +49,7 @@ it("synchronizes native menus and other windows without rebroadcast loops", asyn
     setUiLanguage("en");
     await settle();
     expect(bus.emit).toHaveBeenCalledExactlyOnceWith(
-      "monocode-ui-language-changed",
+      "omnicode-ui-language-changed",
       "en",
     );
     expect(bus.invoke).toHaveBeenLastCalledWith("menu_set_language", {

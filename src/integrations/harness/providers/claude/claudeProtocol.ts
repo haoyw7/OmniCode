@@ -257,7 +257,7 @@ export function buildClaudeSpawnArgs(input: {
   if (input.includePartialMessages !== false) {
     args.push("--include-partial-messages");
   }
-  // Isolated spawns are MonoCode's own helper calls (titles, summaries); the
+  // Isolated spawns are OmniCode's own helper calls (titles, summaries); the
   // user's hooks have no business firing there. Interactive sessions inherit
   // whatever the caller decided so `~/.claude` hooks keep working.
   const settings: ClaudeCliSettings = {
@@ -278,7 +278,7 @@ export function buildClaudeSpawnArgs(input: {
         type: "stdio", command: launch.command, args: launch.args, timeout: 250_000,
         // Claude expands these references at launch. Values never enter args,
         // native configuration files, the transcript or Host run records.
-        env: { ...launch.env, MONOCODE_CONTROL_ENDPOINT: "${MONOCODE_CONTROL_ENDPOINT}", MONOCODE_CONTROL_TOKEN: "${MONOCODE_CONTROL_TOKEN}" },
+        env: { ...launch.env, OMNICODE_CONTROL_ENDPOINT: "${OMNICODE_CONTROL_ENDPOINT}", OMNICODE_CONTROL_TOKEN: "${OMNICODE_CONTROL_TOKEN}" },
       } } }));
     }
   }
@@ -611,7 +611,7 @@ export function isSubagentMessage(rec: Record<string, unknown>): boolean {
  * On resume, the CLI re-reports every background task the session started
  * that it considers unfinished — even ones already stopped and reported —
  * and answers each with an empty, zero-turn result. That result belongs to
- * no turn, so it must not end the one MonoCode is waiting on.
+ * no turn, so it must not end the one OmniCode is waiting on.
  */
 export function isReplayedTaskNotificationResult(
   rec: Record<string, unknown>,

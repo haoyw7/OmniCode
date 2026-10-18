@@ -49,7 +49,7 @@ export class HostWorkspaceJournal {
     private readonly request: HostStateRequest,
     private readonly storage: Storage,
   ) {
-    this.prefix = `monocode.host-workspace.v1:${encodeURIComponent(environmentId)}:`;
+    this.prefix = `omnicode.host-workspace.v1:${encodeURIComponent(environmentId)}:`;
   }
 
   get pending(): boolean {
@@ -212,7 +212,7 @@ let lastSnapshot: SharedWorkspace | undefined;
 let activeSinceSave = false;
 let activityTimer: ReturnType<typeof setTimeout> | undefined;
 let disposeDesktop: (() => void) | undefined;
-export const HOST_WORKSPACE_STATUS = "monocode:host-workspace-status";
+export const HOST_WORKSPACE_STATUS = "omnicode:host-workspace-status";
 const notify = () => window.dispatchEvent(new Event(HOST_WORKSPACE_STATUS));
 export const hostWorkspacePending = () => desktop?.pending ?? false;
 
@@ -236,7 +236,7 @@ export async function initializeHostWorkspaces(): Promise<void> {
     if (descriptor.environmentId !== environmentId) throw new Error("Host identity changed");
     if (!descriptor.capabilities?.includes("workspaces.read")) throw new Error(translate("Update Host to share workspace state."));
   } catch (error) {
-    const cached = localStorage.getItem(`monocode.host-workspace.v1:${encodeURIComponent(environmentId)}:cache:desktop`);
+    const cached = localStorage.getItem(`omnicode.host-workspace.v1:${encodeURIComponent(environmentId)}:cache:desktop`);
     if (!cached || !hostStateTransportUnavailable(error)) throw error;
   }
   desktop = new HostWorkspaceJournal(environmentId, crypto.randomUUID(), "desktop",

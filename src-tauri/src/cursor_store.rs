@@ -330,7 +330,7 @@ fn cap_text(value: &str, limit: usize) -> String {
 /// Recover tool arguments that Cursor currently omits from its ACP events.
 ///
 /// Cursor persists the complete call in a per-session SQLite store before
-/// sending the corresponding result. MonoCode only opens that store read-only.
+/// sending the corresponding result. OmniCode only opens that store read-only.
 #[tauri::command]
 pub async fn cursor_tool_calls(
     session_id: String,

@@ -39,7 +39,7 @@ fn runtime(app: &AppHandle) -> Result<(PathBuf, PathBuf), String> {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"))
             .parent()
             .ok_or("Missing development directory")?;
-        let entry = root.join("build/host/monocode-host.mjs");
+        let entry = root.join("build/host/omnicode-host.mjs");
         if entry.is_file() {
             return Ok((PathBuf::from("node"), entry));
         }
@@ -89,7 +89,7 @@ pub fn shared_host_prepare(
         .state::<crate::harness::HarnessHost>()
         .runtime_binary_paths();
     command.env(
-        "MONOCODE_DESKTOP_BINARY_PATHS",
+        "OMNICODE_DESKTOP_BINARY_PATHS",
         serde_json::to_string(&binary_paths).map_err(|e| e.to_string())?,
     );
     crate::hide_window_console(&mut command);
@@ -124,7 +124,7 @@ pub fn stop_shared_host(app: &AppHandle) {
     let (node, entry) = match runtime(app) {
         Ok(runtime) => runtime,
         Err(err) => {
-            eprintln!("monocode: stop shared host: {err}");
+            eprintln!("omnicode: stop shared host: {err}");
             return;
         }
     };
@@ -133,17 +133,17 @@ pub fn stop_shared_host(app: &AppHandle) {
     crate::hide_window_console(&mut command);
     match command.output() {
         Ok(output) if !output.status.success() => eprintln!(
-            "monocode: stop shared host: {}",
+            "omnicode: stop shared host: {}",
             String::from_utf8_lossy(&output.stderr).trim()
         ),
-        Err(err) => eprintln!("monocode: stop shared host: {err}"),
+        Err(err) => eprintln!("omnicode: stop shared host: {err}"),
         Ok(_) => {}
     }
 }
 
 /// The Windows updater runs NSIS and then `std::process::exit`, skipping the
 /// quit path. The detached shared Host keeps executing `node.exe` and
-/// `monocode-supervisor.exe` from the install directory, so the installer
+/// `omnicode-supervisor.exe` from the install directory, so the installer
 /// cannot overwrite them. Stop it and wait until those images are released.
 #[tauri::command(async)]
 pub fn prepare_update_install(app: AppHandle) -> Result<(), String> {
@@ -280,7 +280,7 @@ impl Drop for SharedResourceOwner {
 }
 
 fn host_database() -> Option<PathBuf> {
-    crate::dirs_home().map(|home| Path::new(&home).join(".monocode-host/host.db"))
+    crate::dirs_home().map(|home| Path::new(&home).join(".omnicode-host/host.db"))
 }
 
 fn resource_path(path: &Path) -> String {
@@ -556,7 +556,7 @@ pub fn reserve_worktree_removal(path: &Path) -> Result<Option<rusqlite::Connecti
     let Some(home) = crate::dirs_home() else {
         return Ok(None);
     };
-    worktree_removal_lease(&Path::new(&home).join(".monocode-host/host.db"), path)
+    worktree_removal_lease(&Path::new(&home).join(".omnicode-host/host.db"), path)
 }
 
 fn worktree_removal_lease(
@@ -602,7 +602,7 @@ mod tests {
     #[test]
     fn retirement_manifest_file_is_reused_and_repaired_from_the_durable_list() {
         let root = std::env::temp_dir().join(format!(
-            "monocode-retirement-manifest-{}",
+            "omnicode-retirement-manifest-{}",
             uuid::Uuid::new_v4()
         ));
         std::fs::create_dir_all(&root).unwrap();
@@ -618,7 +618,7 @@ mod tests {
     }
     #[test]
     fn shared_resources_protect_nested_paths_without_locking_database_and_drop_after_last_clone() {
-        let root = std::env::temp_dir().join(format!("monocode-resource-{}", uuid::Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!("omnicode-resource-{}", uuid::Uuid::new_v4()));
         let tree = root.join("tree");
         std::fs::create_dir_all(tree.join("nested")).unwrap();
         let database = root.join("host.db");
@@ -680,7 +680,7 @@ mod tests {
         for case in cases["cases"].as_array().unwrap() {
             let name = case["name"].as_str().unwrap();
             let root = std::env::temp_dir().join(format!(
-                "monocode-checkout-conformance-{}",
+                "omnicode-checkout-conformance-{}",
                 uuid::Uuid::new_v4()
             ));
             std::fs::create_dir_all(&root).unwrap();
@@ -721,7 +721,7 @@ mod tests {
     #[test]
     fn dead_resource_owners_are_recovered_without_expiring_live_buffers() {
         let root =
-            std::env::temp_dir().join(format!("monocode-resource-dead-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("omnicode-resource-dead-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&root).unwrap();
         let database = root.join("host.db");
         let writer = rusqlite::Connection::open(&database).unwrap();
@@ -748,7 +748,7 @@ mod tests {
     #[test]
     fn active_writes_and_integration_exclude_each_other_but_mounted_buffers_do_not() {
         let root = std::env::temp_dir().join(format!(
-            "monocode-integration-resource-{}",
+            "omnicode-integration-resource-{}",
             uuid::Uuid::new_v4()
         ));
         std::fs::create_dir_all(&root).unwrap();
@@ -785,7 +785,7 @@ mod tests {
     #[test]
     fn native_mutations_respect_host_execution_leases_and_leave_other_paths_available() {
         let root =
-            std::env::temp_dir().join(format!("monocode-bot-resource-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("omnicode-bot-resource-{}", uuid::Uuid::new_v4()));
         let project = root.join("project");
         let unrelated = root.join("other");
         std::fs::create_dir_all(project.join("nested")).unwrap();
@@ -812,7 +812,7 @@ mod tests {
     fn transferred_process_resource_survives_lease_drop_until_process_exit() {
         use std::os::unix::process::CommandExt;
         let root =
-            std::env::temp_dir().join(format!("monocode-live-resource-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("omnicode-live-resource-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&root).unwrap();
         let database = root.join("host.db");
         let conn = rusqlite::Connection::open(&database).unwrap();
@@ -843,7 +843,7 @@ mod tests {
     #[test]
     fn native_removal_honors_shared_conversation_references_without_holding_a_write_transaction() {
         let root =
-            std::env::temp_dir().join(format!("monocode-shared-worktree-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("omnicode-shared-worktree-{}", uuid::Uuid::new_v4()));
         let tree = root.join("tree");
         std::fs::create_dir_all(tree.join("nested")).unwrap();
         let database = root.join("host.db");
@@ -875,7 +875,7 @@ mod tests {
     }
     #[test]
     fn packaged_runtime_requires_both_node_and_host() {
-        let root = std::env::temp_dir().join(format!("monocode-runtime-{}", uuid::Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!("omnicode-runtime-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(root.join("bin")).unwrap();
         assert!(bundled_runtime(&root).is_none());
         std::fs::write(root.join("host.mjs"), "").unwrap();

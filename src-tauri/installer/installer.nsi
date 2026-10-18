@@ -1,8 +1,8 @@
 ; Based on Tauri CLI 2.11.4 (MIT; see LICENSE-MIT).
 ; https://github.com/tauri-apps/tauri/blob/tauri-cli-v2.11.4/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi
 ; Keep installation/update/uninstallation code aligned with that template.
-; MonoCode changes: pixel-ui.nsh callbacks, combined setup, custom finish,
-; and the desktop shortcut choice collected before installation.
+; OmniCode changes: omnicode-ui.nsh callbacks, combined setup, custom finish,
+; dark restyling hooks, and the desktop shortcut choice collected before installation.
 Unicode true
 ManifestDPIAware true
 ; Add in `dpiAwareness` `PerMonitorV2` to manifest for Windows 10 1607+ (note this should not affect lower versions since they should be able to ignore this and pick up `dpiAware` `true` set by `ManifestDPIAware true`)
@@ -298,6 +298,7 @@ Function PageReinstall
       SendMessage $R3 ${BM_SETCHECK} ${BST_CHECKED} 0
     ${EndIf}
 
+    Call MonoReinstallShow
     ${NSD_SetFocus} $R2
     nsDialogs::Show
   ${EndIf}
@@ -420,7 +421,7 @@ FunctionEnd
 Var DeleteAppDataCheckbox
 Var DeleteAppDataCheckboxState
 !define /ifndef WS_EX_LAYOUTRTL         0x00400000
-!define MUI_PAGE_CUSTOMFUNCTION_SHOW un.ConfirmShow
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW un.MonoConfirmShow
 Function un.ConfirmShow ; Add add a `Delete app data` check box
   ; $1 inner dialog HWND
   ; $2 window DPI
@@ -458,6 +459,7 @@ FunctionEnd
 !insertmacro MUI_UNPAGE_CONFIRM
 
 ; 2. Uninstalling Page
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW un.MonoProgressShow
 !insertmacro MUI_UNPAGE_INSTFILES
 
 ;Languages
@@ -469,7 +471,7 @@ FunctionEnd
   !include "{{this}}"
 {{/each}}
 
-!insertmacro MONOCODE_UI_FUNCTIONS
+!insertmacro OMNICODE_UI_FUNCTIONS
 
 Function .onInit
   StrCpy $MonoDesktopShortcut ${BST_CHECKED}

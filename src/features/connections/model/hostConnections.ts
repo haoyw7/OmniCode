@@ -8,7 +8,7 @@ import type { HostStateRequest } from "./hostWorkspace";
 import { translate } from "../../../shared/i18n/language";
 import { hostStateTransportUnavailable } from "./hostStateOffline";
 
-export const HOST_CONNECTIONS_CHANGE = "monocode:host-connections";
+export const HOST_CONNECTIONS_CHANGE = "omnicode:host-connections";
 type PendingChange = { operationId: string; changes: Record<string, HostConnectionDefinition | null>; importRelease?: boolean };
 export type HostConnectionDirectoryState = { connections: HostConnectionDefinition[]; pending: boolean; error: string };
 
@@ -34,7 +34,7 @@ export class HostConnectionDirectory {
     private readonly request: HostStateRequest,
     private readonly storage: Storage,
   ) {
-    this.prefix = `monocode.host-connections.v1:${encodeURIComponent(environmentId)}:`;
+    this.prefix = `omnicode.host-connections.v1:${encodeURIComponent(environmentId)}:`;
     try {
       const cached = JSON.parse(storage.getItem(`${this.prefix}cache`) ?? "null");
       if (cached && Number.isSafeInteger(cached.revision) && Array.isArray(cached.connections)) this.value = cached;
@@ -125,7 +125,7 @@ export async function initializeHostConnections(options?: {
   try {
     descriptor = await request<HostDescriptor>("environment.describe");
   } catch (error) {
-    const cached = localStorage.getItem(`monocode.host-connections.v1:${encodeURIComponent(environmentId)}:cache`);
+    const cached = localStorage.getItem(`omnicode.host-connections.v1:${encodeURIComponent(environmentId)}:cache`);
     if (!(options?.allowCached ?? !options) || !cached || !hostStateTransportUnavailable(error)) throw error;
     initialError = String(error);
   }

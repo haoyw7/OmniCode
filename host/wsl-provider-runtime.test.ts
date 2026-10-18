@@ -12,7 +12,7 @@ const directories: string[] = [];
 afterEach(async () => { await Promise.all(directories.splice(0).map(path => rm(path, { recursive: true, force: true }))); });
 
 async function fixture() {
-  const root = await mkdtemp(join(tmpdir(), "monocode-wsl-runtime-")); directories.push(root);
+  const root = await mkdtemp(join(tmpdir(), "omnicode-wsl-runtime-")); directories.push(root);
   const home = join(root, "home"); await mkdir(home);
   const directory = join(root, "cache/claude/linux-x64/1.2.3-0123456789abcdef"); await mkdir(directory, { recursive: true });
   await writeFile(join(directory, "claude"), "fixture-native-artifact");
@@ -54,7 +54,7 @@ it("rejects transfer checksum changes without publishing an installation", async
   const { artifact, rpc, home } = await fixture();
   artifact.files[0].sha256 = "0".repeat(64);
   await expect(ensureWslProviderRuntime(rpc, artifact)).rejects.toThrow("checksum mismatch");
-  await expect(stat(join(home, ".monocode/remote/providers/claude/1.2.3-0123456789abcdef"))).rejects.toMatchObject({ code: "ENOENT" });
+  await expect(stat(join(home, ".omnicode/remote/providers/claude/1.2.3-0123456789abcdef"))).rejects.toMatchObject({ code: "ENOENT" });
 });
 
 it("rejects a manifest path that escapes the provider cache", async () => {
@@ -85,5 +85,5 @@ it("rejects a corrupt archive before extracting or publishing it", async () => {
   const bytes = await readFile(archive.path); bytes[bytes.length - 1] ^= 1;
   await writeFile(archive.path, bytes);
   await expect(ensureWslProviderRuntime(rpc, artifact)).rejects.toThrow("archive checksum mismatch");
-  await expect(stat(join(home, ".monocode/remote/providers/claude/1.2.3-0123456789abcdef"))).rejects.toMatchObject({ code: "ENOENT" });
+  await expect(stat(join(home, ".omnicode/remote/providers/claude/1.2.3-0123456789abcdef"))).rejects.toMatchObject({ code: "ENOENT" });
 });

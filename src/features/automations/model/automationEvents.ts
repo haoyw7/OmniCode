@@ -27,7 +27,7 @@ export type ClaimedInboxAutomationRun = DueAutomationRun & {
   linkedWorkItem?: LinkedWorkItem;
 };
 
-const RETRY_STORAGE_KEY = "monocode.automation-inbox-retries.v1";
+const RETRY_STORAGE_KEY = "omnicode.automation-inbox-retries.v1";
 const MAX_RETRY_ITEMS = 500;
 let retryItems: Map<string, InboxItem> | undefined;
 

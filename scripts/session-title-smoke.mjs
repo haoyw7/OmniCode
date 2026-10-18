@@ -8,7 +8,7 @@ import { promisify } from "node:util";
 
 const run = promisify(execFile);
 const root = resolve(".");
-const directory = await mkdtemp(join(tmpdir(), "monocode-title-smoke-"));
+const directory = await mkdtemp(join(tmpdir(), "omnicode-title-smoke-"));
 try {
   for (const binary of [
     "codex",
@@ -56,7 +56,7 @@ try {
   } else console.log('Codex: native metadata database unavailable; not verified');
   let found = false;
   const claude = process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude');
-  for (const cwd of [${JSON.stringify(root)}, process.env.MONOCODE_TITLE_SMOKE_CWD].filter(Boolean)) {
+  for (const cwd of [${JSON.stringify(root)}, process.env.OMNICODE_TITLE_SMOKE_CWD].filter(Boolean)) {
     const project = join(claude, 'projects', cwd.replace(/[^a-zA-Z0-9]/g, '-'));
     if (!existsSync(project)) continue;
     for (const name of readdirSync(project).filter((name) => name.endsWith('.jsonl')).slice(0, 20)) {

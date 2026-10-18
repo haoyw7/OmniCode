@@ -1,4 +1,4 @@
-// Monocode shim for ZCode's ControlHintTooltip: a Radix tooltip with title and description.
+// OmniCode shim for ZCode's ControlHintTooltip: a Radix tooltip with title and description.
 import type { ReactNode, Ref } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../../shared/ui/primitives/Tooltip.js";
 import { cn } from "../../../shared/lib/cn";

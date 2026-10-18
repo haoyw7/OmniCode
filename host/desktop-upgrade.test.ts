@@ -15,7 +15,7 @@ import { HostStore } from "./store";
 import { prepareDesktopHost } from "./desktop";
 
 async function legacyHost(busy: boolean, status: { sharedDesktop?: number; orchestrationHost?: number; nativeSessionAccess?: number; nativeSessionManager?: number } = {}) {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-legacy-upgrade-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-legacy-upgrade-"));
   const desktop = join(directory, "desktop");
   mkdirSync(desktop);
   const store = new HostStore(join(directory, "host.db"));
@@ -103,7 +103,7 @@ it.each([
     const prepared = await prepareDesktopHost(
       old.directory,
       old.desktop,
-      resolve("build/host/monocode-host.mjs"),
+      resolve("build/host/omnicode-host.mjs"),
       old.port,
     );
     expect(old.stops()).toBe(1);
@@ -146,7 +146,7 @@ it.each([
       prepareDesktopHost(
         old.directory,
         old.desktop,
-        resolve("build/host/monocode-host.mjs"),
+        resolve("build/host/omnicode-host.mjs"),
         old.port,
       ),
     ).rejects.toThrow("Finish the running");
@@ -158,7 +158,7 @@ it.each([
 });
 
 it("refuses an older Host upgrade while orchestration is active even with no running lead turn", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-upgrade-active-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-upgrade-active-"));
   const actions: string[] = [];
   const server = createServer((request, response) => {
     let body = "";

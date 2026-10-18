@@ -64,7 +64,7 @@ export type GitlabMrDiff = {
   truncated: boolean;
 };
 
-export const GITLAB_CHANGE_EVENT = "monocode:gitlab-change";
+export const GITLAB_CHANGE_EVENT = "omnicode:gitlab-change";
 
 const repoByPath = new Map<string, string>();
 const detailsByKey = new Map<string, GitlabWorkItemDetails>();

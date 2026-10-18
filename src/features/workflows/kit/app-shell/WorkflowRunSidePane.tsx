@@ -259,6 +259,7 @@ const WorkflowRunContent = memo(function WorkflowRunContent({
         siteId: instance.siteId,
         ordinal: instance.ordinal,
         ...(instance.name ? { actorName: instance.name } : {}),
+        ...(instance.avatar ? { avatar: instance.avatar } : {}),
       });
     },
     [onOpenWorkflowActorSession, tab.parentSessionId, tab.runId, tabScope],
@@ -317,6 +318,7 @@ const WorkflowRunContent = memo(function WorkflowRunContent({
         parentSessionId: tab.parentSessionId,
         runId: tab.runId,
         artifactId,
+        ...(artifact ? { kind: artifact.kind } : {}),
         ...(artifact?.title === undefined ? {} : { title: artifact.title }),
         ...(artifact?.contentType === undefined ? {} : { contentType: artifact.contentType }),
         ...(artifact?.sourcePath === undefined ? {} : { sourcePath: artifact.sourcePath }),
@@ -409,7 +411,7 @@ const WorkflowRunContent = memo(function WorkflowRunContent({
           artifacts={artifacts}
           runId={tab.runId}
           sessionId={tab.parentSessionId}
-          {...(onOpenWorkflowArtifact === undefined ? {} : { onOpenArtifact: handleOpenArtifact })}
+          {...(onOpenWorkflowArtifact ? { onOpenArtifact: handleOpenArtifact } : {})}
         />
       )}
     </div>
@@ -437,7 +439,7 @@ export const WorkflowRunSidePane = memo(function WorkflowRunSidePane({
   tab: WorkflowRunSidePaneTab;
   /** 子代理行 → actor transcript tab。缺省即行不可点。 */
   onOpenWorkflowActorSession?: (request: OpenScopedWorkflowActorSessionSideTabRequest) => void;
-  /** 产物卡片 → 全尺寸查看 tab。缺省即卡片不可点。 */
+  /** 产物卡片 → 工作区产物标签页。 */
   onOpenWorkflowArtifact?: (request: OpenScopedWorkflowArtifactSideTabRequest) => void;
   /** 「已被 run X 替代」→ 后继 run 的详情 tab。缺省即那一行是静态文字。 */
   onOpenWorkflowRun?: (request: OpenScopedWorkflowRunSideTabRequest) => void;

@@ -23,7 +23,7 @@ afterEach(() => {
   for (const cleanup of cleanups.splice(0).reverse()) cleanup();
 });
 function setup() {
-  const root = mkdtempSync(join(tmpdir(), "monocode-checkout-guard-"));
+  const root = mkdtempSync(join(tmpdir(), "omnicode-checkout-guard-"));
   const path = join(root, "tree");
   mkdirSync(path);
   const database = join(root, "host.db");

@@ -1,8 +1,8 @@
 import { mergeOrderedSubset, orderByIds } from "../../shared/lib/reorder";
 import { preferenceStorage } from "../../features/settings/model/sharedPreferences";
 
-const KEY = "monocode.sidebarPinnedOrder.v1";
-const CHANGED = "monocode:sidebar-pinned-order-changed";
+const KEY = "omnicode.sidebarPinnedOrder.v1";
+const CHANGED = "omnicode:sidebar-pinned-order-changed";
 
 /** Preserve manual mixing; newly pinned sessions default to before projects. */
 export function orderSidebarPins<T extends { id: string }>(

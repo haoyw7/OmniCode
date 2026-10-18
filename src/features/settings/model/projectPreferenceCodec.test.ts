@@ -12,7 +12,7 @@ beforeEach(() => {
 
 it("uses one project identity for local and remote path representations", () => {
   const codec = createProjectPreferenceCodec();
-  const key = "monocode.projectProviderSettings.v1";
+  const key = "omnicode.projectProviderSettings.v1";
   const wire = codec.encode(key, { "/app": { defaultHarness: "codex" } });
   expect(wire).toEqual({ "@project:host-a:project-a": { defaultHarness: "codex" } });
   configureSharedHost("host-b", [], "machine-b");
@@ -23,11 +23,11 @@ it("uses one project identity for local and remote path representations", () => 
 
 it("preserves unknown remote entries when editing visible projects", () => {
   const codec = createProjectPreferenceCodec();
-  const key = "monocode.projectRailOrder";
+  const key = "omnicode.projectRailOrder";
   const remote = projectPreferenceIdentity("other", "not-paired");
   expect(codec.decode(key, [remote, "@project:host-a:project-a"])).toEqual(["/app"]);
   expect(codec.encode(key, [])).toEqual([remote]);
-  const mapKey = "monocode.providerAccountSelections.v1";
+  const mapKey = "omnicode.providerAccountSelections.v1";
   codec.decode(mapKey, { [remote]: { codex: "work" }, "@project:host-a:project-a": { codex: "default" } });
   expect(codec.encode(mapKey, { "/app": { codex: "changed" } })).toEqual({
     [remote]: { codex: "work" }, "@project:host-a:project-a": { codex: "changed" },
@@ -36,7 +36,7 @@ it("preserves unknown remote entries when editing visible projects", () => {
 
 it("preserves recency metadata and does not send unregistered client paths", () => {
   const codec = createProjectPreferenceCodec();
-  const key = "monocode.recentProjects";
+  const key = "omnicode.recentProjects";
   const wire = codec.encode(key, [{ path: "/app", openedAt: 42 }]);
   expect(wire).toEqual([{ path: "@project:host-a:project-a", openedAt: 42 }]);
   expect(codec.decode(key, wire)).toEqual([{ path: "/app", openedAt: 42 }]);
@@ -46,14 +46,14 @@ it("preserves recency metadata and does not send unregistered client paths", () 
 it("normalizes session aliases without rewriting user folder names", () => {
   const codec = createProjectPreferenceCodec();
   rememberRemoteSession("shell", "host-session", { environmentId: "host-a", projectId: "project-a" });
-  expect(codec.encode("monocode.sessionFolders", { "/app": [{ name: "shell", sessionIds: ["shell"] }] }))
+  expect(codec.encode("omnicode.sessionFolders", { "/app": [{ name: "shell", sessionIds: ["shell"] }] }))
     .toEqual({ "@project:host-a:project-a": [{ name: "shell", sessionIds: ["host-session"] }] });
 });
 
 
 it("shares mixed pinned projects and sessions by Host identity without leaking local paths", () => {
   const codec = createProjectPreferenceCodec();
-  const key = "monocode.sidebarPinnedOrder.v1";
+  const key = "omnicode.sidebarPinnedOrder.v1";
   rememberRemoteSession("shell", "wire-session", { environmentId: "host-a", projectId: "project-a" });
   const wire = codec.encode(key, ["/app", 'session:["/app","shell"]']);
   expect(wire).toEqual(["@project:host-a:project-a", 'session:["@project:host-a:project-a","wire-session"]']);

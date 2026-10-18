@@ -20,7 +20,7 @@ afterEach(() => {
 });
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 function fixture(badChecksum = false) {
-  const dir = mkdtempSync(join(tmpdir(), "monocode-bootstrap-"));
+  const dir = mkdtempSync(join(tmpdir(), "omnicode-bootstrap-"));
   directories.push(dir);
   const base = join(dir, "host with spaces ' and $data");
   const source = join(dir, "source");
@@ -28,8 +28,8 @@ function fixture(badChecksum = false) {
   mkdirSync(source);
   mkdirSync(bin);
   writeFileSync(
-    join(source, "monocode-host"),
-    `#!/bin/sh\ncase "$1" in\n--version) printf '%s\\n' ${quote(version)} ;;\nservice) printf 'service %s\\n' "$2" >> "$MONOCODE_TEST_EVENTS" ;;\nconnection-info) printf '{"port":3774,"pid":123}\\n' ;;\n*) exit 1 ;;\nesac\n`,
+    join(source, "omnicode-host"),
+    `#!/bin/sh\ncase "$1" in\n--version) printf '%s\\n' ${quote(version)} ;;\nservice) printf 'service %s\\n' "$2" >> "$OMNICODE_TEST_EVENTS" ;;\nconnection-info) printf '{"port":3774,"pid":123}\\n' ;;\n*) exit 1 ;;\nesac\n`,
     { mode: 0o755 },
   );
   const archive = join(dir, "host.tar.gz");
@@ -42,11 +42,11 @@ function fixture(badChecksum = false) {
   // a user service. Never change the test runner's HOME or installed services.
   writeFileSync(
     join(bin, "curl"),
-    `#!/bin/sh\nfor arg do previous="$last"; last="$arg"; done\ncase "$previous" in -o) ;; *) exit 1 ;; esac\ncase "$last" in */checksum) cp "$MONOCODE_TEST_CHECKSUM" "$last" ;; *) cp "$MONOCODE_TEST_ARCHIVE" "$last" ;; esac\nprintf 'download\\n' >> "$MONOCODE_TEST_DOWNLOADS"\n`,
+    `#!/bin/sh\nfor arg do previous="$last"; last="$arg"; done\ncase "$previous" in -o) ;; *) exit 1 ;; esac\ncase "$last" in */checksum) cp "$OMNICODE_TEST_CHECKSUM" "$last" ;; *) cp "$OMNICODE_TEST_ARCHIVE" "$last" ;; esac\nprintf 'download\\n' >> "$OMNICODE_TEST_DOWNLOADS"\n`,
     { mode: 0o755 },
   );
   const script = readFileSync("src-tauri/src/remote_bootstrap.sh", "utf8")
-    .replace('BASE="$HOME/.monocode-host"', `BASE=${quote(base)}`)
+    .replace('BASE="$HOME/.omnicode-host"', `BASE=${quote(base)}`)
     .replace("@@VERSION@@", quote(version))
     .replace("@@RELEASE@@", "'https://example.invalid/releases'");
   const run = (forceUpgrade = false) =>
@@ -56,11 +56,11 @@ function fixture(badChecksum = false) {
           env: {
             ...process.env,
             PATH: `${bin}:/usr/bin:/bin`,
-            MONOCODE_TEST_ARCHIVE: archive,
-            MONOCODE_TEST_CHECKSUM: join(dir, "checksum"),
-            MONOCODE_TEST_EVENTS: join(dir, "events"),
-            MONOCODE_TEST_DOWNLOADS: join(dir, "downloads"),
-            MONOCODE_HOST_FORCE_UPGRADE: forceUpgrade ? "1" : "0",
+            OMNICODE_TEST_ARCHIVE: archive,
+            OMNICODE_TEST_CHECKSUM: join(dir, "checksum"),
+            OMNICODE_TEST_EVENTS: join(dir, "events"),
+            OMNICODE_TEST_DOWNLOADS: join(dir, "downloads"),
+            OMNICODE_HOST_FORCE_UPGRADE: forceUpgrade ? "1" : "0",
           },
           signal: AbortSignal.timeout(10_000),
         });
@@ -87,7 +87,7 @@ it.skipIf(process.platform === "win32")(
     expect(first.error).toBe("");
     expect(first.code).toBe(0);
     expect(JSON.parse(first.out).port).toBe(3774);
-    expect(existsSync(join(base, "bin/monocode-host"))).toBe(true);
+    expect(existsSync(join(base, "bin/omnicode-host"))).toBe(true);
     expect((await run()).code).toBe(0);
     expect(
       readFileSync(join(dir, "downloads"), "utf8").trim().split("\n"),
@@ -119,7 +119,7 @@ it.skipIf(process.platform === "win32")(
     const result = await run();
     expect(result.code).not.toBe(0);
     expect(result.error).toContain("checksum mismatch");
-    expect(existsSync(join(base, "bin/monocode-host"))).toBe(false);
+    expect(existsSync(join(base, "bin/omnicode-host"))).toBe(false);
     expect(existsSync(join(dir, "events"))).toBe(false);
   },
 );

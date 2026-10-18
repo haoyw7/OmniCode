@@ -114,9 +114,10 @@ export function AddRemoteProjectDialog({
   };
 
   return createPortal(
-    <div className="fixed inset-0" style={{ zIndex: LAYER.dialog }}>
-      <div className="absolute inset-0" onMouseDown={cancel} />
+    <div data-window-modal className="fixed inset-0" style={{ zIndex: LAYER.dialog }}>
+      <div data-window-modal-backdrop className="absolute inset-0" onMouseDown={cancel} />
       <form
+        data-window-modal-panel
         role="dialog"
         aria-modal="true"
         aria-label={uiT("Open folder on a machine")}

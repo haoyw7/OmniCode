@@ -30,12 +30,12 @@ Output is one JSON line; exit status 0 means ok:true. A failed or uncertain call
 reports requestId: retry that exact request with --request-id, never a fresh ID.
 When paused, inspect list/get/wait and ask the user to click Resume in desktop.
 Host owns execution; exiting this CLI or closing desktop does not cancel work.
-MONOCODE_CONTROL_ENDPOINT and MONOCODE_CONTROL_TOKEN are supplied only to the
+OMNICODE_CONTROL_ENDPOINT and OMNICODE_CONTROL_TOKEN are supplied only to the
 lead process. Never print credentials.`;
 
 export const WORKFLOW_ACTIONS = ["create", "amend", "resume", "cancel", "get", "list", "wait", "save", "saved", "snippet", "providers"];
 export const WORKFLOW_HELP = `OmniCode dynamic workflows — run multi-agent workflow scripts from this conversation.
-Usage: "$MONOCODE_WORKFLOW_CLI" workflow ACTION [--json JSON | --input FILE|-] [--request-id ID]
+Usage: "$OMNICODE_WORKFLOW_CLI" workflow ACTION [--json JSON | --input FILE|-] [--request-id ID]
 Actions:
   create {name?,script|saved{name,args?,scope?}|path,args?,maxConcurrency?,defaults?,agents?} — submit a run
   amend {runId,script?|path?,name?,maxConcurrency?,defaults?,agents?} — revise a run, reusing finished work
@@ -51,14 +51,14 @@ Actions:
   snippet {code|path,args?,timeoutMs?} — run a world-read snippet synchronously
   providers {} — installed providers, models, thinking levels and speeds
 defaults/agents entries are {provider?,model?,thinking?,speed?}. Read the authoring guide at
-$MONOCODE_WORKFLOW_SKILL_DIR/SKILL.md before writing a script.
+$OMNICODE_WORKFLOW_SKILL_DIR/SKILL.md before writing a script.
 Output is one JSON line; exit status 0 means ok:true. Retry an uncertain call with the same
---request-id. Never print MONOCODE_WORKFLOW_TOKEN.`;
+--request-id. Never print OMNICODE_WORKFLOW_TOKEN.`;
 
 const NAMESPACE_ENV = {
-  control: { endpoint: "MONOCODE_CONTROL_ENDPOINT", token: "MONOCODE_CONTROL_TOKEN" },
-  assistant: { endpoint: "MONOCODE_CONTROL_ENDPOINT", token: "MONOCODE_CONTROL_TOKEN" },
-  workflow: { endpoint: "MONOCODE_WORKFLOW_ENDPOINT", token: "MONOCODE_WORKFLOW_TOKEN" },
+  control: { endpoint: "OMNICODE_CONTROL_ENDPOINT", token: "OMNICODE_CONTROL_TOKEN" },
+  assistant: { endpoint: "OMNICODE_CONTROL_ENDPOINT", token: "OMNICODE_CONTROL_TOKEN" },
+  workflow: { endpoint: "OMNICODE_WORKFLOW_ENDPOINT", token: "OMNICODE_WORKFLOW_TOKEN" },
 } as const;
 type ControlNamespace = keyof typeof NAMESPACE_ENV;
 
@@ -143,7 +143,7 @@ export class HostControl {
     await this.ready;
     if (currentMachineIO().key !== "local") return wslControlLauncher(currentMachineIO());
     await mkdir(directory, { recursive: true, mode: 0o700 });
-    const path = join(directory, process.platform === "win32" ? "monocode-control.cmd" : "monocode-control");
+    const path = join(directory, process.platform === "win32" ? "omnicode-control.cmd" : "omnicode-control");
     const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
     const content = process.platform === "win32"
       ? `@echo off\r\n"${node.replaceAll('"', '')}" "${entry.replaceAll('"', '')}" %*\r\n`

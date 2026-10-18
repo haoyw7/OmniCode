@@ -26,7 +26,7 @@ import {
 import type { CommandDispatch } from "../commands/useCommandDispatcher";
 import { TabVisitNav, WINDOW_DRAG_BAR_HEIGHT, WINDOW_NAVIGATION_END } from "./WindowChrome";
 import { WindowControls } from "./WindowControls";
-import { startWindowDrag, windowDragRegion } from "./startWindowDrag";
+import { windowDragRegion } from "./startWindowDrag";
 
 type Props = {
   navigationItems?: ReactNode;
@@ -204,11 +204,6 @@ export function MenuBar({
       ref={bar}
       data-menu-bar
       {...windowDragRegion()}
-      onMouseDownCapture={(event) => {
-        if (!startWindowDrag(event)) return;
-        closeMenu();
-        setRevealed(false);
-      }}
       className={`shell-chrome shrink-0 select-none items-center gap-0.5 border-b border-stroke text-[12px] ${
         visible
           ? "relative grid grid-cols-[auto_minmax(0,1fr)_auto] px-2"

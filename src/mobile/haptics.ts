@@ -9,13 +9,13 @@ const native = registerPlugin<{
   pulse(options: { strength: "gentle" | "standard" }): Promise<{ status: HapticResult } | void>;
   feedback(options: { cue: Cue }): Promise<{ status: HapticResult } | void>;
   cancel(): Promise<void>;
-}>("MonoCodeHaptics");
+}>("OmniCodeHaptics");
 let foreground = true;
 const lifecycleListeners = new Set<() => void>();
 const previewListeners = new Set<(result: HapticResult) => void>();
 const android = () => Capacitor.getPlatform() === "android";
 // The hosted UI can update before the APK containing this plugin is installed.
-const hasNativeHaptics = () => android() && Capacitor.isPluginAvailable("MonoCodeHaptics");
+const hasNativeHaptics = () => android() && Capacitor.isPluginAvailable("OmniCodeHaptics");
 const available = () => Capacitor.isNativePlatform() && foreground && (typeof document === "undefined" || !document.hidden);
 
 async function cancel() {

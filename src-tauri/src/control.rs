@@ -272,7 +272,7 @@ fn serve(mut stream: TcpStream, app: &AppHandle, inner: &Arc<Mutex<Inner>>) {
             action: request.action,
             input: request.input,
         };
-        let delivered = app.emit_to(grant.window.as_str(), "monocode-control-request", event);
+        let delivered = app.emit_to(grant.window.as_str(), "omnicode-control-request", event);
         let result = if delivered.is_err() {
             Err("OmniCode executor is unavailable".into())
         } else {
@@ -400,7 +400,7 @@ pub fn control_attach_worker(
 }
 
 fn create_worker_scratch() -> Result<PathBuf, String> {
-    let path = std::env::temp_dir().join(format!("monocode-worker-{}", uuid::Uuid::new_v4()));
+    let path = std::env::temp_dir().join(format!("omnicode-worker-{}", uuid::Uuid::new_v4()));
     let builder = std::fs::DirBuilder::new();
     #[cfg(unix)]
     let builder = {
@@ -479,21 +479,21 @@ pub fn window_closed(app: &AppHandle, label: &str) {
 }
 
 pub fn configure_child(app: &AppHandle, session_id: &str, cmd: &mut Command) {
-    cmd.env_remove("MONOCODE_CONTROL_ENDPOINT")
-        .env_remove("MONOCODE_CONTROL_TOKEN")
-        .env_remove("MONOCODE_APP_ENDPOINT")
-        .env_remove("MONOCODE_APP_TOKEN");
+    cmd.env_remove("OMNICODE_CONTROL_ENDPOINT")
+        .env_remove("OMNICODE_CONTROL_TOKEN")
+        .env_remove("OMNICODE_APP_ENDPOINT")
+        .env_remove("OMNICODE_APP_TOKEN");
     let Some(host) = app.try_state::<ControlHost>() else {
         return;
     };
     if let Ok(inner) = host.inner.lock() {
         if let Some(grant) = inner.grants.get(session_id) {
-            cmd.env("MONOCODE_CONTROL_ENDPOINT", &host.endpoint)
-                .env("MONOCODE_CONTROL_TOKEN", &grant.token);
+            cmd.env("OMNICODE_CONTROL_ENDPOINT", &host.endpoint)
+                .env("OMNICODE_CONTROL_TOKEN", &grant.token);
         }
         if let Some(grant) = inner.app_grants.get(session_id) {
-            cmd.env("MONOCODE_APP_ENDPOINT", &host.endpoint)
-                .env("MONOCODE_APP_TOKEN", &grant.token);
+            cmd.env("OMNICODE_APP_ENDPOINT", &host.endpoint)
+                .env("OMNICODE_APP_TOKEN", &grant.token);
         }
         if let Some(scratch) = inner.scratch.get(session_id) {
             configure_worker_scratch(cmd, scratch);

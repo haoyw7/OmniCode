@@ -13,9 +13,9 @@ import { ChevronDown, ChevronUp, X } from "../../../../shared/ui/icons";
 import { keybindingPressed } from "../../../settings/model/settings";
 
 const MATCH_CAP = 999;
-const MATCH_HIGHLIGHT = "monocode-file-preview-search-match";
-const CURRENT_HIGHLIGHT = "monocode-file-preview-search-current";
-const HIGHLIGHT_STYLE_ID = "monocode-file-preview-search-styles";
+const MATCH_HIGHLIGHT = "omnicode-file-preview-search-match";
+const CURRENT_HIGHLIGHT = "omnicode-file-preview-search-current";
+const HIGHLIGHT_STYLE_ID = "omnicode-file-preview-search-styles";
 const BLOCK_ELEMENTS = new Set([
   "address",
   "article",

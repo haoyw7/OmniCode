@@ -29,23 +29,23 @@ import {
   putOutboxEntry,
 } from "./remoteOutbox";
 
-export const REMOTE_MACHINES_CHANGED = "monocode:remote-machines";
+export const REMOTE_MACHINES_CHANGED = "omnicode:remote-machines";
 const CHANGE = REMOTE_MACHINES_CHANGED;
-export const REMOTE_HISTORY_CHANGE = "monocode:remote-history";
-export const REMOTE_HISTORY_UPDATED = "monocode:remote-history-updated";
+export const REMOTE_HISTORY_CHANGE = "omnicode:remote-history";
+export const REMOTE_HISTORY_UPDATED = "omnicode:remote-history-updated";
 export const refreshRemoteProjectSessions = () =>
   window.dispatchEvent(new Event(REMOTE_HISTORY_CHANGE));
 let cachedMachines: RemoteMachine[] = [];
 let machinesLoaded = false;
 let machineRequest: Promise<RemoteMachine[]> | undefined;
 let machineRevision = 0;
-export const OPEN_CONNECTIONS_EVENT = "monocode:open-connections";
-export const OPEN_REMOTE_PROJECT_EVENT = "monocode:open-remote-project";
-export const OPEN_NEW_ENVIRONMENT_EVENT = "monocode:open-new-environment";
+export const OPEN_CONNECTIONS_EVENT = "omnicode:open-connections";
+export const OPEN_REMOTE_PROJECT_EVENT = "omnicode:open-remote-project";
+export const OPEN_NEW_ENVIRONMENT_EVENT = "omnicode:open-new-environment";
 export const refreshRemoteMachines = () =>
   window.dispatchEvent(new Event(CHANGE));
-const TAB_KEY = "monocode.remote-tabs.v2";
-const TAB_SCOPE_KEY = "monocode.remote-tab-scopes.v1";
+const TAB_KEY = "omnicode.remote-tabs.v2";
+const TAB_SCOPE_KEY = "omnicode.remote-tab-scopes.v1";
 export type RemoteSessionScope = { environmentId: string; projectId: string };
 /** Read storage on every lookup so writes in other windows are immediately visible,
  * but decode each version only once instead of once per sidebar row or tab. */
@@ -70,11 +70,11 @@ function cachedRemoteRecord<T>(key: string) {
 }
 const remoteTabBindings = cachedRemoteRecord<string>(TAB_KEY);
 const remoteTabScopes = cachedRemoteRecord<RemoteSessionScope & { hostId: string }>(TAB_SCOPE_KEY);
-const EXECUTION_CWD_KEY = "monocode.remote-pending-execution-cwds.v1";
+const EXECUTION_CWD_KEY = "omnicode.remote-pending-execution-cwds.v1";
 
 function pendingExecutionDirectories(): Record<string, string> {
   const current = localStorage.getItem(EXECUTION_CWD_KEY);
-  const legacyKey = "monocode.remote-pending-worktrees.v1";
+  const legacyKey = "omnicode.remote-pending-worktrees.v1";
   const legacy = localStorage.getItem(legacyKey);
   const raw = current ?? legacy ?? "{}";
   const value = JSON.parse(raw);
@@ -507,7 +507,7 @@ export function useRemoteMachines(enabled = true): {
   }), [state, directory.connections]);
 }
 
-const STATUS = "monocode:remote-machine-status";
+const STATUS = "omnicode:remote-machine-status";
 const machineOnline = new Map<string, boolean>();
 const statusWatchers = new Map<
   string,
@@ -578,7 +578,7 @@ export function useRemoteMachineOnline(machineId?: string): boolean | undefined 
   return online;
 }
 
-const historyKey = (project: string) => `monocode.remote-history.v2:${project}`;
+const historyKey = (project: string) => `omnicode.remote-history.v2:${project}`;
 
 // Native transcript block IDs dominate list rows and are refetched with the
 // list; caching them let a few long sessions fill the WebView quota.

@@ -354,7 +354,7 @@ export function BotChat({
   const [replyText, setReplyText] = useState<string | undefined>(() => {
     if (!chrome) return;
     try {
-      return localStorage.getItem(`monocode.assistant-reply:${cacheKey}`) ?? undefined;
+      return localStorage.getItem(`omnicode.assistant-reply:${cacheKey}`) ?? undefined;
     } catch {
       return undefined;
     }
@@ -516,7 +516,7 @@ export function BotChat({
   useEffect(() => {
     if (!chrome) return;
     try {
-      const key = `monocode.assistant-reply:${cacheKey}`;
+      const key = `omnicode.assistant-reply:${cacheKey}`;
       if (replyText === undefined) localStorage.removeItem(key);
       else localStorage.setItem(key, replyText);
     } catch {

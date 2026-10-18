@@ -24,8 +24,8 @@ export type ProjectNotificationPreference = {
   enabledAfter?: Partial<Record<NotificationCategory, number>>;
 };
 type Preferences = Record<string, ProjectNotificationPreference>;
-const KEY = "monocode.projectNotifications.v1";
-const CHANGE = "monocode:project-notifications-change";
+const KEY = "omnicode.projectNotifications.v1";
+const CHANGE = "omnicode:project-notifications-change";
 
 /** `after` is the last suppressed millisecond, shared with native delivery. */
 export type ProjectNotificationRule = { enabled: boolean; after: number };

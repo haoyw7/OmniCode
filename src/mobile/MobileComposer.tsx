@@ -179,7 +179,7 @@ function useMobileComposerController(props: Props) {
   const native = skillsState.catalog?.native ?? nativeGuess;
   const commands = useMemo(() => [PLAN_COMMAND,
     ...(props.canCompact && (skillsState.catalog?.canCompact ?? true) ? [COMPACT_COMMAND] : []),
-    ...(skillsState.catalog?.skills ?? []).filter(skill => !["operator", "mono", "monocode"].includes(skill.name) &&
+    ...(skillsState.catalog?.skills ?? []).filter(skill => !["operator", "mono", "omnicode"].includes(skill.name) &&
       (skill.kind === "native" || !["plan", "compact", "orchestrator", "draft", "btw", "mcp", "add-to-folder"].includes(skill.name))),
   ], [props.canCompact, skillsState.catalog]);
   const options = rankSkills(commands, props.panel === "actions" ? "" : slash?.query ?? "");

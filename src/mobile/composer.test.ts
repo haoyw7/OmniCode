@@ -71,10 +71,10 @@ function render(overrides: Record<string, unknown> = {}) {
         errors: {},
       },
       projects: [
-        { id: "one", name: "monocode", cwd: "/projects/monocode" },
+        { id: "one", name: "omnicode", cwd: "/projects/omnicode" },
         { id: "two", name: "workbench", cwd: "/projects/workbench" },
       ],
-      project: { id: "one", name: "monocode", cwd: "/projects/monocode" },
+      project: { id: "one", name: "omnicode", cwd: "/projects/omnicode" },
       onProjectChange,
       attachments: [],
       onFiles,
@@ -663,10 +663,10 @@ describe("mobile composer card", () => {
       onChange,
       loadBranches: vi.fn(async () => ({ current: "main", branches: ["main", "feature"], remotes: [] })),
       loadWorktrees: vi.fn(async () => ({
-        defaultRoot: "/projects/monocode-worktrees",
+        defaultRoot: "/projects/omnicode-worktrees",
         worktrees: [
-          { path: "/projects/monocode", branch: "main", head: "a", isMain: true, missing: false },
-          { path: "/projects/monocode-worktrees/wt-fix", branch: "fix", head: "b", isMain: false, missing: false },
+          { path: "/projects/omnicode", branch: "main", head: "a", isMain: true, missing: false },
+          { path: "/projects/omnicode-worktrees/wt-fix", branch: "fix", head: "b", isMain: false, missing: false },
         ],
       })),
     };
@@ -682,9 +682,9 @@ describe("mobile composer card", () => {
     await act(async () => {});
     expect(rows().map(row => row.textContent)).toEqual([expect.stringContaining("wt-fix")]);
     tapKeepingFocus(rows()[0]!);
-    expect(onChange).toHaveBeenLastCalledWith({ mode: "current", cwd: "/projects/monocode-worktrees/wt-fix", linkedWorktree: true });
+    expect(onChange).toHaveBeenLastCalledWith({ mode: "current", cwd: "/projects/omnicode-worktrees/wt-fix", linkedWorktree: true });
     expect(document.activeElement).toBe(area);
-    rerender({ workspace: { ...workspace, value: { mode: "current", cwd: "/projects/monocode-worktrees/wt-fix" } } });
+    rerender({ workspace: { ...workspace, value: { mode: "current", cwd: "/projects/omnicode-worktrees/wt-fix" } } });
     expect(button("Workspace: wt-fix")).not.toBeNull();
     rerender({ lockedAgent: true });
     expect(node.querySelector(".mobile-composer-workspace")).toBeNull();

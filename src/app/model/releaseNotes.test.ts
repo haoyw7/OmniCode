@@ -59,10 +59,24 @@ describe("localized release notes", () => {
     expect(
       releaseNotesMarkdown({ version: "0.11.0" }, bilingual, language),
     ).toContain(included);
-    expect(
-      presentReleaseNotes("0.11.0", undefined, language)?.markdown,
-    ).toContain(language === "en" ? "### Fixed" : "### 修复");
   });
+
+  it.each(["en", "zh-CN"])(
+    "loads OmniCode's initial bundled release in %s",
+    (language) => {
+      const notes = presentReleaseNotes("0.1.0", undefined, language);
+      expect(notes?.date).toBe("2026-10-18");
+      expect(notes?.markdown).toContain("OmniCode");
+      expect(notes?.markdown).toContain(
+        language === "en" ? "### Initial release" : "### 初始版本",
+      );
+      expect(notes?.markdown).not.toContain(
+        language === "en" ? "### 初始版本" : "### Initial release",
+      );
+      expect(notes?.markdown).not.toContain("release-notes:");
+      expect(presentReleaseNotes("0.13.0", undefined, language)).toBeNull();
+    },
+  );
 
   it("keeps old unmarked notes and falls back to English when a locale is absent", () => {
     expect(localizedReleaseNotes(fixture, "zh-CN")).toBe(fixture);

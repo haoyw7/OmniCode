@@ -221,7 +221,7 @@ export function estimateReviewBodyHeight(
   );
 }
 
-/** Resolve Pierre's side/number through Monocode's diff, preserving deleted-line comments. */
+/** Resolve Pierre's side/number through OmniCode's diff, preserving deleted-line comments. */
 export function reviewCommentLine(
   lines: readonly UnifiedLine[],
   side: "additions" | "deletions",

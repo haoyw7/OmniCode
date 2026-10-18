@@ -9,7 +9,7 @@ export function localizeChildExitError(
   translate: (key: string) => string,
 ): string {
   // Keep the persisted interruption marker compatible with older sessions.
-  if (message === "Turn interrupted when MonoCode quit.")
+  if (message === "Turn interrupted when OmniCode quit.")
     return translate("Turn interrupted when OmniCode quit.");
   return message === "RESOURCE_BUSY: The requested project or computer is in use by another run. Retry when it finishes." ||
     message === HOST_OUTPUT_LIMIT_ERROR ||

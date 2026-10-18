@@ -13,6 +13,7 @@ import {
   leafIds,
   newSubagentTab,
   newWorkflowAgentTab,
+  newWorkflowArtifactTab,
   newWorkflowRunTab,
   openEditorTab,
   type FilePaneTab,
@@ -168,6 +169,8 @@ export function useWorkflowRequests({
       })().catch(console.error);
     };
     return {
+      openArtifact: ({ cwd, title, sourceFileId, ...source }) =>
+        openBesideParent(source.parentSessionId, newWorkflowArtifactTab(title || source.artifactId, cwd, source), sourceFileId),
       openRun: (request) =>
         openBesideParent(
           request.parentSessionId,
@@ -187,6 +190,7 @@ export function useWorkflowRequests({
             sessionId: request.sessionId,
             parentSessionId: request.parentSessionId,
             runId: request.runId,
+            ...(request.avatar ? { avatar: request.avatar } : {}),
           }),
           request.sourceFileId,
         ),

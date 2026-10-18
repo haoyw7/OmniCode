@@ -8,7 +8,7 @@ const WATCH_DEBOUNCE_MS = 300;
 function savedWorkflowsDirectoryPath(workspacePath: string): string {
   const separator = workspacePath.includes("\\") && !workspacePath.includes("/") ? "\\" : "/";
   const trimmed = workspacePath.replace(/[\\/]+$/u, "");
-  return `${trimmed}${separator}.monocode${separator}workflows`;
+  return `${trimmed}${separator}.omnicode${separator}workflows`;
 }
 
 /**
@@ -59,7 +59,7 @@ export function useSavedWorkflowsDirectoryWatch({
         });
       })
       .catch((error: unknown) => {
-        logger.debug("[SavedWorkflows] 监听 .monocode/workflows 失败（目录可能尚不存在）", {
+        logger.debug("[SavedWorkflows] 监听 .omnicode/workflows 失败（目录可能尚不存在）", {
           path: directoryPath,
           error: error instanceof Error ? error.message : String(error),
         });

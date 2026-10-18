@@ -102,7 +102,7 @@ export interface WorkflowRunProgressEnvelope {
   eventType?: string;
   payload?: Record<string, unknown>;
   actorSessionId?: string;
-  /** Monocode: the actor's resolved provider runtime, on actor-created and node-dispatched. */
+  /** OmniCode: the actor's resolved provider runtime, on actor-created and node-dispatched. */
   actorRuntime?: WorkflowRunActorRuntime;
 }
 

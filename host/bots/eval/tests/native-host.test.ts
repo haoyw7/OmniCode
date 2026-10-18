@@ -12,7 +12,7 @@ afterEach(async () => {
   for (const fn of cleanup.splice(0)) await fn();
 });
 async function setup() {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-eval-host-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-eval-host-"));
   const store = new HostStore(join(directory, "host.db"));
   const project = store.addProject(directory, "Eval fixture");
   const finishes: (() => void)[] = [];

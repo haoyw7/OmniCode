@@ -412,7 +412,7 @@ it("retains the card and scroll position during refresh and reloads its invalida
   expect(card(0)).toBe(existing);
 });
 
-it("uses Monocode file operations and stages the chunk's document position", async () => {
+it("uses OmniCode file operations and stages the chunk's document position", async () => {
   await render();
   await fileAction("Stage file");
   expect(gitStageFile).toHaveBeenCalledWith("/repo", files[0].relative);

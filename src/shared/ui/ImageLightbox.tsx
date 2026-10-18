@@ -70,6 +70,7 @@ export function ImageLightbox({ src, alt, onClose }: Props) {
       inert={!present}
       aria-hidden={!present || undefined}
       role="dialog"
+      data-window-lightbox
       aria-modal="true"
       aria-label={uiT("Image preview: {value0}", { value0: String(alt) })}
       className="image-lightbox fixed inset-0 flex touch-none items-center justify-center overflow-hidden bg-black/85 p-6 backdrop-blur-sm"

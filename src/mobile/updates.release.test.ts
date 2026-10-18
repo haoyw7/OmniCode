@@ -9,12 +9,12 @@ vi.mock("@capacitor/core", () => ({
 vi.mock("@capacitor/app", () => ({ App: {} }));
 
 const source =
-  "https://github.com/yyy0107/ohmymonocode/releases/latest/download";
+  "https://github.com/haoyw7/OmniCode/releases/latest/download";
 const manifest = {
-  packageId: "com.monocode.mobile",
+  packageId: "com.omnicode.mobile",
   versionName: "0.7.0",
   versionCode: 5,
-  downloadPath: "/monocode-5.apk",
+  downloadPath: "/OmniCode.apk",
   sha256: "a".repeat(64),
   size: 1234,
   publishedAt: "2026-10-09T12:00:00Z",
@@ -22,7 +22,7 @@ const manifest = {
 
 beforeEach(() => {
   vi.resetModules();
-  vi.stubEnv("MONOCODE_UPDATE_CHANNEL", undefined);
+  vi.stubEnv("OMNICODE_UPDATE_CHANNEL", undefined);
   http.mockReset().mockResolvedValue({ status: 200, data: manifest });
 });
 afterEach(() => vi.unstubAllEnvs());
@@ -30,7 +30,7 @@ afterEach(() => vi.unstubAllEnvs());
 describe.each(["production", "development", "release"])("GitHub mobile updates in %s mode", (mode) => {
   beforeEach(() => {
     vi.stubEnv("MODE", mode);
-    if (mode === "release") vi.stubEnv("MONOCODE_UPDATE_CHANNEL", "lan");
+    if (mode === "release") vi.stubEnv("OMNICODE_UPDATE_CHANNEL", "lan");
   });
   it("uses the mobile manifest and a flat GitHub APK asset", async () => {
     const updates = await import("./updates");
@@ -39,14 +39,17 @@ describe.each(["production", "development", "release"])("GitHub mobile updates i
     expect(http).toHaveBeenCalledWith(
       expect.objectContaining({ url: `${source}/mobile-latest.json` }),
     );
-    expect(updates.updateDownloadUrl(update)).toBe(`${source}/monocode-5.apk`);
+    expect(updates.updateDownloadUrl(update)).toBe(`${source}/OmniCode.apk`);
   });
 
   it.each([
-    "/apk/monocode-5.apk",
-    "/monocode-6.apk",
-    "/../monocode-5.apk",
-    "https://other.example/monocode-5.apk",
+    "/apk/omnicode-5.apk",
+    "/omnicode-6.apk",
+    "/omnicode.apk",
+    "/OmniCode-5.apk",
+    "/OmniCode.apk?version=5",
+    "/../omnicode-5.apk",
+    "https://other.example/omnicode-5.apk",
   ])("rejects mismatched release asset %s", async (downloadPath) => {
     const { parseMobileUpdate } = await import("./updates");
     expect(() => parseMobileUpdate({ ...manifest, downloadPath })).toThrow();
@@ -59,7 +62,7 @@ describe.each(["production", "development", "release"])("GitHub mobile updates i
       data: { ...manifest, sourceUrl: "https://other.example" },
     });
     expect(updates.updateDownloadUrl(await updates.checkMobileUpdate())).toBe(
-      `${source}/monocode-5.apk`,
+      `${source}/OmniCode.apk`,
     );
     http.mockClear().mockRejectedValue(new Error("GitHub unavailable"));
     await expect(updates.checkMobileUpdate()).rejects.toThrow(

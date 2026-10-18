@@ -21,7 +21,7 @@ const defaults: EditorPreferences = {
   scrollPastEnd: false,
   tabSize: 4,
 };
-const key = "monocode.editorPreferences";
+const key = "omnicode.editorPreferences";
 let cachedRaw: string | null | undefined;
 let cached = defaults;
 export function loadEditorPreferences(): EditorPreferences {

@@ -102,7 +102,7 @@ it("copies selected output with Ctrl+C and preserves Ctrl+C without a selection"
     await act(async () => root.render(createElement(TerminalView, {
       id: "copy", cwd: "/tmp", active: true,
     })));
-    const target = host.querySelector(".monocode-terminal-host")!;
+    const target = host.querySelector(".omnicode-terminal-host")!;
     xterm.selection = "selected output";
     const selectedKey = new KeyboardEvent("keydown", { key: "c", ctrlKey: true, bubbles: true, cancelable: true });
     await act(async () => { target.dispatchEvent(selectedKey); });
@@ -126,7 +126,7 @@ it("handles native paste once before it reaches xterm's own listeners", async ()
     await act(async () => root.render(createElement(TerminalView, {
       id: "paste", cwd: "/tmp", active: true,
     })));
-    const target = host.querySelector(".monocode-terminal-host")!;
+    const target = host.querySelector(".omnicode-terminal-host")!;
     const nativeHandler = vi.fn();
     target.addEventListener("paste", nativeHandler);
     const clipboardData = new DataTransfer();
@@ -150,7 +150,7 @@ it("offers copy and paste in the context menu and closes it when hidden", async 
   }));
   try {
     await act(async () => render(true));
-    const target = host.querySelector(".monocode-terminal-host")!;
+    const target = host.querySelector(".omnicode-terminal-host")!;
     await act(async () => {
       target.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 20, clientY: 20 }));
     });

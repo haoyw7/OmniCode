@@ -37,7 +37,7 @@ export const diagnosticFailureKind = (value: string | null): string | null =>
 export type DiagnosticContext = {
   caseId?: string;
   phase?: "prompt" | "native" | "expansion";
-  arm?: "control" | "monocode";
+  arm?: "control" | "omnicode";
 };
 const recordSchema = z.object({
   schemaVersion: z.literal(1),
@@ -58,7 +58,7 @@ const recordSchema = z.object({
     .regex(/^[^\x00-\x1f\x7f]+$/)
     .optional(),
   phase: z.enum(["prompt", "native", "expansion"]).optional(),
-  arm: z.enum(["control", "monocode"]).optional(),
+  arm: z.enum(["control", "omnicode"]).optional(),
 });
 /** Own a NEW campaign file outside temporary SDK sessions. Never opens a prior ledger for reuse. */
 export class ProviderDiagnosticJournal {

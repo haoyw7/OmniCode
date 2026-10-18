@@ -10,7 +10,7 @@ import { build } from "esbuild";
 const args = process.argv.slice(2);
 const option = (name) =>
   args.includes(name) ? args[args.indexOf(name) + 1] : undefined;
-const binary = option("--binary") || process.env.MONOCODE_PI_BINARY || "pi";
+const binary = option("--binary") || process.env.OMNICODE_PI_BINARY || "pi";
 const expectedVersion = option("--expected-version") || "1.0.1";
 const version = execFileSync(binary, ["--version"], {
   encoding: "utf8",
@@ -20,7 +20,7 @@ assert.equal(
   expectedVersion,
   "This smoke validates the explicitly selected Pi version",
 );
-const directory = await mkdtemp(join(tmpdir(), "monocode-real-pi-"));
+const directory = await mkdtemp(join(tmpdir(), "omnicode-real-pi-"));
 let child;
 const pending = new Map();
 let serial = 0;

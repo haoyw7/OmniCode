@@ -66,7 +66,7 @@ it.each(["pi", "omp"])("does not reuse a warm %s text process across machines wi
     await warmup("/repo");
     expect(mocks.spawned).toHaveLength(count);
   }
-  expect(mocks.spawned).toEqual(["local", "wsl:Ubuntu", "wsl:Debian", "local"].map(machine => ({ id: `monocode-${provider}-text`, machine })));
+  expect(mocks.spawned).toEqual(["local", "wsl:Ubuntu", "wsl:Debian", "local"].map(machine => ({ id: `omnicode-${provider}-text`, machine })));
 });
 
 it("forwards Pi text and reasoning deltas to an isolated prompt", async () => {

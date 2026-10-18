@@ -11,7 +11,7 @@ import { abortTextPromptRace } from "../../core/abortTextPrompt";
 import { mergeStream } from "../../core/streamText";
 import type { HarnessEvent } from "../../core/types";
 
-const TEXT_CHILD_ID = "monocode-text";
+const TEXT_CHILD_ID = "omnicode-text";
 const INIT_TIMEOUT_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 20_000;
 const TEXT_MODEL = "composer-2.5";
@@ -202,7 +202,7 @@ async function startLive(
       {
         protocolVersion: 1,
         clientCapabilities: CLIENT_CAPABILITIES,
-        clientInfo: { name: "monocode-text", version: "0.1.0" },
+        clientInfo: { name: "omnicode-text", version: "0.1.0" },
       },
       INIT_TIMEOUT_MS,
     );

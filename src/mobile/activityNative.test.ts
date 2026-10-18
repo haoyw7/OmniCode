@@ -226,11 +226,11 @@ describe("Android activity notification bridge", () => {
       enabled: false,
       texts: { reply: "A new reply is ready." },
     });
-    expect(localStorage.getItem("monocode.mobileNotifications")).toBe("0");
+    expect(localStorage.getItem("omnicode.mobileNotifications")).toBe("0");
     expect(latest.unreadIds.has("one")).toBe(true);
   });
   it("starts the remote service when alerts were disabled in a previous app session and stops on disconnect", async () => {
-    localStorage.setItem("monocode.mobileNotifications", "0");
+    localStorage.setItem("omnicode.mobileNotifications", "0");
     await render();
     expect(native.start).toHaveBeenLastCalledWith(
       expect.objectContaining({ enabled: false, name: "Computer" }),

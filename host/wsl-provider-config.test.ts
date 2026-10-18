@@ -48,7 +48,7 @@ it("filters the effective Codex project and CLI configuration, preserving Linux 
 });
 
 it.each(["claude", "codex"] as const)("uses the desktop %s home and explicitly deletes inherited WSL auth overrides", async provider => {
-  const home = await mkdtemp(join(tmpdir(), "monocode-wsl-config-")); directories.push(home);
+  const home = await mkdtemp(join(tmpdir(), "omnicode-wsl-config-")); directories.push(home);
   vi.stubEnv(provider === "claude" ? "CLAUDE_CONFIG_DIR" : "CODEX_HOME", home);
   await writeFile(join(home, "auth.json"), '{}');
   const rpc = { request: async <T>(op: string, args?: Record<string, unknown>): Promise<T> => {
@@ -80,7 +80,7 @@ it("serializes one account but allows unrelated accounts and releases after fail
 });
 
 it("preserves hooks and permission lists from every Claude settings scope before filtering", async () => {
-  const home = await mkdtemp(join(tmpdir(), "monocode-wsl-settings-")); directories.push(home);
+  const home = await mkdtemp(join(tmpdir(), "omnicode-wsl-settings-")); directories.push(home);
   vi.stubEnv("CLAUDE_CONFIG_DIR", home);
   const hook = (command: string) => ({ hooks: [{ type: "command", command }] });
   await writeFile(join(home, "settings.json"), JSON.stringify({

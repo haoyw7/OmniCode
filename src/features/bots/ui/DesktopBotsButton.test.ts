@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
   hosts: [] as { id: string; environmentId: string; capabilities: string[] }[],
 }));
 vi.mock("../../notifications/model/notifications", () => ({
-  NOTIFICATION_CLICK_EVENT: "monocode:notification-click", notifyApp: mocks.notify,
+  NOTIFICATION_CLICK_EVENT: "omnicode:notification-click", notifyApp: mocks.notify,
 }));
 vi.mock("../../connections/model/remoteProjects", () => ({ sharedHostMachineId: () => "local" }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: mocks.listen }));
@@ -115,7 +115,7 @@ it("shows unseen replies and opens the latest message's Host without polling uns
   act(() => markBotRead("env-local", messages.local));
   expect(button().getAttribute("aria-label")).toBe("Bots");
   expect(button().textContent).toBe("Bots");
-  expect(localStorage.getItem("monocode.assistant-read:env-local")).toBe("2");
+  expect(localStorage.getItem("omnicode.assistant-read:env-local")).toBe("2");
 });
 
 it("coalesces streaming revisions and notices new content after an earlier revision was read", async () => {
@@ -135,13 +135,13 @@ it("coalesces streaming revisions and notices new content after an earlier revis
 
 it("restores read state and synchronizes acknowledgements from another window", async () => {
   messages.local = [reply("seen", 1), reply("unseen", 2)];
-  localStorage.setItem("monocode.assistant-read:env-local", "1");
+  localStorage.setItem("omnicode.assistant-read:env-local", "1");
   await render();
   expect(button().getAttribute("aria-label")).toContain("1 unread");
   act(() => {
-    localStorage.setItem("monocode.assistant-read:env-local", "2");
+    localStorage.setItem("omnicode.assistant-read:env-local", "2");
     window.dispatchEvent(
-      new StorageEvent("storage", { key: "monocode.assistant-read:env-local" }),
+      new StorageEvent("storage", { key: "omnicode.assistant-read:env-local" }),
     );
   });
   expect(button().getAttribute("aria-label")).toBe("Bots");
@@ -235,7 +235,7 @@ it("isolates Bot thread unread state and routes notifications to their exact thr
   act(() => markBotRead(JSON.stringify(["env-local", "bot", "one"]), entries.one));
   expect(button().getAttribute("aria-label")).toBe("Bots, 1 unread messages");
   act(() => button().click());
-  expect(JSON.parse(localStorage.getItem("monocode.bot-selection:env-local")!)).toMatchObject({ botId: "bot", threadId: "two" });
+  expect(JSON.parse(localStorage.getItem("omnicode.bot-selection:env-local")!)).toMatchObject({ botId: "bot", threadId: "two" });
   expect(onOpen).toHaveBeenLastCalledWith("local");
   entries.two.push(reply("new-two", 3, "Thread two completed"));
   await act(async () => vi.advanceTimersByTimeAsync(2000));
@@ -243,6 +243,6 @@ it("isolates Bot thread unread state and routes notifications to their exact thr
     title: "OmniCode", subtitle: "Bot", body: "Thread two completed",
   }, false);
   await act(async () => mocks.listen.mock.calls[0][1]({ payload: 'bot:["env-local","main","bot","one"]' }));
-  expect(JSON.parse(localStorage.getItem("monocode.bot-selection:env-local")!)).toMatchObject({ botId: "bot", threadId: "one" });
+  expect(JSON.parse(localStorage.getItem("omnicode.bot-selection:env-local")!)).toMatchObject({ botId: "bot", threadId: "one" });
   expect(mocks.rpc.mock.calls.some(([id, method]) => id === "local" && method.startsWith("assistant."))).toBe(false);
 });

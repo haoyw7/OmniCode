@@ -9,7 +9,7 @@ it("uses the configured model's semantic name before trying a provider", async (
   const provider = vi.fn(async () => "ignored");
   expect(
     await generateWorktreeBranch([
-      async () => "monocode/Fix Login Redirect",
+      async () => "omnicode/Fix Login Redirect",
       provider,
     ]),
   ).toBe("mc/fix-login-redirect");

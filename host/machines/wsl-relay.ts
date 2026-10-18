@@ -20,7 +20,7 @@ export class WslLoopbackRelay {
 
   async environment(environment: Record<string, string>): Promise<Record<string, string>> {
     const mapped = { ...environment };
-    for (const key of ["MONOCODE_CONTROL_ENDPOINT", "MONOCODE_WORKFLOW_ENDPOINT"])
+    for (const key of ["OMNICODE_CONTROL_ENDPOINT", "OMNICODE_WORKFLOW_ENDPOINT"])
       if (mapped[key]) mapped[key] = await this.endpoint(mapped[key]);
     return mapped;
   }

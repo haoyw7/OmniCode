@@ -39,7 +39,7 @@ async function runPublish(root, fingerprint, logPath) {
   const state = await readState(
     join(root, "build/mobile-publish/last-success.json"),
   );
-  return `Mobile build ${state.versionCode}: ${config.baseUrl}/apk/monocode-${state.versionCode}.apk`;
+  return `Mobile build ${state.versionCode}: ${config.baseUrl}/apk/omnicode-${state.versionCode}.apk`;
 }
 
 export async function handleTurn(

@@ -4,7 +4,7 @@ import chinese from "./zh-CN.json";
 export type UiLanguage = "en" | "zh-CN";
 export type TranslationValues = Record<string, string | number>;
 
-export const UI_LANGUAGE_KEY = "monocode.uiLanguage";
+export const UI_LANGUAGE_KEY = "omnicode.uiLanguage";
 const translations: Readonly<Record<string, string>> = chinese;
 const listeners = new Set<() => void>();
 let language: UiLanguage | null = null;
@@ -82,9 +82,6 @@ export function translate(
   values?: TranslationValues,
   locale: UiLanguage = getUiLanguage(),
 ): string {
-  // This Host error is also a wire-level ownership marker; rename only its display.
-  if (text === "Native session is in use by another MonoCode instance")
-    text = "Native session is in use by another OmniCode instance";
   // Only these application-owned error headers are translated; occupant IDs,
   // process IDs and paths on following lines remain literal diagnostic data.
   const newline = text.indexOf("\n");

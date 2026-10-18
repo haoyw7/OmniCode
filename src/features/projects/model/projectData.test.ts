@@ -48,14 +48,14 @@ beforeEach(mockBrowserStorage);
 
 describe("rebaseProjectData", () => {
   it("moves path-keyed project settings to the renamed folder", () => {
-    const from = "/work/monocode";
-    const to = "/work/monocode-personal";
+    const from = "/work/omnicode";
+    const to = "/work/omnicode-personal";
     const oldKey = projectKey(from);
     const newKey = projectKey(to);
 
     saveProjectGroups([{ id: "personal", name: "Personal", collapsed: false }]);
     setProjectGroupAssignment(from, "personal");
-    saveTabGroupLabel(oldKey, "My MonoCode");
+    saveTabGroupLabel(oldKey, "My OmniCode");
     saveProjectSidebarTab(from, "changes");
     saveProjectChatBackgroundSettings(oldKey, {
       path: "/images/background.png",
@@ -75,7 +75,7 @@ describe("rebaseProjectData", () => {
 
     rebaseProjectData(from, to);
 
-    expect(loadTabGroupLabels()).toEqual({ [newKey]: "My MonoCode" });
+    expect(loadTabGroupLabels()).toEqual({ [newKey]: "My OmniCode" });
     expect(loadProjectGroupAssignments()).toEqual({ [to]: "personal" });
     expect(loadProjectChatBackgroundSettings(oldKey)).toBeNull();
     expect(loadProjectChatBackgroundSettings(newKey)?.path).toBe(

@@ -19,7 +19,7 @@ const workspaceCaches = new Set([
   "node_modules",
   "target",
   "build",
-  ".monocode-windows-builder",
+  ".omnicode-windows-builder",
   "host/im/node_modules",
 ]);
 
@@ -163,7 +163,7 @@ export async function runWindowsBuild(
     if (digest(await readFile(archive)) !== archiveHash)
       throw new Error("Windows source archive checksum mismatch");
     // Never clean an arbitrary checkout or another tool's directory.
-    const marker = join(workspace, ".monocode-windows-builder");
+    const marker = join(workspace, ".omnicode-windows-builder");
     try {
       await mkdir(workspace);
       await writeFile(marker, "1");
@@ -223,7 +223,7 @@ export async function runWindowsBuild(
         ],
         options,
       );
-      const filename = `MonoCode_${version}_x64-setup.exe`;
+      const filename = `OmniCode_${version}_x64-setup.exe`;
       const source = join(workspace, "target/release/bundle/nsis", filename);
       const bytes = await readFile(source);
       if (bytes.toString("ascii", 0, 2) !== "MZ")

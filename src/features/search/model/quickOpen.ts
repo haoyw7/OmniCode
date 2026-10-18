@@ -107,7 +107,7 @@ export function rankCommands(
   return ranked.sort((a, b) => b.score - a.score);
 }
 
-const RECENT_COMMANDS_KEY = "monocode.quickOpen.recentCommands";
+const RECENT_COMMANDS_KEY = "omnicode.quickOpen.recentCommands";
 const RECENT_COMMANDS_LIMIT = 8;
 
 export function loadRecentCommands(): string[] {

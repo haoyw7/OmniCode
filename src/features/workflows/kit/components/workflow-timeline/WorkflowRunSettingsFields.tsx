@@ -1,5 +1,5 @@
 // Run settings form fields. The concurrency stepper is ZCode's (Apache-2.0);
-// Monocode's per-agent runtime rows live in WorkflowRunSettingsPopover.
+// OmniCode's per-agent runtime rows live in WorkflowRunSettingsPopover.
 import { Minus as MinusIcon, Plus as PlusIcon } from "../../../../../shared/ui/icons";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "../../../../../shared/ui/forms/InputGroup.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";

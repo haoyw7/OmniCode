@@ -27,7 +27,7 @@
       "nsis": {
         "installMode": "currentUser",
         "template": "installer/installer.nsi",
-        "installerHooks": "installer/pixel-ui.nsh",
+        "installerHooks": "installer/omnicode-ui.nsh",
         "headerImage": "installer/omnicode-header.bmp",
         "installerIcon": "icons/icon.ico",
         "uninstallerIcon": "icons/icon.ico",

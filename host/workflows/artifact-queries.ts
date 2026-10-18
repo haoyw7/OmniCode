@@ -124,6 +124,7 @@ export async function readArtifactBytes(store: FileArtifactStore, journal: Journ
   const end = Math.min(stored.bytes.length, start + Math.max(1, Math.min(512 * 1024, limit)));
   return {
     mediaType: target.contentType ?? stored.contentType,
+    storedPath: stored.path,
     totalBytes: stored.bytes.length,
     dataBase64: stored.bytes.subarray(start, end).toString("base64"),
     nextOffset: end < stored.bytes.length ? end : null,

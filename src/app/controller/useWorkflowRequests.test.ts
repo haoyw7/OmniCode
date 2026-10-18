@@ -62,12 +62,13 @@ afterEach(async () => {
 });
 
 describe("workflow navigation", () => {
-  it.each(["run", "agent"] as const)("opens %s without an intermediate parent activation", async kind => {
+  it.each(["run", "agent", "artifact"] as const)("opens %s without an intermediate parent activation", async kind => {
     const tab = newTab(parent.id);
     await act(async () => root.render(createElement(Harness, { initialTabs: [tab] })));
     commits.length = 0;
     await act(async () => {
       if (kind === "run") actions.openRun({ cwd: "/repo", parentSessionId: parent.id, runId: "run" });
+      else if (kind === "artifact") actions.openArtifact({ cwd: "/repo", parentSessionId: parent.id, runId: "run", artifactId: "report", title: "Report" });
       else actions.openAgent({ cwd: "/repo", parentSessionId: parent.id, runId: "run", sessionId: "worker", title: "Worker" });
     });
     expect(focusParent).not.toHaveBeenCalled();
@@ -76,16 +77,32 @@ describe("workflow navigation", () => {
     expect(latestTabs[0].layout).not.toEqual(tab.layout);
   });
 
+  it("reuses a permanent artifact tab beside its run when opened repeatedly", async () => {
+    const run = newWorkflowRunTab("Run", "/repo", { parentSessionId: parent.id, runId: "run" });
+    const source = newEditorWorkspaceTab(run);
+    await act(async () => root.render(createElement(Harness, { initialTabs: [newTab(parent.id), source] })));
+    const request = { cwd: "/repo", parentSessionId: parent.id, runId: "run", artifactId: "report", title: "Report", sourceFileId: run.id };
+    await act(async () => actions.openArtifact(request));
+    const artifact = latestTabs[1].editorPanes[0].files[1];
+    await act(async () => actions.openArtifact(request));
+    expect(latestTabs[1].editorPanes[0].files).toEqual([run, artifact]);
+    expect(latestTabs[1].editorPanes[0].activeFileId).toBe(artifact.id);
+    expect(artifact.preview).not.toBe(true);
+    expect(artifact.workflowArtifact).toEqual({ parentSessionId: parent.id, runId: "run", artifactId: "report" });
+  });
+
   it("opens beside a detached source without briefly activating its parent", async () => {
     const run = newWorkflowRunTab("Run", "/repo", { parentSessionId: parent.id, runId: "run" });
     const source = newEditorWorkspaceTab(run);
     await act(async () => root.render(createElement(Harness, { initialTabs: [newTab(parent.id), source] })));
     commits.length = 0;
-    await act(async () => actions.openAgent({ cwd: "/repo", parentSessionId: parent.id, runId: "run", sessionId: "worker", title: "Worker", sourceFileId: run.id }));
+    const avatar = { avatarIndex: 8, name: "Worker", status: "done" as const };
+    await act(async () => actions.openAgent({ cwd: "/repo", parentSessionId: parent.id, runId: "run", sessionId: "worker", title: "Worker", sourceFileId: run.id, avatar }));
     expect(focusParent).not.toHaveBeenCalled();
     expect(loadHistory).not.toHaveBeenCalled();
     expect(commits).toEqual([{ active: source.id, composer: false, files: 2 }]);
     expect(latestTabs[0].editorPanes).toHaveLength(0);
+    expect(latestTabs[1].editorPanes[0].files[1].workflowAgent?.avatar).toEqual(avatar);
   });
 
   it("waits for an unopened parent to load before adding its run", async () => {

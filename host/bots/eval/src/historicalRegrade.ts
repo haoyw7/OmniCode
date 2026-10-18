@@ -296,7 +296,7 @@ export async function writeHistoricalRegrade(root: string, out: string) {
     "复现命令（--out 应指向一个新的目录）：",
     "",
     "```sh",
-    "node host/bots/eval/bin/regrade_historical.mjs --out /tmp/monocode-new-historical-regrade",
+    "node host/bots/eval/bin/regrade_historical.mjs --out /tmp/omnicode-new-historical-regrade",
     "```",
     "",
   );

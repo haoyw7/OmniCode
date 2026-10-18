@@ -8,7 +8,7 @@ export const BUILTIN_CREATE_SKILL: BuiltinSkill = {
   description: CREATE_SKILL_DESCRIPTION,
   invocation: CREATE_SKILL_NAME,
   scope: "builtin",
-  source: "monocode",
+  source: "omnicode",
 };
 
 export function mergeCatalog(discovered: DiscoveredSkill[]): Skill[] {
@@ -35,6 +35,6 @@ function asSkill(skill: DiscoveredSkill): FileSkill {
     invocation: skill.name,
     path: skill.path,
     scope: skill.scope === "user" ? "user" : "project",
-    source: skill.source === "monocode" ? "monocode" : skill.source,
+    source: skill.source === "omnicode" ? "omnicode" : skill.source,
   };
 }

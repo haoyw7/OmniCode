@@ -1,4 +1,4 @@
-const key = (environmentId: string) => `monocode.bot-pins:${environmentId}`;
+const key = (environmentId: string) => `omnicode.bot-pins:${environmentId}`;
 
 /** A local, ordered preference; never part of the Host protocol. */
 export function readBotPins(environmentId: string): string[] {

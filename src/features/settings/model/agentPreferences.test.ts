@@ -29,7 +29,7 @@ it("uses the same default model, effort and account across desktop and mobile", 
   expect(loadLastModelChoice()).toEqual({ harness: "claude", model: "claude-opus" });
   expect(loadDefaultModels().claude).toBe("claude-opus");
   expect(requestedProviderAccountId("claude", "/project")).toBe("work");
-  preferenceStorage.setItem("monocode.providerAccountSelections.v1", JSON.stringify({ "/project": { claude: "personal" } }));
+  preferenceStorage.setItem("omnicode.providerAccountSelections.v1", JSON.stringify({ "/project": { claude: "personal" } }));
   expect(requestedProviderAccountId("claude", "/project")).toBe("personal");
   await store.sync();
 });
@@ -38,7 +38,7 @@ it("shares an explicit desktop global account and preserves project precedence o
   restoreProviderAccounts({ codex: [{ id: "work", label: "Work" }] });
   selectProviderAccount("codex", undefined, "work");
   expect(loadMobileAgentDefaults("host").agents?.codex?.accountId).toBe("work");
-  preferenceStorage.setItem("monocode.providerAccountSelections.v1", JSON.stringify({ "@project:host:project": { codex: "personal" } }));
+  preferenceStorage.setItem("omnicode.providerAccountSelections.v1", JSON.stringify({ "@project:host:project": { codex: "personal" } }));
   expect(loadMobileProjectDefaults("host", "project").agents?.codex?.accountId).toBe("personal");
   expect(loadMobileAgentDefaults("another-host")).toEqual({});
   removeProviderAccount("codex", "work");
@@ -47,9 +47,9 @@ it("shares an explicit desktop global account and preserves project precedence o
 });
 it("imports legacy release model settings and global account without changing originals", () => {
   const legacy: Record<string, string> = {
-    "monocode.lastModel": JSON.stringify({ harness: "codex", model: "gpt-5" }),
-    "monocode.lastModelSettings": JSON.stringify({ effort: "high" }),
-    "monocode.providerAccountSelections.v1": JSON.stringify({ "~": { codex: "work" }, "/project": { codex: "personal" } }),
+    "omnicode.lastModel": JSON.stringify({ harness: "codex", model: "gpt-5" }),
+    "omnicode.lastModelSettings": JSON.stringify({ effort: "high" }),
+    "omnicode.providerAccountSelections.v1": JSON.stringify({ "~": { codex: "work" }, "/project": { codex: "personal" } }),
   };
   expect(JSON.parse(legacyAgentDefaults(key => legacy[key] ?? null)!)).toEqual({ harness: "codex", agents: { codex: { model: "gpt-5", modelSettings: { effort: "high" }, accountId: "work" } } });
 });

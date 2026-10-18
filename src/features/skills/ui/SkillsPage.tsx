@@ -77,7 +77,7 @@ const SOURCE_ORDER: SkillSource[] = [
   "grok",
   "hermes",
   "antigravity",
-  "monocode",
+  "omnicode",
 ];
 
 function isHarnessSource(source: SkillSource): source is HarnessId {

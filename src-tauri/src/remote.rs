@@ -312,7 +312,7 @@ pub fn remote_connect(
             .bytes()
             .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-')
     {
-        return Err("Enter the device token issued by monocode-host pair".into());
+        return Err("Enter the device token issued by omnicode-host pair".into());
     }
     let descriptor = rpc(&endpoint, &token, None, "environment.describe", json!({}))?;
     if descriptor.get("protocolVersion").and_then(Value::as_u64) != Some(1) {

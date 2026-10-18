@@ -274,9 +274,9 @@ export function useWorkspaceAppViews(options: Options) {
 
   useEffect(() => {
     const onOpenMcp = () => openSettings("mcp");
-    window.addEventListener("monocode:open-mcp-settings", onOpenMcp);
+    window.addEventListener("omnicode:open-mcp-settings", onOpenMcp);
     return () =>
-      window.removeEventListener("monocode:open-mcp-settings", onOpenMcp);
+      window.removeEventListener("omnicode:open-mcp-settings", onOpenMcp);
   }, [openSettings]);
 
   const onOpenNotificationSettings = useCallback(

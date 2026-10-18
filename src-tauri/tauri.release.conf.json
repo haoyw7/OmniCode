@@ -3,7 +3,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/yyy0107/ohmymonocode/releases/latest/download/latest.json"
+        "https://github.com/haoyw7/OmniCode/releases/latest/download/latest.json"
       ],
       "dangerousInsecureTransportProtocol": false
     }

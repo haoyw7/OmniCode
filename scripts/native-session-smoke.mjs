@@ -72,7 +72,7 @@ function client(binary, args, cwd, env) {
   };
 }
 
-const root = await mkdtemp(join(tmpdir(), "monocode-native-smoke-"));
+const root = await mkdtemp(join(tmpdir(), "omnicode-native-smoke-"));
 const timestamp = new Date().toISOString();
 const serialize = (records) =>
   records.map((row) => JSON.stringify(row)).join("\n") + "\n";
@@ -238,7 +238,7 @@ try {
   await codex.request({
     method: "initialize",
     params: {
-      clientInfo: { name: "monocode_native_smoke", version: "0.1" },
+      clientInfo: { name: "omnicode_native_smoke", version: "0.1" },
       capabilities: { experimentalApi: true },
     },
   });

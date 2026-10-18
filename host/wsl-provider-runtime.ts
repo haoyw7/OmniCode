@@ -29,9 +29,9 @@ const artifact = JSON.parse(input);
 if (!['claude', 'codex', 'pi', 'opencode'].includes(artifact.provider) || !/^linux-(x64|arm64)$/.test(artifact.platform) ||
     !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?-[a-f0-9]{16}$/.test(artifact.name)) throw new Error('Invalid provider artifact');
 const source = process.platform === 'win32' ? artifact.directory : execFileSync('wslpath', ['-u', artifact.directory], { encoding: 'utf8' }).trim();
-const parent = join(homedir(), '.monocode', 'remote', 'providers', artifact.provider);
+const parent = join(homedir(), '.omnicode', 'remote', 'providers', artifact.provider);
 const destination = join(parent, artifact.name);
-const marker = '.monocode-runtime.json';
+const marker = '.omnicode-runtime.json';
 const identity = JSON.stringify({ provider: artifact.provider, version: artifact.version, platform: artifact.platform,
   integrity: artifact.integrity, entrypoint: artifact.entrypoint, files: artifact.files });
 const safe = (root, relative) => {

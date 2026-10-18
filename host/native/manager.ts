@@ -94,7 +94,7 @@ export const nativeHolding = (value: HostSession) =>
 /**
  * Host owner of native Claude Code, Codex, Pi, omp and OpenCode histories:
  * source resolution, reads, watching, turn preparation/settlement, lazy
- * identity for MonoCode-started conversations, and automatic recovery.
+ * identity for OmniCode-started conversations, and automatic recovery.
  */
 export class NativeSessionManager {
   private readonly reader = new NativeReader();
@@ -619,7 +619,7 @@ export class NativeSessionManager {
   // --------------------------------------------------------- lazy identity
 
   /**
-   * After a turn of a MonoCode-started conversation: remember where its native
+   * After a turn of a OmniCode-started conversation: remember where its native
    * source lives and its revision, without taking a lease or watching it.
    */
   recordLazy(id: string): void {

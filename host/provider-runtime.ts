@@ -79,14 +79,14 @@ export function supportsProviderRuntime(provider: string): provider is RuntimePr
 }
 
 const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/;
-const MANIFEST = ".monocode-runtime.json";
+const MANIFEST = ".omnicode-runtime.json";
 const MAX_ARCHIVE_BYTES = 1024 * 1024 * 1024;
 const MAX_UNPACKED_BYTES = 2 * MAX_ARCHIVE_BYTES;
 const inFlight = new Map<string, Promise<ProviderRuntimeArtifact>>();
 const retained = new Map<string, Promise<void>>();
 
 export function providerRuntimeRoot(): string {
-  return join(homedir(), ".monocode-host", "providers");
+  return join(homedir(), ".omnicode-host", "providers");
 }
 
 export function parseProviderVersion(output: string): string {
@@ -522,7 +522,7 @@ async function installPi(version: string, platform: ProviderPlatform, options: P
   const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^npm_config_/i.test(key)));
   try {
     await writeFile(userConfig, ""); await writeFile(globalConfig, "");
-    await writeFile(join(staging, "package.json"), JSON.stringify({ name: "monocode-provider-runtime", version: "1.0.0", private: true, dependencies: { [pkg.name]: pkg.version } }));
+    await writeFile(join(staging, "package.json"), JSON.stringify({ name: "omnicode-provider-runtime", version: "1.0.0", private: true, dependencies: { [pkg.name]: pkg.version } }));
     const runNpm = (args: string[]) => promisify(execFile)(process.execPath, [npm, ...args, ...flags], {
       cwd: staging, env, windowsHide: true, timeout: 600_000, maxBuffer: 4 * 1024 * 1024,
     });

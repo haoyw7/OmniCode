@@ -12,7 +12,7 @@ import {
   vi,
 } from "vitest";
 
-vi.hoisted(() => vi.stubEnv("MONOCODE_UPDATE_CHANNEL", "lan"));
+vi.hoisted(() => vi.stubEnv("OMNICODE_UPDATE_CHANNEL", "lan"));
 afterAll(() => vi.unstubAllEnvs());
 
 const native = vi.hoisted(() => ({
@@ -63,10 +63,10 @@ import {
 import { MobileAppUpdates, useMobileAppUpdates } from "./MobileAppUpdates";
 
 const manifest = {
-  packageId: "com.monocode.mobile",
+  packageId: "com.omnicode.mobile",
   versionName: "0.7.0",
   versionCode: 5,
-  downloadPath: "/apk/monocode-5.apk",
+  downloadPath: "/apk/omnicode-5.apk",
   sha256: "a".repeat(64),
   size: 1234,
   publishedAt: "2026-10-03T12:00:00Z",

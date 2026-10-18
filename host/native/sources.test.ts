@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 function fixture() {
-  const home = mkdtempSync(join(tmpdir(), "monocode-native-sources-"));
+  const home = mkdtempSync(join(tmpdir(), "omnicode-native-sources-"));
   roots.push(home);
   const write = (path: string, lines: unknown[]) => {
     mkdirSync(join(path, ".."), { recursive: true });

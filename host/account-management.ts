@@ -273,7 +273,7 @@ export class HostAccountManagement {
       if (job.status !== "running") return this.loginStatus({ id });
       const launch = await providerLaunch(binary, []);
       const env = { ...process.env };
-      for (const key of ["MONOCODE_CONTROL_TOKEN", "MONOCODE_APP_TOKEN", "OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN"]) delete env[key];
+      for (const key of ["OMNICODE_CONTROL_TOKEN", "OMNICODE_APP_TOKEN", "OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN"]) delete env[key];
       if (provider === "codex") env.CODEX_HOME = profile.home;
       else if (profile.keychainSelector) {
         env.CLAUDE_CONFIG_DIR = profile.keychainSelector;

@@ -197,7 +197,7 @@ mod tests {
     impl Temp {
         fn new() -> Self {
             let path =
-                std::env::temp_dir().join(format!("monocode-defaults-{}", uuid::Uuid::new_v4()));
+                std::env::temp_dir().join(format!("omnicode-defaults-{}", uuid::Uuid::new_v4()));
             std::fs::create_dir(&path).unwrap();
             Self(path)
         }

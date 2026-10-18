@@ -367,7 +367,7 @@ async function applyState(
     );
   if (currentMachineIO().key !== "local") {
     await machineFs.mkdir(machinePath.dirname(target), { recursive: true });
-    const temporary = machinePath.join(machinePath.dirname(target), `.monocode-integrate-${randomUUID()}`);
+    const temporary = machinePath.join(machinePath.dirname(target), `.omnicode-integrate-${randomUUID()}`);
     await machineFs.writeFile(temporary, bytes, { flag: "wx", mode: state.mode });
     try {
       await machineFs.chmod(temporary, state.mode);
@@ -378,7 +378,7 @@ async function applyState(
   await mkdir(dirname(target), { recursive: true });
   const temporary = join(
     dirname(target),
-    `.monocode-integrate-${randomUUID()}`,
+    `.omnicode-integrate-${randomUUID()}`,
   );
   const file = await open(temporary, "wx", state.mode);
   try {

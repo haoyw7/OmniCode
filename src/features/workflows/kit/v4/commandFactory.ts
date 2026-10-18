@@ -1,4 +1,4 @@
-// Monocode shim: ZCode command envelopes, dispatched by the workflow conversation context.
+// OmniCode shim: ZCode command envelopes, dispatched by the workflow conversation context.
 export type CommandEnvelope = {
   commandId: string;
   type: string;

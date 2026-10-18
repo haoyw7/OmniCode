@@ -84,25 +84,25 @@ describe("AgentTranscript collapsed work", () => {
 
   it("shows a /operator request without the command in its amber bubble", () => {
     const markup = render([
-      { id: "user", role: "user", text: "list my notes", monocode: true },
+      { id: "user", role: "user", text: "list my notes", omnicode: true },
     ]);
-    expect(markup).toContain('data-monocode="true"');
+    expect(markup).toContain('data-omnicode="true"');
     expect(markup).toContain("list my notes");
     expect(markup).not.toContain("/operator");
 
     const legacy = render([
-      { id: "old", role: "user", text: "/monocode list my notes" },
+      { id: "old", role: "user", text: "/omnicode list my notes" },
     ]);
-    expect(legacy).toContain('data-monocode="true"');
-    expect(legacy).not.toContain("/monocode");
+    expect(legacy).toContain('data-omnicode="true"');
+    expect(legacy).not.toContain("/omnicode");
   });
 
-  it("shows MonoCode CLI actions instead of their long shell commands", () => {
+  it("shows OmniCode CLI actions instead of their long shell commands", () => {
     const command =
-      "/repo/target/debug/MonoCode.app/Contents/MacOS/monocode";
+      "/repo/target/debug/OmniCode.app/Contents/MacOS/omnicode";
     const markup = render(
       [
-        { id: "user", role: "user", text: "/monocode list my notes" },
+        { id: "user", role: "user", text: "/omnicode list my notes" },
         {
           id: "help",
           role: "tool",
@@ -119,18 +119,18 @@ describe("AgentTranscript collapsed work", () => {
       true,
     );
     expect(markup).toContain("Using OmniCode");
-    expect(markup).toContain('data-monocode-tool-call="--help"');
-    expect(markup).toContain('data-monocode-tool-call="notes.list"');
-    expect(markup).toContain("monocode app --help");
-    expect(markup).toContain("monocode app notes.list");
+    expect(markup).toContain('data-omnicode-tool-call="--help"');
+    expect(markup).toContain('data-omnicode-tool-call="notes.list"');
+    expect(markup).toContain("omnicode app --help");
+    expect(markup).toContain("omnicode app notes.list");
     expect(markup).toContain("Ran");
     expect(markup).toContain("Running");
-    expect(markup).not.toContain("Contents/MacOS/monocode");
+    expect(markup).not.toContain("Contents/MacOS/omnicode");
     expect(markup).not.toContain("Show error details for OmniCode");
   });
 
-  it("shows the full command before approving a MonoCode CLI call", () => {
-    const command = "monocode app sessions.send --json '{\"prompt\":\"private-marker\"}'";
+  it("shows the full command before approving a OmniCode CLI call", () => {
+    const command = "omnicode app sessions.send --json '{\"prompt\":\"private-marker\"}'";
     const markup = renderToStaticMarkup(
       createElement(AgentTranscript, {
         blocks: [
@@ -147,7 +147,7 @@ describe("AgentTranscript collapsed work", () => {
         onApproval: () => {},
       }),
     );
-    expect(markup).toContain('data-monocode-tool-call="sessions.send"');
+    expect(markup).toContain('data-omnicode-tool-call="sessions.send"');
     expect(markup).toContain("private-marker");
     expect(markup).toContain('data-approval="allow"');
     expect(markup).toContain('data-variant="primary"');
@@ -160,7 +160,7 @@ describe("AgentTranscript collapsed work", () => {
           {
             id: "call",
             role: "tool",
-            text: "monocode app notes.list && echo extra",
+            text: "omnicode app notes.list && echo extra",
             tool: { kind: "shell", status: "pending" },
             approval: { requestId: 2 },
           },
@@ -169,24 +169,24 @@ describe("AgentTranscript collapsed work", () => {
         onApproval: () => {},
       }),
     );
-    expect(compound).not.toContain("data-monocode-tool-call");
+    expect(compound).not.toContain("data-omnicode-tool-call");
     expect(compound).toContain("echo extra");
     expect(compound).toContain("Allow</button>");
   });
 
-  it("keeps a failed MonoCode call compact until its error is opened", () => {
+  it("keeps a failed OmniCode call compact until its error is opened", () => {
     const markup = render([
-      { id: "user", role: "user", text: "/monocode list notes" },
+      { id: "user", role: "user", text: "/omnicode list notes" },
       {
         id: "notes",
         role: "tool",
-        text: "monocode app notes.list",
+        text: "omnicode app notes.list",
         tool: { kind: "shell", status: "failed", detail: "Connection refused" },
       },
     ]);
-    expect(markup).toContain('data-monocode-tool-call="notes.list"');
+    expect(markup).toContain('data-omnicode-tool-call="notes.list"');
     expect(markup).toContain("Ran");
-    expect(markup).toContain("monocode app notes.list");
+    expect(markup).toContain("omnicode app notes.list");
     expect(markup).toContain("Show error details for OmniCode: List notes");
     expect(markup).not.toContain("Connection refused");
   });
@@ -858,7 +858,7 @@ describe("worker assignment prompts", () => {
             id: "u1",
             role: "user",
             internal: true,
-            text: "Review the current branch against main.\n\n<monocode_assignment>\nYou are a worker managed by a MonoCode lead. Your assigned write scope is: src/App.tsx.\n</monocode_assignment>",
+            text: "Review the current branch against main.\n\n<omnicode_assignment>\nYou are a worker managed by a OmniCode lead. Your assigned write scope is: src/App.tsx.\n</omnicode_assignment>",
           },
           { id: "a1", role: "assistant", text: "Looking now" },
         ],
@@ -866,8 +866,8 @@ describe("worker assignment prompts", () => {
     );
     expect(markup).toContain("Review the current branch against main.");
     expect(markup).toContain("Looking now");
-    expect(markup).not.toContain("monocode_assignment");
-    expect(markup).not.toContain("You are a worker managed by a MonoCode lead");
+    expect(markup).not.toContain("omnicode_assignment");
+    expect(markup).not.toContain("You are a worker managed by a OmniCode lead");
   });
 });
 

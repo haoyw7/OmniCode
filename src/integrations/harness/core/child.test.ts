@@ -143,7 +143,7 @@ describe("child bridge", () => {
   it("passes stored overrides through resolution and command validation", async () => {
     vi.stubGlobal("localStorage", {
       getItem: (key: string) =>
-        key === "monocode.providerBinaryPaths.v1"
+        key === "omnicode.providerBinaryPaths.v1"
           ? JSON.stringify({
               claude: "/opt/claude/bin/claude",
               codex: "/opt/codex/bin/codex",

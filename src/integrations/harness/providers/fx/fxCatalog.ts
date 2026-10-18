@@ -16,7 +16,7 @@ export function refreshFxCatalog(): Promise<void> {
       if (models.length > 0) setHarnessModels("fx", models);
     })
     .catch((error: unknown) => {
-      console.debug("[monocode] fx catalog", error);
+      console.debug("[omnicode] fx catalog", error);
     })
     .finally(() => {
       inflight = null;

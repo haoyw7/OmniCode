@@ -1,8 +1,8 @@
 // Project options for the saved-workflows hub. Adapted from ZCode (Apache-2.0)
-// packages/ui/src/settings/automationWorkspaceOptions.ts over Monocode projects.
+// packages/ui/src/settings/automationWorkspaceOptions.ts over OmniCode projects.
 import { resolveWorkspaceKey } from "../_shims/shared.js";
 
-/** An open Monocode project. */
+/** An open OmniCode project. */
 export interface WindowTabState {
   workspacePath: string;
   label: string;

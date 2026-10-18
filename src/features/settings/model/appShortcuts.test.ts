@@ -63,7 +63,7 @@ describe("resolveAppShortcut", () => {
 
   it("resolves a migrated sidebar override under the remaining command id", () => {
     localStorage.setItem(
-      "monocode.keybindingOverrides",
+      "omnicode.keybindingOverrides",
       JSON.stringify({
         "App: Toggle Session Sidebar": { shortcut: "Control+Shift+KeyM" },
       }),

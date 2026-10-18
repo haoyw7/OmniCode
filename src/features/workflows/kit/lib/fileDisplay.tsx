@@ -1,4 +1,4 @@
-// Monocode shim for ZCode's file icon descriptor: a document glyph.
+// OmniCode shim for ZCode's file icon descriptor: a document glyph.
 import { FileText } from "../../../../shared/ui/icons";
 
 export function resolveFileDisplayDescriptor(_name: string): { fileIconSrc: string } {

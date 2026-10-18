@@ -54,7 +54,7 @@ const { values } = parseArgs({
     "max-usd": { type: "string", default: "2" },
   },
 });
-const root = process.env.MONOCODE_EVAL_ROOT!,
+const root = process.env.OMNICODE_EVAL_ROOT!,
   out = resolve(values.out ?? "");
 if (!values.out) throw Error("--out NEW_DIRECTORY is required");
 await assertEvalOutputOutsideProject(root, out);
@@ -149,18 +149,18 @@ const expansionIds = [
   ...expandUnrun(catalog, previous, 80),
 ];
 const episodes = [
-  ...buildPairedOrder(diagnosticIds, ["control", "monocode"], 17).map((x) => ({
+  ...buildPairedOrder(diagnosticIds, ["control", "omnicode"], 17).map((x) => ({
     ...x,
     phase: "prompt",
   })),
-  ...buildPairedOrder(nativeIds, ["control", "monocode"], 17).map((x) => ({
+  ...buildPairedOrder(nativeIds, ["control", "omnicode"], 17).map((x) => ({
     ...x,
     phase: "native",
   })),
   ...expansionIds.map((id) => ({
     id,
     phase: "expansion",
-    arm: "monocode",
+    arm: "omnicode",
     seed: 17,
     repeat: 0,
   })),
@@ -445,7 +445,7 @@ for (const episode of episodes) {
           mode: "pi",
           seed: episode.seed,
           adapter: completion,
-          brain: episode.arm === "monocode" ? brain : undefined,
+          brain: episode.arm === "omnicode" ? brain : undefined,
           transportPolicy: "terminal-compatible-v2",
           environmentVersion: "native-parity-v2",
           attackAnnotations: attacks(episode.id),
@@ -458,7 +458,7 @@ for (const episode of episodes) {
             seed: episode.seed,
             maxSteps: 8,
             adapter: completion,
-            brain: episode.arm === "monocode" ? brain : undefined,
+            brain: episode.arm === "omnicode" ? brain : undefined,
             transportPolicy: "terminal-compatible-v2",
             attackAnnotations: attacks(episode.id),
             ...(["bipia", "hotpotqa", "bfcl", "longmemeval"].includes(

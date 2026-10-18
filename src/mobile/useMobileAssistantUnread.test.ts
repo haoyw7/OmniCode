@@ -50,10 +50,10 @@ it("counts unread replies and pending questions, merging streaming revisions and
     brainGeneration: 1, runId: "run", requestId: 1, inputKind: "question", resolved: false,
   };
   messages = [reply("seen", 1), { ...reply("user", 2), kind: "user" }, reply("stream", 3), question];
-  localStorage.setItem("monocode.assistant-read:host", "1");
+  localStorage.setItem("omnicode.assistant-read:host", "1");
   await render();
   expect(count()).toBe(2);
-  expect(localStorage.getItem("monocode.assistant-read:host")).toBe("1");
+  expect(localStorage.getItem("omnicode.assistant-read:host")).toBe("1");
   messages = [reply("stream", 5), { ...question, revision: 6, resolved: true }];
   await act(async () => vi.advanceTimersByTimeAsync(2000));
   expect(count()).toBe(1);
@@ -64,8 +64,8 @@ it("counts unread replies and pending questions, merging streaming revisions and
   await act(async () => vi.advanceTimersByTimeAsync(2000));
   expect(count()).toBe(1);
   act(() => {
-    localStorage.setItem("monocode.assistant-read:host", "7");
-    window.dispatchEvent(new StorageEvent("storage", { key: "monocode.assistant-read:host" }));
+    localStorage.setItem("omnicode.assistant-read:host", "7");
+    window.dispatchEvent(new StorageEvent("storage", { key: "omnicode.assistant-read:host" }));
   });
   expect(count()).toBe(0);
 });
@@ -109,7 +109,7 @@ it("hides another Host's count and cancels in-flight pagination when switching",
 });
 
 it("loads unread replies without waiting for already-read history", async () => {
-  localStorage.setItem("monocode.assistant-read:host", "500");
+  localStorage.setItem("omnicode.assistant-read:host", "500");
   messages = [reply("new", 501)];
   const respond = rpc.getMockImplementation()!;
   rpc.mockImplementation((method, params) =>

@@ -24,7 +24,7 @@ it("defaults to manual installation and preserves unrelated update choices", () 
 it.each(['{"autoInstall":"true","skippedVersion":7}', "not json", "null"])(
   "does not enable automatic installation from corrupt preferences %s",
   (raw) => {
-    localStorage.setItem("monocode.updatePreferences", raw);
+    localStorage.setItem("omnicode.updatePreferences", raw);
     expect(loadUpdatePreferences()).toEqual({
       autoInstall: false,
       skippedVersion: null,

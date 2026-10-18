@@ -59,7 +59,7 @@ export async function callAgent(action: string, input: Record<string, unknown>, 
 
 function errorReply(error: unknown, requestId: string) {
   const message = error instanceof Error ? error.message : String(error);
-  const token = process.env.MONOCODE_CONTROL_TOKEN;
+  const token = process.env.OMNICODE_CONTROL_TOKEN;
   return { ok: false, requestId, error: token ? message.replaceAll(token, "[redacted]") : message };
 }
 
@@ -122,7 +122,7 @@ export async function runAgentsMcp(input: Readable = process.stdin, output: Writ
     if (request.method === "initialize") {
       initialized = true;
       const requested = record(request.params) ? request.params.protocolVersion : undefined;
-      result({ protocolVersion: ["2024-11-05", "2025-03-26", "2025-06-18"].includes(String(requested)) ? requested : "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "monocode-agents", version: "1.0.0" } }); return;
+      result({ protocolVersion: ["2024-11-05", "2025-03-26", "2025-06-18"].includes(String(requested)) ? requested : "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "omnicode-agents", version: "1.0.0" } }); return;
     }
     if (!initialized) { fail(id, -32002, "Initialize the server first"); return; }
     if (request.method === "ping") { result({}); return; }

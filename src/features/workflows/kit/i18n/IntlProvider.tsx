@@ -1,5 +1,5 @@
-// Monocode shim for ZCode's intl hook: ZCode message ids resolve to English UI
-// text (WORKFLOW_MESSAGES), which Monocode's translate() localizes.
+// OmniCode shim for ZCode's intl hook: ZCode message ids resolve to English UI
+// text (WORKFLOW_MESSAGES), which OmniCode's translate() localizes.
 import { useMemo } from "react";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { translate } from "../../../../shared/i18n/language";

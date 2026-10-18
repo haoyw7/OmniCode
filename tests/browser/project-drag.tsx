@@ -17,7 +17,7 @@ const origin = new URLSearchParams(location.search).get("origin");
 const paths = ["cha-k", "optimize-session-model-agent-loading", "ba", "delta", "epsilon", "zeta", "eta"].map(name => `/fixture/${name}`);
 setUiLanguage("zh-CN");
 document.documentElement.classList.add("theme-light");
-localStorage.setItem("monocode.desktopColorScheme", "light");
+localStorage.setItem("omnicode.desktopColorScheme", "light");
 applyDesktopSkin();
 saveProjectRailOrder(paths);
 savePinnedProjects(origin === "pinned" ? paths : []);

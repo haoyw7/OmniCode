@@ -10,7 +10,7 @@ import type { Attachment } from "../../features/sessions/model/session";
 
 type CopiedFile = { name: string; mimeType: string; data: string };
 
-const FILES_ATTRIBUTE = 'data-monocode-files="';
+const FILES_ATTRIBUTE = 'data-omnicode-files="';
 const MAX_CLIPBOARD_METADATA_CHARS = 64 * 1024;
 const MAX_CLIPBOARD_BASE64_CHARS = Math.ceil(MAX_EMBED_BYTES / 3) * 4;
 const MAX_CLIPBOARD_PAYLOAD_CHARS =
@@ -30,7 +30,7 @@ function textWithFolderPaths(text: string, paths: string[]): string {
   return text.endsWith("\n") ? text + suffix : `${text}\n${suffix}`;
 }
 
-/** HTML keeps arbitrary files together with text across MonoCode windows. */
+/** HTML keeps arbitrary files together with text across OmniCode windows. */
 export async function copyMessage(
   text: string,
   attachments: Attachment[] = [],
@@ -88,7 +88,7 @@ export async function copyMessage(
           "'": "&#39;",
         })[char]!,
     );
-  const html = `<div data-monocode-files="${encodeURIComponent(JSON.stringify(files))}"><pre>${escape(payload)}</pre>${files
+  const html = `<div data-omnicode-files="${encodeURIComponent(JSON.stringify(files))}"><pre>${escape(payload)}</pre>${files
     .map((file) => {
       const src = `data:${escape(file.mimeType)};base64,${escape(file.data)}`;
       return file.mimeType.startsWith("image/")

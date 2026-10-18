@@ -7,8 +7,8 @@ import { pathKey } from "../../../shared/lib/paths";
 type Stores = { primary: SharedPreferenceStore; hosts: ReadonlyMap<string, SharedPreferenceStore> };
 let current: Stores | undefined;
 let unsubscribe: (() => void) | undefined;
-const pendingKey = (hostId: string, key: string) => `monocode.pending-project-preferences.v1:${encodeURIComponent(hostId)}:${key}`;
-const pendingListKey = (hostId: string, key: string) => `monocode.pending-project-lists.v1:${encodeURIComponent(hostId)}:${key}`;
+const pendingKey = (hostId: string, key: string) => `omnicode.pending-project-preferences.v1:${encodeURIComponent(hostId)}:${key}`;
+const pendingListKey = (hostId: string, key: string) => `omnicode.pending-project-lists.v1:${encodeURIComponent(hostId)}:${key}`;
 const object = (raw: string | null): Record<string, unknown> => {
   const value: unknown = JSON.parse(raw ?? "{}");
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};

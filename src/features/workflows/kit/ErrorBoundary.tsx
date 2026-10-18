@@ -1,4 +1,4 @@
-// Monocode shim for ZCode's ScopedErrorBoundary: contain a crashed subtree.
+// OmniCode shim for ZCode's ScopedErrorBoundary: contain a crashed subtree.
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { cn } from "../../../shared/lib/cn";
 import { workflowIntl } from "./i18n/IntlProvider.js";

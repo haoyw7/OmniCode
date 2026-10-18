@@ -1,13 +1,13 @@
 // 全局工作流组的纯逻辑。与组件分文件以守住 max-lines 400，
 // 也便于单测这些无 React 的判定。
-import { resolveWorkspaceKey, type MonocodeSavedWorkflowRun } from "../../_shims/shared.js";
-import type { MonocodeAgentSavedWorkflowTarget } from "../../_shims/services.js";
+import { resolveWorkspaceKey, type OmniCodeSavedWorkflowRun } from "../../_shims/shared.js";
+import type { OmniCodeAgentSavedWorkflowTarget } from "../../_shims/services.js";
 import type { AutomationWorkspaceOption } from "../automationWorkspaceOptions.js";
 import type { SavedWorkflowProjectTarget } from "./savedWorkflowContract.js";
 import type { SavedWorkflowRunProject } from "./SavedWorkflowRunHistoryPanel.js";
 
 /** 全局档的 RPC 载体常量：不带 workspace，services 层自选本机运行时。 */
-export const GLOBAL_SAVED_WORKFLOW_TARGET: MonocodeAgentSavedWorkflowTarget = { scope: "global" };
+export const GLOBAL_SAVED_WORKFLOW_TARGET: OmniCodeAgentSavedWorkflowTarget = { scope: "global" };
 
 /** 取路径末段（跨 `/` 与 `\\`），给未打开项目的运行行做兜底 label。 */
 function basenameOfPath(path: string): string {
@@ -49,7 +49,7 @@ export function findProjectByCwd(
  */
 export function buildGlobalRunProjectResolver(
   localProjects: readonly AutomationWorkspaceOption[],
-): (run: MonocodeSavedWorkflowRun) => SavedWorkflowRunProject | null {
+): (run: OmniCodeSavedWorkflowRun) => SavedWorkflowRunProject | null {
   return (run) => {
     if (!run.cwd) return null;
     const project = findProjectByCwd(localProjects, run.cwd);

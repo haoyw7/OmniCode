@@ -26,7 +26,7 @@ it.each(["pi", "omp"] as const)(
   "runs the %s RPC adapter with lead-only control grants and worker scratch isolation",
   async (harness) => {
     const root = mkdtempSync(
-      join(tmpdir(), `monocode-${harness}-orchestration-env-`),
+      join(tmpdir(), `omnicode-${harness}-orchestration-env-`),
     );
     const cwd = join(root, "repo");
     const scratch = join(root, "worker-scratch");
@@ -38,15 +38,15 @@ it.each(["pi", "omp"] as const)(
       `const fs = require('node:fs');
 const path = require('node:path');
 const env = process.env;
-fs.writeFileSync(path.join(${JSON.stringify(root)}, env.MONOCODE_FIXTURE_ID+'.json'), JSON.stringify({
-  endpoint: env.MONOCODE_CONTROL_ENDPOINT || null, token: !!env.MONOCODE_CONTROL_TOKEN,
-  appEndpoint: !!env.MONOCODE_APP_ENDPOINT, appToken: !!env.MONOCODE_APP_TOKEN,
+fs.writeFileSync(path.join(${JSON.stringify(root)}, env.OMNICODE_FIXTURE_ID+'.json'), JSON.stringify({
+  endpoint: env.OMNICODE_CONTROL_ENDPOINT || null, token: !!env.OMNICODE_CONTROL_TOKEN,
+  appEndpoint: !!env.OMNICODE_APP_ENDPOINT, appToken: !!env.OMNICODE_APP_TOKEN,
   tmp: env.TMPDIR, temp: env.TEMP, tmpWindows: env.TMP, args: process.argv.slice(2)
 }));
 const emit = value => process.stdout.write(JSON.stringify(value)+'\\n');
 require('node:readline').createInterface({input:process.stdin}).on('line', line => {
   const input = JSON.parse(line);
-  const data = input.type === 'get_state' ? {sessionId: 'fixture-'+env.MONOCODE_FIXTURE_ID, model: {provider:'fixture', id:'test', contextWindow:200000}, isStreaming:false} : {};
+  const data = input.type === 'get_state' ? {sessionId: 'fixture-'+env.OMNICODE_FIXTURE_ID, model: {provider:'fixture', id:'test', contextWindow:200000}, isStreaming:false} : {};
   emit({type:'response', id:input.id, command:input.type, success:true, data});
   if(input.type === 'prompt') setTimeout(() => {
     emit({type:'agent_end', isTerminal:true});
@@ -121,10 +121,10 @@ require('node:readline').createInterface({input:process.stdin}).on('line', line 
     const provider = hostProviders[harness];
     const engine = new HostEngine(store, { [harness]: provider });
     for (const key of [
-      "MONOCODE_CONTROL_ENDPOINT",
-      "MONOCODE_CONTROL_TOKEN",
-      "MONOCODE_APP_ENDPOINT",
-      "MONOCODE_APP_TOKEN",
+      "OMNICODE_CONTROL_ENDPOINT",
+      "OMNICODE_CONTROL_TOKEN",
+      "OMNICODE_APP_ENDPOINT",
+      "OMNICODE_APP_TOKEN",
     ])
       vi.stubEnv(key, "unrelated-inherited-grant");
     try {
@@ -132,7 +132,7 @@ require('node:readline').createInterface({input:process.stdin}).on('line', line 
       engine.orchestration.control.enable(leadId);
       backend.configureSessionEnvironment((id) => ({
         ...engine.orchestration.environment(id),
-        MONOCODE_FIXTURE_ID: id,
+        OMNICODE_FIXTURE_ID: id,
       }));
       for (const sessionId of [leadId, workerId, ordinaryId]) {
         const events: HarnessEvent[] = [];
@@ -160,7 +160,7 @@ require('node:readline').createInterface({input:process.stdin}).on('line', line 
       expect(lead).toMatchObject({
         endpoint:
           engine.orchestration.control.environment(leadId)
-            .MONOCODE_CONTROL_ENDPOINT,
+            .OMNICODE_CONTROL_ENDPOINT,
         token: true,
         appEndpoint: false,
         appToken: false,

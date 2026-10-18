@@ -34,16 +34,15 @@ import "./features/connections/model/remoteCommands";
 import "./styles/index.css";
 import { initUiLanguage } from "./shared/i18n/languageSync";
 import { initializeSharedHost } from "./features/connections/model/sharedHost";
-import { useTranslation } from "./shared/i18n/useTranslation";
 import { WindowResizeHandles } from "./app/shell/WindowResizeHandles";
 import { WindowResizeObserver } from "./app/shell/WindowResizeObserver";
-import { WindowDragBar } from "./app/shell/WindowChrome";
+import { BootRecovery } from "./app/shell/BootRecovery";
 import { configureDefaultIconArtwork } from "./shared/ui/icons";
 import { desktopIconArtwork } from "./app/desktopIconArtwork";
 
 configureDefaultIconArtwork(desktopIconArtwork);
 
-performance.mark("monocode:bootstrap");
+performance.mark("omnicode:bootstrap");
 // Let local boot IPC overlap loading/evaluating the workspace UI.
 const appLoaded = import("./app/App");
 
@@ -69,8 +68,8 @@ function dismissBootSplash() {
   activateWindowAppearance();
   void animate(splash, { opacity: 0 }, prefersReducedMotion() ? immediateTransition : defaultTransition).then(() => {
     splash.remove();
-    performance.mark("monocode:ui-ready");
-    performance.measure("monocode:navigation-to-ui", { start: 0, end: "monocode:ui-ready" });
+    performance.mark("omnicode:ui-ready");
+    performance.measure("omnicode:navigation-to-ui", { start: 0, end: "omnicode:ui-ready" });
   });
 }
 
@@ -111,23 +110,13 @@ void listen("quit_aborted", () => {
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );
-function BootFailure({ error }: { error: unknown }) {
-  const { t } = useTranslation();
-  useLayoutEffect(dismissBootSplash, []);
-  return (
-    <div className="flex h-screen flex-col text-content">
-      <WindowDragBar />
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-8">
-        <p>{t("Could not connect to shared conversations.")}</p>
-        <pre className="max-w-xl whitespace-pre-wrap text-sm text-content/60">
-          {String(error)}
-        </pre>
-        <button onClick={() => void boot()}>{t("Retry")}</button>
-      </div>
-    </div>
-  );
-}
+let booting = false;
+let bootAttempt = 0;
+const retryBoot = () => { void boot(); };
 async function boot() {
+  if (booting) return;
+  booting = true;
+  const attempt = ++bootAttempt;
   stopDesktopHostPreferences();
   try {
     await providerBinaryPathsPrimed;
@@ -145,7 +134,7 @@ async function boot() {
       loadBootWorkspace(),
       appLoaded,
     ]);
-    performance.mark("monocode:workspace-ready");
+    performance.mark("omnicode:workspace-ready");
     const installedUpdate = windowTransfer ? null : consumeInstalledUpdate();
     root.render(
       <React.StrictMode>
@@ -163,9 +152,11 @@ async function boot() {
   } catch (error) {
     root.render(
       <BootGate>
-        <BootFailure error={error} />
+        <BootRecovery key={attempt} error={error} onRetry={retryBoot} />
       </BootGate>,
     );
+  } finally {
+    booting = false;
   }
 }
 void boot();

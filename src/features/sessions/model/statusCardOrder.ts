@@ -16,7 +16,7 @@ export const STATUS_CARD_IDS = [
 
 export type StatusCardId = (typeof STATUS_CARD_IDS)[number];
 
-const KEY = "monocode.statusCardOrder";
+const KEY = "omnicode.statusCardOrder";
 
 const isStatusCardId = (value: unknown): value is StatusCardId =>
   STATUS_CARD_IDS.includes(value as StatusCardId);
@@ -43,7 +43,7 @@ export function saveStatusCardOrder(order: readonly StatusCardId[]) {
   }
 }
 
-const VISIBLE_KEY = "monocode.statusCardsVisible";
+const VISIBLE_KEY = "omnicode.statusCardsVisible";
 const visibilityListeners = new Set<() => void>();
 
 /** Whether the session status cards show beside the conversation; on by default. */

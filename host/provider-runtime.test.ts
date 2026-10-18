@@ -14,7 +14,7 @@ import { resolveProviderRuntime } from "./process";
 
 const directories: string[] = [];
 afterEach(async () => { await Promise.all(directories.splice(0).map((path) => rm(path, { recursive: true, force: true }))); });
-async function directory() { const path = await mkdtemp(join(tmpdir(), "monocode-provider-runtime-")); directories.push(path); return path; }
+async function directory() { const path = await mkdtemp(join(tmpdir(), "omnicode-provider-runtime-")); directories.push(path); return path; }
 
 interface Entry { path: string; content?: string; type?: string }
 function archive(entries: Entry[]): Buffer {

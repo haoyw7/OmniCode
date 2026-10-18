@@ -46,7 +46,7 @@ for (const mode of ["shell", "tui"] as const) {
     const beforeRows = await wrappedRows();
     await terminal.evaluate(element => element.setAttribute("data-retained-terminal", "true"));
     const initialWidth = (await pane.boundingBox())!.width;
-    const renderer = pane.locator(".monocode-terminal-renderer");
+    const renderer = pane.locator(".omnicode-terminal-renderer");
     const rendererWidth = (await renderer.boundingBox())!.width;
     const handle = page.locator('[data-pane-sash="tools-split:0"] > .resize-handle');
     const box = (await handle.boundingBox())!;

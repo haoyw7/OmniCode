@@ -9,9 +9,9 @@ import { expect, it, vi } from "vitest";
 
 /** Exercises the shipped bundle outside the checkout, with outbound network blocked. */
 it("loads the Feishu SDK from an isolated Host bundle without source node_modules", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-im-package-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-im-package-"));
   const entry = join(directory, "host.mjs"), data = join(directory, "data");
-  copyFileSync(resolve("build/host/monocode-host.mjs"), entry);
+  copyFileSync(resolve("build/host/omnicode-host.mjs"), entry);
   copyFileSync(resolve("host/provider-guard.mjs"), join(directory, "provider-guard.mjs"));
   const marker = join(directory, "sdk-network-attempt");
   const preload = join(directory, "offline.mjs");

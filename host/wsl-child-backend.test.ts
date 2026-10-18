@@ -22,7 +22,7 @@ vi.mock("./wsl-provider-config", async importOriginal => ({
 }));
 
 it("resolves the matching Linux provider runtime without an opt-in flag", async () => {
-  vi.stubEnv("MONOCODE_WSL_SHARED_HOST", undefined);
+  vi.stubEnv("OMNICODE_WSL_SHARED_HOST", undefined);
   const desktop = vi.spyOn(providerProcess, "resolveProviderRuntime").mockResolvedValue({
     provider: "codex", command: "C:\\codex.exe", version: "1.2.3", source: "configured", platform: "win32-x64",
   });
@@ -150,7 +150,7 @@ it("merges session capabilities before shared-account overrides and refreshes Co
   expect(wslProviderConfiguration).toHaveBeenCalledWith(expect.objectContaining({ provider: "codex", cwd: "/repo" }));
   expect(refreshCodexAccountBeforeWsl).toHaveBeenCalledWith({ command: "C:\\codex.exe", home: "C:\\account", accountId: undefined });
   expect(f.request).toHaveBeenCalledWith("process.spawn", expect.objectContaining({ env: {
-    MONOCODE_HOST: "1", WORKFLOW_CAPABILITY: "fixture", OPENAI_API_KEY: null, CODEX_HOME: "/mnt/c/account",
+    OMNICODE_HOST: "1", WORKFLOW_CAPABILITY: "fixture", OPENAI_API_KEY: null, CODEX_HOME: "/mnt/c/account",
   } }));
   await f.backend.close();
 });

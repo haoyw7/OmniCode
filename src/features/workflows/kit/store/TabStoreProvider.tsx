@@ -1,4 +1,4 @@
-// Monocode shim: ZCode lists open workspace tabs; Monocode lists the open projects.
+// OmniCode shim: ZCode lists open workspace tabs; OmniCode lists the open projects.
 import { createContext, useContext } from "react";
 import type { WindowTabState } from "../settings/automationWorkspaceOptions.js";
 

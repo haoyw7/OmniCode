@@ -1,4 +1,4 @@
-/** Bundled MonoCode skill: teach the agent how to write portable SKILL.md files. */
+/** Bundled OmniCode skill: teach the agent how to write portable SKILL.md files. */
 export const CREATE_SKILL_NAME = "create-skill";
 
 export const CREATE_SKILL_DESCRIPTION =

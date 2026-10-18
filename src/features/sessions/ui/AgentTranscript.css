@@ -1,11 +1,11 @@
 /* Import directly from the component: Tailwind's Lightning CSS optimizer warns
  * on valid ::highlight() selectors. Vite's CSS pipeline preserves these rules.
  * https://github.com/parcel-bundler/lightningcss/issues/1300 */
-::highlight(monocode-transcript-search-match) {
+::highlight(omnicode-transcript-search-match) {
   background-color: color-mix(in srgb, #e2c08d 46%, transparent);
 }
 
-::highlight(monocode-transcript-search-current) {
+::highlight(omnicode-transcript-search-current) {
   background-color: color-mix(in srgb, var(--color-accent) 62%, transparent);
 }
 /* A sent bubble already shares the transcript's scroll curve. Keep the

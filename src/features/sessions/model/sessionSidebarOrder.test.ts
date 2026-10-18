@@ -48,7 +48,7 @@ it("synchronizes the affected project and storage changes with detachable listen
   saveSessionSidebarOrder("/work/a", ["a"]);
   expect(changed).toHaveBeenCalledTimes(1);
   window.dispatchEvent(
-    new StorageEvent("storage", { key: "monocode.sessionSidebarOrder.v1" }),
+    new StorageEvent("storage", { key: "omnicode.sessionSidebarOrder.v1" }),
   );
   expect(changed).toHaveBeenCalledTimes(2);
   unsubscribe();
@@ -58,11 +58,11 @@ it("synchronizes the affected project and storage changes with detachable listen
 
 it("ignores malformed order data and tolerates unavailable storage", () => {
   localStorage.setItem(
-    "monocode.sessionSidebarOrder.v1",
+    "omnicode.sessionSidebarOrder.v1",
     JSON.stringify({ "/work/a": ["a", 42, "a", "b"] }),
   );
   expect(loadSessionSidebarOrder("/work/a")).toEqual(["a", "b"]);
-  localStorage.setItem("monocode.sessionSidebarOrder.v1", "invalid");
+  localStorage.setItem("omnicode.sessionSidebarOrder.v1", "invalid");
   expect(loadSessionSidebarOrder("/work/a")).toEqual([]);
   saveSessionSidebarOrder("/work/a", ["a"]);
   expect(loadSessionSidebarOrder("/work/a")).toEqual(["a"]);

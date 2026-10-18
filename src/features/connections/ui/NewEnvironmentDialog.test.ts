@@ -36,7 +36,7 @@ it("parses NAME=value lines and rejects reserved or malformed lines", () => {
   expect(parseEnvironmentVariables("# comment\nexport API_URL = \"http://x\"\n\nEMPTY=\nA=b=c")).toEqual({
     variables: { API_URL: "http://x", EMPTY: "", A: "b=c" },
   });
-  expect(parseEnvironmentVariables("MONOCODE_CONTROL_TOKEN=x").error).toEqual({ line: 1, reserved: true });
+  expect(parseEnvironmentVariables("OMNICODE_CONTROL_TOKEN=x").error).toEqual({ line: 1, reserved: true });
   expect(parseEnvironmentVariables("ok=1\nnot valid").error).toEqual({ line: 2, reserved: false });
 });
 

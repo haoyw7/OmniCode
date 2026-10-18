@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.monocode.mobile",
+  appId: "com.omnicode.mobile",
   appName: "OmniCode",
   loggingBehavior: "none",
   webDir: "dist-mobile",

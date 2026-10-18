@@ -60,7 +60,7 @@ afterEach(async () => {
 });
 
 async function setup() {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-large-sync-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-large-sync-"));
   const store = new HostStore(join(directory, "host.db"));
   let turn: SendTurnInput | undefined;
   let finish = () => {};

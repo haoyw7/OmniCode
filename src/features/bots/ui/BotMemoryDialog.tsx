@@ -4,9 +4,6 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Modal } from "../../../shared/ui/Modal";
 import type { BotMemoryDetailProps } from "./BotChatChrome";
 
-// The assistant overlay sits at z-index 100, above the shared dialog layer.
-const OVERLAY_DIALOG_LAYER = 101;
-
 /** Desktop panel for one remembered fact: the full text, editable or forgettable. */
 export function BotMemoryDialog({
   open,
@@ -30,7 +27,6 @@ export function BotMemoryDialog({
       description={meta}
       size="sm"
       className="desktop-bot-memory-modal"
-      layer={OVERLAY_DIALOG_LAYER}
       onClose={onClose}
     >
       <div className="assistant-settings assistant-memory-dialog">

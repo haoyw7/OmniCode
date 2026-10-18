@@ -335,7 +335,7 @@ it("restores a quoted draft after reopening and retains the same payload through
   act(() => button("Retry message").click());
   await flush();
   expect(data.rpc.mock.calls.filter(([method]) => method === "assistant.send").at(-1)![1]).toEqual(sent);
-  expect(localStorage.getItem("monocode.assistant-reply:host")).toBeNull();
+  expect(localStorage.getItem("omnicode.assistant-reply:host")).toBeNull();
 });
 
 it.each(["background", "user", "assistant"])("reveals every message time while swiping left from %s", async (start) => {
@@ -1104,20 +1104,20 @@ it("acknowledges mobile assistant messages only while the page and document are 
   const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
   render(false);
   await flush();
-  expect(localStorage.getItem("monocode.assistant-read:read-mobile")).toBeNull();
+  expect(localStorage.getItem("omnicode.assistant-read:read-mobile")).toBeNull();
   render(true);
   await flush();
-  expect(localStorage.getItem("monocode.assistant-read:read-mobile")).toBeNull();
+  expect(localStorage.getItem("omnicode.assistant-read:read-mobile")).toBeNull();
   visibility.mockReturnValue("visible");
   act(() => document.dispatchEvent(new Event("visibilitychange")));
-  expect(localStorage.getItem("monocode.assistant-read:read-mobile")).toBe("1");
+  expect(localStorage.getItem("omnicode.assistant-read:read-mobile")).toBe("1");
   render(false);
   data.messages([{ kind: "assistant", id: "next", revision: 2, createdAt: 2, text: "New reply" }]);
   await advanceMotionTimers(2000);
-  expect(localStorage.getItem("monocode.assistant-read:read-mobile")).toBe("1");
+  expect(localStorage.getItem("omnicode.assistant-read:read-mobile")).toBe("1");
   render(true);
   await flush();
-  expect(localStorage.getItem("monocode.assistant-read:read-mobile")).toBe("2");
+  expect(localStorage.getItem("omnicode.assistant-read:read-mobile")).toBe("2");
 });
 
 it("keeps one log observer across revisions and stops background polling while hidden", async () => {

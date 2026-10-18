@@ -89,7 +89,7 @@ it("leaves a pasted GitHub pull request URL as editable text", async () => {
   const root = createRoot(container);
   const submit = vi.fn();
   const onDraftChange = vi.fn();
-  const url = "https://github.com/hardbeat920/monocode/pull/318";
+  const url = "https://github.com/hardbeat920/omnicode/pull/318";
   const props = {
     focused: false,
     harness: "codex" as const,

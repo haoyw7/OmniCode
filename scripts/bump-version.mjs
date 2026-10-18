@@ -11,55 +11,77 @@ if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
-function replaceFirst(path, pattern, replacement) {
-  const text = readFileSync(path, "utf8");
-  const next = text.replace(pattern, replacement);
-  if (next === text) {
-    console.error(`failed to update ${path}`);
+// Validate every target before writing, and allow repeated synchronization.
+const pending = new Map();
+function replaceVersion(path, pattern, replacement, expected = 1) {
+  const text = pending.get(path) ?? readFileSync(path, "utf8");
+  const matches = [
+    ...text.matchAll(
+      new RegExp(
+        pattern.source,
+        pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`,
+      ),
+    ),
+  ];
+  if (matches.length !== expected) {
+    console.error(
+      `expected ${expected} version fields in ${path}, found ${matches.length}`,
+    );
     process.exit(1);
   }
-  writeFileSync(path, next);
+  pending.set(path, text.replace(pattern, replacement));
 }
 
-replaceFirst(
-  join(root, "package.json"),
-  /("version": ")[^"]+(")/,
-  `$1${version}$2`,
-);
-// The lockfile carries the version twice: once at the top and once on the
-// root package. Missing them left npm's lockfile claiming 0.1.0 sixteen
-// releases later. The second pattern is anchored on `packages` because the
-// top-level object repeats the same name/version pair.
-replaceFirst(
-  join(root, "package-lock.json"),
-  /^(\{\n\s*"name": "monocode-desktop",\n\s*"version": ")[^"]+(")/,
-  `$1${version}$2`,
-);
-replaceFirst(
-  join(root, "package-lock.json"),
-  /("packages": \{\n\s*"": \{\n\s*"name": "monocode-desktop",\n\s*"version": ")[^"]+(")/,
-  `$1${version}$2`,
-);
-replaceFirst(
+for (const directory of ["", "host/im"]) {
+  replaceVersion(
+    join(root, directory, "package.json"),
+    /("version": ")[^"]+(")/,
+    `$1${version}$2`,
+  );
+  // Only update the lockfile root, never dependency package versions.
+  replaceVersion(
+    join(root, directory, "package-lock.json"),
+    /^(\{\r?\n\s*"name": "[^"]+",\r?\n\s*"version": ")[^"]+(")/,
+    `$1${version}$2`,
+  );
+  replaceVersion(
+    join(root, directory, "package-lock.json"),
+    /("packages": \{\r?\n\s*"": \{\r?\n\s*"name": "[^"]+",\r?\n\s*"version": ")[^"]+(")/,
+    `$1${version}$2`,
+  );
+}
+replaceVersion(
   join(root, "Cargo.toml"),
-  /^(version = ")[^"]+(")/m,
+  /(\[workspace\.package\]\r?\nversion = ")[^"]+(")/,
   `$1${version}$2`,
 );
-replaceFirst(
+replaceVersion(
   join(root, "src-tauri/tauri.conf.json"),
   /("version": ")[^"]+(")/,
   `$1${version}$2`,
 );
-replaceFirst(
+replaceVersion(
   join(root, "Cargo.lock"),
-  /(name = "monocode(?:-host-supervisor|-process-tree)?"\nversion = ")[^"]+(")/g,
+  /(name = "omnicode(?:-host-supervisor|-process-tree)?"\r?\nversion = ")[^"]+(")/g,
   `$1${version}$2`,
+  3,
 );
 
-replaceFirst(
+replaceVersion(
   join(root, "mobile/android/app/build.gradle"),
   /(versionName ")[^"]+(")/,
   `$1${version}$2`,
 );
+
+replaceVersion(
+  join(root, "mobile/ios/App/App.xcodeproj/project.pbxproj"),
+  /(MARKETING_VERSION = )[^;]+(;)/g,
+  `$1${version}$2`,
+  2,
+);
+
+for (const [path, next] of pending) {
+  if (readFileSync(path, "utf8") !== next) writeFileSync(path, next);
+}
 
 console.log(`version ${version}`);

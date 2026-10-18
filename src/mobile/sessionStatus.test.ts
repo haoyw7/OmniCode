@@ -77,7 +77,7 @@ describe("mobile session status", () => {
     expect(text).toContain("剩余 79%（已用 140K / 660K）");
   });
 
-  it("falls back to the MonoCode session ID and copies it", async () => {
+  it("falls back to the OmniCode session ID and copies it", async () => {
     setUiLanguage("en");
     render();
     const text = node.textContent ?? "";

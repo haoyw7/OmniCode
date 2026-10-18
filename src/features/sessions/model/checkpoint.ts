@@ -35,7 +35,7 @@ export type CheckpointApplyResult = {
   alreadyApplied: number;
 };
 
-const REVIEW_CHANGED = "monocode-review-changed";
+const REVIEW_CHANGED = "omnicode-review-changed";
 
 /** Answers review, Keep and Undo for a conversation the Host runs; paths in its
  * results are already in this window's form. */

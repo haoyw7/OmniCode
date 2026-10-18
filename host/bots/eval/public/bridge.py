@@ -173,7 +173,7 @@ def restrict_runtime():
     datasets = cache_root()
     dataset_lock()
     os.environ.clear()
-    os.environ["MONOCODE_EVAL_DATA_ROOT"] = str(datasets)
+    os.environ["OMNICODE_EVAL_DATA_ROOT"] = str(datasets)
     sys.dont_write_bytecode = True
     read_roots = [ROOT, ROOT.parent / "bin", ROOT.parent / "data", datasets, Path(sys.base_prefix) / "lib", Path("/usr/lib"), Path("/usr/local/lib"), Path("/usr/share")]
 

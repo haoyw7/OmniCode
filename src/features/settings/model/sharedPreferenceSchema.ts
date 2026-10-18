@@ -20,32 +20,32 @@ const deviceLocalGroups: Record<PreferenceKind, readonly string[]> = {
 };
 const kinds = (source: Record<PreferenceKind, readonly string[]>, extra: [string, PreferenceKind][]): Readonly<Record<string, PreferenceKind>> =>
   Object.freeze(Object.fromEntries([
-    ...Object.entries(source).flatMap(([kind, names]) => names.map(name => [`monocode.${name}`, kind as PreferenceKind])),
+    ...Object.entries(source).flatMap(([kind, names]) => names.map(name => [`omnicode.${name}`, kind as PreferenceKind])),
     ...extra,
   ]));
 export const SHARED_PREFERENCE_KINDS = kinds(groups,
-  ["colors", "custom-colors", "labels", "mascots"].map(name => [`monocode:tab-group:${name}`, "object"]));
+  ["colors", "custom-colors", "labels", "mascots"].map(name => [`omnicode:tab-group:${name}`, "object"]));
 /**
  * Formerly shared. Clients keep these in localStorage; the Host still accepts
  * them so journals queued by older clients never block later edits.
  */
-export const DEVICE_LOCAL_PREFERENCE_KINDS = kinds(deviceLocalGroups, [["monocode:tab-groups:collapsed", "array"]]);
+export const DEVICE_LOCAL_PREFERENCE_KINDS = kinds(deviceLocalGroups, [["omnicode:tab-groups:collapsed", "array"]]);
 const KNOWN_PREFERENCE_KINDS: Readonly<Record<string, PreferenceKind>> = { ...SHARED_PREFERENCE_KINDS, ...DEVICE_LOCAL_PREFERENCE_KINDS };
 export const preferenceKind = (key: string): PreferenceKind | undefined =>
   Object.hasOwn(KNOWN_PREFERENCE_KINDS, key) ? KNOWN_PREFERENCE_KINDS[key] : undefined;
 export const PROJECT_MAP_PREFERENCES = new Set([
-  "monocode:tab-group:colors", "monocode:tab-group:custom-colors", "monocode:tab-group:labels", "monocode:tab-group:mascots",
-  "monocode.projectProviderSettings.v1", "monocode.providerAccountSelections.v1", "monocode.sessionFolders", "monocode.sessionSidebarOrder.v1", "monocode.projectGroupAssignments", "monocode.projectNotifications.v1", "monocode.projectBackgroundAssets",
+  "omnicode:tab-group:colors", "omnicode:tab-group:custom-colors", "omnicode:tab-group:labels", "omnicode:tab-group:mascots",
+  "omnicode.projectProviderSettings.v1", "omnicode.providerAccountSelections.v1", "omnicode.sessionFolders", "omnicode.sessionSidebarOrder.v1", "omnicode.projectGroupAssignments", "omnicode.projectNotifications.v1", "omnicode.projectBackgroundAssets",
 ]);
 export const PROJECT_LIST_PREFERENCES = new Set([
-  "monocode.sidebarPinnedOrder.v1",
-  "monocode.recentProjects", "monocode.projectRailOrder", "monocode.projectRailPinned", "monocode.archivedProjects",
+  "omnicode.sidebarPinnedOrder.v1",
+  "omnicode.recentProjects", "omnicode.projectRailOrder", "omnicode.projectRailPinned", "omnicode.archivedProjects",
 ]);
 /** Project-keyed device-local values still decode from Host copies during migration. */
 export const DEVICE_LOCAL_PROJECT_MAP_PREFERENCES = new Set([
-  "monocode.projectSidebarTabs.v1", "monocode.pinnedSessionsCollapsed", "monocode.reminderSessionsCollapsed",
+  "omnicode.projectSidebarTabs.v1", "omnicode.pinnedSessionsCollapsed", "omnicode.reminderSessionsCollapsed",
 ]);
-export const DEVICE_LOCAL_PROJECT_LIST_PREFERENCES = new Set(["monocode:tab-groups:collapsed", "monocode.projectTreeExpanded.v1"]);
+export const DEVICE_LOCAL_PROJECT_LIST_PREFERENCES = new Set(["omnicode:tab-groups:collapsed", "omnicode.projectTreeExpanded.v1"]);
 export function preferenceField(key: string): { base: string; path: string[] } | undefined {
   const split = key.indexOf("::");
   const base = split < 0 ? key : key.slice(0, split);

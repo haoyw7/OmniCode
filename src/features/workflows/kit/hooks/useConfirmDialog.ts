@@ -1,4 +1,4 @@
-// Monocode shim for ZCode's confirm dialog: the platform confirm prompt.
+// OmniCode shim for ZCode's confirm dialog: the platform confirm prompt.
 import { useCallback } from "react";
 
 export type ConfirmDialogRequest = {

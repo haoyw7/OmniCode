@@ -32,7 +32,7 @@ import type { TurnIntent } from "../../../../features/sessions/model/session";
 import type { HarnessEvent } from "../../core/types";
 import { mergeStream } from "../../core/streamText";
 
-const TEXT_CHILD_ID = "monocode-claude-text";
+const TEXT_CHILD_ID = "omnicode-claude-text";
 const INIT_TIMEOUT_MS = 8_000;
 const REQUEST_TIMEOUT_MS = 45_000;
 const TEXT_MODEL = "claude-haiku-4-5";

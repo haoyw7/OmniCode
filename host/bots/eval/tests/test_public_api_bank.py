@@ -167,7 +167,7 @@ class PublicAPIBankTests(unittest.TestCase):
                 episode = api.Episode(case)
                 final, trace = execute_reference(episode)
                 self.assertTrue(episode.grade(final, trace)['passed'])
-        loaded = [name for name in sys.modules if name.startswith('_monocode_public_api_bank_vendor')]
+        loaded = [name for name in sys.modules if name.startswith('_omnicode_public_api_bank_vendor')]
         self.assertFalse(any(fragment in name for name in loaded for fragment in ('tool_search', 'translate', 'dictionary', 'search_engine', 'utils')))
 
     def test_arithmetic_guard_blocks_code_and_unbounded_syntax(self):

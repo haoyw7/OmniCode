@@ -1,6 +1,6 @@
 import type { Block } from "./session";
 
-/** Native files are not an authority for MonoCode sender identity. Only stable
+/** Native files are not an authority for OmniCode sender identity. Only stable
  * message/turn IDs can carry an existing Host origin into a refreshed transcript.
  * Keep unmatched app turns as overlays rather than guess from repeated text. */
 export function retainTurnOrigins(

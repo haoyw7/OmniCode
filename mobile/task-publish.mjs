@@ -149,8 +149,8 @@ function buildApk(root) {
     stdio: "inherit",
     env: {
       ...process.env,
-      MONOCODE_UPDATE_CHANNEL: "lan",
-      MONOCODE_MOBILE_DEFER_PUBLISH: "1",
+      OMNICODE_UPDATE_CHANNEL: "lan",
+      OMNICODE_MOBILE_DEFER_PUBLISH: "1",
     },
   });
   if (result.error) throw result.error;

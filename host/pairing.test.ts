@@ -9,7 +9,7 @@ const installationId = "dff432f1-16ca-45af-812d-d8d370642645";
 afterEach(() => { for (const cleanup of cleanups.splice(0).reverse()) cleanup(); });
 
 it("groups a phone's network credentials across restarts and revokes all of them", () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-phone-identity-test-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-phone-identity-test-"));
   cleanups.push(() => rmSync(directory, { recursive: true, force: true }));
   const path = join(directory, "host.db");
   let store = new HostStore(path);
@@ -90,7 +90,7 @@ it("self-revocation removes only that route's credential", () => {
 });
 
 it("persists pairing redemption across Host restarts while keeping the phone credential", () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-pairing-test-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-pairing-test-"));
   cleanups.push(() => rmSync(directory, { recursive: true, force: true }));
   const path = join(directory, "host.db");
   let store = new HostStore(path);
@@ -112,7 +112,7 @@ it("persists pairing redemption across Host restarts while keeping the phone cre
 });
 
 it("rejects another store connection's attempt after it observed the same pending code", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-pairing-race-test-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-pairing-race-test-"));
   cleanups.push(() => rmSync(directory, { recursive: true, force: true }));
   const path = join(directory, "host.db");
   const first = new HostStore(path);

@@ -256,7 +256,7 @@ html[data-skin] [data-question-footer] {
 }
 
 html[data-skin] [data-tool-renderer]:has([data-approval-controls]),
-html[data-skin] [data-monocode-tool-call]:has([data-approval-controls]),
+html[data-skin] [data-omnicode-tool-call]:has([data-approval-controls]),
 html[data-skin] [data-approval-host]:has([data-approval-controls]) {
   color: var(--color-ink);
   background: var(--color-card);
@@ -320,7 +320,7 @@ html[data-skin] .user-message-media .attachment-chip-image button {
   }
 }
 
-/* Claude Desktop reference geometry, applied to the retained MonoCode surfaces.
+/* Claude Desktop reference geometry, applied to the retained OmniCode surfaces.
  * html scope also reaches pooled transcripts and picker portals. Editor, diff
  * and xterm content keep their own measured typography and virtual row sizes.
  */

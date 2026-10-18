@@ -11,7 +11,7 @@ thread_local! { static SUPPRESS: Cell<usize> = const { Cell::new(0) }; }
 fn installed_class(object: &AnyObject) -> Option<&'static AnyClass> {
     let mut class = Some(object.class());
     while let Some(current) = class {
-        if current.name().to_bytes().starts_with(b"MonoCodeQuiet_") {
+        if current.name().to_bytes().starts_with(b"OmniCodeQuiet_") {
             return Some(current);
         }
         class = current.superclass();
@@ -43,7 +43,7 @@ extern "C" fn activate_others(object: &AnyObject, _: Sel, flag: Bool) {
 
 fn quiet_class(original: &'static AnyClass) -> Result<&'static AnyClass, String> {
     let name = CString::new(format!(
-        "MonoCodeQuiet_{}",
+        "OmniCodeQuiet_{}",
         original.name().to_string_lossy()
     ))
     .map_err(|error| error.to_string())?;
@@ -117,7 +117,7 @@ mod tests {
     fn suppresses_both_activation_paths_and_restores_after_error_and_panic() {
         // Test against a private Objective-C object, never the user's app or clipboard.
         let mut builder =
-            ClassBuilder::new(c"MonoCodeActivationGuardTest", NSObject::class()).unwrap();
+            ClassBuilder::new(c"OmniCodeActivationGuardTest", NSObject::class()).unwrap();
         unsafe {
             builder.add_method(sel!(activate), activated as extern "C" fn(_, _));
             builder.add_method(

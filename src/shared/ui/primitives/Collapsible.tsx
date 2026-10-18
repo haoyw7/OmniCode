@@ -1,5 +1,5 @@
-// Monocode: ZCode's Radix collapsible relies on tw-animate keyframes Monocode does
-// not ship. The same API over Monocode's shared disclosure motion, so content
+// OmniCode: ZCode's Radix collapsible relies on tw-animate keyframes OmniCode does
+// not ship. The same API over OmniCode's shared disclosure motion, so content
 // animates open and closed, stays mounted until closing finishes and respects
 // reduced motion.
 import { createContext, useContext, useState, type ComponentProps, type ReactNode } from "react";

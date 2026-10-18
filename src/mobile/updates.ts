@@ -10,7 +10,7 @@ import releaseConfig from "../../mobile/update-config.release.json";
 
 const release =
   import.meta.env.MODE === "release" ||
-  import.meta.env.MONOCODE_UPDATE_CHANNEL !== "lan";
+  import.meta.env.OMNICODE_UPDATE_CHANNEL !== "lan";
 const config = release ? releaseConfig : lanConfig;
 const manifestPath = release ? releaseConfig.manifestPath : "/latest.json";
 const downloadPrefix = release ? releaseConfig.downloadPrefix : "/apk/";
@@ -48,7 +48,7 @@ export const Updates = registerPlugin<{
     event: "downloadProgress",
     callback: (progress: { received: number; total: number }) => void,
   ): Promise<PluginListenerHandle>;
-}>("MonoCodeUpdates");
+}>("OmniCodeUpdates");
 
 export function parseMobileUpdate(value: unknown): MobileUpdate {
   const update = value as Partial<MobileUpdate> | null;
@@ -59,7 +59,7 @@ export function parseMobileUpdate(value: unknown): MobileUpdate {
     update.versionCode! < 1 ||
     update.versionCode! > 2100000000 ||
     update.downloadPath !==
-      `${downloadPrefix}monocode-${update.versionCode}.apk` ||
+      (release ? "/OmniCode.apk" : `${downloadPrefix}omnicode-${update.versionCode}.apk`) ||
     typeof update.versionName !== "string" ||
     !update.versionName ||
     typeof update.sha256 !== "string" ||

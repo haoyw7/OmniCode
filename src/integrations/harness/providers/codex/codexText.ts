@@ -21,7 +21,7 @@ import type { TextPromptInput } from "../../core/registry";
 
 import { mergeStream, streamTextDelta } from "../../core/streamText";
 
-const TEXT_CHILD_ID = "monocode-codex-text";
+const TEXT_CHILD_ID = "omnicode-codex-text";
 const INIT_TIMEOUT_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 45_000;
 const TEXT_RUNTIME_MODE = "supervised" as const;
@@ -333,7 +333,7 @@ async function startLive(
       "initialize",
       {
         clientInfo: {
-          name: "monocode-text",
+          name: "omnicode-text",
           title: "OmniCode",
           version: "0.1.0",
         },

@@ -179,7 +179,7 @@ export const workflowRunActorSchema = z.object({
    */
   phaseName: z.string().min(1).max(WORKFLOW_RUNS_LIMITS.maxPhaseNameLength).optional(),
   /**
-   * Monocode: the provider runtime this actor runs on (harness id, Monocode model id and a
+   * OmniCode: the provider runtime this actor runs on (harness id, OmniCode model id and a
    * short display label such as "codex · gpt-5.5 · high · fast"). Derived by the Host run
    * service from the actor's persona, the run defaults and per-agent overrides.
    */

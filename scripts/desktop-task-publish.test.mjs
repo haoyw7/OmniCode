@@ -96,13 +96,13 @@ test("nonblocking build commands wait for exit and report failures", async () =>
     /failed \(7\)/,
   );
   await assert.rejects(
-    runBuildProcess("monocode-missing-build-command", []),
+    runBuildProcess("omnicode-missing-build-command", []),
     /ENOENT/,
   );
 });
 
 async function fixture(t) {
-  const root = await mkdtemp(join(tmpdir(), "monocode-desktop-task-"));
+  const root = await mkdtemp(join(tmpdir(), "omnicode-desktop-task-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   execFileSync("git", ["init", "-q"], { cwd: root });
   const write = async (path, content) => {
@@ -116,7 +116,7 @@ async function fixture(t) {
     JSON.stringify({
       version: "0.7.0",
       plugins: {
-        updater: { endpoints: ["https://github.com/yyy0107/ohmymonocode/releases/latest/download/latest.json"] },
+        updater: { endpoints: ["https://github.com/haoyw7/OmniCode/releases/latest/download/latest.json"] },
       },
     }),
   );
@@ -558,7 +558,7 @@ test(
     assert.throws(
       () =>
         execFileSync("bash", [hook], {
-          env: { ...process.env, MONOCODE_DESKTOP_STATE_DIR: state },
+          env: { ...process.env, OMNICODE_DESKTOP_STATE_DIR: state },
           stdio: "pipe",
         }),
       (error) => {

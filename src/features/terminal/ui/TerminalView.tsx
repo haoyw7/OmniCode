@@ -225,7 +225,7 @@ function createLiveTerminal(
 ): LiveTerminal & { parked?: number } {
   // xterm renders into its own node, which moves between views' hosts.
   const node = document.createElement("div");
-  node.className = "monocode-terminal-renderer";
+  node.className = "omnicode-terminal-renderer";
   node.style.width = "100%";
   node.style.height = "100%";
   const term = new Terminal({
@@ -470,7 +470,7 @@ function createLiveTerminal(
 
   live.attach = (nextOuter, nextHost, nextMeta) => {
     if (outer && outer !== nextOuter) {
-      outer.classList.remove("monocode-terminal--alt-screen");
+      outer.classList.remove("omnicode-terminal--alt-screen");
     }
     outer = nextOuter;
     host = nextHost;
@@ -491,7 +491,7 @@ function createLiveTerminal(
     owner = null;
     fitScheduler.cancel();
     observer.disconnect();
-    outer?.classList.remove("monocode-terminal--alt-screen");
+    outer?.classList.remove("omnicode-terminal--alt-screen");
     outer = null;
     host = null;
     meta = { current: undefined };
@@ -605,7 +605,7 @@ export function TerminalView({ id, cwd, active, onMetaChange }: Props) {
   return (
     <div
       ref={outerRef}
-      className="monocode-terminal content-surface flex h-full w-full min-h-0 min-w-0 flex-col"
+      className="omnicode-terminal content-surface flex h-full w-full min-h-0 min-w-0 flex-col"
       onMouseDown={() => liveRef.current?.term.focus()}
       onKeyDownCapture={(event) => {
         const term = liveRef.current?.term;
@@ -640,7 +640,7 @@ export function TerminalView({ id, cwd, active, onMetaChange }: Props) {
     >
       <div
         ref={hostRef}
-        className="monocode-terminal-host min-h-0 min-w-0 flex-1 overflow-hidden"
+        className="omnicode-terminal-host min-h-0 min-w-0 flex-1 overflow-hidden"
       />
       {clipboardError && (
         <div role="alert" className="shrink-0 px-2 py-1 text-xs text-destructive">

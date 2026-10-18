@@ -108,7 +108,7 @@ function render(blocks: Block[] = [tasks, agent], busy = true, width = 1600,
           blocks: nextBlocks,
           busy,
           git: { additions: 3, deletions: 1, files: 2, branch: "master" },
-          cwd: "D:/A-Projects/ohmymonocode",
+          cwd: "D:/A-Projects/omnicode",
           branch: "master",
           context,
           scope,
@@ -181,7 +181,7 @@ describe("session status rail", () => {
     const { toggleChanges } = render();
     const text = rail()?.textContent ?? "";
     expect(text).toContain("This machine");
-    expect(text).toContain("ohmymonocode");
+    expect(text).toContain("omnicode");
     expect(text).toContain("D:/A-Projects");
     expect(text).toContain("master");
     expect(text).toContain("+3");
@@ -192,9 +192,9 @@ describe("session status rail", () => {
     act(() => host.querySelector<HTMLButtonElement>('[title="Review changes"]')?.click());
     expect(toggleChanges).toHaveBeenCalledOnce();
     const environment = cardToggle("Environment");
-    expect(environment.textContent).not.toContain("ohmymonocode");
+    expect(environment.textContent).not.toContain("omnicode");
     act(() => environment.click());
-    expect(environment.textContent).toContain("ohmymonocode");
+    expect(environment.textContent).toContain("omnicode");
     act(() => environment.click());
   });
 

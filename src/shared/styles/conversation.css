@@ -341,7 +341,7 @@ html.has-user-accent
  * halo, a golden sheen sweeps across it, and sparkles drift up from a glow at
  * its base, twinkling as they rise and fading out past the top edge.
  */
-.monocode-sparkles {
+.omnicode-sparkles {
   --sparkle-color: #fde68a;
   --sparkle-glow: rgb(251 191 36 / 0.9);
   position: absolute;
@@ -351,12 +351,12 @@ html.has-user-accent
   pointer-events: none;
 }
 
-html.theme-light .monocode-sparkles {
+html.theme-light .omnicode-sparkles {
   --sparkle-color: #f59e0b;
   --sparkle-glow: rgb(217 119 6 / 0.55);
 }
 
-.monocode-sparkles::before {
+.omnicode-sparkles::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -370,7 +370,7 @@ html.theme-light .monocode-sparkles {
   transform: translateX(-120%);
 }
 
-.monocode-sparkles::after {
+.omnicode-sparkles::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -381,7 +381,7 @@ html.theme-light .monocode-sparkles {
   );
 }
 
-.monocode-sparkle {
+.omnicode-sparkle {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -390,7 +390,7 @@ html.theme-light .monocode-sparkles {
   width: 0;
 }
 
-.monocode-sparkle-glyph {
+.omnicode-sparkle-glyph {
   position: absolute;
   bottom: calc(var(--size) * -1);
   left: calc(var(--size) / -2);
@@ -400,13 +400,13 @@ html.theme-light .monocode-sparkles {
   filter: drop-shadow(0 0 3px var(--sparkle-glow));
 }
 
-.monocode-sparkle-ember {
+.omnicode-sparkle-ember {
   border-radius: 9999px;
   background: radial-gradient(circle, #fffbeb, var(--sparkle-color) 70%);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .monocode-sparkles {
+  .omnicode-sparkles {
     display: none;
   }
 }
@@ -691,9 +691,9 @@ input,
 .inbox-pr-diff,
 .unified-diff,
 .inbox-comment-md,
-.monocode-terminal,
-.monocode-terminal .xterm,
-.monocode-terminal .xterm-viewport {
+.omnicode-terminal,
+.omnicode-terminal .xterm,
+.omnicode-terminal .xterm-viewport {
   user-select: text;
 }
 

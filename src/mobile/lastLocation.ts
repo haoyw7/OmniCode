@@ -6,7 +6,7 @@ export interface MobileLocation {
   sessionId?: string;
 }
 
-export const LAST_LOCATION_KEY = "monocode-mobile-last";
+export const LAST_LOCATION_KEY = "omnicode-mobile-last";
 
 export function readLastLocation(
   environmentId: string | undefined,

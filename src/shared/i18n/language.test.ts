@@ -34,12 +34,12 @@ afterEach(() => {
 
 describe("interface language", () => {
   it("displays the legacy Host ownership marker with the current brand", () => {
-    const marker = "Native session is in use by another MonoCode instance";
+    const marker = "Native session is in use by another OmniCode instance";
     expect(translate(marker, undefined, "en"))
       .toBe("Native session is in use by another OmniCode instance");
     expect(translate(marker, undefined, "zh-CN"))
       .toBe("另一个 OmniCode 实例正在使用此原生会话");
-    expect(translate("My MonoCode project", undefined, "en")).toBe("My MonoCode project");
+    expect(translate("My OmniCode project", undefined, "en")).toBe("My OmniCode project");
   });
   it("uses Chinese system locales and keeps explicit English after a restart", () => {
     expect(resolveUiLanguage("zh-TW")).toBe("zh-CN");

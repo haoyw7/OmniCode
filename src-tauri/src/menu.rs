@@ -160,19 +160,18 @@ fn menu_item(
 pub fn dispatch(app: &AppHandle, id: &str) {
     match id {
         "help_website" => {
-            let _ = open::that("https://github.com/yyy0107/ohmymonocode");
+            let _ = open::that("https://github.com/haoyw7/OmniCode");
         }
         "help_github" => {
-            let _ = open::that("https://github.com/yyy0107/ohmymonocode");
+            let _ = open::that("https://github.com/haoyw7/OmniCode");
         }
         "help_report_bug" => {
-            let _ = open::that(
-                "https://github.com/yyy0107/ohmymonocode/issues/new?template=bug_report.yml",
-            );
+            let _ =
+                open::that("https://github.com/haoyw7/OmniCode/issues/new?template=bug_report.yml");
         }
         "help_request_feature" => {
             let _ = open::that(
-                "https://github.com/yyy0107/ohmymonocode/issues/new?template=feature_request.yml",
+                "https://github.com/haoyw7/OmniCode/issues/new?template=feature_request.yml",
             );
         }
         "new_window" => {

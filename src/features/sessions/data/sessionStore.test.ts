@@ -317,12 +317,12 @@ describe("persisted worktree record", () => {
 describe("sanitizeSessionForPersist", () => {
   it("keeps the stripped /operator turn marker for later turns", () => {
     const submitted = appendUser(newSession("codex", "/repo"), "list notes", [], {
-      monocode: true,
+      omnicode: true,
     });
     expect(sanitizeSessionForPersist(submitted).blocks[0]).toMatchObject({
       role: "user",
       text: "list notes",
-      monocode: true,
+      omnicode: true,
     });
   });
 
@@ -658,7 +658,7 @@ describe("sanitizeSessionForPersist", () => {
       {
         id: "i1",
         role: "system",
-        text: "Turn interrupted when MonoCode quit.",
+        text: "Turn interrupted when OmniCode quit.",
         notice: "interrupt",
       },
       {

@@ -15,7 +15,7 @@ import {
   watchChild,
 } from "../../core/child";
 
-const PROBE_ID = "monocode-cursor-probe";
+const PROBE_ID = "omnicode-cursor-probe";
 const DISCOVERY_TIMEOUT_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 12_000;
 
@@ -34,7 +34,7 @@ export function refreshCursorCatalog(): Promise<void> {
       if (models.length > 0) setHarnessModels("cursor", models);
     })
     .catch((error: unknown) => {
-      console.debug("[monocode] cursor catalog", error);
+      console.debug("[omnicode] cursor catalog", error);
     })
     .finally(() => {
       inflight = null;
@@ -44,12 +44,12 @@ export function refreshCursorCatalog(): Promise<void> {
 
 export async function discoverCursorModels(workingDirectory?: string): Promise<AgentModel[]> {
   const fromAcp = await discoverViaAcp(workingDirectory).catch((error: unknown) => {
-    console.debug("[monocode] cursor ACP catalog failed", error);
+    console.debug("[omnicode] cursor ACP catalog failed", error);
     return [];
   });
   if (fromAcp.length > 0) return fromAcp;
   return discoverViaCli(workingDirectory).catch((error: unknown) => {
-    console.debug("[monocode] cursor CLI catalog failed", error);
+    console.debug("[omnicode] cursor CLI catalog failed", error);
     return [];
   });
 }
@@ -84,7 +84,7 @@ async function discoverViaAcp(workingDirectory?: string): Promise<AgentModel[]> 
         {
           protocolVersion: 1,
           clientCapabilities: CURSOR_CLIENT_CAPABILITIES,
-          clientInfo: { name: "monocode", version: "0.1.0" },
+          clientInfo: { name: "omnicode", version: "0.1.0" },
         },
         REQUEST_TIMEOUT_MS,
       );

@@ -63,7 +63,7 @@ it("copies the conversation's branch from the long-press menu", async () => {
 });
 
 it.each([undefined, "feature/mobile"])("omits Copy branch from the header menu (branch=%s)", (branch) => {
-  const { row } = render({ ...snapshot(branch), autoWorktreeBranch: "monocode/task" });
+  const { row } = render({ ...snapshot(branch), autoWorktreeBranch: "omnicode/task" });
   expect(row("Copy branch")).toBeUndefined();
   expect(row("Session status")).toBeUndefined();
 });

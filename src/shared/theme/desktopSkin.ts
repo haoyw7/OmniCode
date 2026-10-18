@@ -17,7 +17,7 @@ export const DESKTOP_SKIN_IDS = [
 export type DesktopSkinId = (typeof DESKTOP_SKIN_IDS)[number];
 export type DesktopSkinPreference = DesktopSkinId | "auto" | "classic";
 
-export const DESKTOP_SKIN_KEY = "monocode.desktopSkin";
+export const DESKTOP_SKIN_KEY = "omnicode.desktopSkin";
 export const DESKTOP_SKIN_DEFAULT: DesktopSkinPreference = "auto";
 
 type SkinInfo = {

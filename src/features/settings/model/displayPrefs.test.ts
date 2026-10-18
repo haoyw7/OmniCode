@@ -12,7 +12,7 @@ import {
 const prefs = [
   {
     name: "show remaining usage",
-    key: "monocode.showRemainingUsage",
+    key: "omnicode.showRemainingUsage",
     defaultValue: false,
     load: loadShowRemainingUsage,
     save: saveShowRemainingUsage,
@@ -20,7 +20,7 @@ const prefs = [
   },
   {
     name: "mask emails",
-    key: "monocode.maskEmails",
+    key: "omnicode.maskEmails",
     defaultValue: true,
     load: loadMaskEmails,
     save: saveMaskEmails,

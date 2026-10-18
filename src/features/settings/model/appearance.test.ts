@@ -41,17 +41,17 @@ import {
   savePopoverOpacity,
 } from "./appearance";
 
-const KEY = "monocode.transcriptLayout";
-const ACCENT_COLOR_KEY = "monocode.accentColor";
-const SCHEME_KEY = "monocode.colorScheme";
-const ANCHOR_KEY = "monocode.transcriptAnchor";
-const SHOW_EXCLUDED_FILES_KEY = "monocode.showExcludedFiles";
-const CHAT_BACKGROUND_PATH_KEY = "monocode.chatBackgroundPath";
-const CHAT_BACKGROUND_OPACITY_KEY = "monocode.chatBackgroundOpacity";
-const CHAT_BACKGROUND_SCOPE_KEY = "monocode.chatBackgroundScope";
-const NEW_THREAD_BACKGROUND_EFFECT_KEY = "monocode.newThreadBackgroundEffect";
-const THEME_DARK_LIGHTNESS_KEY = "monocode.themeDarkLightness";
-const POPOVER_OPACITY_KEY = "monocode.popoverOpacity";
+const KEY = "omnicode.transcriptLayout";
+const ACCENT_COLOR_KEY = "omnicode.accentColor";
+const SCHEME_KEY = "omnicode.colorScheme";
+const ANCHOR_KEY = "omnicode.transcriptAnchor";
+const SHOW_EXCLUDED_FILES_KEY = "omnicode.showExcludedFiles";
+const CHAT_BACKGROUND_PATH_KEY = "omnicode.chatBackgroundPath";
+const CHAT_BACKGROUND_OPACITY_KEY = "omnicode.chatBackgroundOpacity";
+const CHAT_BACKGROUND_SCOPE_KEY = "omnicode.chatBackgroundScope";
+const NEW_THREAD_BACKGROUND_EFFECT_KEY = "omnicode.newThreadBackgroundEffect";
+const THEME_DARK_LIGHTNESS_KEY = "omnicode.themeDarkLightness";
+const POPOVER_OPACITY_KEY = "omnicode.popoverOpacity";
 
 function mockLocalStorage() {
   const data = new Map<string, string>();
@@ -326,18 +326,18 @@ describe("single sidebar persistence", () => {
   it("loads committed widths and bounds invalid stored values", () => {
     expect(loadSidebarWidth()).toBe(SIDEBAR_WIDTH_DEFAULT);
     saveSidebarWidth(375.6);
-    expect(localStorage.getItem("monocode.sidebarWidth")).toBe("376");
+    expect(localStorage.getItem("omnicode.sidebarWidth")).toBe("376");
     expect(loadSidebarWidth()).toBe(376);
-    localStorage.setItem("monocode.sidebarWidth", "invalid");
+    localStorage.setItem("omnicode.sidebarWidth", "invalid");
     expect(loadSidebarWidth()).toBe(SIDEBAR_WIDTH_DEFAULT);
-    localStorage.setItem("monocode.sidebarWidth", "1000");
+    localStorage.setItem("omnicode.sidebarWidth", "1000");
     expect(loadSidebarWidth()).toBe(SIDEBAR_WIDTH_MAX);
     saveSidebarWidth(1);
     expect(loadSidebarWidth()).toBe(SIDEBAR_WIDTH_MIN);
   });
 
   it("drops legacy Inbox from the order while preserving the panel order", () => {
-    localStorage.setItem("monocode.sidebarTabOrder", JSON.stringify(["inbox", "changes", "files", "sessions"]));
+    localStorage.setItem("omnicode.sidebarTabOrder", JSON.stringify(["inbox", "changes", "files", "sessions"]));
     expect(loadSidebarTabOrder()).toEqual(["changes", "files", "sessions"]);
   });
 });

@@ -24,7 +24,7 @@ let probedAt = 0;
 /** True while `availability` holds the previous run's probe result. */
 let restoredFromCache = false;
 
-const AVAILABILITY_KEY = "monocode.harnessAvailability";
+const AVAILABILITY_KEY = "omnicode.harnessAvailability";
 const listeners = new Set<() => void>();
 
 export function emitHarnessAvailability() {

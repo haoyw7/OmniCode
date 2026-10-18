@@ -212,7 +212,7 @@ describe("agent app commands", () => {
       for (const prompt of [
         "/operator list notes",
         "/mono list notes",
-        "  /MONOCODE list notes",
+        "  /OMNICODE list notes",
       ]) {
         await expect(
           handleAgentApp(

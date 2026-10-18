@@ -134,16 +134,16 @@ export function defaultAppearanceProfile(): AppearanceProfile {
 }
 
 const FONT_SIZE_KEYS: Record<FontSizeKind, string> = {
-  ui: "monocode.uiFontSize",
-  content: "monocode.contentFontSize",
-  code: "monocode.codeFontSize",
+  ui: "omnicode.uiFontSize",
+  content: "omnicode.contentFontSize",
+  code: "omnicode.codeFontSize",
 };
-const REDUCED_MOTION_KEY = "monocode.reducedMotion";
-const SEPARATE_SCHEMES_KEY = "monocode.separateSchemeAppearance";
+const REDUCED_MOTION_KEY = "omnicode.reducedMotion";
+const SEPARATE_SCHEMES_KEY = "omnicode.separateSchemeAppearance";
 const PROFILE_KEYS: Record<AppearanceScope, string> = {
-  shared: "monocode.typographyProfile",
-  light: "monocode.appearanceProfile.light",
-  dark: "monocode.appearanceProfile.dark",
+  shared: "omnicode.typographyProfile",
+  light: "omnicode.appearanceProfile.light",
+  dark: "omnicode.appearanceProfile.dark",
 };
 
 function clamp(value: number, min: number, max: number) {

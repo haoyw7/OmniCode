@@ -1,4 +1,4 @@
-const KEY = "monocode.updatePreferences";
+const KEY = "omnicode.updatePreferences";
 
 export type UpdatePreferences = {
   autoInstall: boolean;

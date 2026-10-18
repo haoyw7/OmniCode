@@ -41,7 +41,7 @@ interface Connection {
 
 export async function wslRuntimeDirectory(configured?: string): Promise<string> {
   const candidates = configured ? [configured] : [
-    process.env.MONOCODE_WSL_RUNTIME,
+    process.env.OMNICODE_WSL_RUNTIME,
     join(dirname(fileURLToPath(import.meta.url)), "wsl"),
     resolve("build/wsl-host"),
   ].filter((path): path is string => Boolean(path));

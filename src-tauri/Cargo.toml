@@ -1,15 +1,20 @@
 [package]
-name = "monocode"
+name = "omnicode"
+default-run = "omnicode"
 version.workspace = true
 edition.workspace = true
 description = "OmniCode — one UI for every agent harness"
 authors = ["Nick"]
-repository = "https://github.com/hardbeat920/monocode"
-homepage = "https://github.com/yyy0107/ohmymonocode"
+repository = "https://github.com/haoyw7/OmniCode"
+homepage = "https://github.com/haoyw7/OmniCode"
 license.workspace = true
 
+[[bin]]
+name = "omnicode"
+path = "src/main.rs"
+
 [lib]
-name = "monocode_lib"
+name = "omnicode_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -19,7 +24,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["protocol-asset", "macos-private-api"] }
 tauri-plugin-opener = "2"
 open = "5.4.1"
-monocode-process-tree = { path = "../crates/process-tree" }
+omnicode-process-tree = { path = "../crates/process-tree" }
 serde.workspace = true
 serde_json.workspace = true
 toml = "0.9.12"
@@ -44,7 +49,7 @@ libc = "0.2"
 [target.'cfg(windows)'.dependencies]
 tauri = { version = "2", features = ["tray-icon"] }
 portable-pty = { version = "0.9", path = "../vendor/portable-pty" }
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_JobObjects", "Win32_System_Threading", "Win32_System_LibraryLoader", "Win32_System_Diagnostics_ToolHelp"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_JobObjects", "Win32_System_Threading", "Win32_System_LibraryLoader", "Win32_System_Diagnostics_ToolHelp", "Win32_UI_WindowsAndMessaging", "Win32_Graphics_Gdi"] }
 tauri-winrt-notification = "0.8"
 # WinRT toast settings (Windows.UI.Notifications) to read the per-app block.
 windows = { version = "0.62", features = ["UI_Notifications"] }

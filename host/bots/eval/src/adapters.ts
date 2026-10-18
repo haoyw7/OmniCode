@@ -144,7 +144,7 @@ export class ClaudeAdapter {
   ) {}
   async complete(system: string, input: string): Promise<Completion> {
     this.budget.reserve();
-    const directory = await mkdtemp(join(tmpdir(), "monocode-eval-cli-"));
+    const directory = await mkdtemp(join(tmpdir(), "omnicode-eval-cli-"));
     const start = Date.now();
     try {
       const output = await runProcess(
@@ -236,7 +236,7 @@ export class PiAdapter implements CompletionAdapter {
   ) {}
   async complete(system: string, input: string): Promise<Completion> {
     this.budget.reserve();
-    const directory = await mkdtemp(join(tmpdir(), "monocode-eval-pi-"));
+    const directory = await mkdtemp(join(tmpdir(), "omnicode-eval-pi-"));
     const started = Date.now();
     try {
       const output = await runProcess(

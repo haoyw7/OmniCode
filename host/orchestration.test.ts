@@ -223,8 +223,8 @@ describe("Host orchestration ownership", () => {
     vi.mocked(f.provider.steer!).mockImplementationOnce(() => new Promise<void>((resolve) => { release = resolve; }));
     const first = f.engine.orchestration.scheduler.handle(f.id, "first-steer", "steer", { taskId: task.id, text: "Wait" });
     await vi.waitFor(() => expect(release).toBeTypeOf("function"));
-    const token = f.engine.orchestration.control.environment(f.id).MONOCODE_CONTROL_TOKEN;
-    const queued = f.engine.orchestration.scheduler.handle(f.id, "old-grant-delegate", "delegate", { title: "Old request", harness: "codex", model: "codex:test", prompt: "Do work", files: ["other.txt"] }, () => f.engine.orchestration.control.environment(f.id).MONOCODE_CONTROL_TOKEN === token);
+    const token = f.engine.orchestration.control.environment(f.id).OMNICODE_CONTROL_TOKEN;
+    const queued = f.engine.orchestration.scheduler.handle(f.id, "old-grant-delegate", "delegate", { title: "Old request", harness: "codex", model: "codex:test", prompt: "Do work", files: ["other.txt"] }, () => f.engine.orchestration.control.environment(f.id).OMNICODE_CONTROL_TOKEN === token);
     f.engine.orchestration.control.disable(f.id);
     f.engine.orchestration.control.enable(f.id);
     release();

@@ -14,10 +14,10 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use crate::dirs_home;
 use crate::fs::expand_home;
 use crate::passwd_identity;
-pub(crate) use monocode_process_tree::terminate_all;
+pub(crate) use omnicode_process_tree::terminate_all;
 #[cfg(not(windows))]
-use monocode_process_tree::tree_alive;
-use monocode_process_tree::{signal_tree, spawn_managed, TreeSignal};
+use omnicode_process_tree::tree_alive;
+use omnicode_process_tree::{signal_tree, spawn_managed, TreeSignal};
 
 const STDOUT_EVENT: &str = "harness-stdout";
 const STDERR_EVENT: &str = "harness-stderr";
@@ -1668,7 +1668,7 @@ fn exec_output_inner(
 }
 
 const KILL_ESCALATE: Duration = Duration::from_secs(2);
-const HARNESS_PARENT_ENV: &str = "MONOCODE_HARNESS_PARENT";
+const HARNESS_PARENT_ENV: &str = "OMNICODE_HARNESS_PARENT";
 
 /// An interactive shell has to source the user's whole rc file; nvm alone can
 /// take a second.
@@ -1753,7 +1753,7 @@ struct ProcessSnapshot {
     harness_parent: Option<u32>,
 }
 
-/// Kill harness trees left behind by a previous MonoCode that exited
+/// Kill harness trees left behind by a previous OmniCode that exited
 /// before SIGKILL ran (crash, force-quit, or the detached escalate thread).
 /// Off-thread: the sweep shells out to `ps` and then waits on a SIGKILL, and
 /// launch would otherwise hold the first window for both. Nothing this run
@@ -2838,7 +2838,7 @@ pub(crate) fn binaries_on_search_path(name: &str) -> Vec<PathBuf> {
         .collect()
 }
 
-/// The binary MonoCode runs for `provider`: the configured override when one
+/// The binary OmniCode runs for `provider`: the configured override when one
 /// is set, otherwise the auto-detected one.
 pub(crate) fn resolve_harness_binary(
     provider: &str,
@@ -2894,7 +2894,7 @@ mod windows_launcher_tests {
     #[test]
     fn independent_cli_wins_over_desktop_payload_on_path() {
         let dir =
-            std::env::temp_dir().join(format!("monocode-desktop-cli-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("omnicode-desktop-cli-{}", uuid::Uuid::new_v4()));
         for (provider, relative) in [
             ("codex", "OpenAI/Codex/bin/hash/codex.exe"),
             ("claude", "Claude/claude-code/2.1.100/hash/claude.exe"),
@@ -2928,7 +2928,7 @@ mod windows_launcher_tests {
 
     #[test]
     fn npm_shell_shim_does_not_hide_windows_launcher() {
-        let dir = std::env::temp_dir().join(format!("monocode-launcher-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-launcher-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let bare = dir.join("agent");
         let cmd = dir.join("agent.cmd");
@@ -3286,7 +3286,7 @@ mod tests {
     fn pi_mcp_status_uses_configured_binary_and_accepts_exit_one() {
         use std::os::unix::fs::PermissionsExt;
         let root =
-            std::env::temp_dir().join(format!("monocode-pi-health-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("omnicode-pi-health-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&root).unwrap();
         let binary = root.join("pi-coding-agent");
         std::fs::write(&binary, "#!/bin/sh\nif [ \"$1\" = --version ]; then echo '1.0.2'; exit 0; fi\nif [ \"$*\" != 'mcp list --json' ]; then exit 2; fi\nprintf '%s' '{\"servers\":[{\"name\":\"docs\",\"scope\":\"global\",\"source\":\"/agent/mcp.json\",\"enabled\":true,\"state\":\"failed\",\"tools\":[],\"error\":\"Connection refused\"}],\"errors\":[]}'\nexit 1\n").unwrap();
@@ -3324,7 +3324,7 @@ mod tests {
 
     #[test]
     fn claude_title_reads_only_bound_metadata_inside_the_account() {
-        let root = std::env::temp_dir().join(format!("monocode-title-{}", uuid::Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!("omnicode-title-{}", uuid::Uuid::new_v4()));
         let project = root.join("projects/-project");
         std::fs::create_dir_all(&project).unwrap();
         std::fs::write(project.join("native.jsonl"), "{\"type\":\"ai-title\",\"sessionId\":\"native\",\"aiTitle\":\"Native name\"}\n{unfinished").unwrap();
@@ -3666,7 +3666,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
 
         let root =
-            std::env::temp_dir().join(format!("monocode-mcp-binaries-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("omnicode-mcp-binaries-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&root).unwrap();
         let host = HarnessHost::new();
         let mut paths = HashMap::new();
@@ -3767,7 +3767,7 @@ mod tests {
         use std::os::unix::fs::PermissionsExt;
 
         let dir = std::env::temp_dir().join(format!(
-            "monocode-configured-binaries-{}",
+            "omnicode-configured-binaries-{}",
             std::process::id()
         ));
         let _ = std::fs::remove_dir_all(&dir);
@@ -3876,7 +3876,7 @@ mod tests {
     fn which_in_path_takes_the_first_executable_hit() {
         use std::os::unix::fs::PermissionsExt;
 
-        let dir = std::env::temp_dir().join(format!("monocode-which-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-which-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let (empty, unreadable, real) = (dir.join("a"), dir.join("b"), dir.join("c"));
         for sub in [&empty, &unreadable, &real] {
@@ -3943,7 +3943,7 @@ mod tests {
     fn resolve_gui_binary_finds_a_binary_on_the_gui_path() {
         use std::os::unix::fs::PermissionsExt;
 
-        let dir = std::env::temp_dir().join(format!("monocode-gui-bin-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-gui-bin-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let target = dir.join("gh");
@@ -3958,7 +3958,7 @@ mod tests {
 
     #[test]
     fn cursor_agent_accepts_symlink_named_agent() {
-        let dir = std::env::temp_dir().join(format!("monocode-agent-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-agent-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("cursor-agent-pack")).unwrap();
         let target = dir.join("cursor-agent-pack/cursor-agent");
@@ -3972,7 +3972,7 @@ mod tests {
 
     #[test]
     fn pi_accepts_coding_agent_and_rejects_other_pi() {
-        let dir = std::env::temp_dir().join(format!("monocode-pi-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-pi-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
 
@@ -4000,7 +4000,7 @@ mod tests {
 
     #[test]
     fn omp_accepts_rpc_capable_binary_and_rejects_other_names() {
-        let dir = std::env::temp_dir().join(format!("monocode-omp-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-omp-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
 
@@ -4031,7 +4031,7 @@ mod tests {
 
     #[test]
     fn fx_accepts_vercel_agent_and_rejects_json_viewer() {
-        let dir = std::env::temp_dir().join(format!("monocode-fx-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-fx-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
 
@@ -4056,7 +4056,7 @@ mod tests {
     /// missed them and silently fell back to spawning `fx --help`.
     #[test]
     fn fx_marker_is_found_past_the_first_chunk() {
-        let dir = std::env::temp_dir().join(format!("monocode-fx-deep-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-fx-deep-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
 
@@ -4078,7 +4078,7 @@ mod tests {
 
     #[test]
     fn grok_accepts_official_install_path_and_markers() {
-        let dir = std::env::temp_dir().join(format!("monocode-grok-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-grok-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let home = dir.join(".grok/bin");
         std::fs::create_dir_all(&home).unwrap();
@@ -4103,7 +4103,7 @@ mod tests {
     #[cfg(unix)]
     fn antigravity_resolver_prefers_executable_wrapper_and_tracks_orphans() {
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("monocode-agy-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-agy-{}", std::process::id()));
         std::fs::create_dir_all(dir.join("bin")).unwrap();
         let wrapper = dir.join("bin/agy_acp_server.par");
         let server = dir.join("agy_acp_server.par");
@@ -4207,7 +4207,7 @@ mod windows_binary_tests {
     #[test]
     fn configured_binary_path_accepts_windows_shim_extension() {
         let dir = std::env::temp_dir().join(format!(
-            "monocode-configured-windows-binary-{}",
+            "omnicode-configured-windows-binary-{}",
             std::process::id()
         ));
         let _ = std::fs::remove_dir_all(&dir);
@@ -4259,7 +4259,7 @@ mod reap_logic_tests {
     #[test]
     fn parse_ps_row_reads_harness_parent_from_env_tail() {
         let parsed = parse_ps_row(
-            " 27129 21504 /Users/n/cursor-agent acp PATH=/usr/bin MONOCODE_HARNESS_PARENT=21504 HOME=/tmp",
+            " 27129 21504 /Users/n/cursor-agent acp PATH=/usr/bin OMNICODE_HARNESS_PARENT=21504 HOME=/tmp",
         )
         .unwrap();
         assert_eq!(parsed.pid, 27129);
@@ -4345,7 +4345,7 @@ mod reap_logic_tests {
     #[test]
     fn parse_ps_pid_command_does_not_treat_the_binary_as_ppid() {
         let (pid, command) = parse_ps_pid_command(
-            " 27129 /Users/n/cursor-agent acp PATH=/usr/bin MONOCODE_HARNESS_PARENT=21504 HOME=/tmp",
+            " 27129 /Users/n/cursor-agent acp PATH=/usr/bin OMNICODE_HARNESS_PARENT=21504 HOME=/tmp",
         )
         .unwrap();
         assert_eq!(pid, 27129);

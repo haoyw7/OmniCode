@@ -24,7 +24,7 @@ test.beforeAll(async () => {
         import { MobileComposer } from './src/mobile/MobileComposer';
         import { installKeyboardMotion } from './src/mobile/keyboardMotion';
         const noop = () => {};
-        const project = { id: 'project', name: 'Monocode', cwd: '/fixture' };
+        const project = { id: 'project', name: 'OmniCode', cwd: '/fixture' };
         function Fixture() {
           const [value, onChange] = useState('Draft stays mounted');
           return h(MotionConfig, { reducedMotion: 'user' },
@@ -75,7 +75,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
     }).toBeCloseTo(784, 0);
     const initial = await dock.boundingBox();
     const keyboard = (height: number) => page.evaluate(height => {
-      window.dispatchEvent(new CustomEvent("monocode:keyboard", {
+      window.dispatchEvent(new CustomEvent("omnicode:keyboard", {
         detail: { height, viewport: 800, duration: 200, easing: "linear" },
       }));
     }, height);
@@ -149,7 +149,7 @@ for (const scenario of [
         await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
         const initial = read();
         const move = async (height: number) => {
-          window.dispatchEvent(new CustomEvent("monocode:keyboard", {
+          window.dispatchEvent(new CustomEvent("omnicode:keyboard", {
             detail: { height, viewport: 800, duration: 200, easing },
           }));
           const start = performance.now();

@@ -1,4 +1,4 @@
-# MonoCode 助理评测
+# OmniCode 助理评测
 
 评测程序位于 `host/bots/eval/`。仓库只保留程序、配置、数据清单、选择规则、校验哈希和许可证；案例、参考答案、运行时数据库、原创变体和包含案例内容的报告均保存在项目外。
 
@@ -6,21 +6,21 @@
 
 评测入口在运行前自动准备所选数据，并逐文件校验 `data/datasets.lock.json` 中的 SHA256。六套公开来源为 `bfcl`、`longmemeval`、`tau_bench`、`api_bank`、`hotpotqa`、`bipia`：首次使用从固定上游版本下载，按现有选择规则重建子集，完整校验后原子写入缓存。缓存有效时可离线复用；下载或校验失败会停止运行，不会改写锁文件。
 
-`original` 需要项目外的原创数据源。默认输入目录是 `${XDG_DATA_HOME:-~/.local/share}/monocode/eval-inputs/original/`，目录内保留以下逻辑路径：
+`original` 需要项目外的原创数据源。默认输入目录是 `${XDG_DATA_HOME:-~/.local/share}/omnicode/eval-inputs/original/`，目录内保留以下逻辑路径：
 
 - `data/cases.jsonl`
 - `data/references.jsonl`
 - `data/variants/structured-nested-v2.jsonl`
 - `data/quality-annotations.jsonl`
 
-设置 `MONOCODE_EVAL_ORIGINAL_SOURCE` 可改用项目外的本地目录或由你提供的 HTTPS 基础地址，准备器在该目录或地址下读取锁文件列出的路径。仓库不内嵌案例、不包含原创题目生成脚本，也不提供默认原创数据下载服务。首次准备时缺少输入会报出配置方法；完整缓存已存在时无需再次访问输入源。
+设置 `OMNICODE_EVAL_ORIGINAL_SOURCE` 可改用项目外的本地目录或由你提供的 HTTPS 基础地址，准备器在该目录或地址下读取锁文件列出的路径。仓库不内嵌案例、不包含原创题目生成脚本，也不提供默认原创数据下载服务。首次准备时缺少输入会报出配置方法；完整缓存已存在时无需再次访问输入源。
 
 | 配置 | 用途与默认位置 |
 | --- | --- |
-| `MONOCODE_EVAL_ORIGINAL_SOURCE` | 原创输入目录或 HTTPS 基础地址；默认使用上述用户数据目录 |
-| `MONOCODE_EVAL_CACHE` | 缓存基目录；默认 `${XDG_CACHE_HOME:-~/.cache}/monocode/eval` |
-| `MONOCODE_EVAL_DATA_ROOT` | 指定完整缓存根目录；默认在缓存基目录下追加锁文件 SHA256 的前 16 位 |
-| `MONOCODE_EVAL_ARCHIVE_ROOT` | 历史证据归档根目录；默认 `${XDG_DATA_HOME:-~/.local/share}/monocode/eval-archive` |
+| `OMNICODE_EVAL_ORIGINAL_SOURCE` | 原创输入目录或 HTTPS 基础地址；默认使用上述用户数据目录 |
+| `OMNICODE_EVAL_CACHE` | 缓存基目录；默认 `${XDG_CACHE_HOME:-~/.cache}/omnicode/eval` |
+| `OMNICODE_EVAL_DATA_ROOT` | 指定完整缓存根目录；默认在缓存基目录下追加锁文件 SHA256 的前 16 位 |
+| `OMNICODE_EVAL_ARCHIVE_ROOT` | 历史证据归档根目录；默认 `${XDG_DATA_HOME:-~/.local/share}/omnicode/eval-archive` |
 
 缓存按 `<缓存根>/<source>/<逻辑路径>` 存储。历史报告中的 `reports/...` 从归档根目录解析；历史证据独立于可重建的数据缓存。缓存、输入和报告目录都应位于项目外。
 
@@ -54,8 +54,8 @@ node host/bots/eval/bin/public_eval.mjs list --sources bfcl,longmemeval
 python3 host/bots/eval/bin/verify_public.py
 
 # 参考轨迹回放：验证评测器和数据，不代表模型成绩。
-node host/bots/eval/bin/eval.mjs run --mode reference --out /tmp/monocode-reference-NEW
-node host/bots/eval/bin/public_eval.mjs run --mode reference --sources bfcl --out /tmp/monocode-public-reference-NEW
+node host/bots/eval/bin/eval.mjs run --mode reference --out /tmp/omnicode-reference-NEW
+node host/bots/eval/bin/public_eval.mjs run --mode reference --sources bfcl --out /tmp/omnicode-public-reference-NEW
 ```
 
 单元测试读取已准备的数据缓存；只运行与改动相关的测试。更新数据时，在项目外维护输入，审阅选择规则和产物后同步数据锁；普通评测不能自动接受上游内容变化。
@@ -66,7 +66,7 @@ node host/bots/eval/bin/public_eval.mjs run --mode reference --sources bfcl --ou
 
 新运行的报告保存在显式的外部 `--out` 目录；使用默认输出位置的入口写入用户归档目录。报告包括 `results.jsonl`、`summary.json`、`report.md`，部分入口还写入选择与哈希清单。参考回放、真实模型结果、环境错误和预算中断分别记录，不能把参考答案回放或格式校验算作模型成功。
 
-历史报告和原始说明已归档到 `MONOCODE_EVAL_ARCHIVE_ROOT`。历史汇总与重评分需要该归档中的原始证据；缺失证据时应配置正确的归档根目录，不能从新运行结果补造旧证据。历史预算、暂停条件、校准状态及原始文件哈希保持其原有意义。
+历史报告和原始说明已归档到 `OMNICODE_EVAL_ARCHIVE_ROOT`。历史汇总与重评分需要该归档中的原始证据；缺失证据时应配置正确的归档根目录，不能从新运行结果补造旧证据。历史预算、暂停条件、校准状态及原始文件哈希保持其原有意义。
 
 ## 程序、清单与许可
 

@@ -24,13 +24,13 @@ it("applies incoming enabled and shortcut changes once and stops when the window
   try {
     await act(async () => root.render(createElement(Harness)));
     mocks.shortcut.mockClear();
-    localStorage.setItem("monocode.quickComposerEnabled", "1");
-    localStorage.setItem("monocode.quickComposerShortcut", "Control+Shift+KeyK");
+    localStorage.setItem("omnicode.quickComposerEnabled", "1");
+    localStorage.setItem("omnicode.quickComposerShortcut", "Control+Shift+KeyK");
     window.dispatchEvent(new Event(SHARED_PREFERENCES_CHANGED));
     expect(mocks.shortcut).toHaveBeenCalledExactlyOnceWith(true, "Control+Shift+KeyK");
     window.dispatchEvent(new Event(SHARED_PREFERENCES_CHANGED));
     expect(mocks.shortcut).toHaveBeenCalledOnce();
-    localStorage.setItem("monocode.quickComposerEnabled", "0");
+    localStorage.setItem("omnicode.quickComposerEnabled", "0");
     window.dispatchEvent(new Event(SHARED_PREFERENCES_CHANGED));
     expect(mocks.shortcut).toHaveBeenLastCalledWith(false, "Control+Shift+KeyK");
     await act(async () => root.unmount());

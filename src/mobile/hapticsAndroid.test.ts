@@ -36,7 +36,7 @@ afterEach(() => {
 
 it("uses bundled feedback when a hosted UI runs inside an older Android APK", async () => {
   await lightImpact(); await successHaptic(); await attentionHaptic();
-  expect(Capacitor.isPluginAvailable).toHaveBeenCalledWith("MonoCodeHaptics");
+  expect(Capacitor.isPluginAvailable).toHaveBeenCalledWith("OmniCodeHaptics");
   expect(Haptics.impact).toHaveBeenCalledExactlyOnceWith({ style: ImpactStyle.Light });
   expect(Haptics.notification).toHaveBeenNthCalledWith(1, { type: NotificationType.Success });
   expect(Haptics.notification).toHaveBeenNthCalledWith(2, { type: NotificationType.Warning });

@@ -2,7 +2,6 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { DesktopBotsButton } from "../../features/bots/ui/DesktopBotsButton";
 import type { RecentProject } from "../../features/projects/model/recents";
-import type { LiveAgent } from "../../features/sessions/model/liveAgents";
 import { type Session } from "../../features/sessions/model/session";
 import { WorkflowSidebarSection } from "../../features/workflows/ui/WorkflowSidebarSection";
 import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
@@ -40,9 +39,7 @@ type Options = {
   onOpenAssistant: (machineId?: string | undefined) => void;
   sidebarCwd: string;
   recents: RecentProject[];
-  liveAgents: LiveAgent[];
   active: Session | undefined;
-  onSelectLiveAgent: (sessionId: string) => void;
   onGoToFile: () => void;
   onOpenInbox: () => void;
   notesEnabled: boolean;
@@ -92,9 +89,7 @@ export function useWorkspaceChrome({
   onOpenAssistant,
   sidebarCwd,
   recents,
-  liveAgents,
   active,
-  onSelectLiveAgent,
   onGoToFile,
   onOpenInbox,
   notesEnabled,
@@ -170,9 +165,6 @@ export function useWorkspaceChrome({
         updateStatus,
         cwd: sidebarCwd,
         recents,
-        liveAgents,
-        activeSessionId: active?.id,
-        onSelectAgent: onSelectLiveAgent,
         onSearch: onGoToFile,
         onOpenInbox,
         onOpenNotes: notesEnabled ? onOpenNotes : undefined,
@@ -196,9 +188,6 @@ export function useWorkspaceChrome({
       updateStatus,
       sidebarCwd,
       recents,
-      liveAgents,
-      active?.id,
-      onSelectLiveAgent,
       onGoToFile,
       onOpenInbox,
       notesEnabled,

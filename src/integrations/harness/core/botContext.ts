@@ -27,7 +27,7 @@ export function snapshotBotContext(context: HarnessBotContext): HarnessBotContex
     throw new Error("Invalid Host Bot context");
   if (context.agentsMcp && (!context.agentsMcp.command || context.agentsMcp.command.includes("\0") ||
       !Array.isArray(context.agentsMcp.args) || context.agentsMcp.args.some(arg => typeof arg !== "string" || arg.includes("\0")) ||
-      Object.entries(context.agentsMcp.env ?? {}).some(([key, value]) => !/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) || typeof value !== "string" || value.includes("\0") || /^MONOCODE_(CONTROL|WORKFLOW)_(TOKEN|ENDPOINT)$/i.test(key))))
+      Object.entries(context.agentsMcp.env ?? {}).some(([key, value]) => !/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) || typeof value !== "string" || value.includes("\0") || /^OMNICODE_(CONTROL|WORKFLOW)_(TOKEN|ENDPOINT)$/i.test(key))))
     throw new Error("Invalid Bot MCP launch settings; credentials must be inherited");
   return Object.freeze({
     scope: Object.freeze({ ...context.scope }),
@@ -60,5 +60,5 @@ export function botAgentsMcpName(context: HarnessBotContext): string {
 export function botContextPrompt(text: string, context?: HarnessBotContext): string {
   if (!context?.systemInstructions) return text;
   // JSON quoting keeps instruction text from closing the enclosing marker.
-  return `<monocode_bot_context delivery="user-message-fallback">\n${JSON.stringify({ systemInstructions: context.systemInstructions }).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")}\n</monocode_bot_context>\n\n${text}`;
+  return `<omnicode_bot_context delivery="user-message-fallback">\n${JSON.stringify({ systemInstructions: context.systemInstructions }).replaceAll("<", "\\u003c").replaceAll(">", "\\u003e")}\n</omnicode_bot_context>\n\n${text}`;
 }

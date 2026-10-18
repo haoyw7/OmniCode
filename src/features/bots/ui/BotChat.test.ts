@@ -819,7 +819,7 @@ it.each([false, true])("shows desktop send loading until delivery succeeds or fa
   }
 });
 it("retains a failed send's draft and clears its saved text immediately after a successful retry", async () => {
-  const key = "monocode.assistant-draft:host";
+  const key = "omnicode.assistant-draft:host";
   localStorage.setItem(key, "Saved before typing");
   const base = chatRpc(configuredView());
   let fail = true;
@@ -1008,13 +1008,13 @@ it("only acknowledges messages while the assistant page and document are visible
   try {
     render(false);
     await flush();
-    expect(localStorage.getItem("monocode.assistant-read:read-host")).toBeNull();
+    expect(localStorage.getItem("omnicode.assistant-read:read-host")).toBeNull();
     render(true);
     await flush();
-    expect(localStorage.getItem("monocode.assistant-read:read-host")).toBeNull();
+    expect(localStorage.getItem("omnicode.assistant-read:read-host")).toBeNull();
     state.mockReturnValue("visible");
     act(() => document.dispatchEvent(new Event("visibilitychange")));
-    expect(localStorage.getItem("monocode.assistant-read:read-host")).toBe("1");
+    expect(localStorage.getItem("omnicode.assistant-read:read-host")).toBe("1");
   } finally {
     state.mockRestore();
   }

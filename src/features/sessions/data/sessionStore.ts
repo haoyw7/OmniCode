@@ -881,7 +881,7 @@ function sanitizeBlock(
     if (worktreeCreation) next.worktreeCreation = worktreeCreation;
   }
   if (block.role === "user" && block.draft) next.draft = true;
-  if (block.role === "user" && block.monocode) next.monocode = true;
+  if (block.role === "user" && block.omnicode) next.omnicode = true;
   if (
     block.role === "user" &&
     (block.intent === "plan" || block.intent === "orchestrate")

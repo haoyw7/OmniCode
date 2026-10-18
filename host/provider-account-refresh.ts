@@ -50,7 +50,7 @@ export async function refreshCodexAccountBeforeWsl(input: {
     try {
       await withMachineIO(localMachineIO, () => (dependencies.request ?? runCodexAccountRequest)(
         input.command, homedir(), "account/read", { refreshToken: true }, input.accountId ?? "default",
-        `monocode-codex-refresh-${randomUUID()}`,
+        `omnicode-codex-refresh-${randomUUID()}`,
       ));
     } catch {
       // CLI errors may include credential contents; expose only app-owned copy.

@@ -10,8 +10,8 @@ export type NotificationProject = {
   paths: string[];
 };
 
-const CATALOG_KEY = "monocode.notificationProjects.v2";
-const CATALOG_CHANGE = "monocode:notification-projects-change";
+const CATALOG_KEY = "omnicode.notificationProjects.v2";
+const CATALOG_CHANGE = "omnicode:notification-projects-change";
 let catalogValue: string | null | undefined;
 let catalog: NotificationProject[] = [];
 

@@ -1,12 +1,12 @@
 // 运行历史的归组与呈现。
 // 归属只按 `dwf_run.name === 工作流名`；模型另起名字的 run 不归任何工作流，而不是猜。
-import type { MonocodeSavedWorkflowRun, MonocodeSavedWorkflowRunStatus } from "../../_shims/shared.js";
+import type { OmniCodeSavedWorkflowRun, OmniCodeSavedWorkflowRunStatus } from "../../_shims/shared.js";
 
 /** 每个名字下 `updatedAt` 最新的一行（服务端按 time_updated 倒序，这里只取首见）。 */
 export function lastRunByWorkflowName(
-  runs: readonly MonocodeSavedWorkflowRun[],
-): Map<string, MonocodeSavedWorkflowRun> {
-  const byName = new Map<string, MonocodeSavedWorkflowRun>();
+  runs: readonly OmniCodeSavedWorkflowRun[],
+): Map<string, OmniCodeSavedWorkflowRun> {
+  const byName = new Map<string, OmniCodeSavedWorkflowRun>();
   const sorted = [...runs].sort((left, right) => right.updatedAt - left.updatedAt);
   for (const run of sorted) {
     if (run.name === undefined || byName.has(run.name)) continue;
@@ -23,7 +23,7 @@ type SavedWorkflowRunBadgeKind = "completed" | "errored" | "running" | "stopped"
  * `failed` / `cancelled`，按同一语义折进去而不是让徽标缺席。
  */
 export function savedWorkflowRunBadgeKind(
-  status: MonocodeSavedWorkflowRunStatus | "errored" | "stopped" | "failed" | "cancelled" | undefined,
+  status: OmniCodeSavedWorkflowRunStatus | "errored" | "stopped" | "failed" | "cancelled" | undefined,
 ): SavedWorkflowRunBadgeKind {
   switch (status) {
     case undefined:
@@ -51,7 +51,7 @@ export function formatSavedWorkflowRunArgs(args: Record<string, unknown> | undef
 }
 
 /** 一次 run 的时长（毫秒）；非终态按 now 计。 */
-export function savedWorkflowRunDurationMs(run: MonocodeSavedWorkflowRun, now: number): number {
+export function savedWorkflowRunDurationMs(run: OmniCodeSavedWorkflowRun, now: number): number {
   const end = run.status === "pending" || run.status === "running" ? now : run.updatedAt;
   return Math.max(0, end - run.createdAt);
 }

@@ -69,7 +69,7 @@ export async function protectWindowsDirectory(
   directory: string,
 ): Promise<void> {
   await runPowerShell(
-    `${aclScript}\nProtect-MonoCodeDirectory ${psQuote(directory)}`,
+    `${aclScript}\nProtect-OmniCodeDirectory ${psQuote(directory)}`,
   );
 }
 
@@ -96,7 +96,7 @@ export function windowsTaskScript(
   return `
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 $sid = $identity.User.Value
-$name = "MonoCode Host-$sid"
+$name = "OmniCode Host-$sid"
 $task = Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
 if ($null -eq $task) {
   [IO.File]::WriteAllText(${psQuote(runnerPath)}, ${psQuote(runner)}, [Text.UTF8Encoding]::new($false))
@@ -121,7 +121,7 @@ Start-ScheduledTask -TaskName $name
 export function windowsUninstallScript(): string {
   return `
 $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-$name = "MonoCode Host-$sid"
+$name = "OmniCode Host-$sid"
 if ($null -ne (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue)) {
   Unregister-ScheduledTask -TaskName $name -Confirm:$false
 }

@@ -1,4 +1,4 @@
-// Monocode shim for ZCode's renderer logger.
+// OmniCode shim for ZCode's renderer logger.
 type Fields = Record<string, unknown>;
 export const logger = {
   debug: (_message: string, _fields?: Fields) => {},

@@ -28,7 +28,7 @@
         </activity>
 
         <service
-            android:name=".MonoCodeNotificationService"
+            android:name=".OmniCodeNotificationService"
             android:foregroundServiceType="remoteMessaging"
             android:stopWithTask="false"
             android:exported="false" />

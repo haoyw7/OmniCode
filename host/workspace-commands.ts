@@ -411,7 +411,7 @@ export class WorkspaceCommands {
     if (await machineFs.stat(path).then((info) => info.isDirectory(), () => false))
       throw new Error("Cannot save text to a directory.");
     // Replace atomically, as the local command does.
-    const temporary = `${path}.monocode-${process.pid}-${Date.now()}`;
+    const temporary = `${path}.omnicode-${process.pid}-${Date.now()}`;
     await machineFs.writeFile(temporary, content, "utf8");
     await machineFs.rename(temporary, path).catch(async (reason) => {
       await machineFs.rm(temporary, { force: true });

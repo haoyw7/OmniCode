@@ -1,6 +1,6 @@
 # Executable public benchmark subsets
 
-This adds **200 executable variants from 176 distinct public problems**. Four newly integrated sources contribute **128 distinct problems / 152 variants**; the previously imported BFCL 30 and LongMemEval 18 now have executable graders. These counts exclude unselected raw downloads and do not count clean/attack pairs as independent problems. Alongside the original 176 MonoCode cases, there are **376 runnable variants / 352 distinct authored-or-public problems**.
+This adds **200 executable variants from 176 distinct public problems**. Four newly integrated sources contribute **128 distinct problems / 152 variants**; the previously imported BFCL 30 and LongMemEval 18 now have executable graders. These counts exclude unselected raw downloads and do not count clean/attack pairs as independent problems. Alongside the original 176 OmniCode cases, there are **376 runnable variants / 352 distinct authored-or-public problems**.
 
 | Source                               | Distinct problems | Variants | Executed scoring                                                         | Scope / limitation                                                                             |
 | ------------------------------------ | ----------------: | -------: | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
@@ -11,7 +11,7 @@ This adds **200 executable variants from 176 distinct public problems**. Four ne
 | [HotpotQA](hotpotqa/README.md)       |                48 |       48 | Pinned official answer/support/joint metrics plus read/citation checks   | 24 bridge + 24 comparison, all hard; 10 local distractor passages, no web/fullwiki             |
 | [BIPIA](bipia/README.md)             |                24 |       48 | Pinned official MatchRef attack rule and independent local answer checks | 24 clean/attacked pairs; 2 attacks × 3 positions, EmailQA only                                 |
 
-All model runs use the actual MonoCode `buildBrainPrompt` through the existing Pi CLI and the supplied local tool schemas. They bypass Host orchestration/UI and use **simulated extensions** rather than claiming the product natively supports these external APIs. The original suite and native Host tests remain separate. No source is represented as an official leaderboard score.
+All model runs use the actual OmniCode `buildBrainPrompt` through the existing Pi CLI and the supplied local tool schemas. They bypass Host orchestration/UI and use **simulated extensions** rather than claiming the product natively supports these external APIs. The original suite and native Host tests remain separate. No source is represented as an official leaderboard score.
 
 ## Run
 
@@ -19,7 +19,7 @@ From the repository root, with existing Node dependencies, Python 3.10–3.14 an
 
 Evaluation commands automatically prepare their required datasets outside the checkout. The first preparation downloads pinned upstream inputs and rebuilds the selected subsets; it needs network access and the corresponding importer dependencies. Prepared payloads are checked against `../data/datasets.lock.json` before use. A matching cache can be reused offline, and preparing data makes no model request.
 
-The default cache is `${XDG_CACHE_HOME:-~/.cache}/monocode/eval/<lock-hash>/`. Set `MONOCODE_EVAL_CACHE` to change its base directory, or `MONOCODE_EVAL_DATA_ROOT` to use an explicit complete data root. Unit tests read prepared caches; the verification command below prepares all public sources first.
+The default cache is `${XDG_CACHE_HOME:-~/.cache}/omnicode/eval/<lock-hash>/`. Set `OMNICODE_EVAL_CACHE` to change its base directory, or `OMNICODE_EVAL_DATA_ROOT` to use an explicit complete data root. Unit tests read prepared caches; the verification command below prepares all public sources first.
 
 To prepare data separately, run `python3 host/bots/eval/bin/prepare_data.py --sources bfcl,longmemeval`. Omitting `--sources` also prepares the original suite, which requires its configured external input directory or HTTPS base URL; see [data configuration](../README.md#数据准备). A cold HotpotQA rebuild requires `pyarrow` (the importer was verified with `23.0.1`), and BIPIA requires `nltk==3.9.2` plus `pandas`. Dependencies are never installed automatically and are unnecessary once their complete cache is present.
 
@@ -37,7 +37,7 @@ node_modules/.bin/vitest run --config host/bots/eval/vitest.config.ts host/bots/
 
 ## Reports and grading
 
-Each fresh output directory must be outside the checkout and contains `manifest.json`, `results.jsonl`, `summary.json`, and `report.md`. Existing directories are never overwritten. Historical `reports/...` paths resolve beneath `MONOCODE_EVAL_ARCHIVE_ROOT`, defaulting to `${XDG_DATA_HOME:-~/.local/share}/monocode/eval-archive`. Per-case records retain source IDs, source/transformation metadata, case hash, tool trace, raw model final outputs, checks, metric values, error classes, latency/tokens/cost. The source artifact hash lock is checked before model calls. Reports capture its hash plus exact adapter/manifest hashes.
+Each fresh output directory must be outside the checkout and contains `manifest.json`, `results.jsonl`, `summary.json`, and `report.md`. Existing directories are never overwritten. Historical `reports/...` paths resolve beneath `OMNICODE_EVAL_ARCHIVE_ROOT`, defaulting to `${XDG_DATA_HOME:-~/.local/share}/omnicode/eval-archive`. Per-case records retain source IDs, source/transformation metadata, case hash, tool trace, raw model final outputs, checks, metric values, error classes, latency/tokens/cost. The source artifact hash lock is checked before model calls. Reports capture its hash plus exact adapter/manifest hashes.
 
 Real inference remains subject to the archived pause conditions, spending gates and cumulative ledger. Moving data or reports does not resume requests, reset budgets or authorize new model calls.
 

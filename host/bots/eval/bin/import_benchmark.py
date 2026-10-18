@@ -29,6 +29,6 @@ def main():
     actual=subprocess.check_output(['git','-C',str(a.out),'rev-parse','HEAD'],text=True).strip()
     if actual!=source['revision']:raise SystemExit('Revision mismatch; snapshot is invalid.')
     plan.update(status='upstream-snapshot-only-not-evaluated',license_sha256=hashlib.sha256((a.out/'LICENSE').read_bytes()).hexdigest())
-    (a.out/'monocode-import-lock.json').write_text(json.dumps(plan,indent=2)+'\n')
+    (a.out/'omnicode-import-lock.json').write_text(json.dumps(plan,indent=2)+'\n')
     print('Fetched immutable upstream snapshot. No tasks have been converted, evaluated, or counted in the local suite.')
 if __name__=='__main__':main()

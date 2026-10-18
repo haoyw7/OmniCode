@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OmniCode",
   "version": "0.1.0",
-  "identifier": "com.monocode.desktop",
+  "identifier": "com.omnicode.desktop",
   "build": {
     "beforeDevCommand": "npm run host:build && npm run dev",
     "devUrl": "http://localhost:1420",
@@ -72,7 +72,7 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ5REM3QzZBMTFBQzY5MTUKUldRVmFhd1JhbnpjMlVKcWFOdVNHd2V6NC8rUVozem1aZndQN2cybDhYdWFSbmRzTGRvL05ySmgK",
-      "endpoints": ["https://github.com/yyy0107/ohmymonocode/releases/latest/download/latest.json"],
+      "endpoints": ["https://github.com/haoyw7/OmniCode/releases/latest/download/latest.json"],
       "dangerousInsecureTransportProtocol": false
     }
   }

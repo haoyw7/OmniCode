@@ -20,7 +20,7 @@ afterEach(async () => {
 
 it.each([false, true])("applies generated worktree names only to retained sessions (deleted: %s)", async (deleted) => {
   vi.useFakeTimers();
-  const cwd = mkdtempSync(join(tmpdir(), "monocode-host-names-"));
+  const cwd = mkdtempSync(join(tmpdir(), "omnicode-host-names-"));
   const git = (...args: string[]) => execFileSync("git", args, { cwd });
   git("init", "-q");
   git("checkout", "-q", "-b", "main");
@@ -87,7 +87,7 @@ it.each([false, true])("applies generated worktree names only to retained sessio
     const logged = vi.spyOn(console, "debug").mockImplementation(() => {});
     try {
       finishBranch("remote-naming");
-      await vi.waitFor(() => expect(logged).toHaveBeenCalledWith("[monocode] remote worktree branch", expect.any(Error)));
+      await vi.waitFor(() => expect(logged).toHaveBeenCalledWith("[omnicode] remote worktree branch", expect.any(Error)));
       expect((await hostWorktrees(cwd)).worktrees.find((item) => item.path === tree.path)?.branch).toBe("mc/12345678");
     } finally { logged.mockRestore(); }
     return;
@@ -123,7 +123,7 @@ it.each([false, true])("applies generated worktree names only to retained sessio
 });
 
 it("creates registered host worktrees and binds new sessions to the selected checkout", async () => {
-  const cwd = mkdtempSync(join(tmpdir(), "monocode-host-worktrees-"));
+  const cwd = mkdtempSync(join(tmpdir(), "omnicode-host-worktrees-"));
   const git = (...args: string[]) => execFileSync("git", args, { cwd });
   git("init", "-q");
   git("checkout", "-q", "-b", "main");

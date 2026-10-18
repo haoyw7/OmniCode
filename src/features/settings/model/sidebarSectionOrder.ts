@@ -1,8 +1,8 @@
 import { mergeOrderedSubset } from "../../../shared/lib/reorder";
 import { preferenceStorage } from "./sharedPreferences";
 
-const KEY = "monocode.sidebarSectionOrder.v1";
-const CHANGED = "monocode:sidebar-section-order-changed";
+const KEY = "omnicode.sidebarSectionOrder.v1";
+const CHANGED = "omnicode:sidebar-section-order-changed";
 export const DEFAULT_SIDEBAR_SECTION_ORDER = [
   "pinned",
   "chats",

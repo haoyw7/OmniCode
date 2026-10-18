@@ -65,7 +65,7 @@ export type AzureDevOpsMrDiff = {
   truncated: boolean;
 };
 
-export const AZUREDEVOPS_CHANGE_EVENT = "monocode:azuredevops-change";
+export const AZUREDEVOPS_CHANGE_EVENT = "omnicode:azuredevops-change";
 
 const repoByPath = new Map<string, string>();
 const detailsByKey = new Map<string, AzureDevOpsWorkItemDetails>();

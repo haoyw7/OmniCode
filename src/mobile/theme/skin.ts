@@ -26,7 +26,7 @@ export type MobileSkin = (typeof MOBILE_SKINS)[number];
  */
 export type MobileSkinPreference = MobileSkin | "auto";
 
-export const MOBILE_SKIN_KEY = "monocode.mobile.skin";
+export const MOBILE_SKIN_KEY = "omnicode.mobile.skin";
 export const MOBILE_SKIN_DEFAULT: MobileSkinPreference = "auto";
 
 type SkinInfo = {

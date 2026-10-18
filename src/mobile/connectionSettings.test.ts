@@ -67,7 +67,7 @@ vi.mock("./MobileQrScanner", () => ({
   MobileQrScanner: ({ active, onDetected }: { active: boolean; onDetected: (text: string) => void }) =>
     createElement("button", {
       className: "mobile-qr-scanner", disabled: !active,
-      onClick: () => onDetected("monocode://pair?host=http://computer:3774&token=XD5J-2J3U"),
+      onClick: () => onDetected("omnicode://pair?host=http://computer:3774&token=XD5J-2J3U"),
     }, "Scan test QR code"),
 }));
 
@@ -333,7 +333,7 @@ describe("mobile connection settings", () => {
     expect(active(".mobile-connection-name")!.textContent).toBe("Workstation");
     expect(active(".mobile-header-title")!.textContent).toBe("Connections");
     expect(host.connection.name).toBe("My computer");
-    expect(JSON.parse(localStorage.getItem("monocode.mobile.connectionAppearance:http://computer:3774")!)).toEqual({ displayName: "Workstation", icon: "terminal" });
+    expect(JSON.parse(localStorage.getItem("omnicode.mobile.connectionAppearance:http://computer:3774")!)).toEqual({ displayName: "Workstation", icon: "terminal" });
     vi.useRealTimers();
   });
 
@@ -371,8 +371,8 @@ describe("mobile connection settings", () => {
     act(() => button("Edit").click());
     input(".mobile-connection-name-field input", "Tailnet");
     act(() => active(".mobile-connection-editor")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
-    expect(JSON.parse(localStorage.getItem("monocode.mobile.connectionAppearance:http://100.64.0.1:3774/")!)).toMatchObject({ displayName: "Tailnet" });
-    expect(localStorage.getItem("monocode.mobile.connectionAppearance:http://computer:3774")).toBeNull();
+    expect(JSON.parse(localStorage.getItem("omnicode.mobile.connectionAppearance:http://100.64.0.1:3774/")!)).toMatchObject({ displayName: "Tailnet" });
+    expect(localStorage.getItem("omnicode.mobile.connectionAppearance:http://computer:3774")).toBeNull();
     expect(rows()[1].querySelector(".mobile-connection-name")!.textContent).toBe("Tailnet");
 
     act(() => rows()[1].querySelector(".mobile-connection-details")!
@@ -381,7 +381,7 @@ describe("mobile connection settings", () => {
     await act(async () => button("Delete connection").click());
     expect(host.forget).toHaveBeenCalledWith("http://100.64.0.1:3774/");
     expect(host.disconnect).not.toHaveBeenCalled();
-    expect(localStorage.getItem("monocode.mobile.connectionAppearance:http://100.64.0.1:3774/")).toBeNull();
+    expect(localStorage.getItem("omnicode.mobile.connectionAppearance:http://100.64.0.1:3774/")).toBeNull();
   });
 
   it("switches to another paired device from its row", async () => {

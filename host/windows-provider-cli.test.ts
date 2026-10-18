@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "monocode desktop 中文-"));
+  const root = mkdtempSync(join(tmpdir(), "omnicode desktop 中文-"));
   directories.push(root);
   const file = (relative: string) => {
     const path = join(root, relative);
@@ -30,7 +30,7 @@ function fixture() {
 async function discover(root: string, provider: "codex" | "claude", packageRoot?: string) {
   // Override only package enumeration; filesystem discovery uses real fixtures.
   const packageStub = packageRoot
-    ? `function Get-AppxPackage { [pscustomobject]@{ InstallLocation = $env:MONOCODE_TEST_PACKAGE; Version = '1.0.0.0' } }`
+    ? `function Get-AppxPackage { [pscustomobject]@{ InstallLocation = $env:OMNICODE_TEST_PACKAGE; Version = '1.0.0.0' } }`
     : "function Get-AppxPackage {}";
   const powershell = join(process.env.SystemRoot ?? "C:\\Windows", "System32/WindowsPowerShell/v1.0/powershell.exe");
   const { stdout } = await promisify(execFile)(powershell, [
@@ -38,7 +38,7 @@ async function discover(root: string, provider: "codex" | "claude", packageRoot?
   ], { windowsHide: true, timeout: 10_000, encoding: "utf8", env: {
     ...process.env,
     LOCALAPPDATA: join(root, "Local"), APPDATA: join(root, "Roaming"),
-    ProgramFiles: join(root, "Programs"), MONOCODE_TEST_PACKAGE: packageRoot,
+    ProgramFiles: join(root, "Programs"), OMNICODE_TEST_PACKAGE: packageRoot,
   } });
   return stdout.trim();
 }

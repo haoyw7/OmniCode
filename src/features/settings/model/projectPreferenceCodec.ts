@@ -21,7 +21,7 @@ export function parseProjectPreferenceIdentity(value: string): { environmentId: 
   } catch { /* Malformed identities never become filesystem paths. */ }
 }
 const absolute = (path: string) => /^(\/|[A-Za-z]:[\\/]|\\\\)/.test(path) || !!parseRemotePath(path);
-const MIXED_PINS_KEY = "monocode.sidebarPinnedOrder.v1";
+const MIXED_PINS_KEY = "omnicode.sidebarPinnedOrder.v1";
 function pinnedSession(value: string): [string, string] | undefined {
   if (!value.startsWith("session:")) return;
   try {
@@ -66,12 +66,12 @@ export function decodeProjectPreferencePath(value: string): string | undefined {
 }
 
 const casePreservingMaps = new Set([
-  "monocode.sessionFolders", "monocode.pinnedSessionsCollapsed", "monocode.reminderSessionsCollapsed", "monocode.sessionSidebarOrder.v1",
+  "omnicode.sessionFolders", "omnicode.pinnedSessionsCollapsed", "omnicode.reminderSessionsCollapsed", "omnicode.sessionSidebarOrder.v1",
 ]);
 function mapSessionIds(key: string, value: unknown): unknown {
   if (!Array.isArray(value)) return value;
-  if (key === "monocode.sessionSidebarOrder.v1") return value.map((id) => typeof id === "string" ? remoteSessionFor(id) ?? id : id);
-  if (key === "monocode.sessionFolders") return value.map((folder) => {
+  if (key === "omnicode.sessionSidebarOrder.v1") return value.map((id) => typeof id === "string" ? remoteSessionFor(id) ?? id : id);
+  if (key === "omnicode.sessionFolders") return value.map((folder) => {
     if (!folder || typeof folder !== "object" || !Array.isArray(folder.sessionIds)) return folder;
     return { ...folder, sessionIds: folder.sessionIds.map((id: unknown) => typeof id === "string" ? remoteSessionFor(id) ?? id : id) };
   });

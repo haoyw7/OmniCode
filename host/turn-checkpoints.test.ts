@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 function fixture() {
-  const dir = mkdtempSync(join(tmpdir(), "monocode-turn-test-"));
+  const dir = mkdtempSync(join(tmpdir(), "omnicode-turn-test-"));
   cleanups.push(dir);
   const repo = join(dir, "repo");
   mkdirSync(repo);
@@ -169,7 +169,7 @@ it("undo restores only recorded files, keep retains history and forget removes r
   expect((await f.store.status("session", f.repo)).files).toEqual([]);
   expect(readFileSync(join(f.repo, ".git/index")).equals(index)).toBe(true);
   await f.store.forget("session");
-  expect(f.git("for-each-ref", "refs/monocode/checkpoints/session/")).toBe("");
+  expect(f.git("for-each-ref", "refs/omnicode/checkpoints/session/")).toBe("");
 });
 
 it("incomplete and failed turns never fall back to the previous result", async () => {
@@ -205,7 +205,7 @@ it("commits after the turn clear modified, created and deleted files", async () 
 it("keeps structured-edit review for folders without Git under a Chinese locale", async () => {
   vi.stubEnv("LC_ALL", "zh_CN.UTF-8");
   vi.stubEnv("LANGUAGE", "zh_CN");
-  const dir = mkdtempSync(join(tmpdir(), "monocode-turn-nongit-"));
+  const dir = mkdtempSync(join(tmpdir(), "omnicode-turn-nongit-"));
   cleanups.push(dir);
   const cwd = join(dir, "project");
   mkdirSync(cwd);

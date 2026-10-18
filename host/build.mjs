@@ -4,7 +4,7 @@ import { excludeEvaluationEsbuild } from "../scripts/production-inputs.mjs";
 
 await build({
   entryPoints: ["host/cli.ts"],
-  outfile: "build/host/monocode-host.mjs",
+  outfile: "build/host/omnicode-host.mjs",
   bundle: true,
   platform: "node",
   format: "esm",
@@ -17,12 +17,12 @@ await build({
   // require/__filename at load time; provide them in the ESM output.
   banner: {
     js: [
-      'import { createRequire as __monocodeCreateRequire } from "node:module";',
-      'import { fileURLToPath as __monocodeFileURLToPath } from "node:url";',
-      'import { dirname as __monocodeDirname } from "node:path";',
-      "const require = __monocodeCreateRequire(import.meta.url);",
-      "const __filename = __monocodeFileURLToPath(import.meta.url);",
-      "const __dirname = __monocodeDirname(__filename);",
+      'import { createRequire as __omnicodeCreateRequire } from "node:module";',
+      'import { fileURLToPath as __omnicodeFileURLToPath } from "node:url";',
+      'import { dirname as __omnicodeDirname } from "node:path";',
+      "const require = __omnicodeCreateRequire(import.meta.url);",
+      "const __filename = __omnicodeFileURLToPath(import.meta.url);",
+      "const __dirname = __omnicodeDirname(__filename);",
     ].join("\n"),
   },
 });

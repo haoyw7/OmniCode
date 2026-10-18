@@ -1,6 +1,6 @@
 // Builds the amend-resume cache (ImportedRunCache) from a predecessor run's
 // journal. Adapted from ZCode's bootstrap dynamic-workflow-import.ts
-// (Apache-2.0). Monocode providers own their transcripts, so a diverging actor
+// (Apache-2.0). OmniCode providers own their transcripts, so a diverging actor
 // is not forked from the predecessor's session: the driver starts a fresh
 // session and gives it a recap of the asks it already completed. In-flight
 // asks are therefore never carried over.

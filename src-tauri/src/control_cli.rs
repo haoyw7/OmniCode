@@ -74,7 +74,7 @@ under a fresh ID instead would queue a second worker.
 Tasks run inside the OmniCode app, not in this process. Exiting this CLI, or a
 failure here, never cancels a task that was already accepted.
 
-OmniCode sets MONOCODE_CONTROL_ENDPOINT and MONOCODE_CONTROL_TOKEN for the lead
+OmniCode sets OMNICODE_CONTROL_ENDPOINT and OMNICODE_CONTROL_TOKEN for the lead
 agent's process only. They are already in your environment; never print them.
 "#;
 
@@ -179,14 +179,14 @@ fn quoted(value: &str) -> String {
 pub fn help() -> String {
     let exe = std::env::current_exe()
         .map(|path| quoted(&path.to_string_lossy()))
-        .unwrap_or_else(|_| "monocode".into());
+        .unwrap_or_else(|_| "omnicode".into());
     USAGE.replace("{exe}", &exe)
 }
 
 pub fn app_help() -> String {
     let exe = std::env::current_exe()
         .map(|path| quoted(&path.to_string_lossy()))
-        .unwrap_or_else(|_| "monocode".into());
+        .unwrap_or_else(|_| "omnicode".into());
     APP_USAGE.replace("{exe}", &exe)
 }
 
@@ -279,14 +279,14 @@ fn sent(error: impl Into<String>) -> Failure {
 
 fn send(action: &str, input: &Value, request_id: &str, app_mode: bool) -> Result<Value, Failure> {
     let endpoint_key = if app_mode {
-        "MONOCODE_APP_ENDPOINT"
+        "OMNICODE_APP_ENDPOINT"
     } else {
-        "MONOCODE_CONTROL_ENDPOINT"
+        "OMNICODE_CONTROL_ENDPOINT"
     };
     let token_key = if app_mode {
-        "MONOCODE_APP_TOKEN"
+        "OMNICODE_APP_TOKEN"
     } else {
-        "MONOCODE_CONTROL_TOKEN"
+        "OMNICODE_CONTROL_TOKEN"
     };
     let endpoint = std::env::var(endpoint_key).map_err(|_| {
         unsent(if app_mode {
@@ -501,18 +501,18 @@ mod tests {
     #[test]
     fn quotes_the_control_path_only_when_the_shell_needs_it() {
         assert_eq!(
-            quoted("/Applications/MonoCode.app/Contents/MacOS/monocode"),
-            "/Applications/MonoCode.app/Contents/MacOS/monocode"
+            quoted("/Applications/OmniCode.app/Contents/MacOS/omnicode"),
+            "/Applications/OmniCode.app/Contents/MacOS/omnicode"
         );
-        assert_eq!(quoted("/Users/a b/MonoCode"), "'/Users/a b/MonoCode'");
-        assert_eq!(quoted("C:\\Tools\\monocode.exe"), "C:\\Tools\\monocode.exe");
+        assert_eq!(quoted("/Users/a b/OmniCode"), "'/Users/a b/OmniCode'");
+        assert_eq!(quoted("C:\\Tools\\omnicode.exe"), "C:\\Tools\\omnicode.exe");
         assert_eq!(
-            quoted("C:\\Program Files\\MonoCode\\monocode.exe"),
-            "\"C:\\Program Files\\MonoCode\\monocode.exe\""
+            quoted("C:\\Program Files\\OmniCode\\omnicode.exe"),
+            "\"C:\\Program Files\\OmniCode\\omnicode.exe\""
         );
         // A backslash escapes in a POSIX shell, so bare would rewrite the path.
-        assert_eq!(quoted("/Users/a\\b/MonoCode"), "'/Users/a\\b/MonoCode'");
-        assert_eq!(quoted("/Users/it's/MonoCode"), r"'/Users/it'\''s/MonoCode'");
+        assert_eq!(quoted("/Users/a\\b/OmniCode"), "'/Users/a\\b/OmniCode'");
+        assert_eq!(quoted("/Users/it's/OmniCode"), r"'/Users/it'\''s/OmniCode'");
     }
     #[test]
     fn app_mode_exposes_only_app_actions_and_safe_request_ids() {

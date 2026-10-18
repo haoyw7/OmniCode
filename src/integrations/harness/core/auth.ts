@@ -14,7 +14,7 @@ export {
 } from "./authSupport";
 
 const LOGIN_TIMEOUT_MS = 10 * 60_000;
-const LOGIN_CHILD_PREFIX = "monocode-provider-login-";
+const LOGIN_CHILD_PREFIX = "omnicode-provider-login-";
 
 function loginChildId(harness: HarnessId, accountId?: string): string {
   let windowLabel = "main";
@@ -47,7 +47,7 @@ const inflight = new Map<string, Promise<void>>();
 
 /**
  * Launch the provider's own login flow. The child owns browser opening and
- * credential storage; MonoCode only supervises its exit status. Duplicate
+ * credential storage; OmniCode only supervises its exit status. Duplicate
  * clicks share one run so two OAuth flows cannot race each other.
  */
 export function loginHarness(

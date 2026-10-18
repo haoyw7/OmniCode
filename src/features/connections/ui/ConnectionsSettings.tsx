@@ -240,7 +240,7 @@ export function ConnectionsSettings() {
           await remoteRequest(machine.id, "devices.revokeSelf");
         } catch (reason) {
           throw new Error(
-            `Could not revoke access, so ${machine.name} was not removed: ${String(reason)}. Reconnect and try again, or remove it from this desktop only and revoke it on the host with monocode-host devices and monocode-host revoke <device-id>.`,
+            `Could not revoke access, so ${machine.name} was not removed: ${String(reason)}. Reconnect and try again, or remove it from this desktop only and revoke it on the host with omnicode-host devices and omnicode-host revoke <device-id>.`,
           );
         }
       }
@@ -404,11 +404,11 @@ export function ConnectionsSettings() {
                       "To stop the host and turn off its background service, run",
                     )}{" "}
                     <code className="rounded bg-content/10 px-1">
-                      ~/.monocode-host/bin/monocode-host service uninstall
+                      ~/.omnicode-host/bin/omnicode-host service uninstall
                     </code>{" "}
                     {uiT("on that machine (")}
                     <code className="rounded bg-content/10 px-1">
-                      %USERPROFILE%\.monocode-host\bin\monocode-host.cmd service
+                      %USERPROFILE%\.omnicode-host\bin\omnicode-host.cmd service
                       uninstall
                     </code>{" "}
                     {uiT("on Windows). Its sessions and history are kept.")}

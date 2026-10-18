@@ -24,7 +24,7 @@ const NEW: &str = "tray_new";
 const QUIT: &str = "tray_quit";
 const SESSION_PREFIX: &str = "tray_session:";
 /// Opens a Host conversation in one window; payload is [`OpenSession`].
-pub const OPEN_SESSION_EVENT: &str = "monocode:tray-open-session";
+pub const OPEN_SESSION_EVENT: &str = "omnicode:tray-open-session";
 const SECTION_LIMIT: usize = 5;
 const MORE_LIMIT: usize = 10;
 /// Display columns for a conversation row; wide (CJK) characters count twice.
@@ -283,12 +283,47 @@ fn build_menu(
         }
         menu = menu.separator();
     }
-    menu.item(&MenuItemBuilder::with_id(NEW, &labels.new_session).build(app)?)
+    let menu = menu
+        .item(&MenuItemBuilder::with_id(NEW, &labels.new_session).build(app)?)
         .separator()
         .item(&MenuItemBuilder::with_id(OPEN, &labels.open).build(app)?)
         .separator()
         .item(&MenuItemBuilder::with_id(QUIT, &labels.quit).build(app)?)
-        .build()
+        .build()?;
+    if let Err(err) = remove_check_gutter(&menu) {
+        eprintln!("tray: could not remove menu check gutter: {err}");
+    }
+    Ok(menu)
+}
+
+/// These text-only menus have no check items or icons. Remove Windows' unused
+/// check column, including in More, whenever the tray menu is rebuilt.
+#[cfg(windows)]
+fn remove_check_gutter(menu: &Menu<Wry>) -> tauri::Result<()> {
+    use tauri::menu::ContextMenu;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        GetMenuInfo, SetMenuInfo, HMENU, MENUINFO, MIM_APPLYTOSUBMENUS, MIM_STYLE, MNS_NOCHECK,
+    };
+
+    let handle = menu.hpopupmenu()? as HMENU;
+    let mut info = MENUINFO {
+        cbSize: std::mem::size_of::<MENUINFO>() as u32,
+        fMask: MIM_STYLE,
+        ..Default::default()
+    };
+    // SAFETY: the live Tauri menu owns this handle; MENUINFO is initialized with
+    // its required size. Both calls are synchronous and retain no references.
+    unsafe {
+        if GetMenuInfo(handle, &mut info) == 0 {
+            return Err(std::io::Error::last_os_error().into());
+        }
+        info.fMask |= MIM_APPLYTOSUBMENUS;
+        info.dwStyle |= MNS_NOCHECK;
+        if SetMenuInfo(handle, &info) == 0 {
+            return Err(std::io::Error::last_os_error().into());
+        }
+    }
+    Ok(())
 }
 
 fn current() -> (TrayLabels, Sections) {
@@ -363,7 +398,7 @@ mod sni {
 
     impl ksni::Tray for SniTray {
         fn id(&self) -> String {
-            "monocode".into()
+            "omnicode".into()
         }
 
         fn title(&self) -> String {

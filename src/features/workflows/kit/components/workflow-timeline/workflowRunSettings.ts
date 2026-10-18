@@ -1,5 +1,5 @@
 // Run settings rules. Adapted from ZCode (Apache-2.0): ZCode retunes one run-level
-// subagent model; Monocode retunes per-agent runtimes and the concurrency limit.
+// subagent model; OmniCode retunes per-agent runtimes and the concurrency limit.
 import type { WorkflowRunState } from "../../_shims/protocol.js";
 
 /**

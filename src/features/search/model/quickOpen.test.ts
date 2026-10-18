@@ -96,7 +96,7 @@ describe("recent commands", () => {
   });
 
   it("ignores unreadable storage", () => {
-    localStorage.setItem("monocode.quickOpen.recentCommands", "{");
+    localStorage.setItem("omnicode.quickOpen.recentCommands", "{");
     expect(loadRecentCommands()).toEqual([]);
   });
 });

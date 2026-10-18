@@ -15,7 +15,7 @@ const out = args.length
   ? resolve(args[1])
   : evalDataPath(root, "reports/optimization-offline-2026-10-09");
 const temporary = await mkdtemp(
-  join(tmpdir(), "monocode-historical-regrade-build-"),
+  join(tmpdir(), "omnicode-historical-regrade-build-"),
 );
 try {
   await build({

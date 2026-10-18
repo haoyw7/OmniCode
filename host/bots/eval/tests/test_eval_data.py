@@ -30,11 +30,11 @@ class ArchivePathsTests(unittest.TestCase):
         self.addCleanup(self.environment.stop)
 
     def test_archive_default_and_explicit_root_preserve_logical_paths(self):
-        archive = self.base / 'user-data/monocode/eval-archive'
+        archive = self.base / 'user-data/omnicode/eval-archive'
         self.assertEqual(eval_data.archive_root(self.root), archive)
         self.assertEqual(eval_data.data_path('reports/run/results.jsonl', self.root), archive / 'reports/run/results.jsonl')
         explicit = self.base / 'existing-archive'
-        with patch.dict(os.environ, {'MONOCODE_EVAL_ARCHIVE_ROOT': str(explicit)}):
+        with patch.dict(os.environ, {'OMNICODE_EVAL_ARCHIVE_ROOT': str(explicit)}):
             self.assertEqual(eval_data.data_path('reports/run/results.jsonl', self.root), explicit / 'reports/run/results.jsonl')
             self.assertEqual(eval_data.resolve_data_file(self.root / 'reports/run', self.root), explicit / 'reports/run')
         self.assertEqual(eval_data.data_path('data/judge-calibration.json', self.root), self.root / 'data/judge-calibration.json')
@@ -66,7 +66,7 @@ class ArchivePathsTests(unittest.TestCase):
 
     def test_missing_archive_fails_before_dataset_preparation(self):
         with patch.object(REPORT, 'ensure_data', side_effect=AssertionError('must not download')):
-            with self.assertRaisesRegex(FileNotFoundError, 'MONOCODE_EVAL_ARCHIVE_ROOT'):
+            with self.assertRaisesRegex(FileNotFoundError, 'OMNICODE_EVAL_ARCHIVE_ROOT'):
                 REPORT.build(self.root)
 
 

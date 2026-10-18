@@ -11,7 +11,7 @@ import {
   saveProviderBinaryPath,
 } from "./providerBinaryPaths";
 
-const key = "monocode.providerBinaryPaths.v1";
+const key = "omnicode.providerBinaryPaths.v1";
 
 beforeEach(() => {
   mocks.invoke.mockReset();

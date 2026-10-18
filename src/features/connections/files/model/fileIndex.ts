@@ -301,7 +301,7 @@ subscribeDirsChanged(scheduleIndexRefresh);
 if (typeof document !== "undefined") {
   const resume = () => {
     if (document.hidden) return;
-    // Changes made outside MonoCode have no checkout-scoped notification.
+    // Changes made outside OmniCode have no checkout-scoped notification.
     // Revalidate the active index and discard inactive snapshots on return.
     for (const cwd of new Set([...cache.keys(), ...inflight.keys()])) {
       if (cwd !== lastCwd) invalidateProjectFiles(cwd);

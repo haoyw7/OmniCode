@@ -4,8 +4,8 @@ import { emit, listen } from "@tauri-apps/api/event";
 /** Commands awaiting a Host receipt, keyed like the earlier localStorage entries.
  * Rows live in the native session database so WebView quota cannot block a
  * send; this mirror keeps lookups synchronous for render paths. */
-export const OUTBOX_PREFIX = "monocode.remote-command.v1:";
-const CHANGED = "monocode://remote-outbox";
+export const OUTBOX_PREFIX = "omnicode.remote-command.v1:";
+const CHANGED = "omnicode://remote-outbox";
 const entries = new Map<string, string>();
 type Change = { source: string; key: string; entry: string | null };
 // Each window applies its own changes synchronously and ignores their echo.

@@ -4,12 +4,12 @@ import {
   TID_WORKFLOW_DETAIL,
   TID_WORKFLOW_DETAIL_SCRIPT,
   TID_WORKFLOW_DETAIL_TAB,
-  type MonocodeSavedWorkflowEntry,
-  type MonocodeSavedWorkflowMeta,
-  type MonocodeSavedWorkflowRun,
-  type MonocodeWorkflowsGetResult,
+  type OmniCodeSavedWorkflowEntry,
+  type OmniCodeSavedWorkflowMeta,
+  type OmniCodeSavedWorkflowRun,
+  type OmniCodeWorkflowsGetResult,
 } from "../../_shims/shared.js";
-import type { IMonocodeAgentService, MonocodeAgentSavedWorkflowTarget } from "../../_shims/services.js";
+import type { IOmniCodeAgentService, OmniCodeAgentSavedWorkflowTarget } from "../../_shims/services.js";
 import { CodeBlock } from "../../components/ai-elements/code-block.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { Spinner } from "../../../../../shared/ui/primitives/Spinner.js";
@@ -41,12 +41,12 @@ type DetailTab = "definition" | "history";
 
 type DetailLoad =
   | { status: "loading" }
-  | { status: "ready"; detail: Extract<MonocodeWorkflowsGetResult, { ok: true }> }
+  | { status: "ready"; detail: Extract<OmniCodeWorkflowsGetResult, { ok: true }> }
   | { status: "failed"; reason: string };
 
 type MetaDraft = SavedWorkflowMetaDraft;
 
-function draftFromMeta(meta: MonocodeSavedWorkflowMeta): MetaDraft {
+function draftFromMeta(meta: OmniCodeSavedWorkflowMeta): MetaDraft {
   return {
     description: meta.description,
     whenToUse: meta.whenToUse ?? "",
@@ -58,13 +58,13 @@ let rowKeySeq = 0;
 
 interface SavedWorkflowDetailViewProps {
   /** 项目档传 workspace target；全局档传 `{ scope: "global" }`（get/updateMeta 直接透传）。 */
-  target: MonocodeAgentSavedWorkflowTarget;
-  agentService: IMonocodeAgentService;
+  target: OmniCodeAgentSavedWorkflowTarget;
+  agentService: IOmniCodeAgentService;
   name: string;
   /** 面包屑「自动化 › <项目名> › <工作流名>」里的项目一级。 */
   projectLabel: string;
-  entry: MonocodeSavedWorkflowEntry | undefined;
-  runs: readonly MonocodeSavedWorkflowRun[];
+  entry: OmniCodeSavedWorkflowEntry | undefined;
+  runs: readonly OmniCodeSavedWorkflowRun[];
   now: number;
   busy: boolean;
   canOpenRun: boolean;
@@ -75,12 +75,12 @@ interface SavedWorkflowDetailViewProps {
   /** 作用域动作：项目档「提升为全局」（AI 概括）/ 全局档「移到项目…」；仅在传入时出现。 */
   onMove?: () => void;
   onDelete: () => void;
-  onOpenRun: (run: MonocodeSavedWorkflowRun) => void;
+  onOpenRun: (run: OmniCodeSavedWorkflowRun) => void;
   /** 产物 chip → `workflow-artifact` tab；缺席即 chips 只读。 */
-  onOpenArtifact?: (run: MonocodeSavedWorkflowRun, artifactId: string) => void;
+  onOpenArtifact?: (run: OmniCodeSavedWorkflowRun, artifactId: string) => void;
   onMetaSaved: () => void;
   /** 传入即在运行历史每行渲染项目列（全局工作流跨项目历史）。 */
-  resolveRunProject?: (run: MonocodeSavedWorkflowRun) => SavedWorkflowRunProject | null;
+  resolveRunProject?: (run: OmniCodeSavedWorkflowRun) => SavedWorkflowRunProject | null;
   /** 实参窗由列表层持有（同一份状态），详情页只负责挂到树上。 */
   launchDialog: ReactNode;
 }
@@ -214,7 +214,7 @@ export function SavedWorkflowDetailView({
     if (!collected.ok) setRowErrors(collected.errors);
     if (descriptionMissing || !collected.ok) return;
     const whenToUse = draft.whenToUse.trim();
-    const meta: MonocodeSavedWorkflowMeta = {
+    const meta: OmniCodeSavedWorkflowMeta = {
       description,
       ...(whenToUse.length === 0 ? {} : { whenToUse }),
       ...(collected.args === undefined ? {} : { args: collected.args }),

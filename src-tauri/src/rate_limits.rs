@@ -421,7 +421,7 @@ fn fetch_claude_usage_sync(config_dir: Option<PathBuf>) -> Result<ClaudeUsageFet
 
     // Claude Code owns this credential and rotates its refresh token. The
     // usage footer must remain read-only: independently refreshing here can
-    // race a live CLI (or another MonoCode window) and leave one process with
+    // race a live CLI (or another OmniCode window) and leave one process with
     // a spent refresh token, which forces the user through sign-in again.
     if token_expired(creds.expires_at_ms, now_ms()) {
         return Ok(usage_error(401));
@@ -844,13 +844,13 @@ mod tests {
                 .unwrap();
         assert_eq!(config_go_api_key(&value), None);
 
-        std::env::set_var("MONOCODE_TEST_GO_KEY", "sk-go-env");
+        std::env::set_var("OMNICODE_TEST_GO_KEY", "sk-go-env");
         let value: Value = serde_json::from_str(
-            r#"{"provider":{"opencode-go":{"options":{"apiKey":"{env:MONOCODE_TEST_GO_KEY}"}}}}"#,
+            r#"{"provider":{"opencode-go":{"options":{"apiKey":"{env:OMNICODE_TEST_GO_KEY}"}}}}"#,
         )
         .unwrap();
         assert_eq!(config_go_api_key(&value).as_deref(), Some("sk-go-env"));
-        std::env::remove_var("MONOCODE_TEST_GO_KEY");
+        std::env::remove_var("OMNICODE_TEST_GO_KEY");
     }
 
     #[test]

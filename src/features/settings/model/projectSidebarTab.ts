@@ -2,7 +2,7 @@ import { preferenceStorage } from "./sharedPreferences";
 import { pathKey } from "../../../shared/lib/paths";
 import { loadSidebarTabOrder, type SidebarTabId } from "./appearance";
 
-const KEY = "monocode.projectSidebarTabs.v1";
+const KEY = "omnicode.projectSidebarTabs.v1";
 
 type ProjectSidebarTab = SidebarTabId;
 type StoredTabs = Record<string, ProjectSidebarTab>;

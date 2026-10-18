@@ -1,4 +1,4 @@
-const key = (endpoint: string) => `monocode.mobile.lastOnline:${endpoint}`;
+const key = (endpoint: string) => `omnicode.mobile.lastOnline:${endpoint}`;
 
 /** When this phone last reached a paired device; device-local, never sent to a Host. */
 export function loadLastOnline(endpoint: string | undefined): number | undefined {

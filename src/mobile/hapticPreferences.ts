@@ -5,8 +5,8 @@ export type HapticPreferences = {
   output: boolean;
   strength: "gentle" | "standard";
 };
-const KEY = "monocode.mobile.haptics";
-const EVENT = "monocode:haptics-change";
+const KEY = "omnicode.mobile.haptics";
+const EVENT = "omnicode:haptics-change";
 const defaults: HapticPreferences = { interactions: true, output: true, strength: "gentle" };
 let cachedRaw: string | null | undefined;
 let cached = defaults;

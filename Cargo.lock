@@ -2441,69 +2441,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "monocode"
-version = "0.1.0"
-dependencies = [
- "arboard",
- "base64 0.22.1",
- "block2",
- "fontdb",
- "glib",
- "ksni",
- "libc",
- "monocode-process-tree",
- "notify",
- "notify-rust",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "objc2-user-notifications",
- "open",
- "png 0.18.1",
- "portable-pty",
- "raw-window-handle",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-opener",
- "tauri-plugin-process",
- "tauri-plugin-updater",
- "tauri-plugin-window-state",
- "tauri-winrt-notification 0.8.1",
- "time",
- "toml 0.9.12+spec-1.1.0",
- "unicode-normalization",
- "ureq",
- "url",
- "uuid",
- "windows 0.62.2",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "monocode-host-supervisor"
-version = "0.1.0"
-dependencies = [
- "libc",
- "monocode-process-tree",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "monocode-process-tree"
-version = "0.1.0"
-dependencies = [
- "libc",
- "windows-sys 0.61.2",
-]
-
-[[package]]
 name = "moxcms"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2894,6 +2831,69 @@ dependencies = [
  "objc2-app-kit",
  "objc2-core-foundation",
  "objc2-foundation",
+]
+
+[[package]]
+name = "omnicode"
+version = "0.1.0"
+dependencies = [
+ "arboard",
+ "base64 0.22.1",
+ "block2",
+ "fontdb",
+ "glib",
+ "ksni",
+ "libc",
+ "notify",
+ "notify-rust",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "objc2-user-notifications",
+ "omnicode-process-tree",
+ "open",
+ "png 0.18.1",
+ "portable-pty",
+ "raw-window-handle",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-opener",
+ "tauri-plugin-process",
+ "tauri-plugin-updater",
+ "tauri-plugin-window-state",
+ "tauri-winrt-notification 0.8.1",
+ "time",
+ "toml 0.9.12+spec-1.1.0",
+ "unicode-normalization",
+ "ureq",
+ "url",
+ "uuid",
+ "windows 0.62.2",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "omnicode-host-supervisor"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "omnicode-process-tree",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "omnicode-process-tree"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { HarnessId } from "./session";
 
-export const REMINDERS_CHANGED = "monocode:reminders-changed";
-export const REMINDER_OPEN = "monocode:reminder-open";
+export const REMINDERS_CHANGED = "omnicode:reminders-changed";
+export const REMINDER_OPEN = "omnicode:reminder-open";
 
 export type SessionReminder = {
   sessionId: string;

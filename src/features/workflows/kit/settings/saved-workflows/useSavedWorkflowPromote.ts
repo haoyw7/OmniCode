@@ -15,7 +15,7 @@ import type { WorkspaceConnectionAgentService } from "../../v4/workspaceConnecti
 import { buildSavedWorkflowPromotePrompt } from "./savedWorkflowLaunchPrompt.js";
 import type { SavedWorkflowLaunchTarget } from "./useSavedWorkflowLauncher.js";
 
-// Monocode: the promote prompt opens a new conversation in the project with the
+// OmniCode: the promote prompt opens a new conversation in the project with the
 // prompt in its composer, under /workflow so the authoring guide comes along.
 
 /** 被提升的项目档：名字与路径进提示词（模型自己读文件），locale 选中英文案。 */

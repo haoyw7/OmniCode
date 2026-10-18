@@ -17,7 +17,7 @@ export const DEFAULT_GLASS_SETTINGS: GlassSettings = {
   transparency: 22,
 };
 
-export const GLASS_SETTINGS_KEY = "monocode.mobileGlass";
+export const GLASS_SETTINGS_KEY = "omnicode.mobileGlass";
 
 const EFFECTS: readonly GlassEffect[] = ["frosted", "solid"];
 
@@ -49,7 +49,7 @@ export function readGlassSettings(): GlassSettings {
   try {
     return normalizeGlassSettings(
       JSON.parse(preferenceStorage.getItem(GLASS_SETTINGS_KEY)
-        ?? (activePreferenceStore() ? null : localStorage.getItem("monocode-mobile-glass")) ?? "null"),
+        ?? (activePreferenceStore() ? null : localStorage.getItem("omnicode-mobile-glass")) ?? "null"),
     );
   } catch {
     return DEFAULT_GLASS_SETTINGS;

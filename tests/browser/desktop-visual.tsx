@@ -43,7 +43,7 @@ import "../../src/styles/index.css";
 const query = new URLSearchParams(location.search);
 setUiLanguage(query.get("lang") === "zh-CN" ? "zh-CN" : "en");
 document.documentElement.classList.toggle("theme-light", query.get("theme") !== "dark");
-localStorage.setItem("monocode.desktopColorScheme", query.get("theme") === "dark" ? "dark" : "light");
+localStorage.setItem("omnicode.desktopColorScheme", query.get("theme") === "dark" ? "dark" : "light");
 applyDesktopSkin();
 if (query.has("large")) document.documentElement.style.setProperty("--font-scale", "1.25");
 // Tauri callers that query settings receive deterministic offline responses.
@@ -55,7 +55,7 @@ Object.assign(window, { __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: 
     if (command === "session_checkpoint_status") return { files: [], undoLocked: false, workspaceShared: false };
     if (/git_branches/.test(command)) return { current: "main", detached: false, branches: [{ name: "main", current: true, remote: null }] };
     if (/git_diff_stats/.test(command)) return { additions: 12, deletions: 4, files: [] };
-    if (command === "chat_folders_list") return ["/fixture/Documents/ohmymonocode/2026-10-13/chat-090000-aaaaaa"];
+    if (command === "chat_folders_list") return ["/fixture/Documents/OmniCode/2026-10-13/chat-090000-aaaaaa"];
     if (/notification_preferences/.test(command)) return {};
     if (command === "system_fonts") return { sans: [], mono: [] };
     if (/list|recents|accounts|sessions|notifications/.test(command)) return [];
@@ -122,8 +122,8 @@ function Gallery() {
   </main>
  </div></SurfaceAppearance.Provider>;
 }
-const CHAT_CWD = "/fixture/Documents/ohmymonocode/2026-10-13/chat-090000-aaaaaa";
-const CODE_CWD = "/fixture/monocode";
+const CHAT_CWD = "/fixture/Documents/OmniCode/2026-10-13/chat-090000-aaaaaa";
+const CODE_CWD = "/fixture/omnicode";
 const attachment: Attachment = { id: "fixture-file", name: "layout-notes.md", mimeType: "text/markdown", kind: "file", size: 128, path: "/fixture/layout-notes.md" };
 const transcript: Block[] = [
   { id: "prompt", role: "user", text: "Refine this workspace while preserving its conversations and tools." },

@@ -1,7 +1,7 @@
 import type { BotMessage } from "./botView";
 
-const PREFIX = "monocode.assistant-read:";
-const CHANGE = "monocode:assistant-read";
+const PREFIX = "omnicode.assistant-read:";
+const CHANGE = "omnicode:assistant-read";
 const fallback = new Map<string, number>();
 
 export function botReadRevision(hostKey: string): number {

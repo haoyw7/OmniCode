@@ -53,7 +53,7 @@ async function render(
       createElement(SearchView, {
         open,
         cwd: "/repo",
-        recents: [{ path: "/work/monocode", openedAt: 1 }],
+        recents: [{ path: "/work/omnicode", openedAt: 1 }],
         history: [],
         sessions: [],
         onClose,
@@ -79,7 +79,7 @@ it("retains the query, scope and results when focus leaves and returns", async (
     Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
       "value",
-    )!.set!.call(input, "monocode");
+    )!.set!.call(input, "omnicode");
     input.dispatchEvent(new Event("input", { bubbles: true }));
     projects.click();
     await vi.advanceTimersByTimeAsync(300);
@@ -87,12 +87,12 @@ it("retains the query, scope and results when focus leaves and returns", async (
 
   await render(false, { queryRequest });
   expect(container.querySelector("[data-app-search]")).not.toBeNull();
-  expect(input.value).toBe("monocode");
+  expect(input.value).toBe("omnicode");
   expect(projects.getAttribute("aria-pressed")).toBe("true");
-  expect(container.textContent).toContain("monocode");
+  expect(container.textContent).toContain("omnicode");
 
   await render(true, { queryRequest });
-  expect(input.value).toBe("monocode");
+  expect(input.value).toBe("omnicode");
   expect(projects.getAttribute("aria-pressed")).toBe("true");
 });
 

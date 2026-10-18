@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn removal_and_in_flight_spawns_exclude_each_other_until_guards_drop() {
         let root =
-            std::env::temp_dir().join(format!("monocode-lifecycle-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("omnicode-lifecycle-{}", uuid::Uuid::new_v4()));
         let child = root.join("src");
         let sibling = root.with_file_name(format!(
             "{}-other",

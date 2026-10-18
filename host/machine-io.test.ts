@@ -60,12 +60,12 @@ it("preserves binary bytes and process error details across the execution protoc
   expect(requests[1]).toMatchObject({ op: "exec", params: { cwd: "/project", stdin: "AP8=", encoding: "base64" } });
 });
 
-it.runIf(process.env.MONOCODE_TEST_WSL === "1")("runs Linux workspace, branch, worktree and checkpoint operations while retaining metadata on Windows", async () => {
-  const distribution = process.env.MONOCODE_TEST_WSL_DISTRO ?? "Ubuntu-26.04";
-  const node = process.env.MONOCODE_TEST_WSL_NODE;
-  if (!node) throw new Error("MONOCODE_TEST_WSL_NODE must name the Linux runtime");
+it.runIf(process.env.OMNICODE_TEST_WSL === "1")("runs Linux workspace, branch, worktree and checkpoint operations while retaining metadata on Windows", async () => {
+  const distribution = process.env.OMNICODE_TEST_WSL_DISTRO ?? "Ubuntu-26.04";
+  const node = process.env.OMNICODE_TEST_WSL_NODE;
+  if (!node) throw new Error("OMNICODE_TEST_WSL_NODE must name the Linux runtime");
   const source = execFileSync("wsl.exe", ["-d", distribution, "--exec", "wslpath", "-a", path.resolve("host/wsl-exec.mjs")], { encoding: "utf8" }).trim();
-  const root = `/tmp/monocode-machine-io-${randomUUID()}`;
+  const root = `/tmp/omnicode-machine-io-${randomUUID()}`;
   const script = `import { createWslExecServer, bridgeWslExec } from ${JSON.stringify(`file://${source}`)};
     import { rm } from 'node:fs/promises';
     const root = ${JSON.stringify(root)}, socket = root + '/run/rpc.sock';
@@ -73,7 +73,7 @@ it.runIf(process.env.MONOCODE_TEST_WSL === "1")("runs Linux workspace, branch, w
     try { await bridgeWslExec(socket); } finally { await service.close(); await rm(root, {recursive:true,force:true}); }`;
   const connection = new WslConnection({ distribution, launch: () => spawn("wsl.exe", ["-d", distribution, "--exec", node, "--input-type=module", "-e", script], { stdio: "pipe", windowsHide: true }) });
   const io = new WslMachineIO(distribution, connection);
-  const metadata = await mkdtemp(path.join(tmpdir(), "monocode-machine-metadata-"));
+  const metadata = await mkdtemp(path.join(tmpdir(), "omnicode-machine-metadata-"));
   const store = new HostStore(path.join(metadata, "host.db"));
   try {
     await withMachineIO(io, async () => {
@@ -170,7 +170,7 @@ it.runIf(process.env.MONOCODE_TEST_WSL === "1")("runs Linux workspace, branch, w
       expect(snippet).toMatchObject({ kind: "completed", result: { text: "before\n", command: { stdout: "Linux", exitCode: 7 } } });
       const saved = await saveSavedWorkflow({ cwd: plain, name: "linux", scope: "project", homeDir: desktopHome,
         meta: { description: "Linux saved workflow" }, script: 'phase("Read"); return await files.read("script");' });
-      expect(saved.path).toBe(`${plain}/.monocode/workflows/linux.dwf.ts`);
+      expect(saved.path).toBe(`${plain}/.omnicode/workflows/linux.dwf.ts`);
       expect((await listSavedWorkflows({ cwd: plain, scope: "project", homeDir: desktopHome })).entries.map((entry) => entry.name)).toEqual(["linux"]);
     });
   } finally {

@@ -132,7 +132,7 @@ def metric_summary(rows, key, predicate=lambda row: True):
 def build(root):
     reports = data_path("reports", root=root)
     if not reports.is_dir():
-        raise FileNotFoundError("Historical reports are unavailable; set MONOCODE_EVAL_ARCHIVE_ROOT to the archive containing reports/")
+        raise FileNotFoundError("Historical reports are unavailable; set OMNICODE_EVAL_ARCHIVE_ROOT to the archive containing reports/")
     catalog = load_catalog(root)
     evidence = {}
 
@@ -352,7 +352,7 @@ def write_report(root, out):
         lines.append("| " + " | ".join(map(md, [row["id"], f"{row['dataset']}/{row['category']}", score, row["real_model_executed"], row["run_id"], row["failure_reason"], row["evidence"] or row["catalog_evidence"]])) + " |")
     lines += ["", "## 框架验证，非助理得分", "", f"保留 {len(summary['reference_runs'])} 个历史 reference 运行索引，详见 summary.json.reference_runs。单元测试与迁移回放结果见 ../migration-2026-10-09/verification.json；绝不进入上述能力分母。", "",
         "## 刷新", "", "仓库根目录：", "```bash", "python3 host/bots/eval/bin/scoring_report.py --out /tmp/assistant-scores-NEW", "```", "",
-        "或进入 host/bots/eval 后运行 `python3 bin/scoring_report.py --out /tmp/assistant-scores-NEW`。输出必须是源码目录外的新目录。reports/ 证据路径以 MONOCODE_EVAL_ARCHIVE_ROOT 归档为基准；:L 后为 JSONL 行号。", "",
+        "或进入 host/bots/eval 后运行 `python3 bin/scoring_report.py --out /tmp/assistant-scores-NEW`。输出必须是源码目录外的新目录。reports/ 证据路径以 OMNICODE_EVAL_ARCHIVE_ROOT 归档为基准；:L 后为 JSONL 行号。", "",
         "历史原记录/报告字节不变，输入 SHA-256 列于 summary.json。旧报告内 eval/ 的绝对路径按 docs/MIGRATION.md 映射到新位置。"]
     (out / "scores.md").write_text("\n".join(lines) + "\n")
     h = html.escape

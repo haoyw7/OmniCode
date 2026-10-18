@@ -1,4 +1,4 @@
-// Monocode shim for ZCode's V4 conversation context: Host session leases, the
+// OmniCode shim for ZCode's V4 conversation context: Host session leases, the
 // three run commands the workflow views send, and the artifact queries — all
 // served by the Host workflow service through `workflows.request`.
 import { createContext, useContext, useMemo, type ReactNode } from "react";
@@ -18,7 +18,7 @@ export interface V4ConversationValue {
   sendCommand(envelope: CommandEnvelope): Promise<CommandAck>;
   workflowRunArtifacts(params: { sessionId: string; runId: string }): Promise<{ artifacts: WorkflowRunArtifact[] }>;
   workflowRunArtifactData(params: { sessionId: string; runId: string; artifactId: string; afterSequence?: number; limit: number }): Promise<{ items: WorkflowArtifactItem[]; hasMore: boolean }>;
-  workflowRunArtifactRead(params: { sessionId: string; runId: string; artifactId: string; version?: number; offset: number; limit: number }): Promise<{ mediaType: string; totalBytes: number; dataBase64: string; nextOffset: number | null }>;
+  workflowRunArtifactRead(params: { sessionId: string; runId: string; artifactId: string; version?: number; offset: number; limit: number }): Promise<{ mediaType: string; totalBytes: number; dataBase64: string; nextOffset: number | null; storedPath?: string }>;
 }
 
 const V4ConversationContext = createContext<V4ConversationValue | null>(null);

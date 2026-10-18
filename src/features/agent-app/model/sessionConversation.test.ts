@@ -56,7 +56,7 @@ describe("sessionConversationPage", () => {
 
   it("omits drafts and shows the latest assistant response in each exchange", () => {
     const session = conversation([
-      { id: "u", role: "user", text: "/monocode list notes" },
+      { id: "u", role: "user", text: "/omnicode list notes" },
       { id: "a1", role: "assistant", text: "Working" },
       { id: "a2", role: "assistant", text: "Done" },
       { id: "draft", role: "user", text: "unsent", draft: true },

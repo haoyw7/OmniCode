@@ -138,7 +138,7 @@ export function NativeSessionsPanel({
       setPending(undefined);
     }
   };
-  /** Import every listed conversation that is not in MonoCode yet, one at a time. */
+  /** Import every listed conversation that is not in OmniCode yet, one at a time. */
   const importAll = async (targets: NativeSessionFile[]) => {
     const queue = targets.filter((file) => !isBound(file));
     if (!queue.length || bulk) return;

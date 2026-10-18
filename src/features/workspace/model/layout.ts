@@ -6,6 +6,8 @@ import {
   type TerminalMetaPatch,
 } from "../../terminal/model/terminalTab";
 import type { HarnessId } from "../../sessions/model/session";
+import type { WorkflowAgentAvatar } from "../../workflows/model/workflowAgentAvatar";
+import type { WorkflowRunArtifactKind } from "../../../integrations/workflow/protocol/workflow-artifacts";
 import { pathKey } from "../../../shared/lib/paths";
 
 /**
@@ -73,6 +75,16 @@ export type WorkflowAgentTabSource = {
   sessionId: string;
   parentSessionId: string;
   runId: string;
+  avatar?: WorkflowAgentAvatar;
+};
+
+export type WorkflowArtifactTabSource = {
+  parentSessionId: string;
+  runId: string;
+  artifactId: string;
+  kind?: WorkflowRunArtifactKind;
+  contentType?: string;
+  sourcePath?: string;
 };
 
 export type SessionChangesSource = {
@@ -140,6 +152,7 @@ export type FilePaneTab = {
   subagent?: SubagentTabSource;
   workflowRun?: WorkflowRunTabSource;
   workflowAgent?: WorkflowAgentTabSource;
+  workflowArtifact?: WorkflowArtifactTabSource;
   terminal?: boolean;
   /** Foreground command when it isn't the shell. Live only — not persisted. */
   foreground?: string;
@@ -468,6 +481,10 @@ export function newWorkflowAgentTab(title: string, cwd: string, workflowAgent: W
   return { id: crypto.randomUUID(), path: title, cwd, workflowAgent };
 }
 
+export function newWorkflowArtifactTab(title: string, cwd: string, workflowArtifact: WorkflowArtifactTabSource): FilePaneTab {
+  return { id: crypto.randomUUID(), path: title, cwd, workflowArtifact };
+}
+
 export function newTerminalFile(
   cwd: string,
   title?: string,
@@ -609,12 +626,17 @@ export function isWorkflowAgentTab(file: FilePaneTab): file is FilePaneTab & { w
   return !!file.workflowAgent;
 }
 
+export function isWorkflowArtifactTab(file: FilePaneTab): file is FilePaneTab & { workflowArtifact: WorkflowArtifactTabSource } {
+  return !!file.workflowArtifact;
+}
+
 export function isVirtualDocumentTab(file: FilePaneTab): boolean {
   return (
     !!file.explorer ||
     isWorkflowRunTab(file) ||
     isSubagentTab(file) ||
     isWorkflowAgentTab(file) ||
+    isWorkflowArtifactTab(file) ||
     isAppViewTab(file) ||
     isPlanTab(file) ||
     isReleaseNotesTab(file) ||
@@ -706,6 +728,7 @@ export function editorTabKey(file: FilePaneTab): string {
   if (file.subagent) return `subagent:${JSON.stringify([file.subagent.parentSessionId, file.subagent.path])}`;
   if (file.workflowRun) return `workflow-run:${file.workflowRun.runId}`;
   if (file.workflowAgent) return `workflow-agent:${file.workflowAgent.sessionId}`;
+  if (file.workflowArtifact) return `workflow-artifact:${JSON.stringify([file.cwd, file.workflowArtifact.parentSessionId, file.workflowArtifact.runId, file.workflowArtifact.artifactId])}`;
   if (file.plan) return `plan:${file.plan.blockId}`;
   if (file.releaseNotes) return `release-notes:${file.releaseNotes.version}`;
   if (file.commit) return `commit:${file.cwd}:${file.commit.sha}`;
@@ -742,6 +765,7 @@ export function isPreviewableTab(file: FilePaneTab): boolean {
     !file.subagent &&
     !file.workflowRun &&
     !file.workflowAgent &&
+    !file.workflowArtifact &&
     !file.plan &&
     !file.releaseNotes &&
     !file.changes
@@ -785,12 +809,12 @@ export function openEditorTab(
     ...tab,
     editorPanes: tab.editorPanes.map((pane) =>
       pane.files.some(
-        (entry) => entry.preview && (entry.workflowRun || entry.workflowAgent),
+        (entry) => entry.preview && (entry.workflowRun || entry.workflowAgent || entry.workflowArtifact),
       )
         ? {
             ...pane,
             files: pane.files.map((entry) =>
-              entry.workflowRun || entry.workflowAgent
+              entry.workflowRun || entry.workflowAgent || entry.workflowArtifact
                 ? withoutPreview(entry)
                 : entry,
             ),

@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 it("removes only retired local-Host commands, retaining uncertain unrelated requests", async () => {
-  const key = (environment: string, id: string) => `monocode.remote-command.v1:${JSON.stringify(["/repo", environment])}:${id}`;
+  const key = (environment: string, id: string) => `omnicode.remote-command.v1:${JSON.stringify(["/repo", environment])}:${id}`;
   native.set(key("local", "old"), JSON.stringify({ command: { sessionId: "old-lead" } }));
   native.set(key("other", "same"), JSON.stringify({ command: { sessionId: "old-lead" } }));
   native.set(key("local", "ordinary"), JSON.stringify({ command: { sessionId: "ordinary" } }));

@@ -42,18 +42,18 @@ import {
 } from "./settings";
 import { IS_MAC, MOD, SHIFT } from "../../../platform/tauri/platform";
 
-const MODEL_CONTROLS_KEY = "monocode.modelControls";
-const LEGACY_EFFORT_VISIBLE_KEY = "monocode.composerEffortVisible";
-const NOTES_KEY = "monocode.notesEnabled";
-const KEYBINDING_OVERRIDES_KEY = "monocode.keybindingOverrides";
-const QUICK_COMPOSER_SHORTCUT_KEY = "monocode.quickComposerShortcut";
-const LIVE_AGENTS_KEY = "monocode.liveAgentsEnabled";
-const DIFF_VIEWER_KEY = "monocode.diffViewer";
-const FORMAT_ON_SAVE_KEY = "monocode.formatOnSave";
-const AUTOSAVE_KEY = "monocode.autosave";
-const FILE_TAB_MODE_KEY = "monocode.fileTabMode";
-const FOLLOW_UP_BEHAVIOR_KEY = "monocode.followUpBehavior";
-const TAB_ANIMATIONS_KEY = "monocode.tabAnimationsEnabled";
+const MODEL_CONTROLS_KEY = "omnicode.modelControls";
+const LEGACY_EFFORT_VISIBLE_KEY = "omnicode.composerEffortVisible";
+const NOTES_KEY = "omnicode.notesEnabled";
+const KEYBINDING_OVERRIDES_KEY = "omnicode.keybindingOverrides";
+const QUICK_COMPOSER_SHORTCUT_KEY = "omnicode.quickComposerShortcut";
+const LIVE_AGENTS_KEY = "omnicode.liveAgentsEnabled";
+const DIFF_VIEWER_KEY = "omnicode.diffViewer";
+const FORMAT_ON_SAVE_KEY = "omnicode.formatOnSave";
+const AUTOSAVE_KEY = "omnicode.autosave";
+const FILE_TAB_MODE_KEY = "omnicode.fileTabMode";
+const FOLLOW_UP_BEHAVIOR_KEY = "omnicode.followUpBehavior";
+const TAB_ANIMATIONS_KEY = "omnicode.tabAnimationsEnabled";
 
 describe("follow-up behavior setting", () => {
   beforeEach(mockLocalStorage);

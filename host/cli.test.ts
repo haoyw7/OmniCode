@@ -18,7 +18,7 @@ const exec = promisify(execFile);
 it(
   "starts detached, authenticates a device, revokes it, and stops independently of the launcher",
   async () => {
-    const directory = mkdtempSync(join(tmpdir(), "monocode-cli-test-"));
+    const directory = mkdtempSync(join(tmpdir(), "omnicode-cli-test-"));
     const probe = createServer();
     await new Promise<void>((resolve, reject) => {
       probe.once("error", reject);
@@ -26,7 +26,7 @@ it(
     });
     const port = (probe.address() as AddressInfo).port;
     await new Promise<void>((resolve) => probe.close(() => resolve()));
-    const cli = resolve("build/host/monocode-host.mjs");
+    const cli = resolve("build/host/omnicode-host.mjs");
     const run = (...args: string[]) =>
       exec(
         process.execPath,

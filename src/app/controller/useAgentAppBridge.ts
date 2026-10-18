@@ -79,7 +79,7 @@ export function useAgentAppBridge({
       requestId: string;
       action: string;
       input: Record<string, unknown>;
-    }>("monocode-control-request", ({ payload }) => {
+    }>("omnicode-control-request", ({ payload }) => {
       const handle = async () => {
         if (payload.namespace === "control") {
           return orchestrator.handle(

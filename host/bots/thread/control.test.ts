@@ -40,7 +40,7 @@ async function call(
 ) {
   return new Promise<any>((resolve, reject) => {
     const socket = connect(
-      Number(environment.MONOCODE_CONTROL_ENDPOINT.split(":")[1]),
+      Number(environment.OMNICODE_CONTROL_ENDPOINT.split(":")[1]),
       "127.0.0.1",
     );
     let reply = "";
@@ -50,7 +50,7 @@ async function call(
       socket.write(
         JSON.stringify({
           namespace,
-          token: environment.MONOCODE_CONTROL_TOKEN,
+          token: environment.OMNICODE_CONTROL_TOKEN,
           requestId: "stable",
           action: "projects.list",
           input: {},
@@ -78,8 +78,8 @@ it("isolates assistant grants from orchestration and from an older brain generat
     expect(
       await call({
         ...first,
-        MONOCODE_CONTROL_TOKEN:
-          orchestration.environment("lead").MONOCODE_CONTROL_TOKEN,
+        OMNICODE_CONTROL_TOKEN:
+          orchestration.environment("lead").OMNICODE_CONTROL_TOKEN,
       }),
     ).toMatchObject({ ok: false });
     assistant.enable("brain");

@@ -13,9 +13,9 @@ const cleanup: Array<() => Promise<void> | void> = [];
 afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close(); });
 
 function fixture() {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-legacy-retire-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-legacy-retire-"));
   cleanup.push(() => rmSync(directory, { recursive: true, force: true }));
-  const path = join(directory, "monocode.db");
+  const path = join(directory, "omnicode.db");
   const source = new DatabaseSync(path);
   source.exec(`CREATE TABLE sessions (id TEXT PRIMARY KEY, cwd TEXT, harness TEXT, model TEXT,
     runtime_mode TEXT, title TEXT, blocks_json TEXT, created_at INTEGER, updated_at INTEGER)`);
@@ -35,7 +35,7 @@ it("derives the source identity locally and rejects changed/invalid native manif
   const { directory } = fixture();
   const path = join(directory, "manifest.json");
   writeFileSync(path, JSON.stringify({ manifestId: "host-orchestration-v1", sourceKey: "untrusted", entries: [{ id: "old-lead" }] }));
-  expect(readLegacyRetirementManifest(path, directory).sourceKey).toBe(createHash("sha256").update(resolve(join(directory, "monocode.db"))).digest("hex"));
+  expect(readLegacyRetirementManifest(path, directory).sourceKey).toBe(createHash("sha256").update(resolve(join(directory, "omnicode.db"))).digest("hex"));
   for (const value of [{ manifestId: "other", entries: [] }, { manifestId: "host-orchestration-v1", entries: [{ id: "../path" }] }, { manifestId: "host-orchestration-v1", entries: [{ id: "same" }, { id: "same" }] }, { manifestId: "host-orchestration-v1", entries: [{ id: "old", cwd: 42 }] }]) {
     writeFileSync(path, JSON.stringify(value));
     expect(() => readLegacyRetirementManifest(path, directory)).toThrow();

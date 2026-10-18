@@ -14,7 +14,7 @@ use crate::harness::{
 mod npm;
 
 const REGISTRY_URL: &str = "https://registry.npmjs.org";
-const USER_AGENT: &str = "MonoCode";
+const USER_AGENT: &str = "OmniCode";
 const HTTP_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Only harnesses whose releases are published to npm. The rest ship through
@@ -30,7 +30,7 @@ fn npm_package(provider: &str) -> Option<&'static str> {
 }
 
 /// Each CLI's own updater, which knows how it was installed (native, npm,
-/// Homebrew) better than MonoCode could guess from the binary path.
+/// Homebrew) better than OmniCode could guess from the binary path.
 fn update_args(provider: &str) -> Option<&'static [&'static str]> {
     match provider {
         "claude" => Some(&["update"]),
@@ -117,7 +117,7 @@ pub struct HarnessInstall {
     real_path: String,
     source: InstallSource,
     bundled_by: Option<String>,
-    /// Other installed copies on the search path that MonoCode could run
+    /// Other installed copies on the search path that OmniCode could run
     /// instead, bundled ones excluded.
     alternatives: Vec<HarnessCopy>,
 }
@@ -228,7 +228,7 @@ pub async fn harness_latest_version(provider: String) -> Result<String, String> 
     .map_err(|e| e.to_string())?
 }
 
-/// Runs the harness's self-update against the binary MonoCode resolved for
+/// Runs the harness's self-update against the binary OmniCode resolved for
 /// it. stdin is closed, so an updater that stops to ask fails instead of
 /// hanging.
 #[tauri::command]
@@ -403,7 +403,7 @@ mod tests {
     #[test]
     fn timed_out_updater_cannot_write_after_rollback_starts() {
         let marker =
-            std::env::temp_dir().join(format!("monocode-update-timeout-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("omnicode-update-timeout-{}", uuid::Uuid::new_v4()));
         let error = exec_update_output(
             "/bin/sh",
             &[

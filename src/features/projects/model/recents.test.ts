@@ -148,7 +148,7 @@ describe("project rail order migration", () => {
 
   it("migrates legacy recency order once while retaining the saved pin order", () => {
     localStorage.setItem(
-      "monocode.recentProjects",
+      "omnicode.recentProjects",
       JSON.stringify([
         { path: "/tmp/old-pin", openedAt: 1 },
         { path: "/tmp/new-pin", openedAt: 10 },
@@ -158,7 +158,7 @@ describe("project rail order migration", () => {
       ]),
     );
     localStorage.setItem(
-      "monocode.projectRailOrder",
+      "omnicode.projectRailOrder",
       JSON.stringify([
         "/tmp/older",
         "/tmp/new-pin",
@@ -179,9 +179,9 @@ describe("project rail order migration", () => {
     ];
     expect(loadProjectRailOrder()).toEqual(migrated);
     expect(
-      JSON.parse(localStorage.getItem("monocode.projectRailOrder")!),
+      JSON.parse(localStorage.getItem("omnicode.projectRailOrder")!),
     ).toEqual(migrated);
-    expect(localStorage.getItem("monocode.projectRailOrderVersion")).toBe("1");
+    expect(localStorage.getItem("omnicode.projectRailOrderVersion")).toBe("1");
 
     rememberProject("/tmp/older");
     expect(loadProjectRailOrder()).toEqual(migrated);
@@ -201,7 +201,7 @@ describe("project rail order migration", () => {
     saveProjectRailOrder(["/tmp/older", "/tmp/current"]);
 
     expect(loadProjectRailOrder()).toEqual(["/tmp/older", "/tmp/current"]);
-    expect(localStorage.getItem("monocode.projectRailOrderVersion")).toBe("1");
+    expect(localStorage.getItem("omnicode.projectRailOrderVersion")).toBe("1");
   });
 });
 
@@ -261,7 +261,7 @@ describe("rememberProject retention", () => {
     for (let i = 0; i < 25; i++) rememberProject(`/work/project-${i}`);
     expect(loadRecents()).toHaveLength(25);
     expect(loadRecents().at(-1)?.path).toBe("/work/project-0");
-    const stored = JSON.parse(localStorage.getItem("monocode.recentProjects")!);
+    const stored = JSON.parse(localStorage.getItem("omnicode.recentProjects")!);
     expect(stored[0]).toEqual({
       path: "/work/project-24",
       openedAt: expect.any(Number),
@@ -320,23 +320,23 @@ describe("replaceProjectPath", () => {
 
   it("keeps rail order and pin state under the renamed path", () => {
     rememberProject("/work/other");
-    rememberProject("/work/monocode");
-    saveProjectRailOrder(["/work/other", "/work/monocode"]);
-    savePinnedProjects(["/work/monocode"]);
-    saveProjectTreeExpanded(["/work/monocode"]);
+    rememberProject("/work/omnicode");
+    saveProjectRailOrder(["/work/other", "/work/omnicode"]);
+    savePinnedProjects(["/work/omnicode"]);
+    saveProjectTreeExpanded(["/work/omnicode"]);
 
     expect(
-      replaceProjectPath("/work/monocode", "/work/monocode-personal").map(
+      replaceProjectPath("/work/omnicode", "/work/omnicode-personal").map(
         (item) => item.path,
       ),
-    ).toEqual(["/work/monocode-personal", "/work/other"]);
+    ).toEqual(["/work/omnicode-personal", "/work/other"]);
     expect(loadProjectRailOrder()).toEqual([
       "/work/other",
-      "/work/monocode-personal",
+      "/work/omnicode-personal",
     ]);
-    expect(loadPinnedProjects()).toEqual(["/work/monocode-personal"]);
+    expect(loadPinnedProjects()).toEqual(["/work/omnicode-personal"]);
     expect([...loadProjectTreeExpanded("/work/other")]).toEqual([
-      "/work/monocode-personal",
+      "/work/omnicode-personal",
     ]);
   });
 });

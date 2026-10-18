@@ -26,7 +26,7 @@ it("CLI polls one durable request through running states without extending its d
     expect(handle).toHaveBeenCalledTimes(3);
     expect(handle.mock.calls.every(([brain, id, action, input]) => brain === "trusted-brain" && id === "stable-request" && action === "agents.ask_bot" && JSON.stringify(input) === '{"botId":"target","prompt":"hello"}')).toBe(true);
     expect(JSON.parse(lines.at(-1)!)).toMatchObject({ ok: true, requestId: "stable-request", result: { status: "completed", deadlineAt } });
-    expect(lines.join("")).not.toContain(environment.MONOCODE_CONTROL_TOKEN);
+    expect(lines.join("")).not.toContain(environment.OMNICODE_CONTROL_TOKEN);
   } finally { await control.close(); }
 });
 
@@ -51,7 +51,7 @@ it("returns busy immediately and preserves a revoked request ID for explicit ret
     control.disable("trusted-brain");
     expect(await runAgentsCli(["ask_bot", "--request-id", "same", "--json", '{"botId":"target","prompt":"hello"}'])).toBe(1);
     expect(JSON.parse(lines.at(-1)!)).toMatchObject({ ok: false, requestId: "same", error: "Connection revoked or unauthorized" });
-    expect(lines.join("")).not.toContain(environment.MONOCODE_CONTROL_TOKEN);
+    expect(lines.join("")).not.toContain(environment.OMNICODE_CONTROL_TOKEN);
   } finally { await control.close(); }
 });
 
@@ -120,8 +120,8 @@ it("serves MCP initialize, tools and calls in a real stdio process using only th
     expect(await eofPending).toBeInstanceOf(Error);
     expect(child.exitCode).toBe(0);
     releaseHold!({ status: "completed" });
-    expect(stdout).not.toContain(environment.MONOCODE_CONTROL_TOKEN);
-    expect(errors).not.toContain(environment.MONOCODE_CONTROL_TOKEN);
+    expect(stdout).not.toContain(environment.OMNICODE_CONTROL_TOKEN);
+    expect(errors).not.toContain(environment.OMNICODE_CONTROL_TOKEN);
   } finally { child.stdin.end(); child.kill(); await exit; await control.close(); }
 });
 

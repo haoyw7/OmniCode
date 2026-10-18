@@ -258,7 +258,7 @@ vi.mock("./shell/Sidebar", async () => {
       activeSessionId,
       tab,
     }: {
-      navigation?: import("react").ReactNode;
+      navigation?: { primary: ReactNode; scrollable: ReactNode };
       footer?: import("react").ReactNode;
       modeToggle?: import("react").ReactNode;
       headerNavigation?: import("react").ReactNode;
@@ -299,7 +299,8 @@ vi.mock("./shell/Sidebar", async () => {
           "data-open-sessions": openSessions.map((session) => session.id).join("|"),
         },
         open ? (headerNavigation ?? modeToggle) : null,
-        navigation,
+        navigation?.primary,
+        navigation?.scrollable,
         footer,
         ...["first", "recent", "replacement"].map((id) =>
           el(
@@ -805,7 +806,7 @@ beforeEach(() => {
   vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => {});
   localStorage.clear();
   setUiLanguage("en");
-  localStorage.setItem("monocode.fileTabMode", "pane");
+  localStorage.setItem("omnicode.fileTabMode", "pane");
   mocks.invoke.mockReset().mockImplementation(async (command) => {
     if (command === "default_cwd") return "/repo";
     if (command === "git_branches") return { branches: [], current: "main" };
@@ -883,7 +884,7 @@ async function clickDesktopNavigation(label: string) {
 }
 
 async function sidebarPreferences() {
-  const key = "monocode.sessionSidebarOpen";
+  const key = "omnicode.sessionSidebarOpen";
   let snapshot: PreferenceSnapshot = { revision: 0, imported: true, values: { [key]: "0" } };
   const state = { online: true, failWrites: false };
   const patches: Record<string, string | null>[] = [];
@@ -949,7 +950,7 @@ describe("sidebar preference actions in StrictMode", () => {
       expect(isOpen()).toBe(clicks % 2 === 1);
       expect(loadSessionSidebarOpen()).toBe(isOpen());
     }
-    expect(saved.mock.calls.filter(([key]) => key === "monocode.sessionSidebarOpen").map(([, value]) => value))
+    expect(saved.mock.calls.filter(([key]) => key === "omnicode.sessionSidebarOpen").map(([, value]) => value))
       .toEqual(Array.from({ length: clicks }, (_, index) => index % 2 === 0 ? "1" : "0"));
     expect(preferences.writes()).toEqual([]);
   });
@@ -1016,7 +1017,7 @@ async function pressKey(key: string, ctrlKey = false) {
 }
 
 describe("desktop mode navigation", () => {
-  const chatCwd = "/home/me/Documents/ohmymonocode/2026-10-13/chat-120000-abcdef";
+  const chatCwd = "/home/me/Documents/omnicode/2026-10-13/chat-120000-abcdef";
   const switchMode = (mode: "Chat" | "Code") => click(`.desktop-mode-toggle button[aria-label="${mode}"]`);
   const openProjects = async () => {
     const button = [...container.querySelectorAll<HTMLButtonElement>('[data-ui="navigation-item"]')]
@@ -1027,18 +1028,18 @@ describe("desktop mode navigation", () => {
   };
 
   it.each([false, true])("launches in saved Chat mode without a snapshot even with a recent project: %s", async (hasRecentProject) => {
-    localStorage.setItem("monocode.desktopMode", "chat");
-    if (hasRecentProject) localStorage.setItem("monocode.recentProjects", JSON.stringify([{ path: "/repo", openedAt: 1 }]));
+    localStorage.setItem("omnicode.desktopMode", "chat");
+    if (hasRecentProject) localStorage.setItem("omnicode.recentProjects", JSON.stringify([{ path: "/repo", openedAt: 1 }]));
     await act(async () => root.render(createElement(App)));
     await act(async () => vi.dynamicImportSettled());
     expect(document.documentElement.dataset.desktopMode).toBe("chat");
     expect(container.querySelector('[data-app-page="projects"]')?.getAttribute("aria-hidden")).toBe("true");
     expect(mocks.invoke).not.toHaveBeenCalledWith("default_cwd");
-    expect(localStorage.getItem("monocode.desktopMode")).toBe("chat");
+    expect(localStorage.getItem("omnicode.desktopMode")).toBe("chat");
   });
 
   it("prioritizes the restored conversation over the saved mode", async () => {
-    localStorage.setItem("monocode.desktopMode", "chat");
+    localStorage.setItem("omnicode.desktopMode", "chat");
     await mount(false, "bottom", { cwd: "/repo", blocks: [{ id: "restored", role: "user", text: "Restored Code" }] });
     expect(document.documentElement.dataset.desktopMode).toBe("code");
     expect(activeTabId()).toBe(firstId);
@@ -1100,7 +1101,7 @@ describe("desktop mode navigation", () => {
 
   it("falls back to Projects for a missing Code target while retaining the Chat workspace", async () => {
     saveMenuBarVisible(false);
-    localStorage.setItem("monocode.desktopLocations.v1", JSON.stringify({ code: { tabId: "closed", sessionId: "gone", cwd: "/removed" } }));
+    localStorage.setItem("omnicode.desktopLocations.v1", JSON.stringify({ code: { tabId: "closed", sessionId: "gone", cwd: "/removed" } }));
     await mount(false, "bottom", { cwd: chatCwd, blocks: [{ id: "chat-user", role: "user", text: "Keep Chat" }] }, false,
       { cwd: "~", blocks: [{ id: "other-chat-user", role: "user", text: "Another Chat" }] });
     setComposerDraft("first", "Keep fallback draft");
@@ -1120,7 +1121,7 @@ describe("desktop mode navigation", () => {
       if (command === "session_get" && args.sessionId === remembered.id) return null;
       return invoke(command, args);
     });
-    localStorage.setItem("monocode.desktopLocations.v1", JSON.stringify({ code: { tabId: "closed", sessionId: remembered.id, cwd: remembered.cwd } }));
+    localStorage.setItem("omnicode.desktopLocations.v1", JSON.stringify({ code: { tabId: "closed", sessionId: remembered.id, cwd: remembered.cwd } }));
     await mount(false, "bottom", { cwd: chatCwd, blocks: [{ id: "chat-user", role: "user", text: "Keep Chat" }] }, false,
       { cwd: "~", blocks: [{ id: "other-chat-user", role: "user", text: "Another Chat" }] });
     setComposerDraft("first", "Keep failed-restore draft");
@@ -1143,7 +1144,7 @@ describe("desktop mode navigation", () => {
       if (command === "session_get" && args.sessionId === remembered.id) return await new Promise<Session>(resolve => { finishRestore = resolve; });
       return invoke(command, args);
     });
-    localStorage.setItem("monocode.desktopLocations.v1", JSON.stringify({ code: { tabId: "closed", sessionId: remembered.id, cwd: remembered.cwd } }));
+    localStorage.setItem("omnicode.desktopLocations.v1", JSON.stringify({ code: { tabId: "closed", sessionId: remembered.id, cwd: remembered.cwd } }));
     await mount(false, "bottom", { cwd: chatCwd, blocks: [{ id: "chat-user", role: "user", text: "Keep Chat" }] }, false,
       { cwd: "~", blocks: [{ id: "other-chat-user", role: "user", text: "Another Chat" }] });
     setComposerDraft("first", "Keep rapid reversal draft");
@@ -1770,7 +1771,7 @@ describe("App workspace app views", () => {
   it.each(["pane", "workspace"])(
     "opens files inside the owning chat with the legacy %s file preference",
     async (legacyMode) => {
-      localStorage.setItem("monocode.fileTabMode", legacyMode);
+      localStorage.setItem("omnicode.fileTabMode", legacyMode);
       await mount();
       await selectSession("recent");
       await click('[data-command="View: Notes"]');
@@ -1869,7 +1870,7 @@ describe("App workspace app views", () => {
   it.each(["file", "diff"])(
     "finishes a pending %s open in its originating chat after switching chats",
     async (surface) => {
-      localStorage.setItem("monocode.diffViewer", "editor");
+      localStorage.setItem("omnicode.diffViewer", "editor");
       let finishOpen!: (path: string) => void;
       const resolver = surface === "file" ? mocks.fileOpen : mocks.diffOpen;
       resolver.mockImplementationOnce(
@@ -1965,7 +1966,7 @@ describe("App workspace app views", () => {
   it.each(["editor", "unified"])(
     "opens a %s diff inside the current chat beside its Settings tool",
     async (viewer) => {
-      localStorage.setItem("monocode.diffViewer", viewer);
+      localStorage.setItem("omnicode.diffViewer", viewer);
       await mount();
       await selectSession("recent");
       await click('[data-command="App: Settings"]');

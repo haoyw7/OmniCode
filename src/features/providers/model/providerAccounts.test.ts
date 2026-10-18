@@ -62,7 +62,7 @@ describe("provider accounts", () => {
 
   it("falls back to the default account for malformed stored profiles", () => {
     localStorage.setItem(
-      "monocode.providerAccounts.v1",
+      "omnicode.providerAccounts.v1",
       JSON.stringify({ claude: { id: "not-an-array" } }),
     );
 
@@ -73,13 +73,13 @@ describe("provider accounts", () => {
 
   it("falls back when the stored root is not a record", () => {
     for (const malformed of ["null", "[]", "42"]) {
-      localStorage.setItem("monocode.providerAccounts.v1", malformed);
+      localStorage.setItem("omnicode.providerAccounts.v1", malformed);
       expect(providerAccounts("claude").map((account) => account.id)).toEqual([
         DEFAULT_PROVIDER_ACCOUNT_ID,
       ]);
     }
 
-    localStorage.setItem("monocode.providerAccountSelections.v1", "null");
+    localStorage.setItem("omnicode.providerAccountSelections.v1", "null");
     expect(selectedProviderAccountId("claude", "/repo")).toBe(
       DEFAULT_PROVIDER_ACCOUNT_ID,
     );
@@ -87,7 +87,7 @@ describe("provider accounts", () => {
 
   it("replaces malformed provider storage when saving an account", () => {
     localStorage.setItem(
-      "monocode.providerAccounts.v1",
+      "omnicode.providerAccounts.v1",
       JSON.stringify({ codex: "not-an-array" }),
     );
 
@@ -106,7 +106,7 @@ describe("provider accounts", () => {
 
   it("discards malformed account entries when saving an account", () => {
     localStorage.setItem(
-      "monocode.providerAccounts.v1",
+      "omnicode.providerAccounts.v1",
       JSON.stringify({
         codex: [
           null,

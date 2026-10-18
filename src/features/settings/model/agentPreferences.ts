@@ -6,7 +6,7 @@ export type SharedAgentDefaults = {
   runtimeMode?: RuntimeMode;
   agents?: Partial<Record<HarnessId, { model?: string; modelSettings?: Record<string, string>; accountId?: string }>>;
 };
-export const AGENT_DEFAULTS_KEY = "monocode.agentDefaults";
+export const AGENT_DEFAULTS_KEY = "omnicode.agentDefaults";
 export function loadSharedAgentDefaults(): SharedAgentDefaults {
   if (!activePreferenceStore()) return {};
   try {
@@ -27,10 +27,10 @@ export function legacyAgentDefaults(read: (key: string) => string | null): strin
   try {
     const previous = read(AGENT_DEFAULTS_KEY);
     if (previous) return previous;
-    const last = JSON.parse(read("monocode.lastModel") ?? "null");
-    const models = JSON.parse(read("monocode.defaultModels") ?? "{}");
-    const settings = JSON.parse(read("monocode.lastModelSettings") ?? "{}");
-    const accounts = JSON.parse(read("monocode.providerAccountSelections.v1") ?? "{}")["~"] ?? {};
+    const last = JSON.parse(read("omnicode.lastModel") ?? "null");
+    const models = JSON.parse(read("omnicode.defaultModels") ?? "{}");
+    const settings = JSON.parse(read("omnicode.lastModelSettings") ?? "{}");
+    const accounts = JSON.parse(read("omnicode.providerAccountSelections.v1") ?? "{}")["~"] ?? {};
     const agents: Record<string, unknown> = {};
     for (const [harness, model] of Object.entries(models)) if (typeof model === "string") agents[harness] = { model, modelSettings: settings };
     if (last?.harness && last?.model) agents[last.harness] = { model: last.model, modelSettings: settings };

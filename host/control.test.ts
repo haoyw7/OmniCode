@@ -11,7 +11,7 @@ const exec = promisify(execFile);
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
 
 async function call(environment: Record<string, string>, request: unknown) {
-  const [host, port] = environment.MONOCODE_CONTROL_ENDPOINT.split(":");
+  const [host, port] = environment.OMNICODE_CONTROL_ENDPOINT.split(":");
   return new Promise<any>((resolve, reject) => {
     const socket = connect(Number(port), host);
     let response = "";
@@ -32,7 +32,7 @@ it("scopes control grants to the lead and revokes them without device RPC author
     service.enable("lead");
     const environment = service.environment("lead");
     expect(service.environment("worker")).toEqual({});
-    const request = { namespace: "control", token: environment.MONOCODE_CONTROL_TOKEN,
+    const request = { namespace: "control", token: environment.OMNICODE_CONTROL_TOKEN,
       requestId: "same-request", action: "list", input: {} };
     expect(await call(environment, request)).toMatchObject({ ok: true, result: { lead: "lead", requestId: "same-request" } });
     expect(await call(environment, { ...request, namespace: "app" })).toMatchObject({ ok: false });
@@ -49,7 +49,7 @@ it("validates control requests before invoking the scheduler", async () => {
   try {
     service.enable("lead");
     const environment = service.environment("lead");
-    const base = { namespace: "control", token: environment.MONOCODE_CONTROL_TOKEN,
+    const base = { namespace: "control", token: environment.OMNICODE_CONTROL_TOKEN,
       requestId: "valid", action: "list", input: {} };
     for (const invalid of [{ ...base, action: "app.send" }, { ...base, requestId: "" }, { ...base, input: [] }])
       expect(await call(environment, invalid)).toMatchObject({ ok: false });
@@ -71,7 +71,7 @@ it("the CLI preserves request IDs on success and uncertain failure and never pri
     service.disable("lead");
     expect(await runControlCli(["list", "--request-id", "receipt-1"])).toBe(1);
     expect(JSON.parse(lines.at(-1)!)).toMatchObject({ ok: false, requestId: "receipt-1" });
-    expect(lines.join("")).not.toContain(environment.MONOCODE_CONTROL_TOKEN);
+    expect(lines.join("")).not.toContain(environment.OMNICODE_CONTROL_TOKEN);
   } finally { await service.close(); }
 });
 
@@ -93,7 +93,7 @@ it("rejects misspelled and duplicate flags without contacting the service", asyn
 });
 
 it("the generated launcher preserves executable/entry paths and JSON arguments with spaces", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "monocode launcher space-"));
+  const directory = await mkdtemp(join(tmpdir(), "omnicode launcher space-"));
   const service = new HostControl(async () => ({}));
   try {
     const entry = join(directory, "entry space.mjs");
@@ -105,6 +105,6 @@ it("the generated launcher preserves executable/entry paths and JSON arguments w
         `""${launcher}" control delegate --json "{\\"title\\":\\"worker with spaces\\"}""`], { windowsVerbatimArguments: true })
       : await exec(launcher, args);
     expect(JSON.parse(output.stdout)).toEqual(args);
-    expect(await readFile(launcher, "utf8")).not.toContain("MONOCODE_CONTROL_TOKEN");
+    expect(await readFile(launcher, "utf8")).not.toContain("OMNICODE_CONTROL_TOKEN");
   } finally { await service.close(); await rm(directory, { recursive: true, force: true }); }
 });

@@ -63,6 +63,7 @@ function DialogOverlay({
       <DialogPrimitive.Overlay
         asChild
         data-slot="dialog-overlay"
+        data-window-modal-backdrop
         data-modal-context={React.useContext(SurfaceAppearance)}
         className={cn(
           // Linux 旧标题栏避让让模态遮罩从 48px 以下开始，窗口顶部仍保持高亮且 tooltip 可见。

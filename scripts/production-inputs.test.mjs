@@ -12,7 +12,7 @@ import {
 } from "./production-inputs.mjs";
 
 test("Git source archives exclude both evaluation directories", async (t) => {
-  const root = await mkdtemp(join(tmpdir(), "monocode-source-archive-"));
+  const root = await mkdtemp(join(tmpdir(), "omnicode-source-archive-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   execFileSync("git", ["init", "-q"], { cwd: root });
   await copyFile(new URL("../.gitattributes", import.meta.url), join(root, ".gitattributes"));
@@ -35,7 +35,7 @@ test("Git source archives exclude both evaluation directories", async (t) => {
 });
 
 test("Host bundling refuses static and dynamic evaluation imports before producing output", async (t) => {
-  const root = await mkdtemp(join(tmpdir(), "monocode-production-inputs-"));
+  const root = await mkdtemp(join(tmpdir(), "omnicode-production-inputs-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   for (const path of ["host/bots/eval/data.json", "eval/legacy.json"]) {
     await mkdir(dirname(join(root, path)), { recursive: true });
@@ -73,7 +73,7 @@ test("Host bundling refuses static and dynamic evaluation imports before produci
 });
 
 test("desktop/mobile Vite guards reject evaluation modules and raw assets with query strings", () => {
-  const root = join(tmpdir(), "monocode-production-inputs");
+  const root = join(tmpdir(), "omnicode-production-inputs");
   const plugin = excludeEvaluationVite();
   plugin.configResolved({ root });
   for (const path of [

@@ -43,9 +43,9 @@ it("flips the meter when another window turns on remaining usage", async () => {
   );
 
   await act(async () => {
-    localStorage.setItem("monocode.showRemainingUsage", "1");
+    localStorage.setItem("omnicode.showRemainingUsage", "1");
     window.dispatchEvent(
-      new StorageEvent("storage", { key: "monocode.showRemainingUsage" }),
+      new StorageEvent("storage", { key: "omnicode.showRemainingUsage" }),
     );
   });
 

@@ -528,7 +528,7 @@ describe("mobile Agent defaults settings and new conversations", () => {
     );
     expect(loadMobileAgentDefaults("http://second")).toEqual({});
     // The previous Host keeps its own saved account; only the active Host loads.
-    const stored = JSON.parse(localStorage.getItem("monocode.mobileAgentDefaults") ?? "{}");
+    const stored = JSON.parse(localStorage.getItem("omnicode.mobileAgentDefaults") ?? "{}");
     expect(stored.hosts?.[COMPUTER]?.agents?.codex?.accountId).toBe("work");
   });
 

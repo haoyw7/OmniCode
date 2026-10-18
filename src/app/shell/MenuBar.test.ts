@@ -97,7 +97,7 @@ afterEach(() => {
 });
 
 describe("MenuBar", () => {
-  it.each(["[data-menu-bar]", "[data-window-leading]"])("starts a blank-bar drag from %s during capture and closes an open menu without waiting", (selector) => {
+  it.each(["[data-menu-bar]", "[data-window-leading]"])("starts a blank-bar drag from %s during capture and keeps the open menu", (selector) => {
     render();
     act(() => menuButton("File")!.click());
     expect(document.querySelector('[role="menu"]')).not.toBeNull();
@@ -113,13 +113,25 @@ describe("MenuBar", () => {
     });
     try {
       act(() => {
+        container.querySelector(selector)!.dispatchEvent(new PointerEvent("pointerdown", {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          pointerType: "mouse",
+        }));
+      });
+      expect(document.querySelector('[role="menu"]')).not.toBeNull();
+      act(() => {
         container.querySelector(selector)!.dispatchEvent(event);
         expect(windowMock.startDragging).toHaveBeenCalledOnce();
       });
       expect(event.defaultPrevented).toBe(true);
       expect(nativeDocumentHandler).not.toHaveBeenCalled();
       act(() => completeMotionAnimation(document.body));
-    expect(document.querySelector('[role="menu"]')).toBeNull();
+      expect(document.querySelector('[role="menu"]')).not.toBeNull();
+      act(() => document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
+      act(() => completeMotionAnimation(document.body));
+      expect(document.querySelector('[role="menu"]')).toBeNull();
     } finally {
       document.removeEventListener("mousedown", nativeDocumentHandler);
     }
@@ -160,7 +172,7 @@ describe("MenuBar", () => {
     expect(bar.lastElementChild?.lastElementChild).toBe(controls);
     const [toggle, back, forward] =
       navigation.querySelectorAll<HTMLButtonElement>("button");
-    const productIcon = navigation.querySelector('img[alt="MonoCode"]')!;
+    const productIcon = navigation.querySelector('[data-window-product-icon] [role="img"]')!;
     expect(productIcon.parentElement?.nextElementSibling).toBe(toggle);
     expect(back.getAttribute("aria-label")).toMatch(/^Back/);
     expect(forward.getAttribute("aria-label")).toMatch(/^Forward/);

@@ -35,7 +35,7 @@ Cases cover missing recipients/timezones/attachments, contradictory or negative 
 
 - Native tool names are drawn from host/bots/thread/control.ts. Tools in the fixture are a deliberately smaller normalized contract; production file arguments use absolute scoped paths, whereas fixtures use project-relative paths. Native integration tests exercise the real contract.
 - Memory fixtures model current facts. The real Host retains superseded entries for audit; native tests check that behavior separately.
-- `fixture.*` is an evaluation-only extension (documents/web snippets, sheets, mailbox, calendar). It does not claim a MonoCode cloud connector exists.
+- `fixture.*` is an evaluation-only extension (documents/web snippets, sheets, mailbox, calendar). It does not claim a OmniCode cloud connector exists.
 - Delegation cases simulate worker dispatch and status. No real sub-worker side effects or scheduling races are induced by the corpus. Native tests cover backend mechanics; true multi-agent end-to-end remains separate.
 - Long task recovery uses scripted messages and state drift. One 180-line noise fixture is not a realistic million-token memory benchmark.
 - No PDF/image/audio binary or UI interaction cases are scored yet. Unsupported cases test honest fallback only.

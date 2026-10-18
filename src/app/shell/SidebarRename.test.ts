@@ -552,27 +552,27 @@ describe("sidebar session IDs", () => {
     await act(async () => copyHarnessId.click());
     expect(copyText).toHaveBeenNthCalledWith(1, "harness-session-2");
 
-    const monocodeMenu = openCopyIdMenu("session-2");
-    const copyMonoCodeId = Array.from(
-      monocodeMenu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
+    const omnicodeMenu = openCopyIdMenu("session-2");
+    const copyOmniCodeId = Array.from(
+      omnicodeMenu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
     ).find((item) => item.textContent === "OmniCode session ID")!;
-    expect(copyMonoCodeId.disabled).toBe(false);
-    await act(async () => copyMonoCodeId.click());
+    expect(copyOmniCodeId.disabled).toBe(false);
+    await act(async () => copyOmniCodeId.click());
     expect(copyText).toHaveBeenNthCalledWith(2, "session-2");
   });
 
-  it("keeps the MonoCode ID available before the harness supplies an ID", async () => {
+  it("keeps the OmniCode ID available before the harness supplies an ID", async () => {
     act(() => render());
     const copyMenu = openCopyIdMenu("session-1");
     const copyHarnessId = Array.from(
       copyMenu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
     ).find((item) => item.textContent === "Harness session ID")!;
-    const copyMonoCodeId = Array.from(
+    const copyOmniCodeId = Array.from(
       copyMenu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'),
     ).find((item) => item.textContent === "OmniCode session ID")!;
     expect(copyHarnessId.disabled).toBe(true);
-    expect(copyMonoCodeId.disabled).toBe(false);
-    await act(async () => copyMonoCodeId.click());
+    expect(copyOmniCodeId.disabled).toBe(false);
+    await act(async () => copyOmniCodeId.click());
     expect(copyText).toHaveBeenCalledExactlyOnceWith("session-1");
   });
 });
@@ -717,7 +717,7 @@ describe("sidebar reorder affordances", () => {
       },
     ];
     localStorage.setItem(
-      "monocode.sessionFolders",
+      "omnicode.sessionFolders",
       JSON.stringify({
         "/workspace/project": [
           {
@@ -807,7 +807,7 @@ describe("sidebar pinned sessions", () => {
     expect(group.querySelector('[data-session-card="session-1"]')).not.toBeNull();
     expect(
       JSON.parse(
-        localStorage.getItem("monocode.pinnedSessionsCollapsed") ?? "{}",
+        localStorage.getItem("omnicode.pinnedSessionsCollapsed") ?? "{}",
       ),
     ).toEqual({ "/workspace/project": true });
   });
@@ -1450,7 +1450,7 @@ describe("single sidebar layout and width", () => {
   it("reads the saved width only on mount, not on sidebar updates or reopening", () => {
     const read = vi.spyOn(localStorage, "getItem");
     act(render);
-    const widthReads = () => read.mock.calls.filter(([key]) => key === "monocode.sidebarWidth").length;
+    const widthReads = () => read.mock.calls.filter(([key]) => key === "omnicode.sidebarWidth").length;
     expect(widthReads()).toBe(1);
     props = { ...props, pending: true };
     act(render);
@@ -1463,7 +1463,7 @@ describe("single sidebar layout and width", () => {
 
   it("keeps content during collapse, hides its portal and reuses the list after reopening", async () => {
     vi.useFakeTimers();
-    localStorage.setItem("monocode.sidebarWidth", "390");
+    localStorage.setItem("omnicode.sidebarWidth", "390");
     act(render);
     const aside = container.querySelector("aside");
     act(() => card().dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })));
@@ -1484,7 +1484,7 @@ describe("single sidebar layout and width", () => {
     await act(async () => vi.advanceTimersByTime(1000));
     expect(container.querySelector("aside")).toBe(aside);
     expect(aside!.closest("[hidden]")).not.toBeNull();
-    expect(localStorage.getItem("monocode.sidebarWidth")).toBe("390");
+    expect(localStorage.getItem("omnicode.sidebarWidth")).toBe("390");
     props.open = true;
     act(render);
     expect(container.querySelector("aside")).toBe(aside);
@@ -1542,13 +1542,13 @@ describe("single sidebar layout and width", () => {
     props.open = false;
     act(render);
     expect(shell.style.width).toBe("0px");
-    expect(localStorage.getItem("monocode.sidebarWidth")).toBe(String(resizedWidth));
+    expect(localStorage.getItem("omnicode.sidebarWidth")).toBe(String(resizedWidth));
     expect(document.documentElement.classList.contains("is-resizing")).toBe(false);
     act(() => {
       window.dispatchEvent(new PointerEvent("pointermove", { pointerId: 1, clientX: 500 }));
       window.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1, clientX: 500 }));
     });
-    expect(localStorage.getItem("monocode.sidebarWidth")).toBe(String(resizedWidth));
+    expect(localStorage.getItem("omnicode.sidebarWidth")).toBe(String(resizedWidth));
     props.open = true;
     act(render);
     expect(shell.style.width).toBe(`${resizedWidth}px`);
@@ -1567,7 +1567,7 @@ describe("single sidebar layout and width", () => {
       window.dispatchEvent(new PointerEvent("pointermove", { pointerId: 1, clientX: resizedWidth }));
       window.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1, clientX: resizedWidth }));
     });
-    expect(localStorage.getItem("monocode.sidebarWidth")).toBe(String(resizedWidth));
+    expect(localStorage.getItem("omnicode.sidebarWidth")).toBe(String(resizedWidth));
     expect(container.querySelector("aside")!.style.width).toBe(`${resizedWidth}px`);
     act(() => root.unmount());
     root = createRoot(container);
@@ -1575,6 +1575,6 @@ describe("single sidebar layout and width", () => {
     expect(container.querySelector("aside")!.style.width).toBe(`${resizedWidth}px`);
     act(() => container.querySelector('[aria-label="Resize sidebar"]')!.dispatchEvent(new MouseEvent("dblclick", { bubbles: true })));
     expect(container.querySelector("aside")!.style.width).toBe(`${SIDEBAR_WIDTH_DEFAULT}px`);
-    expect(localStorage.getItem("monocode.sidebarWidth")).toBe(String(SIDEBAR_WIDTH_DEFAULT));
+    expect(localStorage.getItem("omnicode.sidebarWidth")).toBe(String(SIDEBAR_WIDTH_DEFAULT));
   });
 });

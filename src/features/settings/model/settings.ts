@@ -18,7 +18,7 @@ import {
 import { readFlag, writeFlag } from "./storageFlags";
 import { translate } from "../../../shared/i18n/language";
 
-const SECTION_KEY = "monocode.settingsSection";
+const SECTION_KEY = "omnicode.settingsSection";
 
 export type SettingsSectionId =
   | "general"
@@ -668,15 +668,15 @@ export function saveSettingsSection(id: SettingsSectionId) {
 }
 
 
-const FOLLOW_UP_BEHAVIOR_KEY = "monocode.followUpBehavior";
+const FOLLOW_UP_BEHAVIOR_KEY = "omnicode.followUpBehavior";
 
-const COMPOSER_EFFORT_VISIBLE_KEY = "monocode.composerEffortVisible";
+const COMPOSER_EFFORT_VISIBLE_KEY = "omnicode.composerEffortVisible";
 
-const MODEL_CONTROLS_KEY = "monocode.modelControls";
+const MODEL_CONTROLS_KEY = "omnicode.modelControls";
 
-const FILE_TAB_MODE_KEY = "monocode.fileTabMode";
+const FILE_TAB_MODE_KEY = "omnicode.fileTabMode";
 
-const TAB_ANIMATIONS_ENABLED_KEY = "monocode.tabAnimationsEnabled";
+const TAB_ANIMATIONS_ENABLED_KEY = "omnicode.tabAnimationsEnabled";
 
 export type FollowUpBehavior = "steer" | "queue";
 
@@ -738,7 +738,7 @@ export type ModelControls = "menu" | "beside";
 export const MODEL_CONTROLS_DEFAULT: ModelControls = "beside";
 
 /** Fired on `window` when the composer model controls setting flips. */
-export const MODEL_CONTROLS_CHANGE_EVENT = "monocode:model-controls-change";
+export const MODEL_CONTROLS_CHANGE_EVENT = "omnicode:model-controls-change";
 
 export function loadModelControls(): ModelControls {
   try {
@@ -777,12 +777,12 @@ export function subscribeModelControls(onStoreChange: () => void) {
     window.removeEventListener(MODEL_CONTROLS_CHANGE_EVENT, onStoreChange);
 }
 
-const NOTES_ENABLED_KEY = "monocode.notesEnabled";
+const NOTES_ENABLED_KEY = "omnicode.notesEnabled";
 
 export const NOTES_ENABLED_DEFAULT = true;
 
 /** Fired on `window` when the Notes UI setting flips. */
-export const NOTES_ENABLED_CHANGE_EVENT = "monocode:notes-enabled-change";
+export const NOTES_ENABLED_CHANGE_EVENT = "omnicode:notes-enabled-change";
 
 export function loadNotesEnabled(): boolean {
   return readFlag(NOTES_ENABLED_KEY) ?? NOTES_ENABLED_DEFAULT;
@@ -803,8 +803,8 @@ export function subscribeNotesEnabled(onStoreChange: () => void) {
     window.removeEventListener(NOTES_ENABLED_CHANGE_EVENT, onStoreChange);
 }
 
-const QUICK_COMPOSER_ENABLED_KEY = "monocode.quickComposerEnabled";
-const QUICK_COMPOSER_SHORTCUT_KEY = "monocode.quickComposerShortcut";
+const QUICK_COMPOSER_ENABLED_KEY = "omnicode.quickComposerEnabled";
+const QUICK_COMPOSER_SHORTCUT_KEY = "omnicode.quickComposerShortcut";
 
 export const QUICK_COMPOSER_ENABLED_DEFAULT = true;
 
@@ -839,13 +839,13 @@ export function saveQuickComposerShortcut(value: string) {
   }
 }
 
-const LIVE_AGENTS_ENABLED_KEY = "monocode.liveAgentsEnabled";
+const LIVE_AGENTS_ENABLED_KEY = "omnicode.liveAgentsEnabled";
 
 export const LIVE_AGENTS_ENABLED_DEFAULT = true;
 
 /** Fired on `window` when the working-agents rail card setting flips. */
 export const LIVE_AGENTS_ENABLED_CHANGE_EVENT =
-  "monocode:live-agents-enabled-change";
+  "omnicode:live-agents-enabled-change";
 
 export function loadLiveAgentsEnabled(): boolean {
   return readFlag(LIVE_AGENTS_ENABLED_KEY) ?? LIVE_AGENTS_ENABLED_DEFAULT;
@@ -868,7 +868,7 @@ export function subscribeLiveAgentsEnabled(onStoreChange: () => void) {
     window.removeEventListener(LIVE_AGENTS_ENABLED_CHANGE_EVENT, onStoreChange);
 }
 
-const CLOSE_TO_TRAY_KEY = "monocode.closeToTray";
+const CLOSE_TO_TRAY_KEY = "omnicode.closeToTray";
 
 export const CLOSE_TO_TRAY_DEFAULT = true;
 
@@ -882,14 +882,14 @@ export function saveCloseToTray(value: boolean) {
   writeFlag(CLOSE_TO_TRAY_KEY, value);
 }
 
-const DIFF_VIEWER_KEY = "monocode.diffViewer";
+const DIFF_VIEWER_KEY = "omnicode.diffViewer";
 
 export type DiffViewer = "editor" | "unified";
 
 export const DIFF_VIEWER_DEFAULT: DiffViewer = "editor";
 
 /** Fired on `window` when the working-tree diff layout flips. */
-export const DIFF_VIEWER_CHANGE_EVENT = "monocode:diff-viewer-change";
+export const DIFF_VIEWER_CHANGE_EVENT = "omnicode:diff-viewer-change";
 
 function isDiffViewer(value: unknown): value is DiffViewer {
   return value === "editor" || value === "unified";
@@ -924,7 +924,7 @@ export function subscribeDiffViewer(onStoreChange: () => void) {
     window.removeEventListener(DIFF_VIEWER_CHANGE_EVENT, onStoreChange);
 }
 
-const FORMAT_ON_SAVE_KEY = "monocode.formatOnSave";
+const FORMAT_ON_SAVE_KEY = "omnicode.formatOnSave";
 
 export const FORMAT_ON_SAVE_DEFAULT = true;
 
@@ -936,8 +936,8 @@ export function saveFormatOnSave(value: boolean) {
   writeFlag(FORMAT_ON_SAVE_KEY, value);
 }
 
-const AUTOSAVE_KEY = "monocode.autosave";
-const AUTOSAVE_CHANGE_EVENT = "monocode:autosave-change";
+const AUTOSAVE_KEY = "omnicode.autosave";
+const AUTOSAVE_CHANGE_EVENT = "omnicode:autosave-change";
 
 export const AUTOSAVE_DEFAULT = false;
 
@@ -967,8 +967,8 @@ export function subscribeAutosave(onStoreChange: () => void) {
   };
 }
 
-const MENU_BAR_VISIBLE_KEY = "monocode.menuBarVisible";
-const MENU_BAR_CHANGE_EVENT = "monocode:menu-bar-change";
+const MENU_BAR_VISIBLE_KEY = "omnicode.menuBarVisible";
+const MENU_BAR_CHANGE_EVENT = "omnicode:menu-bar-change";
 
 /** Windows/Linux in-window menu bar; hidden means it appears on an Alt tap. */
 export function loadMenuBarVisible(): boolean {
@@ -996,7 +996,7 @@ export function subscribeMenuBarVisible(onStoreChange: () => void) {
   };
 }
 
-const CLAUDE_HOOKS_KEY = "monocode.claudeHooks";
+const CLAUDE_HOOKS_KEY = "omnicode.claudeHooks";
 
 export const CLAUDE_HOOKS_DEFAULT = true;
 
@@ -1117,8 +1117,8 @@ export const KEYBINDINGS: KeybindingRow[] = [
   { command: "Editor: Replace", keys: `${MOD}${ALT}F`, when: "editorFocus" },
 ];
 
-const KEYBINDING_OVERRIDES_KEY = "monocode.keybindingOverrides";
-const KEYBINDINGS_CHANGE_EVENT = "monocode:keybindings-change";
+const KEYBINDING_OVERRIDES_KEY = "omnicode.keybindingOverrides";
+const KEYBINDINGS_CHANGE_EVENT = "omnicode:keybindings-change";
 
 export type KeybindingOverride = {
   disabled?: boolean;

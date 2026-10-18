@@ -30,7 +30,7 @@ export type NativeSessionState = {
   busy: boolean;
   error?: string;
   lastSynced?: number;
-  /** `${provider}:${providerSessionId}` already bound to MonoCode history. */
+  /** `${provider}:${providerSessionId}` already bound to OmniCode history. */
   bound: ReadonlySet<string>;
   /** Imported conversations the Host keeps in sync. */
   importedCount?: number;
@@ -155,7 +155,7 @@ export function nativeSessionAccessHint(session: Session): string | undefined {
     return translate(
       "This session is still open in another client. Saved history keeps syncing. Continue there, or close that session before retrying here; a finished reply may not release it.",
     );
-  if (access?.reason === "anotherMonocode")
+  if (access?.reason === "anotherOmniCode")
     return translate(
       "Another OmniCode window is using this session. It will become available when that operation finishes.",
     );
@@ -233,7 +233,7 @@ export function discoverNativeSessions(): Promise<NativeSessionFile[]> {
   });
 }
 
-/** Native sessions in a project that MonoCode has not imported or started itself. */
+/** Native sessions in a project that OmniCode has not imported or started itself. */
 export function externalNativeSessions(
   files: readonly NativeSessionFile[],
   bound: ReadonlySet<string>,

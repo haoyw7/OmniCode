@@ -79,7 +79,7 @@ function nativeAccessNotice(access: NativeSessionAccess | undefined): string {
       "{provider} is running in this project (pid {pid}) on the computer and may be using this conversation. Close it to continue here.",
       { provider: nativeProviderLabel(holder.provider), pid: holder.pid },
     );
-  if (access.reason === "anotherMonocode")
+  if (access.reason === "anotherOmniCode")
     return translate("OmniCode desktop is using this conversation. Try again when it finishes.");
   if (access.reason === "unsupportedPlatform")
     return translate("Native session ownership cannot be verified on this platform. Imported history is read-only.");

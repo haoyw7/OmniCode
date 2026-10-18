@@ -34,14 +34,14 @@ it("round-trips multiple normalized paths and ignores invalid saved entries", ()
     "/work/b",
   ]);
   localStorage.setItem(
-    "monocode.projectTreeExpanded.v1",
+    "omnicode.projectTreeExpanded.v1",
     '[null, false, "/work/a/", ""]',
   );
   expect([...loadProjectTreeExpanded("/other")]).toEqual(["/work/a"]);
 });
 
 it("falls back to the current project for unreadable storage without throwing", () => {
-  localStorage.setItem("monocode.projectTreeExpanded.v1", "broken");
+  localStorage.setItem("omnicode.projectTreeExpanded.v1", "broken");
   expect([...loadProjectTreeExpanded("/work/a")]).toEqual(["/work/a"]);
   vi.spyOn(localStorage, "getItem").mockImplementation(() => {
     throw new Error("blocked");
@@ -77,7 +77,7 @@ it("notifies mounted trees about same-window and other-window preference changes
   window.dispatchEvent(new StorageEvent("storage", { key: "unrelated" }));
   expect(onChange).toHaveBeenCalledOnce();
   window.dispatchEvent(
-    new StorageEvent("storage", { key: "monocode.projectTreeExpanded.v1" }),
+    new StorageEvent("storage", { key: "omnicode.projectTreeExpanded.v1" }),
   );
   expect(onChange).toHaveBeenCalledTimes(2);
   unsubscribe();

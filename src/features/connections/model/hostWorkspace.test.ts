@@ -42,7 +42,7 @@ it("does not claim the most recent window on a background snapshot update", asyn
   await first.save({ selection: "one" }, true);
   await second.save({ selection: "two" }, false);
   expect(request).toHaveBeenLastCalledWith("workspaces.save", expect.objectContaining({ windowId: "window-b", activate: false }));
-  expect(JSON.parse(localStorage.getItem("monocode.host-workspace.v1:host-a:cache:desktop")!).windowId).toBe("window-a");
+  expect(JSON.parse(localStorage.getItem("omnicode.host-workspace.v1:host-a:cache:desktop")!).windowId).toBe("window-a");
 });
 
 it("keeps caches and pending operations isolated by verified Host identity", async () => {

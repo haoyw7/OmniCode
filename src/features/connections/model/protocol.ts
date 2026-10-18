@@ -152,7 +152,7 @@ export type HostSession = {
   blockRevisions?: Record<string, number>;
   /** Host-managed native history status (absent for ordinary sessions and older Hosts). */
   nativeStatus?: import("../../../integrations/harness/core/nativeSessions").NativeSyncStatus;
-  /** Host-only lazy identity for a MonoCode-started provider conversation. */
+  /** Host-only lazy identity for a OmniCode-started provider conversation. */
   nativeBinding?: import("../../../integrations/harness/core/nativeSessions").NativeBinding;
   orchestration?: HostOrchestrationView;
 };

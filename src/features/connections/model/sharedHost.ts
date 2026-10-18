@@ -56,8 +56,8 @@ type PreparedHost = {
   retiredSessionIds?: string[];
 };
 
-const BOOTSTRAP_POINTER = "monocode.shared-host-bootstrap.current";
-const bootstrapKey = (environmentId: string) => `monocode.shared-host-bootstrap.v1:${encodeURIComponent(environmentId)}`;
+const BOOTSTRAP_POINTER = "omnicode.shared-host-bootstrap.current";
+const bootstrapKey = (environmentId: string) => `omnicode.shared-host-bootstrap.v1:${encodeURIComponent(environmentId)}`;
 
 /** Only successful native pairing can create this cache; it contains no credential. */
 async function prepareSharedHost(): Promise<{ prepared: PreparedHost; offline: boolean }> {

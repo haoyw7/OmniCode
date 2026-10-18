@@ -103,7 +103,7 @@ export class NativeHostFixtureAdapter {
     const support = nativeHostSupport(scenario);
     if (!support.supported)
       throw new EvalError(`NATIVE_HOST_BLOCKED: ${support.reasons.join("; ")}`);
-    const directory = await mkdtemp(join(tmpdir(), "monocode-native-host-"));
+    const directory = await mkdtemp(join(tmpdir(), "omnicode-native-host-"));
     let store: HostStore | undefined, engine: HostEngine | undefined;
     const pending: (() => void)[] = [];
     try {

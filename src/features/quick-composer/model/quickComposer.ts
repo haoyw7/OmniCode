@@ -42,7 +42,7 @@ export const QUICK_COMPOSER_CATALOG_REQUEST_EVENT =
 /** Workspace windows answer with every live catalog they hold. */
 export const QUICK_COMPOSER_CATALOG_EVENT = "quick_composer_catalog";
 
-const LAST_PROJECT_KEY = "monocode.quickComposerProject";
+const LAST_PROJECT_KEY = "omnicode.quickComposerProject";
 
 /** Live model lists keyed by harness, as a workspace window knows them. */
 export type QuickCatalog = {

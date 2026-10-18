@@ -9,7 +9,7 @@ import { loadRemoteHostDescriptor } from "../../connections/model/remoteHostMeta
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("../../../platform/tauri/platform", () => ({ IS_WIN: true, IS_MAC: false }));
-vi.mock("../../connections/model/connections", () => ({ remoteRequest: vi.fn(), remoteSessionFor: () => undefined, REMOTE_MACHINES_CHANGED: "monocode:remote-machines" }));
+vi.mock("../../connections/model/connections", () => ({ remoteRequest: vi.fn(), remoteSessionFor: () => undefined, REMOTE_MACHINES_CHANGED: "omnicode:remote-machines" }));
 vi.mock("../../connections/model/remoteHostMetadata", () => ({ loadRemoteHostDescriptor: vi.fn() }));
 
 const machines = [
@@ -51,42 +51,42 @@ const settle = async () => {
 };
 
 it("imports release global settings once and sends project choices to the owning Host", async () => {
-  localStorage.setItem("monocode.colorScheme", "dark");
-  localStorage.setItem("monocode.projectProviderSettings.v1", JSON.stringify({
+  localStorage.setItem("omnicode.colorScheme", "dark");
+  localStorage.setItem("omnicode.projectProviderSettings.v1", JSON.stringify({
     "/app": { defaultHarness: "codex" }, "remote://remote/app": { defaultHarness: "claude" },
   }));
   await initializeHostPreferences();
   await settle();
   expect(hosts["local-machine"].imported).toBe(true);
-  expect(hosts["local-machine"].values["monocode.colorScheme"]).toBe("dark");
-  expect(hosts["local-machine"].values['monocode.projectProviderSettings.v1::["@project:local:local-project","defaultHarness"]']).toBe('"codex"');
-  expect(hosts["remote-machine"].values['monocode.projectProviderSettings.v1::["@project:remote:remote-project","defaultHarness"]']).toBe('"claude"');
+  expect(hosts["local-machine"].values["omnicode.colorScheme"]).toBe("dark");
+  expect(hosts["local-machine"].values['omnicode.projectProviderSettings.v1::["@project:local:local-project","defaultHarness"]']).toBe('"codex"');
+  expect(hosts["remote-machine"].values['omnicode.projectProviderSettings.v1::["@project:remote:remote-project","defaultHarness"]']).toBe('"claude"');
   expect(Object.keys(hosts["local-machine"].values).some((key) => key.includes("@project:remote:"))).toBe(false);
-  expect(JSON.parse(preferenceStorage.getItem("monocode.projectProviderSettings.v1")!)).toEqual({
+  expect(JSON.parse(preferenceStorage.getItem("omnicode.projectProviderSettings.v1")!)).toEqual({
     "/app": { defaultHarness: "codex" }, "remote://remote/app": { defaultHarness: "claude" },
   });
-  localStorage.setItem("monocode.colorScheme", "light");
+  localStorage.setItem("omnicode.colorScheme", "light");
   await initializeHostPreferences();
-  expect(hosts["local-machine"].values["monocode.colorScheme"]).toBe("dark");
+  expect(hosts["local-machine"].values["omnicode.colorScheme"]).toBe("dark");
 });
 
 it("does not upload the dev origin's legacy settings", async () => {
   vi.stubEnv("DEV", true);
-  localStorage.setItem("monocode.colorScheme", "light");
+  localStorage.setItem("omnicode.colorScheme", "light");
   await initializeHostPreferences();
   await settle();
   expect(hosts["local-machine"].imported).toBe(false);
-  expect(hosts["local-machine"].values["monocode.colorScheme"]).toBeUndefined();
-  expect(hosts["local-machine"].values["monocode.recentProjects"]).toContain("@project:local:local-project");
-  expect(localStorage.getItem("monocode.recentProjects")).toBeNull();
+  expect(hosts["local-machine"].values["omnicode.colorScheme"]).toBeUndefined();
+  expect(hosts["local-machine"].values["omnicode.recentProjects"]).toContain("@project:local:local-project");
+  expect(localStorage.getItem("omnicode.recentProjects")).toBeNull();
 });
 
 it("discovers WSL projects with their machine identity and repairs staged legacy rail paths", async () => {
   vi.stubEnv("DEV", true);
   configureSharedHost("local", [{ id: "wsl-project", cwd: "/home/wy/.claude", name: ".claude",
     machine: { kind: "wsl", distribution: "Ubuntu-26.04" } }], "local-machine");
-  const recentKey = "monocode.recentProjects";
-  localStorage.setItem(`monocode.pending-project-lists.v1:local:${recentKey}`, JSON.stringify([
+  const recentKey = "omnicode.recentProjects";
+  localStorage.setItem(`omnicode.pending-project-lists.v1:local:${recentKey}`, JSON.stringify([
     { path: "/home/wy/.claude", openedAt: 12 },
     { path: "//wsl.localhost/Ubuntu-26.04/home/wy/.claude", openedAt: 10 },
     { path: "wsl://Ubuntu-26.04/home/wy/.claude", openedAt: 8 },
@@ -97,7 +97,7 @@ it("discovers WSL projects with their machine identity and repairs staged legacy
   expect(recents.filter((entry: { path: string }) => entry.path.includes(".claude"))).toEqual([
     { path: "wsl://Ubuntu-26.04/home/wy/.claude", openedAt: 12 },
   ]);
-  expect(localStorage.getItem(`monocode.pending-project-lists.v1:local:${recentKey}`)).toBeNull();
+  expect(localStorage.getItem(`omnicode.pending-project-lists.v1:local:${recentKey}`)).toBeNull();
   expect(hosts["local-machine"].values[recentKey]).toContain("@project:local:wsl-project");
   await initializeHostPreferences();
   await settle();
@@ -109,8 +109,8 @@ it("does not assign a legacy Linux path to an arbitrary WSL distribution", async
   configureSharedHost("local", ["Ubuntu", "Debian"].map(distribution => ({
     id: distribution, cwd: "/home/wy/app", name: "App", machine: { kind: "wsl" as const, distribution },
   })), "local-machine");
-  const recentKey = "monocode.recentProjects";
-  localStorage.setItem(`monocode.pending-project-lists.v1:local:${recentKey}`, JSON.stringify([
+  const recentKey = "omnicode.recentProjects";
+  localStorage.setItem(`omnicode.pending-project-lists.v1:local:${recentKey}`, JSON.stringify([
     { path: "/home/wy/app", openedAt: 12 },
   ]));
   await initializeHostPreferences();
@@ -122,13 +122,13 @@ it("does not assign a legacy Linux path to an arbitrary WSL distribution", async
 });
 
 it("boots from the same verified Host cache on transport failure but rejects identity failures", async () => {
-  localStorage.setItem("monocode.colorScheme", "dark");
+  localStorage.setItem("omnicode.colorScheme", "dark");
   await initializeHostPreferences();
   await settle();
   vi.mocked(loadRemoteHostDescriptor).mockRejectedValue(new Error("connection refused"));
   vi.mocked(remoteRequest).mockRejectedValue(new Error("offline"));
   await initializeHostPreferences();
-  expect(preferenceStorage.getItem("monocode.colorScheme")).toBe("dark");
+  expect(preferenceStorage.getItem("omnicode.colorScheme")).toBe("dark");
   expect(desktopProjectPreferenceStores.get("local")?.error).toBe("offline");
   vi.mocked(loadRemoteHostDescriptor).mockRejectedValue(new Error("Host identity changed"));
   await expect(initializeHostPreferences()).rejects.toThrow("Host identity changed");

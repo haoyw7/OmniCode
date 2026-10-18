@@ -1,6 +1,6 @@
 import type { BotScope } from "./bots";
-export const BOT_SELECTION_EVENT = "monocode:bot-selection";
-const key = (environmentId: string) => `monocode.bot-selection:${environmentId}`;
+export const BOT_SELECTION_EVENT = "omnicode:bot-selection";
+const key = (environmentId: string) => `omnicode.bot-selection:${environmentId}`;
 export function readBotSelection(environmentId: string): BotScope | undefined {
   try {
     const value = JSON.parse(localStorage.getItem(key(environmentId)) ?? "null");

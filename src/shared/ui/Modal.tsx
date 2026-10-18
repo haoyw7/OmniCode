@@ -88,6 +88,7 @@ export function ModalPanel({
 
   return (
     <div
+      data-window-modal-panel
       data-modal-context={appearance}
       className={
         popupHost
@@ -168,12 +169,13 @@ export function Modal(props: Props) {
   if (!visible) return null;
   if (host) return createPortal(<ModalPanel {...props} />, host);
   return createPortal(
-    <motion.div data-modal-context={appearance} className="fixed inset-0" style={{ zIndex: props.layer ?? LAYER.dialog }}
+    <motion.div data-window-modal data-modal-context={appearance} className="fixed inset-0" style={{ zIndex: props.layer ?? LAYER.dialog }}
       initial={reduced ? false : { opacity: popInitial.opacity }}
       animate={{ opacity: popAnimate.opacity }} exit={{ opacity: popExit.opacity }}
       transition={reduced ? immediateTransition : popTransition}
       inert={!present} aria-hidden={!present || undefined}>
       <div
+        data-window-modal-backdrop
         className="modal-backdrop absolute inset-0 bg-black/60 backdrop-blur-xs"
         onMouseDown={props.onClose}
       />

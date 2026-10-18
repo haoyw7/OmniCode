@@ -32,7 +32,7 @@ it("subscribes a machine registered after bridge startup before spawning", async
   stop(); expect(wsl.listeners.size).toBe(0); expect(local.listeners.size).toBe(0);
 });
 
-it.each(["monocode-pi-text", "monocode-omp-text", "monocode-pi-probe", "monocode-omp-probe"])("rebinds utility %s to local, Ubuntu and Debian while retaining its latest write owner", async sessionId => {
+it.each(["omnicode-pi-text", "omnicode-omp-text", "omnicode-pi-probe", "omnicode-omp-probe"])("rebinds utility %s to local, Ubuntu and Debian while retaining its latest write owner", async sessionId => {
   const registry = new ChildBackendRegistry();
   const machines = new Map(["local", "wsl:Ubuntu", "wsl:Debian"].map(key => [key, backend()]));
   for (const [key, value] of machines) registry.register(key, value as ChildBackend);

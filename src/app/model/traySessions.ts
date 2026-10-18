@@ -13,7 +13,7 @@ import { sessionDisplayTitle } from "../../features/sessions/model/session";
 import { RemoteSessionUnread } from "../../features/sessions/model/remoteSessionUnread";
 
 /** Rust's `tray::OPEN_SESSION_EVENT`, sent to the one window that opens it. */
-export const TRAY_OPEN_SESSION_EVENT = "monocode:tray-open-session";
+export const TRAY_OPEN_SESSION_EVENT = "omnicode:tray-open-session";
 
 // The activity list carries every Host conversation (~1–2 MB), so poll gently.
 const TRAY_POLL_MS = 15_000;

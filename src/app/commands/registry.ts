@@ -52,12 +52,12 @@ export const MENUS: { id: MenuId; label: string }[] = [
 ];
 
 export const HELP_URLS: Record<string, string> = {
-  "Help: Website": "https://github.com/yyy0107/ohmymonocode",
-  "Help: GitHub": "https://github.com/yyy0107/ohmymonocode",
+  "Help: Website": "https://github.com/haoyw7/OmniCode",
+  "Help: GitHub": "https://github.com/haoyw7/OmniCode",
   "Help: Report a Bug":
-    "https://github.com/yyy0107/ohmymonocode/issues/new?template=bug_report.yml",
+    "https://github.com/haoyw7/OmniCode/issues/new?template=bug_report.yml",
   "Help: Request a Feature":
-    "https://github.com/yyy0107/ohmymonocode/issues/new?template=feature_request.yml",
+    "https://github.com/haoyw7/OmniCode/issues/new?template=feature_request.yml",
 };
 
 export const APP_COMMANDS: CommandSpec[] = [

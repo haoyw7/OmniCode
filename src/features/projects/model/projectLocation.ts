@@ -9,7 +9,7 @@ import {
   sameProjectPath,
 } from "./recents";
 
-const KEY = "monocode.projectLocations";
+const KEY = "omnicode.projectLocations";
 
 type StoredProjectLocation = {
   path: string;

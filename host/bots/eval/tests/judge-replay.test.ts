@@ -19,7 +19,7 @@ it.skipIf(!replayFixturesAvailable)(
   "replays immutable real evidence with zero inference, excluding failed calibration from all formal rates",
   async () => {
     const campaign = archiveCampaign;
-    const directory = await mkdtemp(join(tmpdir(), "monocode-replay-test-"));
+    const directory = await mkdtemp(join(tmpdir(), "omnicode-replay-test-"));
     try {
       const cases = (
         await readFile(evalDataPath(root, "data/cases.jsonl"), "utf8")
@@ -80,7 +80,7 @@ it.skipIf(!replayFixturesAvailable)(
   },
 );
 it("a changed calibration artifact invalidates its registry", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "monocode-calibration-test-"));
+  const directory = await mkdtemp(join(tmpdir(), "omnicode-calibration-test-"));
   try {
     await mkdir(join(directory, "data"));
     await writeFile(join(directory, "anchor.json"), "changed");

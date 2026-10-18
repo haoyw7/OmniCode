@@ -14,7 +14,7 @@ import { SidebarEntry } from "./SidebarEntry";
 
 
 
-const CHAT_PROJECT_EXPANDED_KEY = "monocode.chatProjectExpanded.v1";
+const CHAT_PROJECT_EXPANDED_KEY = "omnicode.chatProjectExpanded.v1";
 
 /** Projectless chats grouped above workflows and projects. */
 export function ChatProjectCard({

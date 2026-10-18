@@ -1,4 +1,4 @@
-// Monocode shim for ZCode's run-open handler: a run line in the sidebar opens the
+// OmniCode shim for ZCode's run-open handler: a run line in the sidebar opens the
 // run's detail tab through the desktop shell.
 import { useCallback } from "react";
 import { useWorkflowApp } from "../../ui/workflowAppContext";

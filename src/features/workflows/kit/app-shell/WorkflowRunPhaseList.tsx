@@ -216,6 +216,7 @@ export const WorkflowRunPhaseList = memo(function WorkflowRunPhaseList({
     if (onOpenActor === undefined || slot === undefined) return;
     const sessionId = pill.instance?.sessionId;
     onOpenActor({
+      avatar: { avatarIndex: pill.avatarIndex, name: nameOf(pill), status: pill.status },
       ordinal: slot.ordinal,
       ...(sessionId === undefined ? {} : { sessionId }),
       siteId: slot.siteId,

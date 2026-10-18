@@ -89,7 +89,7 @@ export async function readAcpTitleInProcess(
   binary: { path: string; args: string[] },
   spawnCwd = input.cwd,
 ): Promise<string | null> {
-  const childId = `monocode-title-read-${crypto.randomUUID()}`;
+  const childId = `omnicode-title-read-${crypto.randomUUID()}`;
   const acp = new AcpClient(childId, {});
   watchChild(
     childId,
@@ -114,7 +114,7 @@ export async function readAcpTitleInProcess(
           fs: { readTextFile: false, writeTextFile: false },
           terminal: false,
         },
-        clientInfo: { name: "monocode-title-read", version: "1" },
+        clientInfo: { name: "omnicode-title-read", version: "1" },
       },
       Math.max(1, deadline - Date.now()),
     );

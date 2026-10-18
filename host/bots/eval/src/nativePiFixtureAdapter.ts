@@ -459,7 +459,7 @@ export class NativePiFixtureAdapter {
       throw new EvalError("PREFLIGHT_TOOL_FORBIDDEN");
     });
     const directory = await mkdtemp(
-      join(tmpdir(), "monocode-native-preflight-"),
+      join(tmpdir(), "omnicode-native-preflight-"),
     );
     let session: any;
     try {
@@ -564,7 +564,7 @@ export class NativePiFixtureAdapter {
           denied: scenario.fixture.denied ?? [],
           context: scenario.fixture.context ?? null,
         });
-    const directory = await mkdtemp(join(tmpdir(), "monocode-native-pi-"));
+    const directory = await mkdtemp(join(tmpdir(), "omnicode-native-pi-"));
     const gate = createRequestGate(
       this.options.budget,
       this.options.fetch ?? fetch,

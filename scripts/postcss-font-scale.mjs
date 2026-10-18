@@ -64,15 +64,15 @@ function guardRules(container, guard) {
 /** @returns {import("postcss").Plugin} */
 export default function fontScale() {
   return {
-    postcssPlugin: "monocode-font-scale",
+    postcssPlugin: "omnicode-font-scale",
     OnceExit(root) {
       root.walkDecls("font-size", (decl) => {
         decl.value = scaleFontSize(decl.value);
       });
       root.walkAtRules("media", (atRule) => {
         const match = MOTION_QUERY.exec(atRule.params.trim());
-        if (!match || atRule.raws.monocodeReducedMotion) return;
-        atRule.raws.monocodeReducedMotion = true;
+        if (!match || atRule.raws.omnicodeReducedMotion) return;
+        atRule.raws.omnicodeReducedMotion = true;
         const [systemGuard, forcedGuard] = MOTION_GUARDS[match[1]];
         const forced = atRule.clone();
         // Unwrap the clone: its rules apply whenever the user forces it.

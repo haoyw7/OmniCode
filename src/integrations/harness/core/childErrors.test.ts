@@ -10,11 +10,11 @@ it("localizes Host limit errors at display time and preserves provider text", ()
 });
 
 it("displays the legacy interruption marker with the current brand without rewriting provider text", () => {
-  const legacy = "Turn interrupted when MonoCode quit.";
+  const legacy = "Turn interrupted when OmniCode quit.";
   expect(localizeChildExitError(legacy, (text) => translate(text, undefined, "en")))
     .toBe("Turn interrupted when OmniCode quit.");
   expect(localizeChildExitError(legacy, (text) => translate(text, undefined, "zh-CN")))
     .toBe("OmniCode 退出时中断了此轮执行。");
-  expect(localizeChildExitError("Provider mentioned MonoCode", (text) => translate(text)))
-    .toBe("Provider mentioned MonoCode");
+  expect(localizeChildExitError("Provider mentioned OmniCode", (text) => translate(text)))
+    .toBe("Provider mentioned OmniCode");
 });

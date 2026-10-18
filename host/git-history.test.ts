@@ -8,7 +8,7 @@ import { HostStore } from "./store";
 import { WorkspaceCommands } from "./workspace-commands";
 
 it("includes all branches and detached worktrees only when requested, excluding stash", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-history-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-history-"));
   const cwd = join(directory, "repo");
   const detached = join(directory, "detached");
   mkdirSync(cwd);

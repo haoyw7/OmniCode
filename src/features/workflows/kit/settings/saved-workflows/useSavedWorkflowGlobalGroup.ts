@@ -1,7 +1,7 @@
 // 全局工作流组的状态与动作。抽成 hook 让组件文件守住
 // max-lines 400；载体是 `useServices().workflowAgentService`，RPC 一律带 `{ scope: "global" }`。
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MonocodeSavedWorkflowEntry, MonocodeSavedWorkflowRun } from "../../_shims/shared.js";
+import type { OmniCodeSavedWorkflowEntry, OmniCodeSavedWorkflowRun } from "../../_shims/shared.js";
 import { toast } from "../../../../../shared/ui/primitives/Toast.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import { useConfirmDialog } from "../../hooks/useConfirmDialog.js";
@@ -72,8 +72,8 @@ export function useSavedWorkflowGlobalGroup({
     selectSavedWorkflowState(store, GLOBAL_SAVED_WORKFLOW_TARGET),
   );
   const load = useSavedWorkflowStore((store) => store.load);
-  const [launchEntry, setLaunchEntry] = useState<MonocodeSavedWorkflowEntry | null>(null);
-  const [moveEntry, setMoveEntry] = useState<MonocodeSavedWorkflowEntry | null>(null);
+  const [launchEntry, setLaunchEntry] = useState<OmniCodeSavedWorkflowEntry | null>(null);
+  const [moveEntry, setMoveEntry] = useState<OmniCodeSavedWorkflowEntry | null>(null);
   const [busyName, setBusyName] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
@@ -128,7 +128,7 @@ export function useSavedWorkflowGlobalGroup({
 
   // 全局档一律弹窗——即使无实参，也需要「运行于」选择器。
   const handleRun = useCallback(
-    (entry: MonocodeSavedWorkflowEntry) => {
+    (entry: OmniCodeSavedWorkflowEntry) => {
       launcher.clearError();
       setLaunchEntry(entry);
     },
@@ -136,7 +136,7 @@ export function useSavedWorkflowGlobalGroup({
   );
   const launch = useCallback(
     async (
-      entry: MonocodeSavedWorkflowEntry,
+      entry: OmniCodeSavedWorkflowEntry,
       args: Record<string, unknown>,
       target?: AutomationWorkspaceOption,
     ) => {
@@ -154,7 +154,7 @@ export function useSavedWorkflowGlobalGroup({
     [launcher],
   );
   const handleRevise = useCallback(
-    (entry: MonocodeSavedWorkflowEntry) => {
+    (entry: OmniCodeSavedWorkflowEntry) => {
       if (!actionTarget) return;
       onCreateViaChat?.(
         buildSavedWorkflowRevisePrompt({
@@ -173,7 +173,7 @@ export function useSavedWorkflowGlobalGroup({
     onCreateViaChat?.(buildSavedWorkflowCreatePrompt(locale, "global"), actionTarget);
   }, [actionTarget, locale, onCreateViaChat]);
   const handleCopyPath = useCallback(
-    (entry: MonocodeSavedWorkflowEntry) => {
+    (entry: OmniCodeSavedWorkflowEntry) => {
       void navigator.clipboard
         ?.writeText(entry.path)
         .then(() => toast(intl.formatMessage({ id: "workflows.hub.copied" })))
@@ -186,7 +186,7 @@ export function useSavedWorkflowGlobalGroup({
     [intl],
   );
   const handleDelete = useCallback(
-    async (entry: MonocodeSavedWorkflowEntry) => {
+    async (entry: OmniCodeSavedWorkflowEntry) => {
       const confirmed = await requestConfirmation({
         title: intl.formatMessage({ id: "workflows.hub.delete.title" }, { name: entry.name }),
         description: intl.formatMessage(
@@ -229,18 +229,18 @@ export function useSavedWorkflowGlobalGroup({
     [agentService, intl, mode, onBack, refresh, requestConfirmation],
   );
   const handleCardDelete = useCallback(
-    (entry: MonocodeSavedWorkflowEntry) => void handleDelete(entry),
+    (entry: OmniCodeSavedWorkflowEntry) => void handleDelete(entry),
     [handleDelete],
   );
-  const handleCardMove = useCallback((entry: MonocodeSavedWorkflowEntry) => setMoveEntry(entry), []);
+  const handleCardMove = useCallback((entry: OmniCodeSavedWorkflowEntry) => setMoveEntry(entry), []);
   const handleOpen = useCallback(
-    (entry: MonocodeSavedWorkflowEntry) => onOpenDetail(entry.name),
+    (entry: OmniCodeSavedWorkflowEntry) => onOpenDetail(entry.name),
     [onOpenDetail],
   );
   // 全局档的目标项目按 `run.cwd` 反查已打开项目；没打开就两个入口都关掉
   // （实例必须开在发起它的项目）。门与实参构造与项目档共用（产物不需要 toolCallId）。
   const resolveRunTarget = useCallback(
-    (run: MonocodeSavedWorkflowRun) => findProjectByCwd(localProjects, run.cwd) ?? null,
+    (run: OmniCodeSavedWorkflowRun) => findProjectByCwd(localProjects, run.cwd) ?? null,
     [localProjects],
   );
   const { handleOpenArtifact, handleOpenRun } = useSavedWorkflowRunOpeners({

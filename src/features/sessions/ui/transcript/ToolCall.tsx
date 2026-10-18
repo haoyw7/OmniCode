@@ -15,22 +15,22 @@ import {
   toolCallLabel,
   toolCallState,
 } from "../../model/transcriptActivity";
-import { monoCodeToolCall, type MonoCodeToolCall } from "../../model/monocodeToolCall";
+import { omniCodeToolCall, type OmniCodeToolCall } from "../../model/omnicodeToolCall";
 
 
 
-export function MonoCodeMark({ className = "size-4" }: { className?: string }) {
+export function OmniCodeMark({ className = "size-4" }: { className?: string }) {
   return <Omi compact className={`shrink-0 ${className}`} />;
 }
 
-/** MonoCode commands read like the other activity rows; failures expose their output. */
-export function MonoCodeCallRow({
+/** OmniCode commands read like the other activity rows; failures expose their output. */
+export function OmniCodeCallRow({
   block,
   call,
   onApproval,
 }: {
   block: Block;
-  call: MonoCodeToolCall;
+  call: OmniCodeToolCall;
   onApproval?: (requestId: number, decision: ApprovalDecision) => void;
 }) {
   const { t: uiT } = useTranslation();
@@ -40,7 +40,7 @@ export function MonoCodeCallRow({
   const [errorOpen, setErrorOpen] = useState(false);
   const hasError = state === "rejected" && !!output;
   const pendingApproval = needsApproval(block);
-  const command = `monocode app ${call.action}`;
+  const command = `omnicode app ${call.action}`;
   const verb = pendingApproval
     ? "Run"
     : state === "pending"
@@ -48,7 +48,7 @@ export function MonoCodeCallRow({
       : "Ran";
   const summary = (
     <>
-      <MonoCodeMark className="size-3.5" />
+      <OmniCodeMark className="size-3.5" />
       <span
         className={`shrink-0 font-sans text-sm ${state === "rejected" ? "text-red-400" : "text-foreground-subtlest"}`}
       >
@@ -67,7 +67,7 @@ export function MonoCodeCallRow({
     </>
   );
   return (
-    <div data-monocode-tool-call={call.action} className="min-w-0">
+    <div data-omnicode-tool-call={call.action} className="min-w-0">
       {hasError ? (
         <button
           type="button"
@@ -124,11 +124,11 @@ export function ToolCall({
   const state = toolCallState(block);
   const frame = embedded ? "py-0.5" : "px-4 @md:px-6 py-1";
 
-  const appCall = monoCodeToolCall(block);
+  const appCall = omniCodeToolCall(block);
   if (appCall) {
     return (
       <div className={frame}>
-        <MonoCodeCallRow block={block} call={appCall} onApproval={onApproval} />
+        <OmniCodeCallRow block={block} call={appCall} onApproval={onApproval} />
       </div>
     );
   }

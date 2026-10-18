@@ -75,7 +75,7 @@ for (const failed of [
 }
 
 test("desktop selection leaves other checkouts, mobile, release and CLI processes alone", () => {
-  const checkout = "/tmp/monocode-dev-refresh-fixture";
+  const checkout = "/tmp/omnicode-dev-refresh-fixture";
   const entry = (pid, args, extra = {}) => ({
     pid,
     ppid: 1,
@@ -91,7 +91,7 @@ test("desktop selection leaves other checkouts, mobile, release and CLI processe
     "--no-watch",
   ];
   const vite = ["node", `${checkout}/node_modules/.bin/vite`];
-  const native = `${checkout}/target/debug/monocode`;
+  const native = `${checkout}/target/debug/omnicode`;
   const entries = [
     entry(1, tauri),
     entry(2, ["cargo", "run"], { ppid: 1, cwd: `${checkout}/src-tauri` }),
@@ -102,11 +102,11 @@ test("desktop selection leaves other checkouts, mobile, release and CLI processe
     entry(7, tauri, { cwd: "/tmp/other-checkout" }),
     entry(8, ["node", `${checkout}/node_modules/.bin/tauri`, "build"]),
     entry(9, ["bash", "-c", tauri.join(" ")]),
-    entry(10, [`${checkout}/target/release/monocode`], {
-      exe: `${checkout}/target/release/monocode`,
+    entry(10, [`${checkout}/target/release/omnicode`], {
+      exe: `${checkout}/target/release/omnicode`,
     }),
     entry(11, [native, "control", "status"], { exe: native }),
-    entry(12, ["node", `${checkout}/build/host/monocode-host.mjs`, "serve"]),
+    entry(12, ["node", `${checkout}/build/host/omnicode-host.mjs`, "serve"]),
   ];
   // Synthetic roots need an unrelated parent, not the selected PID 1.
   for (const item of entries) if (![2, 3, 5].includes(item.pid)) item.ppid = 99;
@@ -117,16 +117,16 @@ test("desktop selection leaves other checkouts, mobile, release and CLI processe
 });
 
 test("process snapshot handles spaces in comm, zombies and disappeared PIDs", () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-proc-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-proc-"));
   try {
     const proc = join(directory, "123");
     mkdirSync(proc);
     symlinkSync("/tmp/checkout", join(proc, "cwd"));
     symlinkSync(
-      "/tmp/checkout/target/debug/monocode (deleted)",
+      "/tmp/checkout/target/debug/omnicode (deleted)",
       join(proc, "exe"),
     );
-    writeFileSync(join(proc, "cmdline"), "monocode\0");
+    writeFileSync(join(proc, "cmdline"), "omnicode\0");
     const fields = ["S", "42", ...Array(17).fill("0"), "987654"];
     writeFileSync(
       join(proc, "stat"),
@@ -137,8 +137,8 @@ test("process snapshot handles spaces in comm, zombies and disappeared PIDs", ()
       ppid: 42,
       started: "987654",
       cwd: "/tmp/checkout",
-      exe: "/tmp/checkout/target/debug/monocode",
-      args: ["monocode"],
+      exe: "/tmp/checkout/target/debug/omnicode",
+      args: ["omnicode"],
     });
     fields[0] = "Z";
     writeFileSync(join(proc, "stat"), `123 (zombie) ${fields.join(" ")}`);
@@ -214,7 +214,7 @@ test("shell help is read-only and works without a display or systemd", () => {
 
 for (const lock of ["dev-refresh.lock", "task.lock"]) {
   test(`shell refuses an overlapping ${lock} before starting work`, () => {
-    const directory = mkdtempSync(join(tmpdir(), "monocode-refresh-lock-"));
+    const directory = mkdtempSync(join(tmpdir(), "omnicode-refresh-lock-"));
     try {
       assert.throws(
         () =>
@@ -229,7 +229,7 @@ for (const lock of ["dev-refresh.lock", "task.lock"]) {
             {
               encoding: "utf8",
               stdio: "pipe",
-              env: { ...process.env, MONOCODE_DESKTOP_STATE_DIR: directory },
+              env: { ...process.env, OMNICODE_DESKTOP_STATE_DIR: directory },
             },
           ),
         (error) => {

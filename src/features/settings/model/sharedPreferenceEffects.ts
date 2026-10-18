@@ -13,14 +13,14 @@ import { PROJECT_LIST_PREFERENCES, preferenceField } from "./sharedPreferenceSch
  */
 const NON_PRESENTATION_PREFERENCES = new Set([
   ...PROJECT_LIST_PREFERENCES,
-  "monocode.sidebarTabOrder",
-  "monocode.projectGroups",
-  "monocode.projectGroupAssignments",
-  "monocode.sessionFolders",
-  "monocode.sessionSidebarOrder.v1",
-  "monocode.lastModel",
-  "monocode.lastModelSettings",
-  "monocode.recentModels",
+  "omnicode.sidebarTabOrder",
+  "omnicode.projectGroups",
+  "omnicode.projectGroupAssignments",
+  "omnicode.sessionFolders",
+  "omnicode.sessionSidebarOrder.v1",
+  "omnicode.lastModel",
+  "omnicode.lastModelSettings",
+  "omnicode.recentModels",
 ]);
 
 function onlyNonPresentation(event: Event) {

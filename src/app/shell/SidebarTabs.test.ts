@@ -251,7 +251,7 @@ describe("sidebar tab selection feedback", () => {
     expect(onTabChange).not.toHaveBeenCalled();
     expect(selectedLabel()).toBe("Sessions");
     expect(
-      JSON.parse(localStorage.getItem("monocode.sidebarTabOrder")!),
+      JSON.parse(localStorage.getItem("omnicode.sidebarTabOrder")!),
     ).toEqual(["sessions", "changes", "files"]);
 
     pointer(button("Explorer"), "pointerdown", 250);

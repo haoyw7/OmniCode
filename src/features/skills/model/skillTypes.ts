@@ -13,7 +13,7 @@ export type SkillSource =
   | "grok"
   | "hermes"
   | "antigravity"
-  | "monocode";
+  | "omnicode";
 
 type SkillCommon = {
   name: string;
@@ -31,7 +31,7 @@ export type FileSkill = SkillCommon & {
 export type BuiltinSkill = SkillCommon & {
   kind: "builtin";
   scope: "builtin";
-  source: "monocode";
+  source: "omnicode";
 };
 
 export type NativeSkill = NativeCommand & {

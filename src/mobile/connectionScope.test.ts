@@ -21,7 +21,7 @@ it("moves settings saved by Host identity to the connection address once", () =>
   expect(loadMobileAgentDefaults("http://100.64.0.1:3774")).toEqual({});
   expect(loadMobileAgentDefaults("http://10.0.0.2:3774").harness).toBe("codex");
   expect(loadMobileAgentDefaults("host-a")).toEqual({});
-  expect(localStorage.getItem("monocode.mobile.connectionAppearance:host-a")).toBeNull();
-  expect(JSON.parse(localStorage.getItem("monocode.mobile.connectionAppearance:http://10.0.0.1:3774")!))
+  expect(localStorage.getItem("omnicode.mobile.connectionAppearance:host-a")).toBeNull();
+  expect(JSON.parse(localStorage.getItem("omnicode.mobile.connectionAppearance:http://10.0.0.1:3774")!))
     .toEqual({ displayName: "Workstation", icon: "terminal" });
 });

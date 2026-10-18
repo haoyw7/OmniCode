@@ -10,7 +10,7 @@ import {
 import type { HostDescriptor } from "../../model/protocol";
 import { translate } from "../../../../shared/i18n/language";
 
-const RELEASE_PREFIX = "monocode.editor-resource-release.v1.";
+const RELEASE_PREFIX = "omnicode.editor-resource-release.v1.";
 type PendingRelease = { machineId: string; resourceId: string };
 const pendingReleases = new Map<string, PendingRelease>();
 let releaseTimer: ReturnType<typeof setTimeout> | undefined;
@@ -87,7 +87,7 @@ if (typeof window !== "undefined") {
   window.addEventListener("online", () => {
     void flushEditorResourceReleases();
   });
-  window.addEventListener("monocode:remote-machine-status", () => {
+  window.addEventListener("omnicode:remote-machine-status", () => {
     void flushEditorResourceReleases();
   });
   void Promise.resolve().then(flushEditorResourceReleases);

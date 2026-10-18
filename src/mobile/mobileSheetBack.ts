@@ -1,4 +1,4 @@
-const BACK_EVENT = "monocode:sheet-back";
+const BACK_EVENT = "omnicode:sheet-back";
 
 /** Route native Back to the frontmost interactive sheet, including its inner page. */
 export function backMobileSheet(): boolean {

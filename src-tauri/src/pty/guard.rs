@@ -250,7 +250,7 @@ impl Terminal {
             .env("TERM", "xterm-256color")
             .env("COLORTERM", "truecolor")
             .env("COLORFGBG", "15;0")
-            .env("TERM_PROGRAM", "MonoCode")
+            .env("TERM_PROGRAM", "OmniCode")
             .env("PATH", path)
             .env("PWD", cwd);
         unsafe {
@@ -297,7 +297,7 @@ impl Terminal {
             ("TERM", "xterm-256color"),
             ("COLORTERM", "truecolor"),
             ("COLORFGBG", "15;0"),
-            ("TERM_PROGRAM", "MonoCode"),
+            ("TERM_PROGRAM", "OmniCode"),
             ("PATH", path),
         ] {
             command.env(name, value);
@@ -354,7 +354,7 @@ impl Terminal {
     #[cfg(unix)]
     fn stop(&mut self) -> Result<(), String> {
         let groups = terminal_groups(self.pid)?;
-        monocode_process_tree::terminate_all(&groups);
+        omnicode_process_tree::terminate_all(&groups);
         let _ = self.child.wait();
         #[cfg(target_os = "linux")]
         unsafe {
@@ -373,7 +373,7 @@ impl Terminal {
             JobObjectBasicAccountingInformation, QueryInformationJobObject, TerminateJobObject,
             JOBOBJECT_BASIC_ACCOUNTING_INFORMATION,
         };
-        let job = monocode_process_tree::managed_job().map_err(|e| e.to_string())?;
+        let job = omnicode_process_tree::managed_job().map_err(|e| e.to_string())?;
         unsafe {
             if TerminateJobObject(job.as_raw_handle(), 1) == 0 {
                 return Err(std::io::Error::last_os_error().to_string());
@@ -485,7 +485,7 @@ mod tests {
     #[test]
     #[ignore = "subprocess entry point"]
     fn guard_process() {
-        if std::env::var_os("MONOCODE_TEST_TERMINAL_GUARD").is_some() {
+        if std::env::var_os("OMNICODE_TEST_TERMINAL_GUARD").is_some() {
             std::process::exit(run());
         }
     }
@@ -498,7 +498,7 @@ mod tests {
                 "--ignored",
                 "--nocapture",
             ])
-            .env("MONOCODE_TEST_TERMINAL_GUARD", "1")
+            .env("OMNICODE_TEST_TERMINAL_GUARD", "1")
             .env("SHELL", "/bin/sh")
             .current_dir(cwd)
             .stdin(Stdio::piped())
@@ -524,7 +524,7 @@ mod tests {
         );
     }
     fn root() -> PathBuf {
-        let path = std::env::temp_dir().join(format!("monocode-terminal-{}", uuid::Uuid::new_v4()));
+        let path = std::env::temp_dir().join(format!("omnicode-terminal-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&path).unwrap();
         path
     }
@@ -640,7 +640,7 @@ mod tests {
     #[test]
     #[ignore = "subprocess entry point"]
     fn owner_process() {
-        if let Some(root) = std::env::var_os("MONOCODE_TEST_TERMINAL_OWNER") {
+        if let Some(root) = std::env::var_os("OMNICODE_TEST_TERMINAL_OWNER") {
             let root = PathBuf::from(root);
             let mut child = launch(&root);
             start(&mut child, &root);
@@ -662,7 +662,7 @@ mod tests {
                 "--ignored",
                 "--nocapture",
             ])
-            .env("MONOCODE_TEST_TERMINAL_OWNER", &root)
+            .env("OMNICODE_TEST_TERMINAL_OWNER", &root)
             .stdout(Stdio::null())
             .spawn()
             .unwrap();

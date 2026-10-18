@@ -1,5 +1,5 @@
 // Workflow UI messages from ZCode (Apache-2.0) packages/ui/src/i18n/locales/en-US.ts.
-// Keys are ZCode message ids; values are the English UI text, which Monocode
+// Keys are ZCode message ids; values are the English UI text, which OmniCode
 // uses as its translation key (src/shared/i18n/zh-CN.json holds the Chinese).
 export const WORKFLOW_MESSAGES: Record<string, string> = {
   "automations.time.ago": "{amount} ago",

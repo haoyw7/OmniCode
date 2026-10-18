@@ -87,6 +87,18 @@ function press(selector = "[data-blank]", options: MouseEventInit = {}) {
   return event;
 }
 
+function pointerPress(selector = "[data-blank]", options: PointerEventInit = {}) {
+  const event = new PointerEvent("pointerdown", {
+    bubbles: true,
+    cancelable: true,
+    button: 0,
+    pointerType: "mouse",
+    ...options,
+  });
+  act(() => document.querySelector(selector)!.dispatchEvent(event));
+  return event;
+}
+
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   native.tauri = true;
@@ -132,6 +144,53 @@ it("stops the same press before a document drag listener can start it again", ()
     expect(native.startDragging).toHaveBeenCalledOnce();
   } finally {
     document.removeEventListener("mousedown", fallbackDrag);
+  }
+});
+
+it.each(["Linux", "Windows", "macOS"])(
+  "keeps outside-dismiss listeners from closing panels before dragging on %s",
+  (platform) => {
+    native.linux = platform === "Linux";
+    native.windows = platform === "Windows";
+    render();
+    const dismiss = vi.fn();
+    document.addEventListener("pointerdown", dismiss);
+    window.addEventListener("pointerdown", dismiss);
+    try {
+      expect(pointerPress().defaultPrevented).toBe(false);
+      expect(dismiss).not.toHaveBeenCalled();
+      press();
+      expect(native.startDragging).toHaveBeenCalledTimes(platform === "macOS" ? 0 : 1);
+      pointerPress("[data-icon]");
+      expect(dismiss).toHaveBeenCalledTimes(2);
+    } finally {
+      document.removeEventListener("pointerdown", dismiss);
+      window.removeEventListener("pointerdown", dismiss);
+    }
+  },
+);
+
+it("preserves outside interactions on controls, portals, non-mouse input and non-primary buttons", () => {
+  render();
+  const outside = vi.fn();
+  window.addEventListener("pointerdown", outside);
+  try {
+    for (const selector of ["[data-icon]", "[data-disabled]", "[data-role]", "[data-tabindex]", "[data-portal]"]) {
+      pointerPress(selector);
+    }
+    pointerPress(undefined, { button: 2 });
+    pointerPress(undefined, { pointerType: "touch" });
+    pointerPress(undefined, { pointerType: "pen" });
+    expect(outside).toHaveBeenCalledTimes(8);
+    native.tauri = false;
+    pointerPress();
+    expect(outside).toHaveBeenCalledTimes(9);
+    native.tauri = true;
+    render("true");
+    pointerPress();
+    expect(outside).toHaveBeenCalledTimes(10);
+  } finally {
+    window.removeEventListener("pointerdown", outside);
   }
 });
 

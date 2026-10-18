@@ -15,8 +15,8 @@ import { lightImpact } from "./haptics";
 vi.mock("./haptics", () => ({ lightImpact: vi.fn() }));
 
 const projects: HostProject[] = [
-  { id: "one", name: "monocode", cwd: "/projects/monocode" },
-  { id: "two", name: "monocode", cwd: "/other/monocode" },
+  { id: "one", name: "omnicode", cwd: "/projects/omnicode" },
+  { id: "two", name: "omnicode", cwd: "/other/omnicode" },
 ];
 const session = (
   id: string,
@@ -375,7 +375,7 @@ describe("mobile home and project history", () => {
     act(() =>
       node
         .querySelector<HTMLButtonElement>(
-          '.mobile-home-project[title="/other/monocode"]',
+          '.mobile-home-project[title="/other/omnicode"]',
         )!
         .click(),
     );
@@ -412,7 +412,7 @@ describe("mobile home and project history", () => {
     await render({ loadSessions });
     const section = node.querySelector(".mobile-home-overview-projects")!;
     const toggle = section.querySelector<HTMLButtonElement>(".mobile-home-section-toggle")!;
-    const project = section.querySelector('.mobile-home-project[title="/projects/monocode"]')!;
+    const project = section.querySelector('.mobile-home-project[title="/projects/omnicode"]')!;
     expect(project.querySelector('[aria-label="Needs input"]')).not.toBeNull();
     expect(project.querySelector('[aria-label="Working"] .mobile-spin')).not.toBeNull();
     act(() => toggle.click());
@@ -588,7 +588,7 @@ describe("projectless chats", () => {
   const chat: HostProject = {
     id: "chat",
     name: "chat-101010-aaaaaa",
-    cwd: "/home/me/Documents/ohmymonocode/2026-10-11/chat-101010-aaaaaa",
+    cwd: "/home/me/Documents/omnicode/2026-10-11/chat-101010-aaaaaa",
   };
   const loadSessions = async (id: string) =>
     id === "chat" ? [session("chatting", id, 60)] : [session("work", id, 50)];
@@ -597,7 +597,7 @@ describe("projectless chats", () => {
     const onChats = vi.fn();
     await render({ projects: [projects[0], chat], loadSessions, onChats });
     const rows = [...node.querySelectorAll(".mobile-home-overview-projects .mobile-home-project")];
-    expect(rows.map((row) => row.textContent)).toEqual(["Chats", "monocode"]);
+    expect(rows.map((row) => row.textContent)).toEqual(["Chats", "omnicode"]);
     expect(ids(".mobile-home-recent")).toEqual(["chatting", "work"]);
     act(() => (rows[0] as HTMLButtonElement).click());
     expect(onChats).toHaveBeenCalledOnce();

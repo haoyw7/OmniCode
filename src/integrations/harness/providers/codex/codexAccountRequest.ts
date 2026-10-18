@@ -11,7 +11,7 @@ export async function runCodexAccountRequest<T>(
   method: string,
   params: unknown,
   accountId: string,
-  childId = "monocode-codex-usage",
+  childId = "omnicode-codex-usage",
 ): Promise<T> {
   const rpc = new JsonRpcClient(
     childId,
@@ -56,7 +56,7 @@ export async function runCodexAccountRequest<T>(
           "initialize",
           {
             clientInfo: {
-              name: "monocode",
+              name: "omnicode",
               title: "OmniCode",
               version: "0.1.0",
             },

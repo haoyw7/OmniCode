@@ -33,8 +33,8 @@ function connect(launch?: () => ReturnType<typeof bridge>) {
 }
 function bridge() { return spawn(process.execPath, [entry, "bridge", directory, socket], { stdio: "pipe", windowsHide: true }); }
 beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), "monocode-wsl-exec-"));
-  socket = process.platform === "win32" ? `\\\\.\\pipe\\monocode-wsl-exec-${randomUUID()}` : join(directory, "rpc.sock");
+  directory = await mkdtemp(join(tmpdir(), "omnicode-wsl-exec-"));
+  socket = process.platform === "win32" ? `\\\\.\\pipe\\omnicode-wsl-exec-${randomUUID()}` : join(directory, "rpc.sock");
   service = await createWslExecServer({ socket, runDirectory: directory });
 });
 afterEach(async () => {
@@ -194,11 +194,11 @@ it("relays bounded bidirectional TCP to granted Host endpoints and closes owned 
   const connection = connect(), relay = new WslLoopbackRelay(connection);
   let lingering: Socket | undefined;
   try {
-    await expect(relay.environment({ MONOCODE_CONTROL_ENDPOINT: "example.invalid:80" })).rejects.toThrow("loopback");
-    const environment = await relay.environment({ MONOCODE_CONTROL_ENDPOINT: endpoint, MONOCODE_WORKFLOW_ENDPOINT: endpoint, UNCHANGED: "value" });
-    expect(environment.MONOCODE_CONTROL_ENDPOINT).toBe(environment.MONOCODE_WORKFLOW_ENDPOINT);
+    await expect(relay.environment({ OMNICODE_CONTROL_ENDPOINT: "example.invalid:80" })).rejects.toThrow("loopback");
+    const environment = await relay.environment({ OMNICODE_CONTROL_ENDPOINT: endpoint, OMNICODE_WORKFLOW_ENDPOINT: endpoint, UNCHANGED: "value" });
+    expect(environment.OMNICODE_CONTROL_ENDPOINT).toBe(environment.OMNICODE_WORKFLOW_ENDPOINT);
     expect(environment.UNCHANGED).toBe("value");
-    const port = Number(environment.MONOCODE_CONTROL_ENDPOINT.split(":")[1]);
+    const port = Number(environment.OMNICODE_CONTROL_ENDPOINT.split(":")[1]);
     const bytes = Buffer.alloc(2 * 1024 * 1024, 187);
     const result = await new Promise<Buffer>((done, reject) => {
       const socket = createConnection({ host: "127.0.0.1", port });
@@ -245,7 +245,7 @@ it("replaces an idle previous runtime while refusing to replace one with a live 
   await mkdir(previousRuntime);
   await copyFile(entry, join(previousRuntime, "wsl-exec.mjs"));
   await copyFile(resolve("host/wsl-exec-protocol.mjs"), join(previousRuntime, "wsl-exec-protocol.mjs"));
-  const secondSocket = process.platform === "win32" ? `\\\\.\\pipe\\monocode-wsl-upgrade-${randomUUID()}` : join(directory, "upgrade.sock");
+  const secondSocket = process.platform === "win32" ? `\\\\.\\pipe\\omnicode-wsl-upgrade-${randomUUID()}` : join(directory, "upgrade.sock");
   const runDirectory = join(directory, "upgrade");
   const previous = spawn(process.execPath, [join(previousRuntime, "wsl-exec.mjs"), "serve", runDirectory, secondSocket], { stdio: "pipe", windowsHide: true });
   const exited = new Promise<void>((done) => previous.once("close", () => done()));

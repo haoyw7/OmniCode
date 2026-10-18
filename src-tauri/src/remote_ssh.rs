@@ -239,11 +239,11 @@ pub enum HostPlatform {
     Windows,
 }
 
-const PLATFORM_PROBE: &[&str] = &["echo", "MONOCODE_PLATFORM", "$env:OS", "%OS%", "$OS"];
+const PLATFORM_PROBE: &[&str] = &["echo", "OMNICODE_PLATFORM", "$env:OS", "%OS%", "$OS"];
 
 fn parse_platform(output: &str) -> Result<HostPlatform, String> {
     let marker = output
-        .rsplit_once("MONOCODE_PLATFORM")
+        .rsplit_once("OMNICODE_PLATFORM")
         .ok_or("Could not identify the remote shell. Use cmd.exe, PowerShell, or a Unix shell.")?
         .1;
     Ok(
@@ -398,7 +398,7 @@ pub fn bootstrap_script(platform: HostPlatform) -> String {
 
 fn bootstrap_script_from_template(platform: HostPlatform, template: &str) -> String {
     let version = env!("CARGO_PKG_VERSION");
-    let url = format!("https://github.com/hardbeat920/monocode/releases/download/v{version}");
+    let url = format!("https://github.com/haoyw7/OmniCode/releases/download/v{version}");
     match platform {
         // include_str! preserves checkout line endings, including Windows CRLF.
         HostPlatform::Unix => template
@@ -416,10 +416,10 @@ pub fn upgrade_script(platform: HostPlatform, port: u16) -> String {
     let script = bootstrap_script(platform);
     match platform {
         HostPlatform::Unix => {
-            format!("MONOCODE_HOST_FORCE_UPGRADE=1\nMONOCODE_HOST_PORT={port}\n{script}")
+            format!("OMNICODE_HOST_FORCE_UPGRADE=1\nOMNICODE_HOST_PORT={port}\n{script}")
         }
         HostPlatform::Windows => format!(
-            "$env:MONOCODE_HOST_FORCE_UPGRADE = '1'\n$env:MONOCODE_HOST_PORT = '{port}'\n{script}"
+            "$env:OMNICODE_HOST_FORCE_UPGRADE = '1'\n$env:OMNICODE_HOST_PORT = '{port}'\n{script}"
         ),
     }
 }
@@ -428,7 +428,7 @@ pub fn upgrade_script(platform: HostPlatform, port: u16) -> String {
 // code than the installed release (and migrate the schema), so pair with the
 // running Host's own runtime when it can be identified.
 const UNIX_PAIRING: &str = r#"set -eu
-dir="$HOME/.monocode-host"
+dir="$HOME/.omnicode-host"
 node=""
 entry=""
 pid=$(sed -n 's/.*"pid":\([0-9][0-9]*\).*/\1/p' "$dir/running.json" 2>/dev/null || true)
@@ -439,12 +439,12 @@ fi
 if [ -n "$node" ] && [ -x "$node" ] && [ -n "$entry" ] && [ -f "$entry" ]; then
   exec "$node" "$entry" pair --name @@NAME@@ --json
 fi
-exec "$dir/bin/monocode-host" pair --name @@NAME@@ --json
+exec "$dir/bin/omnicode-host" pair --name @@NAME@@ --json
 "#;
 
 const WINDOWS_PAIRING: &str = r#"$ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
-$base = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.monocode-host'
+$base = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.omnicode-host'
 $runtime = [IO.File]::ReadAllText((Join-Path $base 'runtime-path')).Trim()
 $node = Join-Path $runtime 'node.exe'
 $entry = Join-Path $runtime 'host.mjs'
@@ -750,9 +750,9 @@ mod tests {
     fn loopback_transport_preserves_host_and_reconnects() {
         let required = |key| std::env::var(key).expect("Run scripts/test-remote-ssh.py");
         let target = SshTarget {
-            target: required("MONOCODE_TEST_SSH_TARGET"),
-            port: Some(required("MONOCODE_TEST_SSH_PORT").parse().unwrap()),
-            remote_port: required("MONOCODE_TEST_HOST_PORT").parse().unwrap(),
+            target: required("OMNICODE_TEST_SSH_TARGET"),
+            port: Some(required("OMNICODE_TEST_SSH_PORT").parse().unwrap()),
+            remote_port: required("OMNICODE_TEST_HOST_PORT").parse().unwrap(),
         };
         let make_command = || {
             let mut command = command(&target, false);
@@ -760,13 +760,13 @@ mod tests {
                 "-F",
                 "/dev/null",
                 "-i",
-                &required("MONOCODE_TEST_SSH_KEY"),
+                &required("OMNICODE_TEST_SSH_KEY"),
                 "-o",
                 "IdentitiesOnly=yes",
                 "-o",
                 &format!(
                     "UserKnownHostsFile={}",
-                    required("MONOCODE_TEST_KNOWN_HOSTS")
+                    required("OMNICODE_TEST_KNOWN_HOSTS")
                 ),
             ]);
             command
@@ -792,13 +792,13 @@ mod tests {
         )
         .unwrap();
         assert_eq!(output.trim(), "remote-script-ok");
-        let environment = required("MONOCODE_TEST_ENVIRONMENT");
+        let environment = required("OMNICODE_TEST_ENVIRONMENT");
         for _ in 0..2 {
             let tunnel = Tunnel::start_with_command(&target, None, None, make_command()).unwrap();
             let response = ureq::post(&format!("http://127.0.0.1:{}/rpc", tunnel.port))
                 .set(
                     "Authorization",
-                    &format!("Bearer {}", required("MONOCODE_TEST_TOKEN")),
+                    &format!("Bearer {}", required("OMNICODE_TEST_TOKEN")),
                 )
                 .send_string(r#"{"version":1,"method":"environment.describe"}"#)
                 .unwrap();
@@ -857,24 +857,24 @@ mod tests {
         assert!(script.contains("\"$FORCE_UPGRADE\" = 1"));
         assert!(script.contains("service uninstall"));
         assert!(
-            upgrade_script(HostPlatform::Unix, 3774).starts_with("MONOCODE_HOST_FORCE_UPGRADE=1")
+            upgrade_script(HostPlatform::Unix, 3774).starts_with("OMNICODE_HOST_FORCE_UPGRADE=1")
         );
         assert!(!upgrade_script(HostPlatform::Unix, 3774).contains('\r'));
         assert!(upgrade_script(HostPlatform::Windows, 3774)
-            .starts_with("$env:MONOCODE_HOST_FORCE_UPGRADE = '1'"));
+            .starts_with("$env:OMNICODE_HOST_FORCE_UPGRADE = '1'"));
     }
     #[test]
     fn remote_platform_probe_handles_cmd_powershell_and_unix() {
         assert_eq!(
-            parse_platform("MONOCODE_PLATFORM $env:OS Windows_NT $OS\r\n").unwrap(),
+            parse_platform("OMNICODE_PLATFORM $env:OS Windows_NT $OS\r\n").unwrap(),
             HostPlatform::Windows
         );
         assert_eq!(
-            parse_platform("MONOCODE_PLATFORM\r\nWindows_NT\r\n%OS%\r\n").unwrap(),
+            parse_platform("OMNICODE_PLATFORM\r\nWindows_NT\r\n%OS%\r\n").unwrap(),
             HostPlatform::Windows
         );
         assert_eq!(
-            parse_platform("MONOCODE_PLATFORM :OS %OS%\n").unwrap(),
+            parse_platform("OMNICODE_PLATFORM :OS %OS%\n").unwrap(),
             HostPlatform::Unix
         );
         assert!(parse_platform("unrecognized shell").is_err());
@@ -882,7 +882,7 @@ mod tests {
         let script = bootstrap_script(HostPlatform::Windows);
         assert!(!script.contains("@@"));
         assert!(script.contains("checksum mismatch"));
-        assert!(script.contains("Protect-MonoCodeDirectory"));
+        assert!(script.contains("Protect-OmniCodeDirectory"));
         assert!(pairing_script(HostPlatform::Windows, "Nick's $PC").contains("'Nick''s $PC'"));
     }
     #[cfg(windows)]

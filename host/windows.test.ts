@@ -27,7 +27,7 @@ afterEach(() => {
     rmSync(dir, { recursive: true, force: true });
 });
 const temporary = () => {
-  const dir = mkdtempSync(join(tmpdir(), "monocode-win-test-"));
+  const dir = mkdtempSync(join(tmpdir(), "omnicode-win-test-"));
   directories.push(dir);
   return dir;
 };
@@ -122,7 +122,7 @@ it("treats an npm shim whose declared executable is gone as not installed", asyn
 
 it("uses an unlimited, unelevated per-user task and preserves literal paths", () => {
   const options = {
-    directory: "C:\\Users\\Nick's $PC\\.monocode-host",
+    directory: "C:\\Users\\Nick's $PC\\.omnicode-host",
     executable: "C:\\Runtime\\node.exe",
     entry: "C:\\Runtime\\host.mjs",
     port: 3774,

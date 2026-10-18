@@ -37,6 +37,8 @@ interface WorkflowRunArtifactBytesState {
   /** journal 记录上的 contentType（不是 store 重新嗅探出来的那个）——渲染器分派的精确匹配契约。 */
   mediaType: string | null;
   totalBytes: number | null;
+  /** Absolute path on the owning Host; absent with older Hosts. */
+  storedPath: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -48,6 +50,7 @@ function emptyState(): WorkflowRunArtifactBytesState {
     objectUrl: null,
     mediaType: null,
     totalBytes: null,
+    storedPath: null,
     loading: false,
     error: null,
   };
@@ -105,6 +108,7 @@ export function useWorkflowRunArtifactBytes(options: {
         let offset = 0;
         let mediaType = "application/octet-stream";
         let totalBytes = 0;
+        let storedPath: string | null = null;
         for (let index = 0; index < MAX_CHUNKS; index += 1) {
           const result = await workflowRunArtifactRead({
             sessionId,
@@ -117,6 +121,7 @@ export function useWorkflowRunArtifactBytes(options: {
           if (!alive) return;
           mediaType = result.mediaType;
           totalBytes = result.totalBytes;
+          storedPath = result.storedPath ?? storedPath;
           chunks.push(decodeBase64(result.dataBase64));
           if (result.nextOffset === null) break;
           offset = result.nextOffset;
@@ -143,6 +148,7 @@ export function useWorkflowRunArtifactBytes(options: {
           objectUrl,
           mediaType,
           totalBytes,
+          storedPath,
           loading: false,
           error: null,
         });

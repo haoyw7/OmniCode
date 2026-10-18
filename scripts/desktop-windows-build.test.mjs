@@ -30,7 +30,7 @@ const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const version = "0.7.1-lan.123";
 
 async function fixture(t) {
-  const root = await mkdtemp(join(tmpdir(), "monocode-windows-"));
+  const root = await mkdtemp(join(tmpdir(), "omnicode-windows-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   execFileSync("git", ["init", "-q"], { cwd: root });
   const write = async (path, value) => {
@@ -115,7 +115,7 @@ for (const channel of ["lan", "release"]) {
     const state = "build/windows-lan";
     const inbox = join(root, state, "inbox", runId);
     await write(`${state}/inbox/${runId}/source.tar.gz`, "source archive");
-    await write(`${state}/workspace/.monocode-windows-builder`, "1");
+    await write(`${state}/workspace/.omnicode-windows-builder`, "1");
     await write(`${state}/workspace/src/stale.ts`, "stale");
     await write(`${state}/workspace/target/cache`, "rust cache");
     await write(`${state}/workspace/build/runtime-cache`, "runtime cache");
@@ -141,7 +141,7 @@ for (const channel of ["lan", "release"]) {
             plugins: {
               updater: {
                 endpoints: [
-                  "https://github.com/yyy0107/ohmymonocode/releases/latest/download/latest.json",
+                  "https://github.com/haoyw7/OmniCode/releases/latest/download/latest.json",
                 ],
               },
             },
@@ -167,7 +167,7 @@ for (const channel of ["lan", "release"]) {
         assert.equal(
           config.plugins?.updater.endpoints[0],
           channel === "release"
-            ? "https://github.com/yyy0107/ohmymonocode/releases/latest/download/latest.json"
+            ? "https://github.com/haoyw7/OmniCode/releases/latest/download/latest.json"
             : "http://192.168.0.206/latest.json",
         );
         assert.equal(settings.cwd, join(root, state, "workspace"));
@@ -178,7 +178,7 @@ for (const channel of ["lan", "release"]) {
         const output = join(
           settings.cwd,
           "target/release/bundle/nsis",
-          `MonoCode_${version}_x64-setup.exe`,
+          `OmniCode_${version}_x64-setup.exe`,
         );
         mkdirSync(dirname(output), { recursive: true });
         writeFileSync(output, "MZ built exe");
@@ -353,7 +353,7 @@ for (const failure of [null, "version", "checksum", "ssh"]) {
             version: failure === "version" ? "wrong" : request.version,
             archiveHash: request.archiveHash,
             checked: false,
-            filename: `MonoCode_${version}_x64-setup.exe`,
+            filename: `OmniCode_${version}_x64-setup.exe`,
             sha256: hash("MZ installer"),
             size: "MZ installer".length,
           }),

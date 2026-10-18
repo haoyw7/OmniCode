@@ -234,7 +234,7 @@ describe("mobile unread reply cursors", () => {
     expect(activity.state.entries.two).toBeUndefined();
   });
   it("survives corrupt or unavailable storage and conversations without new protocol fields", () => {
-    localStorage.setItem("monocode.mobileActivity:host", "invalid");
+    localStorage.setItem("omnicode.mobileActivity:host", "invalid");
     const activity = loadMobileActivity("host");
     expect(
       activity.observe([

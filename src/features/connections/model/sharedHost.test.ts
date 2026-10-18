@@ -24,7 +24,7 @@ import { sessionUsesHost } from "./remoteProjects";
 import { loadRecents, projectRailItems, rememberProject, saveProjectRailOrder } from "../../projects/model/recents";
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("./remoteOutbox", () => ({
-  OUTBOX_PREFIX: "monocode.remote-command.v1:",
+  OUTBOX_PREFIX: "omnicode.remote-command.v1:",
   loadRemoteOutbox: vi.fn(async () => undefined),
   outboxKeys: () => [],
   outboxEntry: () => undefined,
@@ -208,7 +208,7 @@ it("runs imported native conversations on the Host and never saves them on the d
 });
 it("removes deleted Host bindings before restoring a desktop workspace", async () => {
   localStorage.setItem(
-    "monocode.remote-tabs.v2",
+    "omnicode.remote-tabs.v2",
     JSON.stringify({ shell: "history", "unknown-shell": "history" }),
   );
   rememberRemoteSession("remote-shell", "history", { environmentId: "other-host", projectId: "other-project" });
@@ -316,7 +316,7 @@ it("imports native history without promoting its project in the sidebar", async 
 
 it("does not overwrite legacy project preferences during pre-settings bootstrap", async () => {
   const legacy = JSON.stringify([{ path: "/old-project", openedAt: 1 }]);
-  localStorage.setItem("monocode.recentProjects", legacy);
+  localStorage.setItem("omnicode.recentProjects", legacy);
   await initializeSharedHost();
-  expect(localStorage.getItem("monocode.recentProjects")).toBe(legacy);
+  expect(localStorage.getItem("omnicode.recentProjects")).toBe(legacy);
 });

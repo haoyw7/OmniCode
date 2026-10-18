@@ -2,8 +2,8 @@ import { normalizeHostUrl } from "./client";
 
 /**
  * Host credentials read from a pairing QR code:
- * `monocode://pair?host=<Host URL>&token=<pairing code>`. The pairing code is
- * exchanged once for a private device credential issued by MonoCode Host.
+ * `omnicode://pair?host=<Host URL>&token=<pairing code>`. The pairing code is
+ * exchanged once for a private device credential issued by OmniCode Host.
  */
 export type PairingOffer = { host: string; token: string };
 
@@ -23,7 +23,7 @@ export function parsePairingOffer(text: string): PairingOffer {
   }
   const host = url.searchParams.get("host");
   const token = normalizePairingCode(url.searchParams.get("token") ?? "");
-  if (url.protocol !== "monocode:" || url.hostname !== "pair" || !host || !token)
+  if (url.protocol !== "omnicode:" || url.hostname !== "pair" || !host || !token)
     throw new Error("This QR code is not a OmniCode pairing code.");
   if (!/^[A-Za-z0-9_-]+$/.test(token))
     throw new Error("Enter a valid device token from OmniCode Host.");

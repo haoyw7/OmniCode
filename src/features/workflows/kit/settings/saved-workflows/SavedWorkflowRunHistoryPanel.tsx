@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Ban, ChevronRight, CircleCheck, Loader2, TriangleAlert } from "../../../../../shared/ui/icons";
-import { TID_WORKFLOW_RUN_ROW, testId, type MonocodeSavedWorkflowRun } from "../../_shims/shared.js";
+import { TID_WORKFLOW_RUN_ROW, testId, type OmniCodeSavedWorkflowRun } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
@@ -31,17 +31,17 @@ export function SavedWorkflowRunHistory({
   onOpenArtifact,
   resolveRunProject,
 }: {
-  runs: readonly MonocodeSavedWorkflowRun[];
+  runs: readonly OmniCodeSavedWorkflowRun[];
   now: number;
   canOpenRun: boolean;
-  onOpenRun: (run: MonocodeSavedWorkflowRun) => void;
+  onOpenRun: (run: OmniCodeSavedWorkflowRun) => void;
   /**
    * 产物 chip → `workflow-artifact` tab。
    * 缺席即 chips 只读。门比「查看实例」松一格：产物不需要 `toolCallId`。
    */
-  onOpenArtifact?: (run: MonocodeSavedWorkflowRun, artifactId: string) => void;
+  onOpenArtifact?: (run: OmniCodeSavedWorkflowRun, artifactId: string) => void;
   /** 传入即在每行渲染项目列（全局工作流跨项目历史）；「查看实例」还要该行 canOpen。 */
-  resolveRunProject?: (run: MonocodeSavedWorkflowRun) => SavedWorkflowRunProject | null;
+  resolveRunProject?: (run: OmniCodeSavedWorkflowRun) => SavedWorkflowRunProject | null;
 }) {
   const { intl } = useWorkflowIntl();
   if (runs.length === 0) {

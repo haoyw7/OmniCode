@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parent
 import sys
 sys.path.insert(0, str(ROOT.parents[1] / "bin"))
 from eval_data import data_path
-_PACKAGE = '_monocode_public_api_bank_vendor'
+_PACKAGE = '_omnicode_public_api_bank_vendor'
 if _PACKAGE not in sys.modules:
     _spec = importlib.util.spec_from_file_location(_PACKAGE, ROOT / 'vendor' / '__init__.py', submodule_search_locations=[str(ROOT / 'vendor')])
     _module = importlib.util.module_from_spec(_spec)

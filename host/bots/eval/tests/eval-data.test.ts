@@ -39,8 +39,8 @@ async function fixture() {
 it("resolves only locked payloads into a source-specific cache outside the checkout", async () => {
   const { root, lock } = await fixture();
   const cache = join(root, "external-cache");
-  vi.stubEnv("MONOCODE_EVAL_DATA_ROOT", "");
-  vi.stubEnv("MONOCODE_EVAL_CACHE", cache);
+  vi.stubEnv("OMNICODE_EVAL_DATA_ROOT", "");
+  vi.stubEnv("OMNICODE_EVAL_CACHE", cache);
   const expected = join(
     cache,
     createHash("sha256").update(lock).digest("hex").slice(0, 16),
@@ -71,7 +71,7 @@ it("prepares only requested sources and passes the returned root to later consum
     join(root, "bin/prepare_data.py"),
     `import json, sys\nassert sys.argv[1:] == ['--sources', 'bfcl']\nprint('preparation progress')\nprint(json.dumps({'root': ${JSON.stringify(cache)}}))\n`,
   );
-  vi.stubEnv("MONOCODE_EVAL_DATA_ROOT", "");
+  vi.stubEnv("OMNICODE_EVAL_DATA_ROOT", "");
   expect(await ensureEvalData(root, ["bfcl", "bfcl"])).toBe(cache);
   expect(evalDataPath(root, "public/bfcl/cases.jsonl")).toBe(
     join(cache, "bfcl/public/bfcl/cases.jsonl"),
@@ -85,7 +85,7 @@ it("reads historical artifacts from the archive and rejects escaped evidence", a
   const { root } = await fixture();
   const archive = await mkdtemp(join(tmpdir(), "eval-archive-test-"));
   directories.push(archive);
-  vi.stubEnv("MONOCODE_EVAL_ARCHIVE_ROOT", archive);
+  vi.stubEnv("OMNICODE_EVAL_ARCHIVE_ROOT", archive);
   await mkdir(join(archive, "reports"));
   await writeFile(join(archive, "reports/summary.json"), "archived evidence");
   expect(evalDataPath(root, "reports/summary.json")).toBe(
@@ -96,9 +96,9 @@ it("reads historical artifacts from the archive and rejects escaped evidence", a
   );
   await expect(
     requireEvalInputPath(root, "reports/missing-run"),
-  ).rejects.toThrow("MONOCODE_EVAL_ARCHIVE_ROOT");
+  ).rejects.toThrow("OMNICODE_EVAL_ARCHIVE_ROOT");
   await expect(readEvalText(root, "reports/missing.json")).rejects.toThrow(
-    "MONOCODE_EVAL_ARCHIVE_ROOT",
+    "OMNICODE_EVAL_ARCHIVE_ROOT",
   );
   await writeFile(join(root, "private.json"), "outside archive");
   await symlink(

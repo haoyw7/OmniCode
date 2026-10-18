@@ -14,10 +14,10 @@ import { test } from "node:test";
 import { publishDesktopUpdate } from "./publish-desktop-update.mjs";
 
 async function fixture(t) {
-  const directory = await mkdtemp(join(tmpdir(), "monocode-desktop-update-"));
+  const directory = await mkdtemp(join(tmpdir(), "omnicode-desktop-update-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
-  const deb = join(directory, "MonoCode_0.7.0_amd64.deb");
-  const appimage = join(directory, "MonoCode_0.7.0_amd64.AppImage");
+  const deb = join(directory, "OmniCode_0.7.0_amd64.deb");
+  const appimage = join(directory, "OmniCode_0.7.0_amd64.AppImage");
   await writeFile(deb, "deb package");
   await writeFile(appimage, "appimage package");
   return {
@@ -60,13 +60,13 @@ test("publishes signed installer-specific targets and a development fallback", a
 test("date labels and download names preserve the native update version and signed bytes", async (t) => {
   const options = await fixture(t);
   const version = `0.7.1-lan.${Date.parse("2026-10-07T15:40:00Z")}`;
-  const deb = join(options.output, "..", `MonoCode_${version}_amd64.deb`);
+  const deb = join(options.output, "..", `OmniCode_${version}_amd64.deb`);
   const appimage = join(
     options.output,
     "..",
-    `MonoCode_${version}_amd64.AppImage`,
+    `OmniCode_${version}_amd64.AppImage`,
   );
-  const nsis = join(options.output, "..", `MonoCode_${version}_x64-setup.exe`);
+  const nsis = join(options.output, "..", `OmniCode_${version}_x64-setup.exe`);
   await copyFile(options.deb, deb);
   await copyFile(options.appimage, appimage);
   await writeFile(nsis, "MZ windows installer");
@@ -86,7 +86,7 @@ test("date labels and download names preserve the native update version and sign
     ["windows-x86_64-nsis", "x64-setup.exe", "MZ windows installer"],
   ]) {
     const entry = manifest.platforms[target];
-    assert.ok(entry.url.endsWith(`/MonoCode_10-07-0840_${suffix}`));
+    assert.ok(entry.url.endsWith(`/OmniCode_10-07-0840_${suffix}`));
     assert.equal(entry.signature, `signed:${content}`);
     assert.equal(
       await readFile(join(options.output, new URL(entry.url).pathname), "utf8"),
@@ -113,7 +113,7 @@ test(
   { skip: process.platform === "win32" },
   async (t) => {
     const options = await fixture(t);
-    const nsis = join(options.output, "..", "MonoCode_0.7.0_x64-setup.exe");
+    const nsis = join(options.output, "..", "OmniCode_0.7.0_x64-setup.exe");
     await writeFile(nsis, "MZ windows installer");
     for (const file of [options.deb, options.appimage, nsis]) {
       await chmod(file, 0o700);
@@ -136,7 +136,7 @@ test(
 
 test("Windows and Linux share one version and the feed stays intact if Windows signing fails", async (t) => {
   const options = await fixture(t);
-  const nsis = join(options.output, "..", "MonoCode_0.7.0_x64-setup.exe");
+  const nsis = join(options.output, "..", "OmniCode_0.7.0_x64-setup.exe");
   await writeFile(nsis, "MZ windows installer");
   const manifest = await publishDesktopUpdate({ ...options, nsis });
   assert.deepEqual(

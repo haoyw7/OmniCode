@@ -11,8 +11,8 @@ afterEach(() => {
 });
 
 function repository() {
-  const cwd = mkdtempSync(join(tmpdir(), "monocode-checkpoint-repo-"));
-  const data = mkdtempSync(join(tmpdir(), "monocode-checkpoint-data-"));
+  const cwd = mkdtempSync(join(tmpdir(), "omnicode-checkpoint-repo-"));
+  const data = mkdtempSync(join(tmpdir(), "omnicode-checkpoint-data-"));
   cleanups.push(cwd, data);
   const git = (...args: string[]) => execFileSync("git", args, { cwd });
   git("init", "-q");

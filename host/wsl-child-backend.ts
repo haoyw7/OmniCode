@@ -122,7 +122,7 @@ export class WslChildBackend implements ChildBackend {
       if (!(error instanceof UnsupportedProviderRuntimeError)) throw error;
       for (const name of names[provider]) {
         const found = await this.rpc.request<{ code: number; stdout: string }>("exec", {
-          command: "/bin/sh", args: ["-c", 'command -v -- "$1"', "monocode", name], timeout: 10_000,
+          command: "/bin/sh", args: ["-c", 'command -v -- "$1"', "omnicode", name], timeout: 10_000,
         });
         if (found.code === 0 && found.stdout.trim().startsWith("/"))
           return { command: found.stdout.trim(), fallback: true, ...(provider === "antigravity" ? { args: ["--uid="] } : {}) };
@@ -166,7 +166,7 @@ export class WslChildBackend implements ChildBackend {
           try {
             const result = await this.rpc.request<{ pid: number }>("process.spawn", { stream: id,
               command: runtime.command, args: runtimeArguments(runtime, prepared.args), cwd: args.cwd,
-              env: { MONOCODE_HOST: "1", ...environment, ...prepared.env } });
+              env: { OMNICODE_HOST: "1", ...environment, ...prepared.env } });
             if (this.earlyExits.get(id) !== result.pid) {
               this.children.set(id, result.pid);
               // Linux PIDs cannot be checked from the Windows registry. Keep

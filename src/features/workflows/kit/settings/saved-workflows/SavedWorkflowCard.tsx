@@ -7,8 +7,8 @@ import {
   TID_WORKFLOW_ACTION_DELETE,
   TID_WORKFLOW_ACTION_MOVE,
   testId,
-  type MonocodeSavedWorkflowEntry,
-  type MonocodeSavedWorkflowRun,
+  type OmniCodeSavedWorkflowEntry,
+  type OmniCodeSavedWorkflowRun,
 } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import {
@@ -35,7 +35,7 @@ function SavedWorkflowLastRunBadge({
   run,
   now,
 }: {
-  run: MonocodeSavedWorkflowRun | undefined;
+  run: OmniCodeSavedWorkflowRun | undefined;
   now: number;
 }) {
   const { intl } = useWorkflowIntl();
@@ -86,17 +86,17 @@ function SavedWorkflowLastRunBadge({
 }
 
 interface SavedWorkflowCardProps {
-  entry: MonocodeSavedWorkflowEntry;
-  lastRun: MonocodeSavedWorkflowRun | undefined;
+  entry: OmniCodeSavedWorkflowEntry;
+  lastRun: OmniCodeSavedWorkflowRun | undefined;
   now: number;
   busy?: boolean;
-  onOpen: (entry: MonocodeSavedWorkflowEntry) => void;
-  onRun: (entry: MonocodeSavedWorkflowEntry) => void;
-  onRevise: (entry: MonocodeSavedWorkflowEntry) => void;
-  onCopyPath: (entry: MonocodeSavedWorkflowEntry) => void;
+  onOpen: (entry: OmniCodeSavedWorkflowEntry) => void;
+  onRun: (entry: OmniCodeSavedWorkflowEntry) => void;
+  onRevise: (entry: OmniCodeSavedWorkflowEntry) => void;
+  onCopyPath: (entry: OmniCodeSavedWorkflowEntry) => void;
   /** 作用域动作：项目档「提升为全局」（AI 概括）/ 全局档「移到项目…」；仅在传入时出现。 */
-  onMove?: (entry: MonocodeSavedWorkflowEntry) => void;
-  onDelete: (entry: MonocodeSavedWorkflowEntry) => void;
+  onMove?: (entry: OmniCodeSavedWorkflowEntry) => void;
+  onDelete: (entry: OmniCodeSavedWorkflowEntry) => void;
 }
 
 /**

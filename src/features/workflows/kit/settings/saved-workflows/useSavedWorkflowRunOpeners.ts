@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { MonocodeSavedWorkflowRun } from "../../_shims/shared.js";
+import type { OmniCodeSavedWorkflowRun } from "../../_shims/shared.js";
 import type {
   SavedWorkflowsOpenArtifactParams,
   SavedWorkflowsOpenRunParams,
@@ -31,17 +31,17 @@ interface SavedWorkflowRunOpenTarget {
  */
 export function useSavedWorkflowRunOpeners(options: {
   /** 该行归属的项目；返回 null 即两个入口都关闭（全局档里 cwd 对应的项目没打开）。 */
-  resolveTarget: (run: MonocodeSavedWorkflowRun) => SavedWorkflowRunOpenTarget | null;
+  resolveTarget: (run: OmniCodeSavedWorkflowRun) => SavedWorkflowRunOpenTarget | null;
   onOpenWorkflowRun?: (params: SavedWorkflowsOpenRunParams) => void;
   onOpenWorkflowArtifact?: (params: SavedWorkflowsOpenArtifactParams) => void;
 }): {
-  handleOpenRun: (run: MonocodeSavedWorkflowRun, workflowName: string) => void;
-  handleOpenArtifact: (run: MonocodeSavedWorkflowRun, artifactId: string) => void;
+  handleOpenRun: (run: OmniCodeSavedWorkflowRun, workflowName: string) => void;
+  handleOpenArtifact: (run: OmniCodeSavedWorkflowRun, artifactId: string) => void;
 } {
   const { onOpenWorkflowArtifact, onOpenWorkflowRun, resolveTarget } = options;
 
   const handleOpenRun = useCallback(
-    (run: MonocodeSavedWorkflowRun, workflowName: string) => {
+    (run: OmniCodeSavedWorkflowRun, workflowName: string) => {
       if (!run.parentSessionId || !run.toolCallId) return;
       const target = resolveTarget(run);
       if (!target) return;
@@ -58,11 +58,11 @@ export function useSavedWorkflowRunOpeners(options: {
   );
 
   const handleOpenArtifact = useCallback(
-    (run: MonocodeSavedWorkflowRun, artifactId: string) => {
+    (run: OmniCodeSavedWorkflowRun, artifactId: string) => {
       if (!run.parentSessionId) return;
       const target = resolveTarget(run);
       if (!target) return;
-      // 行上的 chip 载荷（`MonocodeSavedWorkflowRun.artifacts`）带最新版的 `contentType`：
+      // 行上的 chip 载荷（`OmniCodeSavedWorkflowRun.artifacts`）带最新版的 `contentType`：
       // 终点据它把 html 产物直接开成浏览器 tab。老行整个 `artifacts` 缺席，少一个键是退化不是错误。
       const artifact = run.artifacts?.find((candidate) => candidate.id === artifactId);
       onOpenWorkflowArtifact?.({

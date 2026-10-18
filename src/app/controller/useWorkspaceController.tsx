@@ -270,7 +270,6 @@ import {
   upsertSession,
 } from "../../features/sessions/data/sessionStore";
 import { useUnseenFinishedSessions } from "../../features/sessions/hooks/useUnseenFinishedSessions";
-import { liveAgentsFromSessions } from "../../features/sessions/model/liveAgents";
 import {
   SECOND_OPINION_TITLE,
   buildSecondOpinionRequest,
@@ -1273,14 +1272,6 @@ export function useWorkspaceController({
     sessions,
     busySessionIds,
     activeSessionId,
-  );
-
-  const liveAgents = useMemo(
-    () =>
-      liveAgentsEnabled
-        ? liveAgentsFromSessions(sessions, unseenFinishedIds)
-        : [],
-    [liveAgentsEnabled, sessions, unseenFinishedIds],
   );
 
   const approvalToasts = useMemo(
@@ -3277,7 +3268,7 @@ export function useWorkspaceController({
   useEffect(() => {
     const onEscape = (event: KeyboardEvent) => {
       const target = event.target instanceof Element ? event.target : null;
-      const inTerminal = Boolean(target?.closest(".monocode-terminal"));
+      const inTerminal = Boolean(target?.closest(".omnicode-terminal"));
       const activeTabId = activeTabIdRef.current;
       const sessionId = focusedBusyAgentSessionId(
         activeTabId,
@@ -3543,13 +3534,6 @@ export function useWorkspaceController({
       retry: () => {},
     }),
     [onOpenApprovalSession, queueWorkerPanes],
-  );
-
-  const onSelectLiveAgent = useCallback(
-    (sessionId: string) => {
-      onOpenApprovalSession(sessionId);
-    },
-    [onOpenApprovalSession],
   );
 
   tabProjectsRef.current = new Map(
@@ -4208,9 +4192,7 @@ export function useWorkspaceController({
     onOpenAssistant,
     sidebarCwd,
     recents,
-    liveAgents,
     active,
-    onSelectLiveAgent,
     onGoToFile,
     onOpenInbox,
     notesEnabled,

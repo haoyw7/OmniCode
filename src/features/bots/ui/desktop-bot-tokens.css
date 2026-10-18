@@ -1,5 +1,5 @@
 /* Grok 0.30.0 static REA definitions.
-   Dark colors and motion are MonoCode adaptations, not measured Grok values. */
+   Dark colors and motion are OmniCode adaptations, not measured Grok values. */
 .desktop-bots-workspace.assistant-chat {
   --bots-navigation-width: var(--bots-sidebar-preference, 280px); /* S077: expanded 240–400, collapsed 88 */
   --bots-inspector-width: 320px; /* S078 */

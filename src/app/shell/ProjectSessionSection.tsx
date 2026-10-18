@@ -118,7 +118,7 @@ type ProjectSessionSectionProps = SidebarProps & {
   onClearQuery?: () => void;
 };
 const REMINDERS_COLOR = "#f59e0b";
-const PROJECT_SESSION_SELECTION = "monocode:project-session-selection";
+const PROJECT_SESSION_SELECTION = "omnicode:project-session-selection";
 
 /** Initial preview and each "Show more" step in a project tree. */
 const TREE_PREVIEW_COUNT = 5;
@@ -845,7 +845,7 @@ function ProjectSessionSectionComponent({
               },
               {
                 kind: "item" as const,
-                id: "copy-monocode-session-id",
+                id: "copy-omnicode-session-id",
                 label: uiT("OmniCode session ID"),
               },
             ],
@@ -964,7 +964,7 @@ function ProjectSessionSectionComponent({
       setRenamingSessionId(sessionId);
       return;
     }
-    if (id === "copy-harness-session-id" || id === "copy-monocode-session-id") {
+    if (id === "copy-harness-session-id" || id === "copy-omnicode-session-id") {
       const value =
         id === "copy-harness-session-id" ? providerSessionId : sessionId;
       if (value) {

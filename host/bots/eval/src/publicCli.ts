@@ -35,7 +35,7 @@ const { values, positionals } = parseArgs({
     "timeout-ms": { type: "string", default: "60000" },
   },
 });
-const root = process.env.MONOCODE_EVAL_ROOT!,
+const root = process.env.OMNICODE_EVAL_ROOT!,
   command = positionals[0] ?? "list";
 if (!["list", "run"].includes(command))
   throw Error(
@@ -99,7 +99,7 @@ if (command === "list") {
   );
   const adapter =
     mode === "pi" ? new PiAdapter(values.model, budget, timeoutMs) : undefined;
-  const { brain } = await import(process.env.MONOCODE_EVAL_BRAIN_MODULE!);
+  const { brain } = await import(process.env.OMNICODE_EVAL_BRAIN_MODULE!);
   const sourceFiles: Record<string, string> = {};
   const implementationFiles: Record<string, string> = {};
   for (const path of [
@@ -147,7 +147,7 @@ if (command === "list") {
     safety:
       "No native CLI tools; fresh credential-free Python process per case; audited fixtures only; network/subprocess/file writes denied in bridge",
     scope:
-      "actual MonoCode buildBrainPrompt through existing Pi CLI; local public tools; not full Host/UI E2E or official benchmark score",
+      "actual OmniCode buildBrainPrompt through existing Pi CLI; local public tools; not full Host/UI E2E or official benchmark score",
   };
   await writeFile(
     join(out, "manifest.json"),
@@ -196,7 +196,7 @@ if (command === "list") {
   );
   await writeFile(
     join(out, "report.md"),
-    `# Public source run\n\nMode: ${mode === "reference" ? "Harness reference validation — NOT an agent score" : "Real Pi + MonoCode brain prompt + isolated public tools"}.\n\n| Source | Total | Pass | Fail | Environment | Budget | Local metric pass rate |\n|---|---:|---:|---:|---:|---:|---:|\n${rows.join("\n")}\n\n${summary.denominator}\n\nRequests attempted: ${budget.requests}; observed usage: ${summary.usage.requests} requests, ${summary.usage.inputTokens} input / ${summary.usage.outputTokens} output tokens, reported nominal cost USD ${summary.usage.costUsd ?? "unavailable"}. Latency sum ${summary.usage.latencyMs}ms.\n\nNo LLM judge calls; formal judge remains unavailable under the existing failed calibration gate. Full case hashes, traces, checks, errors and source provenance: results.jsonl; exact adapter hashes and selection: manifest.json.\n\nFailures:\n${
+    `# Public source run\n\nMode: ${mode === "reference" ? "Harness reference validation — NOT an agent score" : "Real Pi + OmniCode brain prompt + isolated public tools"}.\n\n| Source | Total | Pass | Fail | Environment | Budget | Local metric pass rate |\n|---|---:|---:|---:|---:|---:|---:|\n${rows.join("\n")}\n\n${summary.denominator}\n\nRequests attempted: ${budget.requests}; observed usage: ${summary.usage.requests} requests, ${summary.usage.inputTokens} input / ${summary.usage.outputTokens} output tokens, reported nominal cost USD ${summary.usage.costUsd ?? "unavailable"}. Latency sum ${summary.usage.latencyMs}ms.\n\nNo LLM judge calls; formal judge remains unavailable under the existing failed calibration gate. Full case hashes, traces, checks, errors and source provenance: results.jsonl; exact adapter hashes and selection: manifest.json.\n\nFailures:\n${
       results
         .filter((r) => r.status !== "passed")
         .map(

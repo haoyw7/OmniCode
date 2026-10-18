@@ -24,7 +24,7 @@ export const promptTitle = (transcript: NativeTranscript, provider: NativeSessio
   );
 /**
  * Imported titles wait for the original agent's title. The prompt-derived
- * placeholder never triggers MonoCode's own title generation.
+ * placeholder never triggers OmniCode's own title generation.
  */
 export const NATIVE_PENDING_TITLE: SessionTitleState = {
   source: "placeholder",
@@ -35,7 +35,7 @@ export const NATIVE_PENDING_TITLE: SessionTitleState = {
 
 /**
  * Use the title the agent generated (or the user set in its CLI), now or when
- * it appears later. A title renamed in MonoCode stays manual and always wins.
+ * it appears later. A title renamed in OmniCode stays manual and always wins.
  */
 export function withNativeTitle(session: Session, raw: string | undefined): Session {
   return session.providerSessionId

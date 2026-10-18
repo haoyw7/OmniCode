@@ -13,6 +13,7 @@ import {
   isAppPageKind,
   newAppViewWorkspaceTab,
   newAgentTab,
+  newWorkflowArtifactTab,
   newChangesTab,
   newCommitTab,
   newFileTab,
@@ -478,9 +479,11 @@ describe("collectWorkspaceSnapshot", () => {
     expect(snapshot.projectTerminals).toEqual([]);
   });
 
-  it("drops agent tabs, and the pane holding only them", () => {
+  it.each(["agent", "workflow artifact"])("drops %s tabs, and the pane holding only them", (kind) => {
     const file = newFileTab("/tmp/a/README.md", "/tmp/a");
-    const agent = newAgentTab("Audit the UI", "/tmp/a", {
+    const agent = kind === "workflow artifact" ? newWorkflowArtifactTab("Report", "/tmp/a", {
+      parentSessionId: "s1", runId: "run", artifactId: "report",
+    }) : newAgentTab("Audit the UI", "/tmp/a", {
       sessionId: "worker",
       leadId: "s1",
       harness: "codex",

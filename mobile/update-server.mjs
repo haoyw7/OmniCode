@@ -11,10 +11,10 @@ export const config = JSON.parse(
   readFileSync(new URL("./update-config.json", import.meta.url)),
 );
 export const updateDirectory = () =>
-  process.env.MONOCODE_MOBILE_UPDATE_DIR ||
+  process.env.OMNICODE_MOBILE_UPDATE_DIR ||
   join(
     process.env.XDG_DATA_HOME || join(homedir(), ".local/share"),
-    "monocode/mobile-updates",
+    "omnicode/mobile-updates",
   );
 
 export function createUpdateServer(directory = updateDirectory()) {
@@ -36,13 +36,13 @@ export function createUpdateServer(directory = updateDirectory()) {
       res.end(
         req.method === "HEAD"
           ? undefined
-          : JSON.stringify({ service: "monocode-mobile-updates" }),
+          : JSON.stringify({ service: "omnicode-mobile-updates" }),
       );
       return;
     }
     if (
       path !== "/latest.json" &&
-      !/^\/apk\/monocode-\d+\.apk$/.test(path || "")
+      !/^\/apk\/omnicode-\d+\.apk$/.test(path || "")
     ) {
       res.writeHead(404).end();
       return;
@@ -92,7 +92,7 @@ export async function ensureUpdateServer() {
       const response = await fetch(`${config.baseUrl}/health`, {
         signal: AbortSignal.timeout(1000),
       });
-      return (await response.json()).service === "monocode-mobile-updates";
+      return (await response.json()).service === "omnicode-mobile-updates";
     } catch {
       return false;
     }

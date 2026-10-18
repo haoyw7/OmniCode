@@ -1,4 +1,4 @@
-// Monocode shim: ZCode's conversation projection, built from the Host session the
+// OmniCode shim: ZCode's conversation projection, built from the Host session the
 // lease watches — its live `workflowRuns` and rows derived from run-card blocks.
 import { useMemo, useSyncExternalStore } from "react";
 import type { Session } from "../../../sessions/model/session";

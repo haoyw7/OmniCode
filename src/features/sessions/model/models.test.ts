@@ -259,7 +259,7 @@ describe("provider defaults", () => {
 
   it("falls back to lastModel for the default provider when no map exists", () => {
     localStorage.setItem(
-      "monocode.lastModel",
+      "omnicode.lastModel",
       JSON.stringify({ harness: "cursor", model: "cursor:grok-4.6" }),
     );
     expect(preferredModelId("cursor")).toBe("cursor:grok-4.6");
@@ -447,12 +447,12 @@ describe("live catalog overlays", () => {
     };
     setHarnessModels("pi", [opusLive]);
     expect(hasFreshCatalog("pi")).toBe(true);
-    const saved = localStorage.getItem("monocode.liveModelCatalogs");
+    const saved = localStorage.getItem("omnicode.liveModelCatalogs");
 
     // A new run: memory is empty, storage holds the last catalog.
     resetHarnessModelOverlays();
     localStorage.setItem(
-      "monocode.liveModelCatalogs",
+      "omnicode.liveModelCatalogs",
       saved!.replace("]", ',{"id":"omp:x","harness":"pi","name":"Misfiled"}]'),
     );
     hydrateCachedModelCatalogs();

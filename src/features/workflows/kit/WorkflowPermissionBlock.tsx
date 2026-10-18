@@ -1,7 +1,7 @@
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { } from "../../../shared/ui/icons";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import type { MonocodePermissionRequest } from "./_shims/shared.js";
+import type { OmniCodePermissionRequest } from "./_shims/shared.js";
 import { CodeBlock } from "./components/ai-elements/code-block.js";
 import {
   Collapsible,
@@ -111,7 +111,7 @@ function WorkflowSavedSourceBadge({ saved }: { saved: WorkflowSavedSource }) {
 export function WorkflowPermissionBlock({
   request,
 }: {
-  request: MonocodePermissionRequest;
+  request: OmniCodePermissionRequest;
   /** 会话模型清单的作用域（PermissionDialog 给）：只用来把 provider id 换成 provider 名。 */
   workspacePath?: string;
 }) {

@@ -1,7 +1,7 @@
 {
-  "baseUrl": "https://github.com/yyy0107/ohmymonocode/releases/latest/download",
+  "baseUrl": "https://github.com/haoyw7/OmniCode/releases/latest/download",
   "baseUrls": [],
   "manifestPath": "/mobile-latest.json",
   "downloadPrefix": "/",
-  "packageId": "com.monocode.mobile"
+  "packageId": "com.omnicode.mobile"
 }

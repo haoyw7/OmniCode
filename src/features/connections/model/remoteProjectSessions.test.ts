@@ -88,7 +88,7 @@ afterEach(async () => {
 
 it("preserves collapsed history and treats a successfully loaded empty list as loaded", async () => {
   const path = project("collapsed");
-  localStorage.setItem(`monocode.remote-history.v2:${path}`, JSON.stringify([summary("Cached")]));
+  localStorage.setItem(`omnicode.remote-history.v2:${path}`, JSON.stringify([summary("Cached")]));
   await render([{ path, enabled: false, name: "collapsed" }]);
   expect(views.get("collapsed")).toMatchObject({ loaded: true, pending: false, offline: false });
   expect(views.get("collapsed")!.sessions[0].title).toBe("Cached");
@@ -106,7 +106,7 @@ it("keeps idle polls of an unchanged list silent and announces real changes", as
   await prefetchRemoteProjectSessions(path);
   const first = cachedRemoteSessions(path);
   const updates = vi.fn();
-  window.addEventListener("monocode:remote-history-updated", updates);
+  window.addEventListener("omnicode:remote-history-updated", updates);
   try {
     await prefetchRemoteProjectSessions(path);
     expect(updates).not.toHaveBeenCalled();
@@ -117,7 +117,7 @@ it("keeps idle polls of an unchanged list silent and announces real changes", as
     expect(updates).toHaveBeenCalledOnce();
     expect(cachedRemoteSessions(path)[0].title).toBe("Renamed");
   } finally {
-    window.removeEventListener("monocode:remote-history-updated", updates);
+    window.removeEventListener("omnicode:remote-history-updated", updates);
   }
 });
 
@@ -125,7 +125,7 @@ it("distinguishes an unloaded project from successful empty and restored cache l
   const empty = project("empty-readiness");
   const restored = project("restored-readiness");
   const failed = project("failed-readiness");
-  localStorage.setItem(`monocode.remote-history.v2:${restored}`, "[]");
+  localStorage.setItem(`omnicode.remote-history.v2:${restored}`, "[]");
   expect(hasCachedRemoteProjectSessions(empty)).toBe(false);
   expect(hasCachedRemoteProjectSessions(restored)).toBe(true);
   await prefetchRemoteProjectSessions(empty);
@@ -139,7 +139,7 @@ it("distinguishes an unloaded project from successful empty and restored cache l
 it("exposes missing remote registrations as scoped offline errors without issuing IPC", async () => {
   const missing = `remote://unregistered/projects/${sequence}/missing`;
   const restored = `remote://unregistered/projects/${sequence}/cached`;
-  localStorage.setItem(`monocode.remote-history.v2:${restored}`, JSON.stringify([summary("Saved remote history")]));
+  localStorage.setItem(`omnicode.remote-history.v2:${restored}`, JSON.stringify([summary("Saved remote history")]));
   await render([
     { path: missing, enabled: true, name: "missing" },
     { path: restored, enabled: false, name: "restored" },
@@ -249,7 +249,7 @@ it("does not let a request from a disconnected machine overwrite its replacement
 it("keeps failures and cached fallback scoped to the affected project", async () => {
   const failed = project("failed");
   const healthy = project("healthy");
-  localStorage.setItem(`monocode.remote-history.v2:${failed}`, JSON.stringify([summary("Recovery") ]));
+  localStorage.setItem(`omnicode.remote-history.v2:${failed}`, JSON.stringify([summary("Recovery") ]));
   list = async (id) => {
     if (id === "failed") throw new Error("SSH refused the request");
     return [summary("Current")];
@@ -273,7 +273,7 @@ it("keeps failures and cached fallback scoped to the affected project", async ()
 
 it("retains disconnected cache and refreshes a collapsed subscriber once on retry", async () => {
   const path = project("disconnected");
-  localStorage.setItem(`monocode.remote-history.v2:${path}`, JSON.stringify([summary("Offline cache")]));
+  localStorage.setItem(`omnicode.remote-history.v2:${path}`, JSON.stringify([summary("Offline cache")]));
   await disconnectMachine(machine.id);
   await render([{ path, enabled: false, name: "view" }]);
   await act(async () => {
@@ -322,7 +322,7 @@ it("keeps the same Host session id distinct between project caches", async () =>
 
 it("caches history without native block IDs and evicts other projects when storage is full", async () => {
   const path = project("trimmed");
-  const other = `monocode.remote-history.v2:${project("other")}`;
+  const other = `omnicode.remote-history.v2:${project("other")}`;
   localStorage.setItem(other, JSON.stringify([summary("Other")]));
   const nativeSession = {
     provider: "codex", providerSessionId: "native", path: "/tmp/native.jsonl",
@@ -338,7 +338,7 @@ it("caches history without native block IDs and evicts other projects when stora
   await prefetchRemoteProjectSessions(path);
   spy.mockRestore();
   expect(cachedRemoteSessions(path)[0].nativeSession?.blockIds).toEqual(["a", "b"]);
-  const stored = JSON.parse(localStorage.getItem(`monocode.remote-history.v2:${path}`)!);
+  const stored = JSON.parse(localStorage.getItem(`omnicode.remote-history.v2:${path}`)!);
   expect(stored[0].nativeSession).toEqual({ ...nativeSession, blockIds: [], nativeIds: undefined });
   expect(localStorage.getItem(other)).toBeNull();
 });

@@ -3,7 +3,6 @@ import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowDownCircle,
-  Bot,
   Inbox,
   Loader,
   Search,
@@ -27,8 +26,6 @@ import {
   type RecentProject,
 } from "../../features/projects/model/recents";
 import { InboxNotificationMenu } from "../../features/inbox/ui/InboxNotificationMenu";
-import { LiveAgentsPreview } from "../../features/sessions/ui/LiveAgentsPreview";
-import type { LiveAgent } from "../../features/sessions/model/liveAgents";
 import type { InstalledUpdate } from "../model/updateNotice";
 import { UpdateAvailableDialog } from "./UpdateAvailableDialog";
 import { UpdateRailCard } from "./UpdateRailCard";
@@ -51,9 +48,6 @@ export type ActivityBarProps = {
   chromeInMenuBar?: boolean;
   cwd: string;
   recents: RecentProject[];
-  liveAgents?: LiveAgent[];
-  activeSessionId?: string;
-  onSelectAgent?: (sessionId: string) => void;
   onSearch?: () => void;
   onOpenInbox?: () => void;
   onOpenNotes?: () => void;
@@ -81,9 +75,6 @@ export function ActivityBar({
   chromeInMenuBar = false,
   cwd,
   recents,
-  liveAgents = [],
-  activeSessionId,
-  onSelectAgent,
   onSearch,
   onOpenInbox,
   onOpenNotes,
@@ -114,7 +105,7 @@ export function ActivityBar({
   const quickOpenShortcut = useCommandShortcut("App: Go to File");
   const quickOpenLabel = useShortcutLabel("Quick Open", "App: Go to File");
   const settingsLabel = useShortcutLabel("Settings", "App: Settings");
-  const [popup, setPopup] = useState<"agents" | "updates" | null>(
+  const [popup, setPopup] = useState<"updates" | null>(
     null,
   );
   const [inboxMenu, setInboxMenu] = useState<{ x: number; y: number } | null>(
@@ -126,7 +117,6 @@ export function ActivityBar({
     setInboxMenu(null);
   }, [visible]);
   const inboxTrigger = useRef<HTMLElement | null>(null);
-  const agentsAnchor = useRef<HTMLButtonElement>(null);
   const snapshot = updateStatus?.snapshot;
   const actionable = updateStatus?.actionable ?? false;
   const showUpdates =
@@ -226,19 +216,6 @@ export function ActivityBar({
         <div
           className={`flex shrink-0 flex-col ${row ? "gap-1" : "gap-1.5 pt-1.5"}`}
         >
-          {liveAgents.length > 0 ? (
-            <ActivityAction
-              row={row}
-              ref={agentsAnchor}
-              label={t("Working agents, {count}", { count: liveAgents.length })}
-              text={t("Working agents")}
-              icon={Bot}
-              dot={liveAgents.some((agent) => agent.needsApproval)}
-              active={popup === "agents"}
-              expanded={popup === "agents"}
-              onClick={() => togglePopup("agents")}
-            />
-          ) : null}
           <div className={layout === "sidebar-footer" ? "flex items-center gap-1" : undefined}>
             <div data-activity-settings className={layout === "sidebar-footer" ? "relative min-w-0 flex-1" : "relative"}>
               <ActivityAction
@@ -288,32 +265,6 @@ export function ActivityBar({
           side={popoverSide}
         />
       ) : null}
-      <PresenceBoundary propagate>{popup === "agents" ? (
-        <Popover
-          anchor={agentsAnchor}
-          side={popoverSide}
-          align={row ? "start" : "end"}
-          width={280}
-          maxHeight={500}
-          onDismiss={(reason) => {
-            setPopup(null);
-            if (reason === "escape") agentsAnchor.current?.focus();
-          }}
-          role="dialog"
-          aria-label={t("Working agents")}
-          className="py-2"
-        >
-          <LiveAgentsPreview
-            minimumAgents={1}
-            agents={liveAgents}
-            activeSessionId={activeSessionId}
-            onSelect={(id) => {
-              setPopup(null);
-              onSelectAgent?.(id);
-            }}
-          />
-        </Popover>
-      ) : null}</PresenceBoundary>
       <PresenceBoundary>{popup === "updates" && actionable && updateStatus ? (
         <UpdateAvailableDialog
           snapshot={updateStatus.snapshot}

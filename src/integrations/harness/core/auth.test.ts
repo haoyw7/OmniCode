@@ -92,7 +92,7 @@ describe("harness login", () => {
   it("keeps provider-owned browser login for harnesses without account profiles", async () => {
     const login = loginHarness("cursor");
     await vi.waitFor(() => expect(child.watchChild).toHaveBeenCalledOnce());
-    expect(child.spawnChild).toHaveBeenCalledWith("monocode-provider-login-test-window-cursor", "/bin/agent", ["login"], "/home/alice", undefined, "cursor");
+    expect(child.spawnChild).toHaveBeenCalledWith("omnicode-provider-login-test-window-cursor", "/bin/agent", ["login"], "/home/alice", undefined, "cursor");
     const onExit = child.watchChild.mock.calls[0]?.[2] as ((code: number | null) => void) | undefined;
     onExit?.(0);
     await expect(login).resolves.toBeUndefined();

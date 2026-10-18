@@ -287,7 +287,7 @@ export class TurnCheckpoints {
       const saved = JSON.parse(await readFile(join(dir, "turns", entry), "utf8")) as { repo?: string };
       if (saved.repo) repos.add(saved.repo);
     }
-    const prefix = `refs/monocode/checkpoints/${sessionId}/`;
+    const prefix = `refs/omnicode/checkpoints/${sessionId}/`;
     for (const repo of repos) {
       if (!(await machineFs.lstat(repo).catch(() => undefined))?.isDirectory()) continue;
       const refs = (await runGit(repo, ["for-each-ref", "--format=%(refname)", prefix])).toString("utf8");
@@ -325,7 +325,7 @@ function completedTurn(review: TurnReview): RecordedTurn {
 }
 
 function turnRef(session: string, turn: string, side: string): string {
-  return `refs/monocode/checkpoints/${session}/${turn}/${side}`;
+  return `refs/omnicode/checkpoints/${session}/${turn}/${side}`;
 }
 
 function validateId(value: string, label: string) {
@@ -411,13 +411,13 @@ async function captureWorkspace(root: string, reference: string): Promise<string
   const sparse = await runGit(root, ["config", "--bool", "core.sparseCheckout"]).catch(() => Buffer.alloc(0));
   if (sparse.toString("utf8").startsWith("true"))
     throw new Error("Workspace checkpoints are unavailable for sparse checkouts");
-  const index = machinePath.join(currentMachineIO().key === "local" ? tmpdir() : "/tmp", `monocode-checkpoint-${randomUUID()}`);
+  const index = machinePath.join(currentMachineIO().key === "local" ? tmpdir() : "/tmp", `omnicode-checkpoint-${randomUUID()}`);
   const env = {
     GIT_INDEX_FILE: index,
-    GIT_AUTHOR_NAME: "MonoCode",
-    GIT_AUTHOR_EMAIL: "checkpoint@monocode.local",
-    GIT_COMMITTER_NAME: "MonoCode",
-    GIT_COMMITTER_EMAIL: "checkpoint@monocode.local",
+    GIT_AUTHOR_NAME: "OmniCode",
+    GIT_AUTHOR_EMAIL: "checkpoint@omnicode.local",
+    GIT_COMMITTER_NAME: "OmniCode",
+    GIT_COMMITTER_EMAIL: "checkpoint@omnicode.local",
   };
   const durable = ["-c", "core.fsync=objects,reference", "-c", "core.fsyncMethod=fsync"];
   const run = (args: string[]) => runGit(root, args, env);
@@ -426,7 +426,7 @@ async function captureWorkspace(root: string, reference: string): Promise<string
     await run(hasHead ? ["read-tree", "HEAD"] : ["read-tree", "--empty"]);
     await run([...durable, "add", "-A", "--", "."]);
     const tree = (await run([...durable, "write-tree"])).toString("utf8").trim();
-    const commit = (await run([...durable, "commit-tree", tree, "-m", "MonoCode workspace checkpoint"]))
+    const commit = (await run([...durable, "commit-tree", tree, "-m", "OmniCode workspace checkpoint"]))
       .toString("utf8").trim();
     await run([...durable, "update-ref", reference, commit]);
     return commit;

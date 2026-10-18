@@ -9,16 +9,16 @@ import java.time.format.DateTimeFormatter
 def mobileRoot = rootProject.projectDir.parentFile
 def lanConfig = new JsonSlurper().parse(new File(mobileRoot, 'update-config.json'))
 def releaseUpdateConfig = new JsonSlurper().parse(new File(mobileRoot, 'update-config.release.json'))
-def lanUpdates = System.getenv('MONOCODE_UPDATE_CHANNEL') == 'lan'
+def lanUpdates = System.getenv('OMNICODE_UPDATE_CHANNEL') == 'lan'
 def updateConfig = lanUpdates ? lanConfig : releaseUpdateConfig
 def projectVersion = new JsonSlurper().parse(new File(mobileRoot.parentFile, 'package.json')).version
 // GitHub builds use the project version; explicit LAN builds keep the date label.
-def buildVersionName = providers.gradleProperty('monocodeVersionName').getOrElse(
+def buildVersionName = providers.gradleProperty('omnicodeVersionName').getOrElse(
     lanUpdates ? DateTimeFormatter.ofPattern('MM-dd-HHmm')
         .withZone(ZoneId.of('America/Los_Angeles')).format(Instant.now()) : projectVersion)
-def updateRoot = new File(System.getenv('MONOCODE_MOBILE_UPDATE_DIR') ?: new File(
+def updateRoot = new File(System.getenv('OMNICODE_MOBILE_UPDATE_DIR') ?: new File(
     System.getenv('XDG_DATA_HOME') ?: new File(System.getProperty('user.home'), '.local/share').path,
-    'monocode/mobile-updates').path)
+    'omnicode/mobile-updates').path)
 def allocatesBuild = gradle.startParameter.taskNames.any {
     it.tokenize(':').last() ==~ /(?i)(assemble.*|install.*|package.*|bundle.*|build)/
 }
@@ -47,17 +47,17 @@ android {
         versionCode nextCode
         versionName buildVersionName
         def updateSources = ([updateConfig.baseUrl] + (updateConfig.baseUrls ?: [])).unique()
-        buildConfigField 'String[]', 'MONOCODE_UPDATE_BASE_URLS',
+        buildConfigField 'String[]', 'OMNICODE_UPDATE_BASE_URLS',
             'new String[]{' + updateSources.collect { JsonOutput.toJson(it) }.join(',') + '}'
-        buildConfigField 'String', 'MONOCODE_UPDATE_DOWNLOAD_PREFIX',
+        buildConfigField 'String', 'OMNICODE_UPDATE_DOWNLOAD_PREFIX',
             JsonOutput.toJson(lanUpdates ? '/apk/' : releaseUpdateConfig.downloadPrefix)
     }
     buildTypes {
         release {
             def updateSources = ([releaseUpdateConfig.baseUrl] + releaseUpdateConfig.baseUrls).unique()
-            buildConfigField 'String[]', 'MONOCODE_UPDATE_BASE_URLS',
+            buildConfigField 'String[]', 'OMNICODE_UPDATE_BASE_URLS',
                 'new String[]{' + updateSources.collect { JsonOutput.toJson(it) }.join(',') + '}'
-            buildConfigField 'String', 'MONOCODE_UPDATE_DOWNLOAD_PREFIX',
+            buildConfigField 'String', 'OMNICODE_UPDATE_DOWNLOAD_PREFIX',
                 JsonOutput.toJson(releaseUpdateConfig.downloadPrefix)
         }
     }
@@ -65,7 +65,7 @@ android {
 
 android.applicationVariants.all { variant ->
     // GitHub Release builds never advance the LAN feed, even when signed.
-    if (lanUpdates && variant.buildType.name != 'release' && variant.signingConfig != null && System.getenv('MONOCODE_MOBILE_DEFER_PUBLISH') != '1') {
+    if (lanUpdates && variant.buildType.name != 'release' && variant.signingConfig != null && System.getenv('OMNICODE_MOBILE_DEFER_PUBLISH') != '1') {
         variant.packageApplicationProvider.configure {
             doLast {
                 exec {

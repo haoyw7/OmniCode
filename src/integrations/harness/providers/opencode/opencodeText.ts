@@ -30,7 +30,7 @@ import { abortTextPromptRace } from "../../core/abortTextPrompt";
 import { streamTextDelta } from "../../core/streamText";
 import type { HarnessEvent } from "../../core/types";
 
-const TEXT_CHILD_ID = "monocode-opencode-text";
+const TEXT_CHILD_ID = "omnicode-opencode-text";
 const SERVER_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 45_000;
 

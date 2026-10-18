@@ -34,7 +34,7 @@ export function parseEnvironmentVariables(text: string): {
     if (!line || line.startsWith("#")) continue;
     const match = /^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=(.*)$/.exec(line);
     if (!match) return { variables, error: { line: index + 1, reserved: false } };
-    if (/^MONOCODE_/i.test(match[1])) return { variables, error: { line: index + 1, reserved: true } };
+    if (/^OMNICODE_/i.test(match[1])) return { variables, error: { line: index + 1, reserved: true } };
     let value = match[2].trim();
     if (value.length >= 2 && /^(["']).*\1$/.test(value)) value = value.slice(1, -1);
     variables[match[1]] = value;
@@ -285,7 +285,7 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
               />
               <p className={cn("text-ui-sm", parsed.error ? "text-red-400" : "text-foreground-subtle")}>
                 {parsed.error
-                  ? t(parsed.error.reserved ? "Line {value0}: MONOCODE_ variables are reserved" : "Line {value0}: use NAME=value",
+                  ? t(parsed.error.reserved ? "Line {value0}: OMNICODE_ variables are reserved" : "Line {value0}: use NAME=value",
                     { value0: String(parsed.error.line) })
                   : t("One NAME=value per line. Applied to agents started in these folders.")}
               </p>

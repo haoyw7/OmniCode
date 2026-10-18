@@ -14,7 +14,7 @@ applyDesktopSkin();
 const query = new URLSearchParams(location.search);
 const now = Date.UTC(2026, 9, 12, 12);
 const bots: BotView[] = Array.from({ length: 60 }, (_, i) => ({
-  id: `demo-${i}`, name: i ? `Project assistant ${i}` : "MonoCode", defaultThreadId: `thread-${i}`,
+  id: `demo-${i}`, name: i ? `Project assistant ${i}` : "OmniCode", defaultThreadId: `thread-${i}`,
   createdAt: now, updatedAt: now, revision: 1, chatRevision: 6, lifecycle: query.has("running") ? "running" : "idle", enabled: true,
   harness: "codex", model: "default", modelSettings: {}, runtimeMode: "full-access", targetRuntimeMode: "full-access",
   policy: fullBotPolicy(), policyVersion: 1, triggers: { user: true, event: false, schedule: false },
@@ -24,9 +24,9 @@ const threads: BotThread[] = bots.map((bot, i) => ({ botId: bot.id, id: bot.defa
 let revision = 6;
 let entries: BotMessage[] = [
  { id: "1", kind: "user", text: "请检查新的桌面界面。Keep the text clear and preserve keyboard navigation.", revision: 1, createdAt: now },
- { id: "2", kind: "assistant", text: "已完成布局检查。\n\n- 保留 **MonoCode** 品牌和现有能力\n- 检查长文本、代码块和工具结果\n- 使用键盘打开设置，再返回对话", revision: 2, createdAt: now + 1000 },
+ { id: "2", kind: "assistant", text: "已完成布局检查。\n\n- 保留 **OmniCode** 品牌和现有能力\n- 检查长文本、代码块和工具结果\n- 使用键盘打开设置，再返回对话", revision: 2, createdAt: now + 1000 },
  { id: "3", kind: "assistant", text: "```typescript\nconst viewport = { width: 1280, height: 800 };\nconst title = 'A deliberately long line to verify horizontal scrolling without moving the conversation viewport';\n```", revision: 3, createdAt: now + 2000 },
- { id: "4", kind: "session-card", title: "Codex: Review layout", harness: "codex", model: "default", projectName: "monocode", actionId: "demo", status: "completed", ref: { projectId: "demo", sessionId: "demo", environmentId: "demo" }, revision: 4, createdAt: now + 3000 },
+ { id: "4", kind: "session-card", title: "Codex: Review layout", harness: "codex", model: "default", projectName: "omnicode", actionId: "demo", status: "completed", ref: { projectId: "demo", sessionId: "demo", environmentId: "demo" }, revision: 4, createdAt: now + 3000 },
  { id: "5", kind: "assistant", text: "工具检查完成。布局和交互结果可以在设置面板中查看。", revision: 5, createdAt: now + 4000 },
  { id: "6", kind: "user", text: "Thanks. Please keep the existing conversation and cancellation controls.", revision: 6, createdAt: now + 5000 },
 ];

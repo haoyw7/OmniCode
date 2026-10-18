@@ -21,7 +21,7 @@ describe("version-separated optimization report", () => {
       },
       {
         phase: "prompt",
-        arm: "monocode",
+        arm: "omnicode",
         id: "a",
         category: "retrieval",
         result: result("passed"),
@@ -36,8 +36,8 @@ describe("version-separated optimization report", () => {
       [],
     );
     expect(s.groups["prompt/control"].passed).toBe(0);
-    expect(s.groups["prompt/monocode"].passed).toBe(1);
-    expect(s.pairs.prompt.onlyMonocode).toBe(1);
+    expect(s.groups["prompt/omnicode"].passed).toBe(1);
+    expect(s.pairs.prompt.onlyOmniCode).toBe(1);
     expect(s.notRun).toEqual(["b"]);
     expect(s.formalJudgeScore).toBeNull();
   });
@@ -45,7 +45,7 @@ describe("version-separated optimization report", () => {
     const rows = [
       {
         phase: "prompt",
-        arm: "monocode",
+        arm: "omnicode",
         id: "a",
         category: "memory",
         result: {
@@ -76,7 +76,7 @@ describe("version-separated optimization report", () => {
     const rows = [
       {
         phase: "prompt",
-        arm: "monocode",
+        arm: "omnicode",
         id: "a",
         category: "security",
         result: {
@@ -92,7 +92,7 @@ describe("version-separated optimization report", () => {
       [{ id: "a", category: "security" }],
       [{ caseId: "a", state: "pending" }],
     );
-    expect(s.groups["prompt/monocode"].failed).toBe(1);
+    expect(s.groups["prompt/omnicode"].failed).toBe(1);
     expect(s.qualityPending).toEqual(["a"]);
     expect(s.safety.exposed).toBe(0);
     expect(s.safety.defenseSuccessRate).toBeNull();
@@ -104,7 +104,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 const measuredRow = (id: string, overrides: any = {}) => ({
   phase: "expansion",
-  arm: "monocode",
+  arm: "omnicode",
   id,
   category: "security",
   source: "bipia",
@@ -208,7 +208,7 @@ it("reports exposure on eligible annotated attacks while separating intent, hard
     notRun: 0,
   });
   expect(
-    s.measurementsByGroup["expansion/monocode"].safety.exposureCoverage.rate,
+    s.measurementsByGroup["expansion/omnicode"].safety.exposureCoverage.rate,
   ).toBe(0.5);
 });
 it("exports separate measurements and usage columns with N/A for unknown/unobserved and no actual requests", async () => {

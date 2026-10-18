@@ -44,7 +44,7 @@ function readTerminal(paneId = "tools-editor") {
 }
 
 const query = new URLSearchParams(location.search);
-const cwd = "/fixture/monocode";
+const cwd = "/fixture/omnicode";
 const sourcePath = `${cwd}/src/workspace.ts`;
 const reviewLines = Array.from({ length: 90 }, (_, index) =>
   `export const setting${index} = "${"Review resizing preserves syntax, line numbers and annotations. ".repeat(5)}";`,
@@ -58,8 +58,8 @@ const current = query.has("reviewResize")
 const noop = () => {};
 setUiLanguage(query.get("lang") === "zh-CN" ? "zh-CN" : "en");
 document.documentElement.classList.toggle("theme-light", query.get("theme") !== "dark");
-localStorage.setItem("monocode.desktopColorScheme", query.get("theme") === "dark" ? "dark" : "light");
-localStorage.setItem("monocode.autosave", "false");
+localStorage.setItem("omnicode.desktopColorScheme", query.get("theme") === "dark" ? "dark" : "light");
+localStorage.setItem("omnicode.autosave", "false");
 applyDesktopSkin();
 document.documentElement.dataset.desktopMode = "code";
 saveExpanded(cwd, new Set([cwd, `${cwd}/src`]));
@@ -108,14 +108,14 @@ Object.assign(window, { isTauri: query.get("native") === "1", __TAURI_EVENT_PLUG
     if (command === "plugin:window|scale_factor") return 1;
     if (["plugin:window|start_dragging", "plugin:window|start_resize_dragging", "plugin:window|toggle_maximize", "plugin:window|minimize", "plugin:window|close"].includes(command)) return;
     if (command === "pty_spawn") {
-      setTimeout(() => output(String(args?.id), "\x1b[32mwy@monocode\x1b[0m ~/monocode\r\n$ git status --short\r\n M src/workspace.ts\r\nM  README.md\r\n?? docs/layout.md\r\n\r\n$ "), 80);
+      setTimeout(() => output(String(args?.id), "\x1b[32mwy@omnicode\x1b[0m ~/omnicode\r\n$ git status --short\r\n M src/workspace.ts\r\nM  README.md\r\n?? docs/layout.md\r\n\r\n$ "), 80);
       return;
     }
     if (command === "pty_status") return { foreground: null };
     if (command === "pty_write") { output(String(args?.id), String(args?.data)); return; }
     if (command === "pty_resize" || command === "pty_kill") return;
     if (command === "list_dir") return entries(String(args?.path));
-    if (command === "read_text_file") return String(args?.path).endsWith(".json") ? '{\n  "name": "monocode"\n}\n' : current;
+    if (command === "read_text_file") return String(args?.path).endsWith(".json") ? '{\n  "name": "omnicode"\n}\n' : current;
     if (command === "stat_files") return (args?.paths as string[]).map(path => ({ path, mtimeMs: 1791891000000 }));
     if (command === "read_file_preview") return current.split("\n");
     if (command === "git_diff_index" || command === "git_diff_files") return index;
@@ -149,11 +149,11 @@ const review: FilePaneTab = { id: "tools-review", path: sourcePath, cwd, review:
 const initialPane: EditorPane = { id: "tools-editor", files: [source, review], activeFileId: query.get("editor") === "source" ? source.id : review.id };
 if (query.has("explorer")) initialPane.files.unshift({ id: "tools-explorer", path: cwd, cwd, explorer: true });
 if (query.get("editor") === "terminal") {
-  initialPane.files.push({ id: "tools-pane-pty", path: "monocode", cwd, terminal: true });
+  initialPane.files.push({ id: "tools-pane-pty", path: "omnicode", cwd, terminal: true });
   initialPane.activeFileId = "tools-pane-pty";
 }
-const initialDock: ProjectTerminalDock = { projectPath: cwd, side: "bottom", size: 220, open: true, pane: { id: "tools-terminal-pane", files: [{ id: "tools-pty", path: "monocode", cwd, terminal: true }], activeFileId: "tools-pty" } };
-const stackedTerminal: EditorPane = { id: "tools-stacked-terminal", files: [{ id: "tools-stacked-pty", path: "monocode", cwd, terminal: true }], activeFileId: "tools-stacked-pty" };
+const initialDock: ProjectTerminalDock = { projectPath: cwd, side: "bottom", size: 220, open: true, pane: { id: "tools-terminal-pane", files: [{ id: "tools-pty", path: "omnicode", cwd, terminal: true }], activeFileId: "tools-pty" } };
+const stackedTerminal: EditorPane = { id: "tools-stacked-terminal", files: [{ id: "tools-stacked-pty", path: "omnicode", cwd, terminal: true }], activeFileId: "tools-stacked-pty" };
 const initialLayout: LayoutNode = { type: "split", id: "tools-split", dir: query.get("split") === "down" ? "down" : "right", children: [{ type: "leaf", id: session.id }, query.has("stackedTools") ? { type: "split", id: "stacked-tools", dir: "down", children: [{ type: "leaf", id: initialPane.id }, { type: "leaf", id: stackedTerminal.id }], sizes: [0.5, 0.5] } : { type: "leaf", id: initialPane.id }], sizes: [0.54, 0.46] };
 
 function DesktopToolsFixture() {

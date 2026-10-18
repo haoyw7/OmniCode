@@ -74,7 +74,7 @@ const cleanups: Array<() => Promise<void>> = [];
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); });
 
 it("uses one Host database and paired-device API for local and same-path WSL projects", async () => {
-  const root = await mkdtemp(join(tmpdir(), "monocode-shared-wsl-"));
+  const root = await mkdtemp(join(tmpdir(), "omnicode-shared-wsl-"));
   const store = new HostStore(join(root, "host.db"));
   const services = new Map<string, ExecutionService>();
   const local = new HostChildBackend({});
@@ -134,7 +134,7 @@ it("uses one Host database and paired-device API for local and same-path WSL pro
   expect((await call("projects.open", { cwd: "/workspace", machine: ubuntu.machine })).id).toBe(ubuntu.id);
   expect((await call("projects.list", {}, phone.token)).map((project: { id: string }) => project.id).sort())
     .toEqual([localProject.id, ubuntu.id, debian.id].sort());
-  await call("preferences.patch", { operationId: "shared-setting", changes: { "monocode.colorScheme": "dark" } });
+  await call("preferences.patch", { operationId: "shared-setting", changes: { "omnicode.colorScheme": "dark" } });
   expect(await call("preferences.read", {}, phone.token)).toEqual(await call("preferences.read"));
   const created = await Promise.all([localProject, ubuntu, debian].map((project, index) => call("commands.dispatch", {
     type: "create", commandId: `create-${index}`, projectId: project.id, harness: "codex", model: "codex:test", runtimeMode: "supervised",

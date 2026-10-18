@@ -15,7 +15,7 @@ function client(reason: string = "timeout") {
   } as unknown as MobileClient;
 }
 function cache() {
-  localStorage.setItem("monocode.host-workspace.v1:host:cache:mobile", JSON.stringify({
+  localStorage.setItem("omnicode.host-workspace.v1:host:cache:mobile", JSON.stringify({
     revision: 1, kind: "desktop", windowId: "desktop", updatedAt: 1, snapshot: { location },
   }));
 }

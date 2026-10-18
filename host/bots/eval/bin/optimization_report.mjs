@@ -88,7 +88,7 @@ const quality = await readJSONL(
   evalDataPath(root, "data/quality-annotations.jsonl"),
 );
 const budget = JSON.parse(await readFile(join(run, "budget.json"), "utf8"));
-const temp = await mkdtemp(join(tmpdir(), "monocode-report-only-"));
+const temp = await mkdtemp(join(tmpdir(), "omnicode-report-only-"));
 try {
   await build({
     entryPoints: [join(root, "src/optimizationReport.ts")],

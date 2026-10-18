@@ -59,9 +59,9 @@ const view = new EditorView({
   extensions: [editorScrollbar],
 });
 const terminalHost = fixture("terminal", "Terminal");
-terminalHost.classList.add("monocode-terminal");
+terminalHost.classList.add("omnicode-terminal");
 const renderer = document.createElement("div");
-renderer.className = "monocode-terminal-renderer";
+renderer.className = "omnicode-terminal-renderer";
 renderer.style.cssText = "width:100%;height:100%";
 terminalHost.append(renderer);
 const terminal = new Terminal({

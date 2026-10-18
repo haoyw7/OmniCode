@@ -10,7 +10,7 @@ const HTTP_TIMEOUT: Duration = Duration::from_secs(7);
 const MAX_REDIRECTS: usize = 5;
 const MAX_PAGE_BYTES: usize = 512 * 1024;
 const MAX_ICON_BYTES: usize = 256 * 1024;
-const USER_AGENT: &str = "Mozilla/5.0 (compatible; MonoCode-LinkPreview/1.0)";
+const USER_AGENT: &str = "Mozilla/5.0 (compatible; OmniCode-LinkPreview/1.0)";
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

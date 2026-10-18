@@ -1,4 +1,11 @@
 /* Measured desktop geometry. Mobile removes data-skin before applying its theme. */
+/* Match WindowDragBar and the pinned MenuBar; mobile has neither. */
+html:has([data-window-chrome]) {
+  --desktop-window-chrome-height: 42px;
+}
+html:has([data-window-chrome]):not(:has([data-window-chrome] [data-window-drag-bar])) {
+  --desktop-window-chrome-height: 36px;
+}
 /* Keep the drag value untyped: WebKitGTK 2.52 applies native page zoom twice to
    registered <length> values when they are substituted into width. */
 @property --sidebar-resize-width {

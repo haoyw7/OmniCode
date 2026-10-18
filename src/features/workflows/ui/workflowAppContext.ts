@@ -1,5 +1,7 @@
 // What the workflow views need from the desktop shell: navigation and composer.
 import { createContext, useContext } from "react";
+import type { WorkflowAgentAvatar } from "../model/workflowAgentAvatar";
+import type { WorkflowArtifactTabSource } from "../../workspace/model/layout";
 
 export type OpenWorkflowRunRequest = {
   /** Project folder (desktop path) the run belongs to. */
@@ -13,6 +15,7 @@ export type OpenWorkflowRunRequest = {
 };
 
 export type OpenWorkflowAgentRequest = {
+  avatar?: WorkflowAgentAvatar;
   cwd: string;
   parentSessionId: string;
   runId: string;
@@ -24,6 +27,7 @@ export type OpenWorkflowAgentRequest = {
 };
 
 export type WorkflowAppActions = {
+  openArtifact(request: WorkflowArtifactTabSource & { cwd: string; title?: string; sourceFileId?: string }): void;
   openRun(request: OpenWorkflowRunRequest): void;
   openAgent(request: OpenWorkflowAgentRequest): void;
   /** Open a conversation the Host created (a saved workflow launched from the sidebar). */

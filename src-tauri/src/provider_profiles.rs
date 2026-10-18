@@ -1,5 +1,5 @@
 //! Local profile metadata. Credential and history directories may be owned by
-//! MonoCode or explicitly supplied by the user; external Homes are never deleted.
+//! OmniCode or explicitly supplied by the user; external Homes are never deleted.
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -260,7 +260,7 @@ mod tests {
 
     #[test]
     fn profiles_survive_browser_storage_loss_and_keep_external_homes() {
-        let root = std::env::temp_dir().join(format!("monocode-profiles-{}", uuid::Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!("omnicode-profiles-{}", uuid::Uuid::new_v4()));
         let dir = root.join("provider-accounts");
         let external = root.join("external home");
         let account = ProviderProfile {
@@ -297,7 +297,7 @@ mod tests {
     #[test]
     fn keeps_managed_credentials_when_the_builtin_profile_reuses_the_home() {
         let dir =
-            std::env::temp_dir().join(format!("monocode-shared-home-{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("omnicode-shared-home-{}", uuid::Uuid::new_v4()));
         let managed = dir.join("codex/work");
         std::fs::create_dir_all(&managed).unwrap();
         std::fs::write(managed.join("auth.json"), "keep").unwrap();
@@ -337,7 +337,7 @@ mod tests {
 
     #[test]
     fn validates_and_updates_default_and_named_homes_without_deleting_old_data() {
-        let dir = std::env::temp_dir().join(format!("monocode-profiles-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("omnicode-profiles-{}", uuid::Uuid::new_v4()));
         let profile = |id: &str, home: Option<&str>| {
             HashMap::from([(
                 "claude".into(),

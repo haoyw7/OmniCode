@@ -47,7 +47,7 @@ it("checks only selected cache sources while rejecting altered or injected cache
   const hash = (value: string) =>
     createHash("sha256").update(value).digest("hex");
   try {
-    vi.stubEnv("MONOCODE_EVAL_DATA_ROOT", cache);
+    vi.stubEnv("OMNICODE_EVAL_DATA_ROOT", cache);
     await mkdir(join(root, "public"), { recursive: true });
     await mkdir(join(root, "data"));
     await mkdir(join(root, "data/upstream/bfcl-v4-sample"), {

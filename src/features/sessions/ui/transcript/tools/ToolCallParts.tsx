@@ -37,7 +37,7 @@ export function ToolKindIcon({
   live?: boolean;
 }) {
   const Icon = {
-    monocode: Terminal,
+    omnicode: Terminal,
     agent: Bot,
     question: CircleHelp,
     skill: WandSparkles,

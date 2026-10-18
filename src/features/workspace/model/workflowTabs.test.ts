@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   isPreviewableTab,
+  isFilesystemTab,
   newEditorPane,
   newFileTab,
   newTab,
   newWorkflowAgentTab,
+  newWorkflowArtifactTab,
   newWorkflowRunTab,
   openEditorTab,
   splitPane,
@@ -21,6 +23,18 @@ const agentTab = (sessionId = "worker") => newWorkflowAgentTab(sessionId, "/repo
 });
 
 describe("workflow tab navigation", () => {
+  it("keeps artifacts from different runs separate and reuses the same run artifact", () => {
+    const source = { parentSessionId: "parent", runId: "run", artifactId: "report" };
+    const first = newWorkflowArtifactTab("Report", "/repo", source);
+    const second = newWorkflowArtifactTab("Report", "/repo", { ...source, runId: "other-run" });
+    let tab = openEditorTab(newTab("parent"), first);
+    tab = openEditorTab(tab, second);
+    tab = openEditorTab(tab, newWorkflowArtifactTab("Report", "/repo", source));
+    expect(tab.editorPanes[0].files).toEqual([first, second]);
+    expect(tab.editorPanes[0].activeFileId).toBe(first.id);
+    expect(isPreviewableTab(first)).toBe(false);
+    expect(isFilesystemTab(first)).toBe(false);
+  });
   it("keeps the run and inserts a permanent agent immediately to its right", () => {
     const run = runTab();
     const other = newFileTab("/repo/other.ts", "/repo");

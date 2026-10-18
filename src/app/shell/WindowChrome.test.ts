@@ -97,7 +97,7 @@ it("keeps navigation and native window controls clickable", () => {
   const minimize = container.querySelector<HTMLButtonElement>(
     '[aria-label="Minimize window"]',
   )!;
-  const productIcon = container.querySelector('[data-window-navigation] img[alt="MonoCode"]')!;
+  const productIcon = container.querySelector('[data-window-product-icon] [role="img"]')!;
   expect(productIcon.parentElement?.nextElementSibling).toBe(sidebar);
   expect(press(sidebar.querySelector("svg")!).defaultPrevented).toBe(false);
   expect(press(minimize.querySelector("svg")!).defaultPrevented).toBe(false);

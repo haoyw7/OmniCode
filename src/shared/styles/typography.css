@@ -1,5 +1,5 @@
 /* Typography.png defines families, weights and semantic levels, not numeric
-   sizes. These scales map those levels to Monocode's existing UI geometry. */
+   sizes. These scales map those levels to OmniCode's existing UI geometry. */
 @theme static {
   --font-system-sans: -apple-system, BlinkMacSystemFont, Inter, "Segoe UI Variable Text", "Segoe UI", "Ubuntu Sans", "Noto Sans", Roboto, "Helvetica Neue", "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", "HarmonyOS Sans SC", ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--user-ui-font,) "Source Sans 3", var(--font-system-sans);

@@ -28,6 +28,10 @@ export function WorkflowsView({ cwd }: { cwd: string }) {
                     onNavigateToLaunchedRun: (target, sessionId) => app.openSession(target.workspacePath, sessionId),
                     onCreateViaChat: (prompt, target) => app.createViaChat(target.workspacePath, prompt),
                     onOpenWorkflowRun: (params) => app.openSession(params.workspacePath, params.sessionId),
+                    onOpenWorkflowArtifact: (params) => app.openArtifact({
+                      cwd: params.workspacePath, parentSessionId: params.sessionId, runId: params.runId,
+                      artifactId: params.artifactId, title: params.title, contentType: params.contentType,
+                    }),
                   }
                 : {})}
             />

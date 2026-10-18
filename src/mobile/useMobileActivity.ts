@@ -25,7 +25,7 @@ import { NativeActivitySync } from "./nativeActivitySync";
 import type { HostSessionSummary } from "../features/connections/model/protocol";
 import type { BotNotificationActivity as AssistantNotificationActivity } from "../features/bots/model/botNotifications";
 
-const ENABLED_KEY = "monocode.mobileNotifications";
+const ENABLED_KEY = "omnicode.mobileNotifications";
 
 /** One cue per poll, however many conversations changed at once. */
 function playActivityCue(notices: readonly ActivityNotice[]) {

@@ -16,7 +16,7 @@ export interface KeyboardMotion {
   easing: string;
 }
 
-export const KEYBOARD_EVENT = "monocode:keyboard";
+export const KEYBOARD_EVENT = "omnicode:keyboard";
 const FALLBACK_EASING = "cubic-bezier(0.2, 0, 0, 1)";
 const MOTION_SURFACES = [
   ".mobile-notes",

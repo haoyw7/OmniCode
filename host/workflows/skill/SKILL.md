@@ -1,20 +1,20 @@
 ---
 name: dynamic-workflows
-description: "Use when writing, debugging, or resubmitting a MonoCode dynamic-workflow script: choosing subagent topology and each subagent's provider/model/thinking/speed, typing subagent results, fanning out over files or git, gating loops on world.run commands, testing pieces with `workflow snippet`, planner-reviewer loops, confirming findings before reporting them, report() salvage, the report shape a run returns, publishing artifacts the user opens, and handling a background run."
+description: "Use when writing, debugging, or resubmitting a OmniCode dynamic-workflow script: choosing subagent topology and each subagent's provider/model/thinking/speed, typing subagent results, fanning out over files or git, gating loops on world.run commands, testing pieces with `workflow snippet`, planner-reviewer loops, confirming findings before reporting them, report() salvage, the report shape a run returns, publishing artifacts the user opens, and handling a background run."
 ---
 
 
 # Writing dynamic workflows
 
-This skill is the whole authoring contract for MonoCode dynamic workflows. You submit and
-manage workflows with the MonoCode workflow CLI, available in your shell as
-`"$MONOCODE_WORKFLOW_CLI"` (§16). The facade the compiler checks against, the rules a script
+This skill is the whole authoring contract for OmniCode dynamic workflows. You submit and
+manage workflows with the OmniCode workflow CLI, available in your shell as
+`"$OMNICODE_WORKFLOW_CLI"` (§16). The facade the compiler checks against, the rules a script
 must satisfy and the input each command takes are in §16. The rest is the judgment layer: how
 many subagents a request deserves, which of them should share a context, which provider and
 model each one runs on, what each one should hand back, and how to keep the run's work from
 dying with the run.
 
-Each subagent in a workflow is a full MonoCode agent session — Pi, Codex, Claude Code, omp,
+Each subagent in a workflow is a full OmniCode agent session — Pi, Codex, Claude Code, omp,
 OpenCode, Cursor and the other installed providers — with its own working tools. Use that:
 put a strong reasoning model on planning and review, a fast model on bulk fan-out, and a
 different provider on an independent check when fresh eyes matter (§3).
@@ -170,7 +170,7 @@ Four rules make the eyes actually fresh:
   already had its eyes; do not add a reader on top of the confirmers.
 
 Three cautions. Correlated reviewers add little — same model, same prompt, same blind
-spots — so give each a distinct lens or a different task. In MonoCode the cheapest
+spots — so give each a distinct lens or a different task. In OmniCode the cheapest
 decorrelation is a different provider: give an independent reviewer
 `agent("复核", { system: "…", provider: "codex", thinking: "high" })` when the author ran
 on Claude, or the reverse. Bound it: one deliverable gets one
@@ -699,7 +699,7 @@ chart's points, so a card for it would say nothing new.
 The complete review workflow that used to sit here — a reviewer per changed file, triage
 through one shared subagent that is fed as reviews land, a confirmer per kept finding chained
 inside the same callback, one join for the cross-file deduplication — is
-`${MONOCODE_WORKFLOW_SKILL_DIR}/examples.md` §5. Read it when you want to see a whole script's arc; §7
+`${OMNICODE_WORKFLOW_SKILL_DIR}/examples.md` §5. Read it when you want to see a whole script's arc; §7
 and §10 already carry its rules.
 
 ## 12. Anti-patterns
@@ -742,14 +742,14 @@ and §10 already carry its rules.
 
 Compilation happens first. **Diagnostics mean nothing ran** — there is no partially-started
 run to clean up — and they name the file your script is in. Every script you submit has one:
-an inline `script` is written under `.monocode/workflow-drafts/` before it is even compiled
+an inline `script` is written under `.omnicode/workflow-drafts/` before it is even compiled
 and the response hands you the path; a script you submitted by `path` is that file already.
 Each diagnostic reads `{path}:L{line}:C{column} {message}`, counted in the file, so it
 addresses an edit as it stands. **Edit that file and resubmit with `path`. Do not paste the
 script inline again.**
 
 On a clean compile the run starts in the background and `workflow create` returns a run ID.
-The run shows as a card in this conversation and in MonoCode's Workflows sidebar, where the
+The run shows as a card in this conversation and in OmniCode's Workflows sidebar, where the
 user watches phases, subagents, tokens and artifacts live. When you need the result:
 
 - `workflow wait {"runId":"…","timeoutSeconds":25}` blocks up to 25 seconds and returns the
@@ -767,7 +767,7 @@ Read the terminal state precisely. A run ends in exactly one of three states:
   refuses it; edit the run's script file and resubmit it with `workflow amend` and `path`.
 - **stopped** — the run was stopped and can be resumed as-is with `workflow resume`. Its
   `stopReason` says why: `user` (the user stopped it — leave it alone unless they ask),
-  `model` (you stopped it with `workflow cancel`), `interrupted` (the MonoCode Host exited;
+  `model` (you stopped it with `workflow cancel`), `interrupted` (the OmniCode Host exited;
   resume it), or `provider` (a subagent hit a deterministic provider error — sign-in
   expired, model not available, quota cap; the error names the cause — resolve it with the
   user, then resume). A fifth reason, `superseded`, is the state of a run you amended away.
@@ -842,27 +842,27 @@ to the wrong subagent — edit the run's script file and `workflow amend` it (§
 
 ## 15. Going deeper
 
-- `${MONOCODE_WORKFLOW_SKILL_DIR}/patterns.md` — the topology catalogue: fan-out/fan-in, review sweeps,
+- `${OMNICODE_WORKFLOW_SKILL_DIR}/patterns.md` — the topology catalogue: fan-out/fan-in, review sweeps,
   planner-reviewer loops, judge panels, staged pipelines, bounded discovery,
   `world.run`-gated verifier loops. Read it
   when you know the shape you want and want it written correctly.
-- `${MONOCODE_WORKFLOW_SKILL_DIR}/examples.md` — complete worked scripts, including a two-subagent
+- `${OMNICODE_WORKFLOW_SKILL_DIR}/examples.md` — complete worked scripts, including a two-subagent
   adversarial prove/disprove loop. Read one when you want to see a whole script's arc.
 
 
 ## 16. Tool reference
 
-Every command runs through the MonoCode workflow CLI:
+Every command runs through the OmniCode workflow CLI:
 
 ```sh
-"$MONOCODE_WORKFLOW_CLI" workflow <command> --json '<JSON input>'
-"$MONOCODE_WORKFLOW_CLI" workflow <command> --input input.json   # or --input - for stdin
+"$OMNICODE_WORKFLOW_CLI" workflow <command> --json '<JSON input>'
+"$OMNICODE_WORKFLOW_CLI" workflow <command> --input input.json   # or --input - for stdin
 ```
 
 Output is one JSON line: `{"ok":true,"result":…}` or `{"ok":false,"error":"…"}`. Prefer
 `--input` with a file for anything containing a script or quotes. A failed or uncertain call
 reports a `requestId`: retry that exact request with `--request-id`, never a fresh ID. Never
-print `MONOCODE_WORKFLOW_TOKEN`. Commands: `create`, `amend`, `resume`, `cancel`, `get`,
+print `OMNICODE_WORKFLOW_TOKEN`. Commands: `create`, `amend`, `resume`, `cancel`, `get`,
 `list`, `wait`, `save`, `saved`, `snippet`, `providers`.
 
 ### 16.1 `workflow create`
@@ -873,7 +873,7 @@ Typechecks the script; on a clean compile starts the run in the background and r
 **Three sources; pass exactly one.**
 
 - `script`: a one-off workflow written inline. It is saved to a file under
-  `.monocode/workflow-drafts/` and the result names that file, whether the script compiled or
+  `.omnicode/workflow-drafts/` and the result names that file, whether the script compiled or
   not; revise it by editing the file and resubmitting with `path`.
 - `saved`: a workflow saved in this project or globally, by name —
   `"saved": { "name": "pr-review", "args": { "pr": "123" } }`. Its arguments are validated
@@ -881,7 +881,7 @@ Typechecks the script; on a clean compile starts the run in the background and r
   `workflow saved`: a saved workflow the user reviewed and kept beats a rebuilt one.
 - `path`: a script file on disk, relative to the working directory or absolute — normally the
   file a previous result named. Pass `args` alongside it when the file declares arguments in
-  its `/* monocode-workflow` block.
+  its `/* omnicode-workflow` block.
 
 **Fields.**
 
@@ -1382,9 +1382,9 @@ to run again; keep names stable and keep tunable constants out of ask text (§13
 ### 16.5 `workflow save`
 
 Saves a script with its metadata so it can be run again by name — through `workflow create`'s
-`saved` source, from the MonoCode Workflows sidebar, and listed by `workflow saved`. Project
-definitions go in `.monocode/workflows/<name>.dwf.ts`, committed with the repository and
-visible only inside it; global definitions go in `~/.monocode/workflows/<name>.dwf.ts` and
+`saved` source, from the OmniCode Workflows sidebar, and listed by `workflow saved`. Project
+definitions go in `.omnicode/workflows/<name>.dwf.ts`, committed with the repository and
+visible only inside it; global definitions go in `~/.omnicode/workflows/<name>.dwf.ts` and
 are available from every project on this machine.
 
 **When to call it.**
@@ -1404,13 +1404,13 @@ are available from every project on this machine.
 - `scope` (required): `project` when the script references this repository; `global`
   otherwise.
 - `script` or `scriptPath`, never both. `scriptPath` saves a draft a previous result named; a
-  `/* monocode-workflow` block in that file is dropped, because the metadata comes from this
+  `/* omnicode-workflow` block in that file is dropped, because the metadata comes from this
   call's fields.
 - `args`: name exactly the values that would change between runs. Each declaration gives a
   `type` (`string`, `number`, `boolean`, or `json`), and optionally a `description`,
   `required: true` and a `default`.
 
-The saved file is valid TypeScript: a `/* monocode-workflow` block of YAML metadata, then the
+The saved file is valid TypeScript: a `/* omnicode-workflow` block of YAML metadata, then the
 script verbatim. The script is typechecked before anything is written; diagnostics mean
 nothing was written. Per-subagent providers and models written in `agent()` personas are
 saved with the script; users can override them per run from the sidebar.

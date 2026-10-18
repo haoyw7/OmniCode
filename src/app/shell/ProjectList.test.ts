@@ -1211,9 +1211,9 @@ it.each(["pinned", "chats", "workflows", "groups", "projects", "remote-control"]
     expect(fold.inert).toBe(false);
     expect(fold.firstElementChild).toBe(content);
     expect(
-      localStorage.getItem("monocode.sidebarSectionsCollapsed.v1"),
+      localStorage.getItem("omnicode.sidebarSectionsCollapsed.v1"),
     ).toBeNull();
-    expect(localStorage.getItem("monocode.chatProjectExpanded.v1")).toBeNull();
+    expect(localStorage.getItem("omnicode.chatProjectExpanded.v1")).toBeNull();
   },
 );
 

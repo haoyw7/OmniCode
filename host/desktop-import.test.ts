@@ -16,7 +16,7 @@ afterEach(() => {
     rmSync(path, { recursive: true, force: true });
 });
 function fixture() {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-shared-import-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-shared-import-"));
   directories.push(directory);
   const path = join(directory, "desktop.db");
   const db = new DatabaseSync(path);

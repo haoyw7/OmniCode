@@ -872,7 +872,7 @@ export class HostEngine {
       io.key.startsWith("wsl:") ? { kind: "wsl", distribution: io.key.slice(4) } : undefined);
   }
 
-  /** A projectless chat: a new dated folder under `~/Documents/ohmymonocode`. */
+  /** A projectless chat: a new dated folder under `~/Documents/omnicode`. */
   async createChat(home = homedir()) {
     for (let attempt = 0; ; attempt++) {
       const cwd = join(home, CHAT_ROOT, chatFolderRelativePath());
@@ -2023,7 +2023,7 @@ export class HostEngine {
           if (live) live.value = saved;
         })
         .catch((error) =>
-          console.debug("[monocode] remote worktree branch", error),
+          console.debug("[omnicode] remote worktree branch", error),
         );
     }
   }
@@ -2118,12 +2118,12 @@ export class HostEngine {
               model: session.model,
               modelSettings: session.modelSettings,
               providerAccountId: session.providerAccountId,
-              ...(session.harness === "claude" ? { claudeHooks: this.clientState.preferencesRead()!.values["monocode.claudeHooks"] !== "0" } : {}),
+              ...(session.harness === "claude" ? { claudeHooks: this.clientState.preferencesRead()!.values["omnicode.claudeHooks"] !== "0" } : {}),
               runtimeMode: session.runtimeMode,
               intent: intent === "orchestrate" ? "plan" : intent,
               onEvent: (event) => { if (!this.orchestration.planningEvent(session.id, event)) this.event(session.id, runId!, event, session.harness, session.providerAccountId); },
             };
-            // A MonoCode-started conversation continued elsewhere becomes a managed native session.
+            // A OmniCode-started conversation continued elsewhere becomes a managed native session.
             if (!session.nativeSession && this.store.session(session.id).nativeBinding)
               await this.nativeSessions.promoteIfChanged(session.id);
             if (this.store.session(session.id).session.nativeSession && !this.nativeLeases.has(session.id)) {

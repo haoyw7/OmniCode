@@ -25,7 +25,7 @@ export function archiveFocusedSession(
   if (!session) return;
 
   const target = event.target instanceof Element ? event.target : null;
-  if (target?.closest(".cm-editor, .monocode-terminal")) return;
+  if (target?.closest(".cm-editor, .omnicode-terminal")) return;
   if (
     target?.closest('input, textarea, select, [contenteditable="true"]') &&
     !target.closest("[data-composer]")

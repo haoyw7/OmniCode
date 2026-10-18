@@ -244,7 +244,7 @@ export async function forgetCursorSession(sessionId: string): Promise<void> {
   await stopCursorSession(sessionId);
 }
 
-/** Seed ACP resume state for a restored MonoCode session. */
+/** Seed ACP resume state for a restored OmniCode session. */
 export function bindCursorSession(
   threadId: string,
   acpSessionId: string,
@@ -322,7 +322,7 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
     noteAcpTitleCapabilities(acp, await acp.request("initialize", {
       protocolVersion: 1,
       clientCapabilities: CLIENT_CAPABILITIES,
-      clientInfo: { name: "monocode", version: "0.1.0" },
+      clientInfo: { name: "omnicode", version: "0.1.0" },
     }));
     await acp
       .request("authenticate", { methodId: "cursor_login" })

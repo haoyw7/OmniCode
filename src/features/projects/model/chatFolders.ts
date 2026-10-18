@@ -8,8 +8,8 @@ import { isChatFolder } from "./chatFolderPath";
 
 export { CHAT_ROOT, chatFolderRelativePath, isChatFolder } from "./chatFolderPath";
 
-const KEY = "monocode.chatFolders.v1";
-const CHANGED = "monocode:chat-folders-changed";
+const KEY = "omnicode.chatFolders.v1";
+const CHANGED = "omnicode:chat-folders-changed";
 
 function loadRegistered(): string[] {
   try {

@@ -22,7 +22,7 @@ afterEach(async () => {
 });
 
 async function setup() {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-mobile-integration-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-mobile-integration-"));
   const store = new HostStore(join(directory, "host.db"));
   let turn: SendTurnInput | undefined;
   let finish = () => {};
@@ -109,7 +109,7 @@ async function setup() {
   };
 }
 
-describe("mobile client against the real MonoCode Host", () => {
+describe("mobile client against the real OmniCode Host", () => {
   it("pairs only one phone per QR and restores its private credential without reusing the code", async () => {
     const s = await setup();
     const issued = s.store.issuePairingDevice("New phone");
@@ -193,7 +193,7 @@ describe("mobile client against the real MonoCode Host", () => {
   });
   it("reads temporary image files outside registered projects through authenticated mobile RPC", async () => {
     const s = await setup();
-    const outside = mkdtempSync(join(tmpdir(), "monocode-mobile-image-preview-"));
+    const outside = mkdtempSync(join(tmpdir(), "omnicode-mobile-image-preview-"));
     cleanups.push(async () => rmSync(outside, { recursive: true, force: true }));
     const png = Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a7X8AAAAASUVORK5CYII=",
@@ -218,7 +218,7 @@ describe("mobile client against the real MonoCode Host", () => {
   });
   it.skipIf(process.platform === "win32")("browses directory symlinks through mobile RPC and opens their targets outside registered projects", async () => {
     const s = await setup();
-    const target = mkdtempSync(join(tmpdir(), "monocode-mobile-link-target-"));
+    const target = mkdtempSync(join(tmpdir(), "omnicode-mobile-link-target-"));
     cleanups.push(async () => rmSync(target, { recursive: true, force: true }));
     mkdirSync(join(target, "child"));
     const link = join(s.directory, "linked 项目");
@@ -232,7 +232,7 @@ describe("mobile client against the real MonoCode Host", () => {
   });
   it("browses and opens computer folders outside registered projects without creating projects during browsing", async () => {
     const s = await setup();
-    const outside = mkdtempSync(join(tmpdir(), "monocode-mobile-project-picker-"));
+    const outside = mkdtempSync(join(tmpdir(), "omnicode-mobile-project-picker-"));
     cleanups.push(async () => rmSync(outside, { recursive: true, force: true }));
     const folder = join(outside, "My 项目");
     mkdirSync(folder);

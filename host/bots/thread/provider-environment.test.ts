@@ -35,13 +35,13 @@ require('node:readline').createInterface({input:process.stdin}).on('line', line 
   const input = JSON.parse(line);
   emit({type:'response', id:input.id, command:input.type, success:true, data:input.type === 'get_state' ? {sessionId:'retained-brain', model:{provider:'fixture', id:'test', contextWindow:200000}, isStreaming:false} : {}});
   if (input.type !== 'prompt') return;
-  const socket = net.connect(Number(env.MONOCODE_CONTROL_ENDPOINT.split(':')[1]), '127.0.0.1');
+  const socket = net.connect(Number(env.OMNICODE_CONTROL_ENDPOINT.split(':')[1]), '127.0.0.1');
   let reply = '';
   socket.setEncoding('utf8');
-  socket.on('connect', () => socket.write(JSON.stringify({namespace:'assistant', token:env.MONOCODE_CONTROL_TOKEN, requestId:'catalog-'+crypto.randomUUID(), action:'projects.list', input:{}})+'\\n'));
+  socket.on('connect', () => socket.write(JSON.stringify({namespace:'assistant', token:env.OMNICODE_CONTROL_TOKEN, requestId:'catalog-'+crypto.randomUUID(), action:'projects.list', input:{}})+'\\n'));
   socket.on('data', data => reply += data);
   socket.on('end', () => {
-    fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify({pid:process.pid, grant:crypto.createHash('sha256').update(env.MONOCODE_CONTROL_TOKEN).digest('hex'), args:process.argv.slice(2), reply:JSON.parse(reply)})+'\\n');
+    fs.appendFileSync(${JSON.stringify(log)}, JSON.stringify({pid:process.pid, grant:crypto.createHash('sha256').update(env.OMNICODE_CONTROL_TOKEN).digest('hex'), args:process.argv.slice(2), reply:JSON.parse(reply)})+'\\n');
     emit({type:'agent_end', isTerminal:true});
     emit({type:'agent_settled'});
   });
@@ -63,7 +63,7 @@ require('node:readline').createInterface({input:process.stdin}).on('line', line 
       await engine.ready;
       backend.configureSessionEnvironment((id) => {
         const environment = engine.assistant.environment(id);
-        if (environment.MONOCODE_CONTROL_TOKEN) issued.push(environment);
+        if (environment.OMNICODE_CONTROL_TOKEN) issued.push(environment);
         return environment;
       });
       engine.assistant.setCatalog(
@@ -107,11 +107,11 @@ require('node:readline').createInterface({input:process.stdin}).on('line', line 
       expect(turns[1].args).toContain("retained-brain");
       for (const environment of issued) {
         const reply = await new Promise<{ ok: boolean; error?: string }>((resolve, reject) => {
-          const socket = connect(Number(environment.MONOCODE_CONTROL_ENDPOINT.split(":")[1]), "127.0.0.1");
+          const socket = connect(Number(environment.OMNICODE_CONTROL_ENDPOINT.split(":")[1]), "127.0.0.1");
           let data = "";
           socket.setEncoding("utf8");
           socket.on("error", reject);
-          socket.on("connect", () => socket.write(JSON.stringify({ namespace: "assistant", token: environment.MONOCODE_CONTROL_TOKEN, requestId: "revoked-probe", action: "projects.list", input: {} }) + "\n"));
+          socket.on("connect", () => socket.write(JSON.stringify({ namespace: "assistant", token: environment.OMNICODE_CONTROL_TOKEN, requestId: "revoked-probe", action: "projects.list", input: {} }) + "\n"));
           socket.on("data", chunk => { data += chunk; });
           socket.on("end", () => resolve(JSON.parse(data)));
         });

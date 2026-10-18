@@ -8,13 +8,13 @@ import {
 } from "./projectTree";
 import { isChatFolder } from "./chatFolderPath";
 
-const KEY = "monocode.recentProjects";
-const RAIL_ORDER_KEY = "monocode.projectRailOrder";
-const RAIL_ORDER_VERSION_KEY = "monocode.projectRailOrderVersion";
-const RAIL_PINNED_KEY = "monocode.projectRailPinned";
-const ARCHIVED_KEY = "monocode.archivedProjects";
-const ARCHIVED_CHANGED = "monocode:archived-projects-changed";
-const PROJECT_PATHS_CHANGED = "monocode:project-paths-changed";
+const KEY = "omnicode.recentProjects";
+const RAIL_ORDER_KEY = "omnicode.projectRailOrder";
+const RAIL_ORDER_VERSION_KEY = "omnicode.projectRailOrderVersion";
+const RAIL_PINNED_KEY = "omnicode.projectRailPinned";
+const ARCHIVED_KEY = "omnicode.archivedProjects";
+const ARCHIVED_CHANGED = "omnicode:archived-projects-changed";
+const PROJECT_PATHS_CHANGED = "omnicode:project-paths-changed";
 
 export type RecentProject = {
   path: string;
@@ -162,7 +162,7 @@ export function notifyProjectPathsChanged(): void {
 
 export function subscribeProjectPathsChanged(onChange: () => void): () => void {
   if (typeof window === "undefined") return () => {};
-  const keys = new Set([KEY, RAIL_ORDER_KEY, RAIL_PINNED_KEY, ARCHIVED_KEY, "monocode.projectGroups", "monocode.projectGroupAssignments"]);
+  const keys = new Set([KEY, RAIL_ORDER_KEY, RAIL_PINNED_KEY, ARCHIVED_KEY, "omnicode.projectGroups", "omnicode.projectGroupAssignments"]);
   const onStorage = (event: StorageEvent) => {
     if (event.key === null || keys.has(event.key)) onChange();
   };

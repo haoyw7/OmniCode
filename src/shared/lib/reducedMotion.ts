@@ -6,7 +6,7 @@
  */
 export type ReducedMotionPreference = "system" | "on" | "off";
 
-export const REDUCED_MOTION_CHANGE_EVENT = "monocode:reducedmotionchange";
+export const REDUCED_MOTION_CHANGE_EVENT = "omnicode:reducedmotionchange";
 
 const QUERY = "(prefers-reduced-motion: reduce)";
 

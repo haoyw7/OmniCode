@@ -7,7 +7,7 @@
 // 纯函数、无时钟——「已结束的行何时折叠」由渲染端的已确认集合决定，不在这里记时间。
 
 import { z } from "zod";
-// Monocode port: the two ZCode protocol definitions this module reads, inlined.
+// OmniCode port: the two ZCode protocol definitions this module reads, inlined.
 const timestampSchema = z.number();
 /** A background work item of the parent session (ZCode snapshot.ts). */
 export type BackgroundWorkSummary = {

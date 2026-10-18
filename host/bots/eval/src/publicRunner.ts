@@ -81,7 +81,7 @@ export class PythonBridge implements Bridge {
         PATH: process.env.PATH,
         LANG: "C.UTF-8",
         PYTHONDONTWRITEBYTECODE: "1",
-        MONOCODE_EVAL_DATA_ROOT: readDatasetLock(root)
+        OMNICODE_EVAL_DATA_ROOT: readDatasetLock(root)
           ? evalDataRoot(root)
           : undefined,
       },

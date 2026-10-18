@@ -31,7 +31,7 @@ export const DEFAULT_SESSION_SIDEBAR_FILTERS: SessionSidebarFilters = {
   status: DEFAULT_SESSION_STATUS_FILTER,
 };
 
-const FILTERS_KEY = "monocode.sessionSidebarFilters";
+const FILTERS_KEY = "omnicode.sessionSidebarFilters";
 
 export function harnessesInSessions(rows: SessionSummary[]): HarnessId[] {
   const seen = new Set<HarnessId>();
@@ -44,7 +44,7 @@ export function loadSessionSidebarFilters(): SessionSidebarFilters {
     const raw = preferenceStorage.getItem(FILTERS_KEY);
     if (!raw) {
       const legacyArchived =
-        preferenceStorage.getItem("monocode.sessionsShowArchived") === "1";
+        preferenceStorage.getItem("omnicode.sessionsShowArchived") === "1";
       return legacyArchived
         ? { ...DEFAULT_SESSION_SIDEBAR_FILTERS, showArchived: true }
         : DEFAULT_SESSION_SIDEBAR_FILTERS;

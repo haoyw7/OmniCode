@@ -1,4 +1,4 @@
-// Monocode's WorkflowDriver: every workflow actor runs as a hidden Host session
+// OmniCode's WorkflowDriver: every workflow actor runs as a hidden Host session
 // on the provider, model, thinking level and speed resolved for it. Typed asks
 // end their reply with a fenced JSON block that the engine validates; rejected
 // results get a repair turn in the same session, missing ones a nudge turn.
@@ -44,7 +44,7 @@ export interface WorkflowWorkerPort {
   stop(sessionId: string): Promise<void>;
 }
 
-export interface MonocodeWorkflowDriverOptions {
+export interface OmniCodeWorkflowDriverOptions {
   runId: string;
   parentSessionId: string;
   cwd: string;
@@ -67,7 +67,7 @@ export interface MonocodeWorkflowDriverOptions {
 
 /** Deterministic actor session id, so run events can name it before the session exists. */
 export function mintActorSessionId(runId: string, actor: ActorRef): string {
-  const hex = createHash("sha256").update(`monocode-workflow\0${runId}\0${refToString(actor)}`).digest("hex");
+  const hex = createHash("sha256").update(`omnicode-workflow\0${runId}\0${refToString(actor)}`).digest("hex");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-${((parseInt(hex[16]!, 16) & 0x3) | 0x8).toString(16)}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
@@ -163,7 +163,7 @@ export function personaRuntime(persona: PersonaSpec): WorkflowAgentRuntime {
   };
 }
 
-export class MonocodeWorkflowDriver implements WorkflowDriver {
+export class OmniCodeWorkflowDriver implements WorkflowDriver {
   readonly journal: JournalStorePort;
   private readonly asks = new Map<string, AskState>();
   /** Actor sessions whose persona prompt has not been sent yet. */
@@ -174,7 +174,7 @@ export class MonocodeWorkflowDriver implements WorkflowDriver {
   private readonly askCounts = new Map<string, number>();
   private disposed = false;
 
-  constructor(private readonly options: MonocodeWorkflowDriverOptions) {
+  constructor(private readonly options: OmniCodeWorkflowDriverOptions) {
     this.journal = options.journal;
   }
 

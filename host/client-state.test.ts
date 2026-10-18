@@ -20,20 +20,20 @@ function setup() {
 it("merges independent fields and preserves receipt responses across restart without replaying stale data", () => {
   const s = setup();
   expect(s.state.preferencesRead({ revision: -1 })).toEqual({ revision: 0, imported: false, values: {} });
-  const first = { operationId: "desktop-1", changes: { "monocode.colorScheme": "dark" } };
+  const first = { operationId: "desktop-1", changes: { "omnicode.colorScheme": "dark" } };
   const accepted = s.state.preferencesPatch(first);
-  s.state.preferencesPatch({ operationId: "phone-1", changes: { "monocode.uiLanguage": "zh-CN", "monocode.colorScheme": "light" } });
+  s.state.preferencesPatch({ operationId: "phone-1", changes: { "omnicode.uiLanguage": "zh-CN", "omnicode.colorScheme": "light" } });
   const state = s.restart();
   expect(state.preferencesPatch(first)).toEqual(accepted);
-  expect(state.preferencesRead()).toMatchObject({ revision: 2, values: { "monocode.colorScheme": "light", "monocode.uiLanguage": "zh-CN" } });
+  expect(state.preferencesRead()).toMatchObject({ revision: 2, values: { "omnicode.colorScheme": "light", "omnicode.uiLanguage": "zh-CN" } });
   expect(state.preferencesRead({ revision: 2 })).toBeNull();
-  expect(() => state.preferencesPatch({ ...first, changes: { "monocode.colorScheme": "light" } })).toThrow("already used");
+  expect(() => state.preferencesPatch({ ...first, changes: { "omnicode.colorScheme": "light" } })).toThrow("already used");
 });
 
 it("supports independent entity fields, deletion and a one-time release import", () => {
   const { state } = setup();
-  const first = 'monocode.projectProviderSettings.v1::["@project:host:project","defaultHarness"]';
-  const second = 'monocode.projectProviderSettings.v1::["@project:host:project","defaultModel"]';
+  const first = 'omnicode.projectProviderSettings.v1::["@project:host:project","defaultHarness"]';
+  const second = 'omnicode.projectProviderSettings.v1::["@project:host:project","defaultModel"]';
   state.preferencesPatch({ operationId: "import-1", importRelease: true, changes: { [first]: '"codex"' } });
   state.preferencesPatch({ operationId: "model-1", changes: { [second]: '"model-1"' } });
   expect(state.preferencesPatch({ operationId: "import-2", importRelease: true, changes: { [first]: '"claude"' } })).toMatchObject({ imported: true, values: { [first]: '"codex"', [second]: '"model-1"' } });
@@ -44,10 +44,10 @@ it("supports independent entity fields, deletion and a one-time release import",
 it("rejects credentials, malformed values and invalid field paths atomically", () => {
   const { state } = setup();
   for (const changes of [
-    { "monocode.colorScheme": "light", "monocode.deviceToken": "secret" },
-    { "monocode.sidebarWidth": "no-number" },
-    { 'monocode.defaultModels::["__proto__","token"]': '"secret"' },
-    { "monocode.colorScheme": { credentials: "secret" } },
+    { "omnicode.colorScheme": "light", "omnicode.deviceToken": "secret" },
+    { "omnicode.sidebarWidth": "no-number" },
+    { 'omnicode.defaultModels::["__proto__","token"]': '"secret"' },
+    { "omnicode.colorScheme": { credentials: "secret" } },
   ]) expect(() => state.preferencesPatch({ operationId: "bad", changes })).toThrow();
   expect(state.preferencesRead()).toEqual({ revision: 0, values: {}, imported: false });
 });
@@ -98,7 +98,7 @@ it("stores environments and resolves variables for the most specific folder on t
   expect(state.environmentVariables(`${nested}${process.platform === "win32" ? "\\" : "/"}pkg`)).toEqual({ API_URL: "inner" });
   expect(state.environmentVariables(process.platform === "win32" ? "C:\\code\\application" : "/code/application")).toEqual({});
   expect(state.environmentVariables("/code/app", { kind: "wsl", distribution: "Ubuntu" })).toEqual({ API_URL: "wsl" });
-  expect(() => state.environmentsPatch({ operationId: "env-2", changes: { bad: { id: "bad", name: "Bad", folders: [root], variables: { MONOCODE_CONTROL_TOKEN: "x" } } } })).toThrow("Invalid environment variable name");
+  expect(() => state.environmentsPatch({ operationId: "env-2", changes: { bad: { id: "bad", name: "Bad", folders: [root], variables: { OMNICODE_CONTROL_TOKEN: "x" } } } })).toThrow("Invalid environment variable name");
   expect(() => state.environmentsPatch({ operationId: "env-3", changes: { bad: { id: "bad", name: "Bad", folders: ["relative"], variables: {} } } })).toThrow("absolute");
   state.environmentsPatch({ operationId: "env-4", changes: { web: null } });
   expect(state.environmentsList()?.environments).toHaveLength(2);

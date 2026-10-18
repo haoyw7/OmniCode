@@ -70,7 +70,7 @@ export async function initializeHostPreferences() {
   try {
     capabilities = (await loadRemoteHostDescriptor(machineId, hostId)).capabilities;
   } catch (error) {
-    const cached = localStorage.getItem(`monocode.hostPreferences.v1:${hostId}`);
+    const cached = localStorage.getItem(`omnicode.hostPreferences.v1:${hostId}`);
     if (!cached || !hostStateTransportUnavailable(error)) throw error;
     capabilities = ["clientState.v1"];
   }
@@ -160,8 +160,8 @@ export async function initializeHostPreferences() {
       await migrateLegacyPreferenceBackgrounds();
       const { legacyAgentDefaults } = await import("./agentPreferences");
       await primary.importRelease((key) => PROJECT_MAP_PREFERENCES.has(key) || PROJECT_LIST_PREFERENCES.has(key) ? null
-        : key === "monocode.agentDefaults" ? legacyAgentDefaults((key) => localStorage.getItem(key))
-          : key === "monocode.chatBackgroundAsset" ? primary.getItem(key) ?? localStorage.getItem(key) : localStorage.getItem(key));
+        : key === "omnicode.agentDefaults" ? legacyAgentDefaults((key) => localStorage.getItem(key))
+          : key === "omnicode.chatBackgroundAsset" ? primary.getItem(key) ?? localStorage.getItem(key) : localStorage.getItem(key));
     }
     // Project discovery is a shared preference write. Bootstrap must not mutate
     // the retained legacy localStorage before the Host adapter is installed.
@@ -194,7 +194,7 @@ export async function initializeHostPreferences() {
   };
   const onMachines = () => { void refreshMachines().catch(() => undefined); };
   const onStorage = (event: StorageEvent) => {
-    if (event.key?.startsWith("monocode.hostPreferences.v1:")) syncAux();
+    if (event.key?.startsWith("omnicode.hostPreferences.v1:")) syncAux();
   };
   const timer = window.setInterval(syncAux, 2_000);
   window.addEventListener(REMOTE_MACHINES_CHANGED, onMachines);

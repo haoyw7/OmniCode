@@ -23,7 +23,7 @@ import type {
 /**
  * Live omp (oh-my-pi) adapter. Spawns `omp --mode rpc` with the user's config
  * and extensions loaded (no `--no-extensions`), so plugins in `~/.omp/agent`
- * keep working; TUI-only widgets do not appear in MonoCode. omp is a fork of
+ * keep working; TUI-only widgets do not appear in OmniCode. omp is a fork of
  * Pi and speaks the same RPC protocol, so both run on the `piFamily` core.
  */
 export function sendOmpTurn(input: SendTurnInput): Promise<void> {

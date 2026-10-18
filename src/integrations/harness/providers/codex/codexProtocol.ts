@@ -35,7 +35,7 @@ export function buildCodexAppServerArgs(context?: HarnessBotContext): string[] {
   const values: Record<string, unknown> = {
     command: context.agentsMcp.command,
     args: context.agentsMcp.args,
-    env_vars: ["MONOCODE_CONTROL_ENDPOINT", "MONOCODE_CONTROL_TOKEN"],
+    env_vars: ["OMNICODE_CONTROL_ENDPOINT", "OMNICODE_CONTROL_TOKEN"],
     tool_timeout_sec: 250,
   };
   for (const [key, value] of Object.entries(values)) args.push("-c", `${prefix}.${key}=${JSON.stringify(value)}`);
@@ -379,7 +379,7 @@ export type MappedCodexNotification = {
 };
 
 /**
- * Translate a Codex app-server notification into MonoCode HarnessEvents.
+ * Translate a Codex app-server notification into OmniCode HarnessEvents.
  * Unknown methods return empty events (non-fatal).
  */
 export function mapCodexNotification(
@@ -538,7 +538,7 @@ export function mapCodexNotification(
   return { events: [] };
 }
 
-/** Codex thread items MonoCode already renders elsewhere or that are internal metadata. */
+/** Codex thread items OmniCode already renders elsewhere or that are internal metadata. */
 const SILENT_ITEM_TYPES = new Set([
   "userMessage",
   "contextCompaction",

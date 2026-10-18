@@ -112,7 +112,7 @@ export function applyTerminalChrome(
   outer: HTMLElement,
   tui: boolean,
 ): void {
-  outer.classList.toggle("monocode-terminal--alt-screen", tui);
+  outer.classList.toggle("omnicode-terminal--alt-screen", tui);
   term.options.overviewRuler = {
     width: tui ? MIN_TUI_SCROLLBAR_WIDTH : DEFAULT_SCROLLBAR_WIDTH,
   };

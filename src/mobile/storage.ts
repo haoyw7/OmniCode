@@ -11,7 +11,7 @@ interface CredentialsPlugin {
   set(options: { key: StorageKey; value: string }): Promise<void>;
   remove(options: { key: StorageKey }): Promise<void>;
 }
-const credentials = registerPlugin<CredentialsPlugin>("MonoCodeCredentials");
+const credentials = registerPlugin<CredentialsPlugin>("OmniCodeCredentials");
 
 // Development browser connections are deliberately ephemeral. Device tokens
 // never enter localStorage, Preferences, URLs, or the compiled application.

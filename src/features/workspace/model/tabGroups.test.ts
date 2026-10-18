@@ -296,7 +296,7 @@ const CORTEX = "/Users/me/cortex/agentbase";
 
 describe("project appearance keys", () => {
   beforeEach(() => {
-    mockLocalStorage({ "monocode:tab-group:key-version": "2" });
+    mockLocalStorage({ "omnicode:tab-group:key-version": "2" });
   });
 
   it("keeps same-named projects in different folders apart", () => {
@@ -321,12 +321,12 @@ describe("project appearance keys", () => {
 describe("migrateProjectAppearanceKeys", () => {
   it("moves folder-name entries onto every project that carries the name", () => {
     const store = mockLocalStorage({
-      "monocode.recentProjects": JSON.stringify([
+      "omnicode.recentProjects": JSON.stringify([
         { path: FINANCE, openedAt: 2 },
         { path: CORTEX, openedAt: 1 },
       ]),
-      "monocode:tab-group:labels": JSON.stringify({ agentbase: "Agentbase" }),
-      "monocode:tab-group:colors": JSON.stringify({ agentbase: "4" }),
+      "omnicode:tab-group:labels": JSON.stringify({ agentbase: "Agentbase" }),
+      "omnicode:tab-group:colors": JSON.stringify({ agentbase: "4" }),
     });
 
     const labels = loadTabGroupLabels();
@@ -334,7 +334,7 @@ describe("migrateProjectAppearanceKeys", () => {
     expect(labels[projectKey(CORTEX)]).toBe("Agentbase");
     expect(labels.agentbase).toBeUndefined();
     expect(loadTabGroupColors()[projectKey(CORTEX)]).toBe(4);
-    expect(store.get("monocode:tab-group:key-version")).toBe("2");
+    expect(store.get("omnicode:tab-group:key-version")).toBe("2");
 
     // Renaming one afterwards leaves the other alone.
     saveTabGroupLabel(projectKey(CORTEX), "Cortex");
@@ -345,34 +345,34 @@ describe("migrateProjectAppearanceKeys", () => {
 
   it("leaves entries for projects it no longer knows about", () => {
     const store = mockLocalStorage({
-      "monocode:tab-group:labels": JSON.stringify({ gone: "Gone" }),
+      "omnicode:tab-group:labels": JSON.stringify({ gone: "Gone" }),
     });
     expect(loadTabGroupLabels().gone).toBe("Gone");
     // Unfinished: a later launch must still get the chance to claim it.
-    expect(store.get("monocode:tab-group:key-version")).toBeUndefined();
+    expect(store.get("omnicode:tab-group:key-version")).toBeUndefined();
   });
 
   it("claims an entry once its project is remembered again", () => {
     // Evicted from the 20-slot recents cap, so the first pass cannot match it.
     mockLocalStorage({
-      "monocode:tab-group:labels": JSON.stringify({ agentbase: "Finance" }),
+      "omnicode:tab-group:labels": JSON.stringify({ agentbase: "Finance" }),
     });
     expect(loadTabGroupLabels()[projectKey(FINANCE)]).toBeUndefined();
 
     // Next launch, with the project reopened.
     mockLocalStorage({
-      "monocode.recentProjects": JSON.stringify([{ path: FINANCE, openedAt: 1 }]),
-      "monocode:tab-group:labels": JSON.stringify({ agentbase: "Finance" }),
+      "omnicode.recentProjects": JSON.stringify([{ path: FINANCE, openedAt: 1 }]),
+      "omnicode:tab-group:labels": JSON.stringify({ agentbase: "Finance" }),
     });
     expect(loadTabGroupLabels()[projectKey(FINANCE)]).toBe("Finance");
   });
 
   it("keeps Windows checkouts that differ only in case together", () => {
     mockLocalStorage({
-      "monocode.recentProjects": JSON.stringify([
+      "omnicode.recentProjects": JSON.stringify([
         { path: "C:\\Users\\me\\cortex\\Agentbase", openedAt: 1 },
       ]),
-      "monocode:tab-group:labels": JSON.stringify({ Agentbase: "Finance" }),
+      "omnicode:tab-group:labels": JSON.stringify({ Agentbase: "Finance" }),
     });
     const labels = loadTabGroupLabels();
     expect(labels[projectKey("C:/Users/me/cortex/agentbase")]).toBe("Finance");

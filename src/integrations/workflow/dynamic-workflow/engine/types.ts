@@ -65,7 +65,7 @@ export function refToString(ref: InstanceRef | ActorRef): string {
 export interface PersonaSpec {
   name?: string;
   system?: string;
-  // Monocode: per-actor runtime selection. The host resolves these against the
+  // OmniCode: per-actor runtime selection. The host resolves these against the
   // run defaults and UI overrides; the engine only carries them.
   provider?: string;
   model?: string;

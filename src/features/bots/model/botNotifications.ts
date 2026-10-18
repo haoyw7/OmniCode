@@ -76,7 +76,7 @@ export function takeBotNotification(
   hostKey: string,
   activity: BotNotificationActivity | null,
 ): BotNotification | undefined {
-  const key = `monocode.assistant-notification:${hostKey}`;
+  const key = `omnicode.assistant-notification:${hostKey}`;
   let cursor = fallback.get(key);
   try {
     const saved = JSON.parse(localStorage.getItem(key) ?? "null");

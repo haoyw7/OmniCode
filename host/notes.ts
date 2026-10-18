@@ -112,7 +112,7 @@ export class HostNotes {
   private storage() {
     const desktop = this.desktopDirectory();
     const directory = resolve(desktop || this.hostDirectory);
-    const path = join(directory, desktop ? "monocode.db" : "notes.db");
+    const path = join(directory, desktop ? "omnicode.db" : "notes.db");
     if (this.connection?.path === path) return this.connection;
     this.close();
     if (!desktop) mkdirSync(directory, { recursive: true });

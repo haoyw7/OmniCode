@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 
 function draftStorage(hostKey: string) {
-  const key = `monocode.assistant-draft:${hostKey}`;
+  const key = `omnicode.assistant-draft:${hostKey}`;
   let saved = "";
   try {
     saved = localStorage.getItem(key) ?? "";

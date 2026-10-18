@@ -90,7 +90,7 @@ beforeEach(() => {
 });
 
 describe("provider-aware skill catalog", () => {
-  it("uses Pi discovery without adding MonoCode's built-in row", async () => {
+  it("uses Pi discovery without adding OmniCode's built-in row", async () => {
     const catalog = await loadSkills({ harness: "pi", cwd: "/repo/" });
 
     expect(mocks.discoverPiSkills).toHaveBeenCalledWith("/repo");
@@ -352,10 +352,10 @@ describe("file skill visibility preferences", () => {
   });
 
   it("tolerates malformed and mixed stored preferences", (): void => {
-    storage.set("monocode.disabledSkillPaths", "invalid json");
+    storage.set("omnicode.disabledSkillPaths", "invalid json");
     expect(loadDisabledSkillPaths()).toEqual([]);
     storage.set(
-      "monocode.disabledSkillPaths",
+      "omnicode.disabledSkillPaths",
       JSON.stringify([path, null, 42]),
     );
     expect(loadDisabledSkillPaths()).toEqual([path]);

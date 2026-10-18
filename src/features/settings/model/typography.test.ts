@@ -41,7 +41,7 @@ describe("font sizes", () => {
     expect(saveFontSize("ui", 30)).toBe(20);
     expect(loadFontSize("ui")).toBe(20);
     expect(saveFontSize("code", 9.6)).toBe(10);
-    localStorage.setItem("monocode.contentFontSize", "abc");
+    localStorage.setItem("omnicode.contentFontSize", "abc");
     expect(loadFontSize("content")).toBe(14);
   });
 
@@ -97,7 +97,7 @@ describe("appearance profiles", () => {
   });
 
   it("keeps explicit saved desktop weights and font families", () => {
-    localStorage.setItem("monocode.typographyProfile", JSON.stringify({ uiFont: "Custom UI", uiWeight: 500, contentFont: "Custom Content", contentWeight: 600, codeFont: "Custom Mono", codeWeight: 700 }));
+    localStorage.setItem("omnicode.typographyProfile", JSON.stringify({ uiFont: "Custom UI", uiWeight: 500, contentFont: "Custom Content", contentWeight: 600, codeFont: "Custom Mono", codeWeight: 700 }));
     const shared = loadProfile("shared");
     expect(shared).toMatchObject({ uiFont: "Custom UI", uiWeight: 500, contentFont: "Custom Content", contentWeight: 600, codeFont: "Custom Mono", codeWeight: 700 });
     initTypography();

@@ -6,12 +6,12 @@ import { normalizeProjectPath } from "../../projects/model/recents";
 import { orderByIds } from "../../../shared/lib/reorder";
 import { TAB_GROUP_COLORS } from "../../workspace/model/tabGroups";
 
-const KEY = "monocode.sessionFolders";
-const CHANGE_EVENT = "monocode:session-folders-change";
-const PINNED_COLLAPSED_KEY = "monocode.pinnedSessionsCollapsed";
-const REMINDERS_COLLAPSED_KEY = "monocode.reminderSessionsCollapsed";
-const SIDEBAR_ORDER_KEY = "monocode.sessionSidebarOrder.v1";
-const SIDEBAR_ORDER_CHANGED = "monocode:session-sidebar-order-changed";
+const KEY = "omnicode.sessionFolders";
+const CHANGE_EVENT = "omnicode:session-folders-change";
+const PINNED_COLLAPSED_KEY = "omnicode.pinnedSessionsCollapsed";
+const REMINDERS_COLLAPSED_KEY = "omnicode.reminderSessionsCollapsed";
+const SIDEBAR_ORDER_KEY = "omnicode.sessionSidebarOrder.v1";
+const SIDEBAR_ORDER_CHANGED = "omnicode:session-sidebar-order-changed";
 
 export type SessionFolder = {
   id: string;

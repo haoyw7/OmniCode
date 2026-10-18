@@ -530,7 +530,7 @@ describe("named project/session tree", () => {
   it("persists first-use expansion so renaming and removing a project update the mounted tree", () => {
     const renamed = "/workspace/renamed-alpha";
     act(() => render());
-    expect(localStorage.getItem("monocode.projectTreeExpanded.v1")).toBe(
+    expect(localStorage.getItem("omnicode.projectTreeExpanded.v1")).toBe(
       JSON.stringify([A]),
     );
     act(() => rebaseProjectTreeExpanded(A, renamed));
@@ -1902,7 +1902,7 @@ describe("unified pinned sidebar group", () => {
     const initial = pinnedRows();
     expect(initial.map((row) => !!row.dataset.sidebarPinnedEntry)).toEqual([true, true, false]);
     localStorage.setItem(
-      "monocode.sidebarPinnedOrder.v1",
+      "omnicode.sidebarPinnedOrder.v1",
       JSON.stringify([
         A,
         initial[1].dataset.sidebarPinnedEntry,
@@ -2176,10 +2176,10 @@ describe("unified pinned sidebar group", () => {
       } as MediaQueryList);
       const path =
         origin === "chat"
-          ? "/home/me/Documents/ohmymonocode/2026-10-11/chat-101010-aaaaaa"
+          ? "/home/me/Documents/omnicode/2026-10-11/chat-101010-aaaaaa"
           : A;
       if (origin === "chat") {
-        localStorage.setItem("monocode.chatFolders.v1", JSON.stringify([path]));
+        localStorage.setItem("omnicode.chatFolders.v1", JSON.stringify([path]));
         props.recents = [];
       }
       if (origin === "pinned project") savePinnedProjects([path]);
@@ -2325,10 +2325,10 @@ describe("unified pinned sidebar group", () => {
 });
 
 describe("sidebar chat conversations", () => {
-  const C1 = "/home/me/Documents/ohmymonocode/2026-10-11/chat-101010-aaaaaa";
-  const C2 = "/home/me/Documents/ohmymonocode/2026-10-11/chat-202020-bbbbbb";
+  const C1 = "/home/me/Documents/omnicode/2026-10-11/chat-101010-aaaaaa";
+  const C2 = "/home/me/Documents/omnicode/2026-10-11/chat-202020-bbbbbb";
   beforeEach(() => {
-    localStorage.setItem("monocode.chatFolders.v1", JSON.stringify([C1, C2]));
+    localStorage.setItem("omnicode.chatFolders.v1", JSON.stringify([C1, C2]));
     props.cwd = C1;
     props.recents = [];
     props.sessions = [summary("a", C1, "Alpha conversation")];
@@ -2530,7 +2530,7 @@ describe("sidebar chat conversations", () => {
 
   it("applies provider, time, archive and running-status filters to chat rows", () => {
     localStorage.setItem(
-      "monocode.sessionSidebarFilters",
+      "omnicode.sessionSidebarFilters",
       JSON.stringify({
         hiddenHarnesses: ["codex"],
         time: "7d",
@@ -2700,7 +2700,7 @@ describe("project conversation summaries", () => {
       remoteState.rows.set(path, [
         { ...hostRow("host-recent"), updatedAt: 2000 },
       ]);
-      window.dispatchEvent(new Event("monocode:remote-history-updated"));
+      window.dispatchEvent(new Event("omnicode:remote-history-updated"));
     });
     await act(async () => render());
     expect(props.onLoadProject).toHaveBeenCalledExactlyOnceWith(A);
@@ -2763,7 +2763,7 @@ describe("unified project search loading", () => {
         path,
         path === B ? [hostRow("host-match", "Found through Host")] : [],
       );
-      window.dispatchEvent(new Event("monocode:remote-history-updated"));
+      window.dispatchEvent(new Event("omnicode:remote-history-updated"));
     });
     act(() => render());
     await act(async () => query("Found through Host"));
@@ -3042,8 +3042,8 @@ it("hands over the right-clicked conversation in its own project", async () => {
 });
 
 describe("chat project row", () => {
-  const C1 = "/home/me/Documents/ohmymonocode/2026-10-11/chat-101010-aaaaaa";
-  const C2 = "/home/me/Documents/ohmymonocode/2026-10-11/chat-202020-bbbbbb";
+  const C1 = "/home/me/Documents/omnicode/2026-10-11/chat-101010-aaaaaa";
+  const C2 = "/home/me/Documents/omnicode/2026-10-11/chat-202020-bbbbbb";
   const chatRow = () => container.querySelector("[data-chat-project]")!;
   const chatIds = () =>
     [...chatRow().querySelectorAll<HTMLElement>("[data-session-card]")].map(
@@ -3051,7 +3051,7 @@ describe("chat project row", () => {
     );
 
   it("places chats before workflows and projects without recent-session duplicates and starts new chats", () => {
-    localStorage.setItem("monocode.chatFolders.v1", JSON.stringify([C1, C2]));
+    localStorage.setItem("omnicode.chatFolders.v1", JSON.stringify([C1, C2]));
     props.projectHistory = [
       { ...summary("older-chat", C1), updatedAt: 10 },
       { ...summary("newer-chat", C2), updatedAt: 30 },

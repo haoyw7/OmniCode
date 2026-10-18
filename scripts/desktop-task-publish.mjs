@@ -184,12 +184,12 @@ export async function deployDesktopUpdate({ output, directory, beforeCommit }) {
       privileged ? ["-n", command, ...args] : args,
       { stdio: "pipe" },
     );
-  const temporary = join(directory, `.monocode-latest-${randomUUID()}.json`);
+  const temporary = join(directory, `.omnicode-latest-${randomUUID()}.json`);
   try {
     run("cp", [
       "-R",
       "--no-preserve=ownership",
-      join(output, "monocode-desktop"),
+      join(output, "omnicode-desktop"),
       directory,
     ]);
     run("install", ["-m", "644", join(output, "latest.json"), temporary]);
@@ -230,7 +230,7 @@ export async function verifyDeployment({ root, directory, manifest }) {
 
 export async function publishCompletedTask({
   root,
-  directory = process.env.MONOCODE_DESKTOP_UPDATE_DIR || "/var/www/html",
+  directory = process.env.OMNICODE_DESKTOP_UPDATE_DIR || "/var/www/html",
   expectedFingerprint,
   build = buildAllDesktops,
   prepare = prepareDesktopUpdate,
@@ -306,7 +306,7 @@ if (
     const root = fileURLToPath(new URL("../", import.meta.url));
     const key = join(
       homedir(),
-      ".local/share/monocode/desktop-updates/signing.key",
+      ".local/share/omnicode/desktop-updates/signing.key",
     );
     const config = await readJson(join(root, "src-tauri/tauri.conf.json"));
     await access(key, constants.R_OK);

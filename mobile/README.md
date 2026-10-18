@@ -1,6 +1,6 @@
-# ohmymonocode Mobile
+# OmniCode Mobile
 
-A Capacitor iOS / Android client for an existing MonoCode Host. The app supports
+A Capacitor iOS / Android client for an existing OmniCode Host. The app supports
 manual **Host URL + device token** connections, opening projects by host folder
 path, conversation history, Agent/model/reasoning selection for new conversations,
 model/reasoning changes for idle conversations, permission selection,
@@ -29,7 +29,7 @@ mobile app.
 
 ## Connect to a Host
 
-The desktop starts the shared MonoCode Host automatically. For a computer
+The desktop starts the shared OmniCode Host automatically. For a computer
 without the desktop running yet, run the matching Host release manually. Install
 and sign in to a supported provider CLI, then run the Host and issue a separate
 device credential for your phone:
@@ -37,8 +37,8 @@ device credential for your phone:
 ```sh
 npm ci
 npm run host:build
-node build/host/monocode-host.mjs start
-node build/host/monocode-host.mjs pair --name "My phone"
+node build/host/omnicode-host.mjs start
+node build/host/omnicode-host.mjs pair --name "My phone"
 ```
 
 The command prints a generated device token for this phone. Use a separate
@@ -110,7 +110,7 @@ Disabling notifications or denying permission preserves unread dots.
 
 While connected with Android notification permission, a silent ongoing **Remote**
 card shows **Connected to {computer name}** (or **Reconnecting to {computer name}**
-when the network is unavailable). Tap it to return to MonoCode. The native
+when the network is unavailable). Tap it to return to OmniCode. The native
 foreground receiver continues after Home, Android Back/closing the page, and
 removing the app's recent task. **Disconnect** stops reception and removes the
 card. The **System notifications** switch controls reply/input alerts separately;
@@ -237,6 +237,11 @@ npm run mobile:sync
 `mobile:sync` copies it into both native projects and refreshes native plugins.
 The normal desktop `dev`, `build`, and Tauri entries remain separate.
 
+APK build and publication requests default to a release-signed `OmniCode.apk` using
+the existing [release key](#release-signing-key). The following debug commands are
+for explicitly requested development/debug builds only; `npm run mobile:apk`
+currently produces a debug build and must not be used as the default delivery path.
+
 Android requires JDK 21, Android SDK 36, and the platform's build tools. Open
 `mobile/android` in Android Studio or run:
 
@@ -251,7 +256,7 @@ The debug APK is `mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
 To build locally with an explicit version name and without LAN publication:
 
 ```sh
-MONOCODE_MOBILE_DEFER_PUBLISH=1 ORG_GRADLE_PROJECT_monocodeVersionName=0.10.0 npm run mobile:apk
+OMNICODE_MOBILE_DEFER_PUBLISH=1 ORG_GRADLE_PROJECT_omnicodeVersionName=0.10.0 npm run mobile:apk
 ```
 
 The Android versionCode still increases; omitting the version-name override uses
@@ -266,6 +271,53 @@ Default builds use this fork's GitHub Releases. Build commands do not publish a
 Release. Builds and publication require an explicit request; see
 [AGENTS.md](../AGENTS.md#verification).
 
+GitHub Android releases use the exact asset name `OmniCode.apk`. The accompanying
+`mobile-latest.json` uses `/OmniCode.apk` as `downloadPath` and records the APK's
+versionCode, versionName, byte size and SHA-256. Upload both assets to the same
+Release. Do not append a version, build number, date, or any other suffix to the
+delivered APK filename. Keep the application display name `OmniCode` and increase
+versionCode for subsequent builds. Legacy LAN scripts produce versioned internal
+filenames and are not the default release delivery workflow.
+
+For a production APK, build the frontend with `npm run mobile:build -- --mode release`,
+run `npx cap sync android`, then run Gradle `:app:assembleRelease`. The Gradle release
+output is unsigned unless an external signing configuration is supplied. Align it
+with Android SDK `zipalign`, then sign it with `apksigner` using the dedicated
+release keystore and output name `OmniCode.apk`; verify alignment and the signing
+certificate before publication. Never sign production builds with the debug key.
+Keep the release keystore and its password outside the repository, back them up
+securely, and reuse the same key for future updates. A debug-signed installation
+must be uninstalled before installing a differently signed release, which removes
+its local application data.
+
+### Release signing key
+
+All future APK deliveries and releases must reuse the dedicated OmniCode key first
+used on 2026-10-18 for version 0.1.0 (build 3). Never regenerate, replace, rotate,
+or fall back to a debug key unless the user explicitly requests that change. If
+the existing key cannot be accessed, report the blocker and stop signing/publication.
+
+- Keystore type: PKCS12; alias: `omnicode`.
+- Certificate SHA-256:
+  `E4:81:24:FA:A8:1F:5B:60:F4:3E:5C:54:43:BC:E1:11:61:81:E2:DE:87:26:FF:F7:B2:42:6E:69:CC:80:EB:00`.
+- Primary keystore in WSL `Ubuntu-26.04`:
+  `/home/wy/.local/share/omnicode/android-signing/omnicode-release.p12`.
+- Primary password file:
+  `/home/wy/.local/share/omnicode/android-signing/password.txt`.
+  The directory has mode 700; both files have mode 600.
+- Windows backup directory: `C:\Users\wy\.android\omnicode-release`.
+  It contains `omnicode-release.p12`, `password.dpapi`, and recovery instructions in
+  `README.txt`. The password backup uses DPAPI and is tied to the current Windows
+  account and machine; it is not a portable password backup.
+
+Keep signing material outside Git and Release assets. Do not print passwords or
+private keys in commands, logs, or documentation. Preserve a secure independent
+backup before resetting Windows or deleting the WSL distribution. Pass password
+files directly to signing tools instead of putting their contents in command arguments.
+Before publication, verify the signed APK's certificate against the fingerprint
+above, confirm debugging is disabled, check alignment, and verify that the manifest's
+version, size, and SHA-256 match the actual `OmniCode.apk`.
+
 ## iOS development
 
 For iOS, use macOS with Xcode and Swift Package Manager:
@@ -277,7 +329,7 @@ npm run mobile:ios
 Select your signing team in Xcode, then run the `App` target on a simulator or
 phone. The iOS project uses `MobileBridgeViewController` from both its storyboard
 and SceneDelegate to register secure storage. The iOS deployment target is 15;
-Android minimum SDK is 24. Store signing and distribution are not configured.
+Android minimum SDK is 24. App Store signing and distribution are not configured.
 
 ## Browser development
 
@@ -286,7 +338,7 @@ uses a **local Vite proxy bound to one configured Host**, rather than changing
 Host CORS or exposing its token in a URL:
 
 ```sh
-MONOCODE_MOBILE_HOST_URL=http://127.0.0.1:3774 npm run mobile:dev
+OMNICODE_MOBILE_HOST_URL=http://127.0.0.1:3774 npm run mobile:dev
 ```
 
 Open `http://127.0.0.1:1425/mobile.html` and enter the same configured Host URL and

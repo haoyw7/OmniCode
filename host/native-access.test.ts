@@ -5,7 +5,7 @@ import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  IN_USE_BY_MONOCODE,
+  IN_USE_BY_OMNICODE,
   acquireNativeLease,
   explicitSession,
   nativeLockPath,
@@ -21,7 +21,7 @@ afterEach(async () => {
   for (const cleanup of cleanups.splice(0).reverse()) await cleanup();
 });
 function temp() {
-  const directory = realpathSync(mkdtempSync(join(tmpdir(), "monocode-native-access-")));
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), "omnicode-native-access-")));
   cleanups.push(() => rmSync(directory, { recursive: true, force: true }));
   return directory;
 }
@@ -66,7 +66,7 @@ describe("native session lock interop", () => {
   it.runIf(linux)("serializes writers through flock and releases on demand", async () => {
     const lock = join(temp(), "locks", "x.lock");
     const first = await acquireNativeLease(lock);
-    await expect(acquireNativeLease(lock)).rejects.toThrow(IN_USE_BY_MONOCODE);
+    await expect(acquireNativeLease(lock)).rejects.toThrow(IN_USE_BY_OMNICODE);
     await first.release();
     const second = await acquireNativeLease(lock);
     await second.release();
@@ -103,7 +103,7 @@ child.on("exit", (code) => process.exit(code ?? 1));
       holder.stdin!.end();
     }));
     await new Promise((resolve) => holder.stdout!.once("data", resolve));
-    await expect(acquireNativeLease(lock)).rejects.toThrow(IN_USE_BY_MONOCODE);
+    await expect(acquireNativeLease(lock)).rejects.toThrow(IN_USE_BY_OMNICODE);
   });
 });
 

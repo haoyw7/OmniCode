@@ -10,7 +10,7 @@ import {
   type UiLanguage,
 } from "./language";
 
-const LANGUAGE_EVENT = "monocode-ui-language-changed";
+const LANGUAGE_EVENT = "omnicode-ui-language-changed";
 let nativeMenuUpdate = Promise.resolve();
 
 function syncNativeMenu() {

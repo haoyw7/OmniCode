@@ -142,7 +142,7 @@ it("retains per-thread drafts and scroll state while routing sends only to the s
   expect(rpc.mock.calls.find(([method]) => method === "botThreads.send")?.[1]).toMatchObject({ botId: "A", threadId: "A-1", text: "Draft A1" });
   await select("B");
   expect(composer().value).toBe("Draft B1");
-  expect(localStorage.getItem(`monocode.assistant-draft:${botCacheKey("host", { botId: "A", threadId: "A-2" })}`)).toBe("Draft A2");
+  expect(localStorage.getItem(`omnicode.assistant-draft:${botCacheKey("host", { botId: "A", threadId: "A-2" })}`)).toBe("Draft A2");
   expect(rpc.mock.calls.some(([method]) => method.startsWith("assistant."))).toBe(false);
 });
 it("creates a Bot only after saving its editable draft and creates a named Thread after submission", async () => {
@@ -420,7 +420,7 @@ it("pins without duplicate rows, keeps pins searchable and drops an archived Bot
   act(() => active().querySelector<HTMLElement>('[title="B"]')!.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, clientX: 10, clientY: 20 }))); await flush();
   const pin = [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')].find(button => button.textContent?.includes("Pin Bot"))!;
   act(() => pin.click()); await flush();
-  expect(JSON.parse(localStorage.getItem("monocode.bot-pins:host")!)).toEqual(["B"]);
+  expect(JSON.parse(localStorage.getItem("omnicode.bot-pins:host")!)).toEqual(["B"]);
   expect(active().querySelector('.desktop-bots-pinned')?.textContent).toBe("B");
   expect(active().querySelector('.desktop-bots-contacts [title="B"]')).toBeNull();
   await select("B");
@@ -437,7 +437,7 @@ it("pins without duplicate rows, keeps pins searchable and drops an archived Bot
   act(() => setValue(search, "")); await flush();
   snapshot = { ...snapshot, bots: snapshot.bots.map(bot => bot.id === "B" ? { ...bot, archivedAt: 1 } : bot) };
   await act(async () => { await vi.advanceTimersByTimeAsync(2100); }); await flush();
-  expect(JSON.parse(localStorage.getItem("monocode.bot-pins:host")!)).toEqual([]);
+  expect(JSON.parse(localStorage.getItem("omnicode.bot-pins:host")!)).toEqual([]);
   await finishMotion();
   expect(active().querySelector('.desktop-bots-pinned')).toBeNull();
 });
@@ -479,7 +479,7 @@ it("reveals team search matches and restores the previous fold state after Escap
 });
 
 it("opens the last thread with picker arrows and Enter, filters results, and closes with Escape", async () => {
-  localStorage.setItem("monocode.bot-selection:host", JSON.stringify({ botId: "A", threadId: "A-2" }));
+  localStorage.setItem("omnicode.bot-selection:host", JSON.stringify({ botId: "A", threadId: "A-2" }));
   await render(); await select("B");
   const field = await recipient();
   expect(node.querySelector('.desktop-bots-create:not([aria-hidden]) .desktop-bots-draft-row')?.textContent).toBe("New");
@@ -533,7 +533,7 @@ it("clamps and shares the sidebar width across retained thread surfaces", async 
   const separator = () => active().querySelector<HTMLElement>('[aria-label="Resize sidebar"]')!;
   act(() => separator().dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true })));
   await flush();
-  expect(localStorage.getItem("monocode.bots-sidebar-width")).toBe("400");
+  expect(localStorage.getItem("omnicode.bots-sidebar-width")).toBe("400");
   await select("B");
   expect(separator().getAttribute("aria-valuenow")).toBe("400");
   act(() => separator().dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
@@ -548,7 +548,7 @@ it("clamps and shares the sidebar width across retained thread surfaces", async 
 
 
 it("unpins from the pinned card keyboard menu and restores the ordinary row", async () => {
-  localStorage.setItem("monocode.bot-pins:host", JSON.stringify(["B"]));
+  localStorage.setItem("omnicode.bot-pins:host", JSON.stringify(["B"]));
   await render();
   const card = active().querySelector<HTMLButtonElement>('.desktop-bots-pinned [title="B"]')!;
   await key(card, "ContextMenu");
@@ -556,5 +556,5 @@ it("unpins from the pinned card keyboard menu and restores the ordinary row", as
   act(() => unpin.click()); await finishMotion();
   expect(active().querySelector('.desktop-bots-pinned')).toBeNull();
   expect(active().querySelectorAll('.desktop-bots-contacts [title="B"]')).toHaveLength(1);
-  expect(JSON.parse(localStorage.getItem("monocode.bot-pins:host")!)).toEqual([]);
+  expect(JSON.parse(localStorage.getItem("omnicode.bot-pins:host")!)).toEqual([]);
 });

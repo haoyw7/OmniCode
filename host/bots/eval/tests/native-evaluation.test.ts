@@ -17,7 +17,7 @@ const scenario = () =>
       { kind: "excludes", values: ["secret"] },
     ],
     rubric: ["task_completion"],
-    provenance: { kind: "original", source: "monocode-original-v1" },
+    provenance: { kind: "original", source: "omnicode-original-v1" },
   });
 const run = (extra: Record<string, unknown> = {}) => ({
   status: "completed",

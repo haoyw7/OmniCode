@@ -31,13 +31,13 @@ export function scopedBotRpc(rpc: BotRpc, scope: BotScope, defaultScope: boolean
 
 /** Copy the default conversation's local state once, preserving old mobile keys. */
 export function migrateDefaultBotCache(environmentId: string, cacheKey: string, storage: Pick<Storage, "getItem" | "setItem"> = localStorage) {
-  const marker = `monocode.bot-cache-migrated:${cacheKey}`;
+  const marker = `omnicode.bot-cache-migrated:${cacheKey}`;
   try {
     if (storage.getItem(marker)) return;
     for (const kind of ["draft", "reply", "outbox", "read", "notification"])
-      if (storage.getItem(`monocode.assistant-${kind}:${cacheKey}`) === null) {
-        const value = storage.getItem(`monocode.assistant-${kind}:${environmentId}`);
-        if (value !== null) storage.setItem(`monocode.assistant-${kind}:${cacheKey}`, value);
+      if (storage.getItem(`omnicode.assistant-${kind}:${cacheKey}`) === null) {
+        const value = storage.getItem(`omnicode.assistant-${kind}:${environmentId}`);
+        if (value !== null) storage.setItem(`omnicode.assistant-${kind}:${cacheKey}`, value);
       }
     storage.setItem(marker, "1");
   } catch { /* Local drafts remain usable if persistent storage is unavailable. */ }

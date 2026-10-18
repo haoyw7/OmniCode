@@ -1,4 +1,4 @@
-//! Provider process supervisor for the headless MonoCode Host.
+//! Provider process supervisor for the headless OmniCode Host.
 //!
 //! The Host talks to this process over newline-delimited JSON on stdio:
 //! requests `{"id":1,"op":"spawn"|"write"|"kill"|"killAll",...}` are answered
@@ -18,7 +18,7 @@ use std::time::Duration;
 #[cfg(not(windows))]
 use std::time::Instant;
 
-use monocode_process_tree::{signal_tree, spawn_managed, terminate_all, TreeSignal};
+use omnicode_process_tree::{signal_tree, spawn_managed, terminate_all, TreeSignal};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -217,9 +217,9 @@ impl Supervisor {
             // A provider that exits owns nothing anymore: stop what it left in
             // its group, which would otherwise hold the output pipes open.
             #[cfg(not(windows))]
-            if monocode_process_tree::tree_alive(pid) {
+            if omnicode_process_tree::tree_alive(pid) {
                 signal_tree(pid, TreeSignal::Term);
-                if !monocode_process_tree::wait_until_dead(&[pid], Instant::now() + ORPHAN_GRACE) {
+                if !omnicode_process_tree::wait_until_dead(&[pid], Instant::now() + ORPHAN_GRACE) {
                     signal_tree(pid, TreeSignal::Kill);
                 }
             }
@@ -340,7 +340,7 @@ fn write_queue(
 }
 
 fn main() {
-    if let Err(error) = monocode_process_tree::initialize() {
+    if let Err(error) = omnicode_process_tree::initialize() {
         eprintln!("Process supervision is unavailable: {error}");
         std::process::exit(1);
     }

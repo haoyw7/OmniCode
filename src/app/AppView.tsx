@@ -377,7 +377,7 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
           <SessionHeaderActionsContext.Provider value={sessionHeaderActions}>
             <div
               data-desktop-mode={desktopMode}
-              className={`app-shell-root desktop-workspace relative isolate flex h-full flex-col text-content ${
+              className={`app-shell-root desktop-workspace relative flex h-full flex-col text-content ${
                 HAS_NATIVE_GLASS
                   ? "bg-background-base/40"
                   : "bg-background-base"
@@ -397,7 +397,7 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
               <div
                 data-window-chrome
                 className="relative shrink-0"
-                style={{ zIndex: LAYER.windowChrome }}
+                style={{ zIndex: LAYER.windowChrome, pointerEvents: "auto" }}
               >
                 {!IS_MAC ? (
                   <MenuBar
@@ -440,7 +440,7 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
                 ) : null}
               </div>
 
-              <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden">
+              <div className="relative isolate flex min-h-0 min-w-0 flex-1 overflow-hidden">
                 <SidebarRail open={!sessionSidebarOpen}>
                   <ActivityBar
                     layout="rail"

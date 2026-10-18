@@ -15,8 +15,8 @@ export type DesktopLocation = {
   cwd: string;
 };
 export type DesktopLocations = Partial<Record<DesktopMode, DesktopLocation>>;
-export const DESKTOP_MODE_KEY = "monocode.desktopMode";
-export const DESKTOP_LOCATIONS_KEY = "monocode.desktopLocations.v1";
+export const DESKTOP_MODE_KEY = "omnicode.desktopMode";
+export const DESKTOP_LOCATIONS_KEY = "omnicode.desktopLocations.v1";
 
 /** Presentation grouping only: never rewrite a session's cwd or provider. */
 export function desktopModeForCwd(cwd: string): DesktopMode {

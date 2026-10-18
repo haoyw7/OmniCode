@@ -21,7 +21,7 @@ afterEach(async () => {
 });
 
 function setup(harness: "codex" | "claude" | "pi" | "omp" = "codex") {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-engine-test-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-engine-test-"));
   const store = new HostStore(join(directory, "host.db"));
   const project = store.addProject(directory, "Test");
   const turns: Array<{ input: SendTurnInput; finish: () => void }> = [];
@@ -84,7 +84,7 @@ describe("headless session ownership", () => {
     const scope = engine.assistant.store.scope;
     const run = engine.bots.store.queuedRun(scope, { id: "wake", attempts: 0, createdAt: Date.now() });
     engine.bots.store.updateRun(scope, run.id, { status: "running" });
-    const context: HarnessBotContext = { scope: { ...scope, runId: run.id }, systemInstructions: "Identity and Soul", contextFingerprint: "v1", tools: { enabledActions: ["memory.read"] }, controlCli: { command: "monocode-control" } };
+    const context: HarnessBotContext = { scope: { ...scope, runId: run.id }, systemInstructions: "Identity and Soul", contextFingerprint: "v1", tools: { enabledActions: ["memory.read"] }, controlCli: { command: "omnicode-control" } };
     const command = { type: "send", commandId: "context-send", sessionId: id, text: "USER AND RECALL REFERENCE" };
     expect(() => engine.command({ ...command, botContext: context })).toThrow("reserved");
     expect(() => engine.assistantCommand(command, undefined, { ...context, scope: { ...context.scope, threadId: "forged" } })).toThrow("does not belong");
@@ -147,11 +147,11 @@ describe("headless session ownership", () => {
   it("reads Claude hooks from the execution Host for each new turn", async () => {
     const { store, engine, turns, id } = setup("claude");
     const preferences = new HostClientState(store);
-    preferences.preferencesPatch({ operationId: "disable-hooks", changes: { "monocode.claudeHooks": "0" } });
+    preferences.preferencesPatch({ operationId: "disable-hooks", changes: { "omnicode.claudeHooks": "0" } });
     engine.command({ type: "send", commandId: "no-hooks", sessionId: id, text: "First request" });
     await vi.waitFor(() => expect(turns).toHaveLength(1));
     expect(turns[0].input.claudeHooks).toBe(false);
-    preferences.preferencesPatch({ operationId: "enable-hooks", changes: { "monocode.claudeHooks": "1" } });
+    preferences.preferencesPatch({ operationId: "enable-hooks", changes: { "omnicode.claudeHooks": "1" } });
     expect(turns[0].input.claudeHooks).toBe(false);
     turns[0].finish();
     await vi.waitFor(() => expect(store.session(id).status).toBe("idle"));
@@ -1360,15 +1360,15 @@ describe("imported native sessions", () => {
   }
 
   it.runIf(process.platform === "linux")("continues under the Host's lock with a strict binding, then releases it", async () => {
-    const { acquireNativeLease, IN_USE_BY_MONOCODE } = await import("./native-access");
+    const { acquireNativeLease, IN_USE_BY_OMNICODE } = await import("./native-access");
     const { engine, provider, turns, id, lock, path, store, nativeId } = await nativeSetup();
     expect(await engine.nativeAccess(id)).toMatchObject({ state: "idle" });
     engine.command({ type: "send", commandId: "native-send", sessionId: id, text: "Continue from the phone" });
     await vi.waitFor(() => expect(turns, store.session(id).session.blocks.at(-1)?.text).toHaveLength(1), { timeout: 5_000 });
     expect(provider.bind).toHaveBeenCalledWith(id, nativeId, expect.any(String), undefined, expect.objectContaining({ path }));
     expect(turns[0].input.nativeSession?.path).toBe(path);
-    // Another MonoCode writer cannot start while the Host turn runs.
-    await expect(acquireNativeLease(lock)).rejects.toThrow(IN_USE_BY_MONOCODE);
+    // Another OmniCode writer cannot start while the Host turn runs.
+    await expect(acquireNativeLease(lock)).rejects.toThrow(IN_USE_BY_OMNICODE);
     expect(await engine.nativeAccess(id)).toMatchObject({ state: "idle" });
     turns[0].finish();
     await vi.waitFor(() => expect(store.session(id).status).toBe("idle"));
@@ -1378,12 +1378,12 @@ describe("imported native sessions", () => {
     await lease.release();
   }, 10_000);
 
-  it.runIf(process.platform === "linux")("refuses to write while another MonoCode writer holds the session", async () => {
+  it.runIf(process.platform === "linux")("refuses to write while another OmniCode writer holds the session", async () => {
     const { acquireNativeLease } = await import("./native-access");
     const { engine, provider, id, lock, store } = await nativeSetup();
     const other = await acquireNativeLease(lock);
     try {
-      expect(await engine.nativeAccess(id)).toMatchObject({ reason: "anotherMonocode" });
+      expect(await engine.nativeAccess(id)).toMatchObject({ reason: "anotherOmniCode" });
       // A known owner fails fast, before a turn starts.
       expect(() => engine.command({ type: "send", commandId: "blocked", sessionId: id, text: "x" })).toThrow(
         "OmniCode desktop is using this conversation",
@@ -1639,7 +1639,7 @@ describe("projectless chats", () => {
     const home = join(directory, "home");
     const chat = await engine.createChat(home);
     expect(chat.cwd.replaceAll("\\", "/")).toMatch(
-      /\/home\/Documents\/ohmymonocode\/\d{4}-\d{2}-\d{2}\/chat-\d{6}-[a-z0-9]{6}$/,
+      /\/home\/Documents\/omnicode\/\d{4}-\d{2}-\d{2}\/chat-\d{6}-[a-z0-9]{6}$/,
     );
     expect(statSync(chat.cwd).isDirectory()).toBe(true);
     expect(store.projects().some((project) => project.id === chat.id)).toBe(true);

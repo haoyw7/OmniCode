@@ -3,8 +3,8 @@
   "notice": "Code license is not blanket permission for all data. All external entries are unintegrated unless status explicitly changes with evidence.",
   "sources": [
     {
-      "id": "monocode-original-v1",
-      "title": "MonoCode original assistant scenarios v1",
+      "id": "omnicode-original-v1",
+      "title": "OmniCode original assistant scenarios v1",
       "url": null,
       "revision": "v1-2026-10-09",
       "code_license": "MIT (repository LICENSE)",

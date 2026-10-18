@@ -29,7 +29,7 @@ export async function publishUpdate(
     packageId: config.packageId,
     versionCode: artifact.versionCode,
     versionName: artifact.versionName,
-    downloadPath: `/apk/monocode-${artifact.versionCode}.apk`,
+    downloadPath: `/apk/omnicode-${artifact.versionCode}.apk`,
     size: data.length,
     sha256: createHash("sha256").update(data).digest("hex"),
     publishedAt: new Date().toISOString(),

@@ -22,14 +22,14 @@ afterEach(() => uninstall());
 
 describe("shared preference effects", () => {
   it("does not replay appearance for sidebar navigation state", () => {
-    announce(["monocode.projectRailOrder"]);
-    announce(["monocode.recentProjects", "monocode.sessionSidebarOrder.v1"]);
-    announce(['monocode.sessionFolders::["/repo"]']);
+    announce(["omnicode.projectRailOrder"]);
+    announce(["omnicode.recentProjects", "omnicode.sessionSidebarOrder.v1"]);
+    announce(['omnicode.sessionFolders::["/repo"]']);
     expect(initAppearance).not.toHaveBeenCalled();
   });
 
   it("replays appearance when a presentation key or unknown set changes", () => {
-    announce(["monocode.recentProjects", "monocode.themeHue"]);
+    announce(["omnicode.recentProjects", "omnicode.themeHue"]);
     announce();
     expect(initAppearance).toHaveBeenCalledTimes(2);
   });

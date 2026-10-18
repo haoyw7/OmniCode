@@ -151,9 +151,14 @@ export function WorkflowRunCard({ block, parent: session }: { block: Block; pare
                 onResume: () => act(() => workflowActions.resume(cwd, meta.runId)),
                 onOpenPill: (pill) => {
                   const sessionId = pill.instance?.sessionId;
-                  if (sessionId) app.openAgent({ cwd, parentSessionId: session.id, runId: meta.runId, sessionId, title: pill.runtimeName ?? meta.name });
+                  if (sessionId) app.openAgent({ cwd, parentSessionId: session.id, runId: meta.runId, sessionId, title: pill.runtimeName ?? meta.name,
+                    avatar: { avatarIndex: pill.avatarIndex, name: pill.runtimeName ?? meta.name, status: pill.status } });
                 },
-                onOpenArtifact: () => app.openRun({ cwd, parentSessionId: session.id, runId: meta.runId, toolCallId: block.id, workflowName: meta.name }),
+                onOpenArtifact: (artifactId) => {
+                  const artifact = run?.artifacts?.find((candidate) => candidate.id === artifactId);
+                  app.openArtifact({ cwd, parentSessionId: session.id, runId: meta.runId, artifactId,
+                    title: artifact?.title, kind: artifact?.kind, contentType: artifact?.contentType });
+                },
               }
             : {})}
         />

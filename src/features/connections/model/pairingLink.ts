@@ -1,6 +1,6 @@
-/** The QR text read by the mobile app: `monocode://pair?host=<Host URL>&token=<pairing code>`. */
+/** The QR text read by the mobile app: `omnicode://pair?host=<Host URL>&token=<pairing code>`. */
 export function pairingLink(hostUrl: string, token: string): string {
-  return `monocode://pair?${new URLSearchParams({ host: hostUrl, token })}`;
+  return `omnicode://pair?${new URLSearchParams({ host: hostUrl, token })}`;
 }
 
 /** The Host URL as the phone reaches it, or undefined if it has a path, query or credentials. */

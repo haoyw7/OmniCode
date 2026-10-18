@@ -17,7 +17,7 @@ afterEach(() => {
     rmSync(path, { recursive: true, force: true });
 });
 it.each([[false, "one"], [true, "one"], [true, "default"]] as const)("reads the selected Claude account's metadata with custom Home %s and profile %s", async (custom, selected) => {
-  const root = mkdtempSync(join(tmpdir(), "monocode-native-title-"));
+  const root = mkdtempSync(join(tmpdir(), "omnicode-native-title-"));
   directories.push(root);
   const config = join(root, "desktop.json");
   writeFileSync(config, JSON.stringify({ desktopDirectory: root }));
@@ -68,7 +68,7 @@ it.each([[false, "one"], [true, "one"], [true, "default"]] as const)("reads the 
   ).toBeNull();
 });
 it("rejects a transcript symlink outside the provider's projects directory", async () => {
-  const root = mkdtempSync(join(tmpdir(), "monocode-native-title-"));
+  const root = mkdtempSync(join(tmpdir(), "omnicode-native-title-"));
   directories.push(root);
   const project = join(root, "projects", "-project");
   mkdirSync(project, { recursive: true });

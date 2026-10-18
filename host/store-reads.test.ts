@@ -147,7 +147,7 @@ describe("host store reads", () => {
   });
 
   it("knows which sessions hold queued messages without parsing them", () => {
-    const path = join(tmpdir(), `monocode-store-queued-${process.pid}-${Date.now()}.db`);
+    const path = join(tmpdir(), `omnicode-store-queued-${process.pid}-${Date.now()}.db`);
     const seeded = new HostStore(path);
     const project = seeded.addProject("/project", "Project");
     const queued = snapshot(project.id, "queued");

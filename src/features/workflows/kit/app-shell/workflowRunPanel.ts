@@ -9,6 +9,7 @@ import {
   type WorkflowRunStopReason,
 } from "../components/workflow-graph/run-status-presentation.js";
 import type { WorkflowRunActor, WorkflowRunState } from "../_shims/protocol.js";
+import type { WorkflowAgentAvatar } from "../../model/workflowAgentAvatar";
 
 /**
  * Cancel 只在 `running` 上可用。
@@ -86,6 +87,7 @@ export function workflowRunResultView(run: WorkflowRunState | undefined): Workfl
  * 随行的订阅目标，缺席时 tab 里是「尚未启动」占位。
  */
 export interface WorkflowActorInstance {
+  avatar?: WorkflowAgentAvatar;
   siteId: string;
   ordinal: number;
   name?: string;

@@ -152,7 +152,7 @@ it("notifies mounted controls at expiry without a reload and synchronizes change
     expect(notificationPreferencesSnapshot()).not.toBe(muted);
     listener.mockClear();
     window.dispatchEvent(
-      new StorageEvent("storage", { key: "monocode.projectNotifications.v1" }),
+      new StorageEvent("storage", { key: "omnicode.projectNotifications.v1" }),
     );
     expect(listener).toHaveBeenCalled();
   } finally {
@@ -163,7 +163,7 @@ it("notifies mounted controls at expiry without a reload and synchronizes change
 
 it("ignores malformed persisted entries without losing valid project choices", () => {
   localStorage.setItem(
-    "monocode.projectNotifications.v1",
+    "omnicode.projectNotifications.v1",
     JSON.stringify({
       private: {
         disabled: ["issues", "future-category", 5],

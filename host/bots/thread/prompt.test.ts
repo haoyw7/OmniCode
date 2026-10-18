@@ -78,7 +78,7 @@ it("gives the brain local time, conversation gap, personality and promises", () 
         },
       ],
     } as unknown as BotThreadRecord,
-    launcher: "monocode-host",
+    launcher: "omnicode-host",
     actions: ["projects.list"],
     wakeup,
     messages: [

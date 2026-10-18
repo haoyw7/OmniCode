@@ -389,7 +389,7 @@ mod path_tests {
     /// return trimmed this resolves to nothing.
     #[test]
     fn a_uri_list_line_resolves_to_the_file_it_names() {
-        let dir = std::env::temp_dir().join(format!("monocode-uri-list-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-uri-list-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let file = dir.join("All_BTech_Affiliated_2022_23.pdf");
         std::fs::write(&file, b"%PDF-1.7").unwrap();

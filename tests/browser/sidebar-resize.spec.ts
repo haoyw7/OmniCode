@@ -61,7 +61,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
 
 test("sidebar stays anchored through resize, release and a second drag", async ({ page }) => {
   await page.setViewportSize({ width: 1400, height: 800 });
-  await page.addInitScript(() => localStorage.setItem("monocode.sidebarWidth", "360"));
+  await page.addInitScript(() => localStorage.setItem("omnicode.sidebarWidth", "360"));
   await page.goto("/tests/browser/desktop-tools.html?editor=terminal");
   const handle = page.getByRole("separator", { name: "Resize sidebar", exact: true });
   await expect(handle).toBeVisible();
@@ -94,7 +94,7 @@ test("sidebar stays anchored through resize, release and a second drag", async (
 
 for (const mode of ["code", "chat"] as const) {
   test(`${mode} sidebar layout ends at the divider, including with a visible backdrop`, async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem("monocode.sidebarWidth", "360"));
+    await page.addInitScript(() => localStorage.setItem("omnicode.sidebarWidth", "360"));
     await page.goto(`/tests/browser/desktop-visual.html?page=workspace&state=conversation&mode=${mode}&theme=dark`);
     const sidebar = page.locator("[data-desktop-sidebar]");
     await expect(sidebar).toBeVisible();

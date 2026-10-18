@@ -106,10 +106,12 @@ export function SwitchBranchDialog({
 
   return createPortal(
     <div
+      data-window-modal={host ? undefined : true}
       className={host ? "relative" : "fixed inset-0"}
       style={{ zIndex: LAYER.dialog }}
     >
       <div
+        data-window-modal-backdrop
         className="absolute inset-0 bg-black/30"
         onMouseDown={() => {
           if (!busy && !generating) onCancel();
@@ -117,6 +119,7 @@ export function SwitchBranchDialog({
       />
       <div
         role="dialog"
+        data-window-modal-panel
         aria-modal="true"
         aria-busy={Boolean(busy) || generating}
         aria-label={

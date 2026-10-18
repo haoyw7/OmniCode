@@ -1,5 +1,5 @@
 {
-  "name": "monocode-desktop",
+  "name": "omnicode-desktop",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -17,7 +17,7 @@
     "host:package": "npm run host:build && node host/package.mjs",
     "host:desktop-package": "npm run host:build && node host/package.mjs --desktop",
     "host:wsl-runtime": "node host/package.mjs --wsl-runtime",
-    "host": "node build/host/monocode-host.mjs",
+    "host": "node build/host/omnicode-host.mjs",
     "pretest:host": "npm run host:build",
     "test:host": "vitest run --config host/vitest.config.ts",
     "check": "npm run check:web && npm run check:rust",

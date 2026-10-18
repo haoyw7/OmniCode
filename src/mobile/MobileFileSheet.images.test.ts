@@ -51,7 +51,7 @@ describe("mobile image files in the bottom sheet", () => {
   }
 
   it("opens a Read tool's /tmp image chip directly in the bottom sheet", async () => {
-    const path = "/tmp/monocode-image-preview/sheet.png";
+    const path = "/tmp/omnicode-image-preview/sheet.png";
     const session = newSession("claude", "/repo");
     session.blocks = [
       { id: "user", role: "user", text: "Show the image" },

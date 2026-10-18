@@ -57,10 +57,11 @@ export function RemoveProjectDialog({
   if (!visible) return null;
 
   return createPortal(
-    <div className="fixed inset-0" style={{ zIndex: LAYER.dialog }}>
-      <div className="absolute inset-0 bg-black/30" onMouseDown={onCancel} />
+    <div data-window-modal className="fixed inset-0" style={{ zIndex: LAYER.dialog }}>
+      <div data-window-modal-backdrop className="absolute inset-0 bg-black/30" onMouseDown={onCancel} />
       <div
         role="dialog"
+        data-window-modal-panel
         aria-modal="true"
         aria-label={uiT("Delete {value0}", { value0: String(name) })}
         onMouseDown={(event) => event.stopPropagation()}

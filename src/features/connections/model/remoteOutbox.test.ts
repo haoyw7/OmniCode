@@ -46,7 +46,7 @@ const followup: HostCommand = {
 };
 
 it("migrates an old pending create without losing its execution directory", async () => {
-  const key = `monocode.remote-command.v1:${JSON.stringify(["project", "env"])}:create-1`;
+  const key = `omnicode.remote-command.v1:${JSON.stringify(["project", "env"])}:create-1`;
   native.rows.set(key, JSON.stringify({ ...create, worktreeCwd: "/repo/subdir" }));
   await loadRemoteOutbox();
   const command = pendingRemoteCommand("project", "env");
@@ -55,9 +55,9 @@ it("migrates an old pending create without losing its execution directory", asyn
 });
 
 it("moves the saved pending-directory selection to the execution-directory key", () => {
-  localStorage.setItem("monocode.remote-pending-worktrees.v1", JSON.stringify({ shell: "/repo/subdir" }));
+  localStorage.setItem("omnicode.remote-pending-worktrees.v1", JSON.stringify({ shell: "/repo/subdir" }));
   expect(remotePendingExecutionCwd("shell")).toBe("/repo/subdir");
-  expect(localStorage.getItem("monocode.remote-pending-worktrees.v1")).toBeNull();
+  expect(localStorage.getItem("omnicode.remote-pending-worktrees.v1")).toBeNull();
   rememberRemotePendingExecutionCwd("shell", "/repo");
   expect(remotePendingExecutionCwd("shell")).toBe("/repo");
 });
@@ -88,7 +88,7 @@ it("persists natively and refuses to dispatch when the request cannot be saved",
 });
 
 it("moves commands saved by the earlier desktop into native storage", async () => {
-  const key = 'monocode.remote-command.v1:["project","env"]:create-1';
+  const key = 'omnicode.remote-command.v1:["project","env"]:create-1';
   localStorage.setItem(key, JSON.stringify(create));
   await loadRemoteOutbox();
   expect(pendingRemoteCommand("project", "env", null, "first-tab")).toEqual(

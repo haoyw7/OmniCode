@@ -9,7 +9,7 @@ use tauri::{AppHandle, Manager, State, WebviewWindow};
 pub struct Captures(pub Mutex<HashSet<PathBuf>>);
 
 fn root() -> PathBuf {
-    std::env::temp_dir().join("monocode-captures")
+    std::env::temp_dir().join("omnicode-captures")
 }
 
 pub fn new_path() -> Result<PathBuf, String> {

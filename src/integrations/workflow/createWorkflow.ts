@@ -5,7 +5,7 @@
 import { z } from "zod";
 
 /**
- * Monocode: the agent runtime for workflow subagents. Each field is optional and
+ * OmniCode: the agent runtime for workflow subagents. Each field is optional and
  * falls back to the next layer: per-agent UI override, the script's `agent()` persona,
  * these run defaults, then the launching session's provider and model.
  */
@@ -15,7 +15,7 @@ export const WorkflowAgentRuntimeSchema = z
     model: z.string().trim().min(1).optional().describe("Model id for that provider."),
     thinking: z.string().trim().min(1).optional().describe("Thinking / reasoning level, for example low, medium, high, xhigh or max."),
     speed: z.string().trim().min(1).optional().describe("Speed tier: default or fast where supported."),
-    /** Exact provider settings picked in MonoCode's model picker (effort, fast, serviceTier…). */
+    /** Exact provider settings picked in OmniCode's model picker (effort, fast, serviceTier…). */
     modelSettings: z.record(z.string(), z.string()).optional(),
   })
   .strict();

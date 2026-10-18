@@ -11,7 +11,7 @@ afterEach(() => {
     rmSync(path, { recursive: true, force: true });
 });
 it("reads full child histories, associates exact parents and observes live WAL updates", async () => {
-  const root = mkdtempSync(join(tmpdir(), "monocode-child-test-"));
+  const root = mkdtempSync(join(tmpdir(), "omnicode-child-test-"));
   roots.push(root);
   const directory = join(root, "acp-sessions", "child");
   mkdirSync(directory, { recursive: true });

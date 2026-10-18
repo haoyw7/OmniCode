@@ -1,8 +1,8 @@
 /** Projectless chats each get a dated folder under `~/<CHAT_ROOT>`. */
-export const CHAT_ROOT = "Documents/ohmymonocode";
+export const CHAT_ROOT = "Documents/omnicode";
 
 const CHAT_FOLDER =
-  /(^|\/)Documents\/ohmymonocode\/\d{4}-\d{2}-\d{2}\/chat-\d{6}-[a-z0-9]{6}$/;
+  /(^|\/)Documents\/omnicode\/\d{4}-\d{2}-\d{2}\/chat-\d{6}-[a-z0-9]{6}$/;
 
 const pad = (value: number) => String(value).padStart(2, "0");
 

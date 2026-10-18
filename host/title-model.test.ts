@@ -16,7 +16,7 @@ afterEach(async () => {
   for (const cleanup of cleanups.splice(0).reverse()) await cleanup();
 });
 function setup() {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-title-model-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-title-model-"));
   cleanups.push(() => rmSync(directory, { recursive: true, force: true }));
   return { directory, api: new TitleModelApi(directory) };
 }

@@ -18,8 +18,8 @@
 // `JSON.stringify(applyAll(带 prior 的快照, diff(prior, next)).workflowRuns) === JSON.stringify(next)`
 // ——**逐字节**，不只是深相等。键序因此是本模块的一等公民，见 {@link canonicalWorkflowRun}。
 
-// Monocode port: only canonical key order + structural equality are kept; the
-// ZCode wire-delta diff/apply half is dropped because Monocode syncs whole sessions.
+// OmniCode port: only canonical key order + structural equality are kept; the
+// ZCode wire-delta diff/apply half is dropped because OmniCode syncs whole sessions.
 
 import { workflowRunSchema, type WorkflowRunState } from "./workflow-runs.js";
 

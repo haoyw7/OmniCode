@@ -176,7 +176,7 @@ export const BTW_COMMAND: BuiltinSkill = {
   invocation: "btw",
   description: "Ask a read-only side question about the current turn.",
   scope: "builtin",
-  source: "monocode",
+  source: "omnicode",
 };
 
 /** Consume `/btw` when it is the leading composer command. */

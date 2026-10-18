@@ -6,7 +6,7 @@ export const ORCHESTRATOR_COMMAND: BuiltinSkill = {
   invocation: "orchestrator",
   description: "Plan and coordinate agent work.",
   scope: "builtin",
-  source: "monocode",
+  source: "omnicode",
 };
 
 /** Consume `/orchestrator` when it is used as the leading composer command. */

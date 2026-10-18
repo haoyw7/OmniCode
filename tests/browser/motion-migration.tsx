@@ -15,7 +15,7 @@ import { applyDesktopSkin } from "../../src/shared/theme/desktopSkin";
 import { setUiLanguage } from "../../src/shared/i18n/language";
 import "../../src/styles/index.css";
 setUiLanguage("en");
-localStorage.setItem("monocode.desktopColorScheme", "light");
+localStorage.setItem("omnicode.desktopColorScheme", "light");
 applyDesktopSkin();
 Object.assign(window, { __TAURI_INTERNALS__: {
  metadata: { currentWindow: { label: "fixture" }, currentWebview: { label: "fixture" } },
@@ -34,7 +34,7 @@ function Fixture() {
  useEffect(() => { Object.assign(window, { motionBlocks: setBlocks, motionTranscriptVisible: setTranscriptVisible, motionStream: (text: string, streaming: boolean) => setBlocks(previous => [...previous.filter(block=>block.id!=="reply"),{id:"reply",role:"assistant",text,streaming}]) }); }, []);
  return <MotionConfig reducedMotion="user" transition={defaultTransition}><div style={{height:"100vh",display:"flex",fontSize:14}}>
   <SidebarRail open={!sidebar}><button onClick={()=>setSidebar(true)}>Open sidebar</button></SidebarRail>
-  <SidebarTransition open={sidebar} width={280} dragging={false} setPaneRef={noop} finishDrag={noop}><aside style={{width:280,padding:20,height:"100%",background:"var(--color-card)"}}><h2>MonoCode</h2><p>Motion migration</p><button onClick={()=>setSidebar(false)}>Close sidebar</button><p>Project / monocode</p><p>Animation migration</p></aside></SidebarTransition>
+  <SidebarTransition open={sidebar} width={280} dragging={false} setPaneRef={noop} finishDrag={noop}><aside style={{width:280,padding:20,height:"100%",background:"var(--color-card)"}}><h2>OmniCode</h2><p>Motion migration</p><button onClick={()=>setSidebar(false)}>Close sidebar</button><p>Project / omnicode</p><p>Animation migration</p></aside></SidebarTransition>
   <main style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",padding:24,gap:16}}>
    <div style={{display:"flex",gap:16,alignItems:"center"}}><button onClick={()=>setFold(v=>!v)}>Toggle tool card</button><button onClick={()=>setModal(true)}>Open modal</button></div>
    <SurfaceTabs files={files} activeFileId={activeFile} dirtyFileIds={new Set()} fileErrorCounts={new Map()} onSelectFile={setActiveFile} onCloseFile={id=>setFiles(current=>current.filter(file=>file.id!==id))} onCloseOtherFiles={id=>setFiles(current=>current.filter(file=>file.id===id))} onReorder={ids=>setFiles(current=>ids.map(id=>current.find(file=>file.id===id)!))}/>

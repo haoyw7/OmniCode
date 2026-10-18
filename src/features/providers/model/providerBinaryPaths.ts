@@ -3,7 +3,7 @@ import type { HarnessId } from "../../sessions/model/session";
 
 export type ConfigurableBinaryProvider = HarnessId;
 
-const STORAGE_KEY = "monocode.providerBinaryPaths.v1";
+const STORAGE_KEY = "omnicode.providerBinaryPaths.v1";
 
 type StoredBinaryPaths = Partial<Record<ConfigurableBinaryProvider, string>>;
 

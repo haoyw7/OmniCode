@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn reads_concrete_hosts_through_includes() {
-        let home = std::env::temp_dir().join(format!("monocode-ssh-config-{}", std::process::id()));
+        let home = std::env::temp_dir().join(format!("omnicode-ssh-config-{}", std::process::id()));
         let ssh = home.join(".ssh");
         std::fs::create_dir_all(ssh.join("config.d")).unwrap();
         std::fs::write(

@@ -7,7 +7,7 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use monocode_process_tree::spawn_managed;
+use omnicode_process_tree::spawn_managed;
 use serde::Serialize;
 use serde_json::{json, Value};
 
@@ -242,7 +242,7 @@ fn inspect(transport: &mut dyn Transport) -> Result<McpInspection, String> {
         json!({
             "protocolVersion": PROTOCOL_VERSION,
             "capabilities": {},
-            "clientInfo": { "name": "MonoCode", "version": env!("CARGO_PKG_VERSION") },
+            "clientInfo": { "name": "OmniCode", "version": env!("CARGO_PKG_VERSION") },
         }),
     )?;
     transport.notify("notifications/initialized", json!({}))?;
@@ -755,7 +755,7 @@ mod tests {
 
     #[test]
     fn locates_claude_local_and_opencode_nested_servers() {
-        let dir = std::env::temp_dir().join(format!("monocode-mcp-inspect-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("omnicode-mcp-inspect-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let claude = dir.join("claude.json");
         std::fs::write(

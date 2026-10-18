@@ -38,9 +38,9 @@ import {
   workDiffStats,
   type ActivityPhase,
 } from "../../../model/transcriptActivity";
-import { monoCodeWorkSummary } from "../../../model/monocodeToolCall";
+import { omniCodeWorkSummary } from "../../../model/omnicodeToolCall";
 import { ActivityPhaseIcon } from "./ActivityPhaseIcon";
-import { MonoCodeMark } from "../ToolCall";
+import { OmniCodeMark } from "../ToolCall";
 import { SubagentMascot, subagentStatusLine } from "./SubagentMascot";
 import {
   ActivityInterjectionRow,
@@ -190,7 +190,7 @@ function ActivityPhaseGroup({
   }, [phase.steps]);
   const turnFor = useStepQueue(visible);
   const title = activityPhaseTitle(phase, active);
-  const monoCodePhase = !!monoCodeWorkSummary(phase.steps, active);
+  const omniCodePhase = !!omniCodeWorkSummary(phase.steps, active);
   // Opening a group on purpose is also how you read the line that titled it,
   // whole. The auto-open while it runs is a live view, not a reading one, and
   // a one-line note the header already shows in full has nothing to add.
@@ -261,8 +261,8 @@ function ActivityPhaseGroup({
          * Sheet triggers keep their icon; their chevron lives at the row's end.
          */}
         <span className="relative flex size-3.5 shrink-0 items-center justify-center">
-          {monoCodePhase ? (
-            <MonoCodeMark
+          {omniCodePhase ? (
+            <OmniCodeMark
               className={`size-3.5 ${sheet ? "" : "group-hover/activity-disclosure:opacity-0 group-focus-visible/activity-disclosure:opacity-0"}`}
             />
           ) : (

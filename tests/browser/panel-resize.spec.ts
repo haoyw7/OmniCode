@@ -145,8 +145,8 @@ for (const direction of ["right", "down"] as const) {
 
 test("keeps split background geometry out of the transcript while preserving its background", async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem("monocode:project-chat-backgrounds", JSON.stringify({
-      "/fixture/monocode": { path: "/fixture/background.svg", effect: "gradient-blur", scope: "all" },
+    localStorage.setItem("omnicode:project-chat-backgrounds", JSON.stringify({
+      "/fixture/omnicode": { path: "/fixture/background.svg", effect: "gradient-blur", scope: "all" },
     }));
   });
   await page.route("**/fixture/background.svg*", route => route.fulfill({

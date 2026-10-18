@@ -70,7 +70,7 @@ it("shows automatic recall to the brain only when hits share enough words", () =
       policy: {},
       timezone: "UTC",
     } as Parameters<typeof buildBrainPrompt>[0]["config"],
-    launcher: "monocode-host",
+    launcher: "omnicode-host",
     actions: ["chat.search"],
     wakeup: {
       id: "w",

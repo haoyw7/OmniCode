@@ -6,7 +6,7 @@ import { configureProjectPreferenceStores, projectPreferencePending, routeGet, r
 import { configureSharedHost, REMOTE_PROJECTS_CHANGED, rememberRemoteProject } from "../../connections/model/remoteProjects";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
-const key = "monocode.projectProviderSettings.v1";
+const key = "omnicode.projectProviderSettings.v1";
 function host(id: string) {
   let revision = 1;
   const values: Record<string, string> = {};
@@ -43,7 +43,7 @@ it("aggregates project choices but sends each edit only to the project's Host", 
   await Promise.all([local.store.sync(), remote.store.sync()]);
   expect(vi.mocked(local.request).mock.calls.some(([method]) => method === "preferences.patch")).toBe(false);
   const changes = vi.mocked(remote.request).mock.calls.find(([method]) => method === "preferences.patch")?.[1].changes;
-  expect(changes).toEqual({ 'monocode.projectProviderSettings.v1::["@project:remote:remote-project","defaultHarness"]': '"omp"' });
+  expect(changes).toEqual({ 'omnicode.projectProviderSettings.v1::["@project:remote:remote-project","defaultHarness"]': '"omp"' });
 });
 
 it("keeps unregistered project choices durable until the Host returns a project ID", async () => {
@@ -79,14 +79,14 @@ it("scopes pending project settings to their Host, including unregistered projec
 it("does not route global preferences or project rail ordering away from the primary Host", () => {
   const local = host("local");
   configureProjectPreferenceStores(local.store);
-  expect(routeGet("monocode.projectRailOrder")).toBeUndefined();
-  expect(routeSet("monocode.colorScheme", "dark")).toBe(false);
+  expect(routeGet("omnicode.projectRailOrder")).toBeUndefined();
+  expect(routeSet("omnicode.colorScheme", "dark")).toBe(false);
 });
 
 it("retains a newly opened folder in recents while waiting for project registration", async () => {
   const local = host("local");
   configureProjectPreferenceStores(local.store);
-  const recentKey = "monocode.recentProjects";
+  const recentKey = "omnicode.recentProjects";
   const raw = JSON.stringify([{ path: "/new", openedAt: 12 }, { path: "/app", openedAt: 4 }]);
   routeSet(recentKey, raw);
   expect(projectPreferencePending()).toBe(true);
@@ -106,7 +106,7 @@ it("retains a newly opened folder in recents while waiting for project registrat
 it("durably stages mixed pins until their embedded project identity is known", async () => {
   const local = host("local");
   configureProjectPreferenceStores(local.store);
-  const pins = "monocode.sidebarPinnedOrder.v1";
+  const pins = "omnicode.sidebarPinnedOrder.v1";
   const raw = JSON.stringify(['session:["/new-project","session-id"]']);
   expect(routeSet(pins, raw)).toBe(true);
   expect(routeGet(pins)).toBe(raw);

@@ -9,5 +9,5 @@ export default defineConfig({
     testTimeout: 30000,
     hookTimeout: 30000,
   },
-  cacheDir: "/tmp/monocode-eval-vite-cache",
+  cacheDir: "/tmp/omnicode-eval-vite-cache",
 });

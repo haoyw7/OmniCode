@@ -7,7 +7,7 @@ if [[ $# -gt 0 ]]; then
   exec node scripts/dev-refresh.mjs "$@"
 fi
 
-state_dir="${MONOCODE_DESKTOP_STATE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/monocode/desktop-updates}"
+state_dir="${OMNICODE_DESKTOP_STATE_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/omnicode/desktop-updates}"
 mkdir -p "$state_dir"
 exec 8>"$state_dir/dev-refresh.lock"
 flock -n 8 || { echo "Another development refresh is running." >&2; exit 1; }

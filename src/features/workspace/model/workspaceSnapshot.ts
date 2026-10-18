@@ -9,6 +9,7 @@ import {
   isSubagentTab,
   isAppPageKind,
   isWorkflowAgentTab,
+  isWorkflowArtifactTab,
   isWorkflowRunTab,
   isAppViewTab,
   isAppViewOnlyTab,
@@ -175,7 +176,7 @@ function parseProjectReturnTargets(raw: unknown): ProjectReturnMemory {
  */
 /** Orchestration workers and workflow views watch live Host state; they are not restored. */
 function isAgentTab(file: Parameters<typeof isWorkerTab>[0]) {
-  return isWorkerTab(file) || isSubagentTab(file) || isWorkflowRunTab(file) || isWorkflowAgentTab(file);
+  return isWorkerTab(file) || isSubagentTab(file) || isWorkflowRunTab(file) || isWorkflowAgentTab(file) || isWorkflowArtifactTab(file);
 }
 
 function withoutAgentTabs(tabs: WorkspaceTab[]): WorkspaceTab[] {

@@ -60,7 +60,7 @@ mod worktree_lifecycle;
 mod worktrees;
 mod wsl_path;
 
-// Phase 1 seam: spawn / kill harness children per MonoCode thread.
+// Phase 1 seam: spawn / kill harness children per OmniCode thread.
 // Adapters own the protocol; this host only supervises processes.
 
 /// Project directory for new sessions — prefer cwd, else home.

@@ -4,7 +4,7 @@
 
 新增公开集：**6 个可执行来源、176 道不同公开原题、200 个变体**；加上原有原创集共 **352 道不同任务、376 个可执行条目**。四个新集为 tau-bench、API-Bank、HotpotQA、BIPIA；BFCL/LongMemEval 已接入程序判分。[公开集运行说明](../public/README.md)。下文原始套件的历史成绩与 judge 校准结论保持不变。
 
-The Pi runs use a real installed Pi CLI and its existing provider login, with `openai-codex/gpt-5.6-luna`. They are **production-prompt evaluations with isolated tool simulation**, not full MonoCode assistant end-to-end tests and not an unprompted bare-model benchmark.
+The Pi runs use a real installed Pi CLI and its existing provider login, with `openai-codex/gpt-5.6-luna`. They are **production-prompt evaluations with isolated tool simulation**, not full OmniCode assistant end-to-end tests and not an unprompted bare-model benchmark.
 
 | Component | What is actually exercised | Boundary |
 |---|---|---|

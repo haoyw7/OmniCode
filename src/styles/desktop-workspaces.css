@@ -1,3 +1,19 @@
+/* Only the backdrop yields the native title row; dialog content still covers it. */
+html:has([data-window-chrome]) [data-window-modal] {
+  pointer-events: none;
+}
+html:has([data-window-chrome]) [data-window-modal-panel],
+html:has([data-window-chrome]) [data-window-modal-backdrop] {
+  pointer-events: auto;
+}
+html:has([data-window-chrome]) [data-window-modal-backdrop] {
+  /* Clip only the backdrop's paint/hit area, never the dialog content. */
+  clip-path: inset(var(--desktop-window-chrome-height) 0 0);
+}
+html:has([data-window-chrome]) [data-window-lightbox] {
+  top: var(--desktop-window-chrome-height);
+}
+
 html[data-skin] .app-view-dialog {
   inset: 0;
   width: min(1024px, calc(100% - 32px));

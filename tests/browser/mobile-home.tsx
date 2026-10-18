@@ -17,7 +17,7 @@ setUiLanguage("zh-CN");
 applyMobileSkin(isMobileSkin(skin) ? skin : "daylight", "light");
 const now = Date.UTC(2026, 9, 13, 10);
 const projects: HostProject[] = [
-  { id: "app", name: "Monocode", cwd: "/workspace/monocode" },
+  { id: "app", name: "OmniCode", cwd: "/workspace/omnicode" },
   { id: "research", name: "设计研究与移动端体验", cwd: "/workspace/research" },
 ];
 const sessions: HostSessionSummary[] = [
@@ -34,7 +34,7 @@ function Fixture() {
   return <div className="mobile-app">
     <header className="mobile-header" data-floating="true">
       <IconButton className="" label="Home" onClick={() => setProject(undefined)}><PanelLeft /></IconButton>
-      <div className="mobile-header-title"><strong>{project?.name ?? "Monocode"}</strong></div>
+      <div className="mobile-header-title"><strong>{project?.name ?? "OmniCode"}</strong></div>
       <div className="mobile-header-actions"><IconButton className="" label="Search"><Search /></IconButton></div>
     </header>
     <MobileHome projects={projects} project={project} foreground query="" now={now}

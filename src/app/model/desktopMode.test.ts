@@ -8,13 +8,13 @@ import {
   loadDesktopLocations, loadDesktopMode, saveDesktopMode, type DesktopLocations,
 } from "./desktopMode";
 
-const chatCwd = "/home/me/Documents/ohmymonocode/2026-10-13/chat-120000-abcdef";
+const chatCwd = "/home/me/Documents/omnicode/2026-10-13/chat-120000-abcdef";
 beforeEach(() => { activatePreferenceStore(undefined); localStorage.clear(); });
 afterEach(() => { activatePreferenceStore(undefined); localStorage.clear(); vi.restoreAllMocks(); });
 
 describe("desktop mode grouping", () => {
   it.each(["", "~", "/", "/home/me", "/Users/me", "C:\\Users\\me", "C:\\", chatCwd,
-    "C:\\Users\\me\\Documents\\ohmymonocode\\2026-10-13\\chat-120000-abcdef",
+    "C:\\Users\\me\\Documents\\omnicode\\2026-10-13\\chat-120000-abcdef",
     `remote://machine${chatCwd}`])("keeps projectless location %s in Chat", cwd => {
     expect(desktopModeForCwd(cwd)).toBe("chat");
   });

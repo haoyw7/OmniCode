@@ -28,8 +28,8 @@ async function open({ width = 1280, height = 932, theme = 'light', lang = 'en', 
   // Set the same preference variables before mount, so textarea measurement
   // uses the enlarged type on its first layout rather than a stale inline size.
   await page.addInitScript(size => {
-    localStorage.setItem('monocode.uiFontSize', String(size));
-    localStorage.setItem('monocode.contentFontSize', String(size));
+    localStorage.setItem('omnicode.uiFontSize', String(size));
+    localStorage.setItem('omnicode.contentFontSize', String(size));
     const apply = () => {
       if (!document.documentElement) return false;
       for (const name of ['--ui-font-scale', '--content-font-scale', '--font-scale']) document.documentElement.style.setProperty(name, String(size / 14));
@@ -223,7 +223,7 @@ try {
     host.style.cssText = 'width:100%;min-width:0;padding:8px;box-sizing:border-box';
     document.body.append(host);
     const noop = () => {};
-    createRoot(host).render(createElement(Composer, { compact: true, focused: true, harness: 'claude', model: 'claude-sonnet', runtimeMode: 'full-access', cwd: '/fixture/monocode', executionCwd: '/fixture/monocode', sessionId: 'fixture-compact', remoteSession: true, hideBranchPicker: true, context: { used: 33000, window: 100000 }, onFocus: noop, onCwdChange: noop, onModelChange: noop, onRuntimeModeChange: noop, onSubmit: noop }));
+    createRoot(host).render(createElement(Composer, { compact: true, focused: true, harness: 'claude', model: 'claude-sonnet', runtimeMode: 'full-access', cwd: '/fixture/omnicode', executionCwd: '/fixture/omnicode', sessionId: 'fixture-compact', remoteSession: true, hideBranchPicker: true, context: { used: 33000, window: 100000 }, onFocus: noop, onCwdChange: noop, onModelChange: noop, onRuntimeModeChange: noop, onSubmit: noop }));
   });
   const compactComposer = compact.page.locator('[data-composer-layout="compact"]');
   await compactComposer.locator('textarea').waitFor();

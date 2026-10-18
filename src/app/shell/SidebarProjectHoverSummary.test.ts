@@ -149,7 +149,7 @@ it("passes counts for all main conversations without using the tree's five-row p
 });
 
 it("keeps the session tree while separating projectless chats from local and remote Code projects", () => {
-  const chat = "/home/me/Documents/ohmymonocode/2026-10-13/chat-120000-abcdef";
+  const chat = "/home/me/Documents/omnicode/2026-10-13/chat-120000-abcdef";
   const remote = "remote://machine/projects/remote";
   props.recents = [...props.recents!, { path: remote, openedAt: 3 }];
   props.projectHistory = [row("local", A), row("remote", remote), row("chat", chat), row("draft", "~")];

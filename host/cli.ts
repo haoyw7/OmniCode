@@ -54,7 +54,7 @@ const option = (name: string, fallback: string): string => {
   return args[i + 1];
 };
 const directory = resolve(
-  option("data-dir", join(homedir(), ".monocode-host")),
+  option("data-dir", join(homedir(), ".omnicode-host")),
 );
 const port = Number(option("port", "3774"));
 // A private Unix socket for the WSL stdio bridge; Windows never needs TCP.
@@ -140,7 +140,7 @@ Connect another computer using an SSH forward to the loopback port.`);
     if (!desktopDirectory) throw new Error("Provide --desktop-data-dir");
     console.log(JSON.stringify(await prepareDesktopHost(directory, resolve(desktopDirectory),
       fileURLToPath(import.meta.url), port, option("legacy-orchestration-manifest", "") || undefined,
-      JSON.parse(process.env.MONOCODE_DESKTOP_BINARY_PATHS ?? "{}"))));
+      JSON.parse(process.env.OMNICODE_DESKTOP_BINARY_PATHS ?? "{}"))));
     return;
   }
   if (command === "connection-info") {

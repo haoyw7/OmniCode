@@ -16,10 +16,10 @@ import { expect, it, vi } from "vitest";
 const exec = promisify(execFile);
 
 it("starts shared Host automatically, imports history and reuses the owner and desktop credential", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-desktop-bootstrap-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-desktop-bootstrap-"));
   const desktop = join(directory, "desktop");
   mkdirSync(desktop);
-  const legacy = new DatabaseSync(join(desktop, "monocode.db"));
+  const legacy = new DatabaseSync(join(desktop, "omnicode.db"));
   legacy.exec(`CREATE TABLE sessions (id TEXT PRIMARY KEY, cwd TEXT, harness TEXT, model TEXT,
     runtime_mode TEXT, title TEXT, blocks_json TEXT, created_at INTEGER, updated_at INTEGER);
     INSERT INTO sessions VALUES ('old', '${desktop.replaceAll("'", "''")}', 'codex', 'codex:test',
@@ -34,14 +34,14 @@ it("starts shared Host automatically, imports history and reuses the owner and d
     exec(
       process.execPath,
       [
-        resolve("build/host/monocode-host.mjs"),
+        resolve("build/host/omnicode-host.mjs"),
         ...args,
         "--data-dir",
         directory,
         "--port",
         String(port),
       ],
-      { timeout: 30_000, env: { ...process.env, MONOCODE_DESKTOP_BINARY_PATHS: JSON.stringify(binaryPaths) } },
+      { timeout: 30_000, env: { ...process.env, OMNICODE_DESKTOP_BINARY_PATHS: JSON.stringify(binaryPaths) } },
     );
   try {
     const first = JSON.parse(
@@ -114,10 +114,10 @@ it("starts shared Host automatically, imports history and reuses the owner and d
 }, 60_000);
 
 it("retirement bootstrap deletes imported copies without mutating the source or replaying cleanup", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-retirement-bootstrap-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-retirement-bootstrap-"));
   const desktop = join(directory, "desktop");
   mkdirSync(desktop);
-  const legacy = new DatabaseSync(join(desktop, "monocode.db"));
+  const legacy = new DatabaseSync(join(desktop, "omnicode.db"));
   legacy.exec(`CREATE TABLE sessions (id TEXT PRIMARY KEY, cwd TEXT, harness TEXT, model TEXT,
     runtime_mode TEXT, title TEXT, blocks_json TEXT, created_at INTEGER, updated_at INTEGER)`);
   for (const id of ["legacy-lead", "legacy-worker", "ordinary"]) legacy.prepare("INSERT INTO sessions VALUES (?, ?, 'pi', 'pi:test', 'supervised', ?, '[]', 1, 2)").run(id, desktop, id);
@@ -130,15 +130,15 @@ it("retirement bootstrap deletes imported copies without mutating the source or 
   await new Promise<void>(done => probe.listen(0, "127.0.0.1", done));
   const port = (probe.address() as AddressInfo).port;
   await new Promise<void>(done => probe.close(() => done()));
-  const run = (...args: string[]) => exec(process.execPath, [resolve("build/host/monocode-host.mjs"), ...args, "--data-dir", directory, "--port", String(port)], { timeout: 30_000 });
+  const run = (...args: string[]) => exec(process.execPath, [resolve("build/host/omnicode-host.mjs"), ...args, "--data-dir", directory, "--port", String(port)], { timeout: 30_000 });
   try {
     const first = JSON.parse((await run("desktop", "--desktop-data-dir", desktop)).stdout);
     expect(first.sessions).toHaveLength(3);
-    const source = readFileSync(join(desktop, "monocode.db"));
+    const source = readFileSync(join(desktop, "omnicode.db"));
     const retired = JSON.parse((await run("desktop", "--desktop-data-dir", desktop, "--legacy-orchestration-manifest", manifestPath)).stdout);
     expect(retired.sessions).toContainEqual({ id: "ordinary", cwd: desktop });
     expect(retired.sessions).toContainEqual({ id: "legacy-lead", cwd: desktop, deleted: true });
-    expect(readFileSync(join(desktop, "monocode.db"))).toEqual(source);
+    expect(readFileSync(join(desktop, "omnicode.db"))).toEqual(source);
     expect(readFileSync(checkpoint, "utf8")).toBe("keep");
     const rpc = async (method: string, params: unknown) => (await fetch(`${retired.endpoint}/rpc`, { method: "POST", headers: { Authorization: `Bearer ${retired.token}` }, body: JSON.stringify({ version: 1, environmentId: retired.environmentId, method, params }) })).json();
     expect((await rpc("sessions.sync", { sessionId: "legacy-worker" })).error).toBeDefined();

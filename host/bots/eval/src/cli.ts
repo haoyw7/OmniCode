@@ -16,7 +16,7 @@ import { TOOL_SCHEMAS } from "./tools";
 import { judgeResult, JudgeSchema, JUDGE_PROTOCOL_HASH } from "./judge";
 import { loadCalibrationRegistry, CalibrationSchema } from "./judgeTrust";
 import { replayCampaign } from "./replay";
-const root = process.env.MONOCODE_EVAL_ROOT!;
+const root = process.env.OMNICODE_EVAL_ROOT!;
 const args = process.argv.slice(2);
 const command = args.shift() ?? "validate";
 const allowed = new Set([
@@ -212,7 +212,7 @@ if (command === "schema") {
         )
     : undefined;
   const calibration = await loadCalibrationRegistry(root);
-  const native = await import(process.env.MONOCODE_EVAL_BRAIN_MODULE!);
+  const native = await import(process.env.OMNICODE_EVAL_BRAIN_MODULE!);
   const startedAt = new Date().toISOString();
   console.log(
     JSON.stringify({
@@ -289,7 +289,7 @@ if (command === "schema") {
     interpretation:
       mode === "reference"
         ? "Harness/reference sanity check. NOT assistant capability or official benchmark performance."
-        : "Real agent CLI inference + production MonoCode brain prompt + simulated tools. NOT live Host end-to-end.",
+        : "Real agent CLI inference + production OmniCode brain prompt + simulated tools. NOT live Host end-to-end.",
     datasetSha256: createHash("sha256")
       .update(await readFile(evalDataPath(root, "data/cases.jsonl")))
       .digest("hex"),
@@ -328,7 +328,7 @@ if (command === "schema") {
     .join("\n");
   await writeFile(
     join(out, "report.md"),
-    `# MonoCode evaluation report\n\n${summary.interpretation}\n\nStarted: ${startedAt}. Seed: ${seed}. Dataset SHA256: ${summary.datasetSha256}.\n\n| Category | Pass | Fail | Excluded | Hard pass rate |\n|---|---:|---:|---:|---:|\n${table}\n\nStatuses: ${JSON.stringify(summary.statuses)}\n\nUsage: ${JSON.stringify(summary.usage)}. Null cost means unavailable, not free. Attempted requests: ${budget.requests}; reserved estimate (provider cap only for Claude): $${budget.reservedUsd.toFixed(2)}.\n\nJudge: ${JSON.stringify(summary.judge)}. Composite: ${JSON.stringify(summary.composite)}. Rubric scores are advisory and cannot overturn hard assertions.\n\n${failures || "No hard assertion failures in this run."}\n\nSee results.jsonl for per-case trace, final state, checks, judge evidence and usage.\n`,
+    `# OmniCode evaluation report\n\n${summary.interpretation}\n\nStarted: ${startedAt}. Seed: ${seed}. Dataset SHA256: ${summary.datasetSha256}.\n\n| Category | Pass | Fail | Excluded | Hard pass rate |\n|---|---:|---:|---:|---:|\n${table}\n\nStatuses: ${JSON.stringify(summary.statuses)}\n\nUsage: ${JSON.stringify(summary.usage)}. Null cost means unavailable, not free. Attempted requests: ${budget.requests}; reserved estimate (provider cap only for Claude): $${budget.reservedUsd.toFixed(2)}.\n\nJudge: ${JSON.stringify(summary.judge)}. Composite: ${JSON.stringify(summary.composite)}. Rubric scores are advisory and cannot overturn hard assertions.\n\n${failures || "No hard assertion failures in this run."}\n\nSee results.jsonl for per-case trace, final state, checks, judge evidence and usage.\n`,
   );
   console.log(JSON.stringify(summary.statuses));
   if (results.some((r) => r.status !== "passed")) process.exitCode = 1;

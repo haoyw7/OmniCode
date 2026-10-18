@@ -22,7 +22,7 @@ vi.mock("@tauri-apps/api/core", async (importOriginal) => ({
   invoke,
 }));
 
-const BODY_GLASS_KEY = "monocode.bodyGlass";
+const BODY_GLASS_KEY = "omnicode.bodyGlass";
 
 function hasGlass() {
   return document.documentElement.classList.contains("has-native-glass");

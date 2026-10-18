@@ -147,7 +147,7 @@ it("builds temporary and generated worktree branch names", () => {
   expect(namedWorktreeBranch("feature/faster-worktrees")).toBe(
     "mc/feature/faster-worktrees",
   );
-  expect(namedWorktreeBranch("monocode/already-prefixed")).toBe(
+  expect(namedWorktreeBranch("omnicode/already-prefixed")).toBe(
     "mc/already-prefixed",
   );
   expect(namedWorktreeBranch("mc/already-short")).toBe("mc/already-short");

@@ -5,9 +5,9 @@ import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), ".."),
-  output = await mkdtemp(join(tmpdir(), "monocode-public-eval-build-"));
-process.env.MONOCODE_EVAL_ROOT = root;
-process.env.MONOCODE_EVAL_BRAIN_MODULE = pathToFileURL(
+  output = await mkdtemp(join(tmpdir(), "omnicode-public-eval-build-"));
+process.env.OMNICODE_EVAL_ROOT = root;
+process.env.OMNICODE_EVAL_BRAIN_MODULE = pathToFileURL(
   join(output, "brain.mjs"),
 ).href;
 try {

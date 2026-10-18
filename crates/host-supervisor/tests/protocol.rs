@@ -15,7 +15,7 @@ struct Supervisor {
 
 impl Supervisor {
     fn start() -> Self {
-        let mut child = Command::new(env!("CARGO_BIN_EXE_monocode-supervisor"))
+        let mut child = Command::new(env!("CARGO_BIN_EXE_omnicode-supervisor"))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()

@@ -38,7 +38,7 @@ host/im/
 
 `runtime.sessions.bind({ channelId, threadId }, sessionId)` 建立绑定；get 和
 unbind 查询或移除。channelId 区分多个平台账户 / 配置实例，不能只用平台名。
-映射仅保存在内存中，不创建或持久化 MonoCode 会话。
+映射仅保存在内存中，不创建或持久化 OmniCode 会话。
 
 启动失败按逆序清理已尝试启动的渠道，清理失败可再调用 stop 重试。
 启停期间拒绝重入；关闭后或旧运行期的消息与回复被拒绝。

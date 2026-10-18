@@ -1,18 +1,18 @@
 set -eu
 umask 077
-BASE="$HOME/.monocode-host"
-ENTRY="$BASE/bin/monocode-host"
+BASE="$HOME/.omnicode-host"
+ENTRY="$BASE/bin/omnicode-host"
 VERSION=@@VERSION@@
 RELEASE=@@RELEASE@@
 EXISTED=0
 [ -x "$ENTRY" ] && EXISTED=1
-FORCE_UPGRADE=${MONOCODE_HOST_FORCE_UPGRADE:-0}
-HOST_PORT=${MONOCODE_HOST_PORT:-3774}
+FORCE_UPGRADE=${OMNICODE_HOST_FORCE_UPGRADE:-0}
+HOST_PORT=${OMNICODE_HOST_PORT:-3774}
 
 if [ ! -x "$ENTRY" ] || [ "$FORCE_UPGRADE" = 1 ]; then
   case "$(uname -s)" in Darwin) OS=darwin ;; Linux) OS=linux ;; *) echo 'OmniCode Host supports Linux and macOS.' >&2; exit 1 ;; esac
   case "$(uname -m)" in arm64|aarch64) ARCH=arm64 ;; x86_64|amd64) ARCH=x64 ;; *) echo 'Unsupported host architecture.' >&2; exit 1 ;; esac
-  FILE="monocode-host-$OS-$ARCH.tar.gz"
+  FILE="omnicode-host-$OS-$ARCH.tar.gz"
   mkdir -p "$BASE/runtime" "$BASE/bin"
   TMP=$(mktemp -d "$BASE/runtime/.install.XXXXXXXX")
   trap 'rm -rf "$TMP"' EXIT
@@ -42,11 +42,11 @@ if [ ! -x "$ENTRY" ] || [ "$FORCE_UPGRADE" = 1 ]; then
   [ "$EXPECTED" = "$ACTUAL" ] || { echo 'OmniCode Host package checksum mismatch.' >&2; exit 1; }
   mkdir "$TMP/unpacked"
   tar -xzf "$TMP/$FILE" -C "$TMP/unpacked"
-  [ "$("$TMP/unpacked/monocode-host" --version)" = "$VERSION" ] || { echo 'OmniCode Host version mismatch.' >&2; exit 1; }
+  [ "$("$TMP/unpacked/omnicode-host" --version)" = "$VERSION" ] || { echo 'OmniCode Host version mismatch.' >&2; exit 1; }
   DEST="$BASE/runtime/$VERSION-$OS-$ARCH-$(basename "$TMP")"
   # Concurrent installations never replace a directory used by a running host.
   mv "$TMP/unpacked" "$DEST"
-  [ "$("$DEST/monocode-host" --version)" = "$VERSION" ] || exit 1
+  [ "$("$DEST/omnicode-host" --version)" = "$VERSION" ] || exit 1
   # Keep a real wrapper (rather than a symlink): it resolves the packaged Node
   # relative to the versioned executable, not this bin directory.
   printf '%s\n' "$DEST" > "$TMP/runtime-path"
@@ -56,7 +56,7 @@ if [ ! -x "$ENTRY" ] || [ "$FORCE_UPGRADE" = 1 ]; then
 set -eu
 BASE=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 RUNTIME=$(cat "$BASE/runtime-path")
-exec "$RUNTIME/monocode-host" "$@"
+exec "$RUNTIME/omnicode-host" "$@"
 SH
   chmod 700 "$TMP/launcher"
   mv "$TMP/launcher" "$ENTRY"

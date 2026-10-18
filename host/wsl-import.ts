@@ -123,11 +123,11 @@ export async function importWslSnapshot(store: HostStore, path: string, machine:
 /** Stop the verified old Host, snapshot into Windows, and retain the original as backup. */
 export async function importLegacyWslHost(store: HostStore, rpc: MachineTransport, machine: ProjectMachine, transform?: Transform) {
   const { home } = await rpc.request<{ home: string }>("env.info");
-  const directory = posix.join(home, ".monocode/remote/data");
+  const directory = posix.join(home, ".omnicode/remote/data");
   const database = posix.join(directory, "host.db");
   try { await rpc.request("fs.stat", { path: database }); }
   catch (error) { if (missing(error)) return { projects: 0, sessions: 0 }; throw error; }
-  const temporary = await mkdtemp(join(tmpdir(), "monocode-wsl-import-"));
+  const temporary = await mkdtemp(join(tmpdir(), "omnicode-wsl-import-"));
   try {
     const converted = await rpc.request<{ stdout: string; code: number }>("exec", { command: "wslpath", args: ["-a", "-u", temporary], timeout: 10_000 });
     if (converted.code !== 0) throw new Error("Could not map the WSL import directory");

@@ -1,22 +1,41 @@
 """Native icon format conversion; requires Pillow. Run through generate-omnicode-icons.mjs."""
 from pathlib import Path
+from io import BytesIO
+import struct
 import sys
 ROOT=Path(__file__).resolve().parent.parent
 sys.path.insert(0,str(ROOT/'.tmp/omnicode-native-tools'))
 from PIL import Image, ImageDraw
 work=Path(sys.argv[1])
-mark=Image.open(work/'mark.png').convert('RGBA')
 app=Image.open(work/'app.png').convert('RGBA')
-square=Image.open(work/'square.png').convert('RGB')
 resample=Image.Resampling.LANCZOS
+
+def windows_icon(image, destination):
+    encoded=BytesIO()
+    image.save(encoded,format='ICO',sizes=[(n,n) for n in [16,20,24,32,40,48,64,128,256]])
+    data=bytearray(encoded.getvalue())
+    count=struct.unpack_from('<H',data,4)[0]
+    entries=[data[6+i*16:6+(i+1)*16] for i in range(count)]
+    # Pillow writes smallest first; Tauri 2 decodes only the first ICO entry
+    # for the window icon. Lead with 256px to avoid upscaling the 16px layer.
+    # Reorder directory entries only: their payload offsets remain valid.
+    entries.sort(key=lambda entry:(entry[0] or 256)*(entry[1] or 256),reverse=True)
+    data[6:6+count*16]=b''.join(entries)
+    destination.write_bytes(data)
 
 def size_of(file):
     with Image.open(file) as image:return image.size
 
 icons=ROOT/'src-tauri/icons'
+windows_icon(app,icons/'icon.ico')
+if '--windows-only' in sys.argv[2:]:
+    print('Updated Windows ICO with the highest-resolution layer first')
+    sys.exit(0)
+
+mark=Image.open(work/'mark.png').convert('RGBA')
+square=Image.open(work/'square.png').convert('RGB')
 for file in icons.glob('*.png'):
     app.resize(size_of(file),resample).save(file)
-app.save(icons/'icon.ico',sizes=[(n,n) for n in [16,20,24,32,40,48,64,128,256]])
 app.save(icons/'icon.icns')
 Image.open(work/'sidebar.png').convert('RGB').save(icons/'installer-sidebar.bmp')
 mark.save(ROOT/'src-tauri/macos/AppIcon.icon/Assets/icon.png')
@@ -56,6 +75,6 @@ def vector(width,viewport,offset=0):
 <group android:translateX="{offset}" android:translateY="{offset}">{paths}</group>
 </vector>
 '''
-(android/'drawable/ic_stat_monocode.xml').write_text(vector(24,256),encoding='utf-8')
+(android/'drawable/ic_stat_omnicode.xml').write_text(vector(24,256),encoding='utf-8')
 (android/'drawable-v24/ic_launcher_foreground.xml').write_text(vector(108,384,64),encoding='utf-8')
 print('Replaced desktop PNG/ICO/ICNS, Android/iOS icons and splashes, notification vector and installer bitmap')

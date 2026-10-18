@@ -1,5 +1,7 @@
 // Side-pane tab and open-request types from ZCode (Apache-2.0)
-// packages/ui/src/lib/workspaceSidePane.ts; Monocode opens these as editor-pane tabs.
+// packages/ui/src/lib/workspaceSidePane.ts; OmniCode opens these as editor-pane tabs.
+import type { WorkflowAgentAvatar } from "../../model/workflowAgentAvatar";
+import type { WorkflowRunArtifactKind } from "../_shims/protocol";
 type WorkspaceScope = { workspacePath: string; workspaceIdentity?: string; remoteSessionId?: string };
 
 export interface WorkflowRunSidePaneTab extends WorkspaceScope {
@@ -25,6 +27,7 @@ export interface OpenWorkflowRunSideTabRequest {
 }
 
 export interface OpenWorkflowActorSessionSideTabRequest {
+  avatar?: WorkflowAgentAvatar;
   parentSessionId: string;
   runId: string;
   actorSessionId?: string;
@@ -34,6 +37,7 @@ export interface OpenWorkflowActorSessionSideTabRequest {
 }
 
 export interface OpenWorkflowArtifactSideTabRequest {
+  kind?: WorkflowRunArtifactKind;
   parentSessionId: string;
   runId: string;
   artifactId: string;

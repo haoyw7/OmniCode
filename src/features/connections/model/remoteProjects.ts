@@ -23,8 +23,8 @@ export type RemoteProject = {
   machine?: WslProjectMachine;
 };
 
-const KEY = "monocode.remote-projects.v2";
-export const REMOTE_PROJECTS_CHANGED = "monocode:remote-projects-changed";
+const KEY = "omnicode.remote-projects.v2";
+export const REMOTE_PROJECTS_CHANGED = "omnicode:remote-projects-changed";
 
 const slashed = (path: string) => path.replace(/\\/g, "/");
 let localEnvironment: string | undefined;

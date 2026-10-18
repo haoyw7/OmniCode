@@ -12,6 +12,6 @@ def main():
     if args.out.exists():raise SystemExit('Output must be new')
     require_external_output(args.out)
     campaign=resolve_data_file(args.campaign)
-    if not campaign.is_dir():raise SystemExit('Campaign is unavailable; set MONOCODE_EVAL_ARCHIVE_ROOT or pass an existing archive directory')
+    if not campaign.is_dir():raise SystemExit('Campaign is unavailable; set OMNICODE_EVAL_ARCHIVE_ROOT or pass an existing archive directory')
     subprocess.run(['node',str(ROOT/'bin/eval.mjs'),'replay','--campaign',str(campaign),'--out',str(args.out.resolve())],cwd=ROOT.parents[2],check=True)
 if __name__=='__main__':main()

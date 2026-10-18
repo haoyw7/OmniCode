@@ -2,10 +2,10 @@
 // Run settings popover
 // ============================================================
 // ZCode's popover (Apache-2.0) retunes one run-level subagent model and the
-// concurrency limit. Monocode's version keeps the popover, the anchor model and
+// concurrency limit. OmniCode's version keeps the popover, the anchor model and
 // the concurrency stepper, and replaces the single model with per-agent runtime
 // rows: a default runtime, and for each subagent an optional override of its
-// provider, model, thinking level and speed, picked with Monocode's model picker.
+// provider, model, thinking level and speed, picked with OmniCode's model picker.
 // Apply retunes the run in place: concurrency applies immediately, runtimes to
 // subagents that start afterwards (and to the run's resume or amend).
 

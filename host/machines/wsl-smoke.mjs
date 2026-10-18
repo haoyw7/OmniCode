@@ -11,7 +11,7 @@ import { probeWslExec, processIdentity } from "../wsl-exec.mjs";
 import { readLines } from "../wsl-exec-protocol.mjs";
 
 if (process.platform !== "linux") throw new Error("Run this smoke test inside Linux or WSL");
-const directory = await mkdtemp(join(tmpdir(), "monocode-wsl-exec-smoke-"));
+const directory = await mkdtemp(join(tmpdir(), "omnicode-wsl-exec-smoke-"));
 const socket = join(directory, "rpc.sock");
 const entry = fileURLToPath(new URL("../wsl-exec.mjs", import.meta.url));
 const identities = [];

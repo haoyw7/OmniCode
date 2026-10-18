@@ -4,7 +4,7 @@ import {
   TID_WORKFLOW_ACTION_DELETE,
   TID_WORKFLOW_ACTION_MOVE,
   testId,
-  type MonocodeSavedWorkflowEntry,
+  type OmniCodeSavedWorkflowEntry,
 } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import {
@@ -24,7 +24,7 @@ import {
 interface SavedWorkflowDetailHeaderProps {
   name: string;
   description: string;
-  entry: MonocodeSavedWorkflowEntry | undefined;
+  entry: OmniCodeSavedWorkflowEntry | undefined;
   busy: boolean;
   onRun: () => void;
   onRevise: () => void;

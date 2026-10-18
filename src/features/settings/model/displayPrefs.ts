@@ -1,17 +1,17 @@
 import { useSyncExternalStore } from "react";
 import { readFlag, writeFlag } from "./storageFlags";
 
-const SHOW_REMAINING_USAGE_KEY = "monocode.showRemainingUsage";
-const MASK_EMAILS_KEY = "monocode.maskEmails";
+const SHOW_REMAINING_USAGE_KEY = "omnicode.showRemainingUsage";
+const MASK_EMAILS_KEY = "omnicode.maskEmails";
 
 export const SHOW_REMAINING_USAGE_DEFAULT = false;
 export const MASK_EMAILS_DEFAULT = true;
 
 /** Fired on `window` whenever the usage meter direction flips (detail: boolean). */
 export const SHOW_REMAINING_USAGE_CHANGE_EVENT =
-  "monocode:showremainingusagechange";
+  "omnicode:showremainingusagechange";
 /** Fired on `window` whenever email masking flips (detail: boolean). */
-export const MASK_EMAILS_CHANGE_EVENT = "monocode:maskemailschange";
+export const MASK_EMAILS_CHANGE_EVENT = "omnicode:maskemailschange";
 
 function flagStore(key: string, fallback: boolean, event: string) {
   // Holds a saved value only while storage failed to keep it, so the switch

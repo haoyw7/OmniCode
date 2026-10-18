@@ -32,13 +32,13 @@ it("keeps paths and environment content from injecting service configuration", (
 it.skipIf(process.platform === "win32").each(["darwin", "linux"] as const)(
   "removes the %s service registration but keeps host data",
   async (platform) => {
-    const home = mkdtempSync(join(tmpdir(), "monocode-service-test-"));
+    const home = mkdtempSync(join(tmpdir(), "omnicode-service-test-"));
     try {
       const service =
         platform === "darwin"
-          ? join(home, "Library/LaunchAgents/com.monocode.host.plist")
-          : join(home, ".config/systemd/user/monocode-host.service");
-      const data = join(home, ".monocode-host/host.db");
+          ? join(home, "Library/LaunchAgents/com.omnicode.host.plist")
+          : join(home, ".config/systemd/user/omnicode-host.service");
+      const data = join(home, ".omnicode-host/host.db");
       for (const file of [service, data]) {
         mkdirSync(dirname(file), { recursive: true });
         writeFileSync(file, "existing");
@@ -64,7 +64,7 @@ it.skipIf(process.platform === "win32").each(["darwin", "linux"] as const)(
           "--user",
           "disable",
           "--now",
-          "monocode-host.service",
+          "omnicode-host.service",
         ]);
         expect(notes.join("\n")).toContain("loginctl disable-linger");
       }
@@ -80,7 +80,7 @@ it("unregisters only this user's Windows task", async () => {
     platform: "win32",
     powershell: async (script) => scripts.push(script),
   });
-  expect(scripts[0]).toContain('"MonoCode Host-$sid"');
+  expect(scripts[0]).toContain('"OmniCode Host-$sid"');
   expect(scripts[0]).toContain("Unregister-ScheduledTask");
-  expect(scripts[0]).not.toMatch(/Remove-Item|\.monocode-host/);
+  expect(scripts[0]).not.toMatch(/Remove-Item|\.omnicode-host/);
 });

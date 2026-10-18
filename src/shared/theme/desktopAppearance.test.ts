@@ -13,12 +13,12 @@ afterEach(() => { vi.restoreAllMocks(); delete document.documentElement.dataset.
 
 describe("desktop appearance migration", () => {
   it.each(Object.entries(LEGACY_SKIN_SCHEMES))("migrates %s without changing shared/mobile theme", (skin, scheme) => {
-    localStorage.setItem("monocode.desktopSkin", skin);
-    localStorage.setItem("monocode.colorScheme", "system");
-    localStorage.setItem("monocode.themeHue", "173");
+    localStorage.setItem("omnicode.desktopSkin", skin);
+    localStorage.setItem("omnicode.colorScheme", "system");
+    localStorage.setItem("omnicode.themeHue", "173");
     expect(loadThemePreference()).toBe(scheme);
-    expect(localStorage.getItem("monocode.colorScheme")).toBe("system");
-    expect(localStorage.getItem("monocode.themeHue")).toBe("173");
+    expect(localStorage.getItem("omnicode.colorScheme")).toBe("system");
+    expect(localStorage.getItem("omnicode.themeHue")).toBe("173");
     const backup = localStorage.getItem(DESKTOP_APPEARANCE_BACKUP_KEY)!;
     expect(JSON.parse(backup)).toMatchObject({ desktopSkin: skin, colorScheme: "system", themeHue: "173" });
     saveThemePreference("system");
@@ -29,37 +29,37 @@ describe("desktop appearance migration", () => {
   });
 
   it.each(["classic", "auto"])("preserves %s mode and font/scale preferences", skin => {
-    localStorage.setItem("monocode.desktopSkin", skin);
-    localStorage.setItem("monocode.colorScheme", "system");
-    localStorage.setItem("monocode.uiFontSize", "18");
-    localStorage.setItem("monocode.uiScale", "1.25");
+    localStorage.setItem("omnicode.desktopSkin", skin);
+    localStorage.setItem("omnicode.colorScheme", "system");
+    localStorage.setItem("omnicode.uiFontSize", "18");
+    localStorage.setItem("omnicode.uiScale", "1.25");
     expect(loadThemePreference()).toBe("system");
-    expect(localStorage.getItem("monocode.uiFontSize")).toBe("18");
-    expect(localStorage.getItem("monocode.uiScale")).toBe("1.25");
+    expect(localStorage.getItem("omnicode.uiFontSize")).toBe("18");
+    expect(localStorage.getItem("omnicode.uiScale")).toBe("1.25");
   });
 
   it("uses dark for invalid values without replaying a previous skin", () => {
-    localStorage.setItem("monocode.desktopSkin", "broken");
-    localStorage.setItem("monocode.colorScheme", "light");
+    localStorage.setItem("omnicode.desktopSkin", "broken");
+    localStorage.setItem("omnicode.colorScheme", "light");
     expect(loadThemePreference()).toBe("dark");
     localStorage.setItem(DESKTOP_SCHEME_KEY, "broken");
-    localStorage.setItem("monocode.desktopSkin", "meadow");
+    localStorage.setItem("omnicode.desktopSkin", "meadow");
     expect(loadThemePreference()).toBe("dark");
   });
 
   it("applies the resolved mode when persistence fails", () => {
-    localStorage.setItem("monocode.desktopSkin", "atelier");
+    localStorage.setItem("omnicode.desktopSkin", "atelier");
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("quota"); });
     expect(loadThemePreference()).toBe("light");
   });
 
   it("does not migrate or write desktop preferences on mobile", () => {
-    localStorage.setItem("monocode.desktopSkin", "atelier");
-    localStorage.setItem("monocode.colorScheme", "dark");
+    localStorage.setItem("omnicode.desktopSkin", "atelier");
+    localStorage.setItem("omnicode.colorScheme", "dark");
     document.documentElement.dataset.mobileSkin = "midnight";
     expect(loadThemePreference()).toBe("dark");
     saveThemePreference("light");
-    expect(localStorage.getItem("monocode.colorScheme")).toBe("light");
+    expect(localStorage.getItem("omnicode.colorScheme")).toBe("light");
     expect(localStorage.getItem(DESKTOP_SCHEME_KEY)).toBeNull();
     expect(localStorage.getItem(DESKTOP_APPEARANCE_BACKUP_KEY)).toBeNull();
   });
@@ -70,8 +70,8 @@ describe("desktop appearance migration", () => {
       for (const scheme of ["light", "dark", "system", "invalid"]) {
         for (const migrated of [false, true]) {
           localStorage.clear();
-          localStorage.setItem("monocode.desktopSkin", skin);
-          localStorage.setItem("monocode.colorScheme", scheme);
+          localStorage.setItem("omnicode.desktopSkin", skin);
+          localStorage.setItem("omnicode.colorScheme", scheme);
           if (migrated) localStorage.setItem(DESKTOP_SCHEME_KEY, scheme);
           new Function(boot)();
           const first = document.documentElement.dataset.skin;

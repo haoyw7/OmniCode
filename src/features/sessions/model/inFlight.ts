@@ -5,7 +5,7 @@ import { stopStreaming } from "../../../integrations/harness/core/apply";
 import type { ProjectReturnMemory } from "../../projects/model/projectReturn";
 
 export const INTERRUPT_MESSAGE =
-  "Turn interrupted when MonoCode quit.";
+  "Turn interrupted when OmniCode quit.";
 
 export const CONTINUE_PROMPT = "Continue from where you left off.";
 

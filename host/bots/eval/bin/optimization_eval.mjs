@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const output = await mkdtemp(join(tmpdir(), "monocode-optimization-build-"));
-process.env.MONOCODE_EVAL_ROOT = root;
+const output = await mkdtemp(join(tmpdir(), "omnicode-optimization-build-"));
+process.env.OMNICODE_EVAL_ROOT = root;
 try {
   await build({
     entryPoints: [join(root, "src/optimizationCampaign.ts")],

@@ -11,8 +11,8 @@ import {
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
-const BINDINGS = "monocode.remote-tabs.v2";
-const SCOPES = "monocode.remote-tab-scopes.v1";
+const BINDINGS = "omnicode.remote-tabs.v2";
+const SCOPES = "omnicode.remote-tab-scopes.v1";
 const scope = { environmentId: "local", projectId: "project" };
 
 beforeEach(() => localStorage.clear());
@@ -87,7 +87,7 @@ it("forgets only this Host's bindings to sessions it no longer lists", () => {
 
 it("ignores repeated identical bindings so pollers cannot trigger history refreshes", () => {
   const changes = vi.fn();
-  window.addEventListener("monocode:remote-history", changes);
+  window.addEventListener("omnicode:remote-history", changes);
   try {
     rememberRemoteSession("shell", "host", scope);
     const write = vi.spyOn(Storage.prototype, "setItem");
@@ -98,7 +98,7 @@ it("ignores repeated identical bindings so pollers cannot trigger history refres
     rememberRemoteSession("shell", "next", scope);
     expect(changes).toHaveBeenCalledTimes(2);
   } finally {
-    window.removeEventListener("monocode:remote-history", changes);
+    window.removeEventListener("omnicode:remote-history", changes);
   }
 });
 

@@ -11,7 +11,7 @@ export async function generateWorktreeBranch(
     try {
       const value = await generate();
       const fragment = sanitizeBranchFragment(value ?? "")
-        .replace(/^(?:mc|monocode)\//, "")
+        .replace(/^(?:mc|omnicode)\//, "")
         .replace(/\//g, "-");
       if (fragment) return `mc/${fragment}`;
     } catch {

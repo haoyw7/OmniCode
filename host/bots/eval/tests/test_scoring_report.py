@@ -15,7 +15,7 @@ class ScoreReportTests(unittest.TestCase):
         if self._testMethodName == 'test_unknown_metrics_are_not_fabricated':
             return
         if not REPORT.data_path(REPORT.GATED + '/results.jsonl', root=ROOT).is_file():
-            self.skipTest('Historical evidence is optional; set MONOCODE_EVAL_ARCHIVE_ROOT to run archive regressions')
+            self.skipTest('Historical evidence is optional; set OMNICODE_EVAL_ARCHIVE_ROOT to run archive regressions')
         for relative in ['data/cases.jsonl'] + [f'public/{source}/cases.jsonl' for source in REPORT.SOURCES]:
             if not REPORT.data_path(relative, root=ROOT).is_file():
                 self.skipTest('Prepare dataset caches before running historical report regressions')

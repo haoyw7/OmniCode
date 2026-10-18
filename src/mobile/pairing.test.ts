@@ -12,7 +12,7 @@ vi.mock("@capacitor/core", () => ({
 describe("pairing QR codes", () => {
   it("reads the Host URL and pairing code", () => {
     expect(
-      parsePairingOffer("monocode://pair?host=http%3A%2F%2F192.168.0.206%3A3774%2F&token=abc_-1"),
+      parsePairingOffer("omnicode://pair?host=http%3A%2F%2F192.168.0.206%3A3774%2F&token=abc_-1"),
     ).toEqual({ host: "http://192.168.0.206:3774", token: "abc_-1" });
   });
 
@@ -20,14 +20,14 @@ describe("pairing QR codes", () => {
     expect(normalizePairingCode(" xd5j2j3u ")).toBe("XD5J-2J3U");
     expect(normalizePairingCode("xd5j-2j3u")).toBe("XD5J-2J3U");
     expect(normalizePairingCode("aB3_long-device-token")).toBe("aB3_long-device-token");
-    expect(parsePairingOffer("monocode://pair?host=http://pc:3774&token=XD5J-2J3U").token).toBe("XD5J-2J3U");
+    expect(parsePairingOffer("omnicode://pair?host=http://pc:3774&token=XD5J-2J3U").token).toBe("XD5J-2J3U");
   });
 
   it("rejects unrelated QR codes and Host URLs with paths", () => {
     expect(() => parsePairingOffer("https://example.com/?host=http://pc&token=abc")).toThrow("not a OmniCode pairing code");
-    expect(() => parsePairingOffer("monocode://pair?token=abc")).toThrow("not a OmniCode pairing code");
-    expect(() => parsePairingOffer("monocode://pair?host=http://pc&token=a%20b")).toThrow("valid device token");
-    expect(() => parsePairingOffer("monocode://pair?host=http://pc/rpc&token=abc")).toThrow("Host URL only");
+    expect(() => parsePairingOffer("omnicode://pair?token=abc")).toThrow("not a OmniCode pairing code");
+    expect(() => parsePairingOffer("omnicode://pair?host=http://pc&token=a%20b")).toThrow("valid device token");
+    expect(() => parsePairingOffer("omnicode://pair?host=http://pc/rpc&token=abc")).toThrow("Host URL only");
   });
 });
 

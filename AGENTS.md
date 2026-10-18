@@ -163,6 +163,23 @@ are not prerequisites for local work.
   accept new violations without the user's approval. Use `--report <file>` for
   a readable list with line numbers.
 
+## Android APK 构建与发布
+
+- 用户要求构建或发布 APK 时，默认构建 Release 并使用 2026-10-18 首次正式发布
+  （0.1.0，build 3）的同一把 OmniCode 正式签名密钥；除非用户明确要求调试包，
+  不得交付 debug 签名包。不得自行重新生成、替换或轮换正式密钥。
+- 交付和发布的 APK 文件名固定为 `OmniCode.apk`，大小写保持一致，不添加版本号、
+  build 编号、日期或其他后缀；应用显示名保持 `OmniCode`。
+- 密钥 alias 为 `omnicode`，证书 SHA-256 为
+  `E4:81:24:FA:A8:1F:5B:60:F4:3E:5C:54:43:BC:E1:11:61:81:E2:DE:87:26:FF:F7:B2:42:6E:69:CC:80:EB:00`。
+  密钥位置与恢复说明见 [移动端签名说明](mobile/README.md#release-signing-key)。
+  密钥不可用时应明确报告阻塞，不能退回调试签名或新建密钥替代。
+- 密钥与密码必须保留在仓库外，不得提交、上传至 Release 或打印到日志。
+  发布前验证 Release 调试开关已关闭、签名证书匹配、APK 对齐及 SHA-256；
+  `mobile-latest.json` 的 `downloadPath` 固定为 `/OmniCode.apk`，并匹配实际产物的
+  versionCode、versionName、大小和校验值。后续构建继续递增 versionCode。
+- 构建与发布仍是独立授权操作；仅构建的请求不授权发布，也不配置自动发布钩子。
+
 ## Verification
 
 Keep verification proportional to the change and minimize unnecessary testing.

@@ -8,7 +8,7 @@ import { HostStore } from "./store";
 import { WorkspaceCommands } from "./workspace-commands";
 
 it("returns complete large Git file contents for working tree, index, base and history", async () => {
-  const root = mkdtempSync(join(tmpdir(), "monocode-large-diff-"));
+  const root = mkdtempSync(join(tmpdir(), "omnicode-large-diff-"));
   const store = new HostStore(":memory:");
   const git = (...args: string[]) => execFileSync("git", args, {
     cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"],

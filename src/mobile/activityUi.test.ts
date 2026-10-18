@@ -497,14 +497,14 @@ describe("mobile unread indicators and notification navigation", () => {
       await advanceMotionTimers(3000);
     });
     expect(node.querySelector(".mobile-unread-dot")).not.toBeNull();
-    expect(JSON.parse(localStorage.getItem("monocode.mobileActivity:host")!).entries.one.manualUnread).toBe(true);
+    expect(JSON.parse(localStorage.getItem("omnicode.mobileActivity:host")!).entries.one.manualUnread).toBe(true);
     expect(mocked.notify).not.toHaveBeenCalled();
     await act(async () => node.querySelector<HTMLButtonElement>('[data-session-id="one"]')!.click());
     await openMenu();
     await advanceMotionTimers(600);
     await finishListAnimations();
     expect(node.querySelector(".mobile-unread-dot")).toBeNull();
-    expect(JSON.parse(localStorage.getItem("monocode.mobileActivity:host")!).entries.one.manualUnread).toBeUndefined();
+    expect(JSON.parse(localStorage.getItem("omnicode.mobileActivity:host")!).entries.one.manualUnread).toBeUndefined();
   });
   it("shows a green unread marker at the end of a row, clears it after loading and does not repeat the banner", async () => {
     await clickProject();
@@ -521,7 +521,7 @@ describe("mobile unread indicators and notification navigation", () => {
       node.querySelector<HTMLButtonElement>(".mobile-session-row")!.click();
     });
     expect(
-      JSON.parse(localStorage.getItem("monocode.mobileActivity:host")!).entries
+      JSON.parse(localStorage.getItem("omnicode.mobileActivity:host")!).entries
         .one.read,
     ).toBe(20);
     await openMenu();
@@ -541,7 +541,7 @@ describe("mobile unread indicators and notification navigation", () => {
       node.querySelector<HTMLButtonElement>(".mobile-session-row")!.click();
     });
     expect(
-      JSON.parse(localStorage.getItem("monocode.mobileActivity:host")!).entries
+      JSON.parse(localStorage.getItem("omnicode.mobileActivity:host")!).entries
         .one.read,
     ).toBeLessThan(20);
     await openMenu();
@@ -559,7 +559,7 @@ describe("mobile unread indicators and notification navigation", () => {
   });
   it("opens Home on launch and remembers the last project for a new conversation", async () => {
     localStorage.setItem(
-      "monocode-mobile-last",
+      "omnicode-mobile-last",
       JSON.stringify({
         environmentId: "host",
         projectId: "other-project",
@@ -581,7 +581,7 @@ describe("mobile unread indicators and notification navigation", () => {
   });
   it("keeps Home usable when the remembered conversation is gone", async () => {
     localStorage.setItem(
-      "monocode-mobile-last",
+      "omnicode-mobile-last",
       JSON.stringify({
         environmentId: "host",
         projectId: "project",
@@ -624,7 +624,7 @@ describe("mobile unread indicators and notification navigation", () => {
       "Other conversation",
     );
     expect(
-      JSON.parse(localStorage.getItem("monocode-mobile-last")!),
+      JSON.parse(localStorage.getItem("omnicode-mobile-last")!),
     ).toMatchObject({ projectId: "other-project", sessionId: "two" });
   });
   it("opens a project page from Projects and starts a conversation there", async () => {
@@ -640,7 +640,7 @@ describe("mobile unread indicators and notification navigation", () => {
       node.querySelector(".mobile-drawer-backdrop")!.getAttribute("data-open"),
     ).toBe("false");
     expect(
-      JSON.parse(localStorage.getItem("monocode-mobile-last")!),
+      JSON.parse(localStorage.getItem("omnicode-mobile-last")!),
     ).toEqual({ environmentId: "host", projectId: "other-project" });
   });
   it("follows a finger to open and close the drawer", async () => {
@@ -708,7 +708,7 @@ describe("mobile unread indicators and notification navigation", () => {
       "Other conversation",
     );
     expect(
-      JSON.parse(localStorage.getItem("monocode.mobileActivity:host")!).entries
+      JSON.parse(localStorage.getItem("omnicode.mobileActivity:host")!).entries
         .two.read,
     ).toBe(20);
   });

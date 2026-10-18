@@ -130,7 +130,7 @@ try {
     await page.waitForTimeout(50);
     widths.drag = await width(); expect(widths.drag).toBe(368);
     await page.mouse.up(); await page.waitForTimeout(300);
-    expect(await page.evaluate(() => localStorage.getItem('monocode.sidebarWidth'))).toBe('368');
+    expect(await page.evaluate(() => localStorage.getItem('omnicode.sidebarWidth'))).toBe('368');
     await page.locator('[data-window-navigation] button[aria-label^="Toggle Sidebar"]').click(); await page.waitForTimeout(300);
     expect(await width()).toBe(0);
     await page.locator('[data-window-drag-bar]').getByRole('button', { name: /Toggle Sidebar/ }).click(); await page.waitForTimeout(300);

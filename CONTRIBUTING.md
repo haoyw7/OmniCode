@@ -1,6 +1,6 @@
-# Contributing to ohmymonocode
+# Contributing to OmniCode
 
-This is an independently maintained personal fork of MonoCode. Keep changes
+This is an independently maintained personal fork of the upstream project. Keep changes
 focused and follow [AGENTS.md](AGENTS.md). Upstream issues, provider restrictions
 and maintainer approvals are not prerequisites for work in this fork.
 
@@ -24,6 +24,14 @@ Localize application-owned text through `src/shared/i18n/`; preserve provider an
 Desktop and Host reuse adapters, but image persistence differs by runtime.
 
 ## Verification and delivery
+
+Use `npm run set-version -- 0.1.0` to synchronize the application version across
+the desktop and Host IM npm manifests and lockfiles, workspace Cargo manifest
+and lockfile, Tauri configuration, Android versionName, and both iOS
+MARKETING_VERSION settings. The command can be repeated and leaves third-party
+dependency versions and native build counters unchanged. Write the corresponding
+English and Chinese release notes in `CHANGELOG.md`; version synchronization does
+not rewrite release history, rebuild binaries, or publish artifacts.
 
 Run the smallest existing checks that cover the change and record their results.
 Documentation-only edits need link and formatting inspection, not application

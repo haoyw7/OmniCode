@@ -212,7 +212,7 @@ it("marks non-textual diff notices ready without waiting for the code renderer",
   expect(container.textContent).toContain("Binary file changed");
 });
 
-it("passes Monocode chunk positions to the stage action", () => {
+it("passes OmniCode chunk positions to the stage action", () => {
   render(true);
   const button = [
     ...container.querySelectorAll<HTMLButtonElement>("button"),

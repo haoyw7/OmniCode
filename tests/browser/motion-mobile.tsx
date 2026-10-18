@@ -15,7 +15,7 @@ import "../../src/mobile/motion.css";
 applyMobileSkin("daylight");
 installKeyboardMotion();
 const noop = () => {};
-const project = { id: "project", name: "Monocode", cwd: "/fixture" };
+const project = { id: "project", name: "OmniCode", cwd: "/fixture" };
 function Fixture() {
   const [sheet, setSheet] = useState(false);
   const [popup, setPopup] = useState<"anchor" | "dialog" | null>(null);
@@ -26,7 +26,7 @@ function Fixture() {
     <div className="mobile-app" style={{height:"100dvh",background:"var(--color-m-bg)",color:"var(--color-m-ink)"}}>
       <MobilePageTransition route={{key:page?"chat":"home",section:page?"chat":"home",depth:page?1:0}}>
         <main className="mobile-home-scroll" style={{padding:24,height:"100%"}}>
-          <h1>{page ? "Conversation" : "Monocode"}</h1>
+          <h1>{page ? "Conversation" : "OmniCode"}</h1>
           <p>Physical sheet and drawer springs. Route state is preserved during travel.</p>
           <div style={{display:"grid",gap:16}}>
             <button data-testid="sheet-open" onClick={()=>setSheet(true)}>Open sheet</button>

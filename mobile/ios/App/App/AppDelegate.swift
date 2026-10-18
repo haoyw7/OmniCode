@@ -48,14 +48,14 @@ import Security
 
 class MobileBridgeViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
-        bridge?.registerPluginInstance(MonoCodeCredentialsPlugin())
+        bridge?.registerPluginInstance(OmniCodeCredentialsPlugin())
     }
 }
 
-@objc(MonoCodeCredentialsPlugin)
-public class MonoCodeCredentialsPlugin: CAPPlugin, CAPBridgedPlugin {
-    public let identifier = "MonoCodeCredentialsPlugin"
-    public let jsName = "MonoCodeCredentials"
+@objc(OmniCodeCredentialsPlugin)
+public class OmniCodeCredentialsPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "OmniCodeCredentialsPlugin"
+    public let jsName = "OmniCodeCredentials"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "get", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "set", returnType: CAPPluginReturnPromise),
@@ -67,7 +67,7 @@ public class MonoCodeCredentialsPlugin: CAPPlugin, CAPBridgedPlugin {
             return nil
         }
         return [kSecClass as String: kSecClassGenericPassword,
-                kSecAttrService as String: "com.monocode.mobile.credentials",
+                kSecAttrService as String: "com.omnicode.mobile.credentials",
                 kSecAttrAccount as String: key]
     }
     @objc func get(_ call: CAPPluginCall) {

@@ -1,6 +1,6 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import type { MouseEvent } from "react";
+import type { MouseEvent, PointerEvent } from "react";
 import { IS_LINUX, IS_WIN } from "../../platform/tauri/platform";
 
 const CONTROLS = [
@@ -33,17 +33,15 @@ export function windowDragRegion() {
   return {
     "data-window-drag-region": "deep",
     "data-tauri-drag-region": IS_LINUX || IS_WIN ? "false" : "deep",
+    onPointerDownCapture: protectWindowDrag,
     onMouseDownCapture: startWindowDrag,
   };
 }
 
-/** Linux/Windows delegate one gesture to Tauri; macOS uses its injected handler. */
-export function startWindowDrag(event: MouseEvent<HTMLElement>): boolean {
+function isDragTarget(event: MouseEvent<HTMLElement>): boolean {
   if (
-    !(IS_LINUX || IS_WIN) ||
     !isTauri() ||
     event.button !== 0 ||
-    (event.detail !== 1 && event.detail !== 2) ||
     event.defaultPrevented ||
     event.currentTarget.getAttribute("data-window-drag-region") !== "deep"
   )
@@ -57,6 +55,24 @@ export function startWindowDrag(event: MouseEvent<HTMLElement>): boolean {
   if (!target || !event.currentTarget.contains(target)) return false;
   const control = target.closest(CONTROLS);
   if (control && control !== event.currentTarget && event.currentTarget.contains(control)) return false;
+  return true;
+}
+
+/** Outside-dismiss listeners run on pointerdown, before native mousedown drag. */
+function protectWindowDrag(event: PointerEvent<HTMLElement>) {
+  if (event.pointerType !== "mouse" || !isDragTarget(event)) return;
+  // Keep the compatibility mousedown (and macOS's injected drag handler).
+  // preventDefault here would suppress it and make the title bar stop dragging.
+  event.stopPropagation();
+}
+
+/** Linux/Windows delegate one gesture to Tauri; macOS uses its injected handler. */
+export function startWindowDrag(event: MouseEvent<HTMLElement>): boolean {
+  if (
+    !(IS_LINUX || IS_WIN) ||
+    (event.detail !== 1 && event.detail !== 2) ||
+    !isDragTarget(event)
+  ) return false;
 
   // Leave the native GTK resize rim to its button-press handler. A deep title
   // region must not also start a move (including Tauri's document fallback).

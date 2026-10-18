@@ -29,18 +29,18 @@ export function readDatasetLock(root: string): DatasetLock | undefined {
 }
 
 export function evalDataRoot(root: string): string {
-  if (process.env.MONOCODE_EVAL_DATA_ROOT)
-    return resolve(expandHome(process.env.MONOCODE_EVAL_DATA_ROOT));
+  if (process.env.OMNICODE_EVAL_DATA_ROOT)
+    return resolve(expandHome(process.env.OMNICODE_EVAL_DATA_ROOT));
   const digest = createHash("sha256")
     .update(readFileSync(join(root, "data/datasets.lock.json")))
     .digest("hex")
     .slice(0, 16);
   return resolve(
     expandHome(
-      process.env.MONOCODE_EVAL_CACHE ||
+      process.env.OMNICODE_EVAL_CACHE ||
         join(
           process.env.XDG_CACHE_HOME || join(homedir(), ".cache"),
-          "monocode",
+          "omnicode",
           "eval",
         ),
     ),
@@ -53,10 +53,10 @@ export function evalArchiveRoot(root: string): string {
   if (!readDatasetLock(root)) return resolve(root);
   return resolve(
     expandHome(
-      process.env.MONOCODE_EVAL_ARCHIVE_ROOT ||
+      process.env.OMNICODE_EVAL_ARCHIVE_ROOT ||
         join(
           process.env.XDG_DATA_HOME || join(homedir(), ".local", "share"),
-          "monocode",
+          "omnicode",
           "eval-archive",
         ),
     ),
@@ -125,7 +125,7 @@ export async function readEvalText(
       readDatasetLock(root)
     )
       throw new Error(
-        `Historical evaluation artifact is unavailable: ${relativePath}. Set MONOCODE_EVAL_ARCHIVE_ROOT to the external archive containing reports/.`,
+        `Historical evaluation artifact is unavailable: ${relativePath}. Set OMNICODE_EVAL_ARCHIVE_ROOT to the external archive containing reports/.`,
       );
     throw error;
   }
@@ -152,7 +152,7 @@ export async function requireEvalInputPath(
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT")
       throw new Error(
-        `Evaluation artifact is unavailable: ${resolved}. Supply an existing external path or set MONOCODE_EVAL_ARCHIVE_ROOT to the archive containing reports/.`,
+        `Evaluation artifact is unavailable: ${resolved}. Supply an existing external path or set OMNICODE_EVAL_ARCHIVE_ROOT to the archive containing reports/.`,
       );
     throw error;
   }
@@ -182,7 +182,7 @@ export async function assertEvalOutputOutsideProject(
     (!rel.startsWith("../") && !rel.startsWith("..\\") && !isAbsolute(rel))
   )
     throw new Error(
-      "Evaluation reports must be stored outside the project; use MONOCODE_EVAL_ARCHIVE_ROOT or an external --out directory.",
+      "Evaluation reports must be stored outside the project; use OMNICODE_EVAL_ARCHIVE_ROOT or an external --out directory.",
     );
 }
 
@@ -212,7 +212,7 @@ export async function ensureEvalData(
         cwd: root,
         env: {
           ...process.env,
-          MONOCODE_EVAL_ARCHIVE_ROOT: evalArchiveRoot(root),
+          OMNICODE_EVAL_ARCHIVE_ROOT: evalArchiveRoot(root),
           PYTHONDONTWRITEBYTECODE: "1",
         },
         stdio: ["ignore", "pipe", "pipe"],
@@ -245,6 +245,6 @@ export async function ensureEvalData(
     throw new Error(
       "Evaluation data preparation returned no absolute cache root",
     );
-  process.env.MONOCODE_EVAL_DATA_ROOT = result.root;
+  process.env.OMNICODE_EVAL_DATA_ROOT = result.root;
   return result.root;
 }

@@ -220,7 +220,7 @@ it("explains removal and removes the saved connection without stopping or revoki
     "leaves this desktop’s credential valid",
   );
   expect(container.textContent).toContain(
-    "~/.monocode-host/bin/monocode-host service uninstall",
+    "~/.omnicode-host/bin/omnicode-host service uninstall",
   );
   await act(async () => button("Remove from this desktop only").click());
   expect(invoke).toHaveBeenCalledWith("remote_disconnect", {

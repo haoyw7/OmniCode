@@ -33,7 +33,7 @@ export type NativeSessionFile = {
   modifiedAt: number;
   /** Absent in records listed before multi-provider sync. */
   storage?: "jsonl" | "sqlite";
-  /** MonoCode provider account whose config directory owns the session. */
+  /** OmniCode provider account whose config directory owns the session. */
   accountId?: string;
   /** Title the agent generated or the user set in its CLI, when stored outside the transcript. */
   title?: string;
@@ -144,7 +144,7 @@ export type NativeSyncStatus = {
 };
 
 /**
- * Identity recorded for a Host conversation started by MonoCode itself. It is
+ * Identity recorded for a Host conversation started by OmniCode itself. It is
  * not a `nativeSession` link: warm process reuse continues until the source
  * changes outside a Host turn, which promotes the session to a managed link.
  */

@@ -462,7 +462,7 @@ export function bindCodexSession(
 
 async function ensureLive(input: HarnessSessionInput): Promise<Live> {
   let existing = liveByThread.get(input.sessionId);
-  // Native CLIs can append between MonoCode turns. Reopen an idle imported
+  // Native CLIs can append between OmniCode turns. Reopen an idle imported
   // thread so the next turn loads their latest context from disk.
   if (
     existing && resumeByThread.get(input.sessionId)?.native &&
@@ -603,7 +603,7 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
   try {
     await rpc.request("initialize", {
       clientInfo: {
-        name: "monocode",
+        name: "omnicode",
         title: "OmniCode",
         version: "0.1.0",
       },
@@ -854,7 +854,7 @@ function handleNotification(
   const mapped = mapCodexNotification(method, params);
   if (mapped.diagnostic) {
     console.debug(
-      `[monocode] codex ${live.threadId} ${method}`,
+      `[omnicode] codex ${live.threadId} ${method}`,
       mapped.diagnostic,
     );
   }
@@ -1594,14 +1594,14 @@ export function __codexTestReset(): void {
 export async function readCodexSessionTitle(input: NativeTitleInput): Promise<string | null> {
   const live = liveByThread.get(input.sessionId);
   if (!live) {
-    const childId = `monocode-codex-title-read-${crypto.randomUUID()}`;
+    const childId = `omnicode-codex-title-read-${crypto.randomUUID()}`;
     const rpc = new JsonRpcClient(childId, {}, { includeJsonrpc: false, label: "codex-title-read" });
     watchChild(childId, (line) => rpc.pushLine(line), () => rpc.close());
     const deadline = Date.now() + 5_000;
     try {
       const { path } = await resolveCodexBinary();
       await spawnChild(childId, path, ["app-server"], input.cwd, { provider: "codex", id: input.providerAccountId ?? "default" }, "codex");
-      await rpc.request("initialize", { clientInfo: { name: "monocode-title-read", version: "1" }, capabilities: { experimentalApi: true } }, Math.max(1, deadline - Date.now()));
+      await rpc.request("initialize", { clientInfo: { name: "omnicode-title-read", version: "1" }, capabilities: { experimentalApi: true } }, Math.max(1, deadline - Date.now()));
       await rpc.notify("initialized", undefined);
       const metadata = await rpc.request<{ thread?: { name?: string } }>("thread/read", { threadId: input.providerSessionId, includeTurns: false }, Math.max(1, deadline - Date.now()));
       return metadata.thread?.name ?? null;

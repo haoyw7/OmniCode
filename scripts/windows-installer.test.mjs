@@ -26,22 +26,30 @@ const upstream = {
   "Section Uninstall": "740872b8913ed7be8814054d6639acccab2fe8c34e9213622089dded935b249a"
 };
 
+// Presentation-only calls inserted into upstream blocks; stripped before hashing.
+const presentation = {
+  "Function PageReinstall": "    Call MonoReinstallShow\n"
+};
+
 for (const [block, digest] of Object.entries(upstream)) {
-  test(`pixel UI retains upstream ${block}`, () => {
+  test(`OmniCode UI retains upstream ${block}`, () => {
     const end = block.startsWith("Function") ? "FunctionEnd" : "SectionEnd";
     const match = template.match(new RegExp(`^${escape(block)}\\n[\\s\\S]*?^${end}$`, "m"));
     assert.ok(match, `${block} exists`);
-    assert.equal(hash(match[0]), digest, "Review engine changes against upstream before updating this contract");
+    const edit = presentation[block];
+    if (edit) assert.equal(match[0].split(edit).length, 2, `${block} has exactly one presentation hook`);
+    const source = edit ? match[0].replace(edit, "") : match[0];
+    assert.equal(hash(source), digest, "Review engine changes against upstream before updating this contract");
   });
 }
 
-test("pixel UI retains command-line parsing and default/previous install location", () => {
+test("OmniCode UI retains command-line parsing and default/previous install location", () => {
   const init = template.match(/^Function \.onInit\n[\s\S]*?^FunctionEnd$/m)[0]
     .replace("  StrCpy $MonoDesktopShortcut ${BST_CHECKED}\n", "");
   assert.equal(hash(init), "565efcb6a57d4d96549be82abc8b6ea1fb0d2a855a7a100a1a6b1756a4b08067");
 });
 
-test("pixel UI retains file deployment, associations, registry and start menu", () => {
+test("OmniCode UI retains file deployment, associations, registry and start menu", () => {
   const install = template.match(/^Section Install\n[\s\S]*?!insertmacro MUI_STARTMENU_WRITE_END/m)[0];
   assert.equal(hash(install), "be41b33f8ce0606b71cbb2919999cb0ed540e14858c72f1121888c6bd7274374");
 });

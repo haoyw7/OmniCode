@@ -17,7 +17,7 @@ import { parseCodexModelList } from "./codexCatalog";
 it("adds only a thread-specific MCP server and passes credential variable names, never values", () => {
   expect(buildCodexAppServerArgs()).toEqual(["app-server"]);
   const args = buildCodexAppServerArgs({ scope: { botId: "bot", threadId: "thread", runId: "run" }, systemInstructions: "", contextFingerprint: "v1", agentsMcp: { command: "/node path", args: ["/host path", "agents-mcp"], env: { LANG: "C" } } });
-  expect(args).toEqual(["app-server", "-c", 'mcp_servers.mc_agents_thread.command="/node path"', "-c", 'mcp_servers.mc_agents_thread.args=["/host path","agents-mcp"]', "-c", 'mcp_servers.mc_agents_thread.env_vars=["MONOCODE_CONTROL_ENDPOINT","MONOCODE_CONTROL_TOKEN"]', "-c", 'mcp_servers.mc_agents_thread.tool_timeout_sec=250', "-c", 'mcp_servers.mc_agents_thread.env.LANG="C"']);
+  expect(args).toEqual(["app-server", "-c", 'mcp_servers.mc_agents_thread.command="/node path"', "-c", 'mcp_servers.mc_agents_thread.args=["/host path","agents-mcp"]', "-c", 'mcp_servers.mc_agents_thread.env_vars=["OMNICODE_CONTROL_ENDPOINT","OMNICODE_CONTROL_TOKEN"]', "-c", 'mcp_servers.mc_agents_thread.tool_timeout_sec=250', "-c", 'mcp_servers.mc_agents_thread.env.LANG="C"']);
   expect(args.some(arg => arg.startsWith("mcp_servers="))).toBe(false);
 });
 
@@ -69,7 +69,7 @@ describe("runtimeModeToCodexConfig", () => {
 
   it("opens the sandbox network only for a lead, which needs the control socket", () => {
     // Both sandboxed policies default networkAccess to false, which denies
-    // loopback too, so the control CLI cannot reach MonoCode without this.
+    // loopback too, so the control CLI cannot reach OmniCode without this.
     for (const mode of ["supervised", "auto-accept-edits", "auto"] as const) {
       expect(runtimeModeToCodexConfig(mode).sandboxPolicy).not.toHaveProperty(
         "networkAccess",

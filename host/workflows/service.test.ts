@@ -35,7 +35,7 @@ function fakeProvider(reply: Reply, sent: SendTurnInput[]): HostProvider {
 }
 
 function setup(runtimeMode: "supervised" | "full-access" = "full-access", reply?: Reply) {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-workflow-test-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-workflow-test-"));
   const store = new HostStore(join(directory, "host.db"));
   const project = store.addProject(directory, "Test");
   const sent: SendTurnInput[] = [];
@@ -205,7 +205,7 @@ describe("Host dynamic workflows", () => {
     const { engine, parentId, claude } = setup();
     const result = await engine.workflows.submit(parentId, { script: "const x: number = 'no';\nreturn x;", name: "Broken" }, "agent");
     expect(result).toMatchObject({ ok: false, reason: "diagnostics" });
-    expect((result as { diagnostics: string[] }).diagnostics[0].replaceAll("\\", "/")).toMatch(/\.monocode\/workflow-drafts\/.+\.dwf\.ts:L1:C/);
+    expect((result as { diagnostics: string[] }).diagnostics[0].replaceAll("\\", "/")).toMatch(/\.omnicode\/workflow-drafts\/.+\.dwf\.ts:L1:C/);
     expect(claude.send).not.toHaveBeenCalled();
   }, 30_000);
 
@@ -231,7 +231,7 @@ describe("workflow control CLI", () => {
     const { engine, parentId } = setup();
     await engine.workflows.ready;
     const environment = engine.workflows.environment(parentId);
-    expect(environment.MONOCODE_WORKFLOW_TOKEN).toBeTruthy();
+    expect(environment.OMNICODE_WORKFLOW_TOKEN).toBeTruthy();
     expect(engine.workflows.prompt(parentId, "/workflow review the repo")).toContain("SKILL.md");
     const saved = { ...process.env };
     const output: string[] = [];

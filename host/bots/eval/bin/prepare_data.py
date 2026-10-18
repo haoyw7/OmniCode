@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare checksum-locked evaluation datasets in the user's external cache.
 
-Only explicitly selected sources are fetched. Original MonoCode fixtures come
+Only explicitly selected sources are fetched. Original OmniCode fixtures come
 from an external input directory or HTTPS base URL; public sources use immutable
 upstream revisions. Downloads
 and rebuilt datasets are verified before an atomic, per-source publication.
@@ -54,14 +54,14 @@ def load_lock():
 
 
 def cache_root():
-    override = os.environ.get("MONOCODE_EVAL_DATA_ROOT")
+    override = os.environ.get("OMNICODE_EVAL_DATA_ROOT")
     if override:
         return Path(override).expanduser().resolve()
-    base = os.environ.get("MONOCODE_EVAL_CACHE")
+    base = os.environ.get("OMNICODE_EVAL_CACHE")
     if base:
         cache = Path(base).expanduser()
     else:
-        cache = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "monocode/eval"
+        cache = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "omnicode/eval"
     return (cache / sha256(LOCK_PATH)[:16]).resolve()
 
 
@@ -128,7 +128,7 @@ def download(url, digest, downloads):
     if not url.startswith("https://"):
         raise ValueError("Eval downloads require HTTPS")
     print(f"Fetching {url}", file=sys.stderr)
-    request = urllib.request.Request(url, headers={"User-Agent": "monocode-eval-data/1"})
+    request = urllib.request.Request(url, headers={"User-Agent": "omnicode-eval-data/1"})
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(dir=downloads, prefix=".download-", delete=False) as output:
@@ -274,17 +274,17 @@ def _prepare_bipia(stage, downloads):
 
 def _prepare_original(stage, downloads):
     """Read original cases from external input; never reconstruct them in code."""
-    configured = os.environ.get("MONOCODE_EVAL_ORIGINAL_SOURCE", "").strip()
-    source = configured or str(Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share") / "monocode/eval-inputs/original")
+    configured = os.environ.get("OMNICODE_EVAL_ORIGINAL_SOURCE", "").strip()
+    source = configured or str(Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share") / "omnicode/eval-inputs/original")
     is_url = "://" in source
     if is_url:
         parsed = urllib.parse.urlsplit(source)
         if parsed.scheme != "https" or not parsed.netloc or parsed.query or parsed.fragment:
-            raise ValueError("MONOCODE_EVAL_ORIGINAL_SOURCE must be an external directory or an HTTPS base URL without query/fragment")
+            raise ValueError("OMNICODE_EVAL_ORIGINAL_SOURCE must be an external directory or an HTTPS base URL without query/fragment")
     else:
         directory = Path(source).expanduser().resolve()
         if directory == PROJECT_ROOT or PROJECT_ROOT in directory.parents:
-            raise ValueError("MONOCODE_EVAL_ORIGINAL_SOURCE must be outside the project directory")
+            raise ValueError("OMNICODE_EVAL_ORIGINAL_SOURCE must be outside the project directory")
     for relative, digest in load_lock()["sources"]["original"]["files"].items():
         destination = stage / relative
         if is_url:
@@ -297,7 +297,7 @@ def _prepare_original(stage, downloads):
             if not original.is_file():
                 raise FileNotFoundError(
                     f"Original eval dataset input missing: {original}. "
-                    "Set MONOCODE_EVAL_ORIGINAL_SOURCE to an external directory or HTTPS base URL "
+                    "Set OMNICODE_EVAL_ORIGINAL_SOURCE to an external directory or HTTPS base URL "
                     "containing the data/... paths listed in data/datasets.lock.json."
                 )
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -334,7 +334,7 @@ def ensure_data(sources=None):
     # A custom cache must still be outside the project: builds cannot turn into
     # source-tree datasets merely through an accidental relative environment.
     if root == PROJECT_ROOT or PROJECT_ROOT in root.parents:
-        raise ValueError("MONOCODE_EVAL_CACHE/MONOCODE_EVAL_DATA_ROOT must be outside the project directory")
+        raise ValueError("OMNICODE_EVAL_CACHE/OMNICODE_EVAL_DATA_ROOT must be outside the project directory")
     root.mkdir(parents=True, exist_ok=True)
     for source in selected:
         files = lock["sources"][source]["files"]
@@ -349,7 +349,7 @@ def ensure_data(sources=None):
                     _prepare_original(work, root.parent / "downloads")
                 else:
                     _copy_sources(work, source, lock)
-                    environment = dict(os.environ, MONOCODE_EVAL_BUILD_ROOT=str(work), PYTHONDONTWRITEBYTECODE="1", PYTHONUTF8="1")
+                    environment = dict(os.environ, OMNICODE_EVAL_BUILD_ROOT=str(work), PYTHONDONTWRITEBYTECODE="1", PYTHONUTF8="1")
                     subprocess.run([sys.executable, str(Path(__file__).resolve()), "--_build", source,
                                     "--_stage", str(work), "--_downloads", str(root.parent / "downloads")],
                                    env=environment, stdout=sys.stderr, check=True)

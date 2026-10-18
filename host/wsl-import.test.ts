@@ -9,7 +9,7 @@ const cleanups: Array<() => Promise<void>> = [];
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); });
 
 async function fixture() {
-  const root = await mkdtemp(join(tmpdir(), "monocode-wsl-import-test-"));
+  const root = await mkdtemp(join(tmpdir(), "omnicode-wsl-import-test-"));
   const source = new HostStore(join(root, "source.db"));
   const target = new HostStore(join(root, "target.db"));
   const project = source.addProject("/home/dev/repo", "Linux repository");
@@ -60,7 +60,7 @@ it("archives detached worker history and pauses migrated queued attachments", as
   source.save({ ...value, revision: value.revision + 1, session: { ...value.session,
     orchestrationLeadId: "old-lead", workflowParentId: "old-parent", workflowRunId: "old-workflow",
     queueStatus: "active", queuedMessages: [{ id: "queued", text: "Next", attachments: [{
-      id: "image-1", path: "/home/dev/.monocode/remote/data/attachments/image-1", name: "image.png", kind: "image", size: 10, mimeType: "image/png",
+      id: "image-1", path: "/home/dev/.omnicode/remote/data/attachments/image-1", name: "image.png", kind: "image", size: 10, mimeType: "image/png",
     }] }],
   } }, { type: "fixture.worker" });
   await importWslSnapshot(target, source.databasePath, machine);

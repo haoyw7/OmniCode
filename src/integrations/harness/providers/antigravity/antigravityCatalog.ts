@@ -13,7 +13,7 @@ import {
   modelsFromSessionNew,
 } from "./antigravityProtocol";
 
-const PROBE_ID = "monocode-antigravity-probe";
+const PROBE_ID = "omnicode-antigravity-probe";
 const REQUEST_TIMEOUT_MS = 12_000;
 let inflight: Promise<void> | null = null;
 
@@ -25,7 +25,7 @@ export function refreshAntigravityCatalog(): Promise<void> {
     })
     .catch((error: unknown) => {
       // Preserve the last live catalog (or startup seeds) when offline/logged out.
-      console.debug("[monocode] antigravity catalog", error);
+      console.debug("[omnicode] antigravity catalog", error);
     })
     .finally(() => {
       inflight = null;
@@ -74,7 +74,7 @@ export async function discoverAntigravityModels(workingDirectory?: string) {
           // session/new, leaving the catalog with nothing to enumerate.
           session: { configOptions: { boolean: {} } },
         },
-        clientInfo: { name: "monocode", version: "0.1.0" },
+        clientInfo: { name: "omnicode", version: "0.1.0" },
       },
       REQUEST_TIMEOUT_MS,
     );

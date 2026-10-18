@@ -145,8 +145,6 @@ const INTERVAL_PRESETS = [
   { minutes: 240, label: "4 hours" },
   { minutes: 1440, label: "1 day" },
 ];
-// The assistant overlay sits at z-index 100, above the shared dialog layers.
-const OVERLAY_POPOVER_LAYER = 101;
 /** Hosts can hold thousands of conversations; rows mount a page at a time. */
 const WATCHED_PAGE = 50;
 
@@ -293,7 +291,6 @@ function Picker({
           placeholder={placeholder}
           disabled={disabled}
           searchable={searchable}
-          layer={OVERLAY_POPOVER_LAYER}
         />
         {hint && <small>{hint}</small>}
       </div>

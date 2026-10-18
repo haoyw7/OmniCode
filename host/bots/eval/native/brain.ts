@@ -5,7 +5,7 @@ export function brain(actions: string[], text: string) {
   return buildBrainPrompt({
     config: {
       id: "eval-assistant",
-      name: "MonoCode Eval",
+      name: "OmniCode Eval",
       timezone: "UTC",
       policy: fullBotPolicy(),
       watches: [],

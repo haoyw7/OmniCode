@@ -1,0 +1,70 @@
+import { motion } from "motion/react";
+import { panelTransition } from "../../../shared/motion/tokens";
+import { useState, type CSSProperties } from "react";
+import { useTurnCelebration } from "./turnCelebration";
+
+const SPARKLE_COUNT = 18;
+const STAR_PATH =
+  "M12 0C12.9 6.6 17.4 11.1 24 12C17.4 12.9 12.9 17.4 12 24C11.1 17.4 6.6 12.9 0 12C6.6 11.1 11.1 6.6 12 0Z";
+
+type Sparkle = {
+  star: boolean;
+  x: number;
+  size: number;
+  drift: number;
+  spin: number;
+};
+
+function makeSparkles(): Sparkle[] {
+  return Array.from({ length: SPARKLE_COUNT }, (_, i) => {
+    const star = i % 3 !== 2;
+    return {
+      star,
+      // Spread evenly across the bubble with some jitter so it never reads as a grid.
+      x: Math.min(96, Math.max(4, ((i + Math.random()) / SPARKLE_COUNT) * 100)),
+      size: star ? 7 + Math.random() * 6 : 2.5 + Math.random() * 2,
+      drift: (Math.random() - 0.5) * 28,
+      spin: (Math.random() < 0.5 ? -1 : 1) * (90 + Math.random() * 120),
+    };
+  }).sort(() => Math.random() - 0.5);
+}
+
+/** A one-shot burst of rising sparkles inside a freshly sent /operator bubble. */
+export function OmniCodeSparkles({
+  blockId,
+  startedAt,
+}: {
+  blockId: string;
+  startedAt?: number;
+}) {
+  const { active, opacity, y } = useTurnCelebration(blockId, startedAt);
+  const [sparkles] = useState(makeSparkles);
+
+  if (!active) return null;
+  return (
+    <motion.span aria-hidden className="omnicode-sparkles" style={{ opacity, y }}>
+      {sparkles.map((sparkle, index) => (
+        <motion.span
+          key={index} initial={false} animate={{ y: ["0%", "-100%"], x: [0, sparkle.drift], rotate: [0, sparkle.spin] }} transition={panelTransition}
+          className="omnicode-sparkle"
+          style={
+            {
+              "--x": `${sparkle.x}%`,
+              "--size": `${sparkle.size}px`,
+              "--drift": `${sparkle.drift}px`,
+              "--spin": `${sparkle.spin}deg`,
+            } as CSSProperties
+          }
+        >
+          {sparkle.star ? (
+            <svg viewBox="0 0 24 24" className="omnicode-sparkle-glyph">
+              <path d={STAR_PATH} fill="currentColor" />
+            </svg>
+          ) : (
+            <span className="omnicode-sparkle-glyph omnicode-sparkle-ember" />
+          )}
+        </motion.span>
+      ))}
+    </motion.span>
+  );
+}

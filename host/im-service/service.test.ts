@@ -17,7 +17,7 @@ afterEach(async () => { for (const cleanup of cleanups.splice(0)) await cleanup(
 const config = { appId: "cli_1234567890abcdef", appSecret: "private-bot-secret", ownerOpenId: "ou_owner", language: "zh-CN" };
 
 async function setup(options: { failFirstStart?: boolean } = {}) {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-im-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-im-"));
   let store: HostStore, engine: HostEngine;
   const channels: Array<HostImChannel & { receive: ImMessageHandler }> = [];
   const send = vi.fn(async (_target: string, _message: ImOutgoingMessage) => ({ messageId: randomUUID() }));

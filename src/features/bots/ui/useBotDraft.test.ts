@@ -8,7 +8,7 @@ import { useBotDraft } from "./useBotDraft";
 let root: Root;
 let node: HTMLDivElement;
 let update: (value: string) => void;
-const key = (host: string) => `monocode.assistant-draft:${host}`;
+const key = (host: string) => `omnicode.assistant-draft:${host}`;
 
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

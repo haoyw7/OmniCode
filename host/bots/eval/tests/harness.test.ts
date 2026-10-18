@@ -15,7 +15,7 @@ const scenario: any = {
   assertions: [{ kind: "state", path: "reminders.length", equals: 1 }],
   rubric: ["task_completion"],
   maxSteps: 4,
-  provenance: { kind: "original", source: "monocode-original-v1" },
+  provenance: { kind: "original", source: "omnicode-original-v1" },
 };
 const call = {
   action: "reminders.create",

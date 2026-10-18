@@ -66,7 +66,7 @@ await mkdir(output, { recursive: true });
 await mkdir(cache, { recursive: true });
 const { version } = JSON.parse(await readFile("package.json", "utf8"));
 const hostFiles = [
-  ["build/host/monocode-host.mjs", "host.mjs"],
+  ["build/host/omnicode-host.mjs", "host.mjs"],
   ["host/provider-guard.mjs", "provider-guard.mjs"],
 ];
 async function runtimeArchive(target) {
@@ -107,14 +107,14 @@ async function wslRuntime(arch, destination) {
   // GNU tar from Git for Windows would read "C:" as a remote host.
   const tar = process.platform === "win32" ? join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe") : "tar";
   execFileSync(tar, ["-xzf", archive, "-C", destination, "--strip-components=1", `${stem}/bin/node`, `${stem}/LICENSE`]);
-  for (const [from, to] of [["host/wsl-exec.mjs", "wsl-exec.mjs"], ["host/wsl-exec-protocol.mjs", "wsl-exec-protocol.mjs"], ["LICENSE", "MONOCODE-LICENSE"]])
+  for (const [from, to] of [["host/wsl-exec.mjs", "wsl-exec.mjs"], ["host/wsl-exec-protocol.mjs", "wsl-exec-protocol.mjs"], ["LICENSE", "OMNICODE-LICENSE"]])
     await copyFile(from, join(destination, to));
   await build({ entryPoints: ["host/control-cli.ts"], outfile: join(destination, "control-cli.mjs"),
     bundle: true, platform: "node", format: "esm", target: "node24" });
-  await writeFile(join(destination, "bin/monocode-control"), '#!/bin/sh\nBASE=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\nexec "$BASE/bin/node" "$BASE/control-cli.mjs" "$@"\n', { mode: 0o755 });
+  await writeFile(join(destination, "bin/omnicode-control"), '#!/bin/sh\nBASE=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\nexec "$BASE/bin/node" "$BASE/control-cli.mjs" "$@"\n', { mode: 0o755 });
   await writeFile(join(destination, "VERSION"), `${version}\n`);
   await writeFile(join(destination, "ARCH"), `${arch}\n`);
-  const files = ["ARCH", "LICENSE", "MONOCODE-LICENSE", "VERSION", "bin/node", "bin/monocode-control", "control-cli.mjs", "wsl-exec.mjs", "wsl-exec-protocol.mjs"];
+  const files = ["ARCH", "LICENSE", "OMNICODE-LICENSE", "VERSION", "bin/node", "bin/omnicode-control", "control-cli.mjs", "wsl-exec.mjs", "wsl-exec-protocol.mjs"];
   const sums = [];
   for (const file of files)
     sums.push(`${createHash("sha256").update(await readFile(join(destination, file))).digest("hex")}  ${file}`);
@@ -169,33 +169,33 @@ for (const target of targets) {
   if (triple || target === `${process.platform}-${process.arch}`) {
     execFileSync(
       "cargo",
-      ["build", "--release", "--locked", "-p", "monocode-host-supervisor",
+      ["build", "--release", "--locked", "-p", "omnicode-host-supervisor",
         ...(triple ? ["--target", triple] : [])],
       { stdio: "inherit" },
     );
-    const supervisor = windows ? "monocode-supervisor.exe" : "monocode-supervisor";
+    const supervisor = windows ? "omnicode-supervisor.exe" : "omnicode-supervisor";
     await copyFile(
       join(process.env.CARGO_TARGET_DIR ?? "target", triple ?? "", "release", supervisor),
       join(folder, supervisor),
     );
   } else
     console.warn(`${target}: no provider supervisor; using the Node provider guard`);
-  await copyFile("LICENSE", join(folder, "MONOCODE-LICENSE"));
+  await copyFile("LICENSE", join(folder, "OMNICODE-LICENSE"));
   await writeFile(
     join(folder, "version.json"),
     JSON.stringify({ version, nodeVersion, target }),
   );
   if (windows) {
     await writeFile(
-      join(folder, "monocode-host.cmd"),
+      join(folder, "omnicode-host.cmd"),
       '@echo off\r\nsetlocal DisableDelayedExpansion\r\n"%~dp0node.exe" "%~dp0host.mjs" %*\r\nexit /b %errorlevel%\r\n',
     );
   } else {
     await writeFile(
-      join(folder, "monocode-host"),
+      join(folder, "omnicode-host"),
       '#!/bin/sh\nset -eu\nDIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexec "$DIR/bin/node" "$DIR/host.mjs" "$@"\n',
     );
-    await chmod(join(folder, "monocode-host"), 0o755);
+    await chmod(join(folder, "omnicode-host"), 0o755);
   }
   if (target === `${process.platform}-${process.arch}`) {
     const executable = windows
@@ -211,7 +211,7 @@ for (const target of targets) {
     if (actual !== version)
       throw new Error("Packaged host failed its executable smoke test");
   }
-  const filename = `monocode-host-${target}.${extension}`;
+  const filename = `omnicode-host-${target}.${extension}`;
   if (args.includes("--desktop")) {
     const destination = resolve("build/desktop-host");
     await rm(destination, { recursive: true, force: true });

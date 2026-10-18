@@ -82,7 +82,7 @@ function environment(id: string, input: unknown): HostEnvironmentDefinition {
   const entries = Object.entries(input.variables);
   if (entries.length > 256) throw new Error("Too many environment variables");
   for (const [name, value] of entries) {
-    if (!VARIABLE_NAME.test(name) || /^MONOCODE_/i.test(name)) throw new Error(`Invalid environment variable name: ${name}`);
+    if (!VARIABLE_NAME.test(name) || /^OMNICODE_/i.test(name)) throw new Error(`Invalid environment variable name: ${name}`);
     if (typeof value !== "string" || value.length > 32_768 || value.includes("\0")) throw new Error(`Invalid value for ${name}`);
     variables[name] = value;
   }

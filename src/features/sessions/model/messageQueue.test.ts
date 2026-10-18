@@ -43,8 +43,8 @@ describe("isEditingQueuedHead", () => {
 
 describe("canDispatchQueuedHead", () => {
   it("keeps remote queue execution on the Host while preserving its local execution session", () => {
-    const host = chat({ cwd: "/projects/monocode" });
-    const desktopTab = { ...host, cwd: "remote://host/projects/monocode" };
+    const host = chat({ cwd: "/projects/omnicode" });
+    const desktopTab = { ...host, cwd: "remote://host/projects/omnicode" };
     expect(canDispatchQueuedHead(desktopTab)).toBe(false);
     expect(queuedMessageForSubmit(desktopTab, "a", "dispatch")).toBeUndefined();
     expect(canDispatchQueuedHead(host)).toBe(true);

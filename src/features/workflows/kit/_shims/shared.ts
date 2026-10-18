@@ -1,4 +1,4 @@
-// Monocode stand-in for `@zcode/shared`: the test ids and saved-workflow types the
+// OmniCode stand-in for `@zcode/shared`: the test ids and saved-workflow types the
 // ported workflow UI reads.
 import type { SavedWorkflowArgType, SavedWorkflowArgsDeclaration, SavedWorkflowEntry, SavedWorkflowMeta } from "../../../../integrations/workflow/savedWorkflow";
 
@@ -45,18 +45,18 @@ export function resolveWorkspaceKey(params: { workspacePath: string; workspaceId
   return params.workspaceIdentity?.trim() || params.workspacePath;
 }
 
-export type MonocodeSavedWorkflowArgType = SavedWorkflowArgType;
-export type MonocodeSavedWorkflowArgsDeclaration = SavedWorkflowArgsDeclaration;
-export type MonocodeSavedWorkflowMeta = SavedWorkflowMeta;
-export type MonocodeSavedWorkflowEntry = SavedWorkflowEntry;
-export type MonocodeSavedWorkflowScope = SavedWorkflowEntry["scope"];
+export type OmniCodeSavedWorkflowArgType = SavedWorkflowArgType;
+export type OmniCodeSavedWorkflowArgsDeclaration = SavedWorkflowArgsDeclaration;
+export type OmniCodeSavedWorkflowMeta = SavedWorkflowMeta;
+export type OmniCodeSavedWorkflowEntry = SavedWorkflowEntry;
+export type OmniCodeSavedWorkflowScope = SavedWorkflowEntry["scope"];
 
-export type MonocodeSavedWorkflowRunStatus = "pending" | "running" | "completed" | "errored" | "stopped";
+export type OmniCodeSavedWorkflowRunStatus = "pending" | "running" | "completed" | "errored" | "stopped";
 
-export type MonocodeSavedWorkflowRun = {
+export type OmniCodeSavedWorkflowRun = {
   runId: string;
   name?: string;
-  status: MonocodeSavedWorkflowRunStatus;
+  status: OmniCodeSavedWorkflowRunStatus;
   stopReason?: "user" | "model" | "provider" | "interrupted" | "superseded";
   createdAt: number;
   updatedAt: number;
@@ -68,12 +68,12 @@ export type MonocodeSavedWorkflowRun = {
   artifacts?: { id: string; kind: "file" | "markdown" | "chart" | "table" | "metrics" | "board"; title?: string; version: number; contentType?: string }[];
 };
 
-export type MonocodeWorkflowsGetResult =
-  | { ok: true; name: string; path: string; scope: MonocodeSavedWorkflowScope; meta: MonocodeSavedWorkflowMeta; script: string }
+export type OmniCodeWorkflowsGetResult =
+  | { ok: true; name: string; path: string; scope: OmniCodeSavedWorkflowScope; meta: OmniCodeSavedWorkflowMeta; script: string }
   | { ok: false; reason: "invalid_name" | "not_found" | "parse_error" | "read_error"; path?: string; detail?: string };
 
 /** The permission request a workflow approval card renders. */
-export interface MonocodePermissionRequest {
+export interface OmniCodePermissionRequest {
   type: "permission_request";
   taskId: string;
   requestId: string;

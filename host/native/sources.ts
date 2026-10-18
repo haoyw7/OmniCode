@@ -515,7 +515,7 @@ export function sourceFile(
 }
 
 /**
- * Locate the source of a conversation MonoCode started, by provider ID. File
+ * Locate the source of a conversation OmniCode started, by provider ID. File
  * names carry the ID for every JSONL provider, so only matching names are read.
  * More than one match is ambiguous and is never guessed.
  */

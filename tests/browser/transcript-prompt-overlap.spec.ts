@@ -37,8 +37,8 @@ for (const anchor of [false, true]) {
     test(`consecutive prompts stay separated (anchor=${anchor}, reduced=${reduced})`, async ({ page }, testInfo) => {
       await page.emulateMedia({ reducedMotion: reduced ? "reduce" : "no-preference" });
       await page.addInitScript((pin) => {
-        localStorage.setItem("monocode.transcriptLayout", "chat");
-        localStorage.setItem("monocode.transcriptAnchor", String(pin));
+        localStorage.setItem("omnicode.transcriptLayout", "chat");
+        localStorage.setItem("omnicode.transcriptAnchor", String(pin));
       }, anchor);
       await page.goto("/tests/browser/motion-migration.html");
       await page.waitForFunction(() => typeof (window as unknown as { motionBlocks?: unknown }).motionBlocks === "function");
@@ -62,8 +62,8 @@ for (const anchor of [false, true]) {
 
   test(`hiding a moving prompt leaves no displacement when shown (anchor=${anchor})`, async ({ page }) => {
     await page.addInitScript((pin) => {
-      localStorage.setItem("monocode.transcriptLayout", "chat");
-      localStorage.setItem("monocode.transcriptAnchor", String(pin));
+      localStorage.setItem("omnicode.transcriptLayout", "chat");
+      localStorage.setItem("omnicode.transcriptAnchor", String(pin));
     }, anchor);
     await page.goto("/tests/browser/motion-migration.html");
     await page.waitForFunction(() => typeof (window as unknown as { motionBlocks?: unknown }).motionBlocks === "function");

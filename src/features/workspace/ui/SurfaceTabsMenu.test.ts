@@ -26,6 +26,18 @@ vi.mock("../../connections/files/ui/FileTypeIcon", () => ({
     createElement("span", { "data-icon": name }),
 }));
 
+vi.mock("../../workflows/model/workflowSessionWatch", () => ({
+  watchHostSession: (_cwd: string, sessionId: string) => ({
+    sessionId,
+    getSnapshot: () => undefined,
+    subscribe: () => () => {},
+    release: () => {},
+  }),
+}));
+vi.mock("../../sessions/ui/HarnessIcon", () => ({
+  HarnessIcon: ({ harness }: { harness: string }) => createElement("span", { "data-harness": harness }),
+}));
+
 let container: HTMLDivElement;
 let root: Root;
 let props: ComponentProps<typeof SurfaceTabs>;
@@ -95,6 +107,22 @@ afterEach(() => {
 });
 
 describe("file tab context menu", () => {
+  it("preserves the workflow subagent's colored face when restoring its tab", () => {
+    props.files = [{ id: "worker", path: "Researcher", cwd: "/repo",
+      workflowAgent: { sessionId: "worker-session", parentSessionId: "parent", runId: "run",
+        avatar: { avatarIndex: 8, name: "Researcher", status: "done" } } }];
+    props.activeFileId = "worker";
+    render();
+    const tab = container.querySelector('[role="tab"]')!;
+    expect(tab.querySelector("[data-icon]")).toBeNull();
+    expect(tab.querySelector("[data-harness]")).toBeNull();
+    const avatar = tab.querySelector<HTMLElement>("[data-subagent-avatar]")!;
+    expect(avatar).not.toBeNull();
+    expect(avatar.style.color).toBe("#EA4045");
+    expect(avatar.dataset.faceState).toBe("content");
+    expect(tab.textContent).toContain("Researcher");
+  });
+
   it("keeps the default cursor on reorderable file tabs", () => {
     const tabs = container.querySelectorAll<HTMLElement>('[role="tab"]');
     expect(tabs).toHaveLength(2);

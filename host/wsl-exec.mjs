@@ -48,7 +48,7 @@ export async function cleanupOrphans(directory, options = {}) {
 
 function childEnvironment(overrides, loginPath) {
   const env = { ...process.env, ...(loginPath ? { PATH: loginPath } : {}) };
-  for (const key of ["MONOCODE_CONTROL_ENDPOINT", "MONOCODE_CONTROL_TOKEN", "MONOCODE_APP_ENDPOINT", "MONOCODE_APP_TOKEN"])
+  for (const key of ["OMNICODE_CONTROL_ENDPOINT", "OMNICODE_CONTROL_TOKEN", "OMNICODE_APP_ENDPOINT", "OMNICODE_APP_TOKEN"])
     delete env[key];
   for (const [key, value] of Object.entries(overrides ?? {})) {
     if (value === null) delete env[key];

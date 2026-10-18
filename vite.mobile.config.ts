@@ -9,9 +9,9 @@ import { renameSync } from "node:fs";
 // Browser development uses a same-origin proxy. Production mobile builds call
 // the Host through native HTTP; the Host's browser-origin guard stays intact.
 function hostProxy(): Plugin {
-  const endpoint = process.env.MONOCODE_MOBILE_HOST_URL;
+  const endpoint = process.env.OMNICODE_MOBILE_HOST_URL;
   return {
-    name: "monocode-mobile-host",
+    name: "omnicode-mobile-host",
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         if (req.url !== "/__mobile/rpc") return next();
@@ -21,7 +21,7 @@ function hostProxy(): Plugin {
           res.statusCode = 503;
           res.end(
             JSON.stringify({
-              error: "Set MONOCODE_MOBILE_HOST_URL before starting mobile:dev.",
+              error: "Set OMNICODE_MOBILE_HOST_URL before starting mobile:dev.",
             }),
           );
           return;
@@ -72,8 +72,8 @@ function hostProxy(): Plugin {
 
 export default defineConfig({
   define: {
-    "import.meta.env.MONOCODE_UPDATE_CHANNEL": JSON.stringify(
-      process.env.MONOCODE_UPDATE_CHANNEL ?? "release",
+    "import.meta.env.OMNICODE_UPDATE_CHANNEL": JSON.stringify(
+      process.env.OMNICODE_UPDATE_CHANNEL ?? "release",
     ),
   },
   // Desktop and mobile dev servers often run together. Sharing the optimizer

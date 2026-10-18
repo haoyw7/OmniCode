@@ -16,7 +16,7 @@ it.each(["cursor", "pi", "fx"] as const)(
   "does not execute an unrelated ambiguous %s binary while resolving providers",
   async (provider) => {
     const directory = mkdtempSync(
-      join(tmpdir(), "monocode-provider-identity-"),
+      join(tmpdir(), "omnicode-provider-identity-"),
     );
     const name = provider === "cursor" ? "agent" : provider;
     const candidate = join(directory, name);
@@ -43,7 +43,7 @@ it.each(["cursor", "pi", "fx"] as const)(
 it.runIf(process.platform !== "win32")(
   "recognizes a Cursor agent shim without executing it",
   async () => {
-    const directory = mkdtempSync(join(tmpdir(), "monocode-cursor-identity-"));
+    const directory = mkdtempSync(join(tmpdir(), "omnicode-cursor-identity-"));
     const targetDirectory = join(directory, "cursor-agent-package");
     const target = join(targetDirectory, "cursor-agent");
     const candidate = join(directory, "agent");
@@ -64,7 +64,7 @@ it.runIf(process.platform !== "win32")(
 );
 
 it.runIf(process.platform === "win32")("resolves Pi's managed Windows launcher without executing its shell text", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-pi-managed-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-pi-managed-"));
   const bin = join(directory, "bin");
   const root = join(directory, "install/releases/1.3.0/node_modules/@earendil-works/pi-coding-agent");
   const entry = join(root, "dist/bundle/cli.js");
@@ -83,7 +83,7 @@ it.runIf(process.platform === "win32")("resolves Pi's managed Windows launcher w
 it.runIf(process.platform !== "win32")(
   "recognizes Pi's thin npm bin from its package manifest without executing it",
   async () => {
-    const directory = mkdtempSync(join(tmpdir(), "monocode-pi-npm-identity-"));
+    const directory = mkdtempSync(join(tmpdir(), "omnicode-pi-npm-identity-"));
     const packageDirectory = join(
       directory,
       "node_modules/@earendil-works/pi-coding-agent",

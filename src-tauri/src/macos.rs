@@ -54,7 +54,7 @@ pub const BLUR_MIN: u8 = 1;
 pub const BLUR_MAX: u8 = 64;
 pub const BLUR_DEFAULT: u8 = 24;
 
-const GLASS_BACKING_ID: &str = "monocode.webview-glass-backing";
+const GLASS_BACKING_ID: &str = "omnicode.webview-glass-backing";
 
 const RTLD_DEFAULT: *mut c_void = -2isize as *mut c_void;
 
@@ -439,7 +439,7 @@ struct DockMenuTargetIvars {
 
 define_class!(
     #[unsafe(super(NSObject))]
-    #[name = "MonoCodeDockMenuTarget"]
+    #[name = "OmniCodeDockMenuTarget"]
     #[ivars = DockMenuTargetIvars]
     struct DockMenuTarget;
 
@@ -531,7 +531,7 @@ pub(crate) fn install_dock_menu(app: &AppHandle) {
 #[cfg(debug_assertions)]
 pub(crate) fn ensure_dev_bundle() {
     if let Err(err) = relaunch_from_dev_bundle() {
-        eprintln!("monocode: macos dev bundle: {err}");
+        eprintln!("omnicode: macos dev bundle: {err}");
     }
 }
 
@@ -598,7 +598,7 @@ fn relaunch_from_dev_bundle() -> Result<(), String> {
     std::fs::create_dir_all(&macos_dir).map_err(|e| e.to_string())?;
     write_dev_bundle_icons(&app, &app_name)?;
 
-    let bundled = macos_dir.join("monocode");
+    let bundled = macos_dir.join("omnicode");
     let _ = std::fs::remove_file(&bundled);
     // A copy, not a hard link: re-signing below rewrites the file, and the
     // linked original is the executable running this code.
@@ -609,7 +609,7 @@ fn relaunch_from_dev_bundle() -> Result<(), String> {
     perms.set_mode(0o755);
     std::fs::set_permissions(&bundled, perms).map_err(|e| e.to_string())?;
 
-    // The linker's ad-hoc signature carries a `monocode-<hash>` identifier.
+    // The linker's ad-hoc signature carries an `omnicode-<hash>` identifier.
     // UNUserNotificationCenter refuses authorization, without prompting,
     // unless the signing identifier matches CFBundleIdentifier.
     let signed = Command::new("/usr/bin/codesign")
@@ -619,7 +619,7 @@ fn relaunch_from_dev_bundle() -> Result<(), String> {
         .map(|status| status.success())
         .unwrap_or(false);
     if !signed {
-        eprintln!("monocode: macos dev bundle: codesign failed; notifications stay off");
+        eprintln!("omnicode: macos dev bundle: codesign failed; notifications stay off");
     }
 
     let err = Command::new(&bundled)
@@ -652,9 +652,9 @@ fn write_dev_bundle_icons(app: &Path, app_name: &str) -> Result<(), String> {
 #[cfg(debug_assertions)]
 const DEV_BUNDLE_DEFAULT_NAME: &str = "OmniCode";
 #[cfg(debug_assertions)]
-const DEV_BUNDLE_NAME_ENV: &str = "MONOCODE_DEV_APP_NAME";
+const DEV_BUNDLE_NAME_ENV: &str = "OMNICODE_DEV_APP_NAME";
 #[cfg(debug_assertions)]
-const DEV_BUNDLE_ID: &str = "com.monocode.desktop";
+const DEV_BUNDLE_ID: &str = "com.omnicode.desktop";
 #[cfg(debug_assertions)]
 const DEV_ICNS: &[u8] = include_bytes!("../icons/icon.icns");
 #[cfg(debug_assertions)]
@@ -713,11 +713,11 @@ fn dev_bundle_plist(app_name: &str) -> Vec<u8> {
 	<key>CFBundleDisplayName</key>
 	<string>{app_name}</string>
 	<key>CFBundleExecutable</key>
-	<string>monocode</string>
+	<string>omnicode</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.monocode.desktop</string>
+	<string>com.omnicode.desktop</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -751,11 +751,11 @@ mod tests {
             .unwrap()
             .as_nanos();
         let root = std::env::temp_dir().join(format!(
-            "monocode-macos-tests-{}-{nonce}",
+            "omnicode-macos-tests-{}-{nonce}",
             std::process::id()
         ));
         let app = root.join(app_name);
-        let exe = app.join("Contents/MacOS/monocode");
+        let exe = app.join("Contents/MacOS/omnicode");
         std::fs::create_dir_all(exe.parent().unwrap()).unwrap();
         std::fs::write(app.join("Contents/Info.plist"), b"plist").unwrap();
         (root, exe)
@@ -764,8 +764,8 @@ mod tests {
     #[test]
     fn sanitized_dev_bundle_name_accepts_single_component() {
         assert_eq!(
-            sanitized_dev_bundle_name("  MonoCode Dev  "),
-            Some("MonoCode Dev".into())
+            sanitized_dev_bundle_name("  OmniCode Dev  "),
+            Some("OmniCode Dev".into())
         );
     }
 
@@ -779,8 +779,8 @@ mod tests {
     #[test]
     fn bundle_name_from_app_path_reads_existing_bundle_name() {
         assert_eq!(
-            bundle_name_from_app_path(Path::new("/tmp/MonoCode Dev.app")),
-            Some("MonoCode Dev".into())
+            bundle_name_from_app_path(Path::new("/tmp/OmniCode Dev.app")),
+            Some("OmniCode Dev".into())
         );
     }
 
@@ -793,8 +793,8 @@ mod tests {
 
     #[test]
     fn dev_bundle_plist_uses_the_provided_app_name() {
-        let plist = String::from_utf8(dev_bundle_plist("MonoCode Dev")).unwrap();
-        assert!(plist.contains("<string>MonoCode Dev</string>"));
-        assert!(!plist.contains("<string>MonoCode</string>"));
+        let plist = String::from_utf8(dev_bundle_plist("OmniCode Dev")).unwrap();
+        assert!(plist.contains("<string>OmniCode Dev</string>"));
+        assert!(!plist.contains("<string>OmniCode</string>"));
     }
 }

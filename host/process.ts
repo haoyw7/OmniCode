@@ -19,7 +19,7 @@ import {
   type ProviderRuntimeOptions,
 } from "./provider-runtime";
 
-/** npm packages whose Windows .cmd shims MonoCode launches, by shim name. */
+/** npm packages whose Windows .cmd shims OmniCode launches, by shim name. */
 const npmPackages: Record<string, string[]> = {
   codex: ["@openai/codex"],
   claude: ["@anthropic-ai/claude-code"],

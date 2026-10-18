@@ -60,7 +60,7 @@ function startPool(): PoolEntry {
           // Bundle Pierre's entry directly: its package marks the worker as
           // side-effect free, which erases a wrapper's bare static import.
           const worker = new ReviewDiffsWorker({
-            name: "monocode-review-diffs",
+            name: "omnicode-review-diffs",
           });
           worker.addEventListener("error", stop);
           worker.addEventListener("messageerror", stop);

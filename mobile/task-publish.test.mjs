@@ -20,7 +20,7 @@ const initialSource =
   'import "../features/sessions/ui/Shared"; import "../shared/style.css";';
 
 async function fixture(t) {
-  const root = await mkdtemp(join(tmpdir(), "monocode-task-publish-"));
+  const root = await mkdtemp(join(tmpdir(), "omnicode-task-publish-"));
   t.after(() => rm(root, { recursive: true, force: true }));
   execFileSync("git", ["init", "-q"], { cwd: root });
   async function write(path, data) {
@@ -42,7 +42,7 @@ async function fixture(t) {
     await write(
       `${output}/output-metadata.json`,
       JSON.stringify({
-        applicationId: "com.monocode.mobile",
+        applicationId: "com.omnicode.mobile",
         elements: [
           {
             versionCode: builds,
@@ -228,7 +228,7 @@ test("source changes while building prevent the generated APK from being publish
   );
   assert.equal(await readFile(latestFile, "utf8"), before);
   await assert.rejects(
-    readFile(join(options.directory, "apk/monocode-2.apk")),
+    readFile(join(options.directory, "apk/omnicode-2.apk")),
     { code: "ENOENT" },
   );
   assert.equal((await publishCompletedTask(options)).manifest.versionCode, 3);

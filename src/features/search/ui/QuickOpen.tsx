@@ -326,13 +326,15 @@ export function QuickOpen({
   const highlightQuery = Boolean(modeQuery.trim());
 
   return createPortal(
-    <div className="fixed inset-0" style={{ zIndex: LAYER.dialog }}>
+    <div data-window-modal className="fixed inset-0" style={{ zIndex: LAYER.dialog }}>
       <div
+        data-window-modal-backdrop
         className="modal-backdrop absolute inset-0 bg-black/40"
         onMouseDown={onClose}
       />
       <div
         role="dialog"
+        data-window-modal-panel
         aria-label={dialogLabel}
         data-file-picker
         data-quick-open-mode={mode}

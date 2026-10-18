@@ -23,7 +23,7 @@ try{
   await page.emulateMedia({reducedMotion:'reduce'});await toggle.click();await expect(toggle).not.toBeChecked();await page.emulateMedia({reducedMotion:'no-preference'});
   await expect(page.getByRole('switch',{name:'已开启',exact:true})).toBeDisabled();
   await expect(page.getByRole('textbox',{name:'名称',exact:true})).toHaveCSS('min-height','44px');
-  await page.getByRole('textbox',{name:'名称',exact:true}).fill('Monocode');
+  await page.getByRole('textbox',{name:'名称',exact:true}).fill('OmniCode');
   await page.getByRole('button',{name:'选择模型',exact:true}).click();await page.getByRole('radio',{name:'选项二',exact:true}).check();
   await expect(page.getByRole('button',{name:'选择模型',exact:true})).toContainText('选项二');
   await expect(page.locator('.mobile-sheet')).toHaveCount(0);

@@ -32,7 +32,7 @@ vi.mock("node:fs/promises", async (importActual) => {
     ...actual,
     open: async (...args: Parameters<typeof actual.open>) => {
       const file = await actual.open(...args);
-      if (String(args[0]).includes(".monocode-integrate-"))
+      if (String(args[0]).includes(".omnicode-integrate-"))
         filesystem.onIntegrationTemporary?.(String(args[0]));
       return file;
     },
@@ -140,7 +140,7 @@ it("rechecks the exact target after preflight and retains an outside writer's ch
 });
 
 function fixture() {
-  const root = mkdtempSync(join(tmpdir(), "monocode-orchestration-git-"));
+  const root = mkdtempSync(join(tmpdir(), "omnicode-orchestration-git-"));
   const cwd = join(root, "repo");
   mkdirSync(cwd);
   const git = (...args: string[]) =>

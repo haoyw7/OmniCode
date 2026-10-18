@@ -26,7 +26,7 @@ type Turn = {
 };
 
 async function setup(harness: "codex" | "claude" | "pi" | "omp" = "codex") {
-  const directory = mkdtempSync(join(tmpdir(), "monocode-harness-switch-"));
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-harness-switch-"));
   const profiles = join(directory, "provider-accounts");
   for (const provider of ["codex", "claude"])
     mkdirSync(join(profiles, provider, `target-${provider}`), { recursive: true });

@@ -48,7 +48,7 @@ it("saves only the edited profile and keeps Data Homes out of the device cache",
   const account = await addProviderAccountProfile("claude", "Work", "/host/claude");
   expect(providerAccounts("claude")[1]).toEqual(account);
   expect(invoke).toHaveBeenCalledWith("remote_request", { machineId: "machine", method: "providerAccounts.save", params: { provider: "claude", accountId: account.id, label: "Work", dataHome: "/host/claude", operationId: expect.any(String) } });
-  expect(localStorage.getItem("monocode.providerAccounts.v1")).not.toContain("/host/claude");
+  expect(localStorage.getItem("omnicode.providerAccounts.v1")).not.toContain("/host/claude");
   await updateProviderAccountProfile({ ...account, label: "Renamed" });
   expect(providerAccounts("claude")[1].label).toBe("Renamed");
   vi.mocked(invoke).mockRejectedValue(new Error("cannot save"));
@@ -174,7 +174,7 @@ it("refreshes identity subscribers when CLI sign-in changes without a metadata r
     Object.assign(snapshot.accounts.codex[1], { identity: { email: "new-login@example.test" } });
     await loadProviderAccounts();
     expect(changed).toHaveBeenCalled();
-    expect(localStorage.getItem("monocode.hostAccounts.cache.v1:env")).toContain("new-login@example.test");
+    expect(localStorage.getItem("omnicode.hostAccounts.cache.v1:env")).toContain("new-login@example.test");
     changed.mockClear();
     await loadProviderAccounts();
     expect(changed).not.toHaveBeenCalled();
@@ -184,9 +184,9 @@ it("refreshes identity subscribers when CLI sign-in changes without a metadata r
 
 it.each([undefined, { revision: 2, accounts: [], defaults: {} }])("retains the confirmed account cache when Host returns malformed metadata", async response => {
   await loadSharedProviderDefaults();
-  const previous = localStorage.getItem("monocode.hostAccounts.cache.v1:env");
+  const previous = localStorage.getItem("omnicode.hostAccounts.cache.v1:env");
   vi.mocked(invoke).mockResolvedValue(response);
   await expect(loadProviderAccounts()).rejects.toThrow("Host returned invalid account metadata");
   expect(sharedProviderAccountId("codex")).toBe("work");
-  expect(localStorage.getItem("monocode.hostAccounts.cache.v1:env")).toBe(previous);
+  expect(localStorage.getItem("omnicode.hostAccounts.cache.v1:env")).toBe(previous);
 });

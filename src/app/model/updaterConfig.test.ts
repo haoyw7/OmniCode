@@ -48,7 +48,7 @@ describe("updater", () => {
     });
     expect(message).toHaveBeenCalledWith(
       expect.stringContaining(
-        "https://github.com/yyy0107/ohmymonocode/releases/latest",
+        "https://github.com/haoyw7/OmniCode/releases/latest",
       ),
       { title: "OmniCode" },
     );

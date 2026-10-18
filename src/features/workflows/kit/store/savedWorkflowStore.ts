@@ -3,12 +3,12 @@
 // 按 workspaceKey 分片；磁盘仍是唯一权威（不变式 2）——缓存只服务同一页内的重渲染，
 // 变更后一律 `bypass` 刷新（skillStore 的同一条教训：复用 in-flight Promise 会拿到旧扫描）。
 import { create } from "../_shims/zustand.js";
-import { resolveWorkspaceKey, type MonocodeSavedWorkflowEntry, type MonocodeSavedWorkflowRun } from "../_shims/shared.js";
-import type { SavedWorkflowInvalidEntry as MonocodeSavedWorkflowInvalidEntry } from "../../../../integrations/workflow/savedWorkflow";
-import type { IMonocodeAgentService, MonocodeAgentSavedWorkflowTarget } from "../_shims/services.js";
+import { resolveWorkspaceKey, type OmniCodeSavedWorkflowEntry, type OmniCodeSavedWorkflowRun } from "../_shims/shared.js";
+import type { SavedWorkflowInvalidEntry as OmniCodeSavedWorkflowInvalidEntry } from "../../../../integrations/workflow/savedWorkflow";
+import type { IOmniCodeAgentService, OmniCodeAgentSavedWorkflowTarget } from "../_shims/services.js";
 import { logger } from "../logger.js";
 
-type MonocodeWorkflowsListResult = Awaited<ReturnType<IMonocodeAgentService["listSavedWorkflows"]>>;
+type OmniCodeWorkflowsListResult = Awaited<ReturnType<IOmniCodeAgentService["listSavedWorkflows"]>>;
 
 /** 一页里最多拉多少条 run 来算「上次运行」；一个项目的活跃工作流很少超过这个数。 */
 const SAVED_WORKFLOW_RUNS_PAGE = 50;
@@ -19,9 +19,9 @@ const SAVED_WORKFLOW_RUNS_PAGE = 50;
  * @public
  */
 export interface SavedWorkflowWorkspaceState {
-  entries: MonocodeSavedWorkflowEntry[];
-  invalid: MonocodeSavedWorkflowInvalidEntry[];
-  runs: MonocodeSavedWorkflowRun[];
+  entries: OmniCodeSavedWorkflowEntry[];
+  invalid: OmniCodeSavedWorkflowInvalidEntry[];
+  runs: OmniCodeSavedWorkflowRun[];
   /** 扫过的目录（本地绝对路径），全局组据此 watch；未加载或列表未回时为 null。 */
   dir: string | null;
   loading: boolean;
@@ -45,8 +45,8 @@ const EMPTY_SAVED_WORKFLOW_STATE: SavedWorkflowWorkspaceState = {
 interface SavedWorkflowStoreState {
   byWorkspaceKey: Record<string, SavedWorkflowWorkspaceState>;
   load: (
-    target: MonocodeAgentSavedWorkflowTarget,
-    agentService: IMonocodeAgentService,
+    target: OmniCodeAgentSavedWorkflowTarget,
+    agentService: IOmniCodeAgentService,
     options?: { bypassCache?: boolean },
   ) => Promise<void>;
 }
@@ -58,7 +58,7 @@ const inFlight = new Map<string, Promise<void>>();
  * 用固定键 `"global"`——它跨项目、由 services 自选载体，不该与任何项目的 workspaceKey 混淆；
  * 项目档仍按 `resolveWorkspaceKey` 分片。
  */
-function savedWorkflowStoreKey(target: MonocodeAgentSavedWorkflowTarget): string {
+function savedWorkflowStoreKey(target: OmniCodeAgentSavedWorkflowTarget): string {
   if (target.scope === "global" && !target.workspacePath) return "global";
   return resolveWorkspaceKey({
     workspacePath: target.workspacePath ?? "",
@@ -73,9 +73,9 @@ function extractErrorCode(error: unknown): number | null {
 }
 
 async function fetchWorkspace(
-  target: MonocodeAgentSavedWorkflowTarget,
-  agentService: IMonocodeAgentService,
-): Promise<{ list: MonocodeWorkflowsListResult; runs: MonocodeSavedWorkflowRun[] }> {
+  target: OmniCodeAgentSavedWorkflowTarget,
+  agentService: IOmniCodeAgentService,
+): Promise<{ list: OmniCodeWorkflowsListResult; runs: OmniCodeSavedWorkflowRun[] }> {
   // 列表与运行历史并行；运行历史失败不拖垮列表（journal 缺席时中枢照常能看、能管）。
   const [list, runs] = await Promise.all([
     agentService.listSavedWorkflows(target),
@@ -86,7 +86,7 @@ async function fetchWorkspace(
         logger.warn("[savedWorkflowStore] 拉取运行历史失败，按无记录处理", {
           error: error instanceof Error ? error.message : String(error),
         });
-        return [] as MonocodeSavedWorkflowRun[];
+        return [] as OmniCodeSavedWorkflowRun[];
       }),
   ]);
   return { list, runs };
@@ -150,7 +150,7 @@ export const useSavedWorkflowStore = create<SavedWorkflowStoreState>((set) => ({
 
 export function selectSavedWorkflowState(
   state: SavedWorkflowStoreState,
-  target: MonocodeAgentSavedWorkflowTarget | null,
+  target: OmniCodeAgentSavedWorkflowTarget | null,
 ): SavedWorkflowWorkspaceState {
   if (!target) return EMPTY_SAVED_WORKFLOW_STATE;
   return state.byWorkspaceKey[savedWorkflowStoreKey(target)] ?? EMPTY_SAVED_WORKFLOW_STATE;

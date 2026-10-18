@@ -1,7 +1,7 @@
 import { preferenceStorage } from "./sharedPreferences";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 
-const UI_SCALE_KEY = "monocode.uiScale";
+const UI_SCALE_KEY = "omnicode.uiScale";
 
 export const UI_SCALE_DEFAULT = 1;
 export const UI_SCALE_MIN = 0.5;
@@ -13,7 +13,7 @@ export const UI_SCALE_PERCENTS = Array.from(
 );
 
 /** Fired on `window` whenever the UI scale changes (detail: number). */
-export const UI_SCALE_CHANGE_EVENT = "monocode:uiscalechange";
+export const UI_SCALE_CHANGE_EVENT = "omnicode:uiscalechange";
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));

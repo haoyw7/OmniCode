@@ -1,10 +1,15 @@
 # Windows installer
 
-The Windows configuration selects `installer.nsi` and includes `pixel-ui.nsh`
-through Tauri's absolute `installerHooks` path. The UI uses monochrome native
-controls, the OmniCode vector wordmark, a segmented progress bar, and English/Simplified
-Chinese NSIS strings. Native title bars, buttons and focus indicators remain
-owned by Windows; the HTML concept is not an embedded browser installer.
+The Windows configuration selects `installer.nsi` and includes `omnicode-ui.nsh`
+through Tauri's absolute `installerHooks` path. The UI follows the desktop app's
+dark theme: #151515 surfaces, a dark DWM title bar, a footer band with the step
+indicator, the white OmniCode wordmark, flat path fields, a thin accent progress
+bar (#BD5937) and a dark diagnostic log, with English/Simplified Chinese strings.
+Everything is stock NSIS + System plugin calls on native controls, so keyboard,
+focus, accessibility and directory/disk-space validation stay owned by Windows.
+Buttons and scrollbars use the `DarkMode_Explorer` visual style (Windows 10
+1809+); older systems fall back to light native controls. Checkboxes and radio
+buttons keep classic rendering because themed option text ignores custom colors.
 
 Normal installation has three pages: location/desktop shortcut, installation
 with real diagnostic output, and an explicit launch/close choice. Existing
@@ -21,9 +26,13 @@ with the new version and review the engine contract checks in
 `scripts/windows-installer.test.mjs`; they are source guards, not Windows runtime
 tests. The handwritten UI is kept separate to make that comparison small.
 
-Regenerate the 150 × 57, 24-bit OmniCode header with
-`node scripts/generate-installer-header.mjs`. The standalone interaction concept
-is `design/windows-installer.html`.
+Regenerate the 150 × 57, 24-bit dark OmniCode header with
+`node scripts/generate-installer-header.mjs`.
+
+Upstream blocks stay byte-identical except for one presentation call,
+`Call MonoReinstallShow`, in `PageReinstall`; the uninstaller confirm and
+progress pages are styled through their MUI show callbacks
+(`un.MonoConfirmShow` wraps the upstream `un.ConfirmShow`).
 
 Run focused source checks with `node --test scripts/windows-installer.test.mjs`.
 Before publishing, manually verify first installation, unchecked desktop shortcut,

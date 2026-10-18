@@ -7,7 +7,7 @@ import { sessionRecencyAt } from "../features/sessions/model/sessionActivity";
 
 // One envelope keeps storage bounded even after pairing with several Hosts.
 // Conversation contents and credentials never enter this cache.
-export const SESSION_CACHE_KEY = "monocode-mobile-summaries";
+export const SESSION_CACHE_KEY = "omnicode-mobile-summaries";
 export const SESSION_CACHE_PROJECT_LIMIT = 64;
 export const SESSION_CACHE_SESSION_LIMIT = 100;
 export const SESSION_CACHE_SIZE_LIMIT = 256 * 1024;

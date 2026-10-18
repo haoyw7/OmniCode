@@ -23,7 +23,7 @@ import { version } from "../package.json";
 
 const exec = promisify(execFile);
 const windows = process.platform === "win32";
-const shell = windows ? powershell() : process.env.MONOCODE_TEST_PWSH;
+const shell = windows ? powershell() : process.env.OMNICODE_TEST_PWSH;
 let directory: string;
 let archive: string;
 const run = (script: string, env = {}) =>
@@ -36,7 +36,7 @@ const run = (script: string, env = {}) =>
 
 beforeAll(async () => {
   if (!shell) return;
-  directory = mkdtempSync(join(tmpdir(), "monocode-windows-bootstrap-"));
+  directory = mkdtempSync(join(tmpdir(), "omnicode-windows-bootstrap-"));
   const source = join(directory, "source");
   mkdirSync(source);
   copyFileSync(process.execPath, join(source, "node.exe"));
@@ -45,7 +45,7 @@ beforeAll(async () => {
     `import { appendFileSync } from 'node:fs';
 const action = process.argv[2];
 if (action === '--version') console.log(${JSON.stringify(version)});
-else if (action === 'service') appendFileSync(process.env.MONOCODE_TEST_EVENTS, 'service ' + process.argv[3] + '\\n');
+else if (action === 'service') appendFileSync(process.env.OMNICODE_TEST_EVENTS, 'service ' + process.argv[3] + '\\n');
 else if (action === 'connection-info') console.log(JSON.stringify({ port: 3774, pid: 123 }));
 else process.exit(1);
 `,
@@ -76,7 +76,7 @@ async function install(badChecksum: boolean) {
     badChecksum ? "bad.downloads" : "downloads",
   );
   const overrides = `
-function Download-MonoCode([string] $Url, [string] $Destination) {
+function Download-OmniCode([string] $Url, [string] $Destination) {
   $source = if ($Url.EndsWith('.sha256')) { ${psQuote(checksum)} } else { ${psQuote(archive)} }
   Copy-Item -LiteralPath $source -Destination $Destination
   Add-Content -LiteralPath ${psQuote(downloads)} -Value 'download'
@@ -84,7 +84,7 @@ function Download-MonoCode([string] $Url, [string] $Destination) {
 ${
   windows
     ? ""
-    : `function Protect-MonoCodeDirectory([string] $Path) { }
+    : `function Protect-OmniCodeDirectory([string] $Path) { }
 function Expand-Archive([string] $LiteralPath, [string] $DestinationPath) {
   Microsoft.PowerShell.Archive\\Expand-Archive -LiteralPath $LiteralPath -DestinationPath $DestinationPath
   & chmod +x (Join-Path $DestinationPath 'node.exe')
@@ -93,7 +93,7 @@ function Expand-Archive([string] $LiteralPath, [string] $DestinationPath) {
 `;
   const script = readFileSync("src-tauri/src/remote_bootstrap.ps1", "utf8")
     .replace(
-      "$base = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.monocode-host'",
+      "$base = Join-Path ([Environment]::GetFolderPath('UserProfile')) '.omnicode-host'",
       `$base = ${psQuote(base)}`,
     )
     .replace("@@VERSION@@", psQuote(version))
@@ -114,8 +114,8 @@ function Expand-Archive([string] $LiteralPath, [string] $DestinationPath) {
     run: (forceUpgrade = false) =>
       run(launch, {
         PROCESSOR_ARCHITECTURE: "AMD64",
-        MONOCODE_TEST_EVENTS: events,
-        MONOCODE_HOST_FORCE_UPGRADE: forceUpgrade ? "1" : "0",
+        OMNICODE_TEST_EVENTS: events,
+        OMNICODE_HOST_FORCE_UPGRADE: forceUpgrade ? "1" : "0",
       }),
   };
 }
@@ -126,7 +126,7 @@ it.skipIf(!shell)(
     const fixture = await install(false);
     const result = await fixture.run();
     expect(JSON.parse(result.stdout)).toEqual({ port: 3774, pid: 123 });
-    expect(existsSync(join(fixture.base, "bin", "monocode-host.cmd"))).toBe(
+    expect(existsSync(join(fixture.base, "bin", "omnicode-host.cmd"))).toBe(
       true,
     );
     const pointer = readFileSync(join(fixture.base, "runtime-path"), "utf8");
@@ -138,7 +138,7 @@ it.skipIf(!shell)(
       readFileSync(fixture.downloads, "utf8").trim().split(/\r?\n/),
     ).toHaveLength(2);
     if (windows) {
-      const launcher = join(fixture.base, "bin", "monocode-host.cmd");
+      const launcher = join(fixture.base, "bin", "omnicode-host.cmd");
       const versionResult = await run(
         `& ${psQuote(launcher)} --version; if ($LASTEXITCODE -ne 0) { exit 1 }`,
       );

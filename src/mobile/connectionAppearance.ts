@@ -11,8 +11,8 @@ export type ConnectionAppearance = {
   displayName: string;
   icon: ConnectionIcon;
 };
-const EVENT = "monocode-connection-appearance";
-const key = (id: string) => `monocode.mobile.connectionAppearance:${id}`;
+const EVENT = "omnicode-connection-appearance";
+const key = (id: string) => `omnicode.mobile.connectionAppearance:${id}`;
 
 function subscribe(listener: () => void) {
   window.addEventListener(EVENT, listener);

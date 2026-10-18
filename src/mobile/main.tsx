@@ -63,7 +63,7 @@ subscribeSharedPreferences(() => {
 createRoot(document.getElementById("root")!, {
   onRecoverableError(error) {
     console.error(
-      "[monocode mobile] render recovery",
+      "[omnicode mobile] render recovery",
       error instanceof Error && "cause" in error ? error.cause : error,
     );
   },

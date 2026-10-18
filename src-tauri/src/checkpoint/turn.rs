@@ -233,7 +233,7 @@ impl CheckpointStore {
         if edited.is_empty() {
             return Ok(());
         }
-        let prefix = format!("refs/monocode/checkpoints/{session_id}/");
+        let prefix = format!("refs/omnicode/checkpoints/{session_id}/");
         let refs = run_git(
             root,
             &[
@@ -513,7 +513,7 @@ impl CheckpointStore {
                 repos.insert(saved.repo);
             }
         }
-        let prefix = format!("refs/monocode/checkpoints/{session_id}/");
+        let prefix = format!("refs/omnicode/checkpoints/{session_id}/");
         for repo in repos {
             if !Path::new(&repo).is_dir() {
                 continue;
@@ -562,7 +562,7 @@ fn completed_turn(review: &TurnReview) -> Result<&RecordedTurn, String> {
 }
 
 fn turn_ref(session: &str, turn: &str, side: &str) -> String {
-    format!("refs/monocode/checkpoints/{session}/{turn}/{side}")
+    format!("refs/omnicode/checkpoints/{session}/{turn}/{side}")
 }
 
 // Git's NUL-delimited output already contains literal paths. Never trim them
@@ -650,16 +650,16 @@ fn capture_workspace(root: &Path, reference: &str) -> Result<String, String> {
         return Err("Workspace checkpoints are unavailable for sparse checkouts".into());
     }
     let index = PrivateIndex(
-        std::env::temp_dir().join(format!("monocode-checkpoint-{}", uuid::Uuid::new_v4())),
+        std::env::temp_dir().join(format!("omnicode-checkpoint-{}", uuid::Uuid::new_v4())),
     );
     let run = |args: &[&str]| {
         checked_output(
             git_command(root, args)
                 .env("GIT_INDEX_FILE", &index.0)
-                .env("GIT_AUTHOR_NAME", "MonoCode")
-                .env("GIT_AUTHOR_EMAIL", "checkpoint@monocode.local")
-                .env("GIT_COMMITTER_NAME", "MonoCode")
-                .env("GIT_COMMITTER_EMAIL", "checkpoint@monocode.local"),
+                .env("GIT_AUTHOR_NAME", "OmniCode")
+                .env("GIT_AUTHOR_EMAIL", "checkpoint@omnicode.local")
+                .env("GIT_COMMITTER_NAME", "OmniCode")
+                .env("GIT_COMMITTER_EMAIL", "checkpoint@omnicode.local"),
         )
     };
     if run_git(root, &["rev-parse", "--verify", "HEAD"]).is_ok() {
@@ -682,7 +682,7 @@ fn capture_workspace(root: &Path, reference: &str) -> Result<String, String> {
             "commit-tree",
             tree.trim(),
             "-m",
-            "MonoCode workspace checkpoint",
+            "OmniCode workspace checkpoint",
         ],
     ]
     .concat())?)

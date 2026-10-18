@@ -62,8 +62,8 @@ export function execArgsAllowed(provider: RemoteProvider, args: string[]): boole
 }
 
 function childEnvironment(): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...process.env, MONOCODE_HOST: "1" };
-  for (const key of ["MONOCODE_CONTROL_ENDPOINT", "MONOCODE_CONTROL_TOKEN", "MONOCODE_APP_ENDPOINT", "MONOCODE_APP_TOKEN"])
+  const env: NodeJS.ProcessEnv = { ...process.env, OMNICODE_HOST: "1" };
+  for (const key of ["OMNICODE_CONTROL_ENDPOINT", "OMNICODE_CONTROL_TOKEN", "OMNICODE_APP_ENDPOINT", "OMNICODE_APP_TOKEN"])
     delete env[key];
   return env;
 }

@@ -153,7 +153,7 @@ mod tests {
     #[test]
     fn reads_default_profile_identity_from_its_configured_home() {
         let root = std::env::temp_dir().join(format!(
-            "monocode-default-identity-{}",
+            "omnicode-default-identity-{}",
             uuid::Uuid::new_v4()
         ));
         let profiles = root.join("provider-accounts");

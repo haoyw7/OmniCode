@@ -126,7 +126,7 @@ export class BotClient {
     return this.loadingHistory;
   }
   pending() {
-    const key = `monocode.assistant-outbox:${this.hostKey}`;
+    const key = `omnicode.assistant-outbox:${this.hostKey}`;
     if (!this.outbox)
       try {
         const raw = this.storage?.getItem(key);
@@ -147,7 +147,7 @@ export class BotClient {
     text: string,
     attachments: RemoteAttachment[] = [],
   ): Promise<unknown> {
-    const key = `monocode.assistant-outbox:${this.hostKey}`;
+    const key = `omnicode.assistant-outbox:${this.hostKey}`;
     const pending = this.pending();
     if (
       pending &&
