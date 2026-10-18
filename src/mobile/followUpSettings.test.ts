@@ -132,8 +132,8 @@ function activeDialog() {
 async function choose(label: string) {
   await advanceMotionTimers(300);
   await act(async () => {
-    [...activeDialog()!.querySelectorAll<HTMLButtonElement>('[role="radio"]')]
-      .find((button) => button.textContent === label)!
+    [...activeDialog()!.querySelectorAll<HTMLInputElement>('input[type="radio"]')]
+      .find((button) => button.getAttribute("aria-label") === label)!
       .click();
   });
 }
@@ -153,21 +153,21 @@ describe("mobile composer settings", () => {
     await render();
     await openSettings();
     const toggle = () =>
-      node.querySelector<HTMLInputElement>("#mobile-transcript-anchor")!;
-    expect(toggle().checked).toBe(true);
+      node.querySelector<HTMLButtonElement>("#mobile-transcript-anchor")!;
+    expect(toggle().getAttribute("aria-checked")).toBe("true");
     await act(async () => toggle().click());
-    expect(toggle().checked).toBe(false);
+    expect(toggle().getAttribute("aria-checked")).toBe("false");
     expect(loadTranscriptAnchor()).toBe(false);
 
     act(() => root.unmount());
     root = createRoot(node);
     await render();
     await openSettings();
-    expect(toggle().checked).toBe(false);
+    expect(toggle().getAttribute("aria-checked")).toBe("false");
     await act(async () => setUiLanguage("zh-CN"));
     expect(toggle().getAttribute("aria-label")).toBe("将提示词固定到顶部");
     await act(async () => toggle().click());
-    expect(toggle().checked).toBe(true);
+    expect(toggle().getAttribute("aria-checked")).toBe("true");
     expect(loadTranscriptAnchor()).toBe(true);
   });
 
@@ -204,12 +204,12 @@ describe("mobile composer settings", () => {
     ).not.toBeNull();
     expect(activeDialog()!.getAttribute("aria-label")).toBe("后续消息行为");
     expect(
-      [...activeDialog()!.querySelectorAll('[role="radio"]')].map(
-        (option) => option.textContent,
+      [...activeDialog()!.querySelectorAll('input[type="radio"]')].map(
+        (option) => option.getAttribute("aria-label"),
       ),
     ).toEqual(["排队", "引导"]);
     expect(
-      activeDialog()!.querySelector('[aria-checked="true"]')?.textContent,
+      activeDialog()!.querySelector('input[type="radio"]:checked')?.getAttribute("aria-label"),
     ).toBe("排队");
     await choose("引导");
     expect(loadFollowUpBehavior()).toBe("steer");
@@ -227,7 +227,7 @@ describe("mobile composer settings", () => {
       );
     });
     const dialog = activeDialog()!;
-    expect(dialog.querySelector('[aria-checked="true"]')?.textContent).toBe(
+    expect(dialog.querySelector('input[type="radio"]:checked')?.getAttribute("aria-label")).toBe(
       "Queue",
     );
     await act(async () =>

@@ -35,3 +35,16 @@ if (typeof Element !== "undefined" && Element.prototype.animate) {
     return animation;
   };
 }
+
+// AutoAnimate plugins construct Animation directly, bypassing Element.animate.
+// Keep those native animations on the same deterministic test clock as Motion.
+if (typeof Animation !== "undefined") {
+  const play = Animation.prototype.play;
+  Animation.prototype.play = function () {
+    play.call(this);
+    void this.finished.catch(() => {});
+    const endTime = this.effect?.getComputedTiming().endTime;
+    if (typeof endTime === "number" && Number.isFinite(endTime))
+      webAnimations.set(this, endTime);
+  };
+}
