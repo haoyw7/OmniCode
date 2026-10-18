@@ -21,11 +21,11 @@
   /* Text fields are bounded by their fill, not a stroke; focus deepens it. */
   --m-input-fill: color-mix(in srgb, var(--color-m-ink) 7%, var(--color-m-panel));
   --m-input-fill-focus: color-mix(in srgb, var(--color-m-ink) 12%, var(--color-m-panel));
-  --m-switch-width: 64px;
+  --m-switch-width: 48px;
   --m-switch-height: 28px;
-  --m-switch-thumb-width: 39px;
+  --m-switch-thumb-width: 24px;
   --m-switch-thumb-height: 24px;
-  --m-switch-travel: 21px;
+  --m-switch-travel: 20px;
   --radius-m-field: var(--m-control-radius);
   --radius-m-composer: 24px;
 }

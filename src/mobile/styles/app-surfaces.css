@@ -101,7 +101,7 @@ html[data-mobile-skin] .mobile-settings {
   --mobile-settings-icon: 24px;
   --mobile-settings-gap: 16px;
   gap: 24px;
-  padding-inline: 12px;
+  padding-inline: 20px;
 }
 html[data-mobile-skin] .mobile-settings-card,
 html[data-mobile-skin] .mobile-connection-list {
