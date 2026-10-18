@@ -136,12 +136,10 @@ export function TurnMetricsBadge({ metrics }: { metrics?: TurnMetrics }) {
       ? uiT("Cache hit {percent}%", { percent: Math.round(metrics.cacheHitPercent) })
       : null,
     sample
-      ? uiT("Text generation {rate} tok/s", { rate: formatGenerationRate(sample, language) })
+      ? uiT("Turn TPS {rate} tok/s", { rate: formatGenerationRate(sample, language) })
       : uiT("Generation rate unavailable"),
   ].filter(Boolean).join(" · ");
-  const sampleDetail = sample ? uiT("Latest text segment · {source}", {
-    source: sample.tokenSource === "provider" ? uiT("Provider-reported tokens") : uiT("Text tokens"),
-  }) : "";
+  const sampleDetail = sample ? uiT("Total output tokens ÷ total LLM request time") : "";
   const usageDetail = [
     metrics.inputTokens != null
       ? uiT("{count} input", { count: formatMetricCount(metrics.inputTokens) }) : null,

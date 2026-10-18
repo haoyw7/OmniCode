@@ -206,7 +206,7 @@ describe("OpenCode subagent trails", () => {
     state: { status: "running", title: `Task ${callID}`, metadata: { sessionId: child } },
   });
 
-  it("pairs streamed text parts with their assistant message usage", async () => {
+  it("leaves TPS unavailable when message usage has no API request duration", async () => {
     const events: HarnessEvent[] = [];
     const { done } = await startTurn(events);
     let now = 1_000;
@@ -221,7 +221,7 @@ describe("OpenCode subagent trails", () => {
       idle();
       await done;
       const samples = events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined);
-      expect(samples.at(-1)?.generationSample).toMatchObject({ outputTokens: 20, durationMs: 2_000, tokenSource: "provider" });
+      expect(samples.at(-1)?.generationSample).toBeNull();
     } finally { clock.mockRestore(); }
   });
 
@@ -873,6 +873,7 @@ describe("OpenCode child permission routing", () => {
       ...before,
       { type: "message.completed" },
       { type: "reasoning.completed" },
+      { type: "turn.metrics", generationSample: null },
     ]);
     expect(
       harnessHttp.mock.calls.some(([input]) =>

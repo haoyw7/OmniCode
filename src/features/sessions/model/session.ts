@@ -325,7 +325,7 @@ export type TurnModel = {
 
 /** Provider-reported token accounting for one user turn. */
 export type TurnMetrics = {
-  /** Streaming observation, separate from provider token accounting. Null clears a stale sample. */
+  /** Accumulated LLM output and request time for this turn. Null clears unavailable metrics. */
   generationSample?: GenerationSample | null;
   inputTokens?: number;
   outputTokens?: number;

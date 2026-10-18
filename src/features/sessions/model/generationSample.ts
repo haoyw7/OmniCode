@@ -1,11 +1,10 @@
-/** A client-observed streaming sample, never provider billing/accounting. */
+/** Sum of output tokens divided by the matching sum of LLM request durations. */
 export type GenerationSample = {
   outputTokens: number;
   durationMs: number;
-  tokenSource: "provider" | "text-estimate";
-  method: "stream-estimate";
-  scope: "last-text-segment";
-  estimator?: "text-heuristic-v1";
+  tokenSource: "provider";
+  method: "request-total";
+  scope: "turn";
 };
 
 export function sanitizeGenerationSample(
@@ -13,29 +12,25 @@ export function sanitizeGenerationSample(
 ): GenerationSample | null {
   if (!value || typeof value !== "object") return null;
   const rec = value as Record<string, unknown>;
+  // Old stream samples cannot be reconstructed as request totals from history.
   if (
     typeof rec.outputTokens !== "number" ||
     !Number.isSafeInteger(rec.outputTokens) ||
     rec.outputTokens < 0 ||
     typeof rec.durationMs !== "number" ||
     !Number.isFinite(rec.durationMs) ||
-    rec.durationMs < 100 ||
-    rec.method !== "stream-estimate" ||
-    rec.scope !== "last-text-segment" ||
-    (rec.tokenSource !== "provider" && rec.tokenSource !== "text-estimate") ||
-    (rec.tokenSource === "text-estimate" &&
-      rec.estimator !== "text-heuristic-v1")
+    rec.durationMs <= 0 ||
+    rec.method !== "request-total" ||
+    rec.scope !== "turn" ||
+    rec.tokenSource !== "provider"
   )
     return null;
   return {
     outputTokens: rec.outputTokens,
     durationMs: rec.durationMs,
-    tokenSource: rec.tokenSource,
-    method: rec.method,
-    scope: rec.scope,
-    ...(rec.tokenSource === "text-estimate"
-      ? { estimator: "text-heuristic-v1" as const }
-      : {}),
+    tokenSource: "provider",
+    method: "request-total",
+    scope: "turn",
   };
 }
 

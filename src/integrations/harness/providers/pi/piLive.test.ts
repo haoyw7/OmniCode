@@ -71,7 +71,7 @@ describe("Pi live session", () => {
     );
   });
 
-  it("measures a Pi assistant message independently of turn settlement", async () => {
+  it("accumulates Pi requests across tool waits and ignores non-assistant usage", async () => {
     const events: HarnessEvent[] = [];
     const turn = sendPiTurn({ sessionId: "pi-rate", cwd: "/repo", model: "pi:default", runtimeMode: "supervised", text: "Hello", onEvent: e => events.push(e) });
     await vi.waitFor(() => expect(mocks.request).toHaveBeenCalledWith(expect.objectContaining({ type: "prompt" }), 15_000));
@@ -83,12 +83,18 @@ describe("Pi live session", () => {
       frame({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "Hello " } });
       now = 3_000;
       frame({ type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "world" } });
-      frame({ type: "message_end", message: { role: "assistant", content: [{ type: "text", text: "Hello world" }], usage: { output: 20 } } });
+      frame({ type: "message_end", message: { role: "assistant", content: [{ type: "text", text: "Hello world" }], usage: { output: 20 }, durationMs: 8_000 } });
       now = 200_000;
+      frame({ type: "message_start", message: { role: "toolResult" } });
+      frame({ type: "message_end", message: { role: "toolResult", usage: { output: 9_999 }, durationMs: 100_000 } });
+      frame({ type: "message_start", message: { role: "assistant" } });
+      frame({ type: "message_end", message: { role: "assistant", content: [], usage: { output: 180 }, durationMs: 2_000 } });
+      // The same completed message can be repeated; it must not be added twice.
+      frame({ type: "message_end", message: { role: "assistant", content: [], usage: { output: 180 }, durationMs: 2_000 } });
       frame({ type: "agent_settled" });
       await turn;
       const samples = events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined);
-      expect(samples.at(-1)?.generationSample).toMatchObject({ outputTokens: 20, durationMs: 2_000, tokenSource: "provider" });
+      expect(samples.at(-1)?.generationSample).toMatchObject({ outputTokens: 200, durationMs: 10_000, tokenSource: "provider", method: "request-total", scope: "turn" });
     } finally { clock.mockRestore(); await stopPiSession("pi-rate"); }
   });
 

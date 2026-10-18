@@ -499,7 +499,7 @@ describe("headless session ownership", () => {
     engine.command({ type: "send", commandId: "rate-turn", sessionId: id, text: "Hello" });
     await vi.waitFor(() => expect(turns).toHaveLength(1));
     const revision = store.session(id).revision;
-    const generationSample = { outputTokens: 4, durationMs: 1_000, tokenSource: "text-estimate" as const, estimator: "text-heuristic-v1" as const, method: "stream-estimate" as const, scope: "last-text-segment" as const };
+    const generationSample = { outputTokens: 4, durationMs: 1_000, tokenSource: "provider" as const, method: "request-total" as const, scope: "turn" as const };
     turns[0].input.onEvent({ type: "turn.metrics", generationSample });
     await vi.waitFor(() => expect(store.session(id).revision).toBeGreaterThan(revision));
     const delta = JSON.parse(JSON.stringify(store.sync(id, revision)));

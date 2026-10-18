@@ -11,8 +11,8 @@ const sample: GenerationSample = {
   outputTokens: 76,
   durationMs: 227_000,
   tokenSource: "provider",
-  method: "stream-estimate",
-  scope: "last-text-segment",
+  method: "request-total",
+  scope: "turn",
 };
 function markup(element: ReactElement) {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -34,29 +34,11 @@ it("shows a fractional speed without using whole-turn elapsed time", () => {
   setUiLanguage("en");
   const markup = render({ generationSample: sample });
   expect(markup).toContain("0.33 tok/s");
-  expect(markup).toContain("Provider-reported tokens");
+  expect(markup).toContain("Total output tokens ÷ total LLM request time");
 });
-it("shows text-only estimated samples and very small positive rates", () => {
+it("shows very small positive rates", () => {
   setUiLanguage("en");
-  expect(
-    render({
-      generationSample: {
-        ...sample,
-        outputTokens: 1,
-        tokenSource: "text-estimate",
-        estimator: "text-heuristic-v1",
-      },
-    }),
-  ).toContain("<0.01 tok/s");
-  expect(
-    render({
-      generationSample: {
-        ...sample,
-        tokenSource: "text-estimate",
-        estimator: "text-heuristic-v1",
-      },
-    }),
-  ).toContain("Text tokens");
+  expect(render({ generationSample: { ...sample, outputTokens: 1 } })).toContain("<0.01 tok/s");
 });
 it("does not invent a speed for history or malformed samples", () => {
   setUiLanguage("en");
@@ -72,7 +54,7 @@ it("does not invent a speed for history or malformed samples", () => {
 it("localizes the shared desktop/mobile badge", () => {
   setUiLanguage("zh-CN");
   const metrics = { generationSample: sample };
-  expect(render(metrics)).toContain("正文生成 0.33 tok/s");
+  expect(render(metrics)).toContain("本轮 TPS 0.33 tok/s");
   const mobile = markup(
     createElement(
       TranscriptPlatformContext.Provider,
@@ -88,5 +70,5 @@ it("localizes the shared desktop/mobile badge", () => {
       createElement(TurnMetricsBadge, { metrics }),
     ),
   );
-  expect(mobile).toContain("正文生成 0.33 tok/s");
+  expect(mobile).toContain("本轮 TPS 0.33 tok/s");
 });

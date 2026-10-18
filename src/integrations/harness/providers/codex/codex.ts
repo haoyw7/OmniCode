@@ -1,8 +1,5 @@
 import {
   measureGenerationTurn,
-  emitGenerationText,
-  generationRequestStarted,
-  reportGenerationUsage,
   resetGenerationMetrics,
 } from "../../core/generationMetrics";
 import { botContextKey } from "../../core/botContext";
@@ -115,7 +112,6 @@ type Live = {
   emittedGeneratedImages: Set<string>;
   emittedAsyncQuestions: Set<string>;
   turnGeneration: number;
-  generationUsageFingerprint?: string;
   notificationQueue: Promise<void> | null;
   /** Child thread id -> the agent tool row that spawned it. */
   subagentThreads: Map<string, string>;
@@ -427,7 +423,6 @@ export async function stopCodexSession(sessionId: string): Promise<void> {
   if (live) {
     live.muteUpdates = true;
     live.turnGeneration += 1;
-  live.generationUsageFingerprint = undefined;
     clearServerRequests(live);
     live.turnDone?.();
     live.turnDone = null;
@@ -515,7 +510,6 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
     input.sessionId,
     {
       onNotification: (method, params) => {
-        const receivedAt = performance.now();
         const live = liveRef.current;
         if (!live || live.muteUpdates) return;
         if (live.notificationQueue) {
@@ -530,12 +524,12 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
               ) {
                 return;
               }
-              return handleNotification(live, method, params, receivedAt);
+              return handleNotification(live, method, params);
             });
           trackNotificationQueue(live, queued.catch(() => undefined));
           return;
         }
-        const result = handleNotification(live, method, params, receivedAt);
+        const result = handleNotification(live, method, params);
         if (!result) return;
         trackNotificationQueue(live, result.catch(() => undefined));
       },
@@ -807,7 +801,6 @@ function handleNotification(
   live: Live,
   method: string,
   params: unknown,
-  receivedAt = performance.now(),
 ): void | Promise<void> {
   if (method === "thread/name/updated") {
     const title = asRecord(params);
@@ -882,7 +875,7 @@ function handleNotification(
     }
     trackAgentRow(live, event);
     if (event.type === "message.delta") {
-      publishCodexText(live, "assistant", event.text, snapshot, itemId, receivedAt);
+      publishCodexText(live, "assistant", event.text, snapshot, itemId);
       continue;
     }
     if (event.type === "reasoning.delta") {
@@ -890,23 +883,6 @@ function handleNotification(
       continue;
     }
     live.onEvent(event);
-  }
-  if (method === "thread/tokenUsage/updated") {
-    const tokenUsage = asRecord(rec?.tokenUsage);
-    const usage = asRecord(tokenUsage?.last);
-    const total = asRecord(tokenUsage?.total);
-    const fields = ["inputTokens", "outputTokens", "reasoningOutputTokens", "cachedInputTokens", "totalTokens"];
-    const fingerprint = JSON.stringify([notificationTurnId ?? live.activeTurnId,
-      ...fields.map(key => usage?.[key] ?? null), ...fields.map(key => total?.[key] ?? null)]);
-    // Repeated token snapshots can arrive after the next request starts streaming.
-    if (usage && fingerprint !== live.generationUsageFingerprint) {
-      live.generationUsageFingerprint = fingerprint;
-      reportGenerationUsage(live.onEvent, {
-        outputTokens: typeof usage.outputTokens === "number" ? usage.outputTokens : undefined,
-        reasoningTokens: typeof usage.reasoningOutputTokens === "number" ? usage.reasoningOutputTokens : undefined,
-      });
-      generationRequestStarted(live.onEvent);
-    }
   }
   emitCodexAgentInfo(live, rec);
   if (method === "item/completed") showCodexAsyncQuestion(live, rec);
@@ -1299,7 +1275,6 @@ function publishCodexText(
   text: string,
   snapshot: boolean,
   itemId: string | undefined,
-  receivedAt = performance.now(),
 ): void {
   const emitted =
     role === "assistant"
@@ -1314,8 +1289,7 @@ function publishCodexText(
   // Retain completed items until the turn ends to ignore repeated completions.
   emitted.set(key, already + emit);
   if (role === "assistant") {
-    if (snapshot) live.onEvent({ type: "message.delta", text: emit });
-    else emitGenerationText(live.onEvent, emit, itemId, receivedAt);
+    live.onEvent({ type: "message.delta", text: emit });
     return;
   }
   live.onEvent({ type: "reasoning.delta", text: emit });

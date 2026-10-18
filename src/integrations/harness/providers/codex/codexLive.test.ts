@@ -166,7 +166,7 @@ async function startTurn(
 }
 
 describe("codex live turn sequence", () => {
-  it("does not consume a new stream on a duplicate usage snapshot", async () => {
+  it("does not infer request durations from repeated token snapshots", async () => {
     const { events, turn } = await startTurn("codex-live");
     let now = 1_000;
     const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
@@ -179,11 +179,11 @@ describe("codex live turn sequence", () => {
       now = 102_000; chunk("second", "reply"); usage(20, 30);
       notify("turn/completed", { turn: { id: "turn_1", status: "completed" } });
       await turn;
-      expect(events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined).at(-1)?.generationSample).toMatchObject({ outputTokens: 20, durationMs: 2_000, tokenSource: "provider" });
+      expect(events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined).at(-1)?.generationSample).toBeNull();
     } finally { clock.mockRestore(); }
   });
 
-  it("measures streamed generation with matching last-request tokens", async () => {
+  it("leaves TPS unavailable when last-request tokens have no matching duration", async () => {
     const { events, turn } = await startTurn("codex-live");
     let now = 1_000;
     const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
@@ -197,7 +197,7 @@ describe("codex live turn sequence", () => {
       notify("thread/tokenUsage/updated", usage);
       notify("turn/completed", { turn: { id: "turn_1", status: "completed" } });
       await turn;
-      expect(events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined).at(-1)?.generationSample).toMatchObject({ outputTokens: 76, durationMs: 2_000, tokenSource: "provider" });
+      expect(events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined).at(-1)?.generationSample).toBeNull();
     } finally { clock.mockRestore(); }
   });
 

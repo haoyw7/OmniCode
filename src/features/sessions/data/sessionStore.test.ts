@@ -932,11 +932,11 @@ it("saves the exact CI context alongside the compact user message", () => {
 
 it("round-trips generation samples while retaining legacy metrics and clearing invalid samples", () => {
   const session = newSession("cursor", "/repo");
-  const sample = { outputTokens: 4, durationMs: 1_000, tokenSource: "text-estimate" as const, estimator: "text-heuristic-v1" as const, method: "stream-estimate" as const, scope: "last-text-segment" as const };
+  const sample = { outputTokens: 4, durationMs: 1_000, tokenSource: "provider" as const, method: "request-total" as const, scope: "turn" as const };
   session.blocks = [{ id: "u", role: "user", text: "Hello", turnMetrics: { generationSample: sample } }];
   const saved = JSON.parse(JSON.stringify(sanitizeSessionForPersist(session)));
   expect(sanitizeSessionForPersist(saved).blocks[0].turnMetrics).toEqual({ generationSample: sample });
-  for (const generationSample of [null, { ...sample, durationMs: 0 }, { ...sample, outputTokens: Infinity }, { ...sample, estimator: "unknown" }]) {
+  for (const generationSample of [null, { ...sample, durationMs: 0 }, { ...sample, outputTokens: Infinity }, { ...sample, method: "stream-estimate", scope: "last-text-segment" }]) {
     saved.blocks[0].turnMetrics = { generationSample };
     expect(sanitizeSessionForPersist(saved).blocks[0].turnMetrics).toEqual({ generationSample: null });
   }

@@ -1,7 +1,6 @@
 import {
   resetGenerationMetrics,
   measureGenerationTurn,
-  emitAcpGenerationEvent,
 } from "../../core/generationMetrics";
 import { nativeAcpTitleEvent, noteAcpTitleCapabilities, readAcpSessionTitle, readAcpTitleInProcess } from "../../core/nativeTitles";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
@@ -744,7 +743,6 @@ async function prompt(live: Live, input: SendTurnInput): Promise<void> {
 }
 
 function handleNotification(live: Live, method: string, params: unknown) {
-  const receivedAt = performance.now();
   if (method === "session/update") {
     const titleEvent = nativeAcpTitleEvent(params, live.acpSessionId);
     if (titleEvent) { live.onEvent(titleEvent); return; }
@@ -763,7 +761,7 @@ function handleNotification(live: Live, method: string, params: unknown) {
   }
   if (live.muteUpdates) return;
   for (const event of live.subagents.route(params, eventsFromAcpUpdate(params))) {
-    emitAcpGenerationEvent(live.onEvent, event, params, receivedAt, live.acpSessionId);
+    live.onEvent(event);
   }
 }
 

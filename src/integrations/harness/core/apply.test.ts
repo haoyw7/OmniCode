@@ -1513,7 +1513,7 @@ describe("tool timing", () => {
 
 it("replaces and explicitly clears a generation sample without changing token accounting", () => {
   let session = appendUser(newSession("codex", "/repo"), "Explain");
-  const sample = { outputTokens: 4, durationMs: 1_000, tokenSource: "text-estimate" as const, estimator: "text-heuristic-v1" as const, method: "stream-estimate" as const, scope: "last-text-segment" as const };
+  const sample = { outputTokens: 4, durationMs: 1_000, tokenSource: "provider" as const, method: "request-total" as const, scope: "turn" as const };
   session = applyHarnessEvent(session, { type: "turn.metrics", outputTokens: 76, generationSample: sample });
   session = applyHarnessEvent(session, { type: "turn.metrics", inputTokens: 100 });
   expect(session.blocks[0].turnMetrics).toMatchObject({ outputTokens: 76, generationSample: sample });

@@ -73,7 +73,7 @@ describe("fx live turn sequence", () => {
     await stopFxSession(sessionId);
   });
 
-  it("estimates generation speed when request-scoped token usage is unavailable", async () => {
+  it("leaves TPS unavailable without LLM request durations", async () => {
     const events: HarnessEvent[] = [];
     const turn = sendFxTurn({ sessionId: "rate-test", cwd: "/repo", model: "fx:zai/glm-5.2", runtimeMode: "supervised", text: "Hello", onEvent: e => events.push(e) });
     await waitFor(() => parse().some(m => m.method === "initialize"), "initialize");
@@ -92,7 +92,7 @@ describe("fx live turn sequence", () => {
       chunk("世界");
       reply(parse().find(m => m.method === "session/prompt").id, { stopReason: "end_turn" });
       await turn;
-      expect(events.filter(e => e.type === "turn.metrics").at(-1)?.generationSample).toMatchObject({ outputTokens: 4, durationMs: 2_000, tokenSource: "text-estimate" });
+      expect(events.filter(e => e.type === "turn.metrics").at(-1)?.generationSample).toBeNull();
     } finally { clock.mockRestore(); await stopFxSession("rate-test"); }
   });
 

@@ -1,6 +1,5 @@
 import {
   measureGenerationTurn,
-  emitGenerationText,
   generationRequestStarted,
   reportGenerationUsage,
   resetGenerationMetrics,
@@ -948,8 +947,7 @@ function handleFrame(
     }
     if (type === "agent_end" && rec.isTerminal === false) return;
   }
-  if (type === "message_start") generationRequestStarted(live.onEvent);
-  if (type === "compaction_start" || type === "auto_retry_start") resetGenerationMetrics(live.onEvent);
+  if (type === "message_start" && asRecord(rec.message)?.role === "assistant") generationRequestStarted(live.onEvent);
   if (type === "compaction_start") live.compacting = true;
   if (type === "compaction_end") live.compacting = false;
   if (type === "auto_retry_start") live.retrying = true;
@@ -965,15 +963,22 @@ function handleFrame(
   if (context) live.onEvent({ type: "context", ...context });
   const metrics = turnMetricsFromUsage(rec);
   if (metrics) live.onEvent({ type: "turn.metrics", ...metrics });
-  if (type === "message_end" && metrics) {
-    reportGenerationUsage(live.onEvent, { outputTokens: metrics.outputTokens });
+  if (type === "message_end" && asRecord(rec.message)?.role === "assistant") {
+    const message = asRecord(rec.message)!;
+    const usage = asRecord(message.usage) ?? asRecord(rec.usage);
+    // Pi and OMP expose request duration under different names. Both include TTFT.
+    const duration = flavor.id === "omp" ? message.duration : message.durationMs;
+    reportGenerationUsage(live.onEvent, {
+      outputTokens: typeof usage?.output === "number" ? usage.output : undefined,
+      durationMs: typeof duration === "number" ? duration : undefined,
+    });
   }
 
   const delta = assistantDeltaFromEvent(rec);
   if (delta) {
     if (delta.kind === "text") {
       live.emittedAssistant += delta.text;
-      emitGenerationText(live.onEvent, delta.text);
+      live.onEvent({ type: "message.delta", text: delta.text });
     } else {
       live.emittedReasoning += delta.text;
       live.onEvent({ type: "reasoning.delta", text: delta.text });

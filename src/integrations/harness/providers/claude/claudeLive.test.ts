@@ -287,7 +287,7 @@ afterEach(async () => {
 });
 
 describe("claude native context reads", () => {
-  it("uses message usage rather than the final aggregate for generation speed", async () => {
+  it("uses total output and API duration, excluding wall time and chunk delivery timing", async () => {
     const { events, turn } = await startTurn("claude-rate");
     let now = 1_000;
     const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
@@ -298,10 +298,10 @@ describe("claude native context reads", () => {
       now = 3_000;
       stream({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text: "world" } });
       stream({ type: "message_delta", delta: { stop_reason: "end_turn" }, usage: { output_tokens: 20 } });
-      emit({ type: "result", subtype: "success", session_id: "sess_1", usage: { output_tokens: 500 } });
+      emit({ type: "result", subtype: "success", session_id: "sess_1", usage: { output_tokens: 500 }, duration_api_ms: 10_000, duration_ms: 200_000 });
       await turn;
       const samples = events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined);
-      expect(samples.at(-1)?.generationSample).toMatchObject({ outputTokens: 20, durationMs: 2_000, tokenSource: "provider" });
+      expect(samples.at(-1)?.generationSample).toMatchObject({ outputTokens: 500, durationMs: 10_000, tokenSource: "provider", method: "request-total", scope: "turn" });
     } finally { clock.mockRestore(); await stopClaudeSession("claude-rate"); }
   });
 
