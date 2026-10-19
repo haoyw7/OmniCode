@@ -8,7 +8,6 @@ import { WorkspaceToolsDock } from "../../src/app/shell/WorkspaceToolsDock";
 import { TerminalDockLayout } from "../../src/app/shell/TerminalDockLayout";
 import { Sidebar } from "../../src/app/shell/Sidebar";
 import { SidebarMain } from "../../src/app/shell/SidebarMain";
-import { SidebarRail } from "../../src/app/shell/SidebarTransition";
 import { DesktopModeToggle, DesktopNavigation, DesktopNewSessionAction, DesktopTitlebarNavigation } from "../../src/app/shell/DesktopNavigation";
 import { ActivityBar } from "../../src/app/shell/ActivityBar";
 import { WindowDragBar } from "../../src/app/shell/WindowChrome";
@@ -197,7 +196,6 @@ function DesktopToolsFixture() {
   return <MotionConfig reducedMotion="user"><SessionHeaderActionsContext.Provider value={headerActions}><div className="app-shell-root desktop-workspace" data-desktop-mode="code" data-tools-fixture style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
     <WindowDragBar windowNavigation={titlebar} windowLeading={<div ref={setSessionHeaderHost} data-window-session-header className="min-w-0 flex-1" />} />
     <div className="flex min-h-0 min-w-0 flex-1">
-    <SidebarRail open={!sidebarOpen}><ActivityBar layout="rail" chromeInMenuBar {...activity} /></SidebarRail>
     <Sidebar {...sidebar} tab="sessions" open={sidebarOpen} onToggleSidebar={() => setSidebarOpen(value => !value)} chromeInMenuBar navigation={{ primary: <DesktopNewSessionAction mode="code" onNew={noop} />, scrollable: <DesktopNavigation onProjects={noop} projectsActive={false} onBots={noop} botsActive={false} activity={activity} /> }} footer={<ActivityBar layout="sidebar-footer" {...activity} />} />
     <SidebarMain open={sidebarOpen}>
       <main className="desktop-workspace flex min-h-0 min-w-0 flex-1">

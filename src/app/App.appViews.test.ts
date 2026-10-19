@@ -1631,10 +1631,9 @@ describe("App workspace app views", () => {
       expect(navigation!.querySelector(".desktop-mode-toggle")).toBe(modeSwitch);
       expect(modeCollapse.inert).toBe(!open);
       expect(modeCollapse.getAttribute("aria-hidden") === "true").toBe(!open);
-      const rail = container.querySelector<HTMLElement>("[data-sidebar-rail]")!;
-      expect(rail.dataset.foldState).toBe(open ? "closing" : "opening");
+      expect(container.querySelector("[data-sidebar-rail]")).toBeNull();
       await act(async () => finishMotion());
-      expect(rail.dataset.foldState).toBe(open ? "closed" : "open");
+      expect(container.querySelector('[data-activity-bar="rail"]')).toBeNull();
       expect(modeCollapse.hidden).toBe(!open);
       expect(mocks.notificationFocus).toHaveBeenCalledTimes(1);
     }

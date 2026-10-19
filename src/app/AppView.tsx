@@ -16,7 +16,6 @@ import {
 AppViewHost,
 AppViewRendererContext
 } from "../features/workspace/ui/AppViewHost";
-import { ActivityBar } from "./shell/ActivityBar";
 import {
 OrchestrationActions,
 OrchestrationWorkers
@@ -27,7 +26,6 @@ useState, type CSSProperties
 import { Sidebar } from "./shell/Sidebar";
 import { DesktopTitlebarNavigation } from "./shell/DesktopNavigation";
 import { WindowMenuButton } from "./shell/WindowMenuButton";
-import { SidebarRail } from "./shell/SidebarTransition";
 import { SidebarMain } from "./shell/SidebarMain";
 import { GradientBlurBackground } from "../features/settings/ui/GradientBlurBackground";
 import { ApprovalToasts } from "../features/sessions/ui/ApprovalToasts";
@@ -98,7 +96,6 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
     activeSessionId,
     activeTab,
     activeTabId,
-    activityBarProps,
     appDialog,
     appPage,
     appPageHostRef,
@@ -441,13 +438,6 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
               </div>
 
               <div className="relative isolate flex min-h-0 min-w-0 flex-1 overflow-hidden">
-                <SidebarRail open={!sessionSidebarOpen}>
-                  <ActivityBar
-                    layout="rail"
-                    chromeInMenuBar
-                    {...activityBarProps}
-                  />
-                </SidebarRail>
                 <SessionPageCountsContext.Provider value={sessionPageCounts}>
                   <Sidebar {...sidebarProps} desktopMode={desktopMode} />
                 </SessionPageCountsContext.Provider>

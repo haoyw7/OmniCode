@@ -4,7 +4,6 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { MotionConfig } from "motion/react";
 import { Sidebar } from "../../src/app/shell/Sidebar";
-import { SidebarRail } from "../../src/app/shell/SidebarTransition";
 import { SidebarMain } from "../../src/app/shell/SidebarMain";
 import { WindowDragBar } from "../../src/app/shell/WindowChrome";
 import { WindowMenuButton } from "../../src/app/shell/WindowMenuButton";
@@ -132,7 +131,6 @@ function FeaturePagesFixture() {
     <div className="app-shell-root desktop-workspace" data-desktop-mode="code" data-fixture-page={page} style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       <WindowDragBar windowNavigation={titlebar} />
       <div className="flex min-h-0 min-w-0 flex-1">
-      <SidebarRail open={!sidebar}><ActivityBar layout="rail" chromeInMenuBar {...activity} /></SidebarRail>
       <Sidebar desktopMode="code" open={sidebar} cwd={cwd} recents={recents} sessions={[summary]} projectHistory={[summary]} loadedProjectPaths={new Set([cwd])} busySessionIds={new Set()} approvalSessionIds={new Set()} activeSessionId={summary.id} visibleSessionId={null} pending={false} status="idle" tab="sessions" onTabChange={noop} filesSearchOpen={false} onFilesSearchOpenChange={noop} onOpenFile={noop} onSelectSession={noop} onNew={noop} onNewChat={noop} onOpenProject={noop} onSelectProject={noop} onToggleSidebar={() => setSidebar(value => !value)} chromeInMenuBar navigation={{ primary: <DesktopNewSessionAction mode="code" onNew={noop} />, scrollable: <DesktopNavigation onProjects={noop} projectsActive={false} onBots={noop} botsActive={false} activity={activity} /> }} footer={<ActivityBar layout="sidebar-footer" {...activity} />} />
       <SidebarMain open={sidebar}><main data-fixture-page-content className="flex min-h-0 min-w-0 flex-1 overflow-hidden">{content}</main></SidebarMain>
       </div>

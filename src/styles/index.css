@@ -1854,8 +1854,7 @@ html.theme-light .drag-ghost-card {
   --collapse-easing: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.sidebar-transition,
-.sidebar-rail {
+.sidebar-transition {
   /* Motion owns the width; do not add a second CSS transition. */
   transition: none;
   z-index: 1;
@@ -1867,14 +1866,6 @@ html.theme-light .drag-ghost-card {
 }
 
 .sidebar-transition[data-expanded="false"] {
-  pointer-events: none;
-}
-
-.sidebar-rail {
-  z-index: 2;
-}
-
-.sidebar-rail[data-expanded="false"] .sidebar-rail-content {
   pointer-events: none;
 }
 

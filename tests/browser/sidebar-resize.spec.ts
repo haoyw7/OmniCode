@@ -53,9 +53,12 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
     await expect(pane).toHaveAttribute("data-fold-state", "closed");
     await expect(pane).toHaveAttribute("inert", "");
     await expect.poll(() => pane.evaluate(el => el.getBoundingClientRect().width)).toBe(0);
-    const rail = page.locator("[data-sidebar-rail]");
-    await expect(rail).toHaveAttribute("data-fold-state", "open");
-    await expect.poll(() => rail.evaluate(el => el.getBoundingClientRect().width)).toBe(52);
+    await expect(page.locator("[data-sidebar-rail]")).toHaveCount(0);
+    await expect.poll(() => page.locator("main").evaluate(el => el.getBoundingClientRect().left)).toBe(0);
+    await page.getByRole("button", { name: "Toggle sidebar" }).click();
+    await expect(pane).toHaveAttribute("data-fold-state", "open");
+    await expect.poll(() => pane.evaluate(el => el.getBoundingClientRect().width)).toBe(352);
+    await expect(page.getByRole("textbox", { name: "Retained sidebar draft" })).toHaveValue("draft");
   });
 }
 

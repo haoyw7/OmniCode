@@ -13,7 +13,7 @@ beforeEach(() => {
   reduced = false; startMotionClock();
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function(this: HTMLElement) {
     const open = this.closest("[data-open]")?.getAttribute("data-open") !== "false";
-    return {x: open ? 280 : 48, y: 0, left: open ? 280 : 48, top: 0, right: 1000, bottom: 900, width: open ? 720 : 952, height: 900} as DOMRect;
+    return {x: open ? 280 : 0, y: 0, left: open ? 280 : 0, top: 0, right: 1000, bottom: 900, width: open ? 720 : 1000, height: 900} as DOMRect;
   });
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
 });

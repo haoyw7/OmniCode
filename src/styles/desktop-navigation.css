@@ -1,9 +1,4 @@
 /* Measured shell geometry; desktop-only so shared controls retain mobile sizing. */
-html[data-skin] [data-sidebar-rail] [data-activity-bar="rail"] {
-  width: 52px;
-  padding-inline: 8px;
-}
-
 html[data-skin] [data-activity-bar="sidebar-footer"] {
   border-top: 1px solid var(--color-hairline);
   padding-block: 4px 8px;
@@ -627,11 +622,6 @@ html[data-skin]
   line-height: var(--desktop-menu-leading);
 }
 
-/* Native traffic lights stay at the viewport origin when the sidebar folds. */
-html[data-skin].is-mac .sidebar-rail [data-activity-bar="rail"] {
-  padding-top: 44px;
-}
-
 /* Keep the native controls outside the scrollable application menu at minimum window sizes. */
 html[data-skin][data-desktop-mode] [data-menu-bar].relative {
   grid-template-columns: minmax(0, 1fr) auto auto;
@@ -646,7 +636,3 @@ html[data-skin][data-desktop-mode] [data-menu-bar] > div:first-child {
 html[data-skin][data-desktop-mode] [data-menu-bar] > div:first-child > button {
   flex-shrink: 0;
 }
-html[data-skin] .sidebar-rail [data-activity-bar="rail"] { width: var(--sidebar-rail-width); padding: 0 8px 12px; background: var(--color-panel); box-shadow: inset -0.5px 0 var(--color-composer-ring); }
-html[data-skin] .sidebar-rail [data-activity-bar="rail"] > div { gap: 8px; }
-html[data-skin] .sidebar-rail [data-activity-bar="rail"] button[aria-pressed] { width: 36px; height: 36px; border-radius: 8px; }
-html[data-skin] .sidebar-rail [data-activity-bar="rail"] button[aria-pressed] > svg { width: 20px; height: 20px; }

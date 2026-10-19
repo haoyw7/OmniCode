@@ -3,7 +3,7 @@ import { act, createElement, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { startMotionClock, stopMotionClock, finishMotion } from "../../../tests/helpers/sharedMotionClock";
-import { SidebarRail, SidebarTransition } from "./SidebarTransition";
+import { SidebarTransition } from "./SidebarTransition";
 import { useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";
 import { useDragResize } from "../../shared/hooks/useDragResize";
 
@@ -57,7 +57,7 @@ it("starts closed at zero width and reopens at the current saved width", async (
   expect(committed).toHaveBeenLastCalledWith(288);
 });
 
-describe.each(["sidebar", "rail"] as const)("retained %s content", (kind) => {
+describe("retained sidebar content", () => {
   it("defers the first mount, stops hidden parent updates and refreshes on reopening", async () => {
     const mounted = vi.fn();
     const unmounted = vi.fn();
@@ -80,16 +80,14 @@ describe.each(["sidebar", "rail"] as const)("retained %s content", (kind) => {
       act(() => {
         const children = createElement(Content, { open, text });
         root.render(
-          kind === "rail"
-            ? createElement(SidebarRail, { open, children })
-            : createElement(SidebarTransition, {
-                open,
-                width: 280,
-                dragging: false,
-                setPaneRef,
-                finishDrag,
-                children,
-              }),
+          createElement(SidebarTransition, {
+            open,
+            width: 280,
+            dragging: false,
+            setPaneRef,
+            finishDrag,
+            children,
+          }),
         );
       });
     render(false, "initial");

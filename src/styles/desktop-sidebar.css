@@ -336,8 +336,7 @@ html[data-skin] .sidebar-transition:has([data-desktop-sidebar]) > .resize-handle
   left: 0;
 }
 
-.sidebar-transition:not([data-fold-state="open"]),
-.sidebar-rail {
+.sidebar-transition:not([data-fold-state="open"]) {
   /* Fixed-width children must stay inside the animated viewport. Once open,
      allow the sidebar's resize target to extend into the trailing gutter. */
   overflow: clip;

@@ -8,7 +8,6 @@ import { DesktopModeToggle, DesktopNavigation, DesktopNewSessionAction, DesktopT
 import { Sidebar } from "../../src/app/shell/Sidebar";
 import { PresenceBoundary } from "../../src/shared/ui/PresenceBoundary";
 import { AppViewDialog } from "../../src/features/workspace/ui/AppViewDialog";
-import { SidebarRail } from "../../src/app/shell/SidebarTransition";
 import { SidebarMain } from "../../src/app/shell/SidebarMain";
 import { WindowDragBar } from "../../src/app/shell/WindowChrome";
 import { WindowMenuButton } from "../../src/app/shell/WindowMenuButton";
@@ -204,7 +203,6 @@ function DesktopWorkspaceFixture() {
       <WindowDragBar windowNavigation={titlebar} />
     </div>
     <div style={{ flex: 1, minHeight: 0, display: "flex" }}>
-      <SidebarRail open={!sidebar}><ActivityBar layout="rail" chromeInMenuBar {...activity} /></SidebarRail>
       <Sidebar desktopMode={mode} open={sidebar} cwd={active.cwd} recents={recents} sessions={summaries} projectHistory={summaries} loadedProjectPaths={new Set([CODE_CWD, active.cwd])} busySessionIds={new Set(active.busy ? [active.id] : [])} approvalSessionIds={new Set(active.blocks.some(block => block.approval && !block.approval.decided) ? [active.id] : [])} questionSessionIds={new Set(active.pendingQuestion ? [active.id] : [])} activeSessionId={active.id} visibleSessionId={page === "workspace" ? active.id : null} pending={false} status="idle" tab="sessions" onTabChange={noop} filesSearchOpen={false} onFilesSearchOpenChange={noop} onOpenFile={noop} onSelectSession={() => { setPage("workspace"); setState("conversation"); setSessions(current => ({ ...current, [mode]: fixtureSession(mode, "conversation") })); }} onNew={newConversation} onNewChat={newConversation} onOpenProject={noop} onSelectProject={noop} onToggleSidebar={() => setSidebar(value => !value)} chromeInMenuBar navigation={{ primary: <DesktopNewSessionAction mode={mode} onNew={newConversation} />, scrollable: <DesktopNavigation onProjects={() => setPage("projects")} projectsActive={page === "projects"} onBots={noop} botsActive={false} activity={activity} /> }} footer={<ActivityBar layout="sidebar-footer" {...activity} />} />
       <SidebarMain open={sidebar}><main className="desktop-workspace" style={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0 }}>
         <div hidden={page !== "projects"} style={{ display: page === "projects" ? "flex" : "none", minWidth: 0, flex: 1 }}><ProjectsPage mode={mode} cwd={active.cwd} recents={recents} onSelect={noop} onOpen={noop} onNewChat={newConversation} onArchive={noop} onRestore={noop} /></div>
