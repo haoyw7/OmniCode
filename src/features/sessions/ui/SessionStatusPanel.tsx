@@ -65,8 +65,8 @@ import { TerminalSpinner } from "./TerminalSpinner";
 import { ContextUsageDetails } from "./ContextUsageDetails";
 import { ProviderUsageBar } from "./ProviderUsageBar";
 import { hasSessionUsage, type UsageSession } from "../../providers/model/sessionUsage";
-import { accountHeadroomWindow, LOW_HEADROOM_PERCENT } from "../../providers/model/accountUsageStatus";
-import { formatUsagePercent, formatWindowLabel, type ProviderRateLimits } from "../../providers/model/rateLimits";
+import { LOW_HEADROOM_PERCENT } from "../../providers/model/accountUsageStatus";
+import { clampUsedPercent, formatUsagePercent, formatWindowLabel, type ProviderRateLimits } from "../../providers/model/rateLimits";
 import { useUsageClock } from "../../providers/model/useProviderUsage";
 
 /**
@@ -452,9 +452,15 @@ function UsageCard({ id, ...props }: { id: "usage" } & React.ComponentProps<type
 function UsageRemaining({ limits }: { limits?: ProviderRateLimits }) {
   const { t: uiT } = useTranslation();
   const now = useUsageClock();
-  const headroom = accountHeadroomWindow(limits, now);
-  const remaining = headroom?.remaining ?? null;
-  const window = headroom ? formatWindowLabel(headroom.window.windowMinutes) : null;
+  const shortest = [limits?.session, limits?.weekly, limits?.monthly]
+    .filter((window) => window != null)
+    .sort((a, b) => a.windowMinutes - b.windowMinutes)[0];
+  const remaining = shortest
+    ? shortest.resetsAt != null && shortest.resetsAt <= now
+      ? 100
+      : 100 - clampUsedPercent(shortest.usedPercent)
+    : null;
+  const window = shortest ? formatWindowLabel(shortest.windowMinutes) : null;
   const loading = limits?.status === "idle" || limits?.status === "fetching";
   const tone = remaining !== null && remaining <= 0
     ? "text-red-400"
@@ -465,7 +471,7 @@ function UsageRemaining({ limits }: { limits?: ProviderRateLimits }) {
     <span
       data-session-usage-remaining
       className={`min-w-0 truncate text-[11px] tabular-nums ${tone}`}
-      title={remaining !== null ? uiT("Lowest remaining across usage limits") : undefined}
+      title={remaining !== null ? uiT("Shortest usage window") : undefined}
     >
       {remaining !== null
         ? uiT(

@@ -23,6 +23,7 @@ import { useShortcutLabel } from "../commands/useCommandShortcut";
 import { useDragResize } from "../../shared/hooks/useDragResize";
 import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
 import { sessionRecencyAt } from "../../features/sessions/model/sessionActivity";
+import { SessionCompletionOrder, type SessionCompletionRow } from "../model/sessionCompletionOrder";
 import { useProjectDiffStats } from "../../features/source-control/hooks/useProjectDiffStats";
 import {
   loadSidebarWidth,
@@ -420,6 +421,18 @@ function SidebarComponent(props: SidebarProps) {
   // remounts cannot lose replies received by an unopened Host conversation.
   const remoteUnreadTrackers = useRef(new Map<string, RemoteSessionUnread>());
   const remoteUnreadByProject = new Map<string, Set<string>>();
+  const [completionOrder] = useState(() => new SessionCompletionOrder());
+  const completionRows: SessionCompletionRow[] = [];
+  for (const [path, history] of historyByProject) {
+    if (remoteProjectFor(path)) continue;
+    for (const row of mergeLiveSessionSummaries(history, projectOpenSessions(path))) {
+      completionRows.push({
+        ...row,
+        running: props.busySessionIds.has(row.id),
+        needsInput: props.approvalSessionIds.has(row.id) || props.questionSessionIds?.has(row.id),
+      });
+    }
+  }
   for (const { path } of allProjects) {
     const remote = remoteProjectFor(path);
     if (!remote || !hasCachedRemoteProjectSessions(path)) continue;
@@ -430,6 +443,10 @@ function SidebarComponent(props: SidebarProps) {
       remoteUnreadTrackers.current.set(identity, tracker);
     }
     const rows = cachedRemoteSessions(path);
+    completionRows.push(...rows.map((row) => ({
+      ...row, cwd: path, source: identity,
+      running: row.status === "running", completedRunId: row.lastCompletedRunId,
+    })));
     const visibleId = props.visibleSessionId === undefined
       ? props.activeSessionId
       : props.visibleSessionId;
@@ -440,6 +457,7 @@ function SidebarComponent(props: SidebarProps) {
       : undefined;
     remoteUnreadByProject.set(pathKey(path), tracker.observe(rows, focusedId));
   }
+  useEffect(() => completionOrder.observe(completionRows));
   const projectSessionFlags = (
     flags: ReadonlySet<string> | undefined,
     path: string,

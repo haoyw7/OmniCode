@@ -73,6 +73,8 @@ function destroyController(controller: AnimationController) {
  * A changed `revealKey` skips that commit: rows revealed by their own
  * disclosure would otherwise replay from stale hidden coordinates while
  * AutoAnimate pins the list height.
+ * `enabled` removes observers entirely for lists without animated content;
+ * `animate` temporarily pauses an observed list during a direct gesture.
  */
 export function useListReorderMotion(
   root: RefObject<HTMLElement | null>,
@@ -80,6 +82,7 @@ export function useListReorderMotion(
   attribute: string,
   animate = true,
   revealKey?: string | number,
+  enabled = true,
 ) {
   const controllers = useRef(new Map<HTMLElement, AnimationController>());
   const settled = useContext(ListReorderMotionContext);
@@ -87,7 +90,7 @@ export function useListReorderMotion(
   const key = order.join("\0");
   const revealed = useRef(revealKey);
   useLayoutEffect(() => {
-    if (!settled) {
+    if (!settled || !enabled) {
       for (const controller of controllers.current.values()) destroyController(controller);
       controllers.current.clear();
       return;
@@ -131,7 +134,7 @@ export function useListReorderMotion(
       for (const controller of resume) controller.enable();
     });
     return () => cancelAnimationFrame(frame);
-  }, [root, key, attribute, animate, reduced, revealKey, settled]);
+  }, [root, key, attribute, animate, reduced, revealKey, settled, enabled]);
   useLayoutEffect(() => () => {
     for (const controller of controllers.current.values()) destroyController(controller);
     controllers.current.clear();

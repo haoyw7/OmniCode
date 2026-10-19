@@ -2112,7 +2112,7 @@
   "{window} remaining {percent}": "{window} 剩余 {percent}",
   "Weekly remaining {percent}": "周剩余 {percent}",
   "Monthly remaining {percent}": "月剩余 {percent}",
-  "Lowest remaining across usage limits": "各用量限制中最低的剩余额度",
+  "Shortest usage window": "周期最短的用量额度",
   "reset": "次重置",
   "resets": "次重置",
   "running": "正在运行",

@@ -1,13 +1,26 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import {
   loadSidebarChatOrder,
   orderSidebarChats,
   reorderSidebarChats,
   saveSidebarChatOrder,
+  subscribeSidebarChatOrder,
 } from "./sidebarChatOrder";
 
 afterEach(() => localStorage.clear());
+
+it("notifies mounted chat lists of external reordering and detaches listeners", () => {
+  const changed = vi.fn();
+  const stop = subscribeSidebarChatOrder(changed);
+  saveSidebarChatOrder(["b", "a"]);
+  expect(changed).toHaveBeenCalledOnce();
+  window.dispatchEvent(new StorageEvent("storage", { key: "omnicode.sidebarChatOrder.v1" }));
+  expect(changed).toHaveBeenCalledTimes(2);
+  stop();
+  saveSidebarChatOrder(["a", "b"]);
+  expect(changed).toHaveBeenCalledTimes(2);
+});
 
 const ids = (items: { id: string }[]) => items.map(({ id }) => id);
 

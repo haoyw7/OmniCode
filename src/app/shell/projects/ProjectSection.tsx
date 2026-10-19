@@ -1,8 +1,9 @@
 import { useSidebarListPreview } from "../useSidebarListPreview";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useContext, useId, type MouseEvent } from "react";
+import { useContext, useId, useRef, type MouseEvent } from "react";
 import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
+import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
 import { orderByIds } from "../../../shared/lib/reorder";
 import { orderSidebarPins } from "../../model/sidebarPinnedOrder";
 import { sidebarDragPreview } from "../SidebarEntryReorder";
@@ -115,6 +116,7 @@ export function ProjectSection({
     ],
     itemOrder ?? [],
   );
+  const list = useRef<HTMLDivElement>(null);
   const sortable = useAnimatedReorder(
     rows
       .slice(0, preview.count)
@@ -129,6 +131,9 @@ export function ProjectSection({
       collapsedSize: tree ? collapsedProjectHeaderSize : undefined,
     },
   );
+  useListReorderMotion(list, rows.map((row) => row.id), "data-sidebar-pinned-entry",
+    (compact || hideHeader || expanded) && !sectionDragging && !sortable.draggingId,
+    preview.count, pinned && leadingEntries.length > 0);
   return (
     <div
       className={compact ? "shrink-0" : `shrink-0 ${tree ? "mb-1" : "mb-2"}`}
@@ -157,6 +162,7 @@ export function ProjectSection({
             </p>
           ) : null}
           <div
+            ref={pinned ? list : undefined}
             data-project-rows
             className={
               compact

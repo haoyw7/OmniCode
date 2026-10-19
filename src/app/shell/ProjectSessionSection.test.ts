@@ -1714,6 +1714,60 @@ describe("project conversation sorting", () => {
     expect(loadSessionSidebarOrder(B)).toEqual([]);
   });
 
+  it.each([true, false])("raises a finished reply above a saved manual order with reduced motion %s", async (reduced) => {
+    saveSessionSidebarOrder(A, initial);
+    fixture();
+    vi.mocked(window.matchMedia).mockReturnValue({
+      matches: reduced, addEventListener: () => {}, removeEventListener: () => {},
+    } as unknown as MediaQueryList);
+    props.busySessionIds = new Set(["e"]);
+    act(() => render());
+    const rows = visibleRows();
+    const play = vi.spyOn(Animation.prototype, "play");
+    await act(async () => vi.advanceTimersByTimeAsync(duration.panel * 1000));
+    expect(rowIds()).toEqual(initial);
+    props.busySessionIds = new Set();
+    props.projectHistory = props.projectHistory!.map((session) => session.id === "e"
+      ? { ...session, activityAt: 200 } : session);
+    act(() => render());
+    await act(async () => vi.advanceTimersByTimeAsync(0));
+    expect(rowIds()).toEqual(["e", "a", "b", "c", "d"]);
+    expect(loadSessionSidebarOrder(A)).toEqual(["e", "a", "b", "c", "d"]);
+    expect(visibleRows()[0]).toBe(rows[4]);
+    expect(play.mock.contexts.some((animation) => rows.includes((animation.effect as KeyframeEffect)?.target as HTMLElement))).toBe(!reduced);
+    expect(props.onSessionNavigationOrder).toHaveBeenLastCalledWith(["e", "a", "b", "c", "d"]);
+  });
+
+  it("promotes a completed Shared Host conversation inside a pinned Windows project", async () => {
+    const cwd = "D:/A-Projects/OmniCode";
+    configureSharedHost("local-machine", [{ id: "host-project", cwd, name: "OmniCode" }]);
+    props.cwd = cwd;
+    props.recents = [{ path: cwd, openedAt: 1 }];
+    props.sessions = [];
+    props.projectHistory = [];
+    props.loadedProjectPaths = new Set([cwd]);
+    savePinnedProjects([cwd]);
+    saveProjectTreeExpanded([cwd]);
+    saveSessionSidebarOrder(cwd, ["a", "b", "c"]);
+    remoteState.rows.set(cwd, [
+      hostRow("a"), hostRow("b"),
+      { ...hostRow("c"), status: "running", revision: 1 },
+    ]);
+    await act(async () => render());
+    const rows = () => [...project(cwd.toLowerCase()).querySelectorAll<HTMLElement>("[data-session-row]")]
+      .filter((row) => !row.closest("[hidden]"));
+    const original = rows();
+    expect(original.map((row) => row.dataset.sessionRow)).toEqual(["a", "b", "c"]);
+    remoteState.rows.set(cwd, [
+      hostRow("a"), hostRow("b"),
+      { ...hostRow("c"), revision: 2, lastCompletedRunId: "reply-1" },
+    ]);
+    await act(async () => window.dispatchEvent(new Event(REMOTE_HISTORY_UPDATED)));
+    expect(rows().map((row) => row.dataset.sessionRow)).toEqual(["c", "a", "b"]);
+    expect(rows()[0]).toBe(original[2]);
+    expect(loadSessionSidebarOrder(cwd)).toEqual(["c", "a", "b"]);
+  });
+
   it("settles a manual drop once while retaining motion for later external order changes", async () => {
     fixture();
     vi.mocked(window.matchMedia).mockReturnValue({
@@ -1724,18 +1778,19 @@ describe("project conversation sorting", () => {
     )!;
     vi.spyOn(section, "animate");
     const rows = visibleRows();
-    rows.forEach((row) => vi.spyOn(row, "animate"));
+    const play = vi.spyOn(Animation.prototype, "play");
     pointer(card("a"), "pointerdown", 16);
     pointer(window, "pointerup", 148);
     await act(async () => vi.advanceTimersByTimeAsync(duration.panel * 1000));
+    await act(async () => vi.advanceTimersByTimeAsync(32));
     expect(rowIds()).toEqual(["b", "c", "d", "e", "a"]);
     expect(
-      rows.every((row) => vi.mocked(row.animate).mock.calls.length === 0),
+      play.mock.contexts.every((animation) => !rows.includes((animation.effect as KeyframeEffect)?.target as HTMLElement)),
     ).toBe(true);
     await act(async () => { saveSessionSidebarOrder(A, initial); await vi.advanceTimersByTimeAsync(0); });
     expect(rowIds()).toEqual(initial);
     expect(
-      rows.some((row) => vi.mocked(row.animate).mock.calls.length > 0),
+      play.mock.contexts.some((animation) => rows.includes((animation.effect as KeyframeEffect)?.target as HTMLElement)),
     ).toBe(true);
   });
 
@@ -2130,7 +2185,7 @@ describe("unified pinned sidebar group", () => {
     const pinHeader = pinArea.querySelector<HTMLElement>(
       "[data-sidebar-section-header]",
     )!;
-    const row = source.closest<HTMLElement>(".session-reorder-item")!;
+    const row = source.closest<HTMLElement>(".session-reorder-item, .sidebar-pinned-entry")!;
     vi.spyOn(list, "getBoundingClientRect").mockReturnValue(
       new DOMRect(0, 0, 240, 500),
     );

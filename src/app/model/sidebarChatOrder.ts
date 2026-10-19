@@ -2,6 +2,7 @@ import { mergeOrderedSubset, orderByIds } from "../../shared/lib/reorder";
 
 // Device-local: chat ids embed this machine's folder paths.
 const KEY = "omnicode.sidebarChatOrder.v1";
+const CHANGED = "omnicode:sidebar-chat-order-changed";
 // Deleted chats leave their ids behind; keep the list bounded.
 const LIMIT = 1000;
 
@@ -57,4 +58,17 @@ export function saveSidebarChatOrder(order: string[]): void {
   } catch {
     // The current view still supports sorting when storage is unavailable.
   }
+  window.dispatchEvent(new Event(CHANGED));
+}
+
+export function subscribeSidebarChatOrder(onChange: () => void): () => void {
+  const stored = (event: StorageEvent) => {
+    if (event.key === KEY || event.key === null) onChange();
+  };
+  window.addEventListener(CHANGED, onChange);
+  window.addEventListener("storage", stored);
+  return () => {
+    window.removeEventListener(CHANGED, onChange);
+    window.removeEventListener("storage", stored);
+  };
 }

@@ -151,7 +151,7 @@ const usageDetails = () => document.querySelector<HTMLElement>('[role="dialog"][
 const usageToggle = () => container.querySelector<HTMLButtonElement>('[data-status-card="usage"] button[aria-expanded]')!;
 const remaining = () => container.querySelector<HTMLElement>("[data-session-usage-remaining]");
 
-it("keeps the tightest remaining quota current while folded, independently of the used/remaining preference", async () => {
+it("keeps the shortest-window quota current while folded, independently of headroom and the display preference", async () => {
   fetches.codex.mockResolvedValueOnce({
     ...quota(17),
     weekly: { usedPercent: 72, windowMinutes: 10080, resetsAt: null },
@@ -162,9 +162,14 @@ it("keeps the tightest remaining quota current while folded, independently of th
   act(() => usageToggle().click());
   await finishExits();
   expect(usageRow()).toBeNull();
-  expect(remaining()?.textContent).toBe("Weekly remaining 28%");
+  expect(remaining()?.textContent).toBe("5h remaining 83%");
   act(() => setCachedRateLimits("codex", "account-left", quota(60)));
   expect(remaining()?.textContent).toBe("5h remaining 40%");
+  act(() => setCachedRateLimits("codex", "account-left", {
+    ...quota(60),
+    weekly: { usedPercent: 30, windowMinutes: 60, resetsAt: null },
+  }));
+  expect(remaining()?.textContent).toBe("1h remaining 70%");
   sessions[0] = sessions[1];
   await render();
   expect(remaining()?.textContent).toBe("5h remaining 56%");
@@ -362,9 +367,17 @@ it("localizes usage controls while preserving account names", async () => {
     session: { usedPercent: 100, windowMinutes: 300, resetsAt: Date.now() - 60_000 },
     weekly: { usedPercent: 72, windowMinutes: 10080, resetsAt: Date.now() + 86400_000 },
   }));
+  expect(remaining()?.textContent).toBe("5h 剩余 100%");
+  act(() => setCachedRateLimits("codex", "account-left", {
+    ...quota(17),
+    session: null,
+    weekly: { usedPercent: 72, windowMinutes: 10080, resetsAt: null },
+    monthly: { usedPercent: 81, windowMinutes: 43200, resetsAt: null },
+  }));
   expect(remaining()?.textContent).toBe("周剩余 28%");
   act(() => setCachedRateLimits("codex", "account-left", {
     ...quota(17),
+    session: null,
     monthly: { usedPercent: 81, windowMinutes: 43200, resetsAt: null },
   }));
   expect(remaining()?.textContent).toBe("月剩余 19%");

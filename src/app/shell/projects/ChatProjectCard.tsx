@@ -3,13 +3,15 @@ import { useSidebarListPreview } from "../useSidebarListPreview";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Plus } from "../../../shared/ui/icons";
-import { useContext, useId, useState } from "react";
+import { useContext, useEffect, useId, useRef, useState } from "react";
 import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
+import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
 import {
   loadSidebarChatOrder,
   orderSidebarChats,
   reorderSidebarChats,
   saveSidebarChatOrder,
+  subscribeSidebarChatOrder,
 } from "../../model/sidebarChatOrder";
 import { sidebarDragPreview } from "../SidebarEntryReorder";
 import {
@@ -52,6 +54,8 @@ export function ChatProjectCard({
       return !value;
     });
   const [order, setOrder] = useState(loadSidebarChatOrder);
+  useEffect(() => subscribeSidebarChatOrder(() => setOrder(loadSidebarChatOrder())), []);
+  const list = useRef<HTMLDivElement>(null);
   const rows = orderSidebarChats(
     entries.map((entry) => ({ id: `chat:${entry.id}`, entry })),
     order,
@@ -73,6 +77,8 @@ export function ChatProjectCard({
     undefined,
     { activationDistance: 3, floatingPreview: sidebarDragPreview },
   );
+  useListReorderMotion(list, rows.map((row) => row.id), "data-sidebar-pinned-entry",
+    expanded && !sectionDragging && !sortable.draggingId, preview.count);
   if (searchActive && entries.length === 0) return null;
   return (
     <div data-chat-project className="relative shrink-0">
@@ -104,7 +110,7 @@ export function ChatProjectCard({
         animateContentResize
       >
         {() => (
-          <div id={contentId} data-chat-project-children className="px-2">
+          <div ref={list} id={contentId} data-chat-project-children className="px-2">
             {entries.length === 0 ? (
               <p className="px-2 py-1 text-[11px] leading-tight text-content/40">
                 {uiT("Chats you start will show up here")}

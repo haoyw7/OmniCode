@@ -585,7 +585,6 @@ function ProjectSessionSectionComponent({
     flatPins,
   );
   const sessionListEntries: SessionListEntry[] = groupedSessionListEntries;
-  const manualReorderCommit = useRef(false);
   const sortableSessions = useAnimatedReorder(
     shortcutId || tab !== "sessions" || !sectionVisible
       ? []
@@ -605,7 +604,6 @@ function ProjectSessionSectionComponent({
         allIds,
         ids.map((id) => ({ id })),
       ).map(({ id }) => id);
-      manualReorderCommit.current = true;
       saveSessionSidebarOrder(cwd, next);
       setSavedSessionOrder({ cwd, ids: next });
     },
@@ -632,12 +630,9 @@ function ProjectSessionSectionComponent({
     sectionRef,
     sessionRowOrder,
     "data-session-row",
-    !manualReorderCommit.current,
+    !sortableSessions.draggingId,
     shownUngroupedCount,
   );
-  useLayoutEffect(() => {
-    manualReorderCommit.current = false;
-  });
   useEffect(() => {
     if (activeProject && !shortcutId)
       onSessionNavigationOrder?.(sessionNavigationIds);
