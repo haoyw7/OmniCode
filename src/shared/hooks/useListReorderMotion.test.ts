@@ -2,7 +2,7 @@
 import { act, createElement, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { useListReorderMotion } from "./useListReorderMotion";
+import { ListReorderMotionContext, useListReorderMotion } from "./useListReorderMotion";
 
 const preference = vi.hoisted(() => ({ reduced: false }));
 vi.mock("../motion/useMotionPreference", () => ({
@@ -22,8 +22,9 @@ function List({ order, animate, hidden = [] }: { order: string[]; animate: boole
   ));
 }
 
-function render(order: string[], animate = true, hidden: string[] = []) {
-  act(() => root.render(createElement(List, { order, animate, hidden })));
+function render(order: string[], animate = true, hidden: string[] = [], settled = true) {
+  act(() => root.render(createElement(ListReorderMotionContext.Provider, { value: settled },
+    createElement(List, { order, animate, hidden }))));
 }
 
 // AutoAnimate plays each effect through a Web Animation. Browsers mark a
@@ -143,4 +144,19 @@ it("opens a previously hidden row in place instead of sliding it from the origin
   );
   expect(moves(revealed)).toEqual([]);
   expect(moves(kept)).toHaveLength(1);
+});
+
+it("discards moving-page coordinates and resumes sorting after the page settles", async () => {
+  render(["one", "two"]);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const effects = playedEffects();
+  render(["one", "two"], true, [], false);
+  render(["two", "one"], true, [], false);
+  await mutations();
+  expect(effects()).toEqual([]);
+  render(["two", "one"]);
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  render(["one", "two"]);
+  await mutations();
+  expect(effects().some(effect => effect.getKeyframes()[0]?.transform === "translate(0px, 50px)")).toBe(true);
 });

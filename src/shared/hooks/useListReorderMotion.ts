@@ -3,11 +3,13 @@ import autoAnimate, {
   type AnimationController,
   type AutoAnimationPlugin,
 } from "@formkit/auto-animate";
-import { useLayoutEffect, useRef, type RefObject } from "react";
+import { createContext, useContext, useLayoutEffect, useRef, type RefObject } from "react";
 import { autoAnimateOptions } from "../motion/tokens";
 import { useMotionPreference } from "../motion/useMotionPreference";
 
 type Coordinates = { top: number; left: number; width: number; height: number };
+
+export const ListReorderMotionContext = createContext(true);
 
 /**
  * AutoAnimate's default keyframes, except that a row which was hidden
@@ -80,10 +82,16 @@ export function useListReorderMotion(
   revealKey?: string | number,
 ) {
   const controllers = useRef(new Map<HTMLElement, AnimationController>());
+  const settled = useContext(ListReorderMotionContext);
   const reduced = useMotionPreference();
   const key = order.join("\0");
   const revealed = useRef(revealKey);
   useLayoutEffect(() => {
+    if (!settled) {
+      for (const controller of controllers.current.values()) destroyController(controller);
+      controllers.current.clear();
+      return;
+    }
     const element = root.current;
     if (!element) return;
     const parents = new Set<HTMLElement>([element]);
@@ -123,7 +131,7 @@ export function useListReorderMotion(
       for (const controller of resume) controller.enable();
     });
     return () => cancelAnimationFrame(frame);
-  }, [root, key, attribute, animate, reduced, revealKey]);
+  }, [root, key, attribute, animate, reduced, revealKey, settled]);
   useLayoutEffect(() => () => {
     for (const controller of controllers.current.values()) destroyController(controller);
     controllers.current.clear();

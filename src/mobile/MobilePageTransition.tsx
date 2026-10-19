@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useCallback,
+  useContext,
   useLayoutEffect,
   useRef,
   useState,
@@ -9,6 +10,7 @@ import {
 } from "react";
 import { AnimatePresence, animate as animateElement, motion, usePresenceData } from "motion/react";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
+import { ListReorderMotionContext } from "../shared/hooks/useListReorderMotion";
 import { duration, immediateTransition, motionGeometry, panelTransition } from "../shared/motion/tokens";
 import { useCollapseMotion } from "../shared/ui/AnimatedCollapse";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
@@ -54,8 +56,10 @@ const PageLayer = forwardRef<HTMLDivElement, {
   page: MobilePageState;
   children: ReactNode;
   onExited: () => void;
+  onEntered: () => void;
   profile: PageMotion;
-}>(function PageLayer({ id, active, visible, enter, direction, page, children, onExited, profile }, forwarded) {
+}>(function PageLayer({ id, active, visible, enter, direction, page, children, onExited, onEntered, profile }, forwarded) {
+  const parentSettled = useContext(ListReorderMotionContext);
   const element = useRef<HTMLDivElement>(null);
   const assignRef = useCallback((node: HTMLDivElement | null) => {
     element.current = node;
@@ -106,16 +110,18 @@ const PageLayer = forwardRef<HTMLDivElement, {
       exit={{ opacity: 0, transition: immediateTransition }}
       transition={reduced ? immediateTransition : panelTransition}
       layout="position"
-      onAnimationComplete={finish}
+      onAnimationComplete={() => { finish(); if (active) onEntered(); }}
       inert={!active || !visible}
       aria-hidden={!active || !visible || undefined}
     >
       <MobilePageStateContext.Provider value={page}>
-        <SurfaceVisibilityContext.Provider value={active && visible}>
-          <ReadonlyTextStateContext.Provider value={page.values}>
-            {children}
-          </ReadonlyTextStateContext.Provider>
-        </SurfaceVisibilityContext.Provider>
+        <ListReorderMotionContext.Provider value={parentSettled && active && visible && (!enter || reduced)}>
+          <SurfaceVisibilityContext.Provider value={active && visible}>
+            <ReadonlyTextStateContext.Provider value={page.values}>
+              {children}
+            </ReadonlyTextStateContext.Provider>
+          </SurfaceVisibilityContext.Provider>
+        </ListReorderMotionContext.Provider>
       </MobilePageStateContext.Provider>
     </motion.div>
   );
@@ -175,6 +181,8 @@ export function MobilePageTransition({ route, visible = true, animate = true, sl
         <PageLayer key={entry.id} id={entry.id} active={entry.active} visible={visible && parentVisible}
           profile={slide ? "slide" : state.push ? entry.route.section === "chat" ? "push-chat" : "push-home" : "subtle"}
           enter={state.enter} direction={state.direction} page={entry.page}
+          onEntered={() => setState((current) => current.current.id === entry.id && current.enter
+            ? { ...current, enter: false } : current)}
           onExited={() => setState((current) => current.previous?.id === entry.id
             ? { ...current, previous: undefined } : current)}>
           {entry.children}
