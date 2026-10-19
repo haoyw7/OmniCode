@@ -299,7 +299,7 @@ export function MobileConnections({
               else if (details) onSwitch(details.endpoint);
             }}
           >
-            <RefreshCw size={22} />
+            <RefreshCw size={20} />
             <span>{t("Reconnect")}</span>
           </button>
           <button
@@ -308,7 +308,7 @@ export function MobileConnections({
             disabled={disabled}
             onClick={edit}
           >
-            <Pencil size={22} />
+            <Pencil size={20} />
             <span>{t("Edit")}</span>
           </button>
           <button
@@ -320,7 +320,7 @@ export function MobileConnections({
               onPanelChange("connection-delete");
             }}
           >
-            <Trash2 size={22} />
+            <Trash2 size={20} />
             <span>{t("Delete")}</span>
           </button>
         </div>

@@ -8,10 +8,10 @@
   place-items: center;
   color: var(--color-m-ink-secondary);
 }
-/* Task states are drawn at 16px; scale the whole badge rather than its glyph. */
+/* Task states are drawn at 16px; scale the whole badge to the toolbar glyph. */
 .mobile-progress-icon > span[aria-label] {
   margin: 0;
-  scale: 1.375;
+  scale: 1.5;
 }
 html[data-mobile-skin] .mobile-progress-icon > span[aria-label] svg {
   width: revert-layer;

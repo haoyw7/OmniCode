@@ -314,10 +314,9 @@ button.mobile-drawer-group-status,
   min-height: 44px;
 }
 
-/* Individual scale preserves translations used by anchored controls and row
-   reordering. Tint overlays the existing fill, including primary buttons, and
-   spreads from the centre instead of flashing the whole surface. Rows choose
-   the tint through --mobile-press-color. */
+/* Presses never shrink the control. Tint overlays the existing fill, including
+   primary buttons, and spreads from the centre instead of flashing the whole
+   surface. Rows choose the tint through --mobile-press-color. */
 @property --mobile-press-spread {
   syntax: "<percentage>";
   inherits: false;
@@ -327,7 +326,6 @@ button.mobile-drawer-group-status,
 .mobile-desktop-transcript [data-tool-open-row] {
   transition:
     background-color 120ms ease,
-    scale 120ms ease,
     --mobile-press-spread 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 @media (hover: hover) {
@@ -345,7 +343,10 @@ button.mobile-drawer-group-status,
     var(--mobile-press-spread) var(--mobile-press-spread) at 50% 50%,
     var(--mobile-press-color, color-mix(in srgb, currentColor 8%, transparent)) 96%,
     transparent 100%);
-  scale: 0.98;
+}
+/* Shared controls also carry desktop press-scale utilities. */
+:is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) :is(button, a, [role="button"]):active {
+  scale: none;
 }
 /* The shared file card has a desktop hover rule; touch keeps its resting fill. */
 @media (hover: none) {
@@ -365,9 +366,5 @@ button.mobile-drawer-group-status,
   :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) button,
   .mobile-desktop-transcript [data-tool-open-row] {
     transition: none;
-  }
-  :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) button:enabled:active,
-  .mobile-desktop-transcript [data-tool-open-row]:active {
-    scale: none;
   }
 }

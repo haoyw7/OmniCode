@@ -171,7 +171,7 @@ export function MobileSessionActions({
                 >
                   <Copy size={20} />
                   <span>{t("Copy session ID")}</span>
-                  {!summary && <ChevronRight size={18} />}
+                  {!summary && <ChevronRight size={20} />}
                 </button>
                 <button
                   className="mobile-sheet-row"

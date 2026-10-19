@@ -292,9 +292,9 @@
   background: var(--color-m-raised);
 }
 .mobile-skill-options .mobile-sheet-row > svg {
-  flex: 0 0 16px;
-  width: 16px;
-  height: 16px;
+  flex: 0 0 var(--m-icon-sm);
+  width: var(--m-icon-sm);
+  height: var(--m-icon-sm);
   margin-top: 2px;
 }
 /* Match the action rows above while keeping the smaller skill glyph centered. */
@@ -303,8 +303,8 @@
   padding-inline: 14px;
 }
 .mobile-skill-picker .mobile-sheet-row > svg {
-  flex-basis: 22px;
-  width: 22px;
+  flex-basis: var(--m-icon-md);
+  width: var(--m-icon-md);
 }
 .mobile-skill-options .mobile-sheet-row-text {
   min-width: 0;
@@ -396,9 +396,9 @@
 .mobile-sheet-row > svg,
 .mobile-sheet-row > img,
 .mobile-sheet-row > span[aria-hidden] {
-  flex: 0 0 22px;
-  width: 22px;
-  height: 22px;
+  flex: 0 0 var(--m-icon-md);
+  width: var(--m-icon-md);
+  height: var(--m-icon-md);
 }
 .mobile-sheet-row > span {
   flex: 1;

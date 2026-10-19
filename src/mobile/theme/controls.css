@@ -4,6 +4,15 @@
   --m-control-height: 44px;
   --m-control-small: 32px;
   --m-control-icon: 36px;
+  /* One glyph scale on the 24px artwork grid: captions, inline labels, rows and
+     menus, toolbars and navigation, empty states. Line glyphs share the
+     artwork's 1.5 outline plus its 0.3 contour. */
+  --m-icon-xs: 14px;
+  --m-icon-sm: 16px;
+  --m-icon-md: 20px;
+  --m-icon-lg: 24px;
+  --m-icon-xl: 40px;
+  --m-icon-stroke: 1.8;
   --m-control-radius: 14px;
   --m-control-pill: 999px;
   --m-control-primary: #f5f4ed;
@@ -59,4 +68,12 @@ html[data-mobile-skin="daylight"] {
 }
 html[data-mobile-glass="solid"][data-mobile-skin] {
   --m-navigation-control: var(--color-m-menu);
+}
+/* Library line glyphs and the artwork's stroked shapes match the filled outlines,
+   whatever stroke width a shared consumer passes. */
+html[data-mobile-skin] :is(
+  svg[data-ui-icon]:not([data-ui-icon-artwork]),
+  svg[data-ui-icon-artwork] [stroke-width="1.5"]
+) {
+  stroke-width: var(--m-icon-stroke);
 }

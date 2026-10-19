@@ -61,7 +61,7 @@ export function MobileBotCreate({ ref, rpc, onClose, onCreated }: {
   return <main className="mobile-bots mobile-bots-create" inert={!visible} aria-hidden={!visible || undefined}
     onKeyDown={event => { if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); back(); } }}>
     <header className="mobile-header mobile-bots-header">
-      <IconButton label={t("Back")} disabled={busy} onClick={back}><ArrowLeft size={22} /></IconButton>
+      <IconButton label={t("Back")} disabled={busy} onClick={back}><ArrowLeft size={24} /></IconButton>
       <div className="mobile-header-title"><strong role="heading" aria-level={1}>{t("New bot")}</strong></div>
     </header>
     <div className="mobile-bots-create-content" data-mobile-page-scroll>

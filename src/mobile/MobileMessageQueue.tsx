@@ -156,11 +156,11 @@ function MobileQueueView({
                   setMenuId(message.id);
                 }}
               >
-                <ListEnd size={17} aria-hidden="true" />
+                <ListEnd size={16} aria-hidden="true" />
                 {message.origin?.kind === "assistant" && <small>{t("From {value0}", { value0: message.origin.assistantName || t("Assistant") })}</small>}
                 {message.blocked && <small title={t(message.blocked)}>{t("Blocked")}</small>}
                 <span>{label}</span>
-                <MoreHorizontal size={20} aria-hidden="true" />
+                <MoreHorizontal size={16} aria-hidden="true" />
               </button>
             );
           })}
@@ -186,14 +186,14 @@ function MobileQueueView({
             ...sorting.previewStyle,
           }}
         >
-          <ListEnd size={17} />
+          <ListEnd size={16} />
           <span>
             {dragged.text.trim() ||
               t("Queued attachments ({count})", {
                 count: dragged.attachments.length,
               })}
           </span>
-          <MoreHorizontal size={20} />
+          <MoreHorizontal size={16} />
         </motion.div>
       )}
       <MobileSheetPresence open={visible && !!menuMessage}>
@@ -216,7 +216,7 @@ function MobileQueueView({
               setMenuId(undefined);
             }}
           >
-            <Pencil size={21} />
+            <Pencil size={20} />
             <span>{t("Edit message")}</span>
           </button>
           <button
@@ -228,7 +228,7 @@ function MobileQueueView({
               setMenuId(undefined);
             }}
           >
-            <CornerDownRight size={21} />
+            <CornerDownRight size={20} />
             <span>{t("Use as steering")}</span>
           </button>
           <button
@@ -240,7 +240,7 @@ function MobileQueueView({
               setMenuId(undefined);
             }}
           >
-            <Trash2 size={21} />
+            <Trash2 size={20} />
             <span>{t("Cancel message send")}</span>
           </button>
         </MobileSheet>

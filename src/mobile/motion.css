@@ -1,8 +1,6 @@
-/* Simple press feedback remains CSS. Structural and presence motion uses Motion. */
+/* Presses only tint (see 12-sheet-pages.css). Structural and presence motion uses Motion. */
 :root {
-  --mobile-motion-press: 120ms;
   --mobile-motion-feedback: 160ms;
-  --mobile-motion-press-scale: 0.97;
   --mobile-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 .mobile-swap, .mobile-swap-item {
@@ -23,15 +21,4 @@
   background: var(--color-m-raised);
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
   pointer-events: none;
-}
-[data-ui="button"], .mobile-segmented > [role="tab"] > :not(.mobile-segmented-selection) {
-  transition: transform var(--mobile-motion-press) var(--mobile-ease-out);
-}
-[data-ui="button"]:active:not(:disabled),
-.mobile-segmented > [role="tab"]:active:not(:disabled) > :not(.mobile-segmented-selection) {
-  transform: scale(var(--mobile-motion-press-scale));
-}
-@media (prefers-reduced-motion: reduce) {
-  [data-ui="button"], .mobile-segmented > [role="tab"] > * { transition: none; }
-  [data-ui="button"]:active:not(:disabled), .mobile-segmented > [role="tab"]:active:not(:disabled) > * { transform: none; }
 }

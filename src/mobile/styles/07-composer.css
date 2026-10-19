@@ -329,5 +329,5 @@ html[data-mobile-skin] .mobile-composer [data-ui="message-input-field"]:focus-vi
 }
 
 
-.mobile-composer-action > svg { width: 24px; height: 24px; }
+.mobile-composer-action > svg { width: var(--m-icon-lg); height: var(--m-icon-lg); }
 html[data-mobile-glass="solid"] .mobile-composer-input { background: var(--m-control-field); }

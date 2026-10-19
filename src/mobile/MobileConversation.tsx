@@ -104,7 +104,7 @@ export function MobileConversation({
           jump?.();
         }}
       >
-        <ArrowDownCircle size={22} />
+        <ArrowDownCircle size={24} />
       </motion.button>
     </div>
   );

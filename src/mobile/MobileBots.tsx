@@ -146,11 +146,11 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
   <main className="mobile-bots" inert={!visible} aria-hidden={!visible || undefined}
     onKeyDown={event => { if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); back(); } }}>
     <header className="mobile-header mobile-bots-header">
-      <IconButton label={t("Back")} onClick={props.onClose}><ArrowLeft size={22} /></IconButton>
+      <IconButton label={t("Back")} onClick={props.onClose}><ArrowLeft size={24} /></IconButton>
       <h1 className="sr-only">{t("Bots")}</h1>
       <div className="mobile-bots-header-actions">
         <IconButton ref={searchButton} label={t("Search bots")} shape="round" aria-expanded={searching} aria-controls="mobile-bots-search"
-          onClick={() => searching ? closeSearch() : setSearching(true)}>{searching ? <X size={22} /> : <Search size={22} />}</IconButton>
+          onClick={() => searching ? closeSearch() : setSearching(true)}>{searching ? <X size={24} /> : <Search size={24} />}</IconButton>
         <IconButton label={t("New bot")} shape="round" disabled={!canCreate} onClick={() => setCreating(true)}><Plus size={24} /></IconButton>
       </div>
     </header>

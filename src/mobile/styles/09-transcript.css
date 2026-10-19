@@ -598,8 +598,8 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
   padding-inline: 6px 0;
 }
 .mobile-shared-question [data-question-header] > svg {
-  width: 16px;
-  height: 16px;
+  width: var(--m-icon-sm);
+  height: var(--m-icon-sm);
 }
 .mobile-shared-question [data-question-title] {
   font-size: var(--mobile-font-md);
@@ -621,8 +621,8 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
   touch-action: manipulation;
 }
 .mobile-shared-question [data-question-collapse] > svg {
-  width: 20px;
-  height: 20px;
+  width: var(--m-icon-md);
+  height: var(--m-icon-md);
 }
 .mobile-shared-question [data-question-collapse]:active {
   --mobile-press-color: var(--color-selection);
@@ -635,8 +635,8 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
   touch-action: manipulation;
 }
 .mobile-shared-question [data-question-navigation] > button > svg {
-  width: 18px;
-  height: 18px;
+  width: var(--m-icon-md);
+  height: var(--m-icon-md);
 }
 .mobile-shared-question [data-question-navigation] > button:active:not(:disabled) {
   --mobile-press-color: var(--color-selection);
@@ -702,8 +702,8 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
   color: var(--mobile-accent-foreground);
 }
 .mobile-shared-question [data-question-mark] > svg {
-  width: 13px;
-  height: 13px;
+  width: var(--m-icon-xs);
+  height: var(--m-icon-xs);
 }
 .mobile-shared-question [data-question-label] {
   font-size: var(--mobile-font-lg);

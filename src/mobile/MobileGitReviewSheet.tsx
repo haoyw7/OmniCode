@@ -85,7 +85,7 @@ export function MobileGitReviewSheet({
           aria-pressed={wrap}
           onClick={() => setWrap((value) => !value)}
         >
-          <WrapText size={22} />
+          <WrapText size={24} />
         </IconButton>
       ) }}
       surface="solid"

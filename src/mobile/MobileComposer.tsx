@@ -494,7 +494,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         {inlineOpen && <div className="mobile-sheet mobile-command-suggestions">
           <div className="mobile-skill-heading"><strong>{t("Skills and commands")}</strong>
             <IconButton type="button" label={t("Close suggestions")}
-              onPointerDown={event => event.preventDefault()} onClick={dismissSkills}><X size={18} /></IconButton>
+              onPointerDown={event => event.preventDefault()} onClick={dismissSkills}><X size={24} /></IconButton>
           </div>
           <MobileSkillList skills={options} loading={skillsState.loading} failed={!!skillsState.failed} error={skillsState.error}
             active={skillActive} id={skillListId} onPick={pickSkill} onActive={setSkillActive} onRetry={() => void skillsState.reload(true)} />
@@ -574,8 +574,8 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                 }}
               >
                 {workspace.value.mode === "worktree" || workspace.value.linkedWorktree
-                  ? <FolderTree size={18} aria-hidden="true" />
-                  : <Folder size={18} aria-hidden="true" />}
+                  ? <FolderTree size={16} aria-hidden="true" />
+                  : <Folder size={16} aria-hidden="true" />}
                 <span>{workspaceName}</span>
                 {workspace.creating ? (
                   <MobileSpinner size={16} className="mobile-spin" aria-hidden="true" />
@@ -667,7 +667,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                   props.onPanelChange("actions");
                 }}
               >
-                <Plus size={22} />
+                <Plus size={24} />
               </button>
               <div className="mobile-composer-controls">
                 {props.planMode && (
@@ -684,7 +684,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                       props.onPanelChange("plan");
                     }}
                   >
-                    <planStyle.Icon size={18} aria-hidden="true" />
+                    <planStyle.Icon size={20} aria-hidden="true" />
                   </button>
                 )}
                 <button
@@ -789,7 +789,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             props.onPlanModeChange(false);
           }}
         >
-          <X size={18} />
+          <X size={20} />
           <span>{t("Turn off")}</span>
         </button>
         )}
@@ -823,7 +823,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             >
               <RuntimeModeIcon
                 mode={mode}
-                size={22}
+                size={20}
                 className={
                   mode === "full-access"
                     ? "text-amber-400/90"
@@ -858,7 +858,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           disabled={props.disabled || props.readingAttachments}
           onClick={() => openFilePicker(photos.current)}
         >
-          <ImagePlus size={22} />
+          <ImagePlus size={20} />
           <span>{t("Upload photos")}</span>
         </button>
         <button
@@ -867,7 +867,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           disabled={props.disabled || props.readingAttachments}
           onClick={() => openFilePicker(files.current)}
         >
-          <FilePlus size={22} />
+          <FilePlus size={20} />
           <span>{t("Upload files")}</span>
         </button>
         <button
@@ -881,7 +881,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             props.onPlanModeChange(!props.planMode);
           }}
         >
-          <AiIdea size={22} className="text-yellow-300/80" />
+          <AiIdea size={20} className="text-yellow-300/80" />
           <span>{t("Plan mode")}</span>
           {props.planMode && <Check size={20} />}
         </button>
@@ -889,7 +889,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           <button type="button" className="mobile-sheet-row" aria-label={t("Choose project")}
             disabled={props.disabled || props.running || !props.projects.length}
             onClick={() => props.onPanelChange("projects")}>
-            <Folder size={22} />
+            <Folder size={20} />
             <span>{t("Choose project")}</span>
           </button>
         )}
@@ -932,7 +932,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                   props.onProjectChange(project);
               }}
             >
-              <Folder size={22} />
+              <Folder size={20} />
               <span className="mobile-sheet-row-text">
                 <strong>{project.name}</strong>
                 <small>{project.machine?.kind === "wsl" ? `WSL · ${project.machine.distribution} · ${project.cwd}` : project.cwd}</small>

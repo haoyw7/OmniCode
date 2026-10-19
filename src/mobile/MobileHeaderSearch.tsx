@@ -47,7 +47,7 @@ export function MobileHeaderSearch({
       aria-hidden={!open || undefined}
       inert={!open}
     >
-      <Search size={18} aria-hidden="true" />
+      <Search size={20} aria-hidden="true" />
       <input data-ui="input"
         ref={input}
         type="search"

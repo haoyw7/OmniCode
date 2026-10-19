@@ -204,8 +204,8 @@
 }
 
 .mobile-app .mobile-chat > .mobile-empty .mobile-empty-icon > svg {
-  width: 43px;
-  height: 43px;
+  width: var(--m-icon-xl);
+  height: var(--m-icon-xl);
 }
 
 .mobile-app .mobile-chat > .mobile-empty h2 {

@@ -106,7 +106,7 @@ export function MobileAgentDefaultsStatus({
           className="mobile-defaults-status-heading"
           data-attention={affectsDefaults || undefined}
         >
-          <StatusIcon size={18} aria-hidden="true" />
+          <StatusIcon size={16} aria-hidden="true" />
           <strong>
             {loading
               ? t("Checking agents…")

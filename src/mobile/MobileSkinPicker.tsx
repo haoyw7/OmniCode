@@ -44,7 +44,7 @@ function SkinOption({
       type="button"
       role="radio"
       aria-checked={selected}
-      className="mobile-skin-option group flex min-h-m-hit flex-col gap-2 rounded-m-xl p-1.5 text-left transition-transform duration-150 active:scale-[0.97] motion-reduce:transition-none"
+      className="mobile-skin-option group flex min-h-m-hit flex-col gap-2 rounded-m-xl p-1.5 text-left"
       data-wide={wide || undefined}
       onClick={onSelect}
     >
@@ -55,7 +55,7 @@ function SkinOption({
         {children}
         {selected ? (
           <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-m-accent text-m-accent-ink">
-            <Check size={12} />
+            <Check size={14} />
           </span>
         ) : null}
       </span>

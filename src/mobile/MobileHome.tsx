@@ -293,12 +293,12 @@ function useMobileHomeController({
       <span className="mobile-home-project-activity">
         {state === "input" && (
           <span className="mobile-home-project-state" role="img" aria-label={t("Needs input")}>
-            <TriangleAlert size={18} aria-hidden="true" />
+            <TriangleAlert size={16} aria-hidden="true" />
           </span>
         )}
         {running && (
           <span className="mobile-home-project-state" role="img" aria-label={t("Working")}>
-            <MobileSpinner size={18} className="mobile-spin" aria-hidden="true" />
+            <MobileSpinner size={16} className="mobile-spin" aria-hidden="true" />
           </span>
         )}
       </span>
@@ -322,7 +322,7 @@ function useMobileHomeController({
         data-compact={overview ? true : undefined}
         onClick={onClick}
       >
-        <Folder size={23} />
+        <Folder size={24} />
         <span>
           <strong>{item.name}</strong>
           {!overview && <small>{item.machine?.kind === "wsl" ? `WSL · ${item.machine.distribution} · ${item.cwd}` : item.cwd}</small>}
@@ -343,7 +343,7 @@ function useMobileHomeController({
       data-compact={overview || undefined}
       onClick={onChats}
     >
-      <MessageSquare size={23} />
+      <MessageSquare size={24} />
       <span>
         <strong>{t("Chats")}</strong>
       </span>
@@ -486,7 +486,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
             <MobileEmpty icon={<Folder size={40} />} title={t("Projects")}
               action={<Button variant="secondary" type="button" className="mobile-home-add"
                 onClick={(event) => onAddProject(event.currentTarget)}>
-                <FolderPlus size={21} />{t("Open project")}
+                <FolderPlus size={16} />{t("Open project")}
               </Button>}>
               {t("Choose a project")}
             </MobileEmpty>
@@ -513,7 +513,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
                 onClick={() => setProjectsOpen((open) => !open)}>
                 <span>{t("Projects")}</span>
                 {projectActivity(sessions, true)}
-                <MotionChevronDown size={18} aria-hidden="true" animate={{ rotate: projectsOpen ? 0 : -motionGeometry.disclosureAngle }} transition={panelTransition} />
+                <MotionChevronDown size={16} aria-hidden="true" animate={{ rotate: projectsOpen ? 0 : -motionGeometry.disclosureAngle }} transition={panelTransition} />
               </button>
             </h2>
             <AnimatedCollapse expanded={projectsOpen} motion="height">
@@ -528,7 +528,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
               <button type="button" className="mobile-home-section-toggle" aria-expanded={pinnedOpen}
                 onClick={() => setPinnedOpen((open) => !open)}>
                 <span>{t("Pinned")}</span>
-                <MotionChevronDown size={18} aria-hidden="true" animate={{ rotate: pinnedOpen ? 0 : -motionGeometry.disclosureAngle }} transition={panelTransition} />
+                <MotionChevronDown size={16} aria-hidden="true" animate={{ rotate: pinnedOpen ? 0 : -motionGeometry.disclosureAngle }} transition={panelTransition} />
               </button>
             </h2>
             <AnimatedCollapse expanded={pinnedOpen} motion="height">
@@ -549,7 +549,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
                 onClick={() => setFilterOpen((open) => !open)}
               >
                 <span>{t(MOBILE_SESSION_FILTER_LABELS[filter])}</span>
-                <ChevronDown size={18} aria-hidden="true" />
+                <ChevronDown size={16} aria-hidden="true" />
               </button>
             </div>
           )}
@@ -605,9 +605,9 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
                   setFilterOpen(false);
                 }}
               >
-                <Icon size={22} />
+                <Icon size={20} />
                 <span className="flex-1">{t(MOBILE_SESSION_FILTER_LABELS[option])}</span>
-                {filter === option && <Check size={22} />}
+                {filter === option && <Check size={20} />}
               </button>
             );
           })}
@@ -621,7 +621,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
             aria-haspopup="dialog"
             onClick={(event) => onAddProject(event.currentTarget)}
           >
-            <FolderPlus size={22} />
+            <FolderPlus size={24} />
             <span>{t("Open project")}</span>
           </button>
         </div>
@@ -636,7 +636,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
                 aria-label={t("New chat")}
                 onClick={onNewChat}
               >
-                <MessageSquarePlus size={22} />
+                <MessageSquarePlus size={24} />
                 <span>{t("Projectless chat")}</span>
               </button>
             )
@@ -647,7 +647,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
               aria-label={t("New conversation")}
               onClick={onNewSession}
             >
-              {project ? <MessageSquarePlus size={22} /> : <Plus size={22} />}
+              {project ? <MessageSquarePlus size={24} /> : <Plus size={24} />}
               <span>{t(project ? "Chat" : "New conversation")}</span>
             </button>
           )}

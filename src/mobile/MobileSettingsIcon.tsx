@@ -57,7 +57,7 @@ export function MobileSettingsGlyph({
 }) {
   const Icon = glyphs[name];
   return (
-    <Icon size={24} strokeWidth={1.75} aria-hidden="true" focusable="false" />
+    <Icon size={24} aria-hidden="true" focusable="false" />
   );
 }
 

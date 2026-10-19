@@ -256,7 +256,7 @@ export function MobileNotes({
                 disabled={loading || topics.loading || working || !visible}
                 onClick={() => { void refresh(); topics.refresh(); }}
               >
-                <RefreshCw size={18} />
+                <RefreshCw size={24} />
               </IconButton>
             </div>
             <div className="mobile-notes-scroll" data-mobile-page-scroll>

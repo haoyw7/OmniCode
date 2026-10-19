@@ -529,7 +529,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             >
               <SettingsIcon name="notifications" />
               <span className="mobile-settings-label">{t("Notification settings…")}</span>
-              <ChevronRight size={18} aria-hidden="true" />
+              <ChevronRight size={20} aria-hidden="true" />
             </button>
           ) : null}
           {activity.notificationError ? (
@@ -623,7 +623,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
                 ? `${connectionAppearance.displayName || connection.name} · ${t(hostStatusLabel(hostStatus))}`
                 : t("Not connected")}
             </small>
-            <ChevronRight size={18} />
+            <ChevronRight size={20} />
           </button>
           {/* Without a saved Host, keep pairing one tap away on first launch. */}
           {connection ? null : addConnectionRow("mobile-settings-row")}
@@ -636,7 +636,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             >
               <SettingsIcon name="agent" />
               <span className="mobile-settings-label">{t("New conversations")}</span>
-              <ChevronRight size={18} />
+              <ChevronRight size={20} />
             </button>
           ) : null}
           {providerAccounts ? (
@@ -644,7 +644,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
               onClick={() => onPageChange("accounts")}>
               <SettingsIcon name="account" />
               <span className="mobile-settings-label">{t("Accounts and usage")}</span>
-              <ChevronRight size={18} />
+              <ChevronRight size={20} />
             </button>
           ) : null}
           <button
@@ -658,7 +658,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             <small className="mobile-settings-value">
               {t(activity.permission !== "unsupported" && activity.enabled ? "On" : "Off")}
             </small>
-            <ChevronRight size={18} />
+            <ChevronRight size={20} />
           </button>
           <button
             type="button"
@@ -671,7 +671,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             <small className="mobile-settings-value">
               {t(followUpBehavior === "queue" ? "Queue" : "Steer")}
             </small>
-            <ChevronRight size={18} />
+            <ChevronRight size={20} />
           </button>
         </div>
       </section>
@@ -687,7 +687,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           <small className="mobile-settings-value">
             {skin === "auto" ? t("Automatic") : t(MOBILE_SKIN_INFO[skin].label)}
           </small>
-          <ChevronRight size={18} />
+          <ChevronRight size={20} />
         </button>
         {/* Color mode chooses between Midnight and Daylight for the automatic skin. */}
         {skin === "auto" ? (
@@ -760,7 +760,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           <small className="mobile-settings-value">
             {t(glass.effect === "frosted" ? "Frosted glass" : "Solid")}
           </small>
-          <ChevronRight size={18} />
+          <ChevronRight size={20} />
         </button>
       </Group>
       <section
@@ -777,7 +777,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             <span className="mobile-settings-label">
               {t("Archived conversations")}
             </span>
-            <ChevronRight size={18} />
+            <ChevronRight size={20} />
           </button>
           <button
             type="button"
@@ -795,7 +795,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             {appUpdates.available ? (
               <span className="mobile-unread-dot" aria-hidden="true" />
             ) : null}
-            <ChevronRight size={18} />
+            <ChevronRight size={20} />
           </button>
         </div>
       </section>

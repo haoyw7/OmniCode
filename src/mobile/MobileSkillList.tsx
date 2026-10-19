@@ -70,7 +70,7 @@ export function MobileSkillList({
             onMouseEnter={() => onActive(index)}
             onClick={() => onPick(skill)}
           >
-            <Sparkles size={18} />
+            <Sparkles size={20} />
             <span className="mobile-sheet-row-text">
               <strong>/{skill.invocation}</strong>
               {skill.description && (

@@ -52,11 +52,11 @@ export function MobileSessionRow({
       {hostName && <small className="mobile-home-session-host">{hostName}</small>}
       {state === "running" ? (
         <span className="mobile-home-session-state" role="img" aria-label={t("Working")}>
-          <MobileSpinner size={18} className="mobile-spin" aria-hidden="true" />
+          <MobileSpinner size={16} className="mobile-spin" aria-hidden="true" />
         </span>
       ) : state === "input" ? (
         <span className="mobile-home-session-state" role="img" aria-label={t("Needs input")}>
-          <TriangleAlert size={18} aria-hidden="true" />
+          <TriangleAlert size={16} aria-hidden="true" />
         </span>
       ) : (
         <time dateTime={new Date(sessionRecencyAt(session)).toISOString()}>

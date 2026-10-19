@@ -78,7 +78,7 @@ export function MobileConnectionSheet({
       {pairedHost ? (
         <div className="mobile-pairing mobile-pairing-success">
           <div className="mobile-pairing-success-hero" aria-hidden="true">
-            <CheckCircle size={60} strokeWidth={1.75} />
+            <CheckCircle size={60} />
           </div>
           <div role="status" className="mobile-pairing-confirmation">
             <strong>{t("Pairing successful")}</strong>
@@ -120,7 +120,7 @@ export function MobileConnectionSheet({
               }}
             >
               {method === id && <motion.span layoutId={selectionId} className="mobile-segmented-selection" aria-hidden="true" transition={reduced ? immediateTransition : popTransition} />}
-              <Icon size={18} />
+              <Icon size={16} />
               <span>{t(label)}</span>
             </button>
           ))}

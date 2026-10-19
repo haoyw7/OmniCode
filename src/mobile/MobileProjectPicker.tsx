@@ -159,7 +159,7 @@ export function MobileProjectPicker({
               disabled={blocked}
               onClick={close}
             >
-              <X size={20} />
+              <X size={24} />
             </IconButton>
           </header>
           <div className="mobile-project-picker-navigation">
@@ -169,7 +169,7 @@ export function MobileProjectPicker({
               disabled={blocked}
               onClick={() => void browse()}
             >
-              <Computer size={18} />
+              <Computer size={16} />
               <span>{t("Home folder")}</span>
             </Button>
             <Button variant="secondary"
@@ -180,7 +180,7 @@ export function MobileProjectPicker({
                 if (parent) void browse(parent);
               }}
             >
-              <ArrowUp size={18} />
+              <ArrowUp size={16} />
               <span>{t("Parent folder")}</span>
             </Button>
           </div>
@@ -258,7 +258,7 @@ export function MobileProjectPicker({
                   <span className="mobile-project-picker-folder-name">
                     {entry.name}
                   </span>
-                  <ChevronRight size={18} />
+                  <ChevronRight size={20} />
                 </button>
               ))
             ) : directory ? (

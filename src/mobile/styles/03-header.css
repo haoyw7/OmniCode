@@ -303,8 +303,8 @@
 }
 
 .mobile-app .mobile-header [data-ui="icon-button"] > svg {
-  width: 24px;
-  height: 24px;
+  width: var(--m-icon-lg);
+  height: var(--m-icon-lg);
 }
 
 

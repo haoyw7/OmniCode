@@ -60,7 +60,7 @@ function Chip({ connection, active, selected, status, probing, disabled, probe, 
     <button type="button" className="mobile-device-chip" role="radio" aria-checked={selected}
       disabled={disabled && !active} onClick={onSelect}>
       <MobileHostStatus status={active ? status : observed} dotOnly />
-      <Computer size={18} aria-hidden="true" />
+      <Computer size={16} aria-hidden="true" />
       <span>{name}</span>
     </button>
   );

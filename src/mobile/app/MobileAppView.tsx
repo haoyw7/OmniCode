@@ -322,12 +322,12 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
       {view !== "bots" && <>
       <header ref={header} className="mobile-header" data-floating={floatingHeader} data-project={view === "home" && homePageOpen} data-search={view === "home" && searchOpen} inert={drawerOpen || pageOverlayOpen || hostPickerOpen}>
         {view === "chat" && sessionEntrySource === "bot" ? (
-          <IconButton label={t("Back to Bot conversation")} onClick={backToBot}><ArrowLeft size={22} /></IconButton>
+          <IconButton label={t("Back to Bot conversation")} onClick={backToBot}><ArrowLeft size={24} /></IconButton>
         ) : view === "chat" && sessionEntrySource === "project" ? (
           <IconButton label={t("Back")} onClick={() => project && isChatFolder(project.cwd)
             ? openChats()
             : openHome(projects.find((item) => item.id === project?.id))}>
-            <ArrowLeft size={22} />
+            <ArrowLeft size={24} />
           </IconButton>
         ) : view === "chat" || (view === "home" && !homePageOpen) ? (
           <IconButton
@@ -339,11 +339,11 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               setDrawerOpen(true);
             }}
           >
-            <PanelLeft size={22} />
+            <PanelLeft size={24} />
           </IconButton>
         ) : view === "home" ? (
           <IconButton label={t("Back")} inert={searchOpen} aria-hidden={searchOpen || undefined} onClick={() => openHome()}>
-            <ArrowLeft size={22} />
+            <ArrowLeft size={24} />
           </IconButton>
         ) : client.connection || settingsPage !== "root" ? (
           <IconButton
@@ -354,7 +354,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
                 : navigate(settingsReturnView.current)
             }
           >
-            <ArrowLeft size={22} />
+            <ArrowLeft size={24} />
           </IconButton>
         ) : (
           <span className="mobile-header-logo">
@@ -373,7 +373,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
                 <strong>{title}</strong>
               </span>
               <span className="mobile-header-host">
-                <Computer size={12} aria-hidden="true" />
+                <Computer size={14} aria-hidden="true" />
                 <span className="mobile-project-header-host-name">{connectionName}</span>
                 <MobileHostStatus status={hostStatus} dotOnly />
               </span>
@@ -393,7 +393,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
             onClick={() => setHomeMenuOpen((open) => !open)}
           >
             <strong>{title}</strong>
-            <ChevronDown size={14} aria-hidden="true" />
+            <ChevronDown size={16} aria-hidden="true" />
           </button>
         ) : <div className="mobile-header-title" data-capsule={view === "settings" ? false : floatingHeader}>
           <strong>{view === "settings" && settingsPage === "root" ? "OmniCode" : title}</strong>
@@ -401,7 +401,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
             <div className="mobile-header-context">
               {project?.name && (
                 <span className="mobile-header-context-item">
-                  <Folder size={12} aria-hidden="true" />
+                  <Folder size={14} aria-hidden="true" />
                   <span>{project.name}</span>
                 </span>
               )}
@@ -454,11 +454,11 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           </div>
         ) : view === "settings" && settingsPage === "root" ? (
           <IconButton ref={aboutTrigger} label={t("About")} onClick={() => setAboutOpen((open) => !open)}>
-            <Info size={22} />
+            <Info size={24} />
           </IconButton>
         ) : view === "home" ? (
           <IconButton ref={searchTrigger} label={t(searchOpen ? "Close search" : homeChats ? "Search chats" : "Search conversations")} onClick={toggleHomeSearch}>
-            {searchOpen ? <X size={22} /> : <Search size={22} />}
+            {searchOpen ? <X size={24} /> : <Search size={24} />}
           </IconButton>
         ) : null}
       </header>
@@ -473,7 +473,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
                 disabled={busy || hostStatus.state === "reconnecting"}
                 onClick={() => void reconnect()}
               >
-                <RefreshCw size={16} />
+                <RefreshCw size={24} />
               </IconButton>
             )}
           </div>
@@ -724,7 +724,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               {t("Loading conversation…")}
             </div>
           ) : !project ? (
-            <MobileEmpty icon={<Folder size={28} />} title={t("Open your first project")}>
+            <MobileEmpty icon={<Folder size={40} />} title={t("Open your first project")}>
               {t("Add a folder from your connected computer to get started.")}
               <Button variant="secondary"
 
@@ -736,7 +736,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
             </MobileEmpty>
           ) : (
             <MobileEmpty
-              icon={<Chatting size={30} />}
+              icon={<Chatting size={40} />}
               title={
                 sessionId
                   ? "Conversation unavailable"

@@ -516,7 +516,7 @@ function useMobileDrawerController({
                 {t("Needs input")}
               </span>
             ) : item.pinned && item.status !== "running" ? (
-              <Pin size={12} aria-label={t("Pin")} />
+              <Pin size={14} aria-label={t("Pin")} />
             ) : null}
             {tree.length > 1 && (
               <span className="mobile-drawer-session-project">{owner.name}</span>
@@ -660,7 +660,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
             aria-expanded={covered}
             onClick={onHost}
           >
-            <Computer size={22} />
+            <Computer size={24} />
             <span>{hostName}</span>
             <MobileHostStatus status={hostStatus} dotOnly />
             <ChevronDown size={16} className="mobile-drawer-device-chevron" />
@@ -674,7 +674,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
               }) : undefined}
               onClick={onAssistant}
             >
-              <Bot size={22} />
+              <Bot size={24} />
               <span>{t("Bots")}</span>
               {assistantUnreadCount > 0 && (
                 <span className="mobile-drawer-assistant-badge" aria-hidden="true">
@@ -684,7 +684,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
             </button>
           )}
           <button type="button" className="mobile-drawer-item" onClick={onHome}>
-            <Home size={22} />
+            <Home size={24} />
             <span>{t("Sessions")}</span>
           </button>
           <button
@@ -693,7 +693,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
             disabled={!project}
             onClick={() => project && onNewSession(project)}
           >
-            <MessageSquarePlus size={22} />
+            <MessageSquarePlus size={24} />
             <span>{t("New conversation")}</span>
           </button>
           <div>
@@ -704,7 +704,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
               aria-controls={moreId}
               onClick={() => setMoreOpen((value) => !value)}
             >
-              <MoreHorizontal size={22} />
+              <MoreHorizontal size={24} />
               <span>{t(moreOpen ? "Show less" : "More")}</span>
               <MotionChevronDown size={16} className="mobile-drawer-more-chevron" animate={{ rotate: moreOpen ? motionGeometry.flipAngle : 0 }} transition={panelTransition} />
             </button>
@@ -713,7 +713,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
                 <div className="mobile-drawer-secondary">
                   {onNotes && (
                     <button type="button" className="mobile-drawer-item" onClick={onNotes}>
-                      <File size={22} />
+                      <File size={24} />
                       <span>{t("Notes")}</span>
                     </button>
                   )}
@@ -722,7 +722,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
                     className="mobile-drawer-item mobile-drawer-all-projects"
                     onClick={onAllProjects}
                   >
-                    <Folder size={22} />
+                    <Folder size={24} />
                     <span>{t("Projects")}</span>
                   </button>
                 </div>
@@ -735,7 +735,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
             <p className="mobile-drawer-empty">{t("Couldn’t load projects")}</p>
           ) : projectsPending || treeLoading ? (
             <div className="mobile-loading mobile-drawer-group-status" role="status">
-              <MobileSpinner size={15} className="mobile-spin" />
+              <MobileSpinner size={16} className="mobile-spin" />
               {t("Loading conversations…")}
             </div>
           ) : !tree.length ? (
@@ -785,7 +785,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
           className="mobile-drawer-item mobile-drawer-settings"
           onClick={onSettings}
         >
-          <Settings size={22} />
+          <Settings size={24} />
           <span>{t("Settings")}</span>
         </button>
       </motion.nav>

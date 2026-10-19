@@ -43,12 +43,12 @@ const WORK_ICONS: Record<ActivityWorkKind, ComponentType<{ size?: number }>> = {
 function StepIcon({ block }: { block: Block }) {
   if (isToolBlock(block)) {
     const Icon = WORK_ICONS[toolCategory(block)];
-    return <Icon size={18} />;
+    return <Icon size={20} />;
   }
   return isThinkingBlock(block) ? (
-    <Sparkles size={18} />
+    <Sparkles size={20} />
   ) : (
-    <StickyNote size={18} />
+    <StickyNote size={20} />
   );
 }
 

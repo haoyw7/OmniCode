@@ -114,7 +114,7 @@ function MobileAssistantHeader({
           onClick={onClose}
           label={t("Back")}
         >
-          <ArrowLeft size={22} />
+          <ArrowLeft size={24} />
         </IconButton>
         <div className="mobile-header-title" data-capsule="true">
           <div className="mobile-assistant-profile">
@@ -156,7 +156,7 @@ function MobileAssistantHeader({
           disabled={!onSettings}
           onClick={() => setMenuOpen((v) => !v)}
         >
-          <MoreHorizontal size={22} />
+          <MoreHorizontal size={24} />
         </IconButton>
       </header>
       <MobileSheet
@@ -169,7 +169,7 @@ function MobileAssistantHeader({
         onClose={() => setMenuOpen(false)}
       >
         {onTimeline && <button type="button" className="mobile-sheet-row" onClick={() => action(onTimeline)}>
-          <span>{t("Work history")}</span><ChevronRight size={18} />
+          <span>{t("Work history")}</span><ChevronRight size={20} />
         </button>}
         <button
           type="button"
@@ -179,7 +179,7 @@ function MobileAssistantHeader({
         >
           <Settings size={20} />
           <span>{t("Settings")}</span>
-          <ChevronRight size={18} />
+          <ChevronRight size={20} />
         </button>
         {controls && (
           <>
@@ -231,7 +231,7 @@ function MobileAssistantSettingsPanel({
             onClick={onClose}
             label={t("Back")}
           >
-            <ArrowLeft size={22} />
+            <ArrowLeft size={24} />
           </IconButton>
           <strong>
             {t(initialSetup ? "Set up assistant" : "Assistant settings")}
@@ -438,7 +438,7 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
             onMouseDown={(e) => preserveInputFocus(e, input.current)}
             onClick={onCancelReply}
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
       </AnimatedCollapse>
@@ -491,7 +491,7 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
             disabled={inputDisabled}
             onClick={() => setAddOpen(open => !open)}
           >
-            <Plus size={22} />
+            <Plus size={24} />
           </button>
           <input
             ref={files}
@@ -537,9 +537,9 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
             disabled={sendDisabled}
           >
             {sending ? (
-              <MobileSpinner size={21} className="mobile-spin" aria-hidden="true" />
+              <MobileSpinner size={20} className="mobile-spin" aria-hidden="true" />
             ) : (
-              <ArrowUp size={21} aria-hidden="true" />
+              <ArrowUp size={20} aria-hidden="true" />
             )}
           </button>}
         </div>
@@ -737,7 +737,7 @@ export function MobileAssistantSelect({
         >
           {selected?.label ?? placeholder}
         </span>
-        <ChevronRight size={18} aria-hidden="true" />
+        <ChevronRight size={16} aria-hidden="true" />
       </button>
       {hint && <small className="mobile-assistant-select-hint">{hint}</small>}
       <MobileSheet open={open} title={label} onClose={close}>

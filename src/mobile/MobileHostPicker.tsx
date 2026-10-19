@@ -38,14 +38,14 @@ export function MobileHostPicker({
       {status.state !== "connected" && activeId && (
         <button type="button" className="mobile-sheet-row" disabled={switching || status.state === "reconnecting"}
           onClick={onReconnect}>
-          <RefreshCw size={22} /><span>{t("Reconnect")}</span>
+          <RefreshCw size={20} /><span>{t("Reconnect")}</span>
         </button>
       )}
       <button type="button" className="mobile-sheet-row" data-separated onClick={onAdd}>
-        <Plus size={22} /><span>{t("Add connection")}</span>
+        <Plus size={20} /><span>{t("Add connection")}</span>
       </button>
       <button type="button" className="mobile-sheet-row" onClick={onManage}>
-        <Settings size={22} /><span>{t("Manage devices")}</span>
+        <Settings size={20} /><span>{t("Manage devices")}</span>
       </button>
     </MobileSheet>
   );
@@ -67,13 +67,13 @@ function Device({ connection, active, status, open, disabled, probe, onSwitch }:
     <button type="button" className="mobile-sheet-row mobile-device-option"
       aria-label={t("Switch to {host}", { host: name })} aria-pressed={active}
       disabled={disabled} onClick={() => onSwitch(connection.endpoint)}>
-      <Computer size={22} />
+      <Computer size={20} />
       <span className="mobile-device-option-name">
         {name}
         <small>{connection.endpoint.replace(/^https?:\/\//, "")}</small>
       </span>
       <MobileHostStatus status={active ? status : observed} dotOnly />
-      {active && <Check size={18} />}
+      {active && <Check size={20} />}
     </button>
   );
 }

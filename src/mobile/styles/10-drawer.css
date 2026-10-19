@@ -171,11 +171,11 @@
     transition: none;
   }
 }
-/* Every drawer row shares one icon column: a 22px icon at the row inset,
+/* Every drawer row shares one icon column: a navigation icon at the row inset,
    then labels, session titles and headings start on the same text edge. */
 .mobile-app .mobile-drawer {
   --mobile-drawer-inset: 16px;
-  --mobile-drawer-icon: 24px;
+  --mobile-drawer-icon: var(--m-icon-lg);
   --mobile-drawer-gap: 10px;
   width: min(340px, 85vw);
   padding-inline: calc(8px + var(--mobile-safe-left)) 8px;

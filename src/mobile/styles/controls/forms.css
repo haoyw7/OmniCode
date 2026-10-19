@@ -71,7 +71,7 @@ html[data-mobile-skin] [data-ui="icon-button"] {
   background: transparent;
   color: var(--m-control-ink);
 }
-html[data-mobile-skin] [data-ui="icon-button"] svg { width: 24px; height: 24px; }
+html[data-mobile-skin] [data-ui="icon-button"] svg { width: var(--m-icon-lg); height: var(--m-icon-lg); }
 html[data-mobile-skin] [data-ui="icon-button"]:is(:active, [aria-pressed="true"], [aria-expanded="true"], [data-active="true"]):not(:disabled, [aria-disabled="true"]) { background: var(--m-control-active); }
 html[data-mobile-skin] [data-ui="switch"] {
   --switch-travel: var(--m-switch-travel);

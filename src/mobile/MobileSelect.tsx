@@ -53,7 +53,7 @@ export function MobileSelect<T extends string>({
           {selected?.icon}
           <span>{selected?.label ?? value}</span>
         </span>
-        <ChevronDown size={14} />
+        <ChevronDown size={16} />
       </button>
       <MobileSheet
         open={open}

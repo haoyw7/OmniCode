@@ -139,7 +139,7 @@ function ProgressIcon({ model }: { model: SessionStatusPanelModel }) {
         />
       );
     case "plan":
-      return <FileScript size={22} />;
+      return <FileScript size={24} />;
     case "running": {
       const Icon =
         summary.agents && summary.background
@@ -147,14 +147,14 @@ function ProgressIcon({ model }: { model: SessionStatusPanelModel }) {
           : summary.agents
             ? Bot
             : Terminal;
-      return <Icon size={22} />;
+      return <Icon size={24} />;
     }
     case "agents":
-      return <Bot size={22} />;
+      return <Bot size={24} />;
     case "progress":
-      return <ListEnd size={22} />;
+      return <ListEnd size={24} />;
     default:
-      return <GitCompare size={22} />;
+      return <GitCompare size={24} />;
   }
 }
 
@@ -220,7 +220,7 @@ function ProgressSections({
     <div className="mobile-progress-sections">
       {sessionReview?.index && onSessionReview && (
         <Section
-          icon={<FileDiff size={18} />}
+          icon={<FileDiff size={16} />}
           title={t("Session changes")}
           meta={t(sessionReview.index.files.length === 1 ? "{count} file changed" : "{count} files changed", {
             count: sessionReview.index.files.length,
@@ -239,13 +239,13 @@ function ProgressSections({
                 />
               </span>
             </span>
-            <ChevronRight size={18} aria-hidden="true" />
+            <ChevronRight size={20} aria-hidden="true" />
           </button>
         </Section>
       )}
       {review && onReview && (
         <Section
-          icon={<GitCompare size={18} />}
+          icon={<GitCompare size={16} />}
           title={t("Uncommitted changes")}
         >
           <button
@@ -266,13 +266,13 @@ function ProgressSections({
               </span>
               {review.error && <small>{t("Could not load changes.")}</small>}
             </span>
-            <ChevronRight size={18} aria-hidden="true" />
+            <ChevronRight size={20} aria-hidden="true" />
           </button>
         </Section>
       )}
       {tasks && span && (
         <Section
-          icon={<ListEnd size={18} />}
+          icon={<ListEnd size={16} />}
           title={t("Tasks")}
           meta={taskListProgressLabel(tasks, t)}
         >
@@ -302,7 +302,7 @@ function ProgressSections({
         </Section>
       )}
       {model.plans.length > 0 && (
-        <Section icon={<FileScript size={18} />} title={t("Plans")}>
+        <Section icon={<FileScript size={16} />} title={t("Plans")}>
           {model.plans.map((plan) => (
             <button
               key={plan.blockId}
@@ -311,14 +311,14 @@ function ProgressSections({
               onClick={() => onNavigate("plan", plan.blockId)}
             >
               <span>{plan.title}</span>
-              <ChevronRight size={18} aria-hidden="true" />
+              <ChevronRight size={20} aria-hidden="true" />
             </button>
           ))}
         </Section>
       )}
       {model.subagents.length > 0 && (
         <Section
-          icon={<Bot size={18} />}
+          icon={<Bot size={16} />}
           title={t(model.subagents.length === 1 ? "{count} subagent" : "{count} subagents", { count: model.subagents.length })}
           expanded={agentsExpanded}
           onToggle={() => setAgentsExpanded((value) => !value)}
@@ -341,13 +341,13 @@ function ProgressSections({
               <small className="shrink-0 whitespace-nowrap font-mono tabular-nums">
                 {t(agent.steps === 1 ? "{count} step" : "{count} steps", { count: agent.steps })}
               </small>
-              <ChevronRight size={18} aria-hidden="true" />
+              <ChevronRight size={20} aria-hidden="true" />
             </button>
           ))}
         </Section>
       )}
       {model.background.length > 0 && (
-        <Section icon={<Terminal size={18} />} title={t("Background")}>
+        <Section icon={<Terminal size={16} />} title={t("Background")}>
           {model.background.map((description, index) => (
             <div
               key={`${index}:${description}`}

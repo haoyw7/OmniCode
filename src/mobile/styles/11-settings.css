@@ -255,8 +255,8 @@ button.mobile-settings-row:active {
   color: var(--color-m-ink-secondary);
 }
 .mobile-settings-icon > svg {
-  width: 24px;
-  height: 24px;
+  width: var(--m-icon-lg);
+  height: var(--m-icon-lg);
 }
 /* The current computer leads the page like the iOS account card. */
 .mobile-settings-hero {

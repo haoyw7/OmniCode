@@ -62,7 +62,7 @@ export function MobileHomeMenu({
               onProject(project);
             }}
           >
-            <Folder size={22} />
+            <Folder size={20} />
             <span className="mobile-sheet-row-text">
               <strong>{project.name}</strong>
               <small>{project.machine?.kind === "wsl" ? `WSL · ${project.machine.distribution} · ${project.cwd}` : project.cwd}</small>

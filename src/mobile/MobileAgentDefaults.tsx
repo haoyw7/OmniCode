@@ -162,7 +162,7 @@ export function MobileAgentDefaults({
             <span>{t("Agent and model")}</span>
             <small>{summary}</small>
           </span>
-          <ChevronRight size={18} />
+          <ChevronRight size={20} />
         </button>
         <div className="mobile-settings-row mobile-settings-row-stacked">
           <span className="mobile-settings-icon" aria-hidden="true">
@@ -188,7 +188,7 @@ export function MobileAgentDefaults({
             options={RUNTIME_MODES.map((mode) => ({
               value: mode,
               label: t(RUNTIME_MODE_LABEL[mode]),
-              icon: <RuntimeModeIcon mode={mode} size={22} />,
+              icon: <RuntimeModeIcon mode={mode} size={20} />,
             }))}
           />
         </div>

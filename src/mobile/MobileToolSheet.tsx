@@ -179,7 +179,7 @@ export function MobileToolSheet({
             aria-label={t(copied === key ? "Copied" : "Copy")}
             onClick={() => copy(key, text)}
           >
-            {copied === key ? <Check size={15} /> : <Copy size={15} />}
+            {copied === key ? <Check size={16} /> : <Copy size={16} />}
           </button>
         </div>
         {notice}
@@ -268,7 +268,7 @@ export function MobileToolSheet({
       aria-pressed={wrap}
       onClick={() => setWrap((value) => !value)}
     >
-      <WrapText size={22} />
+      <WrapText size={24} />
     </IconButton>
   ) : undefined };
   if (embedded) return (

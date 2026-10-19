@@ -89,8 +89,8 @@ body,
   height: 44px;
 }
 .image-lightbox-close > svg {
-  width: 20px;
-  height: 20px;
+  width: var(--m-icon-lg);
+  height: var(--m-icon-lg);
 }
 /* One font step for sheets, dialogs and shared popovers, including body portals.
    Fixed sizes opt in below; inherited text grows once at the surface root. */
