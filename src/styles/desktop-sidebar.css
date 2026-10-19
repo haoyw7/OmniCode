@@ -285,7 +285,7 @@ html[data-skin] [data-desktop-sidebar] {
   --desktop-sidebar-title-weight: 400;
   --desktop-sidebar-group-row: 32px;
   padding-inline: var(--desktop-sidebar-inset) 0;
-  background: var(--color-panel);
+  background: var(--desktop-sidebar-fill);
   font-size: 14px;
   line-height: 21px;
 }
@@ -603,7 +603,7 @@ html[data-skin] [data-desktop-sidebar] :is([data-sidebar-list-toggle], [data-ses
   font-size: 13px;
 }
 html[data-skin] [data-project-tools-panel] {
-  background: var(--color-panel, var(--color-surface));
+  background: var(--desktop-panel-fill);
   font-size: 13px;
   line-height: 19px;
 }

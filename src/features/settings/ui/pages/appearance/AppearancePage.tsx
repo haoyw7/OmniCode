@@ -123,11 +123,11 @@ export function AppearancePage({ appearance }: { appearance: AppearanceSettings 
         description={
           glassDisabled
             ? uiT(
-                "Light mode keeps the main window opaque, but Popover transparency still applies to menus, pickers, and dialogs.",
+                "Sidebar, panel and popover transparency work within the app. Light mode keeps the desktop behind the window opaque.",
               )
             : windowOpaque
               ? uiT(
-                  "On Linux the window stays opaque until Main pane glass is on or Desktop transparency is above 0%. Popover transparency still applies to menus, pickers, and dialogs.",
+                  "Sidebar, panel and popover transparency work within the app. On Linux, enable Main pane glass or increase Desktop transparency to reveal the desktop.",
                 )
               : uiT(
                 "How much of the desktop shows through OmniCode. Blur costs more to composite the higher it goes.",
@@ -165,7 +165,6 @@ export function AppearancePage({ appearance }: { appearance: AppearanceSettings 
             maxOpacity={Math.round(SIDEBAR_OPACITY_MAX * 100)}
             preview={(value) => applySidebarOpacity(value / 100)}
             onChange={appearance.onOpacity}
-            disabled={windowOpaque}
           />
         </Row>
         <Row
@@ -188,7 +187,7 @@ export function AppearancePage({ appearance }: { appearance: AppearanceSettings 
           id="panel-opacity"
           label={uiT("Panel transparency")}
           description={uiT(
-            "Composer, settings, dialogs and menus. Higher values show more of what is behind them.",
+            "Workspace panels, editors, diffs, composer, settings, dialogs and menus. Higher values show more of what is behind them.",
           )}
         >
           <TransparencySlider

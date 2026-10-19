@@ -620,14 +620,23 @@ html.chat-background-window
 }
 
 :root.chat-background-window.has-chat-background.chat-background-effect-ready
-  :is(.app-shell-root, .shell-chrome, .body-glass, .pane-card, .pane-card-gutter) {
+  :is(
+    .app-shell-root,
+    .shell-chrome,
+    .body-glass,
+    .pane-card,
+    .pane-card-gutter,
+    [data-window-chrome],
+    [data-session-surface-tabs],
+    .desktop-session-pane:where([data-project-chat-background="false"])
+  ) {
   background: transparent;
 }
 
 /* The sidebar keeps a tint of its own over the backdrop to stay distinct;
    under glass it fades with the rest of the window. */
 :root.chat-background-window.has-chat-background.chat-background-effect-ready
-  .sidebar-glass {
+  :is(.sidebar-glass, [data-desktop-sidebar]) {
   background: color-mix(
     in srgb,
     var(--color-background-base) calc(var(--sidebar-opacity) * 100%),
@@ -636,7 +645,7 @@ html.chat-background-window
 }
 
 :root.has-native-glass:not(.theme-light).chat-background-window.has-chat-background.chat-background-effect-ready
-  .sidebar-glass {
+  :is(.sidebar-glass, [data-desktop-sidebar]) {
   background: color-mix(
     in srgb,
     var(--color-background-base)
@@ -1869,12 +1878,8 @@ html.theme-light .drag-ghost-card {
   pointer-events: none;
 }
 
-/* Appearance controls popover background opacity in both color schemes. The
-   main window remains opaque in light mode. */
-/* ZCode menus and dialogs are solid surfaces; only native glass windows keep
-   the user's translucent popover setting. */
-/* Panel opacity fades menus and dialogs in every mode; it multiplies the
-   glass-only Popover opacity. */
+/* Legacy surfaces combine panel and popover opacity under native glass.
+   Desktop skins apply both preferences through their surface fill tokens. */
 
 html.has-native-glass .popover-backdrop {
   background: color-mix(

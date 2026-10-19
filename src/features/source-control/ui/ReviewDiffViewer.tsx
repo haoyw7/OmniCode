@@ -27,8 +27,8 @@ import {
 const viewerStyle = {
   // Measured in claude-ui-analysis/evidence/diff-shadow-{light,dark}.json.
   // Let Pierre mix line, gutter and word backgrounds once, in separate layers.
-  "--diffs-light-bg": "#ffffff",
-  "--diffs-dark-bg": "#1a1a19",
+  "--diffs-light-bg": "color-mix(in srgb, #ffffff calc(var(--panel-opacity) * 100%), transparent)",
+  "--diffs-dark-bg": "color-mix(in srgb, #1a1a19 calc(var(--panel-opacity) * 100%), transparent)",
   "--diffs-light": "#1a1a1a",
   "--diffs-dark": "#eaecf0",
   "--diffs-light-addition-color": "#1e9e3c",
@@ -127,6 +127,14 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
       onPostRender,
       // The viewer's shadow root does not inherit the global scrollbar rules.
       unsafeCSS: `
+        /* Lines paint the palette once. Transparent structural layers keep
+           nested code/gutter backgrounds from accumulating opacity. */
+        :host, pre, code, [data-gutter], [data-content] {
+          background-color: transparent;
+        }
+        [data-line] span {
+          background-color: light-dark(var(--diffs-token-light-bg, transparent), var(--diffs-token-dark-bg, transparent));
+        }
         [data-diff] {
           font-weight: var(--code-font-weight, 400);
           letter-spacing: 0;

@@ -7,7 +7,7 @@
   --review-secondary: #c3c2b7;
   --review-muted: #898781;
   --review-header: color-mix(in srgb, #fff 5%, var(--review-bg));
-  background: var(--review-bg);
+  background: color-mix(in srgb, var(--review-bg) calc(var(--panel-opacity) * 100%), transparent);
 }
 
 .theme-light .git-review-pane {
@@ -59,7 +59,7 @@
 }
 
 .review-file-header {
-  background: var(--review-header);
+  background: color-mix(in srgb, var(--review-header) calc(var(--panel-opacity) * 100%), transparent);
 }
 
 .review-file-toggle {
@@ -103,10 +103,14 @@
 }
 
 .review-stage-hunk {
-  background: var(--review-header);
+  background: color-mix(in srgb, var(--review-header) calc(var(--panel-opacity) * 100%), transparent);
 }
 
 /* Keep the comparison and actions visible when the review pane is narrow. */
 .git-review-pane[data-inline-below~="36"] .git-review-worktree {
   display: none;
+}
+
+.review-rail {
+  background: color-mix(in srgb, var(--color-card) calc(var(--panel-opacity) * 100%), transparent);
 }

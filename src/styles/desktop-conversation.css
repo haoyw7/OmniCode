@@ -22,7 +22,7 @@ html[data-skin] :where(.user-message-row:not(.mobile-desktop-transcript *)) .use
 html[data-skin] .question-dock {
   border-color: var(--color-composer-ring);
   border-radius: var(--desktop-radius-composer);
-  background: var(--color-composer);
+  background: color-mix(in srgb, var(--color-composer) calc(var(--panel-opacity) * 100%), transparent);
   color: var(--color-ink);
   box-shadow: var(--shadow-panel);
 }
@@ -164,7 +164,7 @@ html[data-skin] [data-session-surface-tabs] [data-session-tool-toggle][aria-pres
 html[data-skin] [data-session-status] [data-status-card] {
   border-color: var(--color-hairline);
   border-radius: var(--desktop-radius-card);
-  background: var(--color-card);
+  background: var(--desktop-panel-card);
 }
 
 html[data-skin] [data-question-card] {
@@ -367,9 +367,8 @@ html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] [data-ui="me
   padding: 12px;
   border: var(--desktop-border) solid var(--color-composer-ring);
   border-radius: var(--desktop-radius-composer);
-  background: var(--color-composer);
+  background: color-mix(in srgb, var(--color-composer) calc(var(--panel-opacity) * 100%), transparent);
   box-shadow: var(--desktop-shadow-composer);
-  backdrop-filter: none;
   transition: border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -693,7 +692,7 @@ html[data-skin][data-desktop-mode] [data-chat-tiles] > [data-pane-id]:not([data-
 /* Both modes share card frames, headers and transcript presentation. */
 html[data-skin][data-desktop-mode] .pane-card {
   border-radius: var(--desktop-radius-card);
-  background: var(--color-card);
+  background: var(--desktop-panel-card);
   border: var(--desktop-border) solid var(--color-composer-ring);
 }
 

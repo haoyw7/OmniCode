@@ -10,9 +10,9 @@ html[data-skin] :is(.modal-frame, .quick-open-panel) {
 
 html[data-skin] :is(.popover-frame, .modal-frame) > .popover-backdrop,
 html[data-skin] :is(.composer-popover, .quick-open-panel) {
-  background: var(--color-menu);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
+  background: var(--desktop-popover-fill);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -42,7 +42,11 @@ html[data-skin] :is(.popover-frame, .composer-popover, [data-slot="select-conten
   border-color: var(--color-hairline);
   box-shadow: var(--shadow-panel);
 }
-html[data-skin] [data-slot="popover-content"] { background: var(--color-menu); }
+html[data-skin] :is([data-slot="popover-content"], [data-slot="dialog-content"]) {
+  background: var(--desktop-popover-fill);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
 html[data-skin] :is(.popover-frame, .composer-popover) {
   max-width: calc(100vw - 32px);
   max-height: calc(100dvh - 32px);
@@ -89,7 +93,9 @@ html[data-skin] :is(.popover-frame:has([role="menu"], [role="listbox"], [data-me
   max-width: min(320px, calc(100vw - 16px));
   padding: 0;
   border: 0;
-  background: var(--color-menu);
+  background: var(--desktop-popover-fill);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   box-shadow: var(--shadow-panel) !important;
 }
 html[data-skin] :is(.composer-popover.composer-menu-panel, .popover-frame:has([data-model-picker])) {

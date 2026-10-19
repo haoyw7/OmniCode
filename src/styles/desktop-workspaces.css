@@ -21,7 +21,7 @@ html[data-skin] .app-view-dialog {
   margin: auto;
   border: 0;
   border-radius: var(--desktop-radius-dialog);
-  background: var(--color-card);
+  background: transparent;
   color: var(--color-ink);
   box-shadow: var(--shadow-panel);
 }
@@ -33,7 +33,7 @@ html[data-skin] [data-window-chrome-backdrop] {
 }
 
 html[data-skin] .app-view-dialog > .popover-backdrop {
-  display: none;
+  background: color-mix(in srgb, var(--color-card) calc(var(--panel-opacity) * var(--popover-opacity) * 100%), transparent);
 }
 
 html[data-skin] .app-view-dialog-close {
@@ -84,7 +84,9 @@ html[data-skin] [data-terminal-toolbar-actions] [data-ui="icon-button"] > svg {
 }
 
 /* Settings uses a centered, two-column surface with uncarded rows. */
-html[data-skin] [data-app-settings] { position: relative; background: var(--color-card); }
+html[data-skin] [data-app-settings] { position: relative; background: var(--desktop-panel-card); }
+/* The dialog's glass paints the surface once, behind both settings columns. */
+html[data-skin] .app-view-dialog [data-app-settings] { background: transparent; }
 html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar {
   position: absolute;
   inset: 12px 12px auto;
@@ -124,7 +126,7 @@ html[data-skin] .settings-nav {
   padding: 74px 12px 24px;
   gap: 24px;
   border-inline-end: var(--desktop-border) solid var(--color-hairline);
-  background: var(--color-panel);
+  background: var(--desktop-panel-fill);
 }
 html[data-skin] .settings-nav-group { gap: 1px; }
 html[data-skin] .settings-nav-group > div:first-child {
@@ -294,7 +296,7 @@ html[data-skin] [data-app-automations] { container: automations / inline-size; }
 }
 
 @media (max-width: 639px) {
-  html[data-skin] .settings-nav { width: 152px; padding-inline: 8px; background: var(--color-panel); border-inline-end: var(--desktop-border) solid var(--color-hairline); }
+  html[data-skin] .settings-nav { width: 152px; padding-inline: 8px; background: var(--desktop-panel-fill); border-inline-end: var(--desktop-border) solid var(--color-hairline); }
   html[data-skin] .settings-nav-item { padding-inline: 6px; gap: 8px; }
   html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar > div:last-child > .relative { width: 136px; left: -4px; }
   html[data-skin] .app-view-dialog [data-app-settings] > .desktop-toolbar > div:last-child > button { max-width: calc(100% - 192px); overflow: hidden; white-space: nowrap; }
@@ -381,3 +383,10 @@ html[data-reduced-motion="on"] .desktop-file-explorer-body { transition: none; }
 
 .desktop-file-breadcrumb-menu { display: flex; flex-direction: column; padding: 4px; }
 .desktop-file-breadcrumb-menu > div { height: auto; min-height: 28px; max-height: 100%; }
+
+html[data-skin] [data-git-changes-panel] .git-panel-header {
+  background: var(--desktop-panel-fill);
+}
+html[data-skin] [data-git-changes-panel] .git-commit-message {
+  background: var(--desktop-panel-card);
+}

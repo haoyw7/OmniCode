@@ -12,7 +12,7 @@ function editorThemeStyles(dark: boolean) {
   {
     "&": {
       height: "100%",
-      backgroundColor: "transparent",
+      backgroundColor: "color-mix(in srgb, var(--color-card) calc(var(--panel-opacity) * 100%), transparent)",
       color: "var(--color-content)",
       fontSize: "13px",
       userSelect: "text",

@@ -124,6 +124,15 @@ html[data-skin][data-desktop-mode] .desktop-mode-toggle svg {
 html[data-skin][data-desktop-mode] [data-window-drag-bar] {
   background: var(--color-panel);
 }
+html[data-skin][data-desktop-mode] [data-window-chrome] {
+  background-image: linear-gradient(
+    to right,
+    var(--desktop-sidebar-fill) calc(var(--desktop-sidebar-chrome-background-width, 0px) - 1px),
+    var(--color-sidebar-divider, transparent) calc(var(--desktop-sidebar-chrome-background-width, 0px) - 1px),
+    var(--color-sidebar-divider, transparent) var(--desktop-sidebar-chrome-background-width, 0px),
+    transparent var(--desktop-sidebar-chrome-background-width, 0px)
+  );
+}
 html[data-skin][data-desktop-mode] [data-window-session-header] [data-session-surface-tabs] {
   background: transparent;
   border: 0;

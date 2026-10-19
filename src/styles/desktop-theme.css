@@ -1,4 +1,12 @@
 /* Desktop semantic palette and utility color bindings. Layout belongs to each surface. */
+[data-skin] {
+  /* Surface fills keep the palette opaque and apply appearance preferences only where used. */
+  --desktop-sidebar-fill: color-mix(in srgb, var(--color-sidebar, var(--color-panel)) calc(var(--sidebar-opacity) * 100%), transparent);
+  --desktop-panel-card: color-mix(in srgb, var(--color-card) calc(var(--panel-opacity) * 100%), transparent);
+  --desktop-panel-fill: color-mix(in srgb, var(--color-panel) calc(var(--panel-opacity) * 100%), transparent);
+  --desktop-popover-fill: color-mix(in srgb, var(--color-menu) calc(var(--panel-opacity) * var(--popover-opacity) * 100%), transparent);
+}
+
 :root {
   --context-usage-messages: #2f80ed;
   --context-usage-tools: #f27337;
