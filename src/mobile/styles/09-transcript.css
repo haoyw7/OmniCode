@@ -48,6 +48,11 @@
 .mobile-desktop-transcript .markdown-code-shell {
   max-width: 100%;
 }
+.mobile-desktop-transcript .transcript-live-fold-title {
+  animation: none;
+  background-image: none;
+  color: var(--color-foreground-subtlest);
+}
 /* Touching live tool rows scrolls the conversation, not a nested desktop
    window. Keep the disclosure wrapper responsible for its closing clip. */
 .mobile-desktop-transcript .zen-phase-body .zen-phase-live {
