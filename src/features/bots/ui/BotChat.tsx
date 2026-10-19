@@ -1,6 +1,3 @@
-import { motion as motionElement } from "motion/react";
-import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
-import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
 import { botReadRevision, markBotRead } from "../model/botUnread";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import {
@@ -69,6 +66,7 @@ import { reducedMotionQuery } from "../../../shared/lib/reducedMotion";
 import { slidePromptIn } from "../../sessions/ui/promptLaunch";
 import { ArrowUp, X, Loader2, Sparkles } from "../../../shared/ui/icons";
 import { DesktopBotsNavigation, desktopBotsChrome } from "./DesktopBotsChrome";
+import { useBotNavigationLayout } from "./BotNavigationLayout";
 import { BotIdentitySettings } from "./BotIdentitySettings";
 import { BotAttachmentCard } from "./BotAttachmentCard";
 import { DesktopBotDetails } from "./DesktopBotDetails";
@@ -180,8 +178,6 @@ export function BotChat({
   desktopBots = false,
   cacheKey = hostKey,
   botNavigation,
-  threadTitle,
-  botThreadPicker,
   botPinControl,
   botSettings,
   botAvatarSupported = false,
@@ -205,8 +201,6 @@ export function BotChat({
   /** Storage identity is separate from the real Host identity used for navigation. */
   cacheKey?: string;
   botNavigation?: ReactNode;
-  threadTitle?: string;
-  botThreadPicker?: ReactNode;
   botPinControl?: ReactNode;
   /** Bot defaults stay separate from a thread's effective model override. */
   botSettings?: BotConfiguration;
@@ -226,6 +220,7 @@ export function BotChat({
 }) {
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
+  const navigationLayout = useBotNavigationLayout();
   const client = useMemo(
     () =>
       new BotClient(
@@ -923,6 +918,25 @@ export function BotChat({
   // Polling returns fresh view objects even when access policy is unchanged.
   const allowedProjectsKey = JSON.stringify(assistant?.policy.allowedProjects);
   const messageProjects = useMemo(() => assistant?.policy.allowedProjects, [allowedProjectsKey]);
+  const heading = (
+    <div className="assistant-heading" inert={settingsCovering} aria-hidden={settingsCovering || undefined}>
+      <Header
+        name={assistant?.name ?? t("Assistant")}
+        botIdentity={botsLayout && assistant ? botSettings ?? assistant : undefined}
+        harness={assistant?.harness}
+        hostName={hostName}
+        status={assistant ? t(labels[assistant.lifecycle]) : t(assistant === null ? "Set up assistant" : "Connecting…")}
+        lifecycle={assistant?.lifecycle}
+        activity={assistant?.lifecycle === "running" ? workingLabel : undefined}
+        settingsOpen={settingsOpen}
+        busy={busy}
+        onSettings={assistant ? openSettings : undefined}
+        onTimeline={mobile && timelineSupported && assistant?.policy.permissions["sessions.read"] ? () => showTimeline() : undefined}
+        onClose={onClose}
+        controls={controls}
+      />
+    </div>
+  );
   return (
     <TranscriptPlatformContext.Provider value={renderingPlatform}>
       {Feedback && <Feedback messages={messages} historyIds={client.historyMessageIds}
@@ -935,6 +949,7 @@ export function BotChat({
         data-layout={mobile ? "mobile" : "desktop"}
         data-bot-details={botsLayout ? settingsShown : undefined}
         data-fold-state={botsLayout ? detailsMotion.foldState : undefined}
+        {...(botsLayout ? navigationLayout : {})}
 
       >
         {botsLayout && (botNavigation ?? (
@@ -945,33 +960,7 @@ export function BotChat({
             onSelect={() => chat.current?.querySelector<HTMLTextAreaElement>(".assistant-conversation textarea")?.focus()}
           />
         ))}
-        <div
-          className="assistant-heading"
-          inert={settingsCovering}
-          aria-hidden={settingsCovering || undefined}
-        >
-          <Header
-            name={assistant?.name ?? t("Assistant")}
-            threadTitle={threadTitle}
-            botIdentity={botsLayout && assistant ? botSettings ?? assistant : undefined}
-            threadPicker={botsLayout ? botThreadPicker : undefined}
-            harness={assistant?.harness}
-            hostName={hostName}
-            status={
-              assistant
-                ? t(labels[assistant.lifecycle])
-                : t(assistant === null ? "Set up assistant" : "Connecting…")
-            }
-            lifecycle={assistant?.lifecycle}
-            activity={assistant?.lifecycle === "running" ? workingLabel : undefined}
-            settingsOpen={settingsOpen}
-            busy={busy}
-            onSettings={assistant ? openSettings : undefined}
-            onTimeline={mobile && timelineSupported && assistant?.policy.permissions["sessions.read"] ? () => showTimeline() : undefined}
-            onClose={onClose}
-            controls={controls}
-          />
-        </div>
+        {!botsLayout && heading}
         <div
           className="assistant-details"
           inert={settingsCovering}
@@ -1019,11 +1008,16 @@ export function BotChat({
             <span>{t(supported ? "Loading messages…" : "Connecting…")}</span>
           </div>
         ) : (
-          <motionElement.div
-      initial={false} animate={botsLayout ? { gridTemplateColumns: settingsShown ? "minmax(0, 1fr) minmax(0, var(--bots-inspector-width))" : "minmax(0, 1fr) minmax(0, 0px)" } : undefined} transition={motionPreferenceQuery().matches ? immediateTransition : panelTransition} onAnimationComplete={detailsMotion.finish}
+          <div
             className={`assistant-body${botsLayout ? " animated-collapse-size" : ""}`}
             data-bot-details={botsLayout ? settingsShown : undefined}
             data-bot-setup={botsLayout && !assistant || undefined}
+            onTransitionEnd={event => {
+              if (event.target === event.currentTarget && event.propertyName === "grid-template-columns") detailsMotion.finish();
+            }}
+            onTransitionCancel={event => {
+              if (event.target === event.currentTarget && event.propertyName === "grid-template-columns") detailsMotion.finish();
+            }}
           >
             {mobile && chrome?.Timeline && <chrome.Timeline
               open={timelineOpen && timelineSupported}
@@ -1052,6 +1046,7 @@ export function BotChat({
               >
               <BotSettings
                 key={`${cacheKey}:${settingsBase?.revision ?? "new"}`}
+                presentation={botsLayout && settingsBase ? "inspector" : undefined}
                 panel={botsLayout && botAutomation ? "settings" : "all"}
                 value={settingsBase}
                 catalog={catalog}
@@ -1118,6 +1113,7 @@ export function BotChat({
                 inert={settingsCovering}
                 aria-hidden={settingsCovering || undefined}
               >
+                {botsLayout && heading}
                 <Controls {...controls} />
                 {botsLayout && <AnimatedCollapse expanded={awayFromBottom && newMessages.length > 0} className="desktop-bots-new-messages">
                   <div><button type="button" onClick={jumpToLatest}><ArrowUp size={14} />{t("{count} new messages", { count: retainedNewCount.current })}</button><button type="button" aria-label={t("Dismiss")} onClick={() => setReadThrough(latestRevision)}><X size={13} /></button></div>
@@ -1278,7 +1274,7 @@ export function BotChat({
                 />
               </div>
             )}
-          </motionElement.div>
+          </div>
         )}
         <MessageMenu
           open={!!replyMenu.menu}

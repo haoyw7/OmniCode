@@ -3,6 +3,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { DesktopBots } from "./DesktopBots";
+import { selectBotThread } from "../model/botSelection";
 import { fullBotPolicy, type BotMessage } from "../model/botView";
 import { configureSharedHost, remoteProjectFor } from "../../connections/model/remoteProjects";
 import { setSharedSessionBackend } from "../../sessions/data/sharedSessionBackend";
@@ -200,8 +201,7 @@ it("separates same-ID attachment copies across Bot threads and reuses each threa
   await open(); await open();
   expect(requests("attachments.read")).toHaveLength(1);
   expect(mocks.openFile).toHaveBeenLastCalledWith("/local/A.txt");
-  act(() => active().querySelector<HTMLButtonElement>('[aria-label="Switch thread"]')!.click()); await flush();
-  act(() => active().querySelector<HTMLButtonElement>('[aria-label="A-2"]')!.click()); await flush();
+  act(() => selectBotThread("host", { botId: "A", threadId: "A-2" })); await flush();
   await open();
   expect(mocks.openFile).toHaveBeenLastCalledWith("/local/C.txt");
   act(() => active().querySelector<HTMLButtonElement>('[aria-label="B"]')!.click()); await flush();
@@ -213,8 +213,7 @@ it("separates same-ID attachment copies across Bot threads and reuses each threa
   ]);
   expect(mocks.openFile).toHaveBeenLastCalledWith("/local/B.txt");
   act(() => active().querySelector<HTMLButtonElement>('[title="A"]')!.click()); await flush();
-  act(() => active().querySelector<HTMLButtonElement>('[aria-label="Switch thread"]')!.click()); await flush();
-  act(() => active().querySelector<HTMLButtonElement>('[aria-label="A-1"]')!.click()); await flush();
+  act(() => selectBotThread("host", { botId: "A", threadId: "A-1" })); await flush();
   await open();
   expect(requests("attachments.read")).toHaveLength(3);
   expect(mocks.openFile).toHaveBeenLastCalledWith("/local/A.txt");

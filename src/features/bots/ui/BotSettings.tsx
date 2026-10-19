@@ -46,6 +46,7 @@ import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { reducedMotionQuery } from "../../../shared/lib/reducedMotion";
 import { BotMemoryEditor } from "./BotMemory";
 import { BotMemoryDialog } from "./BotMemoryDialog";
+import { BotSettingsDialog } from "./BotSettingsDialog";
 import { BotImSettings } from "./BotImSettings";
 import { BotHabits, type HabitControl } from "./BotHabits";
 import type { BotHabit } from "../model/botHabits";
@@ -186,19 +187,22 @@ const unitFor = (minutes: number): number =>
 function Section({
   title,
   hint,
+  card = false,
+  kind,
   children,
 }: {
   title: string;
   hint?: string;
+  card?: boolean;
+  kind?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="assistant-settings-section">
+    <section className={`assistant-settings-section${card ? " desktop-bot-setting-group" : ""}`} data-section={kind}>
       <header>
         <h3>{title}</h3>
       </header>
-      {hint && <p>{hint}</p>}
-      {children}
+      {card ? <div className="desktop-bot-setting-card">{hint && <p>{hint}</p>}{children}</div> : <>{hint && <p>{hint}</p>}{children}</>}
     </section>
   );
 }
@@ -208,15 +212,22 @@ function CollapsibleSection({
   summary,
   open,
   onToggle,
+  dialog,
   children,
 }: {
   title: string;
   summary?: string;
   open: boolean;
   onToggle: () => void;
+  dialog?: { onCancel: () => void; onApply: () => void; busy: boolean };
   /** A factory defers content until the section first opens. */
   children: ReactNode | (() => ReactNode);
 }) {
+  if (dialog) return <section className="assistant-settings-section" data-dialog="true">
+    <BotSettingsDialog title={title} summary={summary ?? ""} open={open} onOpen={onToggle} {...dialog}>
+      {typeof children === "function" ? open && children() : children}
+    </BotSettingsDialog>
+  </section>;
   return (
     <section className="assistant-settings-section" data-open={open}>
       <button
@@ -265,8 +276,9 @@ const SelectSlot = createContext<
 
 function Picker({
   mobile,
+  compact = false,
   ...props
-}: BotSelectProps & { mobile: boolean }) {
+}: BotSelectProps & { mobile: boolean; compact?: boolean }) {
   const Custom = useContext(SelectSlot);
   const {
     label,
@@ -285,7 +297,8 @@ function Picker({
       <div className="assistant-field assistant-picker">
         {!hideLabel && <span className="assistant-field-label">{label}</span>}
         <SearchableSelect
-          variant="transparent"
+          variant={compact ? "pill" : "transparent"}
+          className="assistant-picker-control"
           label={label}
           value={value}
           options={options}
@@ -340,6 +353,7 @@ export function BotSettings({
   autonomySupported = false,
   mobile = false,
   panel = "all",
+  presentation,
   submitLabel,
   Select,
   MemoryDetail = BotMemoryDialog,
@@ -380,9 +394,11 @@ export function BotSettings({
   mobile?: boolean;
   /** Desktop detail tabs may split configuration; mobile retains the full form. */
   panel?: "all" | "settings" | "automation";
+  presentation?: "inspector";
   submitLabel?: string;
 }) {
   const { t } = useTranslation();
+  const inspector = !mobile && presentation === "inspector";
   const section = mobile ? "all" : panel;
   const [initialDraft] = useState<BotPatch>(
     () =>
@@ -397,6 +413,9 @@ export function BotSettings({
       },
   );
   const [draft, setDraft] = useState<BotPatch>(initialDraft);
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const dialogDraft = useRef(draft);
+  const cancelDialog = () => setDraft(dialogDraft.current);
   // Permissions and wakeups default sensibly, so they stay folded away.
   const [permissionsOpen, setPermissionsOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
@@ -649,7 +668,15 @@ export function BotSettings({
           : t("{count} projects", { count: policy.allowedProjects.length })
       }`}
       open={permissionsOpen}
-      onToggle={() => setPermissionsOpen((v) => !v)}
+      onToggle={() => {
+        if (inspector) dialogDraft.current = draft;
+        setPermissionsOpen((v) => !v);
+      }}
+      dialog={inspector ? {
+        busy,
+        onCancel: () => { cancelDialog(); setPermissionsOpen(false); },
+        onApply: () => setPermissionsOpen(false),
+      } : undefined}
     >
       <div className="assistant-settings-row">
         {(["runtimeMode", "targetRuntimeMode"] as const).map((key) => (
@@ -1096,6 +1123,85 @@ export function BotSettings({
     </CollapsibleSection>
   );
 
+  const identityFields = <>
+      {!inspector && <label>
+        {t("Assistant name")}
+        <Input
+          value={draft.name ?? ""}
+          aria-invalid={!!errors.name || undefined}
+          onChange={(e) => patch({ name: e.target.value })}
+        />
+        {fieldError(errors.name)}
+      </label>}
+      {personaSupported && (
+        <>
+          <label>
+            {t("What should it call you?")}
+            <Input
+              value={persona.userName ?? ""}
+              maxLength={100}
+              onChange={(e) =>
+                patch({
+                  persona: { ...persona, userName: e.target.value },
+                })
+              }
+            />
+          </label>
+          <div className="assistant-field">
+            <span className="assistant-field-label">
+              {t("Personality")}
+            </span>
+            <div
+              className="assistant-chips"
+              role="radiogroup"
+              aria-label={t("Personality")}
+            >
+              {BOT_PERSONA_PRESETS.map((preset) => (
+                <label className="assistant-chip" key={preset}>
+                  <input
+                    type="radio"
+                    name="assistant-persona"
+                    checked={persona.preset === preset}
+                    onChange={() =>
+                      patch({ persona: { ...persona, preset } })
+                    }
+                  />
+                  <span>{t(personaLabels[preset])}</span>
+                </label>
+              ))}
+            </div>
+            <small>{t(personaHints[persona.preset])}</small>
+          </div>
+          <label>
+            {t("Personality and tone")}
+            <textarea data-ui="textarea"
+              value={persona.style}
+              maxLength={4000}
+              aria-invalid={!!errors.persona || undefined}
+              placeholder={t(
+                "Optional, for example: speak Chinese, be a little humorous, keep replies under three sentences.",
+              )}
+              onChange={(e) =>
+                patch({ persona: { ...persona, style: e.target.value } })
+              }
+            />
+            {fieldError(errors.persona)}
+          </label>
+        </>
+      )}
+  </>;
+  const identitySection = inspector && !personaSupported ? null : (
+    <Section title={t(inspector ? "Instructions" : "Assistant")} card={inspector} kind="identity">
+      {inspector ? <BotSettingsDialog title={t("Personality and tone")} summary={t(personaLabels[persona.preset])} preview={persona.style || t(personaHints[persona.preset])}
+        size="sm" open={instructionsOpen} busy={busy} invalid={!!errors.persona}
+        onOpen={() => { dialogDraft.current = draft; setInstructionsOpen(true); }}
+        onCancel={() => { cancelDialog(); setInstructionsOpen(false); }}
+        onApply={() => setInstructionsOpen(false)}>
+        {identityFields}
+      </BotSettingsDialog> : identityFields}
+    </Section>
+  );
+
   return (
     <SelectSlot.Provider value={Select}>
       <form
@@ -1103,6 +1209,8 @@ export function BotSettings({
         className="assistant-settings"
         noValidate
         data-layout={mobile ? "mobile" : "desktop"}
+        data-presentation={inspector ? "inspector" : undefined}
+        inert={inspector && (instructionsOpen || permissionsOpen)}
         onSubmit={(event) => {
           event.preventDefault();
           if (!canSave) return;
@@ -1111,77 +1219,13 @@ export function BotSettings({
         }}
       >
         <div className="assistant-settings-body">
-          {section !== "automation" && <><Section title={t("Assistant")}>
-            <label>
-              {t("Assistant name")}
-              <Input
-                value={draft.name ?? ""}
-                aria-invalid={!!errors.name || undefined}
-                onChange={(e) => patch({ name: e.target.value })}
-              />
-              {fieldError(errors.name)}
-            </label>
-            {personaSupported && (
-              <>
-                <label>
-                  {t("What should it call you?")}
-                  <Input
-                    value={persona.userName ?? ""}
-                    maxLength={100}
-                    onChange={(e) =>
-                      patch({
-                        persona: { ...persona, userName: e.target.value },
-                      })
-                    }
-                  />
-                </label>
-                <div className="assistant-field">
-                  <span className="assistant-field-label">
-                    {t("Personality")}
-                  </span>
-                  <div
-                    className="assistant-chips"
-                    role="radiogroup"
-                    aria-label={t("Personality")}
-                  >
-                    {BOT_PERSONA_PRESETS.map((preset) => (
-                      <label className="assistant-chip" key={preset}>
-                        <input
-                          type="radio"
-                          name="assistant-persona"
-                          checked={persona.preset === preset}
-                          onChange={() =>
-                            patch({ persona: { ...persona, preset } })
-                          }
-                        />
-                        <span>{t(personaLabels[preset])}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <small>{t(personaHints[persona.preset])}</small>
-                </div>
-                <label>
-                  {t("Personality and tone")}
-                  <textarea data-ui="textarea"
-                    value={persona.style}
-                    maxLength={4000}
-                    aria-invalid={!!errors.persona || undefined}
-                    placeholder={t(
-                      "Optional, for example: speak Chinese, be a little humorous, keep replies under three sentences.",
-                    )}
-                    onChange={(e) =>
-                      patch({ persona: { ...persona, style: e.target.value } })
-                    }
-                  />
-                  {fieldError(errors.persona)}
-                </label>
-              </>
-            )}
-          </Section>
-          <Section title={t("Model")}>
+          {section !== "automation" && <>{!inspector && identitySection}
+          <Section title={t("Model")} card={inspector} kind="model">
             <div className="assistant-settings-row">
               <Picker
                 mobile={mobile}
+                compact={inspector}
+                hideLabel={inspector}
                 label={t("Agent")}
                 value={draft.harness ?? ""}
                 disabled={loadingCatalog || !harnesses.length}
@@ -1202,6 +1246,8 @@ export function BotSettings({
               />
               <Picker
                 mobile={mobile}
+                compact={inspector}
+                hideLabel={inspector}
                 label={t("Model")}
                 value={draft.model ?? ""}
                 disabled={loadingCatalog || !models.length}
@@ -1215,13 +1261,15 @@ export function BotSettings({
               />
               <Picker
                 mobile={mobile}
+                compact={inspector}
+                hideLabel={inspector}
                 label={t("Reasoning effort")}
                 value={
                   reasoning
                     ? (draft.modelSettings?.[reasoning.id] ?? reasoning.value)
                     : ""
                 }
-                disabled={loadingCatalog || !reasoning?.options.length}
+                disabled={busy || loadingCatalog || !reasoning?.options.length}
                 placeholder={t(
                   loadingCatalog ? "Loading models…" : "Unavailable",
                 )}
@@ -1263,6 +1311,7 @@ export function BotSettings({
               <small className="assistant-field-error">{harnessError}</small>
             ) : null}
           </Section>
+          {inspector && identitySection}
           {permissionsSection}</>}
           {section !== "settings" && wakeupsSection}
           {section !== "automation" && memory && (

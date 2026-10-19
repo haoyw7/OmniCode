@@ -9,6 +9,10 @@
 }
 
 html[data-skin] {
+  --color-bot-user: var(--color-accent);
+  --color-bot-user-ink: var(--color-accent-ink);
+  --color-bot-assistant: color-mix(in srgb, var(--color-content) 7%, var(--color-background-base));
+  --shadow-bot-composer: 0 2px 12px color-mix(in srgb, var(--color-content) 5%, transparent);
   --color-omi-face: #20231e;
   --color-omi-violet: #b8a0ed;
   --color-omi-blue: #8ab8e8;
@@ -18,6 +22,7 @@ html[data-skin] {
   --color-omi-green: #9dc58a;
 }
 html[data-skin].theme-light {
+  --color-bot-assistant: #f2f2f3;
   --color-omi-face: #ffffff;
   --color-omi-violet: #7958ad;
   --color-omi-blue: #3c72ab;
@@ -470,6 +475,9 @@ html[data-skin] {
 .desktop-skin-scene-user { background: var(--color-bubble-user); }
 .desktop-skin-scene-composer { background: var(--color-composer); border-color: var(--color-composer-ring); }
 .desktop-skin-scene-composer > span { background: var(--color-accent); }
+
+.desktop-bot-settings-dialog { background: var(--color-panel); color: var(--color-ink); border-color: var(--color-hairline); }
+.desktop-bot-dialog-footer { background: var(--color-panel); }
 
 /* Explicit accent choices override every palette without changing its surfaces. */
 html.has-user-accent[data-skin] {

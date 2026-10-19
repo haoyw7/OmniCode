@@ -77,8 +77,10 @@ export function BotIdentitySettings({ bot, busy, onSave, children, avatarSupport
         </div>
       </AnimatedCollapse>
     </div> : <BotAvatar bot={{ id: bot.id, avatar }} size={96} />}
-    <label>{t("Name")}<Input value={name} maxLength={100} required disabled={busy} onChange={event => setName(event.target.value)} /></label>
-    <Button variant="primary" type="submit" disabled={busy || !changed || !name.trim() || [...avatar].length > 8}>{t("Save")}</Button>
+    <label className="desktop-bot-identity-name"><span className="sr-only">{t("Name")}</span><Input value={name} maxLength={100} required disabled={busy} onChange={event => setName(event.target.value)} /></label>
+    <AnimatedCollapse expanded={changed} className="desktop-bot-identity-save">
+      <Button variant="primary" type="submit" disabled={busy || !changed || !name.trim() || [...avatar].length > 8}>{t("Save")}</Button>
+    </AnimatedCollapse>
     {children}
   </form>;
 }

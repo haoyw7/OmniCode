@@ -70,10 +70,15 @@ it("refreshes loaded older activity through shifting cursors and stops polling w
 it("returns from subpages with Escape, preserves visited drafts, and disables hidden activity", async () => {
   function Visible() { return createElement("span", null, useSurfaceVisibility() ? "active" : "hidden"); }
   act(() => root.render(createElement(DesktopBotDetails, { identity: createElement("input", { defaultValue: "draft" }), children: createElement("p", null, "runtime"), memory: createElement("p", null, "memory"), activity: createElement(Visible) })));
-  act(() => button("Activity").click()); expect(node.textContent).toContain("active");
+  act(() => button("Settings").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+  await flush();
+  act(() => button("Activity").click()); await flush(); expect(node.textContent).toContain("active");
   expect(node.querySelector<HTMLElement>('[data-root="true"]')!.inert).toBe(true);
   act(() => node.querySelector("h3")!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await flush();
   expect(node.textContent).toContain("hidden"); expect(node.querySelector("input")!.value).toBe("draft");
+  act(() => button("Details").dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+  await flush();
   expect(node.querySelector<HTMLElement>('[data-root="true"]')!.inert).toBe(false);
 });
 

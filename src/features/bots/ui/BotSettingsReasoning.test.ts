@@ -58,3 +58,22 @@ it.each(["pi", "omp", "codex"] as const)("saves %s reasoning and resets unsuppor
   await act(async () => node.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
   expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ model: "plain", modelSettings: {} }));
 });
+
+it.each(["pi", "omp", "codex"] as const)("saves the inspector's compact %s reasoning using the provider's setting ID", async (harness) => {
+  const settingId = harness === "codex" ? "reasoningEffort" : "thinking";
+  const catalog: HostModelCatalog = { models: { [harness]: [{ id: "full", name: "Full", harness, settings: [{
+    id: settingId, label: "Reasoning", kind: "select", value: "high",
+    options: [{ value: "low", label: "Low" }, { value: "high", label: "High" }],
+  }] }] }, errors: {} };
+  const save = vi.fn(async () => {});
+  act(() => root.render(createElement(BotSettings, {
+    value: null, catalog, projects: [], busy: false, presentation: "inspector", onSave: save,
+  })));
+  const picker = () => node.querySelector<HTMLButtonElement>('button[aria-label^="Reasoning effort:"]')!;
+  expect(picker().getAttribute("aria-label")).toBe("Reasoning effort: High");
+  await act(async () => picker().click());
+  await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[role="option"]')].find(option => option.textContent === "Low")!.click());
+  expect(picker().getAttribute("aria-label")).toBe("Reasoning effort: Low");
+  await act(async () => node.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
+  expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ harness, modelSettings: { [settingId]: "low" } }));
+});

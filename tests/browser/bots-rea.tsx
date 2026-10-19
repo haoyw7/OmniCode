@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BotMemoryDialog } from "../../src/features/bots/ui/BotMemoryDialog";
 import { createRoot } from "react-dom/client";
 import { DesktopBotsWorkspace } from "../../src/features/bots/ui/DesktopBotsWorkspace";
-import { fullBotPolicy, type BotMessage } from "../../src/features/bots/model/botView";
+import { defaultBotPersona, fullBotPolicy, type BotMessage } from "../../src/features/bots/model/botView";
 import type { BotView, BotThread } from "../../src/features/bots/model/bots";
 import type { BotRpc } from "../../src/features/bots/model/botRpc";
 import { setUiLanguage } from "../../src/shared/i18n/language";
@@ -19,6 +19,7 @@ const bots: BotView[] = Array.from({ length: 60 }, (_, i) => ({
   harness: "codex", model: "default", modelSettings: {}, runtimeMode: "full-access", targetRuntimeMode: "full-access",
   policy: fullBotPolicy(), policyVersion: 1, triggers: { user: true, event: false, schedule: false },
   schedules: [], watches: [], maxAutoTurns: 8, chainWindowMinutes: 15, brainGeneration: 1,
+  persona: defaultBotPersona(),
 }));
 const threads: BotThread[] = bots.map((bot, i) => ({ botId: bot.id, id: bot.defaultThreadId, title: i ? "Planning" : "Interface review", kind: "direct", createdAt: now, updatedAt: now, revision: 1, lifecycle: "idle", chatRevision: 6 }));
 let revision = 6;
@@ -33,7 +34,7 @@ let entries: BotMessage[] = [
 const view = (id: string) => { const thread = threads.find(t => t.id === id) ?? threads[0]; return { ...bots.find(b => b.id === thread.botId)!, botId: thread.botId, threadId: id, title: thread.title, chatRevision: revision }; };
 const rpc: BotRpc = async (method, params = {}) => {
  const p = params as Record<string, any>;
- if (method === "environment.describe") return { capabilities: ["assistant.v1", "assistant.history", "bots.shell.v1", "bots.v1", "bots.management.v1", "bots.runtime.v1", ...(query.has("collaboration") ? ["bots.teams.v1", "bots.rooms.v1"] : [])] } as never;
+ if (method === "environment.describe") return { capabilities: ["assistant.v1", "assistant.history", "assistant.persona", "botMemory.v1", "bots.shell.v1", "bots.v1", "bots.management.v1", "bots.runtime.v1", ...(query.has("collaboration") ? ["bots.teams.v1", "bots.rooms.v1"] : [])] } as never;
  if (method === "botTeams.list") return { revision: 1, teams: [{ id: "design-team", name: "Design team", memberBotIds: bots.slice(0, 4).map(bot => bot.id), chiefBotId: bots[0].id, revision: 1, createdAt: now, updatedAt: now }] } as never;
  if (method === "botRooms.list") return { revision: 1, rooms: [{ id: "design-room", name: "Design reviews", memberIds: bots.slice(0, 4).map(bot => bot.id), memberTimeoutMs: 240000, revision: 1, chatRevision: 0, activityRevision: 0, createdAt: now, updatedAt: now }] } as never;
  if (method === "bots.list") return { revision: 1, bots, threads, defaultBotId: bots[0].id, defaultThreadId: threads[0].id } as never;
@@ -46,7 +47,9 @@ const rpc: BotRpc = async (method, params = {}) => {
  }
  if (method === "botThreads.get") return view(p.threadId) as never;
  if (method === "botThreads.messages") return { assistant: view(p.threadId), entries: p.threadId !== "thread-0" ? [] : p.latest ? entries.slice(-p.limit) : entries.filter(m => m.revision > (p.afterRevision ?? 0)), nextRevision: revision, hasMore: false } as never;
- if (method === "models.list") return { models: { codex: [{ id: "default", name: "Default" }] }, errors: {} } as never;
+ if (method === "models.list") return { models: { codex: [{ id: "default", name: "Default", settings: [{ id: "reasoningEffort", label: "Reasoning effort", kind: "select", value: "medium", options: [{ value: "low", label: "Low" }, { value: "medium", label: "Medium" }, { value: "high", label: "High" }, { value: "xhigh", label: "Extra high" }] }] }] }, errors: {} } as never;
+ if (method === "botMemory.list") return { revision: 1, files: [], topicLimit: 100, topicsTruncated: false } as never;
+ if (method === "botMemory.read") return { path: p.path, text: "Synthetic Bot instructions", kind: "resident", revision: 1, hash: "fixture", bytes: 26, updatedAt: now } as never;
  if (method === "projects.list") return [] as never;
  if (method === "botThreads.control") return { accepted: true } as never;
  if (method === "botThreads.send") { if (query.has("error")) throw new Error("Synthetic offline delivery failure"); entries = [...entries, { id: `sent-${++revision}`, kind: "user", text: p.text, revision, createdAt: now + revision * 1000 }]; return { accepted: true } as never; }

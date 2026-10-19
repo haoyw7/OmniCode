@@ -1,4 +1,5 @@
 import { IconButton } from "../../../shared/ui/forms/IconButton";
+import { Button } from "../../../shared/ui/forms/Button";
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
@@ -9,12 +10,13 @@ import { desktopBotsLegacyChrome, DesktopBotsComposer } from "./DesktopBotsLegac
 import { AnimatedCollapse, useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { Bot, ChevronRight, Plus, Pause, Play, Search, Settings, Square } from "../../../shared/ui/icons";
+import { Bot, ChevronRight, MoreHorizontal, Pause, Play, Search, Square, X } from "../../../shared/ui/icons";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../../../shared/ui/primitives/DropdownMenu";
+import { BotNavigationToggle } from "./BotNavigationLayout";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import { sessionDisplayTitle } from "../../sessions/model/session";
 
 import { BotAvatar } from "./BotAvatar";
-import type { BotThread, BotView } from "../model/bots";
 
 /** The first shell shows only the Host's existing assistant and its real chat. */
 export function DesktopBotsNavigation({ hostName, assistant, messages, onSelect }: {
@@ -85,62 +87,32 @@ export function DesktopBotsNavigation({ hostName, assistant, messages, onSelect 
   );
 }
 
-export function BotThreadSwitcher({ bot, threads, selected, onSelect, onNew }: {
-  bot: BotView; threads: BotThread[]; selected: string; onSelect: (thread: BotThread) => void; onNew: () => void;
-}) {
-  const { t } = useTranslation(), visible = useSurfaceVisibility();
-  const [open, setOpen] = useState(false);
-  const container = useRef<HTMLDivElement>(null), trigger = useRef<HTMLButtonElement>(null);
-  const current = threads.find(thread => thread.id === selected);
-  const harness = current?.modelOverride?.harness ?? bot.harness;
-  const title = sessionDisplayTitle(current?.title ?? "", harness).trim() || t("Main thread");
-  useEffect(() => { if (!visible) setOpen(false); }, [visible]);
-  useEffect(() => {
-    if (!open) return;
-    const outside = (event: PointerEvent) => { if (!container.current?.contains(event.target as Node)) setOpen(false); };
-    document.addEventListener("pointerdown", outside);
-    return () => document.removeEventListener("pointerdown", outside);
-  }, [open]);
-  return <div ref={container} className="desktop-bots-thread-picker" onKeyDown={event => {
-    if (event.key === "Escape" && open) { event.preventDefault(); event.stopPropagation(); setOpen(false); trigger.current?.focus(); }
-    if (open && ["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
-      event.preventDefault();
-      const items = [...container.current!.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')];
-      const index = items.indexOf(document.activeElement as HTMLButtonElement);
-      items[event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (index + (event.key === "ArrowDown" ? 1 : items.length - 1)) % items.length]?.focus();
-    }
-  }}>
-    <button ref={trigger} type="button" className="desktop-bots-thread-trigger" aria-label={t("Switch thread")} title={title} aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen(value => !value)}>
-      <HarnessIcon harness={harness} className="size-3.5 shrink-0" /><span>{title}</span><ChevronRight size={12} />
-    </button>
-    <AnimatedCollapse expanded={open && visible} className="desktop-bots-thread-popover">
-      <div role="menu" aria-label={t("Threads")}>
-        {threads.map(thread => {
-          const provider = thread.modelOverride?.harness ?? bot.harness;
-          const label = sessionDisplayTitle(thread.title, provider).trim() || t("Main thread");
-          return <button type="button" role="menuitem" key={thread.id} aria-label={label} aria-current={selected === thread.id ? "page" : undefined} onClick={() => { setOpen(false); onSelect(thread); }}>
-            <HarnessIcon harness={provider} className="size-4 shrink-0" /><span>{label}</span>
-          </button>;
-        })}
-        <button type="button" role="menuitem" aria-label={t("New thread")} onClick={() => { setOpen(false); onNew(); }}><Plus size={16} /><span>{t("New conversation")}</span></button>
-      </div>
-    </AnimatedCollapse>
-  </div>;
-}
-
-function DesktopBotsHeader({ name, botIdentity, threadPicker, threadTitle, harness, status, lifecycle, busy, settingsOpen, onSettings, controls }: BotHeaderProps) {
+function DesktopBotsHeader({ name, botIdentity, status, lifecycle, busy, settingsOpen, onSettings, controls }: BotHeaderProps) {
   const { t } = useTranslation();
-  const title = threadTitle && harness ? sessionDisplayTitle(threadTitle, harness) : threadTitle;
+  const visible = useSurfaceVisibility();
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => { if (!visible) setMenuOpen(false); }, [visible]);
   return <header className="assistant-header desktop-bots-header">
-    <BotAvatar bot={botIdentity ?? { id: name }} size={28} />
-    <div className="desktop-bots-header-title"><strong>{name}</strong>{threadPicker ?? <span>{title?.trim() ? title : t("Main thread")}</span>}</div>
-    {lifecycle && lifecycle !== "idle" && <span className="assistant-status desktop-bots-run-status" data-lifecycle={lifecycle}>{status}</span>}
+    <div className="desktop-bots-header-navigation"><BotNavigationToggle /></div>
+    <Button variant="ghost" size="xl" className="desktop-bots-bot-capsule" aria-label={t("Bot details")}
+      aria-expanded={settingsOpen} onClick={onSettings} disabled={!onSettings} title={name}>
+      <BotAvatar bot={botIdentity ?? { id: name }} size={24} />
+      <span className="desktop-bots-header-title"><strong>{name}</strong></span>
+      {lifecycle && lifecycle !== "idle" && <span className="desktop-bots-capsule-status" data-lifecycle={lifecycle} role="status" aria-label={status} title={status} />}
+      <ChevronRight size={15} aria-hidden="true" />
+    </Button>
     <div className="assistant-header-actions">
-      {controls && <>
-        <IconButton type="button" className="assistant-icon-button" disabled={busy} label={t(controls.continuable ? "Continue" : "Pause")} onClick={controls.onToggle}>{controls.continuable ? <Play size={15} /> : <Pause size={15} />}</IconButton>
-        <IconButton type="button" className="assistant-icon-button assistant-danger" disabled={busy || !controls.enabled} label={t("Disable assistant")} onClick={controls.onDisable}><Square size={14} /></IconButton>
-      </>}
-      {onSettings && <IconButton type="button" className="assistant-icon-button" label={t("Bot details")} aria-expanded={settingsOpen} onClick={onSettings}><Settings size={17} /></IconButton>}
+      {controls && <DropdownMenu open={menuOpen && visible} onOpenChange={setMenuOpen}>
+        <DropdownMenuTrigger asChild><IconButton size="sm" label={t("Bot actions")} active={menuOpen}><MoreHorizontal size={18} /></IconButton></DropdownMenuTrigger>
+        <DropdownMenuContent align="end" aria-label={t("Bot actions")}>
+          <DropdownMenuItem disabled={busy} onSelect={controls.onToggle}>
+            {controls.continuable ? <Play size={15} /> : <Pause size={15} />}{t(controls.continuable ? "Continue" : "Pause")}
+          </DropdownMenuItem>
+          <DropdownMenuItem disabled={busy || !controls.enabled} onSelect={controls.onDisable}>
+            <Square size={14} />{t("Disable assistant")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>}
     </div>
   </header>;
 }
@@ -185,7 +157,7 @@ function DesktopBotsSettingsPanel({ open, initialSetup, onClose, children }: Bot
         <header className="desktop-bots-inspector-header">
           {initialSetup && <strong>{t("Set up assistant")}</strong>}
           {!initialSetup && <IconButton type="button" className="assistant-icon-button" onClick={onClose}
-            label={t("Hide bot details")}><span aria-hidden="true">»</span></IconButton>}
+            label={t("Hide bot details")}><X size={18} /></IconButton>}
         </header>
         <div className="assistant-settings-content">{children}</div>
       </>}

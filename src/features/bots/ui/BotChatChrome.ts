@@ -6,9 +6,7 @@ import type { BotLifecycle, BotMessage, SessionReference } from "../model/botVie
 /** Presentation slots keep Host state and command ownership in AssistantChat. */
 export type BotHeaderProps = {
   name: string;
-  threadTitle?: string;
   botIdentity?: { id: string; avatar?: string };
-  threadPicker?: ReactNode;
   hostName: string;
   harness?: RemoteProvider;
   status: string;

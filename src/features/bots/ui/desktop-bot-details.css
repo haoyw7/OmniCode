@@ -1,4 +1,39 @@
-.assistant-chat.desktop-bots-workspace .desktop-bots-details-tabs > [role="tablist"] { flex-wrap: wrap; }
+.assistant-chat.desktop-bots-workspace .desktop-bots-details-tabs { align-items: center; flex-shrink: 0; padding: 8px var(--desktop-bot-editor-inset, 24px) 16px; }
+.assistant-chat.desktop-bots-workspace .desktop-bots-details-tabs [data-slot="tabs-list"] { gap: 4px; width: 100%; height: auto; padding: 0; background: transparent; }
+.assistant-chat.desktop-bots-workspace .desktop-bots-details-tabs [data-slot="tabs-trigger"] { min-width: 0; padding: 8px; border-radius: 999px; font-size: var(--text-ui-sm); }
+.assistant-chat.desktop-bots-workspace .desktop-bots-details-tabs [data-slot="tabs-trigger"][data-state="active"] { background: var(--color-surface-hover); color: var(--color-foreground); }
+.assistant-chat.desktop-bots-workspace .desktop-bots-details-tabs [data-slot="tabs-trigger"] > [aria-hidden] { background: var(--color-surface-hover); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-details-heading { position: sticky; top: 0; z-index: 1; background: var(--color-surface); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-settings-links [data-ui="button"] { min-height: 48px; padding-inline: 16px; border-radius: 0; background: var(--color-background-base); white-space: normal; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-settings-links [data-ui="button"]:first-child { border-start-start-radius: var(--bots-card-radius); border-start-end-radius: var(--bots-card-radius); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-settings-links [data-ui="button"]:last-child { border-end-start-radius: var(--bots-card-radius); border-end-end-radius: var(--bots-card-radius); }
+.assistant-chat.desktop-bots-workspace .assistant-settings[data-presentation="inspector"] { min-height: 100%; }
+.assistant-chat.desktop-bots-workspace .assistant-settings[data-presentation="inspector"] .assistant-settings-body { display: flex; flex-direction: column; flex: none; overflow: visible; gap: 24px; padding: 8px var(--desktop-bot-editor-inset, 24px) 24px; }
+.assistant-chat.desktop-bots-workspace .assistant-settings[data-presentation="inspector"] .desktop-bot-setting-group { padding: 0; border: 0; gap: 10px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-setting-group > header { padding-inline: 4px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-setting-group > header h3 { color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); font-weight: var(--font-weight-normal); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-setting-card { display: grid; min-width: 0; gap: 16px; padding: 16px; border: 1px solid var(--color-stroke); border-radius: var(--bots-card-radius); background: var(--color-background-base); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-setting-card .assistant-settings-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr); gap: 8px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-setting-card .assistant-picker { display: block; min-width: 0; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-setting-card .assistant-picker-control { display: flex; width: 100%; max-width: 100%; min-width: 0; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-setting-card [data-desktop-select-trigger] { width: 100%; max-width: 100%; min-width: 0; border-radius: 999px; background: var(--color-surface-hover); }
+.assistant-chat.desktop-bots-workspace .assistant-settings[data-presentation="inspector"] .assistant-settings-section:is([data-open], [data-dialog]) { padding: 16px; background: var(--color-background-base); border-color: var(--color-stroke); border-radius: var(--bots-card-radius); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-settings-entry[data-ui="button"] { justify-content: space-between; width: 100%; height: auto; min-height: var(--desktop-control-xl); padding: 0; white-space: normal; text-align: start; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-settings-entry-copy { display: grid; min-width: 0; gap: 4px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-settings-entry-title { font-weight: var(--font-weight-medium); }
+.assistant-chat.desktop-bots-workspace :is(.desktop-bot-settings-entry-summary, .desktop-bot-settings-entry-preview) { color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); font-weight: var(--font-weight-normal); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-settings-entry-preview { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+.desktop-bot-settings-dialog .modal-panel > header { flex-shrink: 0; padding: 20px 24px 0; }
+.desktop-bot-dialog-settings { min-width: 0; }
+.desktop-bot-dialog-fields { display: grid; min-width: 0; gap: 16px; padding: 20px 24px 24px; }
+.desktop-bot-dialog-fields .assistant-settings-row { grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); }
+.desktop-bot-dialog-fields .assistant-check-grid { grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); }
+.desktop-bot-dialog-fields .assistant-settings-group { padding-block: 16px; }
+.desktop-bot-dialog-fields .assistant-settings-hint { font-size: var(--text-ui-sm); }
+.desktop-bot-dialog-fields textarea { min-height: 160px; }
+.desktop-bot-dialog-footer { position: sticky; bottom: 0; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 16px 24px; border-top: var(--desktop-border) solid var(--color-stroke); }
+.assistant-chat.desktop-bots-workspace .assistant-settings[data-presentation="inspector"] .assistant-settings-footer { position: sticky; bottom: 0; margin-top: auto; padding: 12px var(--desktop-bot-editor-inset, 24px); background: var(--color-surface); border-color: var(--color-stroke); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-identity-name [data-ui="input"]:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 .assistant-chat.desktop-bots-workspace :is(.desktop-bot-runtime, .desktop-bot-activity, .desktop-bot-automation) { min-width: 0; padding: 16px; border-bottom: 1px solid var(--color-stroke); }
 .assistant-chat.desktop-bots-workspace :is(.desktop-bot-runtime, .desktop-bot-activity) h3 { margin: 0; font-size: 13px; font-weight: 600; }
 .assistant-chat.desktop-bots-workspace :is(.desktop-bot-runtime, .desktop-bot-activity) p { margin: 8px 0; color: var(--color-foreground-subtle); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }

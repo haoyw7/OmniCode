@@ -51,6 +51,13 @@ html:has([data-window-chrome]):not(:has([data-window-chrome] [data-window-drag-b
 }
 
 html[data-skin] {
+  --desktop-bot-rail-width: 72px;
+  --desktop-bot-bubble-radius: 24px;
+  --desktop-bot-composer-radius: 28px;
+  --desktop-bot-page-inset: clamp(16px, 3vw, 40px);
+  --desktop-bot-inspector-width: 420px;
+  --desktop-bot-floating-header-height: 64px;
+  --desktop-bot-editor-inset: 24px;
   --scrollbar-size: 7px;
   --scrollbar-arrow-size: 6px;
   --scrollbar-vertical-button-size: 9px;
