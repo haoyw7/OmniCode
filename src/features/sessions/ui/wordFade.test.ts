@@ -8,6 +8,8 @@ import {
   revealBoundary,
   usePacedText,
   WordFadeManager,
+  WordFadeContext,
+  MarkdownSpan,
   type TextRevealOptions,
 } from "./wordFade";
 
@@ -266,24 +268,82 @@ describe("smooth streaming", () => {
 });
 
 describe("phrase fades", () => {
-  it("limits the horizon, settles to a plain prefix, and never replays a settled run", () => {
+  it("starts each received batch immediately and never replays a settled prefix", () => {
     const fade = new WordFadeManager();
-    fade.sync("a".repeat(400), true, 0, 0);
+    fade.sync("a".repeat(400), true, 0);
     const run = fade.reveal("0", "a".repeat(400), 0, 0);
-    expect(run.chunks.length).toBeGreaterThan(1);
-    expect(run.chunks.at(-1)?.start).toBeLessThanOrEqual(600);
-    expect(fade.reveal("0", run.text, 0, 801).chunks).toHaveLength(0);
-    expect(fade.reveal("0", run.text, 0, 900).plain).toBe(400);
-    expect(fade.reveal("0", run.text + "new", 0, 901).chunks).toHaveLength(1);
+    expect(run.chunks).toEqual([{ from: 0, to: 400, start: 0, end: 180 }]);
+    expect(fade.reveal("400", "next", 400, 25).chunks[0].start).toBe(25);
+    expect(fade.reveal("0", run.text, 0, 180).chunks).toHaveLength(0);
+    expect(fade.reveal("0", run.text, 0, 200).plain).toBe(400);
+    expect(fade.reveal("0", run.text + "new", 0, 201).chunks).toEqual([
+      { from: 400, to: 403, start: 201, end: 381 },
+    ]);
   });
   it("primes history but preserves fades during fast delivery", () => {
     const fade = new WordFadeManager();
-    fade.sync("history", true, 7, 0);
+    fade.sync("history", true, 7);
     expect(fade.reveal("0", "history", 0, 0).chunks).toHaveLength(0);
-    fade.sync("history" + "a".repeat(400), true, 7, 100);
+    fade.sync("history" + "a".repeat(400), true, 7);
     expect(
       fade.reveal("7", "a".repeat(400), 7, 100).chunks.length,
     ).toBeGreaterThan(0);
+  });
+  it("shares one cleanup timer across inline nodes, including StrictMode replay and unmount", () => {
+    const manager = new WordFadeManager();
+    manager.sync("new text ".repeat(100), true, 0);
+    act(() => root.render(createElement(StrictMode, null,
+      createElement(WordFadeContext.Provider, { value: { manager, offset: 0 } },
+        Array.from({ length: 100 }, (_, index) => createElement(MarkdownSpan, {
+          key: index, "data-stream-text": index * 9,
+        }, "new text ")),
+      ),
+    )));
+    expect(host.querySelectorAll("[data-word-fade]")).toHaveLength(100);
+    expect(vi.getTimerCount()).toBe(1);
+    advance(225);
+    expect(host.textContent).toBe("new text ".repeat(100));
+    expect(host.querySelectorAll("[data-word-fade]")).toHaveLength(0);
+    expect(vi.getTimerCount()).toBe(0);
+    act(() => root.render(createElement(WordFadeContext.Provider,
+      { value: { manager, offset: 0 } },
+      createElement(MarkdownSpan, { "data-stream-text": 1000 }, "another batch"),
+    )));
+    expect(vi.getTimerCount()).toBe(1);
+    act(() => root.render(null));
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it("keeps later cleanups pending and cancels removed nodes", () => {
+    const manager = new WordFadeManager();
+    const early = vi.fn();
+    const late = vi.fn();
+    const removed = vi.fn();
+    manager.scheduleCleanup(180, early);
+    manager.scheduleCleanup(280, late);
+    const cancel = manager.scheduleCleanup(200, removed);
+    cancel();
+    expect(vi.getTimerCount()).toBe(1);
+    advance(225);
+    expect(early).toHaveBeenCalledTimes(1);
+    expect(late).not.toHaveBeenCalled();
+    expect(removed).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
+    advance(100);
+    expect(late).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it("finishes a large final delivery without a second animation queue", () => {
+    const text = "连续输出中文和 Emoji 👩‍💻，保留完整内容。".repeat(160);
+    act(() => root.render(createElement(AgentMarkdown, { text, streaming: true })));
+    advance(50);
+    act(() => root.render(createElement(AgentMarkdown, { text, streaming: false })));
+    advance(200);
+    expect(host.textContent).toBe(text);
+    for (const span of host.querySelectorAll<HTMLElement>("[data-word-fade]")) {
+      expect(parseFloat(span.style.animationDelay)).toBeLessThanOrEqual(0);
+    }
+    advance(225);
+    expect(host.querySelector("[data-word-fade]")).toBeNull();
   });
   it("fades appended text only, collapses spans while streaming, and preserves inline links", () => {
     const renderMarkdown = (text: string, streaming = true) =>

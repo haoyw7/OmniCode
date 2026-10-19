@@ -1776,7 +1776,7 @@ html:not(.theme-light) .markdown-code-token {
 }
 
 .agent-markdown [data-word-fade] {
-  animation: streaming-text-fade 200ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: streaming-text-fade 180ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 @keyframes zen-thinking-pulse {

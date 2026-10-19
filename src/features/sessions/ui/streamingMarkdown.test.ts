@@ -99,4 +99,29 @@ describe("incremental Markdown parser", () => {
     expect(parser.committed).toHaveLength(0);
     expect(parser.parse("")).toEqual([]);
   });
+  it.each([
+    "[ref]: /target",
+    "   [ref]: /target",
+    "    [ref]: /indented-code",
+    "\t[ref]: /indented-code",
+    "[]: /empty",
+    "[unfinished\n[ref]: /target",
+    "[label] text\n[ref]: /target",
+    "[ref]\n: /not-a-definition",
+    "[ref]: /target\r\n\r\nTail",
+    "[^note]: footnote",
+  ])("preserves reference semantics when definition markers arrive separately: %s", (tail) => {
+    const prefix = "[forward][ref] and A[^note]\n\nSecond\n\nThird\n\nTail\n\n";
+    const parser = new StreamingMarkdownParser();
+    parser.parse(prefix);
+    let text = prefix;
+    for (const character of tail) {
+      text += character;
+      expect(parser.advance(character)).toEqual(parseStreamingMarkdown(text));
+    }
+    const replacement = "[replacement][ref]\n\nNew\n\nContent\n\n";
+    expect(parser.parse(replacement)).toEqual(parseStreamingMarkdown(replacement));
+    expect(parser.committed.length).toBeGreaterThan(0);
+    expect(parser.advance("[ref]: /new")).toEqual(parseStreamingMarkdown(replacement + "[ref]: /new"));
+  });
 });

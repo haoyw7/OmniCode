@@ -22,14 +22,45 @@ export class StreamingMarkdownParser {
   private source = "";
   private committedLength = 0;
   private result: string[] = [];
+  private hasDefinitions = false;
+  private definitionState: "indent" | "label-start" | "label" | "colon" | "invalid" = "indent";
+  private definitionIndent = 0;
+
+  private scanDefinitions(delta: string) {
+    for (let index = 0; index < delta.length; index++) {
+      const character = delta[index];
+      if (character === "\n") {
+        this.definitionState = "indent";
+        this.definitionIndent = 0;
+      } else if (this.definitionState === "indent") {
+        if (character === " " && this.definitionIndent < 3) this.definitionIndent++;
+        else this.definitionState = character === "[" ? "label-start" : "invalid";
+      } else if (this.definitionState === "label-start") {
+        this.definitionState = character === "]" ? "invalid" : "label";
+      } else if (this.definitionState === "label") {
+        if (character === "]") this.definitionState = "colon";
+      } else if (this.definitionState === "colon") {
+        if (character === ":") {
+          this.hasDefinitions = true;
+          return;
+        }
+        this.definitionState = "invalid";
+      } else {
+        const newline = delta.indexOf("\n", index);
+        if (newline < 0) return;
+        index = newline - 1;
+      }
+    }
+  }
 
   advance(delta: string): string[] {
     if (!delta) return this.result;
+    if (!this.hasDefinitions) this.scanDefinitions(delta);
     this.source += delta;
     this.buffer += delta;
     // Definitions can change references anywhere in the document. Streamdown
     // intentionally renders these as one block, including forward references.
-    if (/(^|\n) {0,3}\[[^\]\n]+\]:/.test(this.source)) {
+    if (this.hasDefinitions) {
       this.committed = [];
       this.committedLength = 0;
       this.buffer = this.source;
@@ -76,6 +107,9 @@ export class StreamingMarkdownParser {
       this.committedLength = 0;
       this.offsets = [];
       this.result = [];
+      this.hasDefinitions = false;
+      this.definitionState = "indent";
+      this.definitionIndent = 0;
     }
     return this.advance(text.slice(this.source.length));
   };

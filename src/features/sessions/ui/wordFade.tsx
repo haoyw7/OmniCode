@@ -25,7 +25,7 @@ const MIN_SPEED = 160;
 const MAX_SPEED = (MAX_STEP * 1000) / TICK_MS;
 const ACCELERATION = 1600;
 const FIRST_STEP = (MIN_SPEED * TICK_MS) / 1000;
-const FADE_MS = 200;
+const FADE_MS = 180;
 const FINISH_MS = 180;
 
 const segmenter =
@@ -246,8 +246,10 @@ type FadeRun = { text: string; plain: number; chunks: FadeChunk[] };
 
 export class WordFadeManager {
   private runs = new Map<string, FadeRun>();
-  private horizon = 0;
   private text = "";
+  private cleanups = new Map<() => void, number>();
+  private cleanupTimer: ReturnType<typeof setTimeout> | undefined;
+  private cleanupAt = Infinity;
   primeLength = 0;
   enabled = false;
 
@@ -255,15 +257,48 @@ export class WordFadeManager {
     text: string,
     enabled: boolean,
     primeLength: number,
-    now = performance.now(),
   ) {
     if (!text.startsWith(this.text)) {
       this.runs.clear();
-      this.horizon = now;
       this.primeLength = text.length;
     } else this.primeLength = Math.max(this.primeLength, primeLength);
     this.text = text;
     this.enabled = enabled;
+  }
+
+  scheduleCleanup(end: number, refresh: () => void) {
+    const deadline = Math.ceil(end / TICK_MS) * TICK_MS + 1;
+    this.cleanups.set(refresh, deadline);
+    this.armCleanup(deadline);
+    return () => {
+      this.cleanups.delete(refresh);
+      if (!this.cleanups.size) {
+        clearTimeout(this.cleanupTimer);
+        this.cleanupTimer = undefined;
+        this.cleanupAt = Infinity;
+      }
+    };
+  }
+
+  private armCleanup(deadline: number) {
+    if (deadline >= this.cleanupAt) return;
+    clearTimeout(this.cleanupTimer);
+    this.cleanupAt = deadline;
+    this.cleanupTimer = setTimeout(() => {
+      this.cleanupTimer = undefined;
+      this.cleanupAt = Infinity;
+      const now = performance.now();
+      const due: (() => void)[] = [];
+      let next = Infinity;
+      for (const [refresh, end] of this.cleanups) {
+        if (end <= now) {
+          this.cleanups.delete(refresh);
+          due.push(refresh);
+        } else next = Math.min(next, end);
+      }
+      this.armCleanup(next);
+      for (const refresh of due) refresh();
+    }, Math.max(0, deadline - performance.now()));
   }
 
   reveal(
@@ -281,32 +316,12 @@ export class WordFadeManager {
       run.plain = text.length;
       run.chunks = [];
     } else if (text.length > run.text.length) {
-      let from = run.text.length;
-      // Small phrase groups also work for Chinese and long unbroken words.
-      let size = 0;
-      for (const part of graphemes(text.slice(from))) {
-        size += part.segment.length;
-        if (size < 16 && from + size < text.length && !/\s/.test(part.segment))
-          continue;
-        const to = from + size;
-        if (offset + to <= this.primeLength) {
-          run.plain = to;
-          run.chunks = [];
-        } else {
-          this.horizon = Math.min(
-            Math.max(now, this.horizon) + size * 2.5,
-            now + 600,
-          );
-          run.chunks.push({
-            from,
-            to,
-            start: this.horizon,
-            end: this.horizon + FADE_MS,
-          });
-        }
-        from = to;
-        size = 0;
+      const from = Math.max(run.text.length, this.primeLength - offset);
+      if (from > run.text.length) {
+        run.plain = from;
+        run.chunks = [];
       }
+      run.chunks.push({ from, to: text.length, start: now, end: now + FADE_MS });
     }
     run.text = text;
     while (run.chunks.length && run.chunks[0].end <= now) {
@@ -339,14 +354,11 @@ function FadingText({ start, text }: { start: number; text: string }) {
   const now = performance.now();
   const run = context?.manager.reveal(String(offset), text, offset, now);
   const end = run?.chunks.at(-1)?.end;
+  const manager = context?.manager;
   useEffect(() => {
-    if (end === undefined) return;
-    const timer = setTimeout(
-      () => refresh((n) => n + 1),
-      Math.max(0, end - performance.now()) + 1,
-    );
-    return () => clearTimeout(timer);
-  }, [end]);
+    if (end === undefined || !manager) return;
+    return manager.scheduleCleanup(end, () => refresh((n) => n + 1));
+  }, [end, manager]);
   if (!run?.chunks.length) return text;
   return (
     <>
