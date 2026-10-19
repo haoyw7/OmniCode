@@ -361,8 +361,10 @@ function AgentTranscriptComponent({
     chat: transcriptLayout === "chat",
     visible,
   };
-  // The prompt shown at mount is history, even when StrictMode replays effects.
+  // The first populated snapshot is history, even if it arrives after mount.
   const mountedPromptId = useRef(lastUserId);
+  if (mountedPromptId.current === undefined && lastUserId)
+    mountedPromptId.current = lastUserId;
   const promptRise = useRef<PromptRise | undefined>(undefined);
   useLayoutEffect(() => {
     const mounting = lastUserId === mountedPromptId.current;
@@ -390,7 +392,10 @@ function AgentTranscriptComponent({
     }
     const { chat, visible } = introducePrompt.current;
     if (!lastUserId || !chat || !visible) return;
-    if (mounting && animateFrom !== lastUserId) return;
+    if (
+      (mounting || historyEntries?.some(entry => entry.id === lastUserId)) &&
+      animateFrom !== lastUserId
+    ) return;
     const prior = priorTurn.current;
     priorTurn.current = undefined;
     const rise = riseIntoAnchor(scroller.current, lastUserId, prior);
@@ -693,7 +698,8 @@ function AgentTranscriptComponent({
           const workOpen = openWork[turnId] ?? false;
           // The fold line stays at the start of the work. Clients with a
           // footer keep the clock under the reply and the work summary here.
-          const live = visible && !settled && !preparingHandoff;
+          const running = !settled && !preparingHandoff;
+          const live = visible && running;
           const turnModelName =
             turnModel?.name ?? (live ? currentModelName : undefined);
           // The fold line speaks for the main agent only. A delegated run has
@@ -725,7 +731,7 @@ function AgentTranscriptComponent({
             workSummaryLine(folded)
           );
           const showFoldLine =
-            live || (durationMs != null && !liveClockInFooter) || !!fold;
+            running || (durationMs != null && !liveClockInFooter) || !!fold;
           // It sits where the work starts, from before there is any: the row
           // is there from the first token, so nothing shoves the answer down
           // when the turn folds.
@@ -1023,7 +1029,7 @@ function AgentTranscriptComponent({
                 </div>
               ))}
               {isLastTurn && clockInFooter && cwd ? (
-                <AnimatedCollapse expanded={live} className="transcript-live-footer-collapse">
+                <AnimatedCollapse expanded={running} className="transcript-live-footer-collapse">
                   {() => (
                     <LiveTurnFooter
                       cwd={cwd}

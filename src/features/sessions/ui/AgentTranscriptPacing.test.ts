@@ -158,6 +158,36 @@ it("keeps live work open across a switch and skips background tool entrances", (
   expect(stages()).toEqual(["settled", "settled", "settled", "settled", "entering"]);
 });
 
+it.each([false, true])("keeps running status rows open across session switches (reduced=%s)", async reduced => {
+  applyReducedMotion(reduced ? "on" : "off");
+  const blocks: Block[] = [
+    { id: "user", role: "user", text: "Review" },
+    { id: "reply", role: "assistant", text: "Checking.", streaming: true },
+  ];
+  const show = (visible: boolean, busy = true) => act(() => root.render(
+    createElement(AgentTranscript, { blocks, busy, visible, cwd: "/project" }),
+  ));
+  show(true);
+  const footer = container.querySelector<HTMLElement>(".transcript-live-footer-collapse")!;
+  const fold = container.querySelector(".desktop-work-fold-line")!.closest<HTMLElement>("[data-fold-state]")!;
+  expect(footer.dataset.foldState).toBe("open");
+  expect(fold.dataset.foldState).toBe("open");
+
+  for (const visible of [false, true, false, true]) {
+    show(visible);
+    expect(container.querySelector(".transcript-live-footer-collapse")).toBe(footer);
+    expect(footer.dataset.foldState).toBe("open");
+    expect(fold.dataset.foldState).toBe("open");
+    await act(async () => { await finishMotion(); });
+    expect(footer.isConnected).toBe(true);
+  }
+
+  show(true, false);
+  if (!reduced) expect(footer.dataset.foldState).toBe("closing");
+  await act(async () => { await finishMotion(); });
+  expect(container.querySelector(".transcript-live-footer-collapse")).toBeNull();
+});
+
 function stages() {
   return [...container.querySelectorAll(".zen-phase-step")].map((step) =>
     step.hasAttribute("data-waiting")

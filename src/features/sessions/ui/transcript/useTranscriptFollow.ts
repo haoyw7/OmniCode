@@ -41,6 +41,7 @@ export function useTranscriptFollow({
   const glideFollow = useRef(false);
   const followViewport = useRef(0);
   const followWidth = useRef(0);
+  const followTurn = useRef<{ element: HTMLElement; top: number } | null>(null);
   useEffect(() => {
     const el = scroller.current;
     glideFollow.current = visible;
@@ -193,13 +194,19 @@ export function useTranscriptFollow({
       if (!el) return;
       const widthChanged = followWidth.current !== el.clientWidth;
       const resized = widthChanged || followViewport.current !== el.clientHeight;
+      const turn = el.querySelector<HTMLElement>(".transcript-turn-live");
+      const turnTop = turn?.offsetTop ?? 0;
+      const historyResized = turn !== null && followTurn.current?.element === turn &&
+        Math.abs(followTurn.current.top - turnTop) > 1;
+      followTurn.current = turn ? { element: turn, top: turnTop } : null;
       followViewport.current = el.clientHeight;
       followWidth.current = el.clientWidth;
       // Keyboard motion already animates the mobile surface. Its layout
       // handoff must pin before paint, including during a streamed row glide.
       // Wrapping during a panel resize moves the scroll range on every frame.
       // Settle an existing glide before it can chase those changing targets.
-      if (widthChanged || (promptMotion === "mobile" && resized))
+      if (widthChanged || (promptMotion === "mobile" && resized) ||
+        (historyResized && stickToBottom.current))
         jumpingScrollers.get(el)?.(true);
       // The browser can apply a manual scroll before dispatching its event.
       // Reconcile that offset before a streaming commit or observer pins it.
@@ -207,11 +214,12 @@ export function useTranscriptFollow({
       // Directionless trackpad events can precede off-thread scrolling.
       // Wait for the gesture to reveal its direction before pinning again.
       if (!stickToBottom.current || performance.now() < wheelHold.current) return;
-      // Once visible, all new content glides, even a large reply or the final
-      // update. Any touch stops the glide where it is.
+      // Live output glides; restored history above the turn settles before
+      // paint. Any touch stops the glide where it is.
       const gap = el.scrollHeight - el.clientHeight - el.scrollTop;
       if (
         !resized &&
+        !historyResized &&
         glideFollow.current &&
         gap > 0.5
       )

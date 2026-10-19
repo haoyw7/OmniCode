@@ -1032,6 +1032,62 @@ describe.each([false, true])(
       },
     );
 
+    it("pins delayed history sizing after a revisit without replaying the stream glide", () => {
+      const { scroller, geometry, blocks } = mountScroller();
+      const withHistory: Block[] = [
+        { id: "earlier-user", role: "user", text: "Earlier prompt" },
+        { id: "earlier-reply", role: "assistant", text: "Earlier answer" },
+        ...blocks,
+      ];
+      const show = (visible: boolean) => act(() => root.render(createElement(AgentTranscript, {
+        blocks: withHistory, busy: true, touchScroll, visible, parked: !visible,
+      })));
+      show(true);
+      const liveTurn = scroller.querySelector<HTMLElement>(".transcript-turn-live")!;
+      let historyHeight = 600;
+      Object.defineProperty(liveTurn, "offsetTop", { get: () => historyHeight });
+      const resize = () => act(() => {
+        for (const observer of [...observers])
+          if (observer.targets.includes(scroller)) observer.resize();
+      });
+      resize();
+      show(false);
+      geometry.top = 0;
+      show(true);
+      expect(geometry.top).toBe(600);
+      act(() => applyReducedMotion("off"));
+
+      // The cached transcript is already on screen when earlier change cards return.
+      historyHeight += 388;
+      geometry.height += 388;
+      resize();
+      expect(geometry.top).toBe(988);
+      act(() => motionFrame(16));
+      expect(geometry.top).toBe(988);
+
+      // New output in the current turn still follows with its normal glide.
+      geometry.height += 100;
+      resize();
+      expect(geometry.top).toBe(988);
+      act(() => motionFrame(32));
+      expect(geometry.top).toBeGreaterThan(988);
+      expect(geometry.top).toBeLessThan(1088);
+      // A second historical resize settles that in-flight glide before paint.
+      historyHeight += 80;
+      geometry.height += 80;
+      resize();
+      expect(geometry.top).toBe(1168);
+      act(() => {
+        scroller.dispatchEvent(new WheelEvent("wheel", { deltaY: -200 }));
+        geometry.top -= 200;
+        scroller.dispatchEvent(new Event("scroll"));
+      });
+      historyHeight += 80;
+      geometry.height += 80;
+      resize();
+      expect(geometry.top).toBe(968);
+    });
+
     // Touch input pauses following from touchmove before the scroll lands.
     it.runIf(!touchScroll).each(["resize", "stream update"])(
       "respects an upward move before its scroll event arrives during a %s",
