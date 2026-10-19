@@ -100,7 +100,6 @@ export function ToolRow({
         cwd={cwd}
         chip={activity && compact}
         failed={failed}
-        status={state}
         onOpenFile={onOpenFile}
         onOpenDiff={onOpenDiff}
       />

@@ -27,7 +27,6 @@ export const mobileTranscriptPlatform = {
   },
   localFiles: false,
   messageMotion: "slide" as const,
-  toolDiffPreviews: false,
   answeredQuestionsInline: true,
 };
 

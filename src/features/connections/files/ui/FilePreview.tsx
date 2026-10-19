@@ -69,7 +69,7 @@ type Props = {
   status: Status;
   cwd?: string;
   onOpenFile?: (path: string) => void;
-  variant?: "card" | "popover" | "list";
+  variant?: "card" | "list";
 };
 
 export function FilePreview({
@@ -164,13 +164,7 @@ export function FilePreview({
   }
 
   return (
-    <div
-      className={
-        variant === "card"
-          ? "overflow-hidden rounded-[10px] border border-content/10 bg-content/6"
-          : "min-w-0"
-      }
-    >
+    <div className="overflow-hidden rounded-[10px] border border-content/10 bg-content/6">
       <div className="flex items-center gap-2 px-2.5 py-2">
         <FileTypeIcon name={fileName || "file"} isDir={false} />
         {filePath && onOpenFile ? (
@@ -207,17 +201,7 @@ export function FilePreview({
       {showDiff ? (
         <>
           <div className="h-px bg-content/10" />
-          <div
-            className={
-              variant === "popover"
-                ? "max-h-45 select-text overflow-auto overscroll-contain"
-                : undefined
-            }
-            tabIndex={variant === "popover" ? 0 : undefined}
-            aria-label={
-              variant === "popover" ? uiT("Preview lines") : undefined
-            }
-          >
+          <div>
             {preview.contentOnly && !lines.length ? (
               <p className="px-3 py-2 font-mono text-xs text-content/50">
                 {uiT("Empty file")}
@@ -228,7 +212,6 @@ export function FilePreview({
                 key={`${line.number ?? index}-${line.kind}-${index}`}
                 line={line}
                 showGutter
-                scrollable={variant === "popover"}
               />
             ))}
           </div>

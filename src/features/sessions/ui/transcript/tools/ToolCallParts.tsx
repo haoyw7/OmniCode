@@ -13,7 +13,7 @@ import {
   Wrench,
   X,
 } from "../../../../../shared/ui/icons";
-import { useContext, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { ApprovalDecision } from "../../../../../integrations/harness";
 import { FileTypeIcon } from "../../../../connections/files/ui/FileTypeIcon";
 import type { Block, ToolPreview } from "../../../model/session";
@@ -21,8 +21,6 @@ import {
   resolveToolCallDisplay,
   type ToolCallState,
 } from "../../../model/transcriptActivity";
-import { ToolDiffPreview } from "../../ToolDiffPreview";
-import { TranscriptPlatformContext } from "../../TranscriptPlatform";
 import type { ToolRendererKind } from "../../../model/toolRenderer";
 
 /** The pieces every tool row is built from: icons, the summary line, approval. */
@@ -113,7 +111,6 @@ export function ToolCallSummary({
   interactive = true,
   chip = false,
   failed = false,
-  status = "accepted",
 }: {
   label: string;
   preview?: ToolPreview;
@@ -124,11 +121,9 @@ export function ToolCallSummary({
   /** Sets the file off in a chip, for rows that lean on a rail for structure. */
   chip?: boolean;
   failed?: boolean;
-  status?: ToolCallState;
 }) {
   const { t: uiT } = useTranslation();
-  const { toolDiffPreviews } = useContext(TranscriptPlatformContext);
-  const { action, target, fileName, filePath, isFile, previewMatchesFile } =
+  const { action, target, fileName, filePath, isFile } =
     resolveToolCallDisplay(label, preview, cwd);
   if (!action || !target) {
     return (
@@ -147,13 +142,6 @@ export function ToolCallSummary({
       ? (onOpenDiff ?? onOpenFile)
       : onOpenFile;
   const canOpen = interactive && !!openFile && !!filePath;
-  const canPreview =
-    toolDiffPreviews !== false &&
-    interactive &&
-    preview?.kind === "write" &&
-    previewMatchesFile &&
-    (preview.contentOnly ||
-      preview.lines?.some((line) => line.kind !== "context"));
   const actionTone = failed ? "text-red-400" : "text-foreground-subtlest";
   const targetTone = failed
     ? "text-red-400"
@@ -167,24 +155,7 @@ export function ToolCallSummary({
         {action}
       </span>
       {isFile ? (
-        canPreview ? (
-          <ToolDiffPreview
-            preview={preview}
-            label={target}
-            status={status}
-            cwd={cwd}
-            onOpen={openFile && filePath ? () => openFile(filePath) : undefined}
-            onOpenFile={onOpenFile}
-            className={`-my-0.5 flex min-w-0 cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-left hover:text-sky-300 ${
-              chip
-                ? `max-w-full bg-content/6 hover:bg-content/10 ${targetTone}`
-                : `flex-1 hover:bg-content/4 ${targetTone}`
-            }`}
-          >
-            <FileTypeIcon name={fileName} isDir={false} />
-            <span className="min-w-0 truncate">{target}</span>
-          </ToolDiffPreview>
-        ) : canOpen ? (
+        canOpen ? (
           <button
             type="button"
             aria-label={uiT("Open {value0}", { value0: String(target) })}

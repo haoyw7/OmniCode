@@ -26,8 +26,6 @@ export const TranscriptPlatformContext = createContext<
     messageMotion?: "slide";
     /** Clients without a side panel show a finished tool call's details on tap. */
     openTool?: (block: Block) => void;
-    /** Show desktop hover/focus diff popovers; touch clients use their detail sheets. */
-    toolDiffPreviews?: boolean;
     openAgent?: (block: Block) => void;
     /** Clients without a side panel list a group's steps in a sheet instead of unfolding it inline. */
     openActivity?: (steps: Block[]) => void;

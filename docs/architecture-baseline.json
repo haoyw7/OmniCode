@@ -335,7 +335,6 @@
       "src/features/sessions/ui/SessionPane.tsx -> src/features/settings/ui/GradientBlurBackground.tsx",
       "src/features/sessions/ui/SessionReview.tsx -> src/features/connections/files/ui/FileTypeIcon.tsx",
       "src/features/sessions/ui/SessionStatusPanel.tsx -> src/features/workspace/ui/SessionHeaderActions.tsx",
-      "src/features/sessions/ui/ToolDiffPreview.tsx -> src/features/connections/files/ui/FilePreview.tsx",
       "src/features/sessions/ui/sessionReminderPresets.ts -> src/features/connections/files/ui/ExplorerMenu.tsx",
       "src/features/sessions/ui/transcript/LiveTurn.tsx -> src/features/projects/ui/ProjectMascot.tsx",
       "src/features/sessions/ui/transcript/LiveTurn.tsx -> src/features/projects/ui/useProjectMascotAppearance.ts",
