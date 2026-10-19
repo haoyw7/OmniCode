@@ -17,6 +17,7 @@ import type {
   BotMemoryDetailProps,
   BotSelectProps,
 } from "./BotChatChrome";
+import { BotModelPickerContext } from "./BotChatChrome";
 import {
   BOT_PERMISSIONS,
   BOT_PERSONA_PRESETS,
@@ -207,10 +208,21 @@ function Section({
   );
 }
 
+/** The inspector only reveals its save bar while there is something to save. */
+function InspectorFooter({ inspector, shown, children }: { inspector: boolean; shown: boolean; children: ReactNode }) {
+  return inspector ? <AnimatedCollapse expanded={shown} className="assistant-settings-footer-fold">{children}</AnimatedCollapse> : <>{children}</>;
+}
+
+/** The desktop inspector renders its settings as one grouped list of rows. */
+function SettingsRows({ grouped, children }: { grouped: boolean; children: ReactNode }) {
+  return grouped ? <div className="desktop-bot-row-group">{children}</div> : <>{children}</>;
+}
+
 function CollapsibleSection({
   title,
   summary,
   open,
+  ready = true,
   onToggle,
   dialog,
   children,
@@ -218,6 +230,7 @@ function CollapsibleSection({
   title: string;
   summary?: string;
   open: boolean;
+  ready?: boolean;
   onToggle: () => void;
   dialog?: { onCancel: () => void; onApply: () => void; busy: boolean };
   /** A factory defers content until the section first opens. */
@@ -242,7 +255,7 @@ function CollapsibleSection({
         )}
         <ChevronDown size={18} aria-hidden="true" />
       </button>
-      <AnimatedCollapse expanded={open}>{children}</AnimatedCollapse>
+      <AnimatedCollapse expanded={open} ready={ready}>{children}</AnimatedCollapse>
     </section>
   );
 }
@@ -276,9 +289,8 @@ const SelectSlot = createContext<
 
 function Picker({
   mobile,
-  compact = false,
   ...props
-}: BotSelectProps & { mobile: boolean; compact?: boolean }) {
+}: BotSelectProps & { mobile: boolean }) {
   const Custom = useContext(SelectSlot);
   const {
     label,
@@ -297,7 +309,7 @@ function Picker({
       <div className="assistant-field assistant-picker">
         {!hideLabel && <span className="assistant-field-label">{label}</span>}
         <SearchableSelect
-          variant={compact ? "pill" : "transparent"}
+          variant="transparent"
           className="assistant-picker-control"
           label={label}
           value={value}
@@ -306,6 +318,7 @@ function Picker({
           placeholder={placeholder}
           disabled={disabled}
           searchable={searchable}
+          checkPosition="end"
         />
         {hint && <small>{hint}</small>}
       </div>
@@ -398,6 +411,7 @@ export function BotSettings({
   submitLabel?: string;
 }) {
   const { t } = useTranslation();
+  const ModelPicker = useContext(BotModelPickerContext);
   const inspector = !mobile && presentation === "inspector";
   const section = mobile ? "all" : panel;
   const [initialDraft] = useState<BotPatch>(
@@ -413,7 +427,6 @@ export function BotSettings({
       },
   );
   const [draft, setDraft] = useState<BotPatch>(initialDraft);
-  const [instructionsOpen, setInstructionsOpen] = useState(false);
   const dialogDraft = useRef(draft);
   const cancelDialog = () => setDraft(dialogDraft.current);
   // Permissions and wakeups default sensibly, so they stay folded away.
@@ -422,6 +435,7 @@ export function BotSettings({
   const [sessionOptionsOpen, setSessionOptionsOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [memoryOpen, setMemoryOpen] = useState(false);
+  const [memoryReady, setMemoryReady] = useState(false);
   const [habitsOpen, setHabitsOpen] = useState(false);
   // Project filters apply to explicitly followed conversations.
   const [pickingProjects, setPickingProjects] = useState(
@@ -554,7 +568,7 @@ export function BotSettings({
   const errors = {
     name: section !== "automation" && !draft.name?.trim() ? "Enter a name" : undefined,
     persona:
-      section !== "automation" && personaSupported && persona.preset === "custom" && !persona.style.trim()
+      !inspector && section !== "automation" && personaSupported && persona.preset === "custom" && !persona.style.trim()
         ? "Describe the personality"
         : undefined,
     interval: section !== "settings" && !inRange(schedule.intervalMinutes, 1, MAX_INTERVAL)
@@ -1190,15 +1204,9 @@ export function BotSettings({
         </>
       )}
   </>;
-  const identitySection = inspector && !personaSupported ? null : (
-    <Section title={t(inspector ? "Instructions" : "Assistant")} card={inspector} kind="identity">
-      {inspector ? <BotSettingsDialog title={t("Personality and tone")} summary={t(personaLabels[persona.preset])} preview={persona.style || t(personaHints[persona.preset])}
-        size="sm" open={instructionsOpen} busy={busy} invalid={!!errors.persona}
-        onOpen={() => { dialogDraft.current = draft; setInstructionsOpen(true); }}
-        onCancel={() => { cancelDialog(); setInstructionsOpen(false); }}
-        onApply={() => setInstructionsOpen(false)}>
-        {identityFields}
-      </BotSettingsDialog> : identityFields}
+  const identitySection = (
+    <Section title={t("Assistant")} kind="identity">
+      {identityFields}
     </Section>
   );
 
@@ -1210,7 +1218,7 @@ export function BotSettings({
         noValidate
         data-layout={mobile ? "mobile" : "desktop"}
         data-presentation={inspector ? "inspector" : undefined}
-        inert={inspector && (instructionsOpen || permissionsOpen)}
+        inert={inspector && permissionsOpen}
         onSubmit={(event) => {
           event.preventDefault();
           if (!canSave) return;
@@ -1218,13 +1226,19 @@ export function BotSettings({
           void onSave(toPatch(draft));
         }}
       >
-        <div className="assistant-settings-body">
+        <div className="assistant-settings-body"><SettingsRows grouped={inspector}>
           {section !== "automation" && <>{!inspector && identitySection}
           <Section title={t("Model")} card={inspector} kind="model">
-            <div className="assistant-settings-row">
+            {inspector && ModelPicker ? <ModelPicker
+              catalog={catalog} catalogState={catalogState} harness={draft.harness} model={draft.model}
+              savedModel={value && value.harness === draft.harness ? value.model : undefined}
+              values={draft.modelSettings ?? {}}
+              disabled={busy || loadingCatalog || (!draft.harness && !harnesses.length)}
+              onChange={chooseModel} onSettingsChange={modelSettings => patch({ modelSettings })}
+              onRefresh={onRetryCatalog}
+            /> : <div className="assistant-settings-row">
               <Picker
                 mobile={mobile}
-                compact={inspector}
                 hideLabel={inspector}
                 label={t("Agent")}
                 value={draft.harness ?? ""}
@@ -1246,7 +1260,6 @@ export function BotSettings({
               />
               <Picker
                 mobile={mobile}
-                compact={inspector}
                 hideLabel={inspector}
                 label={t("Model")}
                 value={draft.model ?? ""}
@@ -1261,7 +1274,6 @@ export function BotSettings({
               />
               <Picker
                 mobile={mobile}
-                compact={inspector}
                 hideLabel={inspector}
                 label={t("Reasoning effort")}
                 value={
@@ -1289,7 +1301,7 @@ export function BotSettings({
                   })
                 }
               />
-            </div>
+            </div>}
             {catalogState === "failed" ? (
               <div className="assistant-field-notice" role="alert">
                 <span>{t(catalogError ?? "Could not load models.")}</span>
@@ -1311,7 +1323,6 @@ export function BotSettings({
               <small className="assistant-field-error">{harnessError}</small>
             ) : null}
           </Section>
-          {inspector && identitySection}
           {permissionsSection}</>}
           {section !== "settings" && wakeupsSection}
           {section !== "automation" && memory && (
@@ -1321,12 +1332,14 @@ export function BotSettings({
                 count: memory.lines,
               })}
               open={memoryOpen}
+              ready={memoryReady}
               onToggle={() => setMemoryOpen((v) => !v)}
             >
               {() => (
                 <BotMemoryEditor
                   rpc={memory.rpc}
                   revision={memory.revision}
+                  onReady={setMemoryReady}
                   disabled={busy}
                   Detail={MemoryDetail}
                 />
@@ -1351,8 +1364,9 @@ export function BotSettings({
             </CollapsibleSection>
           )}
           {section !== "automation" && im && !mobile && <BotImSettings {...im} disabled={busy} />}
-        </div>
+        </SettingsRows></div>
         <Actions>
+          <InspectorFooter inspector={inspector} shown={!value || dirty}>
           <footer className="assistant-settings-footer">
             {value && dirty && (
               <>
@@ -1360,6 +1374,7 @@ export function BotSettings({
                   {t("Unsaved changes")}
                 </small>
                 <Button variant="secondary"
+                  size={inspector ? "sm" : undefined}
                   type="button"
                   disabled={busy}
                   onClick={() => {
@@ -1388,6 +1403,7 @@ export function BotSettings({
               </Button>
             )}
             <Button variant="primary"
+              size={inspector ? "sm" : undefined}
               type="submit"
               className="assistant-primary"
               disabled={!canSave}
@@ -1395,6 +1411,7 @@ export function BotSettings({
               {t(submitLabel ?? (value ? section === "automation" ? "Save automation" : "Save settings" : "Enable assistant"))}
             </Button>
           </footer>
+          </InspectorFooter>
         </Actions>
       </form>
     </SelectSlot.Provider>

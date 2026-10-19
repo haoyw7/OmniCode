@@ -1,6 +1,7 @@
 import type { BotTask } from "../../../integrations/harness/core/botAutonomy";
+import { createContext } from "react";
 import type { ClipboardEventHandler, ComponentType, DragEventHandler, ReactNode } from "react";
-import type { RemoteAttachment, RemoteProvider } from "../../connections/model/protocol";
+import type { HostModelCatalog, RemoteAttachment, RemoteProvider } from "../../connections/model/protocol";
 import type { BotLifecycle, BotMessage, SessionReference } from "../model/botView";
 
 /** Presentation slots keep Host state and command ownership in AssistantChat. */
@@ -106,6 +107,20 @@ export type BotMemoryDetailProps = {
   onForget: () => void;
 };
 export type BotSelectOption = { value: string; label: string; icon?: ReactNode };
+export type BotModelPickerProps = {
+  catalog: HostModelCatalog;
+  catalogState: "loading" | "ready" | "failed";
+  harness?: RemoteProvider;
+  model?: string;
+  savedModel?: string;
+  values: Record<string, string>;
+  disabled: boolean;
+  onChange: (harness: RemoteProvider, model: string) => void;
+  onSettingsChange: (values: Record<string, string>) => void;
+  onRefresh?: () => void;
+};
+/** Desktop composition supplies its model menu without a feature UI dependency. */
+export const BotModelPickerContext = createContext<ComponentType<BotModelPickerProps> | undefined>(undefined);
 export type BotSelectProps = {
   label: string;
   value: string;

@@ -35,7 +35,9 @@ import { useDragResize } from "../../../shared/hooks/useDragResize";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { AnimatedCollapse, useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
-import { Button } from "../../../shared/ui/forms/Button";
+import { Modal } from "../../../shared/ui/Modal";
+import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
+import { SurfaceAppearance } from "../../../shared/ui/SurfaceAppearance";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../../../shared/ui/forms/InputGroup";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import { sessionDisplayTitle } from "../../sessions/model/session";
@@ -111,7 +113,6 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
   const [catalog, setCatalog] = useState<HostModelCatalog>({ models: {}, errors: {} });
   const [projects, setProjects] = useState<HostProject[]>([]);
   const [catalogState, setCatalogState] = useState<"loading" | "ready" | "failed">("loading");
-  const [draftVersion, setDraftVersion] = useState(0);
   const [memoryDrafts] = useState(() => new BotMemoryDrafts());
   const workspace = useRef<HTMLDivElement>(null);
   const restoreRecipientFocus = useRef(false);
@@ -219,7 +220,6 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
         threads: [...(current?.threads ?? []).filter((thread) => thread.id !== result.thread.id), result.thread],
       }));
       createCommand.current = undefined;
-      setDraftVersion((value) => value + 1);
       select({ botId: result.bot.id, threadId: result.thread.id });
       void refresh().catch(() => {});
     } catch (cause) { setError(botErrorMessage(cause)); }
@@ -271,13 +271,18 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
     roomDraft.current = undefined; openRoom(room.id);
     void refreshCollaboration().catch(cause => setCollaborationError(botErrorMessage(cause)));
   };
-  const navigation = <BotNavigation navigationWidth={navigationWidth} onNavigationWidth={commitNavigationWidth} pins={pins} onTogglePin={togglePin} draftOpen={recipientOpen || creatingBot} hostName={props.hostName}
+  const navigation = <BotNavigation navigationWidth={navigationWidth} onNavigationWidth={commitNavigationWidth} pins={pins} onTogglePin={togglePin} draftOpen={recipientOpen} hostName={props.hostName}
     teams={teams} rooms={rooms} teamsSupported={props.teamsSupported} roomsSupported={props.roomsSupported} roomSelection={roomSelection} onOpenRoom={openRoom} onManage={openManagement}
     snapshot={snapshot} selection={showArchive || managementPanel || roomSelection ? undefined : selection} activity={activity} environmentId={props.hostKey}
     archiveOpen={showArchive} onArchive={() => { setManagementPanel(undefined); setRoomSelection(undefined); setShowArchive(true); setCreatingBot(false); setRecipientOpen(false); }}
     onNewBot={() => { setManagementPanel(undefined); setRoomSelection(undefined); setShowArchive(false); setCreatingBot(false); setRecipientOpen(true); setError(undefined); }}
     onSelectBot={selectBot} />;
-  const draftShown = !roomSelection && (recipientShown || creatingBot || !selection || showArchive || !!managementPanel);
+  const draftShown = !roomSelection && (recipientShown || !selection || showArchive || !!managementPanel);
+  const cancelCreate = () => {
+    if (busy) return;
+    setCreatingBot(false); createCommand.current = undefined;
+    requestAnimationFrame(() => workspace.current?.querySelector<HTMLButtonElement>(':is(.desktop-bots-thread-surface, .desktop-bots-create):not([aria-hidden]) .desktop-bots-navigation-header button:last-child')?.focus());
+  };
   const closeArchive = () => {
     setShowArchive(false);
     requestAnimationFrame(() => workspace.current?.querySelector<HTMLButtonElement>('.desktop-bots-thread-surface:not([aria-hidden]) .desktop-bots-archive-entry')?.focus());
@@ -292,7 +297,6 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
         <SurfaceVisibilityContext.Provider value={visible && selected}>
           <ScopedBotChat {...props} scope={scope} delegationSupported={props.delegationSupported} botNames={botNames} onOpenBotThread={openDelegationThread} botNavigation={navigation}
             botMemory={props.memorySupported ? <DesktopBotMemory botId={scope.botId} rpc={props.rpc} drafts={memoryDrafts} /> : undefined}
-            botPinControl={bot ? <Button variant="ghost" size="sm" type="button" aria-pressed={pins.includes(bot.id)} onClick={() => togglePin(bot.id)}><Pin size={14} />{t(pins.includes(bot.id) ? "Unpin Bot" : "Pin Bot")}</Button> : undefined}
             botAvatarSupported={props.managementSupported}
             botSettings={bot}
             botReadOnlyReason={thread?.kind === "delegation" ? "Delegation threads accept approvals and questions. Start a direct thread for a new message." : thread?.kind === "room" ? "Room member threads accept approvals and questions. Send new messages in the room." : undefined}
@@ -309,14 +313,13 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
     {visitedRooms.map(id => {
       const room = rooms.find(room => room.id === id), active = roomSelection === id;
       return room ? <div key={id} className="assistant-chat desktop-bots-workspace desktop-bots-create desktop-bots-room-surface animated-collapse-size" {...navigationLayout} style={{ display: active ? "grid" : "none" }} inert={!active} aria-hidden={!active || undefined}><SurfaceVisibilityContext.Provider value={visible && active}>
-        {navigation}<div className="desktop-bots-create-content"><BotNavigationToggle className="desktop-bots-draft-navigation-toggle" /><DesktopBotRoomChat environmentId={props.hostKey} room={room} bots={snapshot?.bots ?? []} rpc={props.rpc} onSaved={refreshCollaboration} onOpenThread={openDelegationThread} /></div>
+        {navigation}<div className="desktop-bots-create-content"><DesktopBotRoomChat environmentId={props.hostKey} room={room} bots={snapshot?.bots ?? []} rpc={props.rpc} onSaved={refreshCollaboration} onOpenThread={openDelegationThread} /></div>
       </SurfaceVisibilityContext.Provider></div> : null;
     })}
     <div className="assistant-chat desktop-bots-workspace desktop-bots-create animated-collapse-size" {...navigationLayout} style={{ display: draftShown ? "grid" : "none" }} inert={!draftShown} aria-hidden={!draftShown || undefined}>
       <SurfaceVisibilityContext.Provider value={visible && draftShown}>
         {navigation}
         <section className="desktop-bots-create-content">
-          <BotNavigationToggle className="desktop-bots-draft-navigation-toggle" />
           <motionElement.div
       initial={false} animate={{ x: recipientOpen ? 0 : "100%", opacity: recipientOpen ? 1 : 0 }} transition={motionPreferenceQuery().matches ? immediateTransition : panelTransition} onAnimationComplete={recipientMotion.finish} className="desktop-bots-recipient-surface" data-fold-state={recipientMotion.foldState} data-open={recipientOpen} inert={!recipientOpen} aria-hidden={!recipientOpen || undefined}
             >
@@ -327,11 +330,7 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
           </motionElement.div>
           {props.teamsSupported && <div className="desktop-bot-management-surface" hidden={managementPanel !== "teams"} inert={managementPanel !== "teams"}><SurfaceVisibilityContext.Provider value={visible && draftShown && managementPanel === "teams"}><DesktopBotTeams teams={teams} bots={snapshot?.bots ?? []} rpc={props.rpc} onSaved={refreshCollaboration} /></SurfaceVisibilityContext.Provider></div>}
           {props.roomsSupported && <div className="desktop-bot-management-surface" hidden={managementPanel !== "rooms"} inert={managementPanel !== "rooms"}><SurfaceVisibilityContext.Provider value={visible && draftShown && managementPanel === "rooms"}><DesktopBotRooms rooms={rooms} bots={snapshot?.bots ?? []} rpc={props.rpc} onSaved={refreshCollaboration} onOpenRoom={openRoom} /></SurfaceVisibilityContext.Provider></div>}
-          {managementPanel ? null : showArchive ? <BotArchive snapshot={snapshot} busy={busy} onRestore={restore} onClose={closeArchive} /> : creatingBot ? <>
-            <header><strong>{t("New bot")}</strong><button type="button" disabled={busy} onClick={() => { setCreatingBot(false); setDraftVersion((value) => value + 1); createCommand.current = undefined; }}>{t("Cancel")}</button></header>
-            <BotSettings key={draftVersion} value={null} submitLabel="Create bot" catalog={catalog} catalogState={catalogState}
-              projects={projects} busy={busy} onSave={createBot} onRetryCatalog={() => void loadCatalog()} />
-          </> : recipientShown ? null : <div className="desktop-bots-empty">
+          {managementPanel ? null : showArchive ? <BotArchive snapshot={snapshot} busy={busy} onRestore={restore} onClose={closeArchive} /> : recipientShown ? null : <div className="desktop-bots-empty">
             <Bot size={30} aria-hidden="true" />
             <h2>{t(snapshot ? "No bots yet" : "Loading…")}</h2>
             {snapshot && <button type="button" onClick={() => setRecipientOpen(true)}>{t("Create bot")}</button>}
@@ -339,6 +338,12 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
         </section>
       </SurfaceVisibilityContext.Provider>
     </div>
+    <SurfaceAppearance.Provider value="settings">
+      <PresenceBoundary>{creatingBot && visible ? <Modal title={t("New bot")} size="md" fitViewport className="desktop-bot-settings-dialog" onClose={cancelCreate}>
+        <BotSettings value={null} submitLabel="Create bot" catalog={catalog} catalogState={catalogState}
+          projects={projects} busy={busy} onSave={createBot} onCancel={cancelCreate} onRetryCatalog={() => void loadCatalog()} />
+      </Modal> : null}</PresenceBoundary>
+    </SurfaceAppearance.Provider>
   </div>;
 }
 
@@ -419,6 +424,7 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
   return <nav ref={setNavigationRef} className="desktop-bots-navigation" data-resizing={resize.dragging || undefined} aria-label={t("Bots")}>
     <header className="desktop-bots-navigation-header">
       <div className="desktop-bots-navigation-title"><h2>{t("Bots")}</h2><span className="desktop-bots-host-name" title={hostName}>{hostName}</span></div>
+      <BotNavigationToggle />
       <IconButton size="sm" onClick={onNewBot} label={t("New bot")}><Plus size={18} /></IconButton>
     </header>
     <AnimatedCollapse expanded={expanded} keepMounted><div className="desktop-bots-search">

@@ -4,6 +4,8 @@ import {
   type AutomationRun,
 } from "../../features/automations/model/automations";
 import { DesktopBots } from "../../features/bots/ui/DesktopBots";
+import { BotModelPickerContext } from "../../features/bots/ui/BotChatChrome";
+import { DesktopBotModelPicker } from "./DesktopBotModelPicker";
 import type { CiRepairRequest } from "../../features/inbox/model/ciRepair";
 import type { InboxProvider } from "../../features/inbox/model/githubTasks";
 import { type InboxItem } from "../../features/inbox/model/githubTasks";
@@ -186,11 +188,13 @@ export function createWorkspacePageRenderer({
         );
       case "assistant":
         return (
-          <DesktopBots
-            selectedMachineId={assistantMachineId}
-            onLocalSession={onSelectHistorySession}
-            onRemoteSession={onSelectRemoteSession}
-          />
+          <BotModelPickerContext.Provider value={DesktopBotModelPicker}>
+            <DesktopBots
+              selectedMachineId={assistantMachineId}
+              onLocalSession={onSelectHistorySession}
+              onRemoteSession={onSelectRemoteSession}
+            />
+          </BotModelPickerContext.Provider>
         );
       case "search":
         return (

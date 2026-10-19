@@ -114,6 +114,41 @@ it("keeps desktop orchestration cards opening their existing worker details", as
   expect(node.textContent).toContain("Read-only worker");
   expect(onOpen).not.toHaveBeenCalled();
 });
+it.each([false, true])("loads session-card display names after history and tolerates catalog failure (%s)", async failed => {
+  const message: Extract<BotMessage, { kind: "session-card" }> = {
+    kind: "session-card", id: "model-card", revision: 1, createdAt: 1,
+    ref: { environmentId: "host", projectId: "project", sessionId: "target" },
+    title: "Task", projectName: "Project", harness: "codex", model: "codex:gpt-test",
+    actionId: "action", status: "completed",
+  };
+  let resolveModels!: (value: unknown) => void;
+  let rejectModels!: (error: Error) => void;
+  const models = new Promise((resolve, reject) => { resolveModels = resolve; rejectModels = reject; });
+  const rpc = vi.fn(async (method: string) => {
+    if (method === "environment.describe") return { capabilities: ["assistant.v1"] };
+    if (method === "assistant.get") return configuredView();
+    if (method === "assistant.messages") return { entries: [message], nextRevision: 1, hasMore: false };
+    if (method === "models.list") return models;
+    throw new Error(`Unexpected method: ${method}`);
+  });
+  act(() => root.render(createElement(BotChat, {
+    hostKey: "model-names", hostName: "Host", rpc: rpc as any, onOpen: () => {},
+  })));
+  await flush();
+  const name = () => node.querySelector(".assistant-card-model-name")?.textContent;
+  expect(name()).toBe("gpt-test");
+  expect(node.querySelector<HTMLButtonElement>(".assistant-card button")?.disabled).toBe(false);
+  expect(rpc.mock.calls.filter(([method]) => method === "models.list")).toHaveLength(1);
+  expect(rpc.mock.calls.some(([method]) => method === "projects.list")).toBe(false);
+  await act(async () => {
+    if (failed) rejectModels(new Error("Catalog unavailable"));
+    else resolveModels({ models: { codex: [{ harness: "codex", id: "codex:gpt-test", name: "GPT-Test" }] }, errors: {} });
+  });
+  await flush();
+  expect(name()).toBe(failed ? "gpt-test" : "GPT-Test");
+  expect(node.querySelector(".assistant-error")).toBeNull();
+  expect(message.model).toBe("codex:gpt-test");
+});
 it("renders only public replies and one updated card without transcript logs", async () => {
   const card: BotMessage = {
     kind: "session-card",
@@ -541,6 +576,24 @@ it("sends necessary input with its exact run and generation rather than a chat p
   expect(rpc.mock.calls.some(([method]) => method === "assistant.send")).toBe(
     false,
   );
+});
+
+it("shows the stored answer inside a resolved question card", async () => {
+  const question: BotMessage = {
+    id: "question", kind: "input", revision: 1, createdAt: 1, text: "Which account?", inputKind: "question",
+    brainGeneration: 1, runId: "run", requestId: 2, resolved: true,
+    question: { requestId: 2, questions: [{ id: "q", prompt: "Which account?", multiSelect: false, allowCustom: true, options: [] }] },
+    reply: { kind: "answered", answers: { q: ["__custom__"] }, custom: { q: "@tibo, latest 20" } },
+  };
+  const approval: BotMessage = { ...question, id: "approval", createdAt: 2, inputKind: "approval", question: undefined, reply: undefined, text: "Run?", decision: "deny" };
+  const legacy: BotMessage = { ...approval, id: "legacy", createdAt: 3, decision: undefined };
+  act(() => root.render(createElement(BotChat, { hostKey: "host", hostName: "Host", rpc: chatRpc(configuredView(), [question, approval, legacy]) as any, onOpen: () => {} })));
+  await flush();
+  const cards = [...node.querySelectorAll(".assistant-input")];
+  expect(cards[0].querySelector(".assistant-input-answer")?.textContent).toBe("@tibo, latest 20");
+  expect(cards[0].querySelector("dt")).toBeNull();
+  expect(cards[1].querySelector(".assistant-input-answer")?.textContent).toBe("Denied");
+  expect(cards[2].querySelector(".assistant-pill")?.textContent).toBe("Resolved");
 });
 
 function chatRpc(view: BotConfiguration, entries: BotMessage[] = []) {

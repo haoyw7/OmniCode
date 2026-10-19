@@ -1,7 +1,7 @@
 import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Input } from "../../../shared/ui/forms/Input";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { BotConfiguration, BotPatch } from "../model/botView";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
@@ -11,8 +11,8 @@ import { BotAvatar } from "./BotAvatar";
 import { BotAvatarPicker } from "./BotAvatarPicker";
 import { botAvatarAppearance, decodeBotAvatar, encodeBotAvatar } from "./botAvatarAppearance";
 
-export function BotIdentitySettings({ bot, busy, onSave, children, avatarSupported = false }: {
-  bot: BotConfiguration; busy: boolean; onSave: (patch: BotPatch) => Promise<void>; children?: ReactNode; avatarSupported?: boolean;
+export function BotIdentitySettings({ bot, busy, onSave, avatarSupported = false }: {
+  bot: BotConfiguration; busy: boolean; onSave: (patch: BotPatch) => Promise<void>; avatarSupported?: boolean;
 }) {
   const { t } = useTranslation();
   const [name, setName] = useState(bot.name), [avatar, setAvatar] = useState(bot.avatar ?? "");
@@ -81,6 +81,5 @@ export function BotIdentitySettings({ bot, busy, onSave, children, avatarSupport
     <AnimatedCollapse expanded={changed} className="desktop-bot-identity-save">
       <Button variant="primary" type="submit" disabled={busy || !changed || !name.trim() || [...avatar].length > 8}>{t("Save")}</Button>
     </AnimatedCollapse>
-    {children}
   </form>;
 }

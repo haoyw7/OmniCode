@@ -1,4 +1,6 @@
 import { supportsProjectTerminal } from "../../features/terminal/model/terminalAvailability";
+import { resolveBotOrigin } from "../../features/bots/model/botOrigin";
+import { selectBotThread } from "../../features/bots/model/botSelection";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { message } from "@tauri-apps/plugin-dialog";
@@ -295,6 +297,8 @@ import {
   REMOTE_HISTORY_UPDATED,
   cachedRemoteSessionSummary,
   knownRemoteMachine,
+  remoteMachineFor,
+  remoteRequest,
   rememberRemoteSession,
   remoteSessionFor,
   remoteTabCwd,
@@ -303,6 +307,7 @@ import type { HostSession } from "../../features/connections/model/protocol";
 import {
   remotePath,
   remoteProjectFor,
+  sharedHostMachineId,
   remoteSessionGitCwd,
   sessionUsesHost,
 } from "../../features/connections/model/remoteProjects";
@@ -3938,7 +3943,19 @@ export function useWorkspaceController({
     [openSettings],
   );
 
+  const onOpenOriginBot = useCallback(async (sessionId: string, origin: NonNullable<Block["origin"]>) => {
+    const session = sessionsRef.current.find(item => item.id === sessionId);
+    const project = session && remoteProjectFor(session.cwd);
+    if (!project) throw new Error("Unavailable Bot");
+    const machineId = project.local ? sharedHostMachineId() : (await remoteMachineFor(project.environmentId))?.id;
+    if (!machineId) throw new Error("Unavailable Bot");
+    const target = await resolveBotOrigin(origin, (method, params) => remoteRequest(machineId, method, params));
+    if (target.threadId) selectBotThread(project.environmentId, { botId: target.bot.id, threadId: target.threadId });
+    onOpenAssistant(machineId);
+  }, [onOpenAssistant]);
+
   const sessionPaneProps = {
+    onOpenBot: onOpenOriginBot,
     workspaceSwitchingSessionId: workspaceNavigation.pending
       ? active?.id
       : undefined,

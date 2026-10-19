@@ -208,6 +208,7 @@ export type SessionPaneProps = {
   ) => void;
   onQuestionInteraction?: (sessionId: string, requestId: number) => void;
   onOpenFile: (path: string) => void;
+  onOpenBot?: (sessionId: string, origin: NonNullable<Block["origin"]>) => void | Promise<void>;
   onOpenDiff: (
     path?: string,
     session?: { sessionId: string; cwd: string; turnId?: string },
@@ -343,6 +344,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onQuestionReply,
   onQuestionInteraction,
   onOpenFile,
+  onOpenBot,
   onOpenDiff,
   onOpenPlan,
   onBuildPlan,
@@ -438,6 +440,10 @@ const LocalSessionPane = memo(function LocalSessionPane({
   const openPlan = useCallback(
     (blockId: string) => onOpenPlan(session.id, blockId),
     [onOpenPlan, session.id],
+  );
+  const openOriginBot = useCallback(
+    (origin: NonNullable<Block["origin"]>) => onOpenBot?.(session.id, origin),
+    [onOpenBot, session.id],
   );
   const buildPlan = useCallback(
     (blockId: string, target?: PlanBuildTarget) =>
@@ -1024,6 +1030,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                   historyEntries={transcriptHistory}
                   animateFrom={animateFrom}
                   onOpenAgent={openSubagent}
+                  onOpenBot={onOpenBot ? openOriginBot : undefined}
                   onOpenQuestion={openQuestion}
                   // No working clock until the worktree exists and the agent has the message.
                   busy={

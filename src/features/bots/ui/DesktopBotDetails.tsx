@@ -71,8 +71,8 @@ export function DesktopBotDetails({ identity, memory, runtime, activity, automat
       {memory && <DetailPage active={selected === "memory"} id={`${scope}-memory`} labelledBy={`${scope}-memory-tab`}>{memory}</DetailPage>}
       {runtime && <DetailPage active={selected === "runtime"} id={`${scope}-runtime`} labelledBy={`${scope}-runtime-tab`}>{runtime}</DetailPage>}
       <DetailPage active={selected === "settings"} id={`${scope}-settings`} labelledBy={`${scope}-settings-tab`}>
-        <nav aria-label={t("Bot details")} className="desktop-bot-settings-links">
-          {pages.map(page => <Button variant="ghost" type="button" key={page.key} onClick={() => setSelected(page.key)}>{t(page.label)}<ChevronRight size={16} /></Button>)}
+        <nav aria-label={t("Bot details")} className="desktop-bot-settings-links desktop-bot-row-group">
+          {pages.map(page => <Button variant="ghost" type="button" className="desktop-bot-row-group-link" key={page.key} onClick={() => setSelected(page.key)}>{t(page.label)}<ChevronRight size={16} /></Button>)}
         </nav>
       </DetailPage>
       {pages.map(page => <DetailPage key={page.key} active={selected === page.key} id={`${scope}-${page.key}`} labelledBy={`${scope}-settings-tab`}>

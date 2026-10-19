@@ -7,14 +7,18 @@ import { HARNESS_TITLE, sessionDisplayTitle } from "../../sessions/model/session
 import { Button } from "../../../shared/ui/forms/Button";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { botErrorMessage } from "../model/botErrors";
+import type { HostModelCatalog } from "../../connections/model/protocol";
+import { findRemoteModel } from "../../connections/model/remoteModels";
 export function BotSessionCard({
   message,
+  catalog,
   onOpen,
   accessible = true,
   mobile = false,
   onTimeline,
 }: {
   message: Extract<BotMessage, { kind: "session-card" }>;
+  catalog?: HostModelCatalog;
   onOpen: (ref: SessionReference) => Promise<void> | void;
   accessible?: boolean;
   mobile?: boolean;
@@ -40,7 +44,8 @@ export function BotSessionCard({
     }
   };
   const title = sessionDisplayTitle(message.title, message.harness) || message.ref.sessionId;
-  const model = message.model.startsWith(`${message.harness}:`) ? message.model.slice(message.harness.length + 1) : message.model;
+  const model = findRemoteModel(catalog?.models[message.harness] ?? [], message.model)?.name
+    || (message.model.startsWith(`${message.harness}:`) ? message.model.slice(message.harness.length + 1) : message.model);
   const labels = {
     accepted: "Accepted",
     queued: "Queued",
@@ -76,18 +81,16 @@ export function BotSessionCard({
       data-status={message.status}
     >
       <div className="assistant-card-heading">
-        {!mobile && <span className="assistant-card-icon" aria-hidden="true">
-          <HarnessIcon
-            harness={message.harness}
-            className="size-[15px]"
-          />
-        </span>}
         <div className="assistant-card-title">
           <strong title={title}>{title}</strong>
           <span className="assistant-card-context">
-            {message.projectName} ·{" "}
-            {HARNESS_TITLE[message.harness] ?? message.harness} ·{" "}
-            {message.model}
+            <span className="assistant-card-project" title={message.projectName}>{message.projectName}</span>
+            {model && <span className="assistant-card-model" title={model}>
+              <span className="shrink-0" role="img" aria-label={HARNESS_TITLE[message.harness] ?? message.harness} title={HARNESS_TITLE[message.harness] ?? message.harness}>
+                <HarnessIcon harness={message.harness} className="size-[13px]" />
+              </span>
+              <span className="assistant-card-model-name">{model}</span>
+            </span>}
           </span>
         </div>
         <span

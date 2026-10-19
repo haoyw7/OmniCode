@@ -28,7 +28,6 @@ afterEach(() => { act(() => root.unmount()); node.remove(); vi.useRealTimers(); 
 it("keeps a runtime draft and command identity after an unknown response, and sends null to clear the directory", async () => {
   const rpc = vi.fn().mockRejectedValueOnce(new Error("Connection lost")).mockResolvedValueOnce({ revision: 6 });
   act(() => root.render(createElement(DesktopBotRuntimeSettings, { bot: bot(), rpc: rpc as never, onSaved: vi.fn() })));
-  act(() => button("Runtime").click()); await flush();
   act(() => { input(field("Working directory"), ""); input(field("Concurrent runs"), "4"); });
   act(() => button("Save runtime settings").click()); await flush();
   expect(field("Concurrent runs").value).toBe("4"); expect(node.textContent).toContain("Connection lost");
@@ -37,14 +36,14 @@ it("keeps a runtime draft and command identity after an unknown response, and se
   expect(rpc.mock.calls[1][1].patch).not.toHaveProperty("avatar");
   expect(rpc.mock.calls[1][1]).toMatchObject({ botId: "bot-a", expectedRevision: 5, patch: { workingDirectory: null, maxConcurrentRuns: 4 } });
   expect(rpc.mock.calls[0][1].commandId).toBe(rpc.mock.calls[1][1].commandId);
-  expect(button("Save runtime settings").disabled).toBe(true);
+  expect(button("Save runtime settings")).toBeUndefined();
 });
 
 it("preserves a conflicting runtime draft until the user explicitly reloads", async () => {
   const latest = { ...bot(), revision: 7, maxConcurrentRuns: 8 };
   const rpc = vi.fn().mockRejectedValueOnce(new Error("Settings changed elsewhere. Reload before saving.")).mockResolvedValueOnce(latest);
   act(() => root.render(createElement(DesktopBotRuntimeSettings, { bot: bot(), rpc: rpc as never, onSaved: vi.fn() })));
-  act(() => button("Runtime").click()); await flush(); act(() => input(field("Concurrent runs"), "5"));
+  act(() => input(field("Concurrent runs"), "5"));
   act(() => button("Save runtime settings").click()); await flush();
   expect(field("Concurrent runs").value).toBe("5"); expect(button("Save runtime settings").disabled).toBe(true);
   act(() => button("Reload saved configuration").click()); await flush(); expect(field("Concurrent runs").value).toBe("8");
@@ -108,9 +107,11 @@ it("limits callable choices to other active Bots on this Host and saves the expl
     if (method === "bots.configure") return { revision: 6 };
     throw new Error(method);
   });
-  act(() => root.render(createElement(DesktopBotRuntimeSettings, { bot: mine, rpc: rpc as never, onSaved: vi.fn(), delegationSupported: true })));
+  const render = (visible: boolean) => act(() => root.render(createElement(SurfaceVisibilityContext.Provider, { value: visible },
+    createElement(DesktopBotRuntimeSettings, { bot: mine, rpc: rpc as never, onSaved: vi.fn(), delegationSupported: true }))));
+  render(false); await flush();
   expect(rpc).not.toHaveBeenCalled();
-  act(() => button("Runtime").click()); await flush();
+  render(true); await flush();
   const list = node.querySelector<HTMLElement>('[aria-label="Callable bots"]')!;
   expect(list.textContent).not.toContain("Test Bot");
   const options = [...list.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
@@ -122,7 +123,6 @@ it("limits callable choices to other active Bots on this Host and saves the expl
 it("omits delegation configuration and discovery when the Host lacks the capability", async () => {
   const rpc = vi.fn().mockResolvedValue({ revision: 6 });
   act(() => root.render(createElement(DesktopBotRuntimeSettings, { bot: bot(), rpc: rpc as never, onSaved: vi.fn() })));
-  act(() => button("Runtime").click()); await flush();
   expect(node.querySelector('[aria-label="Callable bots"]')).toBeNull();
   act(() => input(field("Concurrent runs"), "4"));
   act(() => button("Save runtime settings").click()); await flush();

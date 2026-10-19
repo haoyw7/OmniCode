@@ -59,6 +59,17 @@ function mount(blocks: Block[], historyLoading = false) {
   return { render, update, store };
 }
 
+it("opens the source Bot from a mobile conversation message", async () => {
+  const origin = { kind: "assistant" as const, assistantId: "bot", botId: "bot", threadId: "thread", assistantName: "Helper", actionId: "send", wakeupId: "wake" };
+  const onOpenBot = vi.fn();
+  const { render } = mount([{ ...user, origin }]);
+  render({ onOpenBot });
+  const button = app.querySelector<HTMLButtonElement>("[data-assistant-origin] button");
+  expect(button).not.toBeNull();
+  await act(async () => button!.click());
+  expect(onOpenBot).toHaveBeenCalledWith(origin);
+});
+
 it("shows restored history and subsequent streamed chunks immediately", () => {
   const { render, update } = mount([user, reply("Cached")], true);
   update([user, reply(text), reply(text, "second")]);

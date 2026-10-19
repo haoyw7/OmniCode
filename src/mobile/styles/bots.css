@@ -1052,6 +1052,7 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: calc((100% - 24px) / 3);
+  justify-content: safe center;
   gap: 12px;
   padding-block: 20px 30px;
   overflow-x: auto;
@@ -1066,9 +1067,13 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   min-width: 0;
   padding: 4px 0;
   border-radius: var(--m-control-radius);
+  background: transparent;
   color: var(--color-m-ink-secondary);
   font-size: var(--mobile-font-md);
   line-height: 1.35;
+}
+@media (hover: hover) and (pointer: fine) {
+  .mobile-bots-pinned > button:hover { background: var(--m-control-active); }
 }
 .mobile-bots-pinned > button > span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mobile-bots-pinned .desktop-bot-avatar { max-width: 100%; }

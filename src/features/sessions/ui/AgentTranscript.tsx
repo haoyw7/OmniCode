@@ -115,6 +115,7 @@ type Props = {
   onOpenDiff?: (path: string) => void;
   onOpenPlan?: (blockId: string) => void;
   onOpenAgent?: (block: Block) => void;
+  onOpenBot?: (origin: NonNullable<Block["origin"]>) => void | Promise<void>;
   onOpenQuestion?: (blockId: string) => void;
   onBuildPlan?: (blockId: string, target?: PlanBuildTarget) => void;
   /** The plan whose decision panel is open; its card omits Build. */
@@ -178,6 +179,7 @@ function AgentTranscriptComponent({
   onOpenDiff,
   onOpenPlan,
   onOpenAgent,
+  onOpenBot,
   onOpenQuestion,
   onBuildPlan,
   decidingPlanId,
@@ -208,9 +210,10 @@ function AgentTranscriptComponent({
     () => ({
       ...basePlatform,
       ...(onOpenAgent ? { openAgent: onOpenAgent } : {}),
+      ...(onOpenBot ? { openBot: onOpenBot } : {}),
       ...(onOpenQuestion ? { openQuestion: onOpenQuestion } : {}),
     }),
-    [basePlatform, onOpenAgent, onOpenQuestion],
+    [basePlatform, onOpenAgent, onOpenBot, onOpenQuestion],
   );
   const { t: uiT } = useTranslation();
   const { liveClockInFooter, openActivity, messageMotion } = useContext(TranscriptPlatformContext);

@@ -245,6 +245,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     setAppRoot,
     closeBots,
     botResume,
+    onOpenOriginBot,
     openBotSession,
     backToBot,
     setComposerPanel,
@@ -710,6 +711,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               animateFrom={animateFrom}
               readBinaryFile={readHostImage}
               resolveNoteImage={client.hasCapability("notes.v1") ? resolveNoteImage : undefined}
+              onOpenBot={onOpenOriginBot}
               disabled={busy || !!pending || !sessionConfirmed || nativeReadOnly}
               onCommand={onTranscriptCommand}
               questionOpen={questionOpen}

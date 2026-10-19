@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Button } from "../../../shared/ui/forms/Button";
-import { Modal, type ModalSize } from "../../../shared/ui/Modal";
+import { Modal, ModalFooter, type ModalSize } from "../../../shared/ui/Modal";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { SurfaceAppearance } from "../../../shared/ui/SurfaceAppearance";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
@@ -38,10 +38,11 @@ export function BotSettingsDialog({ title, summary, preview, open, busy, invalid
           if (!busy && !invalid) onApply();
         }}>
           <div className="desktop-bot-dialog-fields">{children}</div>
-          <footer className="desktop-bot-dialog-footer">
+          <ModalFooter className="desktop-bot-dialog-footer">
+            {summary && <span className="desktop-bot-dialog-status" aria-live="polite">{summary}</span>}
             <Button variant="secondary" onClick={onCancel}>{t("Cancel")}</Button>
             <Button variant="primary" type="submit" disabled={busy || invalid}>{t("Apply")}</Button>
-          </footer>
+          </ModalFooter>
         </form>
       </Modal> : null}</PresenceBoundary>
     </SurfaceAppearance.Provider>

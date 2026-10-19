@@ -5,7 +5,7 @@ import { copyMessage, copyText } from "../../../platform/tauri/clipboard";
 import { readBinaryFile, writeTextFile } from "../../../platform/tauri/fs";
 import type { TextRevealOptions } from "./wordFade";
 import type { TextRevealQueue } from "./textRevealQueue";
-import type { Block } from "../model/session";
+import type { Block, TurnOrigin } from "../model/session";
 
 /** Rendering stays shared; each client supplies its native services. */
 const desktopPlatform = {
@@ -27,6 +27,7 @@ export const TranscriptPlatformContext = createContext<
     /** Clients without a side panel show a finished tool call's details on tap. */
     openTool?: (block: Block) => void;
     openAgent?: (block: Block) => void;
+    openBot?: (origin: TurnOrigin) => void | Promise<void>;
     /** Clients without a side panel list a group's steps in a sheet instead of unfolding it inline. */
     openActivity?: (steps: Block[]) => void;
     /** Clients without a side panel read a whole plan in their own view. */

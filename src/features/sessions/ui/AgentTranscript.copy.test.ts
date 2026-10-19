@@ -95,6 +95,24 @@ it("shows the assistant nickname above its sent bubble without including it in c
   await act(async () => container.querySelector<HTMLButtonElement>('button[aria-label="复制消息"]')!.click());
   expect(await navigator.clipboard.readText()).toBe("你好，我是助理");
 });
+it("opens the Bot from its origin label and allows retry after an unavailable target", async () => {
+  const origin = { kind: "assistant" as const, assistantId: "a", botId: "bot", threadId: "thread", actionId: "send", wakeupId: "wake" };
+  const onOpenBot = vi.fn().mockRejectedValueOnce(new Error("Unavailable Bot")).mockResolvedValue(undefined);
+  const blocks: Block[] = [{ id: "from-bot", role: "user", text: "Message", origin }];
+  const render = (visible = true) => act(() => root.render(createElement(AgentTranscript, { blocks, onOpenBot, visible })));
+  render();
+  const button = container.querySelector<HTMLButtonElement>("[data-assistant-origin] button")!;
+  expect(button.textContent).toBe("From Assistant");
+  await act(async () => button.click());
+  expect(onOpenBot).toHaveBeenCalledWith(origin);
+  expect(container.querySelector('[role="alert"]')?.textContent).toBe("Unavailable Bot");
+  expect(button.disabled).toBe(false);
+  await act(async () => button.click());
+  expect(container.querySelector('[role="alert"]')).toBeNull();
+  render(false);
+  expect(button.disabled).toBe(true);
+});
+
 it("copies the full user prompt and confirms success", async () => {
   const text = "First line\nSecond line\nThird line\nFourth line\nFifth line";
   act(() =>

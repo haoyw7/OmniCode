@@ -4,7 +4,8 @@ import { timestampTitle } from "../timestampTitle";
 import { AttachmentList } from "../AttachmentList";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { ArrowUp, CircleDashed, Bot, Trash2 } from "../../../../shared/ui/icons";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useContext, useLayoutEffect, useRef, useState } from "react";
+import { TranscriptPlatformContext } from "../TranscriptPlatform";
 import { AttachmentChip } from "../AttachmentChip";
 import { OmniCodeSparkles } from "../OmniCodeSparkles";
 import { OrchestratorConstellation } from "../OrchestratorConstellation";
@@ -50,6 +51,17 @@ export function UserMessageBlock({
   onOpenFile?: (path: string) => void;
 }) {
   const { t: uiT, language } = useTranslation();
+  const { openBot } = useContext(TranscriptPlatformContext);
+  const [openingBot, setOpeningBot] = useState(false);
+  const [botOpenFailed, setBotOpenFailed] = useState(false);
+  const openOrigin = async () => {
+    if (!openBot || !block.origin || openingBot) return;
+    setOpeningBot(true);
+    setBotOpenFailed(false);
+    try { await openBot(block.origin); }
+    catch { setBotOpenFailed(true); }
+    finally { setOpeningBot(false); }
+  };
   const sentAt = block.sentAt ?? block.startedAt;
   const [expanded, setExpanded] = useState(false);
   const [overflows, setOverflows] = useState(false);
@@ -132,12 +144,21 @@ export function UserMessageBlock({
     >
       <div className="user-message-hover-zone flex w-fit max-w-full min-w-0 flex-col items-end overflow-visible">
         {block.origin?.kind === "assistant" && (
-          <div
-            className="mb-1 inline-flex items-center gap-1.5 px-3 text-xs text-content/60"
-            data-assistant-origin={block.origin.assistantId}
-          >
-            <Bot className="size-3.5" aria-hidden="true" />
-            <span>{uiT("From {value0}", { value0: block.origin.assistantName || uiT("Assistant") })}</span>
+          <div className="mb-1 px-3 text-xs text-content/60" data-assistant-origin={block.origin.assistantId}>
+            {openBot ? (
+              <button type="button"
+                className="inline-flex items-center gap-1.5 rounded hover:text-content hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-content/40 disabled:opacity-50"
+                disabled={!visible || openingBot} aria-busy={openingBot || undefined} onClick={() => void openOrigin()}>
+                <Bot className="size-3.5" aria-hidden="true" />
+                <span>{uiT("From {value0}", { value0: block.origin.assistantName || uiT("Assistant") })}</span>
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1.5">
+                <Bot className="size-3.5" aria-hidden="true" />
+                <span>{uiT("From {value0}", { value0: block.origin.assistantName || uiT("Assistant") })}</span>
+              </span>
+            )}
+            {botOpenFailed && <span role="alert" className="ml-2">{uiT("Unavailable Bot")}</span>}
           </div>
         )}
         {mediaAttachments.length ? (

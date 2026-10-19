@@ -30,6 +30,7 @@ export function BotMemoryEditor({
   revision,
   disabled,
   Detail,
+  onReady,
 }: {
   rpc: BotRpc;
   /** The Host's current memory version; a change reloads the list. */
@@ -37,6 +38,7 @@ export function BotMemoryEditor({
   disabled?: boolean;
   /** Platform panel; facts list on one line and open in it. */
   Detail: ComponentType<BotMemoryDetailProps>;
+  onReady?: (ready: boolean) => void;
 }) {
   const { t } = useTranslation();
   const [memory, setMemory] = useState<BotMemory>();
@@ -59,11 +61,15 @@ export function BotMemoryEditor({
     } catch (cause) {
       if (load === loads.current)
         setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      if (load === loads.current) onReady?.(true);
     }
-  }, [rpc]);
+  }, [rpc, onReady]);
   useEffect(() => {
     void load();
+    return () => { loads.current++; };
   }, [load, revision]);
+  useEffect(() => () => onReady?.(false), [onReady]);
   const notices: Record<MemoryControl["action"], [string, string]> = {
     addMemory: ["Adding memory…", "Memory added"],
     editMemory: ["Updating memory…", "Memory updated"],

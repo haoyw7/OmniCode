@@ -39,8 +39,11 @@ export function DesktopBotsNavigation({ hostName, assistant, messages, onSelect 
   return (
     <nav className="desktop-bots-navigation" aria-label={t("Bots")}>
       <header className="desktop-bots-navigation-header">
-        <strong>{t("Bots")}</strong>
-        <span className="desktop-bots-host-name" title={hostName}>{hostName}</span>
+        <div className="desktop-bots-navigation-title">
+          <strong>{t("Bots")}</strong>
+          <span className="desktop-bots-host-name" title={hostName}>{hostName}</span>
+        </div>
+        <BotNavigationToggle />
       </header>
       <label className="desktop-bots-search">
         <Search size={15} aria-hidden="true" />
@@ -93,13 +96,11 @@ function DesktopBotsHeader({ name, botIdentity, status, lifecycle, busy, setting
   const [menuOpen, setMenuOpen] = useState(false);
   useEffect(() => { if (!visible) setMenuOpen(false); }, [visible]);
   return <header className="assistant-header desktop-bots-header">
-    <div className="desktop-bots-header-navigation"><BotNavigationToggle /></div>
     <Button variant="ghost" size="xl" className="desktop-bots-bot-capsule" aria-label={t("Bot details")}
       aria-expanded={settingsOpen} onClick={onSettings} disabled={!onSettings} title={name}>
       <BotAvatar bot={botIdentity ?? { id: name }} size={24} />
       <span className="desktop-bots-header-title"><strong>{name}</strong></span>
       {lifecycle && lifecycle !== "idle" && <span className="desktop-bots-capsule-status" data-lifecycle={lifecycle} role="status" aria-label={status} title={status} />}
-      <ChevronRight size={15} aria-hidden="true" />
     </Button>
     <div className="assistant-header-actions">
       {controls && <DropdownMenu open={menuOpen && visible} onOpenChange={setMenuOpen}>

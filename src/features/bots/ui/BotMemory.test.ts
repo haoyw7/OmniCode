@@ -77,6 +77,56 @@ const enter = (field: HTMLInputElement) =>
     field.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
   });
 
+it("waits for the memory response before starting the disclosure", async () => {
+  const host = fakeHost();
+  let resolve!: (value: BotMemory) => void;
+  host.calls.mockImplementationOnce(() => new Promise<BotMemory>(done => { resolve = done; }));
+  render(host);
+  act(() => button("Memory").click());
+  await settle();
+  const fold = node.querySelector<HTMLElement>('.assistant-memory')!.closest<HTMLElement>('[data-collapse-motion]')!;
+  await act(async () => finishMotion());
+  expect(fold.dataset.foldState).toBe("closed");
+  expect(fold.style.height).toBe("0px");
+  expect(fold.inert).toBe(true);
+  await act(async () => resolve(structuredClone(host.memory)));
+  expect(fold.dataset.foldState).toBe("opening");
+  expect(fold.textContent).toContain("Prefers pnpm");
+  await act(async () => finishMotion());
+  expect(fold.dataset.foldState).toBe("open");
+  act(() => button("Memory").click());
+  act(() => button("Memory").click());
+  await act(async () => finishMotion());
+  expect(fold.dataset.foldState).toBe("open");
+  act(() => button("Memory").click());
+  await act(async () => finishMotion());
+  expect(node.querySelector('.assistant-memory')).toBeNull();
+  act(() => button("Memory").click());
+  await settle();
+  await act(async () => finishMotion());
+  expect(node.querySelector('.assistant-memory')?.closest<HTMLElement>('[data-collapse-motion]')?.dataset.foldState).toBe("open");
+});
+
+it("ignores a cancelled load and opens to show a failed request", async () => {
+  const host = fakeHost();
+  let resolve!: (value: BotMemory) => void;
+  host.calls.mockImplementationOnce(() => new Promise<BotMemory>(done => { resolve = done; }));
+  render(host);
+  act(() => button("Memory").click());
+  await settle();
+  act(() => button("Memory").click());
+  await act(async () => finishMotion());
+  await act(async () => resolve(structuredClone(host.memory)));
+  expect(node.querySelector('.assistant-memory')).toBeNull();
+  host.calls.mockRejectedValueOnce(new Error("Memory unavailable"));
+  act(() => button("Memory").click());
+  await settle();
+  await act(async () => finishMotion());
+  const memory = node.querySelector<HTMLElement>('.assistant-memory')!;
+  expect(memory.closest<HTMLElement>('[data-collapse-motion]')?.dataset.foldState).toBe("open");
+  expect(memory.querySelector('[role="alert"]')?.textContent).toBe("Memory unavailable");
+});
+
 it("loads memory only when opened and edits it without submitting the settings form", async () => {
   const host = fakeHost();
   const save = render(host);

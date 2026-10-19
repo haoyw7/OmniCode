@@ -101,52 +101,49 @@ it("omits personality fields for Hosts that do not support them", async () => {
 });
 
 const dialogButton = (text: string) => [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find(button => button.textContent === text)!;
-const openPersonality = async () => {
+const openPermissions = async () => {
   await act(async () => node.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')!.click());
 };
 
-it("cancels dialog edits without losing an earlier model change", async () => {
+it("omits the inspector personality card and cancels permission edits without losing an earlier model change", async () => {
   const save = render({ mobile: false, presentation: "inspector", catalog: {
     models: { codex: [{ id: "test", name: "Test", harness: "codex" }, { id: "other", name: "Other", harness: "codex" }] }, errors: {},
   } });
   await act(async () => node.querySelector<HTMLButtonElement>('button[aria-label="Model: Test"]')!.click());
   await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[role="option"]')].find(option => option.textContent === "Other")!.click());
-  await openPersonality();
-  type("Personality and tone", "Discard this text");
+  expect(node.textContent).not.toContain("Personality and tone");
+  expect(node.querySelector('[data-section="identity"]')).toBeNull();
+  await openPermissions();
+  act(() => document.querySelector<HTMLInputElement>('[role="dialog"] input[type="checkbox"]')!.click());
   await act(async () => dialogButton("Cancel").click());
   expect(document.querySelector('[role="dialog"]')).toBeNull();
-  expect(node.textContent).not.toContain("Discard this text");
   expect(document.activeElement).toBe(node.querySelector('button[aria-haspopup="dialog"]'));
   await submit();
   expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ model: "other", persona: expect.objectContaining({ style: "" }) }));
 });
 
-it("validates and applies a dialog draft without submitting the surrounding settings form", async () => {
+it("applies a permission dialog draft without submitting the surrounding settings form", async () => {
   const save = render({ mobile: false, presentation: "inspector" });
-  await openPersonality();
-  act(() => [...document.querySelectorAll<HTMLLabelElement>('[role="dialog"] .assistant-chip')].find(chip => chip.textContent === "Custom")!.querySelector('input')!.click());
-  expect(dialogButton("Apply").disabled).toBe(true);
-  type("Personality and tone", "Speak Chinese");
-  type("What should it call you?", "Wy");
+  await openPermissions();
+  act(() => document.querySelector<HTMLInputElement>('[role="dialog"] input[type="checkbox"]')!.click());
   await act(async () => dialogButton("Apply").click());
   expect(save).not.toHaveBeenCalled();
-  expect(node.textContent).toContain("Speak Chinese");
-  await openPersonality();
-  expect(input("Personality and tone").value).toBe("Speak Chinese");
+  await openPermissions();
+  expect(document.querySelector<HTMLInputElement>('[role="dialog"] input[type="checkbox"]')!.checked).toBe(false);
   await act(async () => dialogButton("Cancel").click());
   await submit();
-  expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ persona: { preset: "custom", style: "Speak Chinese", userName: "Wy" } }));
+  expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ policy: expect.objectContaining({ permissions: expect.objectContaining({ "catalog.read": false }) }) }));
 });
 
 it("discards an open dialog when its retained settings surface is hidden", async () => {
   const props = { value: null, catalog, projects: [], busy: false, presentation: "inspector" as const, onSave: vi.fn(async () => {}) };
   const show = async (visible: boolean) => act(async () => root.render(createElement(SurfaceVisibilityContext.Provider, { value: visible }, createElement(BotSettings, props))));
-  await show(true); await openPersonality();
-  type("Personality and tone", "Hidden draft");
+  await show(true); await openPermissions();
+  act(() => document.querySelector<HTMLInputElement>('[role="dialog"] input[type="checkbox"]')!.click());
   await show(false);
   expect(document.querySelector('[role="dialog"]')).toBeNull();
   await show(true);
   expect(document.querySelector('[role="dialog"]')).toBeNull();
-  await openPersonality();
-  expect(input("Personality and tone").value).toBe("");
+  await openPermissions();
+  expect(document.querySelector<HTMLInputElement>('[role="dialog"] input[type="checkbox"]')!.checked).toBe(true);
 });

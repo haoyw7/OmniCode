@@ -190,10 +190,12 @@ it("creates a Bot only after saving its editable draft and opens its automatic c
   act(() => [...draft.querySelectorAll<HTMLButtonElement>('[role="option"]')].find(button => button.textContent === "Create new Bot")!.click());
   await act(async () => { await vi.advanceTimersByTimeAsync(360); }); await flush();
   expect(rpc.mock.calls.some(([method]) => method === "bots.create")).toBe(false);
-  const name = [...draft.querySelectorAll("label")].find((label) => label.textContent?.startsWith("Assistant name"))!.querySelector("input")!;
+  const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
+  expect(dialog.querySelector("h2")?.textContent).toBe("New bot");
+  const name = [...dialog.querySelectorAll("label")].find((label) => label.textContent?.startsWith("Assistant name"))!.querySelector("input")!;
   act(() => setValue(name, "New colleague"));
   expect(rpc.mock.calls.some(([method]) => method === "bots.create")).toBe(false);
-  act(() => draft.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+  act(() => dialog.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
   await flush();
   expect(rpc.mock.calls.find(([method]) => method === "bots.create")?.[1].patch.name).toBe("New colleague");
   expect(active().textContent).toContain("New colleague");
@@ -461,7 +463,7 @@ it("pins without duplicate rows, keeps pins searchable and drops an archived Bot
   expect(active().querySelector('.desktop-bots-contacts [title="B"]')).toBeNull();
   await select("B");
   act(() => active().querySelector<HTMLButtonElement>('button[aria-label="Bot details"]')!.click()); await flush();
-  expect(active().querySelector<HTMLButtonElement>('.desktop-bot-identity [aria-pressed]')?.getAttribute('aria-pressed')).toBe('true');
+  expect(active().querySelector('.desktop-bot-identity')?.textContent).not.toMatch(/Pin Bot|Unpin Bot/);
   const search = active().querySelector<HTMLInputElement>('[aria-label="Search bots"]')!;
   act(() => setValue(search, "B")); await finishMotion();
   expect(active().querySelector('.desktop-bots-pinned [title="B"]')?.getAttribute('aria-current')).toBe('true');
@@ -534,7 +536,7 @@ it("hides multi-recipient hints on older Hosts and keeps Tab as ordinary navigat
   expect(node.querySelector('.desktop-bot-recipient-chip')).toBeNull();
   expect(node.querySelector('.desktop-bot-recipient-menu')?.textContent).not.toContain("Tab to add");
   await key(field, "ArrowUp"); await key(field, "Enter"); await finishMotion();
-  expect(node.querySelector('.desktop-bots-create:not([aria-hidden]) .assistant-settings')).not.toBeNull();
+  expect(document.querySelector('[role="dialog"] .assistant-settings')).not.toBeNull();
   expect(rpc.mock.calls.some(([method]) => method === "bots.create")).toBe(false);
 });
 

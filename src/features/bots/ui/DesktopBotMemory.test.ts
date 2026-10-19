@@ -77,15 +77,17 @@ it("keeps a command ID across an uncertain save and disables undo until the draf
 });
 it("opens a topic as an unsaved draft and retains it when switching files", async () => {
   await render();
-  act(() => button("New topic").click());
+  act(() => node.querySelector<HTMLButtonElement>('button[aria-label="New topic"]')!.click());
   act(() => input(node.querySelector<HTMLInputElement>('input[placeholder="Topic name"]')!, "preferences"));
   act(() => node.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }))); await flush();
   expect(rpc.mock.calls.some(([method]) => method === "botMemory.save")).toBe(false);
   expect(rpc.mock.calls.some(([method, params]) => method === "botMemory.read" && params.path === "memory/preferences.md")).toBe(true);
   act(() => input(editor(), "Preferred style"));
-  const select = node.querySelector<HTMLSelectElement>('[aria-label="Memory file"]')!;
-  act(() => { select.value = "MEMORY.md"; select.dispatchEvent(new Event("change", { bubbles: true })); }); await flush();
-  expect([...select.options].some((option) => option.value === "memory/preferences.md")).toBe(true);
-  act(() => { select.value = "memory/preferences.md"; select.dispatchEvent(new Event("change", { bubbles: true })); }); await flush();
+  const openFiles = () => act(() => node.querySelector<HTMLButtonElement>('button[aria-label^="Memory file:"]')!.click());
+  const file = (path: string) => [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((option) => option.textContent?.startsWith(path));
+  openFiles(); act(() => file("MEMORY.md")!.click()); await flush();
+  openFiles();
+  expect(file("memory/preferences.md")?.textContent).toContain("Unsaved changes");
+  act(() => file("memory/preferences.md")!.click()); await flush();
   expect(editor().value).toBe("Preferred style");
 });

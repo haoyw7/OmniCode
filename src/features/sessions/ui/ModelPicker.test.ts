@@ -726,7 +726,7 @@ describe("model picker", () => {
     },
   );
 
-  it("names the source of same-name favorites from different providers", () => {
+  it("shows ungrouped favorites in saved order with accessible sources", () => {
     setHarnessModels("cursor", [
       {
         id: "cursor:auto",
@@ -754,8 +754,8 @@ describe("model picker", () => {
       "omnicode.favoriteModels",
       JSON.stringify([
         "cursor:auto",
-        "cursor:muse-spark-1.3",
         "opencode:opencode-go/muse-spark-1.3",
+        "cursor:muse-spark-1.3",
       ]),
     );
 
@@ -789,14 +789,11 @@ describe("model picker", () => {
     );
     expect(options).toEqual([
       "Auto, Cursor",
-      "Muse Spark 1.3, Cursor",
       "Muse Spark 1.3, OpenCode Go",
+      "Muse Spark 1.3, Cursor",
     ]);
-    expect(
-      [...container.querySelectorAll('[role="group"]')].map((group) =>
-        group.getAttribute("aria-label"),
-      ),
-    ).toEqual(["Cursor", "OpenCode Go"]);
+    expect(container.querySelectorAll('[role="group"]')).toHaveLength(0);
+    expect(container.querySelector(".model-picker-group-label")).toBeNull();
   });
 
   it("can move effort into a dedicated composer control", () => {

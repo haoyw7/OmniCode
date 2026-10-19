@@ -1,7 +1,8 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useLayoutEffect, useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { Modal } from "../../../shared/ui/Modal";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import type { BotMemoryDetailProps } from "./BotChatChrome";
 
 /** Desktop panel for one remembered fact: the full text, editable or forgettable. */
@@ -54,27 +55,17 @@ export function BotMemoryDialog({
             {error}
           </small>
         )}
-        <footer className="assistant-settings-footer">
-          <button data-ui="button" data-variant="secondary"
-            type="button"
-            className="assistant-danger"
-            disabled={busy}
-            onClick={onForget}
-          >
+        <ModalFooter className="assistant-memory-actions">
+          <Button variant="secondary" className="assistant-danger" disabled={busy} onClick={onForget}>
             {t("Forget")}
-          </button>
-          <button data-ui="button" data-variant="secondary" type="button" disabled={busy} onClick={onClose}>
+          </Button>
+          <Button variant="secondary" disabled={busy} onClick={onClose}>
             {t("Cancel")}
-          </button>
-          <button data-ui="button" data-variant="primary"
-            type="button"
-            className="assistant-primary"
-            disabled={busy || !changed}
-            onClick={() => onSave(draft)}
-          >
+          </Button>
+          <Button variant="primary" disabled={busy || !changed} onClick={() => onSave(draft)}>
             {t("Save")}
-          </button>
-        </footer>
+          </Button>
+        </ModalFooter>
       </div>
     </Modal> : null}</PresenceBoundary>
   );

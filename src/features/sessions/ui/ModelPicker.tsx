@@ -82,6 +82,7 @@ type Props = {
   allowedHarnesses?: readonly HarnessId[];
   hotkeys?: boolean;
   appearance?: "composer";
+  disabled?: boolean;
   onChange: (harness: HarnessId, model: string) => void;
   onSettingsChange: (settings: Record<string, string>) => void;
   onClose?: () => void;
@@ -255,12 +256,13 @@ export function ModelPicker({
   allowedHarnesses,
   hotkeys = false,
   appearance,
+  disabled = false,
   onChange,
   onSettingsChange,
   onClose,
 }: Props) {
   const { t: uiT } = useTranslation();
-  const visible = useSurfaceVisibility();
+  const visible = useSurfaceVisibility() && !disabled;
   const source = useModelSource();
   const catalogVersion = useSyncExternalStore(
     subscribeModels,
@@ -291,6 +293,11 @@ export function ModelPicker({
   // mark is enough; paint the highlight only after the user navigates.
   const [listNavigated, setListNavigated] = useState(false);
   const [recentMenu, setRecentMenu] = useState<RecentMenu | null>(null);
+  useEffect(() => {
+    if (!disabled) return;
+    setOpen(false);
+    setRecentMenu(null);
+  }, [disabled]);
   const [recentActive, setRecentActive] = useState(0);
   const [submenu, setSubmenu] = useState<Submenu | null>(null);
   const entryAnchors = useRef(new Map<string, { current: HTMLButtonElement | null }>());
@@ -404,6 +411,7 @@ export function ModelPicker({
             .includes(needle),
         )
       : pool;
+    if (visibleTab === "favorites") return filtered;
     // Keyboard navigation and selection must follow the grouped display order.
     return modelGroups(filtered).flatMap((group) =>
       group.models.map(({ item }) => item),
@@ -737,6 +745,7 @@ export function ModelPicker({
         ref={button}
         type="button"
         data-model-picker-trigger
+        disabled={disabled}
         data-composer-control={appearance}
         title={uiT("{value0} · Recent models: right-click or {value1}.", {
           value0: String(triggerTitle),
@@ -1422,7 +1431,14 @@ function ModelBrowser({
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
   const activeRef = useRef<HTMLButtonElement>(null);
   const selectedTabRef = useRef<HTMLButtonElement>(null);
-  const groups = modelGroups(models);
+  const groups = tab === "favorites"
+    ? [{
+        id: "favorites",
+        name: "",
+        showLabel: false,
+        models: models.map((item, index) => ({ item, index })),
+      }]
+    : modelGroups(models);
   const tabLoading =
     tab !== "favorites" && source.loading?.(tab) === true;
 
@@ -1595,7 +1611,11 @@ function ModelBrowser({
           </div>
         ) : (
           groups.map((group) => (
-            <div key={group.id} role="group" aria-label={group.name}>
+            <div
+              key={group.id}
+              role={tab === "favorites" ? undefined : "group"}
+              aria-label={tab === "favorites" ? undefined : group.name}
+            >
               {group.showLabel ? (
                 <div className="model-picker-group-label px-2.5 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wide text-content/40">
                   {group.name}
@@ -1608,8 +1628,8 @@ function ModelBrowser({
                   showActive && index === active && !selected;
                 const favorited = favorites.includes(item.id);
                 const disabled = !source.available(item.harness);
-                // Favorites mix harnesses, so every row names its source.
-                // Provider first (OpenCode Go vs OpenCode), else harness.
+                // Keep the provider in the accessible name when favorites
+                // identify their harness visually with an icon.
                 const provenance =
                   item.provider?.name ?? HARNESS_TITLE[item.harness];
                 return (
@@ -1651,15 +1671,16 @@ function ModelBrowser({
                           : ""
                       }`}
                     >
+                      {tab === "favorites" ? (
+                        <HarnessIcon
+                          harness={item.harness}
+                          className="size-4 shrink-0"
+                        />
+                      ) : null}
                       <span data-menu-title className="min-w-0 flex-1 truncate">
                         {item.name}
                       </span>
                     </button>
-                    {tab === "favorites" ? (
-                      <span className="max-w-24 shrink-0 truncate text-[10px] text-content/40">
-                        {provenance}
-                      </span>
-                    ) : null}
                     <button
                       type="button"
                       data-menu-accessory

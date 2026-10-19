@@ -84,6 +84,7 @@ export const MobileTranscript = memo(function MobileTranscript({
   onCommand,
   readBinaryFile,
   resolveNoteImage,
+  onOpenBot,
   animateFrom,
   active = true,
   onOverlayChange,
@@ -103,6 +104,7 @@ export const MobileTranscript = memo(function MobileTranscript({
   onCommand: (command: HostCommand) => void | Promise<boolean>;
   readBinaryFile?: (path: string) => Promise<Uint8Array>;
   resolveNoteImage?: (asset: string) => Promise<string>;
+  onOpenBot?: (origin: NonNullable<Block["origin"]>) => void | Promise<void>;
   animateFrom?: string;
   active?: boolean;
   /** Let the native Back button dismiss a transcript sheet before leaving chat. */
@@ -154,6 +156,7 @@ export const MobileTranscript = memo(function MobileTranscript({
         ? createMobileTranscriptPlatform(readBinaryFile)
         : mobileTranscriptPlatform),
       resolveNoteImage,
+      openBot: onOpenBot,
       openAgent: (block: Block) => setDetail((current) => ({
         ...current, active: "agent", agent: { kind: "agent", blockId: block.id },
       })),
@@ -175,7 +178,7 @@ export const MobileTranscript = memo(function MobileTranscript({
       })),
       liveClockInFooter: true,
     }),
-    [readBinaryFile, resolveNoteImage, revealPendingQuestion],
+    [readBinaryFile, resolveNoteImage, revealPendingQuestion, onOpenBot],
   );
   // Phones have no editor pane, so file links open a read-only sheet.
   const openFile = useCallback(

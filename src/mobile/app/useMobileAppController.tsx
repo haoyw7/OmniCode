@@ -12,6 +12,7 @@ import { connectionErrorMessage } from "../connectionError";
 import type { MobileAssistantHandle } from "../MobileAssistant";
 import type { MobileBotSelection } from "../MobileBots";
 import type { BotTarget } from "../../features/bots/model/botNavigation";
+import { resolveBotOrigin } from "../../features/bots/model/botOrigin";
 import type { SessionReference } from "../../features/bots/model/botView";
 import { useMobileAssistantUnread } from "../useMobileAssistantUnread";
 import { useHostQueue } from "../../features/connections/ui/useHostQueue";
@@ -1864,6 +1865,14 @@ export function useMobileAppController() {
     setBotResume(undefined);
     navigate("bots");
   });
+  const onOpenOriginBot = useStableCallback(async (origin: NonNullable<Block["origin"]>) => {
+    const connection = client.connection;
+    const target = await resolveBotOrigin(origin, assistantRpc);
+    if (client.connection !== connection) throw new Error("Host connection changed.");
+    onDrawerAssistant();
+    setBotResume({ id: target.bot.id, name: target.bot.name, avatar: target.bot.avatar,
+      threadId: target.threadId, defaultScope: target.defaultScope });
+  });
   const onDrawerNotes = useStableCallback(() => {
     setDrawerOpen(false);
     setComposerPanel(null);
@@ -2115,6 +2124,7 @@ export function useMobileAppController() {
     setAppRoot,
     closeBots,
     botResume,
+    onOpenOriginBot,
     openBotSession,
     backToBot,
     setComposerPanel,

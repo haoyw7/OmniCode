@@ -1,5 +1,8 @@
 import { Input } from "../../../shared/ui/forms/Input";
 import { Button } from "../../../shared/ui/forms/Button";
+import { IconButton } from "../../../shared/ui/forms/IconButton";
+import { SearchableSelect, type SearchableSelectOption } from "../../../shared/ui/SearchableSelect";
+import { ChevronDown, Plus, RefreshCw } from "../../../shared/ui/icons";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotMemoryChange, BotMemoryDocument, BotMemoryKind, BotMemoryList } from "../model/botMemory";
@@ -102,22 +105,26 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
     } catch (cause) { setError(botErrorMessage(cause)); }
     finally { setLoading(false); }
   };
+  const unsaved = (item: string) => !!state.drafts[item] && state.drafts[item].text !== state.drafts[item].base.text;
+  const fileOption = (item: string, group?: string): SearchableSelectOption => ({
+    value: item, label: item, group, trailing: unsaved(item) ? <small className="text-ui-xs text-content/50">{t("Unsaved changes")}</small> : undefined,
+  });
+  const fileOptions = [
+    ...[...new Set([path, ...Object.keys(state.drafts)])].filter((item) => !files?.files.some((file) => file.path === item)).map((item) => fileOption(item)),
+    ...kinds.flatMap(([kind, label]) => (files?.files.filter((file) => file.kind === kind) ?? []).map((file) => fileOption(file.path, t(label)))),
+  ];
   return <section className="desktop-bots-memory" aria-label={t("Memory files")}>
     <div className="desktop-bots-memory-toolbar">
-      <label>{t("File")}<select data-ui="select" data-file-label aria-label={t("Memory file")} value={path} onChange={(event) => drafts.update(botId, (value) => ({ ...value, path: event.target.value }))}>
-        {[...new Set([path, ...Object.keys(state.drafts)])].filter((item) => !files?.files.some((file) => file.path === item)).map((item) => <option key={item} value={item}>{item}</option>)}
-        {kinds.map(([kind, label]) => {
-          const items = files?.files.filter((file) => file.kind === kind) ?? [];
-          return items.length ? <optgroup key={kind} label={t(label)}>{items.map((file) => <option key={file.path} value={file.path}>{file.path}{state.drafts[file.path]?.text !== undefined && state.drafts[file.path].text !== state.drafts[file.path].base.text ? ` • ${t("Unsaved changes")}` : ""}</option>)}</optgroup> : null;
-        })}
-      </select></label>
-      <Button variant="ghost" type="button" onClick={() => setNewTopic((value) => !value)} aria-expanded={newTopic}>{t("New topic")}</Button>
-      <Button variant="secondary" type="button" disabled={loading || draft?.busy} onClick={() => void load()}>{t("Refresh")}</Button>
+      <SearchableSelect label={t("Memory file")} value={path} options={fileOptions} codeLabels className="desktop-bots-memory-file"
+        searchPlaceholder={t("Search options…")} emptyLabel={t("No matching options")}
+        onChange={(next) => drafts.update(botId, (value) => ({ ...value, path: next }))} />
+      <IconButton label={t("New topic")} active={newTopic} aria-expanded={newTopic} onClick={() => setNewTopic((value) => !value)}><Plus size={16} /></IconButton>
+      <IconButton label={t("Refresh")} disabled={loading || draft?.busy} onClick={() => void load()}><RefreshCw size={16} /></IconButton>
     </div>
     <AnimatedCollapse expanded={newTopic}>
       <form className="desktop-bots-memory-new" onSubmit={(event) => { event.preventDefault(); void openTopic(); }}>
         <label>{t("Topic name")}<Input value={topic} onChange={(event) => setTopic(event.target.value)} placeholder={t("Topic name")} /></label>
-        <Button variant="primary" type="submit" disabled={loading || !topic.trim()}>{t("Open draft")}</Button>
+        <Button size="sm" variant="primary" type="submit" disabled={loading || !topic.trim()}>{t("Open draft")}</Button>
       </form>
     </AnimatedCollapse>
     {files?.topicsTruncated && <p role="status">{t("The topic index is limited to {count} files.", { count: files.topicLimit })}</p>}
@@ -139,27 +146,29 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
           {draft.latest ? <>
             <label>{t("Latest saved version")}<textarea data-ui="textarea" readOnly aria-label={t("Latest saved version")} value={draft.latest.text} /></label>
             <div className="desktop-bots-memory-actions">
-              <Button variant="secondary" type="button" onClick={() => drafts.draft(botId, path, (value) => ({ base: value!.latest!, text: value!.latest!.text }))}>{t("Use latest version")}</Button>
-              <Button variant="secondary" type="button" onClick={() => drafts.draft(botId, path, (value) => ({ base: value!.latest!, text: value!.text }))}>{t("Keep draft over latest")}</Button>
+              <Button size="sm" variant="secondary" type="button" onClick={() => drafts.draft(botId, path, (value) => ({ base: value!.latest!, text: value!.latest!.text }))}>{t("Use latest version")}</Button>
+              <Button size="sm" variant="secondary" type="button" onClick={() => drafts.draft(botId, path, (value) => ({ base: value!.latest!, text: value!.text }))}>{t("Keep draft over latest")}</Button>
             </div>
-          </> : <Button variant="secondary" type="button" disabled={loading} onClick={() => void load()}>{t("Retry")}</Button>}
+          </> : <Button size="sm" variant="secondary" type="button" disabled={loading} onClick={() => void load()}>{t("Retry")}</Button>}
         </div>
       </AnimatedCollapse>
       <div className="desktop-bots-memory-actions">
-        <Button variant="secondary" type="button" disabled={!dirty || draft.busy || draft.conflict} onClick={() => void mutate()}>{t(draft.busy ? "Saving…" : "Save file")}</Button>
+        <Button size="sm" variant={dirty ? "primary" : "secondary"} type="button" disabled={!dirty || draft.busy || draft.conflict} onClick={() => void mutate()}>{t(draft.busy ? "Saving…" : "Save file")}</Button>
         <span>{t("Revision {revision}", { revision: draft.base.revision })}</span>
       </div>
-      <Button variant="ghost" className="desktop-bots-memory-history-toggle" type="button" aria-expanded={historyOpen} onClick={() => setHistoryOpen((value) => !value)}>{t("Change history")}</Button>
-      <AnimatedCollapse expanded={historyOpen}>
-        <div className="desktop-bots-memory-history">
-          {historyError && <p role="alert">{t(historyError)} <Button variant="secondary" type="button" onClick={() => void loadHistory()}>{t("Retry")}</Button></p>}
-          {history?.length === 0 && <p>{t("No file changes yet")}</p>}
-          {history?.map((change) => <div key={change.id}>
-            <span><time dateTime={new Date(change.at).toISOString()}>{new Date(change.at).toLocaleString()}</time><small>{t("Revision {revision}", { revision: change.revision })} · {t(({ user: "User", assistant: "Assistant", external: "External edit", migration: "Migration", undo: "Undo" })[change.source])}</small></span>
-            <Button variant="secondary" type="button" disabled={dirty || draft.busy || draft.conflict} onClick={() => void mutate(change.id)}>{t("Undo")}</Button>
-          </div>)}
-        </div>
-      </AnimatedCollapse>
-    </> : loading ? <p role="status">{t("Loading…")}</p> : <Button variant="secondary" type="button" onClick={() => void load()}>{t("Retry")}</Button>}
+      <div className="desktop-bot-row-group"><section className="assistant-settings-section" data-open={historyOpen}>
+        <button type="button" className="assistant-settings-disclosure" aria-expanded={historyOpen} onClick={() => setHistoryOpen((value) => !value)}>
+          <span className="assistant-settings-disclosure-title">{t("Change history")}</span><ChevronDown size={16} aria-hidden="true" />
+        </button>
+        <AnimatedCollapse expanded={historyOpen}><div className="desktop-bots-memory-history">
+            {historyError && <p role="alert">{t(historyError)} <Button size="sm" variant="secondary" type="button" onClick={() => void loadHistory()}>{t("Retry")}</Button></p>}
+            {history?.length === 0 && <p>{t("No file changes yet")}</p>}
+            {history?.map((change) => <div key={change.id}>
+              <span><time dateTime={new Date(change.at).toISOString()}>{new Date(change.at).toLocaleString()}</time><small>{t("Revision {revision}", { revision: change.revision })} · {t(({ user: "User", assistant: "Assistant", external: "External edit", migration: "Migration", undo: "Undo" })[change.source])}</small></span>
+              <Button size="sm" variant="secondary" type="button" disabled={dirty || draft.busy || draft.conflict} onClick={() => void mutate(change.id)}>{t("Undo")}</Button>
+            </div>)}
+        </div></AnimatedCollapse>
+      </section></div>
+    </> : loading ? <p role="status">{t("Loading…")}</p> : <Button size="sm" variant="secondary" type="button" onClick={() => void load()}>{t("Retry")}</Button>}
   </section>;
 }

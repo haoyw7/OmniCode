@@ -17,7 +17,7 @@
 .assistant-chat.desktop-bots-workspace :is(.desktop-bot-delegations, .desktop-bot-delegation-message) button:not([data-ui]) { padding: 5px 8px; border: 1px solid var(--color-stroke); border-radius: 6px; font-size: var(--text-ui-sm); cursor: pointer; }
 .assistant-chat.desktop-bots-workspace :is(.desktop-bot-delegations, .desktop-bot-delegation-message) button:disabled { opacity: .5; cursor: default; }
 .assistant-chat.desktop-bots-workspace :is(.desktop-bot-delegations, .desktop-bot-delegation-message) [role="alert"] { color: var(--color-destructive); overflow-wrap: anywhere; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-callable-list { display: grid; gap: 8px; border-top: 1px solid var(--color-stroke); padding-top: 12px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-callable-list { display: grid; gap: 8px; }
 @media (prefers-reduced-motion: reduce) {
   .assistant-chat.desktop-bots-workspace .desktop-bot-delegation-heading > svg:last-child { transition: none; }
 }

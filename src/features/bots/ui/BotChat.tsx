@@ -179,7 +179,6 @@ export function BotChat({
   desktopBots = false,
   cacheKey = hostKey,
   botNavigation,
-  botPinControl,
   botSettings,
   botAvatarSupported = false,
   botMemory,
@@ -202,7 +201,6 @@ export function BotChat({
   /** Storage identity is separate from the real Host identity used for navigation. */
   cacheKey?: string;
   botNavigation?: ReactNode;
-  botPinControl?: ReactNode;
   /** Bot defaults stay separate from a thread's effective model override. */
   botSettings?: BotConfiguration;
   botAvatarSupported?: boolean;
@@ -390,7 +388,12 @@ export function BotChat({
     "loading" | "ready" | "failed"
   >("loading");
   const [catalogError, setCatalogError] = useState<string>();
-  const catalogLoad = useMemo(() => ({ requested: false, disposed: false }), [client]);
+  const catalogLoad = useMemo(() => ({
+    requested: false,
+    disposed: false,
+    cardModelsRequested: false,
+    modelRequest: undefined as Promise<HostModelCatalog> | undefined,
+  }), [client]);
   useEffect(() => {
     catalogLoad.disposed = false;
     return () => { catalogLoad.disposed = true; };
@@ -512,13 +515,22 @@ export function BotChat({
       clearTimeout(timer);
     };
   }, [client, rpc, attempt, visible]);
+  const loadModels = useCallback(() => {
+    if (!catalogLoad.modelRequest) {
+      catalogLoad.modelRequest = rpc<HostModelCatalog>("models.list").then(models => {
+        if (!catalogLoad.disposed) setCatalog(models);
+        return models;
+      }).finally(() => { catalogLoad.modelRequest = undefined; });
+    }
+    return catalogLoad.modelRequest;
+  }, [rpc, catalogLoad]);
   const loadCatalog = useCallback(async () => {
     catalogLoad.requested = true;
     setCatalogState("loading");
     setCatalogError(undefined);
     try {
       const [models, projects] = await Promise.all([
-        rpc<HostModelCatalog>("models.list"),
+        loadModels(),
         rpc<HostProject[]>("projects.list"),
       ]);
       if (catalogLoad.disposed) return;
@@ -530,13 +542,19 @@ export function BotChat({
       setCatalogError(botErrorMessage(e));
       setCatalogState("failed");
     }
-  }, [rpc, catalogLoad]);
-  // A normal chat does not need model discovery or the project catalog.
-  // Keep those RPCs off the entry path until setup or settings are shown.
+  }, [rpc, catalogLoad, loadModels]);
+  // Setup and settings need both catalogs; session cards only need model names.
   useEffect(() => {
     if (visible && supported === true && (settingsOpen || assistant === null) && !catalogLoad.requested)
       void loadCatalog();
   }, [visible, supported, settingsOpen, assistant === null, catalogLoad, loadCatalog]);
+  const hasSessionCards = renderedMessages.some(message => message.kind === "session-card");
+  useEffect(() => {
+    if (visible && supported === true && !mobile && hasSessionCards && !catalogLoad.cardModelsRequested) {
+      catalogLoad.cardModelsRequested = true;
+      if (!catalogLoad.requested) void loadModels().catch(() => {});
+    }
+  }, [visible, supported, mobile, hasSessionCards, catalogLoad, loadModels]);
   const loadSessions = useCallback(
     async (projectIds: string[]) => {
       const lists = await Promise.all(
@@ -1037,7 +1055,7 @@ export function BotChat({
             >
               {settingsShown && errorNotice}
               <DesktopBotDetails
-                identity={botsLayout && settingsBase ? <BotIdentitySettings key={`${cacheKey}:${settingsBase.revision}`} bot={settingsBase} avatarSupported={botAvatarSupported} busy={busy} onSave={save}>{botPinControl}</BotIdentitySettings> : undefined}
+                identity={botsLayout && settingsBase ? <BotIdentitySettings key={`${cacheKey}:${settingsBase.revision}`} bot={settingsBase} avatarSupported={botAvatarSupported} busy={busy} onSave={save} /> : undefined}
                 delegations={botsLayout ? botDelegations : undefined}
                 memory={botsLayout ? botMemory : undefined}
                 runtime={botsLayout ? botRuntime : undefined}
@@ -1185,6 +1203,7 @@ export function BotChat({
                     </div>
                   )}
                   <BotMessages
+                    catalog={catalog}
                     botsLayout={botsLayout}
                     renderFile={botsLayout ? (messageId, file) => <BotAttachmentCard file={file} read={() => client.readAttachment(messageId, file)} onOpen={openAttachment ? () => openAttachment(messageId, file) : undefined} /> : undefined}
                     renderBotDelegation={botsLayout ? renderBotDelegation : undefined}

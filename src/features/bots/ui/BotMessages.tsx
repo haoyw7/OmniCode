@@ -1,11 +1,12 @@
 import { AttachmentList } from "../../sessions/ui/AttachmentList";
 import { AttachmentChip } from "../../sessions/ui/AttachmentChip";
-import type { RemoteAttachment } from "../../connections/model/protocol";
+import type { HostModelCatalog, RemoteAttachment } from "../../connections/model/protocol";
 import { Fragment, memo, type HTMLAttributes, type ReactNode } from "react";
 import type { BotMessage, SessionReference } from "../model/botView";
 import { splitBotReply } from "../model/botReply";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { QuestionForm } from "../../sessions/ui/QuestionForm";
+import { questionRecordAnswers } from "../../sessions/model/questionHistory";
 import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
 import { AfterTextReveal } from "../../sessions/ui/useTranscriptRenderingPlatform";
 import { BotSessionCard } from "./BotSessionCard";
@@ -18,6 +19,7 @@ import { CornerDownRight } from "../../../shared/ui/icons";
 import { BotMessageImage, type ReadBotImage } from "./BotMessageImage";
 
 type MessageActions = {
+  catalog?: HostModelCatalog;
   botsLayout?: boolean;
   renderFile?: (messageId: string, file: RemoteAttachment) => ReactNode;
   /** Optional desktop-only card; legacy/mobile status text stays unchanged. */
@@ -39,6 +41,7 @@ type MessageActions = {
 
 const BotMessageRow = memo(function BotMessageRow({
   message,
+  catalog,
   previousCreatedAt,
   connected,
   connectNext,
@@ -105,6 +108,7 @@ const BotMessageRow = memo(function BotMessageRow({
           <BotSessionCard
             key={message.id}
             message={message}
+            catalog={catalog}
             onOpen={onOpen}
             onTimeline={onTimeline}
             accessible={accessible}
@@ -120,7 +124,7 @@ const BotMessageRow = memo(function BotMessageRow({
           >
             <p>{message.text}</p>
             {message.resolved ? (
-              <small className="assistant-pill">{t("Resolved")}</small>
+              <BotInputAnswer message={message} />
             ) : message.inputKind === "question" && message.question ? (
               <QuestionForm
                 prompt={message.question}
@@ -226,6 +230,29 @@ const BotMessageRow = memo(function BotMessageRow({
     </Fragment>
   );
 });
+
+/** Shows what was answered; history without a stored answer keeps the plain status. */
+function BotInputAnswer({ message }: { message: Extract<BotMessage, { kind: "input" }> }) {
+  const { t } = useTranslation();
+  const { reply, decision, question } = message;
+  if (message.inputKind === "approval" && decision)
+    return <p className="assistant-input-answer" data-decision={decision}>{t(decision === "allow" ? "Approved" : "Denied")}</p>;
+  if (reply?.kind === "skipped")
+    return <p className="assistant-input-answer" data-empty>{t("Skipped")}</p>;
+  if (reply?.kind !== "answered" || !question)
+    return <small className="assistant-pill">{t("Resolved")}</small>;
+  return <dl className="assistant-input-answers">
+    {question.questions.map((item) => {
+      const labels = questionRecordAnswers(item, reply);
+      return <div key={item.id}>
+        {(question.questions.length > 1 || item.prompt !== message.text) && <dt>{item.prompt}</dt>}
+        <dd className="assistant-input-answer" data-empty={!labels.length || undefined}>
+          {labels.length ? labels.join("\n") : t("Not answered")}
+        </dd>
+      </div>;
+    })}
+  </dl>;
+}
 
 /** Draft/menu/header updates should not walk the conversation history. */
 export const BotMessages = memo(function BotMessages({

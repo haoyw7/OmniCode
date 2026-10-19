@@ -33,7 +33,8 @@ it.each([true, false])("opens the exact source session on mobile and desktop (%s
     expect(node.querySelector('[aria-label="Open session"]')?.getAttribute("title")).toContain("Project · test");
   } else {
     expect(node.textContent).toContain("Project");
-    expect(node.textContent).toContain("Codex");
+    expect(node.querySelector('.assistant-card-model [role="img"][aria-label="Codex"]')).not.toBeNull();
+    expect(node.querySelector(".assistant-card-context")?.textContent).not.toContain("Codex");
     expect(node.textContent).toContain("test");
   }
   expect(node.textContent).toContain("Task");
@@ -44,6 +45,32 @@ it.each([true, false])("opens the exact source session on mobile and desktop (%s
     await act(async () => node.querySelector<HTMLButtonElement>('[aria-label="View progress"]')!.click());
     expect(onTimeline).toHaveBeenCalledWith(ref);
   }
+});
+it.each([
+  ["codex:gpt-test", "GPT-Test"],
+  ["gpt-test", "GPT-Test"],
+  ["codex:mixed-model", "MiXeD Model"],
+  ["codex:Unlisted-Model", "Unlisted-Model"],
+])("uses the catalog display name for %s and preserves unknown model IDs", (model, expected) => {
+  const message: Extract<BotMessage, { kind: "session-card" }> = {
+    id: "model-card", revision: 1, createdAt: 1, kind: "session-card",
+    ref: { environmentId: "host", projectId: "project", sessionId: "session" },
+    title: "Task", projectName: "Project", harness: "codex", model,
+    actionId: "action", status: "completed",
+  };
+  act(() => root.render(createElement(BotMessages, {
+    messages: [message],
+    catalog: { models: { codex: [
+      { harness: "codex", id: "codex:gpt-test", nativeId: "gpt-test", name: "GPT-Test" },
+      { harness: "codex", id: "codex:mixed-model", name: "MiXeD Model" },
+    ] }, errors: {} },
+    mobile: false, canRead: true, busy: false,
+    onOpen: vi.fn(), onRespond: vi.fn(), bindReply: () => ({}),
+  })));
+  const label = node.querySelector(".assistant-card-model-name");
+  expect(label?.textContent).toBe(expected);
+  expect(label?.parentElement?.title).toBe(expected);
+  expect(message.model).toBe(model);
 });
 it("shows jump loading, suppresses repeated opens, and reports a failed historical target", async () => {
   let reject!: (error: Error) => void;
