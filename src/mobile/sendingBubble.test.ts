@@ -4,7 +4,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileApp } from "./MobileApp";
 import { setUiLanguage } from "../shared/i18n/language";
-import type { Block, QueuedMessage } from "../features/sessions/model/session";
+import type { Block, QueuedMessage, QueueReturnPosition } from "../features/sessions/model/session";
+import { insertQueuedMessage } from "../features/sessions/model/messageQueue";
+import type { HostCommand } from "../features/connections/model/protocol";
 import { saveFollowUpBehavior } from "../features/settings/model/settings";
 import type { PendingCommand } from "./client";
 
@@ -87,14 +89,14 @@ beforeEach(() => {
   // Like the Host: a busy conversation queues the send (steering it when it
   // can), otherwise the transcript records it under the command id.
   host.dispatch.mockImplementation((
-    command: { commandId: string; text?: string; followUpBehavior?: string },
+    command: { commandId: string; text?: string; followUpBehavior?: string; queueReturnPosition?: QueueReturnPosition },
     prompt?: { text: string },
   ) =>
     new Promise((resolve, reject) => {
       deferred.resolve = () => {
         const text = command.text ?? prompt?.text ?? "";
         if (state.status === "running") {
-          state.queued = [...state.queued, { id: command.commandId, text, attachments: [] }];
+          state.queued = insertQueuedMessage(snapshot().session, { id: command.commandId, text, attachments: [] }, command.queueReturnPosition);
           if (command.followUpBehavior === "steer") state.steering = command.commandId;
         } else state.blocks = [...state.blocks, { id: command.commandId, role: "user", text }];
         resolve({ commandId: command.commandId, sessionId: "session", revision: 9 });
@@ -130,6 +132,38 @@ const queueText = () => node.querySelector(".mobile-message-queue")?.textContent
 const bubbles = () => [...node.querySelectorAll(".user-message-bubble")].map((bubble) => bubble.textContent);
 
 describe("mobile sending bubble", () => {
+  it("returns an edited mobile queue item to its slot even when normal follow-ups use steering", async () => {
+    saveFollowUpBehavior("steer");
+    state.status = "running";
+    state.queued = ["a", "b", "c"].map(id => ({ id, text: id, attachments: [] }));
+    const original = host.dispatch.getMockImplementation()!;
+    host.dispatch.mockImplementation((command: HostCommand, prompt?: { text: string }) => {
+      if (command.type === "queue" && command.action === "remove") {
+        state.queued = state.queued.filter(row => row.id !== command.messageId);
+        return Promise.resolve({ commandId: command.commandId, sessionId: "session", revision: 9 });
+      }
+      return original(command, prompt);
+    });
+    await act(async () => root.render(createElement(MobileApp)));
+    await act(async () => node.querySelector<HTMLButtonElement>('.mobile-home-session[data-session-id="session"]')!.click());
+    await act(async () => node.querySelector<HTMLButtonElement>('[data-queue-id="b"]')!.click());
+    await act(async () => [...node.querySelectorAll<HTMLButtonElement>(".mobile-sheet-row")].find(button => button.textContent?.includes("Edit message"))!.click());
+    expect(node.querySelector("textarea")!.value).toBe("b");
+    expect(state.queued.map(row => row.id)).toEqual(["a", "c"]);
+    await act(async () => {
+      for (const element of node.querySelectorAll("*"))
+        for (const animation of element.getAnimations()) animation.finish();
+    });
+    await act(async () => node.querySelector("form.mobile-composer")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+    expect(host.dispatch.mock.lastCall?.[0]).toMatchObject({
+      type: "send", followUpBehavior: "queue",
+      queueReturnPosition: { precedingIds: ["a"], followingIds: ["c"], lastUserMessageId: "u1" },
+    });
+    expect([...node.querySelectorAll(".mobile-queue-pills > button > span")].map(label => label.textContent)).toEqual(["a", "b", "c"]);
+    await act(async () => deferred.resolve!());
+    expect(state.queued.map(row => row.text)).toEqual(["a", "b", "c"]);
+    expect(state.steering).toBeUndefined();
+  });
   it("only offers request recovery after sending fails, with one notice for the error", async () => {
     vi.useFakeTimers();
     try {

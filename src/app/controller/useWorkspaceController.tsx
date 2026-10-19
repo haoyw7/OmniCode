@@ -2950,8 +2950,7 @@ export function useWorkspaceController({
 
   const {
     onDeleteQueuedMessage,
-    onEditQueuedMessage,
-    onQueuedMessageEditingChange,
+    onReorderQueuedMessage,
     onSteerQueuedMessage,
     onResumeQueue,
     onUsageLimitResume,
@@ -3977,8 +3976,7 @@ export function useWorkspaceController({
     onStop,
     onCompactContext,
     onDeleteQueuedMessage,
-    onEditQueuedMessage,
-    onQueuedMessageEditingChange,
+    onReorderQueuedMessage,
     onSteerQueuedMessage,
     onResumeQueue,
     onUsageLimitResume,

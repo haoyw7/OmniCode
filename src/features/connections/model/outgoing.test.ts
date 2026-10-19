@@ -25,6 +25,17 @@ function snapshot(overrides: Partial<HostSession> = {}, session: Partial<HostSes
 }
 
 describe("outgoing messages", () => {
+  it("previews an edited send at its original queue position", () => {
+    const base = snapshot({ status: "running" }, {
+      blocks: [{ id: "active", role: "user", text: "Current turn" }],
+      queuedMessages: ["a", "c"].map(id => ({ id, text: id, attachments: [] })),
+    });
+    const view = withOutgoing(base, {
+      id: "edited", text: "Edited b", placement: "queue",
+      queueReturnPosition: { precedingIds: ["a"], followingIds: ["c"], lastUserMessageId: "active" },
+    });
+    expect(view.session.queuedMessages?.map(row => row.id)).toEqual(["a", "edited", "c"]);
+  });
   it("places sends where the Host records them", () => {
     expect(outgoingPlacement(snapshot(), "queue")).toBe("transcript");
     expect(outgoingPlacement(snapshot({ status: "running" }), "queue")).toBe("queue");

@@ -20,6 +20,7 @@ import {
 } from "react";
 import { useNativeSessionAccess } from "./useNativeSessionAccess";
 import { Composer } from "./Composer";
+import { lastQueueUserMessageId } from "../model/messageQueue";
 import type { Worktree } from "../../source-control/model/worktrees";
 import {
   orchestrationCheckoutCwd,
@@ -49,6 +50,8 @@ import {
   type LinkedWorkItem,
   type ModelTarget,
   type PlanBuildTarget,
+  type QueuedMessage,
+  type QueueReturnPosition,
   type RuntimeMode,
   type Session,
   type WorkspaceMode,
@@ -178,12 +181,11 @@ export type SessionPaneProps = {
   onStop: (sessionId: string) => void;
   onCompactContext: (sessionId: string) => boolean;
   onDeleteQueuedMessage: (sessionId: string, messageId: string) => void;
-  onEditQueuedMessage: (
+  onReorderQueuedMessage: (
     sessionId: string,
     messageId: string,
-    text: string,
+    beforeId?: string,
   ) => void;
-  onQueuedMessageEditingChange: (sessionId: string, messageId?: string) => void;
   onSteerQueuedMessage: (sessionId: string, messageId: string) => void;
   onResumeQueue: (sessionId: string) => void;
   onUsageLimitResume: (sessionId: string) => void;
@@ -257,7 +259,7 @@ const TRANSCRIPT_BREAKPOINTS = [28] as const;
 
 type Props = SessionPaneProps & {
   /** Queue presentation supplied by the owning runtime. */
-  messageQueue?: ReactNode;
+  messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
   hostManaged?: boolean;
   remoteSession?: boolean;
   hostFeatures?: { attachments: boolean; plan: boolean; draft: boolean; orchestration?: boolean; checkpoint?: boolean };
@@ -327,8 +329,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onStop,
   onCompactContext,
   onDeleteQueuedMessage,
-  onEditQueuedMessage,
-  onQueuedMessageEditingChange,
+  onReorderQueuedMessage,
   onSteerQueuedMessage,
   onResumeQueue,
   onUsageLimitResume,
@@ -854,15 +855,13 @@ const LocalSessionPane = memo(function LocalSessionPane({
       onStop={() => onStop(session.id)}
       onCompactContext={() => onCompactContext(session.id)}
       queuedMessages={session.queuedMessages}
+      queueLastUserMessageId={lastQueueUserMessageId(session.blocks)}
       queueStatus={session.queueStatus}
       onDeleteQueuedMessage={(messageId) =>
         onDeleteQueuedMessage(session.id, messageId)
       }
-      onEditQueuedMessage={(messageId, text) =>
-        onEditQueuedMessage(session.id, messageId, text)
-      }
-      onQueuedMessageEditingChange={(messageId) =>
-        onQueuedMessageEditingChange(session.id, messageId)
+      onReorderQueuedMessage={(messageId, beforeId) =>
+        onReorderQueuedMessage(session.id, messageId, beforeId)
       }
       onSteerQueuedMessage={(messageId) =>
         onSteerQueuedMessage(session.id, messageId)

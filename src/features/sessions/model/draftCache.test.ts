@@ -10,10 +10,20 @@ import {
   setComposerMcpTags,
   stashComposerAttachments,
   takeComposerAttachments,
+  parkedComposerDrafts,
 } from "./draftCache";
 import { newMcpTag } from "./mcpPicker";
 
 describe("draftCache", () => {
+  it("protects drafts parked while editing a queued message and clears them with the session", () => {
+    const id = "parked";
+    parkedComposerDrafts(id).push({ text: "Unsent draft", attachments: [], borrowedIds: new Set(), intent: "plan", operator: false, draft: false, mcp: [] });
+    expect(hasComposerDraftContent(id)).toBe(true);
+    expect(parkedComposerDrafts(id).pop()?.text).toBe("Unsent draft");
+    expect(hasComposerDraftContent(id)).toBe(false);
+    clearComposerDraft(id);
+    expect(parkedComposerDrafts(id)).toEqual([]);
+  });
   it("protects whitespace and attachments independently when text is cleared", () => {
     const id = "presence";
     setComposerDraft(id, "  \n");

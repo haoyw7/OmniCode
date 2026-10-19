@@ -31,7 +31,7 @@ import {
   appendSteerUser,
   stopStreaming,
 } from "../src/integrations/harness/core/apply";
-import { canDispatchQueuedHead, dequeueQueuedMessage, queuedHead } from "../src/features/sessions/model/messageQueue";
+import { canDispatchQueuedHead, dequeueQueuedMessage, insertQueuedMessage, queuedHead } from "../src/features/sessions/model/messageQueue";
 import { DEFAULT_MODEL_ID, resolveModel } from "../src/features/sessions/model/models";
 import { isVisionImage } from "../src/features/sessions/model/attachments";
 import type {
@@ -47,6 +47,7 @@ import {
   sessionExecutionCwd,
   titleFromPrompt,
   type Session,
+  type QueueReturnPosition,
 } from "../src/features/sessions/model/session";
 import { namedWorktreeBranch } from "../src/features/source-control/model/worktrees";
 import {
@@ -107,6 +108,23 @@ const text = (value: unknown, label: string, max = 128): string => {
     throw new Error(`Invalid ${label}`);
   return value;
 };
+
+function parseQueueReturnPosition(value: unknown): QueueReturnPosition {
+  const position = value as Partial<QueueReturnPosition> | null;
+  if (!position || !Array.isArray(position.precedingIds) || !Array.isArray(position.followingIds) ||
+      position.precedingIds.length + position.followingIds.length > 100)
+    throw new Error("Invalid queue return position");
+  const precedingIds = position.precedingIds.map((id) => text(id, "queued position ID"));
+  const followingIds = position.followingIds.map((id) => text(id, "queued position ID"));
+  if (new Set([...precedingIds, ...followingIds]).size !== precedingIds.length + followingIds.length)
+    throw new Error("Invalid queue return position");
+  return {
+    precedingIds,
+    followingIds,
+    ...(position.lastUserMessageId !== undefined
+      ? { lastUserMessageId: text(position.lastUserMessageId, "queue turn ID") } : {}),
+  };
+}
 
 function modelSettings(value: unknown): Record<string, string> {
   if (value == null) return {};
@@ -236,6 +254,10 @@ export function parseCommand(input: unknown): HostCommand {
   }
   if (v.type === "compact") return { type: "compact", commandId, sessionId };
   if (v.type === "send" || v.type === "draft") {
+    if (v.queueReturnPosition !== undefined &&
+        (v.type !== "send" || v.draftBlockId || v.planBlockId || v.queuedMessageId || v.questionAnswer || v.retryProposalBlockId))
+      throw new Error("Invalid queue return position");
+    const queueReturnPosition = v.queueReturnPosition === undefined ? undefined : parseQueueReturnPosition(v.queueReturnPosition);
     const attachments = parseRemoteAttachments(v.attachments);
     if (v.refreshTitle !== undefined && (v.type !== "send" || typeof v.refreshTitle !== "boolean")) throw new Error("Invalid title refresh");
     if (
@@ -288,6 +310,7 @@ export function parseCommand(input: unknown): HostCommand {
       ...(attachments.length ? { attachments } : {}),
       ...(worktreeCreation ? { worktreeCreation } : {}),
       ...(v.type === "send" && v.refreshTitle === true ? { refreshTitle: true } : {}),
+      ...(queueReturnPosition ? { queueReturnPosition } : {}),
       ...(v.type === "send" && v.followUpBehavior !== undefined
         ? { followUpBehavior: v.followUpBehavior as "queue" | "steer" }
         : {}),
@@ -1440,7 +1463,7 @@ export class HostEngine {
           if ((value.session.queuedMessages?.length ?? 0) >= 100)
             throw new Error("Message queue is full");
           const active = this.running.get(value.session.id);
-          const steer = command.followUpBehavior === "steer" &&
+          const steer = !command.queueReturnPosition && command.followUpBehavior === "steer" &&
             value.status === "running" && !!provider.steer && !!active &&
             !active.finishing && !active.cancelled && !active.failed && !active.persistenceFailed &&
             !value.queueSteeringId && !value.session.editingQueuedMessageId &&
@@ -1450,16 +1473,13 @@ export class HostEngine {
             ...(steer ? { queueSteeringId: command.commandId } : {}),
             session: {
               ...value.session,
-              queuedMessages: [
-                ...(value.session.queuedMessages ?? []),
-                {
-                  id: command.commandId,
-                  text: command.text,
-                  attachments,
-                  intent: command.intent,
-                  origin,
-                },
-              ],
+              queuedMessages: insertQueuedMessage(value.session, {
+                id: command.commandId,
+                text: command.text,
+                attachments,
+                intent: command.intent,
+                origin,
+              }, command.queueReturnPosition, value.queueSteeringId),
               queueStatus: value.session.queueStatus ?? (value.session.usageLimit || this.running.get(value.session.id)?.failed ? "paused" : "active"),
             },
           };

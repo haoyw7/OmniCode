@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import { MessageQueue } from "./MessageQueue";
+import { captureQueueReturnPosition } from "../model/messageQueue";
 import { ComposerEnvironmentPicker } from "./ComposerEnvironmentPicker";
 import { useComposerEnvironment } from "./useComposerEnvironment";
 import { parseWslPath } from "../../../shared/lib/wslPaths";
@@ -87,6 +88,7 @@ import type {
   HarnessId,
   MessageQueueStatus,
   QueuedMessage,
+  QueueReturnPosition,
   UsageLimit,
   RuntimeMode,
   WorkspaceMode,
@@ -187,11 +189,15 @@ import {
 } from "../model/mcpPicker";
 import {
   beginComposerAttachmentRead,
+  getComposerQueuedDraft,
+  parkedComposerDrafts,
   peekComposerAttachments,
   setComposerAttachmentCount,
   setComposerDraft,
+  setComposerQueuedDraft,
   stashComposerAttachments,
   takeComposerAttachments,
+  type QueuedComposerDraft,
 } from "../model/draftCache";
 import type { LastTurnRecall } from "../model/editLastTurn";
 import { useComposerMcpPicker } from "./useComposerMcpPicker";
@@ -233,7 +239,7 @@ type Props = {
   hideBranchPicker?: boolean;
   hideTopBar?: boolean;
   /** Queue presentation supplied by the owning runtime. */
-  messageQueue?: ReactNode;
+  messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
   /** Host commands and capabilities apply to both local and remote workspaces. */
   hostManaged?: boolean;
   /** Workspace location is independent of Host ownership. */
@@ -261,6 +267,7 @@ type Props = {
   editLastTurnSupported?: boolean;
   lastTurnRecall?: LastTurnRecall | null;
   queuedMessages?: QueuedMessage[];
+  queueLastUserMessageId?: string;
   queueStatus?: MessageQueueStatus;
   usageLimit?: UsageLimit;
   hotkeys?: boolean;
@@ -299,8 +306,7 @@ type Props = {
   onStop?: () => void;
   onCompactContext?: () => boolean;
   onDeleteQueuedMessage?: (messageId: string) => void;
-  onEditQueuedMessage?: (messageId: string, text: string) => void;
-  onQueuedMessageEditingChange?: (messageId?: string) => void;
+  onReorderQueuedMessage?: (messageId: string, beforeId?: string) => void;
   onSteerQueuedMessage?: (messageId: string) => void;
   onResumeQueue?: () => void;
   onUsageLimitResume?: () => void;
@@ -354,14 +360,15 @@ export function Composer({
   initialDraft,
   draftResetToken,
   inboxCard,
-  noteCard,
-  handoffCard,
+  noteCard: suppliedNoteCard,
+  handoffCard: suppliedHandoffCard,
   question,
   busy = false,
   allowBusySubmit = true,
   editLastTurnSupported = false,
   lastTurnRecall = null,
   queuedMessages = EMPTY_QUEUE,
+  queueLastUserMessageId,
   queueStatus,
   usageLimit,
   onFocus,
@@ -392,8 +399,7 @@ export function Composer({
   onStop,
   onCompactContext,
   onDeleteQueuedMessage,
-  onEditQueuedMessage,
-  onQueuedMessageEditingChange,
+  onReorderQueuedMessage,
   onSteerQueuedMessage,
   onResumeQueue,
   onUsageLimitResume,
@@ -437,6 +443,10 @@ export function Composer({
   const slashRef = useRef<SlashToken | null>(null);
   const mentionRef = useRef<MentionToken | null>(null);
   const [draft, setDraft] = useState(initialDraft ?? "");
+  const parkedDrafts = useMemo(() => sessionId ? parkedComposerDrafts(sessionId) : [], [sessionId]);
+  const [restoredQueueMessage, setRestoredQueueMessage] = useState<QueuedComposerDraft | undefined>(() => sessionId ? getComposerQueuedDraft(sessionId) : undefined);
+  const noteCard = restoredQueueMessage ? restoredQueueMessage.noteCard : suppliedNoteCard;
+  const handoffCard = restoredQueueMessage ? restoredQueueMessage.handoffCard : suppliedHandoffCard;
   // React rewrites a textarea's text node whenever defaultValue changes, and
   // WebKit then resets the field, committing any IME composition. Parents
   // re-render with the latest draft (remote sessions on every poll), so keep
@@ -496,9 +506,15 @@ export function Composer({
   const { sendKick, setSendKick, sendScale } = useSendKick(reducedMotion);
   const [fileDrag, setFileDrag] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
-  const [planSelected, setPlanSelected] = useState(false);
+  const [planSelected, setPlanSelected] = useState(restoredQueueMessage?.intent === "plan");
   const [operatorSelected, setOperatorSelected] = useState(false);
-  const [orchestrationSelected, setOrchestrationSelected] = useState(false);
+  const [orchestrationSelected, setOrchestrationSelected] = useState(restoredQueueMessage?.intent === "orchestrate");
+  useEffect(() => {
+    if (sessionId) setComposerQueuedDraft(sessionId, restoredQueueMessage && {
+      ...restoredQueueMessage,
+      intent: planSelected ? "plan" : orchestrationSelected ? "orchestrate" : "default",
+    });
+  }, [sessionId, restoredQueueMessage, planSelected, orchestrationSelected]);
   const [draftSelected, setDraftSelected] = useState(false);
   const [slash, setSlash] = useState<SlashToken | null>(null);
   const [skillActive, setSkillActive] = useState(0);
@@ -866,6 +882,7 @@ export function Composer({
       return;
     }
     draftResetTokenRef.current = draftResetToken;
+    setRestoredQueueMessage(undefined);
     pasteGenerationRef.current += 1;
     draftRevisionRef.current += 1;
     if (ref.current) {
@@ -1238,6 +1255,7 @@ export function Composer({
   );
 
   const exitEditMode = useCallback(() => {
+    setRestoredQueueMessage(undefined);
     draftRevisionRef.current += 1;
     pasteGenerationRef.current += 1;
     if (ref.current) {
@@ -1265,12 +1283,45 @@ export function Composer({
     ref.current?.focus();
   }, [onDraftChange, onEditingLastTurnChange, syncHasValue]);
 
+  const restoreQueuedMessage = useCallback((message: QueuedMessage, position?: QueueReturnPosition) => {
+    const text = ref.current?.value ?? "";
+    if (text.length || attachmentsRef.current.length) {
+      parkedDrafts.push({
+        text,
+        attachments: attachmentsRef.current,
+        borrowedIds: new Set(borrowedAttachmentIdsRef.current),
+        intent: planSelected ? "plan" : orchestrationSelected ? "orchestrate" : "default",
+        operator: operatorSelected,
+        draft: draftSelected,
+        mcp: selectedMcp,
+        queued: restoredQueueMessage ?? (noteCard || handoffCard ? { noteCard, handoffCard } : undefined),
+      });
+      attachmentsRef.current = [];
+      borrowedAttachmentIdsRef.current.clear();
+    }
+    draftRevisionRef.current += 1;
+    pasteGenerationRef.current += 1;
+    restoreDraft(message.text, message.attachments, new Set());
+    setRestoredQueueMessage({ ...message, queueReturnPosition: position });
+    setPlanSelected(message.intent === "plan");
+    setOrchestrationSelected(message.intent === "orchestrate");
+    setOperatorSelected(false);
+    setDraftSelected(false);
+    setResendEdited(false);
+    onEditingLastTurnChange?.(false);
+    setSelectedMcp([]);
+    setPlusOpen(false);
+    setSlash(null);
+    setMention(null);
+  }, [parkedDrafts, planSelected, orchestrationSelected, operatorSelected, draftSelected, selectedMcp, restoredQueueMessage, noteCard, handoffCard, restoreDraft, onEditingLastTurnChange]);
+
   const recallLastTurn = useCallback(() => {
     if (!editLastTurnSupported || !lastTurnRecall) return;
     if (resendEdited) {
       exitEditMode();
       return;
     }
+    setRestoredQueueMessage(undefined);
     restoreDraft(
       lastTurnRecall.text,
       lastTurnRecall.attachments,
@@ -1446,6 +1497,10 @@ export function Composer({
       ),
       files,
       {
+        ...(restoredQueueMessage ? {
+          noteCard, handoffCard,
+          ...(restoredQueueMessage.queueReturnPosition ? { queueReturnPosition: restoredQueueMessage.queueReturnPosition } : {}),
+        } : {}),
         intent:
           planSelected || command.planning
             ? "plan"
@@ -1497,6 +1552,17 @@ export function Composer({
     setCreateError(null);
     setPasteError(null);
     syncHasValue("", []);
+    setRestoredQueueMessage(undefined);
+    const parked = parkedDrafts.pop();
+    if (parked) {
+      restoreDraft(parked.text, parked.attachments, parked.borrowedIds);
+      setPlanSelected(parked.intent === "plan");
+      setOrchestrationSelected(parked.intent === "orchestrate");
+      setOperatorSelected(parked.operator);
+      setDraftSelected(parked.draft);
+      setSelectedMcp(parked.mcp);
+      setRestoredQueueMessage(parked.queued);
+    }
   };
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (disabled) return;
@@ -2070,7 +2136,7 @@ export function Composer({
             />
           ) : null}
         </AnimatedCollapse>
-        {messageQueue ?? (
+        {messageQueue ? messageQueue.render(restoreQueuedMessage) : (
           <MessageQueue
             messages={queuedMessages}
             status={queueStatus}
@@ -2079,8 +2145,12 @@ export function Composer({
             canSteer={!hostManaged || busy}
             canResume={!hostManaged || !busy}
             onDelete={onDeleteQueuedMessage}
-            onEdit={onEditQueuedMessage}
-            onEditingChange={onQueuedMessageEditingChange}
+            onRestore={onDeleteQueuedMessage ? (message) => {
+              const position = captureQueueReturnPosition(queuedMessages, message.id, queueLastUserMessageId);
+              onDeleteQueuedMessage(message.id);
+              restoreQueuedMessage(message, position);
+            } : undefined}
+            onReorder={onReorderQueuedMessage}
             onSteer={onSteerQueuedMessage}
             onResume={onResumeQueue}
           />
@@ -2093,8 +2163,8 @@ export function Composer({
       disabled,
       messageQueue,
       onDeleteQueuedMessage,
-      onEditQueuedMessage,
-      onQueuedMessageEditingChange,
+      onReorderQueuedMessage,
+      restoreQueuedMessage,
       onQuestionInteraction,
       onQuestionReply,
       onResumeQueue,
@@ -2105,6 +2175,7 @@ export function Composer({
       question,
       queueStatus,
       queuedMessages,
+      queueLastUserMessageId,
       hostManaged,
       readOnlyReason,
       remote,
@@ -2379,13 +2450,17 @@ export function Composer({
             ) : null}
 
             {noteCard ? (
-              <NoteMiniCard card={noteCard} onDismiss={onNoteCardDismiss} />
+              <NoteMiniCard card={noteCard} onDismiss={restoredQueueMessage
+                ? () => setRestoredQueueMessage((message) => message && { ...message, noteCard: undefined })
+                : onNoteCardDismiss} />
             ) : null}
 
             {handoffCard ? (
               <HandoffMiniCard
                 card={handoffCard}
-                onDismiss={onHandoffCardDismiss}
+                onDismiss={restoredQueueMessage
+                  ? () => setRestoredQueueMessage((message) => message && { ...message, handoffCard: undefined })
+                  : onHandoffCardDismiss}
               />
             ) : null}
 

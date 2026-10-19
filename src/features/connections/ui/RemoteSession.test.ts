@@ -1,3 +1,4 @@
+import { insertQueuedMessage, moveQueuedMessage } from "../../sessions/model/messageQueue";
 import { selectComposerConfiguration } from "../../sessions/model/composerConfiguration";
 import { rememberSharedProviderDefaults, saveProviderAccount, selectProviderAccount } from "../../providers/model/providerAccounts";
 // @vitest-environment happy-dom
@@ -379,10 +380,11 @@ function dispatch(command: HostCommand) {
     host = { ...host, revision: host.revision + 1, session: { ...host.session,
       editingQueuedMessageId: command.action === "hold" ? command.messageId : undefined,
       queuedMessages: command.action === "remove" ? rows.filter(row => row.id !== command.messageId)
+        : command.action === "move" ? moveQueuedMessage(host.session, command.messageId!, command.beforeId).queuedMessages
         : command.action === "edit" ? rows.map(row => row.id === command.messageId ? { ...row, text: command.text! } : row) : rows } };
   } else if (host && command.type === "send" && host.status === "running" && host.supportsQueue) {
     host = { ...host, revision: host.revision + 1, session: { ...host.session,
-      queuedMessages: [...host.session.queuedMessages ?? [], { id: command.commandId, text: command.text, attachments: [] }], queueStatus: "active" } };
+      queuedMessages: insertQueuedMessage(host.session, { id: command.commandId, text: command.text, attachments: [] }, command.queueReturnPosition), queueStatus: "active" } };
   } else if (host && command.type === "send") {
     host = { ...host, session: { ...host.session, ...host.session.pendingConfiguration, pendingConfiguration: undefined } };
     host = {
@@ -1036,12 +1038,11 @@ it("retains a generated image downloaded while an older text sync is pending", a
   expect(hostCalls("attachments.read")).toHaveLength(1);
 });
 
-it("shows an unavailable branch when Git lookup fails", async () => {
+it("hides branch controls when Git lookup reports no repository", async () => {
   branchFailure = "fatal: not a git repository";
   await render();
-  const picker = byLabel("No git repository");
-  expect(picker).not.toBeNull();
-  expect((picker as HTMLButtonElement).disabled).toBe(true);
+  expect(byLabel("No git repository")).toBeNull();
+  expect(byLabel("Choose branch")).toBeNull();
 });
 
 it("creates the host session with the chosen settings on the first message", async () => {
@@ -1886,15 +1887,17 @@ it("shows the Host queue in the desktop composer, queues while busy, and edits a
   expect(container.querySelector('[data-message-queue]')?.textContent).toContain("Queued from desktop");
   expect(container.querySelector('[aria-label="Transcript"]')?.textContent).not.toContain("Queued from desktop");
   await act(async () => byLabel("Edit queued message")!.click()); await settle();
-  const edit = container.querySelector<HTMLTextAreaElement>('textarea[aria-label="Edit queued message"]')!;
+  const edit = container.querySelector<HTMLTextAreaElement>("textarea")!;
   expect(edit.value).toBe("Queued from phone");
-  await act(async () => {
-    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(edit, "Edited on desktop");
-    edit.dispatchEvent(new Event("input", { bubbles: true }));
+  expect(document.activeElement).toBe(edit);
+  expect(host!.session.queuedMessages?.map(row => row.text)).toEqual(["Queued from desktop"]);
+  expect(container.querySelector('[data-message-queue] textarea')).toBeNull();
+  await send("Edited on desktop");
+  expect(host!.session.queuedMessages?.map(row => row.text)).toEqual(["Edited on desktop", "Queued from desktop"]);
+  expect(commands.filter(command => command.type === "send").at(-1)).toMatchObject({
+    queueReturnPosition: { precedingIds: [], followingIds: [host!.session.queuedMessages![1].id], lastUserMessageId: "old" },
   });
-  await act(async () => byLabel("Save queued message")!.click()); await settle();
-  expect(host!.session.queuedMessages?.[0].text).toBe("Edited on desktop");
-  await act(async () => byLabel("Remove queued message")!.click()); await settle();
+  await act(async () => container.querySelector<HTMLButtonElement>(`[data-queue-id="${host!.session.queuedMessages![0].id}"] [aria-label="Remove queued message"]`)!.click()); await settle();
   expect(host!.session.queuedMessages).toHaveLength(1);
   // AutoAnimate retains the removed row until its exit finishes. Happy DOM's
   // WAAPI clock is independent of the Host synchronization microtasks.
@@ -1904,10 +1907,49 @@ it("shows the Host queue in the desktop composer, queues while busy, and edits a
   });
   await settle();
   host = { ...host!, status: "idle", session: { ...host!.session, busy: false } };
-  await act(async () => byLabel("Remove queued message")!.click()); await settle();
+  await act(async () => container.querySelector<HTMLButtonElement>(`[data-queue-id="${host!.session.queuedMessages![0].id}"] [aria-label="Remove queued message"]`)!.click()); await settle();
   expect(container.querySelector('[aria-label="Transcript"]')?.getAttribute("data-busy")).toBe("false");
   expect(container.querySelector('[aria-label="Transcript"]')?.textContent).not.toContain("Queued from desktop");
-  expect(commands.filter(command => command.type === "queue").map(command => command.type === "queue" && command.action)).toEqual(["hold", "edit", "remove", "remove"]);
+  expect(commands.filter(command => command.type === "queue").map(command => command.type === "queue" && command.action)).toEqual(["remove", "remove", "remove"]);
+});
+
+it("reorders the desktop Host queue through a durable move command", async () => {
+  dispatch({ type: "create", commandId: "queue-session", projectId: "project", harness: "codex", model: gpt.id, runtimeMode: "supervised" });
+  host = { ...host!, status: "running", supportsQueue: true, canSteer: true,
+    session: { ...host!.session, busy: true, blocks: [{ id: "old", role: "user", text: "Current work" }],
+      queuedMessages: ["a", "b", "c"].map(id => ({ id, text: id, attachments: [] })), queueStatus: "active" } };
+  rememberRemoteSession("shell", "host-session");
+  await render();
+  await act(async () => container.querySelector('[data-queue-id="b"] button')!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })));
+  await settle();
+  await act(async () => {
+    for (const element of container.querySelectorAll("*"))
+      for (const animation of element.getAnimations()) animation.finish();
+  });
+  expect(commands.find(command => command.type === "queue")).toMatchObject({ type: "queue", action: "move", messageId: "b", sessionId: "host-session" });
+  expect(host!.session.queuedMessages?.map(row => row.id)).toEqual(["a", "c", "b"]);
+  expect([...container.querySelectorAll<HTMLElement>("[data-queue-id]")].map(row => row.dataset.queueId)).toEqual(["a", "c", "b"]);
+});
+
+it("retains the Host queue and desktop draft when take-back attachment reading fails", async () => {
+  dispatch({ type: "create", commandId: "queue-session", projectId: "project", harness: "codex", model: gpt.id, runtimeMode: "supervised" });
+  host = { ...host!, status: "running", supportsQueue: true,
+    session: { ...host!.session, busy: true, blocks: [{ id: "old", role: "user", text: "Current work" }],
+      queuedMessages: [{ id: "image-row", text: "Queued image", attachments: [{ id: "image", name: "image.png", mimeType: "image/png", kind: "image", size: 3 }] }] } };
+  rememberRemoteSession("shell", "host-session");
+  await render();
+  await type("Unsent draft");
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  vi.mocked(invoke).mockImplementation(async (command, input) => {
+    if ((input as { method?: string })?.method === "attachments.read") throw new Error("Image unavailable");
+    return original(command, input);
+  });
+  await act(async () => byLabel("Edit queued message")!.click());
+  await settle();
+  expect(container.querySelector("textarea")!.value).toBe("Unsent draft");
+  expect(host!.session.queuedMessages?.map(row => row.id)).toEqual(["image-row"]);
+  expect(commands.some(command => command.type === "queue")).toBe(false);
+  expect(container.querySelector('[data-message-queue] [role="alert"]')?.textContent).toContain("Image unavailable");
 });
 
 it("puts a send to a busy Host conversation straight into the queue, never the transcript", async () => {

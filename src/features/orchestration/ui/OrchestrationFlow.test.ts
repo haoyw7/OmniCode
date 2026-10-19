@@ -4,7 +4,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(async () => []),
+  invoke: vi.fn(async (command: string) => command === "git_branches"
+    ? { current: null, detached: false, branches: [] }
+    : []),
   isTauri: () => false,
   convertFileSrc: (path: string) => path,
 }));
@@ -664,8 +666,7 @@ describe("orchestration composer and card", () => {
             onStop: noop,
             onCompactContext: () => false,
             onDeleteQueuedMessage: noop,
-            onEditQueuedMessage: noop,
-            onQueuedMessageEditingChange: noop,
+            onReorderQueuedMessage: noop,
             onSteerQueuedMessage: noop,
             onResumeQueue: noop,
             onApproval: approve,

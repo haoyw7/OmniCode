@@ -3,6 +3,7 @@ import { executionWarningText } from "../../../integrations/harness/core/executi
 import { sessionComposerConfiguration } from "../../sessions/model/composerConfiguration";
 import { requestedProviderAccountId, supportsProviderAccounts } from "../../providers/model/providerAccounts";
 import { MessageQueue } from "../../sessions/ui/MessageQueue";
+import { captureQueueReturnPosition, lastQueueUserMessageId } from "../../sessions/model/messageQueue";
 import { CONTINUE_PROMPT } from "../../sessions/model/inFlight";
 import { titleStateFor } from "../../sessions/model/titlePolicy";
 import { useHostQueue } from "./useHostQueue";
@@ -29,8 +30,10 @@ import type {
   Session,
   WorkspaceMode,
   PlanBuildTarget,
+  QueuedMessage,
+  QueueReturnPosition,
 } from "../../sessions/model/session";
-import { uploadRemoteAttachments } from "../model/remoteAttachments";
+import { readRemoteQueuedAttachments, uploadRemoteAttachments } from "../model/remoteAttachments";
 import {
   needsRemoteAttachmentPreviews,
   reuseRemoteAttachmentPreviews,
@@ -104,7 +107,7 @@ import {
 } from "../model/protocol";
 
 export type RemoteSessionOverrides = Partial<SessionPaneProps> & {
-  messageQueue?: ReactNode;
+  messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
   hostManaged: boolean;
   remoteSession: boolean;
   hostFeatures: { attachments: boolean; plan: boolean; draft: boolean; orchestration?: boolean; checkpoint?: boolean };
@@ -127,6 +130,7 @@ const sameConfiguration = (a: Configuration, b: Configuration) =>
   sameModelSettings(a.settings, b.settings);
 
 type OptimisticTurn = {
+  queueReturnPosition?: QueueReturnPosition;
   questionAnswer?: ComposerTurnOptions["questionAnswer"];
   refreshTitle?: boolean;
   commandId: string;
@@ -412,6 +416,7 @@ function ConnectedRemoteSession({
       | "turnModel"
       | "attachments"
       | "draftBlockId"
+      | "queueReturnPosition"
     > & {
       sessionId: string;
       placement: OutgoingMessage["placement"];
@@ -528,11 +533,13 @@ function ConnectedRemoteSession({
           startedAt: unseenSend.startedAt,
           turnModel: unseenSend.turnModel,
           placement: unseenSend.placement,
+          queueReturnPosition: unseenSend.queueReturnPosition,
         }
       : pendingSendActive && pending
         ? {
             id: pending.commandId,
             text: pending.type === "send" ? pending.text : "/compact",
+            queueReturnPosition: pending.type === "send" ? pending.queueReturnPosition : undefined,
             placement: pending.type === "send"
               ? outgoingPlacement(hostSession && snapshot, pending.followUpBehavior)
               : "transcript",
@@ -841,6 +848,7 @@ function ConnectedRemoteSession({
               turnModel: optimistic?.turnModel ?? selectedTurnModel(),
               draftBlockId:
                 command.type === "send" ? command.draftBlockId : undefined,
+              queueReturnPosition: command.type === "send" ? command.queueReturnPosition : undefined,
               // Decided as it leaves, so the message never changes places.
               placement: command.type === "send"
                 ? outgoingPlacement(
@@ -1094,6 +1102,7 @@ function ConnectedRemoteSession({
             turn.refreshTitle,
             turn.retryProposalBlockId,
             turn.questionAnswer,
+            turn.queueReturnPosition,
           ),
       turn,
     );
@@ -1255,6 +1264,7 @@ function ConnectedRemoteSession({
     refreshTitle = false,
     retryProposalBlockId?: string,
     questionAnswer?: ComposerTurnOptions["questionAnswer"],
+    queueReturnPosition?: QueueReturnPosition,
   ): Extract<HostCommand, { type: "send" | "compact" }> =>
     text.trim().toLowerCase() === "/compact" &&
     !attachments.length &&
@@ -1273,6 +1283,7 @@ function ConnectedRemoteSession({
           ...(refreshTitle ? { refreshTitle: true } : {}),
           ...(retryProposalBlockId ? { retryProposalBlockId } : {}),
           ...(questionAnswer ? { questionAnswer, followUpBehavior: "steer" } : {}),
+          ...(queueReturnPosition ? { queueReturnPosition, followUpBehavior: "queue" } : {}),
         };
 
   const submit = (
@@ -1307,6 +1318,7 @@ function ConnectedRemoteSession({
     turn.refreshTitle = options?.refreshTitle;
     turn.retryProposalBlockId = options?.retryProposalBlockId;
     turn.questionAnswer = options?.questionAnswer;
+    turn.queueReturnPosition = options?.queueReturnPosition;
     preparingRef.current = true;
     setStarting(turn);
     if (!hostSession) {
@@ -1815,7 +1827,33 @@ function ConnectedRemoteSession({
       ? transcriptHistory?.session.blocks
       : undefined,
     clockOffsetMs: hostSession ? snapshot?.clockOffsetMs : undefined,
-    messageQueue: <MessageQueue key={snapshot?.session.id} {...queue} disabled={!online || sending || !!pending} />,
+    messageQueue: { render: (restore) => <MessageQueue
+      key={snapshot?.session.id}
+      {...queue}
+      disabled={!online || sending || !!pending}
+      onRestore={async (message) => {
+        const id = snapshot?.session.id;
+        if (!id) return;
+        const version = bindingVersion.current;
+        const current = () => alive.current && version === bindingVersion.current;
+        const attachments = await readRemoteQueuedAttachments(machine.id, id, message.attachments);
+        if (!current()) return;
+        const latest = snapshotRef.current?.session;
+        const position = latest?.id === id ? captureQueueReturnPosition(
+          latest.queuedMessages ?? [], message.id,
+          lastQueueUserMessageId(latest.blocks),
+        ) : undefined;
+        try {
+          await queue.onDelete(message.id);
+        } catch (reason) {
+          const removal = pendingRemoteCommand(project.key, machine.environmentId, id, shell.id);
+          if (current() && removal?.type === "queue" && removal.action === "remove" && removal.messageId === message.id)
+            restore({ ...message, attachments }, position);
+          throw reason;
+        }
+        if (current()) restore({ ...message, attachments }, position);
+      }}
+    /> },
     hostManaged: true,
     remoteSession: !project.local,
     hostFeatures: {
@@ -1893,8 +1931,7 @@ function ConnectedRemoteSession({
       return true;
     },
     onDeleteQueuedMessage: (_, id) => queue.onDelete(id),
-    onEditQueuedMessage: (_, id, text) => queue.onEdit(id, text),
-    onQueuedMessageEditingChange: (_, id) => queue.onEditingChange(id),
+    onReorderQueuedMessage: (_, id, beforeId) => queue.onReorder(id, beforeId),
     onSteerQueuedMessage: (_, id) => queue.onSteer(id),
     onResumeQueue: () => queue.onResume(),
     onUsageLimitResume: () => {

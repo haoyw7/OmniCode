@@ -16,6 +16,13 @@ import {
 
 let now = 0;
 
+it.each(["pi", "omp"] as const)("preserves queued %s message IDs when dispatching and steering", (harness) => {
+  const first = appendUser(newSession(harness, "/repo"), "Queued turn", [], { id: "queued-first" });
+  expect(first.blocks[0]).toMatchObject({ id: "queued-first", role: "user" });
+  const next = appendSteerUser(first, "Queued guidance", [], { id: "queued-steer" });
+  expect(next.blocks[next.blocks.length - 1]).toMatchObject({ id: "queued-steer", role: "user" });
+});
+
 it.each(["pi", "omp", "claude", "codex"] as const)(
   "keeps %s response starts stable while updating send time only on new content",
   (harness) => {

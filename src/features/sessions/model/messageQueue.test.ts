@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import { appendPreparingHandoff } from "./handoff";
 import {
   canDispatchQueuedHead,
+  captureQueueReturnPosition,
   dequeueQueuedMessage,
   isEditingQueuedHead,
+  insertQueuedMessage,
+  moveQueuedMessage,
   queuedHead,
   queuedMessageForSubmit,
 } from "./messageQueue";
@@ -21,6 +24,69 @@ function chat(patch: Partial<Session> = {}): Session {
     ...patch,
   };
 }
+
+describe("returning an edited queued message", () => {
+  const original = ["a", "b", "c", "d"].map(id => queued(id));
+  const position = captureQueueReturnPosition(original, "b", "active")!;
+  const user = (id: string) => ({ id, role: "user" as const, text: id });
+  const returning = queued("edited", "Edited b");
+  function put(queueIds: string[], sent: string[] = [], extra: Partial<Session> = {}) {
+    return insertQueuedMessage(chat({
+      queuedMessages: queueIds.map(id => queued(id)),
+      blocks: [user("active"), ...sent.map(user)],
+      ...extra,
+    }), returning, position).map(row => row.id);
+  }
+  it("returns before the original successors and preserves later additions", () => {
+    expect(put(["a", "c", "d", "new"])).toEqual(["a", "edited", "c", "d", "new"]);
+    expect(put(["c", "d", "new"], ["a"])).toEqual(["edited", "c", "d", "new"]);
+  });
+  it("falls back to the tail after a successor starts, even if other successors are still queued", () => {
+    expect(put(["d", "new"], ["a", "c"])).toEqual(["d", "new", "edited"]);
+  });
+  it("keeps the slot when a neighbor was removed without being sent", () => {
+    expect(put(["a", "d", "new"])).toEqual(["a", "edited", "d", "new"]);
+    expect(put(["a", "new"])).toEqual(["a", "edited", "new"]);
+  });
+  it("restores a former tail ahead of newly added messages until its slot passes", () => {
+    const tail = captureQueueReturnPosition([queued("a"), queued("b")], "b", "active");
+    const session = chat({ queuedMessages: [queued("new")], blocks: [user("active"), user("a")] });
+    expect(insertQueuedMessage(session, returning, tail).map(row => row.id)).toEqual(["edited", "new"]);
+    session.blocks.push(user("new"));
+    session.queuedMessages = [queued("later")];
+    expect(insertQueuedMessage(session, returning, tail).map(row => row.id)).toEqual(["later", "edited"]);
+  });
+  it("distinguishes unrelated steering from a successor taken as steering", () => {
+    const base = chat({ queuedMessages: [queued("c"), queued("new")], blocks: [user("active"), { ...user("guidance"), sentAt: 1 }] });
+    expect(insertQueuedMessage(base, returning, position).map(row => row.id)).toEqual(["edited", "c", "new"]);
+    base.blocks.push({ ...user("d"), sentAt: 2 });
+    expect(insertQueuedMessage(base, returning, position).map(row => row.id)).toEqual(["c", "new", "edited"]);
+    expect(insertQueuedMessage({ ...base, blocks: [user("active")] }, returning, position, "c").map(row => row.id)).toEqual(["c", "new", "edited"]);
+  });
+  it("uses the tail if history no longer contains the captured turn", () => {
+    expect(put(["c", "new"], [], { blocks: [user("different")] })).toEqual(["c", "new", "edited"]);
+    expect(captureQueueReturnPosition(original, "missing")).toBeUndefined();
+  });
+});
+
+describe("moveQueuedMessage", () => {
+  it("moves before another message or to the end without changing content or paused state", () => {
+    const session = chat({ queueStatus: "paused" });
+    const next = moveQueuedMessage(session, "b", "a");
+    expect(next.queuedMessages).toEqual([session.queuedMessages![1], session.queuedMessages![0]]);
+    expect(next.queueStatus).toBe("paused");
+    expect(moveQueuedMessage(next, "b").queuedMessages).toEqual(session.queuedMessages);
+    expect(session.queuedMessages?.map(row => row.id)).toEqual(["a", "b"]);
+  });
+  it("ignores stale targets and held queues", () => {
+    const session = chat();
+    expect(moveQueuedMessage(session, "missing", "a")).toBe(session);
+    expect(moveQueuedMessage(session, "a", "missing")).toBe(session);
+    expect(moveQueuedMessage(session, "a", "a")).toBe(session);
+    const held = chat({ editingQueuedMessageId: "a" });
+    expect(moveQueuedMessage(held, "b", "a")).toBe(held);
+  });
+});
 
 describe("queuedHead", () => {
   it("returns the first queued follow-up", () => {

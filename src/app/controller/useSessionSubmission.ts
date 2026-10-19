@@ -68,6 +68,7 @@ import { requestOutgoingHandoff } from "../../features/sessions/model/handoffTur
 import { CONTINUE_PROMPT } from "../../features/sessions/model/inFlight";
 import {
   dequeueQueuedMessage,
+  insertQueuedMessage,
   queuedMessageForSubmit,
 } from "../../features/sessions/model/messageQueue";
 import {
@@ -454,7 +455,7 @@ export function useSessionSubmission({
           ? current.pendingSwitch
           : null;
 
-      if (current.busy && !pendingSwitch) {
+      if ((current.busy || (options?.queueReturnPosition && current.queuedMessages?.length)) && !pendingSwitch) {
         if (
           operatorCommand.matched &&
           options?.queuedMessageId &&
@@ -468,6 +469,7 @@ export function useSessionSubmission({
           return false;
         }
         const followUpBehavior =
+          options?.queueReturnPosition ||
           current.worktreePreparing ||
           intent === "plan" ||
           intent === "orchestrate" ||
@@ -488,17 +490,14 @@ export function useSessionSubmission({
                     inboxCard: rawCommand ? s.inboxCard : undefined,
                     noteCard: rawCommand ? s.noteCard : undefined,
                     handoffCard: rawCommand ? s.handoffCard : undefined,
-                    queuedMessages: [
-                      ...(s.queuedMessages ?? []),
-                      {
-                        id: crypto.randomUUID(),
-                        text,
-                        attachments,
-                        noteCard,
-                        handoffCard,
-                        intent,
-                      },
-                    ],
+                    queuedMessages: insertQueuedMessage(s, {
+                      id: crypto.randomUUID(),
+                      text,
+                      attachments,
+                      noteCard,
+                      handoffCard,
+                      intent,
+                    }, options?.queueReturnPosition),
                     queueStatus:
                       s.queueStatus === "paused" ? "paused" : "active",
                   }
@@ -523,7 +522,7 @@ export function useSessionSubmission({
         }
         dismissNoticesForContinuedSession(sessionId);
         const visible = displayAttachments(attachments);
-        const cards = userTurnCards(noteCard);
+        const cards = { ...userTurnCards(noteCard), ...(options?.queuedMessageId ? { id: options.queuedMessageId } : {}) };
         const nextSessions = sessionsRef.current.map((s) => {
           if (s.id !== sessionId) return s;
           let next: Session = {
@@ -688,6 +687,7 @@ export function useSessionSubmission({
             : submittedText;
       const checkpointId = crypto.randomUUID();
       const cards = {
+        ...(options?.queuedMessageId ? { id: options.queuedMessageId } : {}),
         checkpointTurnId: checkpointId,
         ...(rawCommand ? undefined : userTurnCards(noteCard, card)),
         ...(ciContext ? { ciContext } : {}),

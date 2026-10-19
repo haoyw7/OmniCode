@@ -113,6 +113,8 @@ import {
 } from "../../features/source-control/model/worktreeCreation";
 import { WORKTREE_NAME_ERROR } from "../../features/source-control/model/worktreeNaming";
 import { takeBackQueuedMessage } from "../queuedDraft";
+import { captureQueueReturnPosition, lastQueueUserMessageId } from "../../features/sessions/model/messageQueue";
+import type { QueueReturnPosition } from "../../features/sessions/model/session";
 import { loadFollowUpBehavior } from "../../features/settings/model/settings";
 import { loadAccentColor, loadTranscriptAnchor, loadTranscriptLayout, loadChatBackgroundPath, loadNewThreadBackgroundEffect } from "../../features/settings/model/appearance";
 import { loadSoundsEnabled } from "../../features/settings/model/sounds";
@@ -288,11 +290,13 @@ export function useMobileAppController() {
   const [accentColor, setAccentColor] = usePreferenceState(loadAccentColor);
   const [soundsEnabled, setSoundsEnabled] = usePreferenceState(loadSoundsEnabled);
   const acceptedQueueAttachments = useRef<Attachment[]>([]);
+  const acceptedQueueReturnPosition = useRef<QueueReturnPosition | undefined>(undefined);
   const parkedDrafts = useRef<Array<{
     text: string;
     attachments: Attachment[];
     planMode: boolean;
     accepted: Attachment[];
+    queueReturnPosition?: QueueReturnPosition;
   }>>([]);
   const [composerPanel, setComposerPanel] = useState<MobileComposerPanel>(null);
   const [progressDock, setProgressDock] = useState<HTMLDivElement | null>(null);
@@ -416,6 +420,7 @@ export function useMobileAppController() {
   const hostDrafts = useRef(new Map<string, {
     projectId: string; sessionId?: string; text: string; attachments: Attachment[];
     planMode: boolean; accepted: Attachment[]; parked: typeof parkedDrafts.current;
+    queueReturnPosition?: QueueReturnPosition;
   }>());
   const nativeLink = snapshot?.session.nativeSession;
   const imageProjectId = snapshot?.projectId ?? project?.id;
@@ -516,6 +521,7 @@ export function useMobileAppController() {
     if (previous && project && (draft.get() || attachments.length || parkedDrafts.current.length)) {
       hostDrafts.current.set(previous, { projectId: project.id, sessionId,
         text: draft.get(), attachments, planMode, accepted: acceptedQueueAttachments.current,
+        queueReturnPosition: acceptedQueueReturnPosition.current,
         parked: parkedDrafts.current });
     }
     navigation.current += 1;
@@ -536,6 +542,7 @@ export function useMobileAppController() {
     setDraft("");
     setAttachments([]);
     acceptedQueueAttachments.current = [];
+    acceptedQueueReturnPosition.current = undefined;
     parkedDrafts.current = [];
     setPlanMode(false);
     setPending(undefined);
@@ -890,6 +897,7 @@ export function useMobileAppController() {
       setCatalogLoading(false);
       setAttachments([]);
       acceptedQueueAttachments.current = [];
+      acceptedQueueReturnPosition.current = undefined;
       parkedDrafts.current = [];
       setPlanMode(false);
       setToken("");
@@ -1024,6 +1032,7 @@ export function useMobileAppController() {
     setDraft(restoreDraft?.text ?? "");
     setAttachments(restoreDraft?.attachments ?? []);
     acceptedQueueAttachments.current = restoreDraft?.accepted ?? [];
+    acceptedQueueReturnPosition.current = restoreDraft?.queueReturnPosition;
     parkedDrafts.current = restoreDraft?.parked ?? [];
     setPlanMode(restoreDraft?.planMode ?? false);
     if (restoreDraft && hostId) hostDrafts.current.delete(hostId);
@@ -1158,6 +1167,7 @@ export function useMobileAppController() {
           setDraft(previousDraft?.text ?? "");
           setAttachments(previousDraft?.attachments ?? []);
           acceptedQueueAttachments.current = previousDraft?.accepted ?? [];
+          acceptedQueueReturnPosition.current = previousDraft?.queueReturnPosition;
           if (previousDraft) setPlanMode(previousDraft.planMode);
         }
         return receipt;
@@ -1221,10 +1231,18 @@ export function useMobileAppController() {
     const generation = navigation.current;
     setReadingAttachments(true);
     try {
+      let queueReturnPosition: QueueReturnPosition | undefined;
       await takeBackQueuedMessage(queued, {
         read: (id, offset) =>
           client.rpc("attachments.read", { sessionId, id, offset }),
-        remove: queue.onDelete,
+        remove: async (id) => {
+          const latest = snapshotStore.get()?.session;
+          queueReturnPosition = latest?.id === sessionId ? captureQueueReturnPosition(
+            latest.queuedMessages ?? [], id,
+            lastQueueUserMessageId(latest.blocks),
+          ) : undefined;
+          await queue.onDelete(id);
+        },
         current: () => generation === navigation.current,
         pendingRemoval: async (id) => {
           const removal = (await client.pending())?.command;
@@ -1238,9 +1256,11 @@ export function useMobileAppController() {
             parkedDrafts.current.push({
               text, attachments, planMode,
               accepted: acceptedQueueAttachments.current,
+              queueReturnPosition: acceptedQueueReturnPosition.current,
             });
           }
           acceptedQueueAttachments.current = queued.attachments;
+          acceptedQueueReturnPosition.current = queueReturnPosition;
           setDraft(queued.text);
           setAttachments(restored);
           setPlanMode(queued.intent === "plan");
@@ -1306,6 +1326,8 @@ export function useMobileAppController() {
     const generation = navigation.current;
     const commandId = crypto.randomUUID();
     const sent = { text, attachments };
+    const queueReturnPosition = acceptedQueueReturnPosition.current;
+    const delivery = queueReturnPosition ? "queue" : followUpBehavior;
     // Show the message at once where the Host will record it: in the
     // transcript, or in the queue of a conversation that is busy.
     const instant = sessionId
@@ -1316,7 +1338,8 @@ export function useMobileAppController() {
         id: commandId,
         text: parsed.text,
         startedAt: Date.now(),
-        placement: sessionId ? outgoingPlacement(snapshotStore.get(), followUpBehavior) : "transcript",
+        placement: sessionId ? outgoingPlacement(snapshotStore.get(), delivery) : "transcript",
+        ...(queueReturnPosition ? { queueReturnPosition } : {}),
         ...(attachments.length ? { attachments } : {}),
       };
       const block: Block = {
@@ -1380,7 +1403,8 @@ export function useMobileAppController() {
           type: "send",
           commandId,
           sessionId,
-          followUpBehavior,
+          followUpBehavior: delivery,
+          ...(queueReturnPosition ? { queueReturnPosition } : {}),
         });
       } else {
         let executionCwd = workspace.mode === "current" ? workspace.cwd : undefined;
@@ -1950,7 +1974,7 @@ export function useMobileAppController() {
     onRestore={restoreQueuedMessage}
     disabled={queueDisabled}
   />, [snapshot?.session.id, queue.messages, queue.status, queue.canSteer, queue.canResume,
-    queue.canReorder, queue.onReorder, queue.onDelete, queue.onEdit, queue.onEditingChange,
+    queue.canReorder, queue.onReorder, queue.onDelete,
     queue.onSteer, queue.onResume, onQueueOverlayChange, restoreQueuedMessage, queueDisabled]);
   const canCreateWorktree = client.hasCapability("git.worktreeCreate");
   const composerWorkspace = useMemo(() => canCreateWorktree && project ? {

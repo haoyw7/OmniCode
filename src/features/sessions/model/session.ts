@@ -110,6 +110,8 @@ export type EditedResendRejection = {
   providerRewound: boolean;
 };
 export type ComposerTurnOptions = {
+  /** Restore an edited follow-up's place while that queue slot is still ahead. */
+  queueReturnPosition?: QueueReturnPosition;
   questionAnswer?: QuestionAnswer;
   refreshTitle?: boolean;
   intent?: TurnIntent;
@@ -312,6 +314,12 @@ export type QueuedMessage = {
   handoffCard?: HandoffComposerCard;
   intent?: TurnIntent;
   origin?: TurnOrigin;
+};
+
+export type QueueReturnPosition = {
+  precedingIds: string[];
+  followingIds: string[];
+  lastUserMessageId?: string;
 };
 
 export type MessageQueueStatus = "active" | "paused" | "resuming";

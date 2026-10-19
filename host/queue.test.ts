@@ -7,6 +7,7 @@ import { HostEngine, parseCommand } from "./engine";
 import { readAttachmentChunk, writeAttachmentChunk } from "./attachments";
 import type { HostProvider } from "./providers";
 import type { SendTurnInput } from "../src/integrations/harness/core/types";
+import { captureQueueReturnPosition } from "../src/features/sessions/model/messageQueue";
 import {
   REMOTE_PROVIDERS,
   applySessionSync,
@@ -72,6 +73,41 @@ function setup(harness: RemoteProvider = "pi", steer = true) {
 }
 
 describe("Host owns the shared message queue", () => {
+  it.each([
+    ["pi", false], ["omp", false], ["pi", true], ["omp", true],
+  ] as const)("returns an edited %s message to its slot unless a successor already started (missed: %s)", async (harness, missed) => {
+    const s = setup(harness);
+    s.send("first");
+    await vi.waitFor(() => expect(s.turns).toHaveLength(1));
+    for (const id of ["a", "b", "c"]) s.send(id);
+    const position = captureQueueReturnPosition(s.store.session(s.id).session.queuedMessages!, "b", "first");
+    s.queue("remove", { messageId: "b" });
+    s.send("new");
+    if (missed) {
+      s.turns[0].finish();
+      await vi.waitFor(() => expect(s.turns).toHaveLength(2));
+      s.turns[1].finish();
+      await vi.waitFor(() => expect(s.turns).toHaveLength(3));
+    }
+    const fields = { queueReturnPosition: position, followUpBehavior: "steer" };
+    const receipt = s.send("edited", "Edited b", fields);
+    expect(s.store.session(s.id).session.queuedMessages?.map(row => row.id))
+      .toEqual(missed ? ["new", "edited"] : ["a", "edited", "c", "new"]);
+    expect(s.provider.steer).not.toHaveBeenCalled();
+    expect(s.send("edited", "Edited b", fields)).toEqual(receipt);
+    expect(s.store.session(s.id).session.queuedMessages?.filter(row => row.id === "edited")).toHaveLength(1);
+  });
+
+  it("validates optional queue positions without changing ordinary sends", () => {
+    const command = { type: "send", commandId: "edit", sessionId: "session", text: "Edited" };
+    const queueReturnPosition = { precedingIds: ["a"], followingIds: ["c"], lastUserMessageId: "active" };
+    expect(parseCommand({ ...command, queueReturnPosition })).toEqual({ ...command, queueReturnPosition });
+    for (const invalid of [null, {}, { precedingIds: [], followingIds: "c" },
+      { precedingIds: ["a"], followingIds: ["a"] }, { precedingIds: [], followingIds: [1] }])
+      expect(() => parseCommand({ ...command, queueReturnPosition: invalid })).toThrow();
+    expect(() => parseCommand({ ...command, type: "draft", queueReturnPosition })).toThrow("queue return position");
+    expect(() => parseCommand({ ...command, queuedMessageId: "a", queueReturnPosition })).toThrow("queue return position");
+  });
   it("stores a first message's worktree record on that message", async () => {
     const s = setup();
     const record = {

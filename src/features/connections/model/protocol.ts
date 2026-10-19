@@ -1,7 +1,7 @@
 import type { Block, Session, RuntimeMode, RemoteControlDevice } from "../../sessions/model/session";
 import type { QuestionAnswer, UserQuestionReply } from "../../sessions/model/userQuestion";
 import type { AgentModel } from "../../sessions/model/models";
-import type { LinkedWorkItem } from "../../sessions/model/session";
+import type { LinkedWorkItem, QueueReturnPosition } from "../../sessions/model/session";
 import type { Skill } from "../../skills/model/skillTypes";
 import type { HarnessId } from "../../sessions/model/session";
 import type { OrchestrationWorkspace, TaskStatus } from "../../orchestration/model/orchestrationState";
@@ -347,6 +347,7 @@ export type HostCommand =
     }
   | {
       type: "send";
+      queueReturnPosition?: QueueReturnPosition;
       questionAnswer?: QuestionAnswer;
       refreshTitle?: boolean;
       commandId: string;

@@ -11,8 +11,7 @@ const NO_MESSAGES: NonNullable<HostSession["session"]["queuedMessages"]> = [];
 type QueueSnapshot = Pick<HostSession, "status" | "runId" | "canSteer" | "queueSteeringId"> & {
   session: Pick<HostSession["session"], "id" | "queuedMessages" | "queueStatus" | "editingQueuedMessageId">;
 };
-/** One edit lease per view. Queue mutations use the same durable command journal
- * as sends; renewable edit leases use ordinary, idempotent RPC requests. */
+/** Queue mutations use the same durable command journal as sends. */
 export function useHostQueue(
   snapshot: QueueSnapshot | undefined,
   request: (
@@ -59,15 +58,6 @@ export function useHostQueue(
     ),
     onDelete: useCallback(
       (messageId: string) => execute("remove", { messageId }),
-      [execute],
-    ),
-    onEdit: useCallback(
-      (messageId: string, text: string) => execute("edit", { messageId, text }),
-      [execute],
-    ),
-    onEditingChange: useCallback(
-      (messageId?: string) =>
-        execute(messageId ? "hold" : "release", { messageId }),
       [execute],
     ),
     onSteer: useCallback(

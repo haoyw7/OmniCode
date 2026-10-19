@@ -1,4 +1,5 @@
-import type { Attachment, Block } from "../../sessions/model/session";
+import type { Attachment, Block, QueueReturnPosition } from "../../sessions/model/session";
+import { insertQueuedMessage } from "../../sessions/model/messageQueue";
 import type { FollowUpBehavior } from "../../settings/model/settings";
 import type { HostSession } from "./protocol";
 
@@ -8,6 +9,7 @@ export type OutgoingMessage = {
   id: string;
   text: string;
   attachments?: Attachment[];
+  queueReturnPosition?: QueueReturnPosition;
   startedAt?: number;
   turnModel?: Block["turnModel"];
   /** Where the message shows until the Host records it. */
@@ -84,9 +86,11 @@ export function withOutgoing(
       ...(pending.turnModel ? { turnModel: pending.turnModel } : {}),
       ...(pending.attachments?.length ? { attachments: pending.attachments } : {}),
     });
-  const queued = (session.queuedMessages ?? []).filter((row) => row !== steering);
+  let queued = (session.queuedMessages ?? []).filter((row) => row !== steering);
   if (pending?.placement === "queue")
-    queued.push({ id: pending.id, text: pending.text, attachments: pending.attachments ?? [] });
+    queued = insertQueuedMessage({ ...session, queuedMessages: queued }, {
+      id: pending.id, text: pending.text, attachments: pending.attachments ?? [],
+    }, pending.queueReturnPosition, snapshot.queueSteeringId);
   return {
     ...snapshot,
     session: {

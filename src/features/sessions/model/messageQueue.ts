@@ -1,6 +1,59 @@
 import { isPreparingHandoff } from "./handoff";
 import { REMOTE_PATH_PREFIX } from "../../../shared/lib/remotePaths";
-import type { QueuedMessage, Session } from "./session";
+import type { Block, QueuedMessage, QueueReturnPosition, Session } from "./session";
+
+export function lastQueueUserMessageId(blocks: readonly Block[]): string | undefined {
+  for (let index = blocks.length - 1; index >= 0; index--) {
+    const block = blocks[index];
+    if (block.role === "user" && !block.draft) return block.id;
+  }
+}
+
+export function captureQueueReturnPosition(
+  messages: readonly QueuedMessage[],
+  messageId: string,
+  lastUserMessageId?: string,
+): QueueReturnPosition | undefined {
+  const index = messages.findIndex((message) => message.id === messageId);
+  if (index < 0) return undefined;
+  return {
+    precedingIds: messages.slice(0, index).map((message) => message.id),
+    followingIds: messages.slice(index + 1).map((message) => message.id),
+    ...(lastUserMessageId ? { lastUserMessageId } : {}),
+  };
+}
+
+export function insertQueuedMessage(
+  session: Pick<Session, "queuedMessages" | "blocks">,
+  message: QueuedMessage,
+  position?: QueueReturnPosition,
+  steeringId?: string,
+): QueuedMessage[] {
+  const messages = session.queuedMessages ?? [];
+  if (!position) return [...messages, message];
+  const preceding = new Set(position.precedingIds);
+  const following = new Set(position.followingIds);
+  let foundTurn = !position.lastUserMessageId;
+  for (let index = session.blocks.length - 1; index >= 0; index--) {
+    const block = session.blocks[index];
+    if (block.role !== "user" || block.draft) continue;
+    if (block.id === position.lastUserMessageId) { foundTurn = true; break; }
+    if (following.has(block.id) ||
+        (!preceding.has(block.id) && (block.startedAt !== undefined || block.sentAt === undefined)))
+      return [...messages, message];
+  }
+  if (!foundTurn || (steeringId && following.has(steeringId))) return [...messages, message];
+  let index = messages.findIndex((row) => following.has(row.id));
+  if (index < 0) {
+    index = 0;
+    for (let at = messages.length - 1; at >= 0; at--) {
+      if (preceding.has(messages[at].id)) { index = at + 1; break; }
+    }
+  }
+  const next = [...messages];
+  next.splice(index, 0, message);
+  return next;
+}
 
 export function queuedHead(session: Session): QueuedMessage | undefined {
   return session.queuedMessages?.find(message => !message.blocked);
@@ -28,6 +81,18 @@ export function dequeueQueuedMessage(
         ? undefined
         : session.editingQueuedMessageId,
   };
+}
+
+export function moveQueuedMessage(session: Session, messageId: string, beforeId?: string): Session {
+  const messages = session.queuedMessages;
+  const message = messages?.find((row) => row.id === messageId);
+  if (!messages || !message || messageId === beforeId || session.editingQueuedMessageId) return session;
+  const remaining = messages.filter((row) => row.id !== messageId);
+  const index = beforeId ? remaining.findIndex((row) => row.id === beforeId) : remaining.length;
+  if (index < 0) return session;
+  remaining.splice(index, 0, message);
+  if (remaining.every((row, at) => row === messages[at])) return session;
+  return { ...session, queuedMessages: remaining };
 }
 
 /**

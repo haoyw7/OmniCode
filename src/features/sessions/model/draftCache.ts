@@ -21,7 +21,7 @@
  * too).
  */
 import type { McpTag } from "./mcpPicker";
-import type { Attachment } from "./session";
+import type { Attachment, QueuedMessage, QueueReturnPosition, TurnIntent } from "./session";
 
 const drafts = new Map<string, string>();
 const environments = new Map<string, { cwd: string; distribution: string | null }>();
@@ -34,6 +34,36 @@ export function setComposerEnvironment(sessionId: string, value: { cwd: string; 
 const mcpTags = new Map<string, McpTag[]>();
 const attachmentCounts = new Map<string, number>();
 const attachmentReads = new Map<string, number>();
+export type QueuedComposerDraft = Pick<QueuedMessage, "noteCard" | "handoffCard" | "intent"> & {
+  queueReturnPosition?: QueueReturnPosition;
+};
+const queuedDrafts = new Map<string, QueuedComposerDraft>();
+export const getComposerQueuedDraft = (sessionId: string) => queuedDrafts.get(sessionId);
+export function setComposerQueuedDraft(sessionId: string, draft: QueuedComposerDraft | undefined) {
+  if (draft) queuedDrafts.set(sessionId, draft);
+  else queuedDrafts.delete(sessionId);
+}
+
+export type ParkedComposerDraft = {
+  text: string;
+  attachments: Attachment[];
+  borrowedIds: ReadonlySet<string>;
+  intent: TurnIntent;
+  operator: boolean;
+  draft: boolean;
+  mcp: McpTag[];
+  queued?: QueuedComposerDraft;
+};
+const parkedDrafts = new Map<string, ParkedComposerDraft[]>();
+
+export function parkedComposerDrafts(sessionId: string): ParkedComposerDraft[] {
+  let drafts = parkedDrafts.get(sessionId);
+  if (!drafts) {
+    drafts = [];
+    parkedDrafts.set(sessionId, drafts);
+  }
+  return drafts;
+}
 /**
  * Attachments of a Composer that unmounted with them unsent. The cache owns
  * them (and their preview URLs) until the session's Composer mounts again.
@@ -96,7 +126,8 @@ export function hasComposerDraftContent(sessionId: string): boolean {
     drafts.get(sessionId)?.length ||
     mcpTags.get(sessionId)?.length ||
     attachmentCounts.get(sessionId) ||
-    attachmentReads.get(sessionId)
+    attachmentReads.get(sessionId) ||
+    parkedDrafts.get(sessionId)?.length
   );
 }
 
@@ -126,6 +157,13 @@ export function setComposerMcpTags(sessionId: string, tags: McpTag[]): void {
 }
 
 export function clearComposerDraft(sessionId: string): void {
+  for (const draft of parkedDrafts.get(sessionId) ?? []) {
+    for (const file of draft.attachments) {
+      if (file.previewUrl && !draft.borrowedIds.has(file.id)) URL.revokeObjectURL(file.previewUrl);
+    }
+  }
+  parkedDrafts.delete(sessionId);
+  queuedDrafts.delete(sessionId);
   const stash = takeComposerAttachments(sessionId);
   for (const file of stash?.attachments ?? []) {
     if (file.previewUrl && !stash?.borrowedIds.has(file.id)) {

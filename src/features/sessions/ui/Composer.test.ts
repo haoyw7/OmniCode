@@ -166,6 +166,54 @@ describe("Composer question focus", () => {
     ],
   };
 
+  it("takes queued text and attachments back to the composer, then restores the previous draft after sending", async () => {
+    const sessionId = "take-back-queue";
+    clearComposerDraft(sessionId);
+    const parkedFile: Attachment = { id: "parked", name: "draft.txt", kind: "file", mimeType: "text/plain", size: 3, data: "YWJj" };
+    const queuedFile: Attachment = { id: "queued-image", name: "queued.png", kind: "image", mimeType: "image/png", size: 3, data: "YWJj" };
+    stashComposerAttachments(sessionId, [parkedFile], new Set());
+    const onSubmit = vi.fn().mockReturnValueOnce(false).mockReturnValue(true);
+    const onDeleteQueuedMessage = vi.fn();
+    const handoffCard = { from: "codex" as const, to: "claude" as const, brief: "Queued handoff context" };
+    const props = {
+      sessionId, focused: true, harness: "claude" as const, model: "claude-sonnet",
+      runtimeMode: "supervised" as const, executionCwd: "/repo", initialDraft: "Unsent draft",
+      hideProjectPicker: true, hideBranchPicker: true,
+      queueLastUserMessageId: "active",
+      queuedMessages: [
+        { id: "before", text: "Before", attachments: [] },
+        { id: "queued", text: "Queued work", attachments: [queuedFile], intent: "plan" as const, handoffCard },
+        { id: "after", text: "After", attachments: [] },
+      ],
+      onFocus: vi.fn(), onCwdChange: vi.fn(), onModelChange: vi.fn(), onRuntimeModeChange: vi.fn(),
+      onSubmit, onDeleteQueuedMessage,
+    };
+    await act(async () => root.render(createElement(Composer, props)));
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-queue-id="queued"] [aria-label="Edit queued message"]')!.click());
+    const input = container.querySelector<HTMLTextAreaElement>("textarea")!;
+    expect(input.value).toBe("Queued work");
+    expect(document.activeElement).toBe(input);
+    expect(onDeleteQueuedMessage).toHaveBeenCalledExactlyOnceWith("queued");
+    expect(container.querySelector('[data-message-queue] textarea')).toBeNull();
+    await act(async () => root.render(null));
+    await act(async () => root.render(createElement(Composer, { ...props, initialDraft: getComposerDraft(sessionId) })));
+    const reopened = container.querySelector<HTMLTextAreaElement>("textarea")!;
+    expect(reopened.value).toBe("Queued work");
+    const send = () => act(async () => reopened.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+    await send();
+    expect(onSubmit).toHaveBeenLastCalledWith("Queued work", [queuedFile], expect.objectContaining({
+      intent: "plan", handoffCard,
+      queueReturnPosition: { precedingIds: ["before"], followingIds: ["after"], lastUserMessageId: "active" },
+    }));
+    expect(reopened.value).toBe("Queued work");
+    await send();
+    expect(reopened.value).toBe("Unsent draft");
+    await send();
+    expect(onSubmit).toHaveBeenLastCalledWith("Unsent draft", [parkedFile], expect.objectContaining({ intent: "default" }));
+    expect(onSubmit.mock.lastCall?.[2]).not.toHaveProperty("queueReturnPosition");
+    clearComposerDraft(sessionId);
+  });
+
   it("opens the environment picker from the workspace bar without disturbing the draft", async () => {
     const onSubmit = vi.fn();
     await renderComposer(undefined, vi.fn(), false, 0, "Keep my draft", undefined, onSubmit);

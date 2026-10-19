@@ -11,6 +11,7 @@ import { CONTINUE_PROMPT } from "../../features/sessions/model/inFlight";
 import {
   canDispatchQueuedHead,
   dequeueQueuedMessage,
+  moveQueuedMessage,
   queuedMessageForSubmit,
 } from "../../features/sessions/model/messageQueue";
 import { saveLastModelSettings } from "../../features/sessions/model/models";
@@ -193,31 +194,12 @@ export function useSessionTurnActions({
     [],
   );
 
-  const onQueuedMessageEditingChange = useCallback(
-    (sessionId: string, messageId?: string) => {
+  const onReorderQueuedMessage = useCallback(
+    (sessionId: string, messageId: string, beforeId?: string) => {
       setSessions((prev) =>
         prev.map((session) =>
           session.id === sessionId
-            ? { ...session, editingQueuedMessageId: messageId }
-            : session,
-        ),
-      );
-    },
-    [],
-  );
-
-  const onEditQueuedMessage = useCallback(
-    (sessionId: string, messageId: string, text: string) => {
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.id === sessionId
-            ? {
-                ...session,
-                queuedMessages: session.queuedMessages?.map((message) =>
-                  message.id === messageId ? { ...message, text } : message,
-                ),
-                editingQueuedMessageId: undefined,
-              }
+            ? moveQueuedMessage(session, messageId, beforeId)
             : session,
         ),
       );
@@ -394,8 +376,7 @@ export function useSessionTurnActions({
   }, [sessions]);
   return {
     onDeleteQueuedMessage,
-    onEditQueuedMessage,
-    onQueuedMessageEditingChange,
+    onReorderQueuedMessage,
     onSteerQueuedMessage,
     onResumeQueue,
     onUsageLimitResume,

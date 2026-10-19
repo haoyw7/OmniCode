@@ -145,12 +145,11 @@ type Shared = {
   onStop: (sessionId: string) => void;
   onCompactContext: (sessionId: string) => boolean;
   onDeleteQueuedMessage: (sessionId: string, messageId: string) => void;
-  onEditQueuedMessage: (
+  onReorderQueuedMessage: (
     sessionId: string,
     messageId: string,
-    text: string,
+    beforeId?: string,
   ) => void;
-  onQueuedMessageEditingChange: (sessionId: string, messageId?: string) => void;
   onSteerQueuedMessage: (sessionId: string, messageId: string) => void;
   onResumeQueue: (sessionId: string) => void;
   onUsageLimitResume: (sessionId: string) => void;
@@ -280,8 +279,7 @@ function PaneTreeComponent({
   onStop,
   onCompactContext,
   onDeleteQueuedMessage,
-  onEditQueuedMessage,
-  onQueuedMessageEditingChange,
+  onReorderQueuedMessage,
   onSteerQueuedMessage,
   onResumeQueue,
   onUsageLimitResume,
@@ -1016,8 +1014,7 @@ function PaneTreeComponent({
                     onStop={onStop}
                     onCompactContext={onCompactContext}
                     onDeleteQueuedMessage={onDeleteQueuedMessage}
-                    onEditQueuedMessage={onEditQueuedMessage}
-                    onQueuedMessageEditingChange={onQueuedMessageEditingChange}
+                    onReorderQueuedMessage={onReorderQueuedMessage}
                     onSteerQueuedMessage={onSteerQueuedMessage}
                     onResumeQueue={onResumeQueue}
                     onUsageLimitResume={onUsageLimitResume}

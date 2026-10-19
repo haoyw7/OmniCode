@@ -481,6 +481,7 @@ function lastMatchingBlock(
 }
 
 type UserTurnExtra = {
+  id?: string;
   checkpointTurnId?: string;
   secondOpinion?: Block["secondOpinion"];
   noteCard?: Block["noteCard"];
@@ -525,7 +526,7 @@ export function appendUser(
   return appendBlock(
     { ...session, busy: true },
     {
-      id: crypto.randomUUID(),
+      id: extra?.id ?? crypto.randomUUID(),
       role: "user",
       text,
       startedAt: Date.now(),
@@ -549,7 +550,7 @@ export function appendSteerUser(
     blocks: [
       ...session.blocks,
       {
-        id: crypto.randomUUID(),
+        id: extra?.id ?? crypto.randomUUID(),
         role: "user",
         text,
         sentAt: Date.now(),
