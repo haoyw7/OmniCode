@@ -3,6 +3,7 @@ import { fullBotPolicy } from "../../../src/features/bots/model/botView";
 import {
   checkPolicy,
   workspacePermission,
+  actionPermission,
   validatePolicy,
 } from "./policy";
 import { WORKSPACE_COMMANDS } from "../../workspace-commands";
@@ -14,6 +15,7 @@ it("maps every workspace action and fails closed on future commands", () => {
   expect(workspacePermission("delete_path")).toBe("files.write");
 });
 it("blocks revoked permissions and project scope", () => {
+  expect(actionPermission("projects.createChat")).toBe("projects.open");
   const policy = fullBotPolicy();
   checkPolicy(policy, "sessions.send", "project");
   policy.permissions["sessions.send"] = false;

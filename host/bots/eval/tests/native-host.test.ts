@@ -75,7 +75,7 @@ it("native action registry and prompt expose actual recovery and trust boundarie
   const { engine } = await setup();
   expect(BOT_ACTIONS).toContain("sessions.steer");
   expect(BOT_ACTIONS).not.toContain("mail.send");
-  const prompt = buildBrainPrompt({
+  const { systemInstructions: prompt } = buildBrainPrompt({
     config: engine.assistant.store.get()!,
     launcher: "isolated-control",
     actions: BOT_ACTIONS,

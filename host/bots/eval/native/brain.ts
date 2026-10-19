@@ -2,7 +2,7 @@ import { buildBrainPrompt } from "../../thread/prompt";
 import { fullBotPolicy } from "../../../../src/features/bots/model/botView";
 export function brain(actions: string[], text: string) {
   const now = Date.parse("2026-10-09T09:00:00Z");
-  return buildBrainPrompt({
+  const prompt = buildBrainPrompt({
     config: {
       id: "eval-assistant",
       name: "OmniCode Eval",
@@ -21,4 +21,5 @@ export function brain(actions: string[], text: string) {
     now,
     fresh: true,
   });
+  return `${prompt.systemInstructions}\n\n${prompt.text}`;
 }

@@ -8,6 +8,7 @@ export const BOT_ACTIONS = [
   "models.list",
   "projects.list",
   "projects.open",
+  "projects.createChat",
   "sessions.list",
   "sessions.get",
   "sessions.activity",

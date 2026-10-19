@@ -3,7 +3,7 @@ import type {
   RemoteProvider,
   RemoteAttachment,
 } from "../../connections/model/protocol";
-import type { UserQuestionPrompt } from "../../sessions/model/userQuestion";
+import type { UserQuestionPrompt, UserQuestionReply } from "../../sessions/model/userQuestion";
 import type { BotHabit } from "./botHabits";
 import type { BotManagedWorktree } from "../../../integrations/harness/core/botAutonomy";
 
@@ -265,6 +265,9 @@ export type BotMessage = MessageBase &
         inputKind: "approval" | "question";
         question?: UserQuestionPrompt;
         resolved: boolean;
+        /** The user's answer, kept so resolved cards can show it; absent on older history. */
+        reply?: UserQuestionReply;
+        decision?: "allow" | "deny";
       }
   );
 export type BotMessages = {

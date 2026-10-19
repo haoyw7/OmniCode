@@ -62,9 +62,9 @@ import {
 } from "./memory";
 import {
   buildBrainPrompt,
+  BRAIN_PROMPT_VERSION,
   privateReplyPart,
   STEER_PREFIX,
-  PERSONA_PRESETS,
   replyMessageId,
   splitReply,
 } from "./prompt";
@@ -404,6 +404,15 @@ export class BotThreadRuntime {
             ? { decision: raw.decision }
             : { reply: raw.reply }),
         });
+        // Re-read: the command may already have resolved this input.
+        const current = this.store.messageById(message.id);
+        if (current?.kind === "input")
+          this.store.message({
+            ...current,
+            ...(message.inputKind === "approval"
+              ? raw.decision === "allow" || raw.decision === "deny" ? { decision: raw.decision } : {}
+              : isQuestionReply(raw.reply) ? { reply: raw.reply } : {}),
+          });
         this.store.recordReceipt(commandId, sig, result);
         return result;
       });
@@ -1231,6 +1240,7 @@ export class BotThreadRuntime {
       const memory = this.store.memory.loadContext();
       const topics = this.store.memory.topicDocuments();
       const contextHash = signature({
+        promptVersion: BRAIN_PROMPT_VERSION,
         // Compare what the user requested, not provider-normalized live model
         // names/settings (for example Pi resolving its default model alias).
         providerConfiguration: providerConfiguration(config),
@@ -1351,7 +1361,7 @@ export class BotThreadRuntime {
       this.injectedMemory = { generation: config.brainGeneration, revision: memory.revision, hash: contextHash };
       const messages = this.store.latestMessages();
       const playbooks = this.store.playbooks();
-      const prompt = buildBrainPrompt({
+      const { systemInstructions, text } = buildBrainPrompt({
         config,
         launcher,
         actions: config.tools?.enabledActions ?? BOT_ACTIONS,
@@ -1371,15 +1381,8 @@ export class BotThreadRuntime {
           directInput: this.active.kind === "user" && wakeupSource(this.active).kind !== "automatic",
         }),
         memory,
+        soul: memory.soul,
       });
-      const persona = config.persona;
-      const systemInstructions = [
-        `You are ${config.name}, the user's OmniCode Bot. Your identity is scoped to this Bot and Thread.`,
-        persona?.preset && persona.preset !== "custom" ? PERSONA_PRESETS[persona.preset] : "",
-        persona?.style ?? "", persona?.userName ? `Address the user as ${JSON.stringify(persona.userName)}.` : "",
-        memory.soul ? `User-authored Bot identity (SOUL.md):\n${memory.soul}` : "",
-        `Host permissions are enforced by the Host. Current policy: ${JSON.stringify(config.policy)}.`,
-      ].filter(Boolean).join("\n");
       const botContext = { scope: { ...this.store.scope, runId: run.id }, systemInstructions, contextFingerprint: contextHash,
         tools: config.tools, controlCli: { command: launcher },
         ...(this.entry ? { agentsMcp: { command: this.options.node ?? process.execPath, args: [this.entry, "agents-mcp"] } } : {}) };
@@ -1388,7 +1391,7 @@ export class BotThreadRuntime {
         type: "send",
         commandId: `assistant:wake:${wakeup.id}:${this.active.attempts}`,
         sessionId: brainId,
-        text: prompt,
+        text,
         attachments: this.active.attachments,
       }, undefined, botContext);
     } finally {
@@ -1827,4 +1830,9 @@ export class BotThreadRuntime {
     if (!this.options.managed) this.engine.store.onSessionSave = undefined;
     this.options.managed?.release();
   }
+}
+
+function isQuestionReply(value: unknown): value is NonNullable<Extract<BotMessage, { kind: "input" }>["reply"]> {
+  const kind = (value as { kind?: unknown } | null)?.kind;
+  return typeof value === "object" && (kind === "skipped" || (kind === "answered" && typeof (value as { answers?: unknown }).answers === "object"));
 }

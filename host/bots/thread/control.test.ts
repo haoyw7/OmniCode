@@ -31,8 +31,42 @@ async function resourceFixture() {
   await engine.assistant.rpc("assistant.send", { commandId: "start", text: "Check the workspace" });
   await vi.waitFor(() => expect(turns).toHaveLength(1));
   const path = join(cwd, "note.txt"); writeFileSync(path, "before");
-  return { engine, store, project, path, cwd, guard };
+  return { engine, store, project, path, cwd, guard, directory };
 }
+
+it("creates an independent general-task directory and replays its receipt without borrowing a project", async () => {
+  const f = await resourceFixture();
+  const createChat = f.engine.createChat.bind(f.engine);
+  const create = vi.spyOn(f.engine, "createChat").mockImplementation((_home, authorize) =>
+    createChat(join(f.directory, "home"), authorize));
+  const chat = await executeBotAction(f.engine.assistant, "general-directory", "projects.createChat", {}, () => true) as { id: string; cwd: string };
+  expect(chat.id).not.toBe(f.project.id);
+  expect(chat.cwd.replaceAll("\\", "/")).toContain("/home/Documents/omnicode/");
+  expect(await executeBotAction(f.engine.assistant, "general-directory", "projects.createChat", {}, () => true)).toEqual(chat);
+  expect(create).toHaveBeenCalledOnce();
+  const target = await executeBotAction(f.engine.assistant, "general-session", "sessions.create", {
+    projectId: chat.id, harness: "codex", model: "test", workspace: "shared",
+    sharedReason: "Read-only system diagnostics in an independent chat directory",
+  }, () => true) as { sessionId: string };
+  expect(f.store.session(target.sessionId).session.cwd).toBe(chat.cwd);
+  expect(f.store.project(f.project.id).cwd).toBe(f.cwd);
+  expect(readFileSync(f.path, "utf8")).toBe("before");
+  const config = f.engine.assistant.store.get()!;
+  f.engine.assistant.store.update({ ...config, policy: { ...config.policy, allowedProjects: [f.project.id] } });
+  await expect(executeBotAction(f.engine.assistant, "general-directory", "projects.createChat", {}, () => true)).rejects.toThrow(/scope/i);
+});
+
+it.each(["permission", "scope"])("does not create a general-task directory outside its %s grant", async denied => {
+  const f = await resourceFixture();
+  const create = vi.spyOn(f.engine, "createChat");
+  const config = f.engine.assistant.store.get()!;
+  const policy = denied === "permission"
+    ? { ...config.policy, permissions: { ...config.policy.permissions, "projects.open": false } }
+    : { ...config.policy, allowedProjects: [f.project.id] };
+  f.engine.assistant.store.update({ ...config, policy });
+  await expect(executeBotAction(f.engine.assistant, "denied-general-directory", "projects.createChat", {}, () => true)).rejects.toThrow(/permission|scope/i);
+  expect(create).not.toHaveBeenCalled();
+});
 
 async function call(
   environment: Record<string, string>,

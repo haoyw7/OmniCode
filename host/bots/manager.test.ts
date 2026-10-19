@@ -84,9 +84,10 @@ it("reloads Soul and bounded memory at turn boundaries without automatically loa
   expect(turns[0].input.botContext?.systemInstructions).not.toContain("Resident preference");
   expect(turns[0].input.text).toContain("Memory truncated:");
   expect(turns[0].input.text).not.toMatch(/OUTSIDE_RESIDENT_BUDGET|LOG_MUST_STAY_ON_DEMAND/);
-  const currentInput = turns[0].input.text.split("Current input (user):")[1];
-  expect(currentInput).toContain('"kind":"topic"');
-  expect(currentInput).toContain(`"threadId":"${sibling.threadId}"`);
+  const reference = turns[0].input.text.split("Current input (user):")[0];
+  expect(reference).toContain('"kind":"topic"');
+  expect(reference).toContain(`"threadId":"${sibling.threadId}"`);
+  expect(turns[0].input.text).toMatch(/Current input \(user\):\nExplain deployment procedures$/);
   writeFileSync(join(memory.workspace, "SOUL.md"), "Respond with concise evidence.");
   expect(runtime.store.get()!.brainSessionId).toBe(turns[0].input.sessionId);
   turns[0].finish();

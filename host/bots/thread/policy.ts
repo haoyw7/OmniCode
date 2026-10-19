@@ -178,7 +178,7 @@ export function actionPermission(action: string): BotPermission {
   if (action === "sessions.integrate") return "git.write";
   if (["agents.list", "models.list"].includes(action)) return "catalog.read";
   if (action === "projects.list") return "projects.read";
-  if (action === "projects.open") return "projects.open";
+  if (action === "projects.open" || action === "projects.createChat") return "projects.open";
   if (
     [
       "sessions.list",

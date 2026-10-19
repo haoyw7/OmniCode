@@ -148,6 +148,8 @@ function readableResult(
     policy.allowedProjects.includes(project);
   if (old.action === "projects.list" && Array.isArray(old.result))
     return old.result.filter((p) => allowed(p.id));
+  if (old.action === "projects.createChat" && old.result && typeof old.result === "object" && "id" in old.result)
+    checkPolicy(policy, "projects.read", String(old.result.id));
   if (
     (old.action === "sessions.list" || old.action === "sessions.activity") &&
     old.result &&
@@ -831,6 +833,14 @@ async function executeMachineBotAction(
             config.policy.allowedProjects === "all" ||
             config.policy.allowedProjects.includes(p.id),
         );
+    } else if (action === "projects.createChat") {
+      fields(input, []);
+      const authorize = () => {
+        requireAccess();
+        if (store.get()!.policy.allowedProjects !== "all") throw new Error("Project scope denied");
+      };
+      authorize();
+      result = await engine.createChat(undefined, authorize);
     } else if (action === "projects.open") {
       fields(input, ["cwd", "machine"]);
       const cwd = id(input.cwd, "project directory", 4096);

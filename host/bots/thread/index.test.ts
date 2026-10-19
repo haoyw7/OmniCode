@@ -851,6 +851,7 @@ it("responds to necessary brain input idempotently and rejects a competing answe
   };
   const first = await engine.assistant.rpc("assistant.respond", input);
   expect(await engine.assistant.rpc("assistant.respond", input)).toEqual(first);
+  expect(engine.assistant.store.messageById(message.id)).toMatchObject({ decision: "allow" });
   await expect(
     engine.assistant.rpc("assistant.respond", {
       ...input,
@@ -1405,6 +1406,9 @@ it("rereads resident memory every turn and replaces the native cache after memor
   expect(turns[1].input.sessionId).not.toBe(brainId);
   expect(await nextTurn("Thanks", 3)).toContain("Your memory (current version");
   expect(turns[2].input.sessionId).toBe(turns[1].input.sessionId);
+  expect(turns[2].input.botContext?.systemInstructions).toBe(turns[1].input.botContext?.systemInstructions);
+  expect(turns[2].input.botContext?.systemInstructions).toContain("How to talk:");
+  expect(turns[2].input.text).not.toContain("How to talk:");
 });
 it("searches Chinese memory through controls across resident, topic and archived facts", async () => {
   const { engine } = await setup();

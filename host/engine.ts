@@ -889,9 +889,10 @@ export class HostEngine {
   }
 
   /** A projectless chat: a new dated folder under `~/Documents/omnicode`. */
-  async createChat(home = homedir()) {
+  async createChat(home = homedir(), authorize?: (cwd: string) => void) {
     for (let attempt = 0; ; attempt++) {
       const cwd = join(home, CHAT_ROOT, chatFolderRelativePath());
+      authorize?.(cwd);
       try {
         await mkdir(dirname(cwd), { recursive: true });
         await mkdir(cwd);
@@ -899,7 +900,7 @@ export class HostEngine {
         if ((error as NodeJS.ErrnoException).code === "EEXIST" && attempt < 2) continue;
         throw error;
       }
-      return this.openProject(cwd);
+      return this.openProject(cwd, authorize);
     }
   }
 
