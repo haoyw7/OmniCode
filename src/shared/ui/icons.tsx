@@ -88,6 +88,7 @@ import {
   Minus as MinusIcon,
   Monitor as MonitorIcon,
   MoreHorizontal as MoreHorizontalIcon,
+  MousePointer2 as MousePointer2Icon,
   MoveLeft as MoveLeftIcon,
   MoveRight as MoveRightIcon,
   Palette as PaletteIcon,
@@ -252,6 +253,7 @@ export const ArrowLeft = wrap(ArrowLeftIcon, "ArrowLeft");
 export const ArrowRight = wrap(ArrowRightIcon, "ArrowRight");
 export const MoveLeft = wrap(MoveLeftIcon, "MoveLeft");
 export const MoveRight = wrap(MoveRightIcon, "MoveRight");
+export const MousePointer2 = wrap(MousePointer2Icon, "MousePointer2");
 export const ArrowUp = wrap(ArrowUpIcon, "ArrowUp");
 export const Bot = wrap(BotIcon, "Bot");
 export const AiIdea = wrap(LightbulbIcon, "AiIdea");

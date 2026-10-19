@@ -35,10 +35,13 @@ function summary(id: string, cwd: string, updatedAt = 1): SessionSummary {
 }
 
 it("preserves remote-control attribution when local activity updates a Host history row", () => {
-  const stored = { ...summary("phone", "/repo"), remoteControl: true };
+  const device = { id: "phone", name: "My phone", model: "Pixel 9" };
+  const stored = { ...summary("phone", "/repo"), remoteControl: true, remoteControlDevice: device };
   const live = summary("phone", "/repo", 2);
   expect(mergeHistorySummary([stored], live)[0].remoteControl).toBe(true);
   expect(mergeLiveSessionSummaries([stored], [live])[0].remoteControl).toBe(true);
+  expect(mergeHistorySummary([stored], live)[0].remoteControlDevice).toEqual(device);
+  expect(mergeLiveSessionSummaries([stored], [live])[0].remoteControlDevice).toEqual(device);
 });
 
 describe("sidebarLiveSessions", () => {

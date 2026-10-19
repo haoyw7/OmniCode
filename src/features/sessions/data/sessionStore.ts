@@ -36,6 +36,7 @@ import type {
   InterjectionMeta,
   LinkedWorkItem,
   RuntimeMode,
+  RemoteControlDevice,
   SecondOpinionMeta,
   Session,
   TaskListMeta,
@@ -54,6 +55,7 @@ import type { OrchestrationSummary } from "../../orchestration/model/orchestrati
 export type SessionSummary = {
   /** Host-owned attribution for conversations controlled by a paired device. */
   remoteControl?: boolean;
+  remoteControlDevice?: RemoteControlDevice;
   titleState?: Session["titleState"];
   orchestrationLeadId?: string;
   workflowParentId?: string;
@@ -874,6 +876,8 @@ function sanitizeBlock(
   if (block.startedAt != null) next.startedAt = block.startedAt;
   if (block.sentAt != null) next.sentAt = block.sentAt;
   if (block.durationMs != null) next.durationMs = block.durationMs;
+  if (block.role === "user" && typeof block.checkpointTurnId === "string")
+    next.checkpointTurnId = block.checkpointTurnId;
   const turnModel = sanitizeTurnModel(block.turnModel);
   if (block.role === "user" && turnModel) next.turnModel = turnModel;
   if (block.role === "user") {

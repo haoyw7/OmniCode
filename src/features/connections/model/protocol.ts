@@ -1,4 +1,4 @@
-import type { Block, Session, RuntimeMode } from "../../sessions/model/session";
+import type { Block, Session, RuntimeMode, RemoteControlDevice } from "../../sessions/model/session";
 import type { QuestionAnswer, UserQuestionReply } from "../../sessions/model/userQuestion";
 import type { AgentModel } from "../../sessions/model/models";
 import type { LinkedWorkItem } from "../../sessions/model/session";
@@ -126,6 +126,7 @@ export type HostSession = {
   executionWarnings?: string[];
   /** A paired device created or sent a message in this conversation. */
   remoteControl?: boolean;
+  remoteControlDevice?: RemoteControlDevice;
   /** Client-only estimate: Host time minus local time; never changes stored timestamps. */
   clockOffsetMs?: number;
   session: Session;

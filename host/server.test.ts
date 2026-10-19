@@ -129,14 +129,18 @@ async function setup(providers: RemoteProvider[] = ["codex"], discoverProviders?
 it("attributes remote-control conversations to the authenticated device and keeps the attribution in history", async () => {
   const s = await setup();
   s.store.markAdminDevice(s.first.id);
+  s.store.updateDeviceInfo(s.second.token, { model: "Pixel 9", manufacturer: "Google" });
+  const remoteControlDevice = { id: s.second.id, name: "Other computer", model: "Pixel 9", manufacturer: "Google" };
   const command = {
     type: "create", commandId: "desktop-create", projectId: s.project.id,
     harness: "codex", model: "codex:test", runtimeMode: "supervised",
+    remoteControlDevice: { id: "spoofed", name: "Spoofed device" },
   };
   const desktop = await s.call("commands.dispatch", { ...command, remoteControl: true });
   expect(desktop.status).toBe(200);
   const desktopId = desktop.value.result.sessionId;
   expect(s.store.session(desktopId).remoteControl).toBeUndefined();
+  expect(s.store.session(desktopId).remoteControlDevice).toBeUndefined();
   await s.call("sessions.get", { sessionId: desktopId }, s.second.token);
   expect(s.store.session(desktopId).remoteControl).toBeUndefined();
 
@@ -145,14 +149,16 @@ it("attributes remote-control conversations to the authenticated device and keep
   expect(phone.status).toBe(200);
   const id = phone.value.result.sessionId;
   expect(s.store.session(id).remoteControl).toBe(true);
+  expect(s.store.session(id).remoteControlDevice).toEqual(remoteControlDevice);
   expect((await s.call("commands.dispatch", remoteCommand, s.second.token)).value.result)
     .toEqual(phone.value.result);
   expect((await s.call("sessions.update", { projectId: s.project.id, sessionId: id, pinned: true, archived: true })).status).toBe(200);
   s.store.invalidateSession(id);
   expect(s.store.session(id).remoteControl).toBe(true);
+  expect(s.store.session(id).remoteControlDevice).toEqual(remoteControlDevice);
   expect((await s.call("sessions.list", { projectId: s.project.id })).value.result)
     .toEqual(expect.arrayContaining([
-      expect.objectContaining({ id, remoteControl: true, pinned: true, archived: true }),
+      expect.objectContaining({ id, remoteControl: true, remoteControlDevice, pinned: true, archived: true }),
       expect.objectContaining({ id: desktopId }),
     ]));
 });
@@ -167,6 +173,7 @@ it("marks an existing conversation after a paired device sends without duplicati
   const sent = await s.call("commands.dispatch", command, s.second.token);
   expect(sent.status).toBe(200);
   expect(s.store.session(sessionId).remoteControl).toBe(true);
+  expect(s.store.session(sessionId).remoteControlDevice).toEqual({ id: s.second.id, name: "Other computer" });
   expect((await s.call("commands.dispatch", command, s.second.token)).value.result).toEqual(sent.value.result);
   await vi.waitFor(() => expect(s.send).toHaveBeenCalledOnce());
   s.finish();
@@ -174,6 +181,19 @@ it("marks an existing conversation after a paired device sends without duplicati
   expect(s.store.summaries(s.project.id)).toEqual([
     expect.objectContaining({ id: sessionId, remoteControl: true }),
   ]);
+
+  const nextDevice = s.store.issueDevice("Work laptop");
+  s.store.updateDeviceInfo(nextDevice.token, { deviceType: "desktop", hostname: "WORK-PC" });
+  const draft = { type: "draft", commandId: "next-device-draft", sessionId, text: "Next step" };
+  expect((await s.call("commands.dispatch", draft, nextDevice.token)).status).toBe(200);
+  const expected = { id: nextDevice.id, name: "Work laptop", hostname: "WORK-PC" };
+  expect(s.store.session(sessionId).remoteControlDevice).toEqual(expected);
+  // Retrying an older command must not replace the latest controller.
+  await s.call("commands.dispatch", command, s.second.token);
+  expect(s.store.session(sessionId).remoteControlDevice).toEqual(expected);
+  s.store.markAdminDevice(s.first.id);
+  await s.call("commands.dispatch", { ...draft, commandId: "desktop-draft" });
+  expect(s.store.session(sessionId).remoteControlDevice).toEqual(expected);
 });
 
 it("shares Host client state across devices and rejects a revoked client's writes and asset reads", async () => {

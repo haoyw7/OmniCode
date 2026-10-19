@@ -515,7 +515,7 @@ html[data-skin] [data-desktop-sidebar] [data-session-menu] {
   inset-block-start: 0;
   inset-inline-end: calc(var(--desktop-sidebar-action-inset) - 1px);
 }
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] [data-session-trailing-status] {
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-remote-control], [data-session-trailing-status]) {
   position: absolute;
   inset-block-start: 0;
   inset-inline-end: calc(var(--desktop-sidebar-action-inset) - 1px);
@@ -536,10 +536,11 @@ html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([dat
 html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-trailing-status]):has([data-session-remote-control]) [data-session-select] {
   padding-inline-end: calc(var(--desktop-sidebar-toolbar-action) * 2);
 }
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-menu]):is(:hover, :focus-within) [data-session-trailing-status] {
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-menu]):is(:hover, :focus-within) [data-session-trailing-status],
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:is(:hover, :focus-within) [data-session-remote-control] {
   opacity: 0;
 }
-html[data-skin] [data-desktop-sidebar] [data-session-card]:not(:has([data-session-trailing-status])):is([data-session-active="true"], [data-session-selected="true"]) [data-session-menu] {
+html[data-skin] [data-desktop-sidebar] [data-session-card]:not(:has([data-session-remote-control], [data-session-trailing-status])):is([data-session-active="true"], [data-session-selected="true"]) [data-session-menu] {
   opacity: 1;
   pointer-events: auto;
 }

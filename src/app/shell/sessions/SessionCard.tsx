@@ -25,6 +25,7 @@ import {
   GitBranch,
   GitPullRequest,
   MoreHorizontal,
+  MousePointer2,
   Pin,
   Share,
   Zap,
@@ -165,6 +166,13 @@ export const SessionCard = memo(function SessionCard({
     orchestration?.tasks.filter((task) => task.status === "completed").length ??
     0;
   const title = sessionDisplayTitle(session.title, session.harness);
+  const remoteDevice = session.remoteControlDevice;
+  const remoteHardware = remoteDevice?.hostname ||
+    [remoteDevice?.manufacturer, remoteDevice?.model].filter(Boolean).join(" ");
+  const remoteDeviceLabel = [...new Set([remoteDevice?.name, remoteHardware].filter(Boolean))].join(" · ");
+  const remoteControlLabel = remoteDeviceLabel
+    ? uiT("Remote control from {device}", { device: remoteDeviceLabel })
+    : uiT("Remote control from an unknown device");
   const twoLine = dense && projectLabel !== undefined;
   const pageCount = useSessionPageCount(session.id);
   const gitLabel = session.worktreeRemoved
@@ -674,6 +682,17 @@ export const SessionCard = memo(function SessionCard({
               </IconButton>
             ) : null}
             {workItemBadge}
+            {session.remoteControl ? (
+              <span
+                data-session-remote-control
+                role="img"
+                title={remoteControlLabel}
+                aria-label={remoteControlLabel}
+                className="grid size-5 shrink-0 place-items-center text-content/45"
+              >
+                <MousePointer2 className="size-3.5" />
+              </span>
+            ) : null}
             {session.automationId ? (
               <span
                 data-automation-icon
@@ -739,6 +758,12 @@ export const SessionCard = memo(function SessionCard({
           </h3>
           {summaryStatus}
         </div>
+        {session.remoteControl ? (
+          <p className="mt-2 flex items-center gap-2 text-content/45">
+            <MousePointer2 className="size-3.5 shrink-0" />
+            <span className="min-w-0 [overflow-wrap:anywhere]">{remoteControlLabel}</span>
+          </p>
+        ) : null}
         {summaryModel || gitLabel || session.executionCwd || time ? (
           <div className="mt-2 flex flex-col gap-1 border-t border-content/10 pt-2">
             {summaryModel ? (

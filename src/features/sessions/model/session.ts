@@ -29,6 +29,14 @@ export type ResourceBlocker = {
   path: string;
   ownerPid: number;
 };
+/** Snapshot of the last authenticated device to control a conversation. */
+export type RemoteControlDevice = {
+  id: string;
+  name: string;
+  model?: string;
+  manufacturer?: string;
+  hostname?: string;
+};
 export type SessionExecutionState = {
   runId: string;
   phase: "waiting-resource" | "starting" | "awaiting-response" | "active" | "settling";

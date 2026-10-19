@@ -631,6 +631,20 @@ export class HostStore {
       .get(this.hash(token));
   }
 
+  /** Attribution comes only from the credential used for this request. */
+  remoteControlDevice(token: string): HostSession["remoteControlDevice"] {
+    const row = this.db.prepare("SELECT id, name, model, manufacturer, hostname FROM devices WHERE hash=? AND admin=0")
+      .get(this.hash(token));
+    if (!row) return undefined;
+    return {
+      id: String(row.id),
+      name: String(row.name),
+      ...(row.model ? { model: String(row.model) } : {}),
+      ...(row.manufacturer ? { manufacturer: String(row.manufacturer) } : {}),
+      ...(row.hostname ? { hostname: String(row.hostname) } : {}),
+    };
+  }
+
   devices(now = Date.now()): HostDevice[] {
     return this.db
       .prepare("SELECT id, name, admin, created_at, paired_at, last_seen, hash, model, manufacturer, device_type, hostname, installation_hash FROM devices ORDER BY created_at, name, id")
@@ -770,6 +784,7 @@ export function summary(value: HostSession): HostSessionSummary {
   const sentAt = lastUserMessage?.sentAt ?? lastUserMessage?.startedAt;
   return {
     ...(value.remoteControl ? { remoteControl: true } : {}),
+    ...(value.remoteControlDevice ? { remoteControlDevice: value.remoteControlDevice } : {}),
     projectId: value.projectId,
     revision: value.revision,
     runId: value.runId,

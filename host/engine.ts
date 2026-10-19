@@ -1040,17 +1040,17 @@ export class HostEngine {
     this.retryTimers.set(id, timer);
   }
 
-  command(raw: unknown, client?: { remoteControl: boolean }): CommandReceipt {
+  command(raw: unknown, client?: { remoteControl: boolean; remoteControlDevice?: HostSession["remoteControlDevice"] }): CommandReceipt {
     if (raw && typeof raw === "object") {
       const input = raw as Record<string, unknown>;
       if (["origin", "author", "assistantOwnerId", "botContext", "systemInstructions", "contextFingerprint"].some(key => key in input) || String(input.commandId).startsWith("assistant:")) throw new Error("Assistant identity is reserved for Host");
       if (input.projectId && this.store.project(String(input.projectId)).kind === "assistant") throw new Error("Assistant project is private");
       if (input.sessionId && this.store.session(String(input.sessionId)).session.assistantOwnerId) throw new Error("Use the assistant control API");
     }
-    return this.applyCommand(raw, false, undefined, undefined, undefined, client?.remoteControl);
+    return this.applyCommand(raw, false, undefined, undefined, undefined, client?.remoteControl, client?.remoteControlDevice);
   }
 
-  async commandAsync(raw: unknown, client?: { remoteControl: boolean }): Promise<CommandReceipt> {
+  async commandAsync(raw: unknown, client?: { remoteControl: boolean; remoteControlDevice?: HostSession["remoteControlDevice"] }): Promise<CommandReceipt> {
     if (currentMachineIO().key === "local") return this.command(raw, client);
     const command = parseCommand(raw);
     if (command.type !== "create") return this.command(raw, client);
@@ -1287,7 +1287,7 @@ export class HostEngine {
     void this.cleanPreviousProviders(sessionId).catch(() => undefined);
   }
 
-  private applyCommand(raw: unknown, managed: boolean, controlReceipt?: ControlReceiptContext, origin?: import("../src/features/sessions/model/session").TurnOrigin, botContext?: HarnessBotContext, remoteControl = false): CommandReceipt {
+  private applyCommand(raw: unknown, managed: boolean, controlReceipt?: ControlReceiptContext, origin?: import("../src/features/sessions/model/session").TurnOrigin, botContext?: HarnessBotContext, remoteControl = false, remoteControlDevice?: HostSession["remoteControlDevice"]): CommandReceipt {
     if (this.closing) throw new Error("Host is stopping");
     const command = parseCommand(raw);
     if (command.type === "orchestration") {
@@ -1729,7 +1729,7 @@ export class HostEngine {
         {
           ...value,
           ...(remoteControl && (command.type === "create" || command.type === "send" || command.type === "draft")
-            ? { remoteControl: true } : {}),
+            ? { remoteControl: true, ...(remoteControlDevice ? { remoteControlDevice } : {}) } : {}),
           revision: value.revision + 1,
           // Creation already initialized both timestamps from the same clock read.
           updatedAt: command.type === "create" ? value.updatedAt : Date.now(),

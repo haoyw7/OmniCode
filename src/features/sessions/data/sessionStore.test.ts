@@ -23,6 +23,13 @@ it("keeps host-owned transcripts out of local session storage", () => {
   expect(shouldPersistSession(session)).toBe(false);
 });
 
+it("retains a submitted turn's checkpoint identity when saving history", () => {
+  const session = appendUser(newSession("codex", "/repo"), "Change files", [], {
+    checkpointTurnId: "recorded-turn",
+  });
+  expect(sanitizeSessionForPersist(session).blocks[0].checkpointTurnId).toBe("recorded-turn");
+});
+
 it("only persists a new composer after its first message is submitted", () => {
   const draft = newSession("codex", "/repo");
   expect(shouldPersistSession(draft)).toBe(false);
