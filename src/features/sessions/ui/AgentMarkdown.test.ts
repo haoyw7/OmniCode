@@ -60,7 +60,6 @@ describe("AgentMarkdown inline code", () => {
     expect(match).not.toBeNull();
     const classes = match![1].split(/\s+/);
     expect(classes).toContain("inline-flex");
-    expect(classes).toContain("min-h-6");
     expect(classes).toContain("max-w-full");
     expect(classes).toContain("[overflow-wrap:anywhere]");
     expect(classes).not.toContain("h-6");
@@ -107,9 +106,7 @@ describe("AgentMarkdown code fence highlighting", () => {
     );
 
     expect(markup).toContain('data-language="js"');
-    expect(markup).toMatch(
-      /class="markdown-code-fallback-label"[^>]*>text<\/span>/,
-    );
+    expect(markup).toMatch(/class="markdown-code-label"[^>]*>text<\/span>/);
   });
 
   it("leaves an untagged fence without a visible language label", () => {
@@ -119,9 +116,7 @@ describe("AgentMarkdown code fence highlighting", () => {
       }),
     );
 
-    expect(markup).toMatch(
-      /class="markdown-code-fallback-label"[^>]*><\/span>/,
-    );
+    expect(markup).toMatch(/class="markdown-code-label"[^>]*><\/span>/);
   });
 
   it("keeps the plaintext and txt fallbacks labeled with their own fence language", () => {
@@ -132,7 +127,7 @@ describe("AgentMarkdown code fence highlighting", () => {
     );
     expect(plaintextMarkup).toContain('data-language="js"');
     expect(plaintextMarkup).toMatch(
-      /class="markdown-code-fallback-label"[^>]*>plaintext<\/span>/,
+      /class="markdown-code-label"[^>]*>plaintext<\/span>/,
     );
 
     const txtMarkup = renderToStaticMarkup(
@@ -141,19 +136,52 @@ describe("AgentMarkdown code fence highlighting", () => {
       }),
     );
     expect(txtMarkup).toContain('data-language="js"');
-    expect(txtMarkup).toMatch(
-      /class="markdown-code-fallback-label"[^>]*>txt<\/span>/,
-    );
+    expect(txtMarkup).toMatch(/class="markdown-code-label"[^>]*>txt<\/span>/);
   });
 
-  it("does not add a fallback label for a real language", () => {
-    const markup = renderToStaticMarkup(
-      createElement(AgentMarkdown, {
-        text: "```python\nx = 1\n```",
-      }),
+  it("labels known languages with their display name and keeps unknown tags", () => {
+    const typescript = renderToStaticMarkup(
+      createElement(AgentMarkdown, { text: "```ts\nconst x = 1;\n```" }),
+    );
+    expect(typescript).toMatch(
+      /class="markdown-code-label"[^>]*>TypeScript<\/span>/,
     );
 
-    expect(markup).not.toContain("markdown-code-fallback-label");
+    const unknown = renderToStaticMarkup(
+      createElement(AgentMarkdown, { text: "```nim\necho 1\n```" }),
+    );
+    expect(unknown).toMatch(/class="markdown-code-label"[^>]*>nim<\/span>/);
+  });
+
+  it("offers an unpressed wrap toggle beside the copy button", () => {
+    const markup = renderToStaticMarkup(
+      createElement(AgentMarkdown, { text: "```ts\nconst x = 1;\n```" }),
+    );
+    expect(markup).toMatch(
+      /<button[^>]*aria-pressed="false"[^>]*class="markdown-code-wrap"/,
+    );
+    expect(markup).not.toContain("data-wrap");
+  });
+
+  it("numbers lines only for citations or fences that ask for it", () => {
+    const snippet = renderToStaticMarkup(
+      createElement(AgentMarkdown, { text: "```ts\nconst x = 1;\n```" }),
+    );
+    expect(snippet).not.toContain("markdown-code-numbered-line");
+
+    const requested = renderToStaticMarkup(
+      createElement(AgentMarkdown, {
+        text: "```ts lineNumbers\nconst x = 1;\n```",
+      }),
+    );
+    expect(requested).toContain("markdown-code-numbered-line");
+
+    const citation = renderToStaticMarkup(
+      createElement(AgentMarkdown, {
+        text: "```12:14:src/app.ts\nconst x = 1;\n```",
+      }),
+    );
+    expect(citation).toContain("markdown-code-numbered-line");
   });
 });
 

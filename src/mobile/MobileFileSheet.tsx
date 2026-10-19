@@ -55,7 +55,7 @@ export function fencedSource(text: string, language: string): string {
     ...(text.match(/`+/g) ?? []).map((run) => run.length),
   );
   const fence = "`".repeat(longest + 1);
-  return `${fence}${language}\n${text}${text.endsWith("\n") ? "" : "\n"}${fence}`;
+  return `${fence}${language} lineNumbers\n${text}${text.endsWith("\n") ? "" : "\n"}${fence}`;
 }
 
 function formatBytes(size: number): string {

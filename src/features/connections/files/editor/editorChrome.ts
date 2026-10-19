@@ -3,17 +3,20 @@ import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { cspStyleNonce } from "../../../../shared/lib/csp";
 import type { ColorScheme } from "../../../settings/model/appearance";
+import { loadCodeTheme } from "../../../settings/model/codeAppearance";
+import { codeThemePalette } from "../../../../shared/theme/codeThemes";
 import { editorHighlightStyleFor } from "./editorLanguage";
 
 export { languageForPath } from "./editorLanguage";
 
 function editorThemeStyles(dark: boolean) {
+  const palette = codeThemePalette(loadCodeTheme(dark ? "dark" : "light"));
   return EditorView.theme(
   {
     "&": {
       height: "100%",
-      backgroundColor: "color-mix(in srgb, var(--color-card) calc(var(--panel-opacity) * 100%), transparent)",
-      color: "var(--color-content)",
+      backgroundColor: `color-mix(in srgb, ${palette.background} calc(var(--panel-opacity) * 100%), transparent)`,
+      color: palette.foreground,
       fontSize: "13px",
       userSelect: "text",
     },
@@ -29,14 +32,14 @@ function editorThemeStyles(dark: boolean) {
     ".cm-content": {
       minHeight: "100%",
       padding: "4px 0 32px",
-      caretColor: "var(--color-content)",
+      caretColor: palette.foreground,
     },
     ".cm-line": {
       padding: "0 6px",
     },
     ".cm-gutters": {
       backgroundColor: "transparent",
-      color: "color-mix(in srgb, var(--color-content) 38%, transparent)",
+      color: palette.comment,
       borderRight:
         "1px solid color-mix(in srgb, var(--color-content) 7%, transparent)",
       paddingLeft: "2px",

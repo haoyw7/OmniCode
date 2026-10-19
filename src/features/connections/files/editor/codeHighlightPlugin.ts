@@ -3,6 +3,7 @@ import type {
   HighlightResult,
   ThemeInput,
 } from "@streamdown/code";
+import { codeHighlightThemes } from "../../../settings/model/codeAppearance";
 import {
   bundledLanguages,
   bundledLanguagesInfo,
@@ -23,7 +24,7 @@ import {
  * for the life of the window. Its key (length plus the first and last 100
  * characters) also let different blocks share a result. This keeps the same
  * `CodeHighlighterPlugin` shape with a bounded LRU and an exact key, and loads
- * languages into one highlighter per theme pair instead of one per language.
+ * languages and themes into a shared highlighter instead of one per language.
  *
  * Mounted blocks hold their tokens in component state, so eviction only means
  * a remounted block briefly shows plain text while it is highlighted again.
@@ -57,6 +58,7 @@ function normalizeLanguage(language: string): string {
 export function createBoundedCodePlugin(
   options: {
     themes?: [ThemeInput, ThemeInput];
+    getThemes?: () => [ThemeInput, ThemeInput];
     maxEntries?: number;
     maxChars?: number;
     /** Where grammars load and code is tokenized; the main thread by default. */
@@ -93,7 +95,7 @@ export function createBoundedCodePlugin(
     type: "code-highlighter",
     supportsLanguage: (language) => supported.has(normalizeLanguage(language)),
     getSupportedLanguages: () => Array.from(supported) as BundledLanguage[],
-    getThemes: () => themes,
+    getThemes: options.getThemes ?? (() => themes),
     cachedResults: () => results.size,
     highlight({ code, language, themes: pair }, callback) {
       const lang = normalizeLanguage(language);
@@ -219,5 +221,6 @@ function createWorkerTokenizer(): CodeTokenizer {
 }
 
 export const boundedCode = createBoundedCodePlugin({
+  getThemes: codeHighlightThemes,
   tokenize: typeof Worker === "undefined" ? undefined : createWorkerTokenizer(),
 });

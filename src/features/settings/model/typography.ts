@@ -99,15 +99,6 @@ export const CONTENT_FONT_PRESETS = [
   "Helvetica Neue",
 ] as const;
 
-export const CODE_FONT_PRESETS = [
-  "JetBrains Mono",
-  "Fira Code",
-  "SF Mono",
-  "Cascadia Code",
-  "Consolas",
-  "Menlo",
-] as const;
-
 export const CONTRAST_MIN = 0;
 export const CONTRAST_MAX = 100;
 /** Matches the stock theme tokens exactly. */

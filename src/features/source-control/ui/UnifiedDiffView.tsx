@@ -23,6 +23,7 @@ import {
 import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useColorScheme } from "../../../shared/hooks/useColorScheme";
+import { useCodeThemePalette, useCodeThemes } from "../../settings/model/codeAppearance";
 import { formatInteger } from "../../../shared/lib/numbers";
 import type { ColorScheme } from "../../settings/model/appearance";
 import { basename } from "../../../platform/tauri/fs";
@@ -327,6 +328,8 @@ const FileSection = memo(function FileSection({
   bindRef,
 }: FileSectionProps) {
   const { t: uiT } = useTranslation();
+  const codeThemes = useCodeThemes();
+  const codePalette = useCodeThemePalette(codeThemes[colorScheme]);
   const Chevron = expanded ? ChevronDown : ChevronRight;
   const name = basename(file.path);
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -344,7 +347,7 @@ const FileSection = memo(function FileSection({
     return () => {
       cancelled = true;
     };
-  }, [colorScheme, expanded, file, near]);
+  }, [colorScheme, codePalette, expanded, file, near]);
 
   const setSection = useCallback(
     (node: HTMLElement | null) => {

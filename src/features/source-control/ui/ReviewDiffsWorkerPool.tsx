@@ -4,10 +4,10 @@ import { preloadHighlighter } from "@pierre/diffs";
 import { WorkerPoolContext } from "@pierre/diffs/react";
 import { WorkerPoolManager } from "@pierre/diffs/worker";
 import ReviewDiffsWorker from "@pierre/diffs/worker/worker.js?worker";
-import { REVIEW_THEMES } from "./reviewThemes";
+import { reviewThemes } from "./reviewThemes";
+import { useCodeThemes } from "../../settings/model/codeAppearance";
 
 const highlighterOptions = {
-  theme: REVIEW_THEMES,
   preferredHighlighter: "shiki-wasm",
   lineDiffType: "word-alt",
   maxLineDiffLength: 1000,
@@ -22,6 +22,7 @@ type PoolEntry = {
   manager?: WorkerPoolManager;
   ready: boolean;
   stop: () => void;
+  updates: Promise<void>;
 };
 
 let entry: PoolEntry | undefined;
@@ -33,7 +34,7 @@ const notify = () => listeners.forEach((listener) => listener());
 function startPool(): PoolEntry {
   let stopped = false;
   const workers: Worker[] = [];
-  const current: PoolEntry = { ready: false, stop: () => undefined };
+  const current: PoolEntry = { ready: false, stop: () => undefined, updates: Promise.resolve() };
   // Pierre 1.1 can leave initialization pending on an asset/worker load error.
   // Keep main-thread highlighting available until initialization succeeds,
   // and return to it on failure rather than trusting isWorkingPool().
@@ -73,7 +74,7 @@ function startPool(): PoolEntry {
         ),
         totalASTLRUCacheSize: 40,
       },
-      highlighterOptions,
+      { ...highlighterOptions, theme: reviewThemes() },
     );
     current.manager = manager;
     void manager
@@ -99,7 +100,7 @@ function acquire() {
   // Main-thread fallback renders nothing until a highlighter exists; with the
   // themes loaded it shows plain text at once and highlights afterwards.
   void preloadHighlighter({
-    themes: [REVIEW_THEMES.light, REVIEW_THEMES.dark],
+    themes: Object.values(reviewThemes()),
     langs: [],
     preferredHighlighter: highlighterOptions.preferredHighlighter,
   }).catch(() => undefined);
@@ -127,10 +128,22 @@ const snapshot = () => (entry?.ready ? entry.manager : undefined);
 
 export function ReviewDiffsWorkerPool({ children }: { children: ReactNode }) {
   const pool = useSyncExternalStore(subscribe, snapshot, () => undefined);
+  const themes = useCodeThemes();
   useEffect(() => {
     acquire();
     return release;
   }, []);
+  useEffect(() => {
+    const target = entry;
+    if (!pool || target?.manager !== pool) return;
+    let current = true;
+    // Serialize asynchronous theme loads so a rapid reversal finishes with
+    // the latest selection while preserving the warm worker pool.
+    target.updates = target.updates.then(async () => {
+      if (current) await pool.setRenderOptions({ ...highlighterOptions, theme: reviewThemes(themes) });
+    }).catch(() => { if (entry?.manager === pool) entry.stop(); });
+    return () => { current = false; };
+  }, [pool, themes.light, themes.dark]);
   return (
     <WorkerPoolContext.Provider value={pool}>
       {children}

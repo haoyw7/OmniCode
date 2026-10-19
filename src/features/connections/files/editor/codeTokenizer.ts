@@ -32,12 +32,12 @@ export function themeName(theme: ThemeInput): string {
 }
 
 /**
- * Loads languages into one highlighter per theme pair and tokenizes with it.
+ * Loads languages and selected themes into one highlighter and tokenizes with it.
  * Shared by the highlight worker and the main-thread fallback.
  */
 export function createCodeTokenizer(maxChars = 500_000): CodeTokenizer {
   const engine = createJavaScriptRegexEngine({ forgiving: true });
-  const highlighters = new Map<string, Promise<Highlighter>>();
+  let sharedHighlighter: Promise<Highlighter> | undefined;
   // Grammar state stays inside the worker (or its fallback). Only the newest
   // fence's complete lines are retained, within the same source-size budget.
   let checkpoint:
@@ -49,14 +49,14 @@ export function createCodeTokenizer(maxChars = 500_000): CodeTokenizer {
       }
     | undefined;
 
-  const highlighterFor = (pair: [ThemeInput, ThemeInput]) => {
-    const key = `${themeName(pair[0])}\u0000${themeName(pair[1])}`;
-    let highlighter = highlighters.get(key);
-    if (!highlighter) {
-      highlighter = createHighlighter({ themes: pair, langs: [], engine });
-      highlighters.set(key, highlighter);
-      highlighter.catch(() => highlighters.delete(key));
+  const highlighterFor = async (pair: [ThemeInput, ThemeInput]) => {
+    if (!sharedHighlighter) {
+      sharedHighlighter = createHighlighter({ themes: pair, langs: [], engine });
+      sharedHighlighter.catch(() => { sharedHighlighter = undefined; });
     }
+    const highlighter = await sharedHighlighter;
+    const missing = pair.filter((theme) => !highlighter.getLoadedThemes().includes(themeName(theme)));
+    if (missing.length) await highlighter.loadTheme(...missing);
     return highlighter;
   };
 

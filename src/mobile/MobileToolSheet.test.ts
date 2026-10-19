@@ -394,6 +394,6 @@ describe("mobile file preview helpers", () => {
   });
 
   it("fences source longer than any backtick run inside it", () => {
-    expect(fencedSource("a ``` b", "md")).toBe("````md\na ``` b\n````");
+    expect(fencedSource("a ``` b", "md")).toBe("````md lineNumbers\na ``` b\n````");
   });
 });

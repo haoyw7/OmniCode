@@ -44,6 +44,7 @@ import {
   useMarkdownMode,
 } from "../../../sessions/ui/MarkdownModeToggle";
 import { useColorScheme } from "../../../../shared/hooks/useColorScheme";
+import { useCodeThemePalette, useCodeThemes } from "../../../settings/model/codeAppearance";
 import { useLockOverscroll } from "../../../../shared/hooks/useLockOverscroll";
 import { isLightScheme } from "../../../settings/model/appearance";
 import { loadAutosave, loadFormatOnSave } from "../../../settings/model/settings";
@@ -615,6 +616,8 @@ export function CodeMirrorEditor({
   const gitOriginalRef = useRef(gitOriginal);
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
   const colorScheme = useColorScheme();
+  const codeThemes = useCodeThemes();
+  const codePalette = useCodeThemePalette(codeThemes[colorScheme]);
   const [commentTarget, setCommentTarget] =
     useState<DiffCommentComposerTarget | null>(null);
   const [selectionTarget, setSelectionTarget] =
@@ -827,7 +830,7 @@ export function CodeMirrorEditor({
     view.dispatch({
       effects: editorScheme.reconfigure(schemeExtensions(colorScheme)),
     });
-  }, [colorScheme]);
+  }, [colorScheme, codePalette]);
 
   useEffect(() => {
     const view = viewRef.current;

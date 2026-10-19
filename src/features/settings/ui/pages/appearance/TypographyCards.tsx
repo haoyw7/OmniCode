@@ -3,7 +3,6 @@ import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { useEffect, useState } from "react";
 import { Input } from "../../../../../shared/ui/forms/Input";
 import {
-  CODE_FONT_PRESETS,
   CONTENT_FONT_PRESETS,
   CONTRAST_MAX,
   CONTRAST_MIN,
@@ -14,11 +13,11 @@ import {
   normalizeFontFamily,
   type FontSizeKind,
   type FontWeight,
-  type SystemFonts,
 } from "../../../model/typography";
 import { type AppearanceSettings } from "./useAppearanceSettings";
 import { Group, LiveSlider, Row, Segmented, Slider, Toggle } from "../../settingsLayout";
 import { AccentRow } from "./AccentRow";
+import { CodeAppearanceCard } from "./CodeAppearanceCard";
 
 
 
@@ -26,20 +25,19 @@ const CUSTOM_FONT = "__custom__";
 
 /** Installed families, or `fallback` until/unless the backend answers. */
 function useSystemFonts(
-  kind: keyof SystemFonts,
   fallback: readonly string[],
 ): readonly string[] {
   const [fonts, setFonts] = useState<readonly string[] | null>(null);
   useEffect(() => {
     let alive = true;
     void loadSystemFonts().then((fonts) => {
-      const list = fonts[kind];
+      const list = fonts.all;
       if (alive && list.length > 0) setFonts(list);
     });
     return () => {
       alive = false;
     };
-  }, [kind]);
+  }, []);
   return fonts ?? fallback;
 }
 
@@ -49,28 +47,23 @@ function FontFamilySelect({
   value,
   defaultLabel,
   presets,
-  monospace = false,
   onChange,
 }: {
   label: string;
   value: string;
   defaultLabel: string;
   presets: readonly string[];
-  /** Code fonts list only fixed-pitch families. */
-  monospace?: boolean;
   onChange: (value: string) => void;
 }) {
   const { t: uiT } = useTranslation();
-  presets = useSystemFonts(monospace ? "monospace" : "all", presets);
+  presets = useSystemFonts(presets);
   const isPreset = value === "" || presets.includes(value);
   const [custom, setCustom] = useState(!isPreset);
   const [draft, setDraft] = useState(isPreset ? "" : value);
   useEffect(() => {
-    if (value !== "" && !presets.includes(value)) {
-      setCustom(true);
-      setDraft(value);
-    }
-  }, [value, presets]);
+    setCustom(!isPreset);
+    setDraft(isPreset ? "" : value);
+  }, [value, isPreset]);
 
   const commit = () => {
     const next = normalizeFontFamily(draft);
@@ -82,31 +75,34 @@ function FontFamilySelect({
     <>
       {custom ? (
         <Input
-          size="lg"
           value={draft}
           aria-label={uiT("Custom {font}", { font: label })}
-          placeholder={uiT("Font name")}
+          placeholder={uiT("e.g. {font}", {
+            font: "Source Sans 3",
+          })}
           spellCheck={false}
           onChange={(event) => setDraft(event.currentTarget.value)}
           onBlur={commit}
           onKeyDown={(event) => {
             if (event.key === "Enter") event.currentTarget.blur();
           }}
-          className="w-36 rounded-lg"
+          className="w-36"
         />
       ) : null}
       <div className="w-40">
         <SearchableSelect searchable={false} align="end" width={280} maxHeight={320} commitOnTab checkPosition="end" className="max-w-52"
           label={label}
           menuClassName="settings-font-select-menu"
-          value={custom ? CUSTOM_FONT : value}
+          value={value}
           options={[
             { value: "", label: defaultLabel },
-            ...presets.map((font) => ({ value: font, label: font })),
             { value: CUSTOM_FONT, label: uiT("Custom…") },
+            ...presets.map((font) => ({ value: font, label: font })),
+            ...(!isPreset ? [{ value, label: value }] : []),
           ]}
           onChange={(next) => {
             if (next === CUSTOM_FONT) {
+              setDraft(value);
               setCustom(true);
               return;
             }
@@ -276,15 +272,7 @@ export function TypographyCards({ appearance }: { appearance: AppearanceSettings
             onChange={(contentWeight) => updateProfile({ contentWeight })}
           />
         </Row>
-        <Row id="code-font" label={uiT("Code font")}>
-          <FontFamilySelect
-            label={uiT("Code font")}
-            value={profile.codeFont}
-            defaultLabel={uiT("Default (Anthropic Mono)")}
-            presets={CODE_FONT_PRESETS}
-            monospace
-            onChange={(codeFont) => updateProfile({ codeFont })}
-          />
+        <Row id="code-font-style" label={uiT("Code font style")}>
           <FontWeightSelect
             label={uiT("Code font style")}
             value={profile.codeWeight}
@@ -303,6 +291,7 @@ export function TypographyCards({ appearance }: { appearance: AppearanceSettings
           />
         </Row>
       </Group>
+      <CodeAppearanceCard appearance={appearance} />
     </>
   );
 }

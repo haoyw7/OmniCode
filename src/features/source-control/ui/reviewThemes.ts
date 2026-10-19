@@ -1,4 +1,6 @@
 import { registerCustomTheme } from "@pierre/diffs";
+import { codeThemeInput, codeThemeName, type CodeThemeSelection } from "../../../shared/theme/codeThemes";
+import { loadCodeTheme } from "../../settings/model/codeAppearance";
 
 /** Shared by the main-thread renderer and the worker pool's resolved themes. */
 export const REVIEW_THEMES = {
@@ -6,7 +8,17 @@ export const REVIEW_THEMES = {
   dark: "omnicode-review-dark",
 } as const;
 
+export function reviewThemes(selection?: CodeThemeSelection) {
+  return Object.fromEntries((["light", "dark"] as const).map((scheme) => [
+    scheme,
+    (selection?.[scheme] ?? loadCodeTheme(scheme)) === `github-${scheme}`
+      ? REVIEW_THEMES[scheme] : codeThemeName(selection?.[scheme] ?? loadCodeTheme(scheme)),
+  ])) as Record<"light" | "dark", string>;
+}
+
 for (const scheme of ["light", "dark"] as const) {
+  const id = `claude-${scheme}` as const;
+  registerCustomTheme(codeThemeName(id), async () => codeThemeInput(id) as import("shiki").ThemeRegistration);
   registerCustomTheme(REVIEW_THEMES[scheme], async () => {
     const { bundledThemes } = await import("shiki");
     const { default: base } = await bundledThemes[`github-${scheme}`]();

@@ -474,7 +474,7 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
   font-size: calc(var(--mobile-font-xl) + var(--mobile-popup-font-step));
 }
 :is(.mobile-sheet, .mobile-modal, [role="dialog"], [data-popover-side])
-  .agent-markdown :is(.markdown-code-path, .markdown-code-fallback-label,
+  .agent-markdown :is(.markdown-code-path, .markdown-code-label,
     [data-streamdown="code-block-header"] > span,
     [data-streamdown="code-block-body"], [data-streamdown="table-header-cell"],
     [data-streamdown="table-cell"]) {

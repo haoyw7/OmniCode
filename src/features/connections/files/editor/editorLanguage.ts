@@ -7,6 +7,8 @@ import {
 import type { Extension } from "@codemirror/state";
 import { tagHighlighter, tags, type Highlighter } from "@lezer/highlight";
 import type { ColorScheme } from "../../../settings/model/appearance";
+import { loadCodeTheme } from "../../../settings/model/codeAppearance";
+import { codeThemePalette, type CodePalette } from "../../../../shared/theme/codeThemes";
 import { basename } from "../../../../platform/tauri/fs";
 
 const HIGHLIGHT_TAGS = {
@@ -60,50 +62,10 @@ const HIGHLIGHT_TAGS = {
   ],
 };
 
-type HighlightPalette = {
-  keyword: string;
-  heading: string;
-  callable: string;
-  string: string;
-  type: string;
-  number: string;
-  comment: string;
-  property: string;
-  meta: string;
-  invalid: string;
-};
-
-const HIGHLIGHT_PALETTE: Record<ColorScheme, HighlightPalette> = {
-  dark: {
-    keyword: "#ff8ffd",
-    heading: "var(--color-markdown-heading)",
-    callable: "#a5d5fe",
-    string: "#b4fa72",
-    type: "#ff8272",
-    number: "#b4fa72",
-    comment: "#fefdc2",
-    property: "#d0d1fe",
-    meta: "#8e8e8e",
-    invalid: "#ffc4bd",
-  },
-  light: {
-    keyword: "#a626a4",
-    heading: "var(--color-markdown-heading)",
-    callable: "#4078f2",
-    string: "#50a14f",
-    type: "#c18401",
-    number: "#986801",
-    comment: "#8a9199",
-    property: "#e45649",
-    meta: "#5c6370",
-    invalid: "#cf222e",
-  },
-};
-
-function highlightStyleFrom(palette: HighlightPalette) {
+function highlightStyleFrom(palette: CodePalette) {
   return HighlightStyle.define([
     { tag: HIGHLIGHT_TAGS.keyword, color: palette.keyword },
-    { tag: HIGHLIGHT_TAGS.heading, color: palette.heading },
+    { tag: HIGHLIGHT_TAGS.heading, color: palette.callable },
     { tag: HIGHLIGHT_TAGS.callable, color: palette.callable },
     { tag: HIGHLIGHT_TAGS.string, color: palette.string },
     { tag: HIGHLIGHT_TAGS.type, color: palette.type },
@@ -115,19 +77,24 @@ function highlightStyleFrom(palette: HighlightPalette) {
   ]);
 }
 
-const HIGHLIGHT_DARK = highlightStyleFrom(HIGHLIGHT_PALETTE.dark);
-const HIGHLIGHT_LIGHT = highlightStyleFrom(HIGHLIGHT_PALETTE.light);
+const highlightStyles = new WeakMap<CodePalette, HighlightStyle>();
 
 export function editorHighlightStyleFor(scheme: ColorScheme) {
-  return scheme === "light" ? HIGHLIGHT_LIGHT : HIGHLIGHT_DARK;
+  const palette = codeThemePalette(loadCodeTheme(scheme));
+  let style = highlightStyles.get(palette);
+  if (!style) {
+    style = highlightStyleFrom(palette);
+    highlightStyles.set(palette, style);
+  }
+  return style;
 }
 
 /** Same tag → color map as the editor, for highlighting outside CodeMirror. */
 export function syntaxTagHighlighter(scheme: ColorScheme): Highlighter {
-  const palette = HIGHLIGHT_PALETTE[scheme];
+  const palette = codeThemePalette(loadCodeTheme(scheme));
   return tagHighlighter([
     { tag: HIGHLIGHT_TAGS.keyword, class: palette.keyword },
-    { tag: HIGHLIGHT_TAGS.heading, class: palette.heading },
+    { tag: HIGHLIGHT_TAGS.heading, class: palette.callable },
     { tag: HIGHLIGHT_TAGS.callable, class: palette.callable },
     { tag: HIGHLIGHT_TAGS.string, class: palette.string },
     { tag: HIGHLIGHT_TAGS.type, class: palette.type },

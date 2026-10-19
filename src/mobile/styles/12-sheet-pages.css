@@ -204,12 +204,12 @@
   background: transparent;
 }
 .mobile-file-sheet[data-view="source"] :is([data-streamdown="code-block-header"],
-  .markdown-code-icon, .markdown-code-copy, .markdown-code-path, .markdown-code-fallback-label) {
+  .markdown-code-icon, .markdown-code-copy, .markdown-code-wrap, .markdown-code-path, .markdown-code-label) {
   display: none;
 }
 .mobile-file-sheet[data-view="source"] [data-streamdown="code-block-body"] {
   padding-block: 4px 12px;
-  border-top: 0;
+  padding-left: 0;
 }
 .mobile-file-sheet[data-view="source"] :is(.mobile-file-plain > span,
   [data-streamdown="code-block-body"] code > span)::before {
@@ -280,7 +280,7 @@ html[data-mobile-skin] .mobile-sheet-pages .mobile-page-layer {
 .mobile-desktop-transcript .user-message-actions button::after,
 .mobile-desktop-transcript [data-ui="response-actions"] [data-ui="response-action"]::after,
 .mobile-desktop-transcript [data-ui="response-metrics-trigger"]::after,
-:is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) .markdown-code-copy::after,
+:is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) :is(.markdown-code-copy, .markdown-code-wrap)::after,
 .mobile-shared-question [data-question-collapse]::after,
 .mobile-settings-row .mobile-select-trigger::after {
   content: "";
@@ -353,7 +353,7 @@ button.mobile-drawer-group-status,
   :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) .attachment-chip-card:enabled {
     background-color: var(--color-m-app);
   }
-  :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) .markdown-code-copy:not(:focus-visible) {
+  :is(.mobile-app, .mobile-sheet, .mobile-modal, [data-popover-side]) :is(.markdown-code-copy, .markdown-code-wrap):not(:focus-visible, [aria-pressed="true"]) {
     background-color: transparent;
     color: var(--color-m-ink-tertiary);
   }

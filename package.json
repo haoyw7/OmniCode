@@ -79,6 +79,7 @@
     "@formkit/auto-animate": "^0.10.0",
     "@lezer/highlight": "^1.2.3",
     "@pierre/diffs": "1.1.22",
+    "@pierre/theme": "0.0.28",
     "@streamdown/code": "^1.1.1",
     "@streamdown/mermaid": "^1.0.2",
     "@tanstack/react-virtual": "3.13.23",

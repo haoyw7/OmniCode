@@ -180,6 +180,33 @@ html[data-skin] .settings-row:not([data-stacked]) { flex-wrap: wrap; }
 html[data-skin] .settings-row-label { font-size: 14px; line-height: 20px; font-weight: var(--font-weight-normal); }
 html[data-skin] .settings-row-description { margin-top: 5px; color: var(--color-ink-tertiary); font-size: 14px; line-height: 20px; }
 html[data-skin] .settings-row-control { max-width: 100%; }
+.settings-code-themes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 20px;
+  padding-block: 12px 16px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+.settings-code-theme { display: flex; min-width: 0; flex-direction: column; gap: 12px; }
+.settings-code-preview {
+  overflow-x: auto;
+  padding-block: 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--desktop-radius-card);
+  font-size: var(--text-body-sm);
+  font-weight: var(--code-font-weight, 400);
+  line-height: 1.5;
+}
+.settings-code-preview-line { display: flex; min-width: max-content; padding-inline: 12px; }
+.settings-code-preview-number { width: 3ch; flex-shrink: 0; text-align: right; color: var(--code-preview-muted); }
+.settings-code-preview-sign { width: 3ch; flex-shrink: 0; text-align: center; }
+.settings-code-preview-line > code { padding-inline-end: 12px; white-space: pre; font: inherit; }
+.settings-code-preview-line[data-change="addition"] { background: var(--code-preview-addition); }
+.settings-code-preview-line[data-change="deletion"] { background: var(--code-preview-deletion); }
+.settings-code-preview-line[data-change="addition"] :is(.settings-code-preview-number, .settings-code-preview-sign) { color: var(--code-preview-added); }
+.settings-code-preview-line[data-change="deletion"] :is(.settings-code-preview-number, .settings-code-preview-sign) { color: var(--code-preview-removed); }
+.settings-code-preview-line[data-change="addition"] [data-word-change] { background: var(--code-preview-addition-word); border-radius: 3px; }
+.settings-code-preview-line[data-change="deletion"] [data-word-change] { background: var(--code-preview-deletion-word); border-radius: 3px; }
 .desktop-skin-picker {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(128px, 100%), 1fr));

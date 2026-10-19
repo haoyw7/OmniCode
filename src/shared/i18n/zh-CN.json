@@ -1,4 +1,10 @@
 {
+  "Code appearance": "代码外观",
+  "Light code theme": "浅色代码主题",
+  "Dark code theme": "深色代码主题",
+  "Light code theme preview": "浅色代码主题预览",
+  "Dark code theme preview": "深色代码主题预览",
+  "Set a custom monospace font for code and terminal.": "为代码和终端设置自定义等宽字体。",
   "This WSL conversation changed in another application. Switch agents to continue with a history handoff; native ownership across Windows and WSL is not supported yet.": "这个 WSL 对话已被其他应用修改。请切换代理，通过历史交接继续；目前尚不支持跨 Windows 和 WSL 核对原生会话的占用状态。",
   "Remote control": "远程控制",
   "File path": "文件路径",
@@ -3367,6 +3373,7 @@
   "Custom…": "自定义…",
   "Custom {font}": "自定义{font}",
   "Font name": "字体名称",
+  "e.g. {font}": "例如：{font}",
   "Regular": "常规",
   "Medium weight": "中等",
   "Semibold": "半粗",

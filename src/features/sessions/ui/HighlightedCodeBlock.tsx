@@ -10,6 +10,8 @@ import type { BundledLanguage } from "shiki";
 import type { HighlightResult } from "@streamdown/code";
 import { CodeBlockContainer, CodeBlockHeader } from "streamdown";
 import { boundedCode } from "../../connections/files/editor/codeHighlightPlugin";
+import { useCodeThemePalette, useCodeThemes } from "../../settings/model/codeAppearance";
+import { useColorScheme } from "../../../shared/hooks/useColorScheme";
 
 type Tokens = HighlightResult["tokens"][number];
 
@@ -53,6 +55,19 @@ const HighlightedLine = memo(function HighlightedLine({
   );
 });
 
+// The gutter is sized by the widest line number so wrapped lines can hang
+// past it without measuring.
+function lineNumberStyle(
+  startLine: number | undefined,
+  lineCount: number,
+): CSSProperties {
+  const first = startLine ?? 1;
+  return {
+    counterReset: `line ${first - 1}`,
+    "--markdown-code-digits": String(first + lineCount - 1).length,
+  } as CSSProperties;
+}
+
 const HighlightedBody = memo(function HighlightedBody({
   result,
   lineNumbers,
@@ -87,7 +102,7 @@ const HighlightedBody = memo(function HighlightedBody({
       <code
         style={
           lineNumbers
-            ? { counterReset: `line ${(startLine ?? 1) - 1}` }
+            ? lineNumberStyle(startLine, result.tokens.length)
             : undefined
         }
       >
@@ -111,6 +126,9 @@ export function HighlightedCodeBlock({
   startLine?: number;
 }) {
   const source = code.replace(/\n+$/, "");
+  const themes = useCodeThemes();
+  const colorScheme = useColorScheme();
+  const palette = useCodeThemePalette(themes[colorScheme]);
   const [highlighted, setHighlighted] = useState<{
     language: string;
     result: HighlightResult;
@@ -132,13 +150,13 @@ export function HighlightedCodeBlock({
     return () => {
       current = false;
     };
-  }, [source, language]);
+  }, [source, language, themes.light, themes.dark]);
   const result =
     highlighted?.language === language ? highlighted.result : undefined;
   return (
     <CodeBlockContainer language={language} isIncomplete={isIncomplete}>
       <CodeBlockHeader language={language} />
-      <div data-streamdown="code-block-body" data-language={language}>
+      <div data-streamdown="code-block-body" data-language={language} style={{ backgroundColor: palette.background, color: palette.foreground }}>
         {result ? (
           <HighlightedBody
             result={result}
@@ -150,7 +168,7 @@ export function HighlightedCodeBlock({
             <code
               style={
                 lineNumbers
-                  ? { counterReset: `line ${(startLine ?? 1) - 1}` }
+                  ? lineNumberStyle(startLine, source.split("\n").length)
                   : undefined
               }
             >

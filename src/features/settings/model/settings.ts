@@ -351,6 +351,18 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     keywords: "typeface family monospace mono 代码 字体 等宽",
   },
   {
+    id: "code-appearance",
+    section: "appearance",
+    label: "Code appearance",
+    keywords: "syntax highlighting diff theme claude github pierre one catppuccin solarized vitesse min rose pine slack nord dracula tokyo 代码 配色 主题 高亮",
+  },
+  {
+    id: "code-font-style",
+    section: "appearance",
+    label: "Code font style",
+    keywords: "monospace weight bold medium regular 代码 字体 字重 样式",
+  },
+  {
     id: "contrast",
     section: "appearance",
     label: "Contrast",

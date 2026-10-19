@@ -233,6 +233,63 @@ const LANGUAGE_FILE_NAMES: Record<string, string> = {
   zsh: "code.sh",
 };
 
+// Header labels use each language's own spelling; unknown fences keep the
+// author's tag unchanged.
+const LANGUAGE_DISPLAY_NAMES: Record<string, string> = {
+  bash: "Bash",
+  c: "C",
+  cpp: "C++",
+  "c++": "C++",
+  csharp: "C#",
+  cs: "C#",
+  css: "CSS",
+  dart: "Dart",
+  diff: "Diff",
+  dockerfile: "Dockerfile",
+  go: "Go",
+  graphql: "GraphQL",
+  html: "HTML",
+  java: "Java",
+  javascript: "JavaScript",
+  js: "JavaScript",
+  json: "JSON",
+  jsonc: "JSONC",
+  jsx: "JSX",
+  kotlin: "Kotlin",
+  kt: "Kotlin",
+  lua: "Lua",
+  makefile: "Makefile",
+  markdown: "Markdown",
+  md: "Markdown",
+  php: "PHP",
+  powershell: "PowerShell",
+  ps1: "PowerShell",
+  python: "Python",
+  py: "Python",
+  ruby: "Ruby",
+  rb: "Ruby",
+  rust: "Rust",
+  rs: "Rust",
+  scss: "SCSS",
+  shell: "Shell",
+  sh: "Shell",
+  sql: "SQL",
+  swift: "Swift",
+  toml: "TOML",
+  ts: "TypeScript",
+  tsx: "TSX",
+  typescript: "TypeScript",
+  vue: "Vue",
+  xml: "XML",
+  yaml: "YAML",
+  yml: "YAML",
+  zsh: "Zsh",
+};
+
+function languageLabel(language: string): string {
+  return LANGUAGE_DISPLAY_NAMES[language.toLowerCase()] ?? language;
+}
+
 // Shiki (via Streamdown's CodeBlock) treats these as plaintext and renders no
 // syntax colors at all, which is common in agent output (pseudocode, file
 // trees, command output) fenced as `text` or left untagged. Falling back to
@@ -310,6 +367,7 @@ function MarkdownCode({
 }: MarkdownCodeProps) {
   const incomplete = useIsCodeFenceIncomplete();
   const { localFiles } = useContext(TranscriptPlatformContext);
+  const [wrapLines, setWrapLines] = useState(false);
   const block = Object.prototype.hasOwnProperty.call(props, "data-block");
   if (!block) {
     const text = textContent(children);
@@ -326,7 +384,7 @@ function MarkdownCode({
       <code
         {...props}
         dir="ltr"
-        className={`inline-flex items-center gap-1 rounded-md bg-content/8 px-1.5 min-h-6 max-w-full [overflow-wrap:anywhere] align-baseline font-mono text-[0.8em] text-content ${
+        className={`inline-flex items-baseline gap-1 rounded-md bg-content/8 px-1.5 py-px leading-[1.4] max-w-full [overflow-wrap:anywhere] align-baseline font-mono text-[0.8em] text-content ${
           open ? "cursor-pointer hover:text-sky-300 hover:underline" : ""
         } ${className ?? ""}`}
         role={open ? "link" : undefined}
@@ -349,8 +407,8 @@ function MarkdownCode({
         }
       >
         {fileName ? (
-          <span aria-hidden="true">
-            <FileTypeIcon name={fileName} isDir={false} size={14} />
+          <span aria-hidden="true" className="inline-flex shrink-0 self-center">
+            <FileTypeIcon name={fileName} isDir={false} size={13} />
           </span>
         ) : null}
         {children}
@@ -370,19 +428,25 @@ function MarkdownCode({
   const iconName =
     fence.fileName ??
     (fence.language ? fileNameForLanguage(fence.language) : "");
-  const lineNumbers = !/\bnoLineNumbers\b/.test(meta);
+  // Snippets read cleaner without a gutter; file citations and fences that
+  // ask for it keep numbering so line references stay meaningful.
+  const lineNumbers =
+    !/\bnoLineNumbers\b/.test(meta) &&
+    (/\blineNumbers\b/.test(meta) ||
+      fence.startLine !== undefined ||
+      fence.filePath !== undefined);
   // highlightLanguageFor swaps the fence language for "js" so Shiki still
-  // colors plaintext fences, but Streamdown's CodeBlock reuses that same
-  // value for the header label. Without this, a `text` fence would show a
-  // "js" header, and an untagged fence would gain a header it never had.
-  // Render our own label with the original language instead, and hide
-  // Streamdown's via CSS (see .markdown-code-fallback-label in index.css).
-  const isPlaintextFallback = PLAINTEXT_FENCE_LANGUAGES.has(
-    fence.language.toLowerCase(),
-  );
+  // colors plaintext fences, and Streamdown's CodeBlock would reuse that
+  // value for its lowercase header label. Render our own label from the
+  // original fence language instead, and hide Streamdown's via CSS
+  // (see .markdown-code-label in conversation.css).
 
   const content = (
-    <div className="markdown-code-shell" dir="ltr">
+    <div
+      className="markdown-code-shell"
+      dir="ltr"
+      data-wrap={wrapLines || undefined}
+    >
       {iconName ? (
         <span className="markdown-code-icon" aria-hidden="true">
           <FileTypeIcon name={iconName} isDir={false} />
@@ -390,9 +454,17 @@ function MarkdownCode({
       ) : null}
       {fence.filePath ? (
         <MarkdownCodePath path={fence.filePath} startLine={fence.startLine} />
-      ) : isPlaintextFallback || virtualCode ? (
-        <span className="markdown-code-fallback-label">{fence.language}</span>
-      ) : null}
+      ) : (
+        <span className="markdown-code-label">
+          {languageLabel(fence.language)}
+        </span>
+      )}
+      {virtualCode ? null : (
+        <CodeWrapButton
+          wrap={wrapLines}
+          onToggle={() => setWrapLines((value) => !value)}
+        />
+      )}
       <CodeCopyButton code={code} />
       {virtualCode ? (
         <ReadonlyTextView text={code} startLine={fence.startLine}
@@ -453,6 +525,33 @@ class CodeHighlightBoundary extends Component<
       </pre>
     ) : this.props.children;
   }
+}
+
+function CodeWrapButton({
+  wrap,
+  onToggle,
+}: {
+  wrap: boolean;
+  onToggle: () => void;
+}) {
+  const { t: uiT } = useTranslation();
+  return (
+    <button
+      type="button"
+      title={uiT("Wrap lines")}
+      aria-label={uiT("Wrap lines")}
+      aria-pressed={wrap}
+      className="markdown-code-wrap"
+      onClick={onToggle}
+    >
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path d="M4 5h12" />
+        <path d="M4 10h9.5a2.5 2.5 0 0 1 0 5H10" />
+        <path d="m11.5 13-2 2 2 2" />
+        <path d="M4 15h3" />
+      </svg>
+    </button>
+  );
 }
 
 function CodeCopyButton({ code }: { code: string }) {
@@ -889,6 +988,7 @@ function MermaidBlock({
         <span className="markdown-code-icon" aria-hidden="true">
           <FileTypeIcon name="diagram.mmd" isDir={false} />
         </span>
+        <span className="markdown-code-label">Mermaid</span>
         <CodeCopyButton code={code} />
         <CodeBlock
           code={code}

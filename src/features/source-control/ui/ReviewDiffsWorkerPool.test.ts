@@ -3,6 +3,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { useWorkerPool } from "@pierre/diffs/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { saveCodeTheme } from "../../settings/model/codeAppearance";
 import {
   REVIEW_POOL_IDLE_MS,
   ReviewDiffsWorkerPool,
@@ -11,7 +12,7 @@ import {
 const state = vi.hoisted(() => ({
   initialize: () => Promise.resolve(),
   factoryFails: false,
-  managers: [] as { terminate: ReturnType<typeof vi.fn> }[],
+  managers: [] as { terminate: ReturnType<typeof vi.fn>; setRenderOptions: ReturnType<typeof vi.fn> }[],
   workers: [] as (EventTarget & { terminate: ReturnType<typeof vi.fn> })[],
 }));
 vi.mock("@pierre/diffs", () => ({
@@ -21,6 +22,7 @@ vi.mock("@pierre/diffs", () => ({
 vi.mock("@pierre/diffs/worker", () => ({
   WorkerPoolManager: class {
     terminate = vi.fn();
+    setRenderOptions = vi.fn(() => Promise.resolve());
     constructor(
       private options: { workerFactory: () => Worker; poolSize: number },
     ) {
@@ -49,6 +51,7 @@ async function render() {
   );
 }
 beforeEach(() => {
+  localStorage.clear();
   vi.useFakeTimers();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   state.initialize = () => Promise.resolve();
@@ -140,4 +143,31 @@ it("uses the main thread when workers are unavailable", async () => {
   await render();
   expect(mode()).toBe("main");
   expect(state.managers).toHaveLength(0);
+});
+
+it("applies code theme changes without recreating the worker pool", async () => {
+  await render();
+  const manager = state.managers[0];
+  await act(async () => saveCodeTheme("light", "catppuccin-latte"));
+  await act(async () => saveCodeTheme("dark", "nord"));
+  expect(state.managers).toHaveLength(1);
+  expect(manager.terminate).not.toHaveBeenCalled();
+  expect(manager.setRenderOptions).toHaveBeenLastCalledWith(expect.objectContaining({
+    theme: { light: "catppuccin-latte", dark: "nord" },
+  }));
+});
+
+it("finishes rapid reversals with the latest themes even when an older theme load is pending", async () => {
+  await render();
+  const manager = state.managers[0];
+  let finish!: () => void;
+  manager.setRenderOptions.mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve; }));
+  await act(async () => saveCodeTheme("light", "pierre-light"));
+  await act(async () => saveCodeTheme("dark", "nord"));
+  await act(async () => saveCodeTheme("light", "claude-light"));
+  await act(async () => finish());
+  expect(manager.setRenderOptions).toHaveBeenLastCalledWith(expect.objectContaining({
+    theme: { light: "omnicode-claude-light", dark: "nord" },
+  }));
+  expect(state.managers).toHaveLength(1);
 });

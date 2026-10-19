@@ -1,5 +1,9 @@
 @import "../ui/scrollbar.css";
 
+.agent-transcript {
+  scrollbar-gutter: stable both-edges;
+}
+
 /* Shared content rendering only. Platform controls and palettes live in their own entries. */
 /* Settings → Appearance: conversation and document text follow the content
    font and size; code inside them and diffs follow the code size. */
@@ -776,10 +780,19 @@ input,
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+  border-color: color-mix(in srgb, var(--color-stroke) 70%, transparent);
+  border-radius: 16px;
 }
 
+/* Three-line (booktabs) tables: no card box or fill, so the active skin's
+   background shows through. Desktop and mobile share these rules. */
 .agent-markdown [data-streamdown="table-wrapper"] {
+  --markdown-table-rule: color-mix(in srgb, var(--color-content) 55%, transparent);
+  --markdown-table-midrule: color-mix(in srgb, var(--color-content) 25%, transparent);
   overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .agent-markdown .markdown-code-shell {
@@ -799,12 +812,12 @@ input,
   margin-block: 0;
 }
 
-.agent-markdown .markdown-code-copy {
+.agent-markdown :is(.markdown-code-copy, .markdown-code-wrap) {
   appearance: none;
   position: absolute;
   z-index: 2;
-  top: 6px;
-  right: 8px;
+  top: 8px;
+  right: 10px;
   display: grid;
   width: 24px;
   height: 24px;
@@ -820,17 +833,26 @@ input,
     color 160ms ease, background-color 160ms ease;
 }
 
-.agent-markdown .markdown-code-copy:hover {
+.agent-markdown :is(.markdown-code-copy, .markdown-code-wrap):hover {
   background: color-mix(in srgb, var(--color-content) 10%, transparent);
   color: var(--color-content);
 }
 
-.agent-markdown .markdown-code-copy:focus-visible {
+.agent-markdown :is(.markdown-code-copy, .markdown-code-wrap):focus-visible {
   background: color-mix(in srgb, var(--color-content) 10%, transparent);
   color: var(--color-content);
 }
 
-.agent-markdown .markdown-code-copy svg {
+.agent-markdown .markdown-code-wrap {
+  right: 38px;
+}
+
+.agent-markdown .markdown-code-wrap[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-content) 8%, transparent);
+  color: var(--color-content);
+}
+
+.agent-markdown :is(.markdown-code-copy, .markdown-code-wrap) svg {
   width: 15px;
   height: 15px;
   overflow: visible;
@@ -850,8 +872,8 @@ input,
 .agent-markdown .markdown-code-icon {
   position: absolute;
   z-index: 1;
-  top: 10px;
-  left: 10px;
+  top: 12px;
+  left: 16px;
   display: flex;
   align-items: center;
   height: 16px;
@@ -861,22 +883,29 @@ input,
   position: absolute;
   z-index: 1;
   top: 10px;
-  left: 34px;
-  right: 12px;
+  left: 40px;
+  right: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: var(--font-weight-medium);
+  line-height: 20px;
   color: color-mix(in srgb, var(--color-content) 65%, transparent);
   pointer-events: none;
 }
 
 .agent-markdown
   .markdown-code-shell:has(.markdown-code-copy)
-  .markdown-code-path {
-  right: 42px;
+  :is(.markdown-code-path, .markdown-code-label) {
+  right: 44px;
+}
+
+.agent-markdown
+  .markdown-code-shell:has(.markdown-code-wrap)
+  :is(.markdown-code-path, .markdown-code-label) {
+  right: 72px;
 }
 
 .agent-markdown .markdown-code-path-link {
@@ -894,52 +923,43 @@ input,
   text-decoration: underline;
 }
 
-.agent-markdown
-  .markdown-code-shell:has(.markdown-code-path)
-  [data-streamdown="code-block-header"]
-  > span {
-  visibility: hidden;
-}
-
-.agent-markdown .markdown-code-fallback-label {
+.agent-markdown .markdown-code-label {
   position: absolute;
   z-index: 1;
   top: 10px;
-  left: 34px;
-  right: 12px;
+  left: 40px;
+  right: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: var(--font-weight-medium);
-  text-transform: lowercase;
-  color: color-mix(in srgb, var(--color-content) 65%, transparent);
+  font-family: var(--font-sans);
+  font-size: var(--text-ui-base);
+  font-weight: var(--font-weight-semibold);
+  line-height: 20px;
+  color: var(--color-content);
   pointer-events: none;
 }
 
-/* highlightLanguageFor swaps text/plaintext/txt/untagged fences to the "js"
-   grammar so Shiki still colors them, but Streamdown's own header reuses
-   that same value as its visible label. Hide the vendor label here and show
-   the real fence language via .markdown-code-fallback-label instead. */
+/* Streamdown labels the header with the highlighting language (plaintext
+   fences highlight as "js") in lowercase mono. The shell renders its own
+   display label or file path over the header instead. */
 .agent-markdown
-  .markdown-code-shell:has(.markdown-code-fallback-label)
+  .markdown-code-shell
   [data-streamdown="code-block-header"]
   > span {
   visibility: hidden;
 }
 
 .agent-markdown
-  .markdown-code-shell:has(.markdown-code-fallback-label:empty)
+  .markdown-code-shell:has(.markdown-code-label:empty)
   [data-streamdown="code-block-header"] {
   display: none;
 }
 
 .agent-markdown
-  .markdown-code-shell:has(.markdown-code-fallback-label:empty)
-  [data-streamdown="code-block-header"]
-  + [data-streamdown="code-block-body"] {
-  border-top: 0;
+  .markdown-code-shell:has(.markdown-code-label:empty)
+  [data-streamdown="code-block-body"] {
+  padding-top: 14px;
 }
 
 /* ZCode headings: semibold, sized on the ui scale, 24px above / 16px below. */
@@ -1021,8 +1041,8 @@ input,
 
 .agent-markdown [data-streamdown="code-block-header"] {
   height: auto;
-  min-height: 36px;
-  padding: 8px 12px;
+  min-height: 40px;
+  padding: 0 16px;
   color: var(--color-foreground-subtle);
 }
 
@@ -1034,7 +1054,7 @@ input,
 }
 
 .agent-markdown .markdown-code-shell [data-streamdown="code-block-header"] {
-  padding-left: 34px;
+  padding-left: 40px;
 }
 
 .agent-markdown [data-streamdown="code-block-header"]:has(span:empty) {
@@ -1048,9 +1068,8 @@ input,
 }
 
 .agent-markdown [data-streamdown="code-block-body"] {
-  padding: 10px 8px 10px 0;
+  padding: 0 16px 16px;
   border: 0;
-  border-top: 1px solid var(--color-stroke);
   border-radius: 0;
   background: transparent;
   font-size: var(--text-ui-caption);
@@ -1059,12 +1078,6 @@ input,
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
-}
-
-.agent-markdown
-  [data-streamdown="code-block-header"]:has(span:empty)
-  + [data-streamdown="code-block-body"] {
-  border-top: 0;
 }
 
 .agent-markdown [data-streamdown="code-block-body"] pre {
@@ -1078,14 +1091,50 @@ input,
   display: block;
   width: max-content;
   min-width: 100%;
+  line-height: 1.65;
   white-space: pre;
 }
 
 .agent-markdown [data-streamdown="code-block-body"] code > span::before {
-  width: 24px;
-  margin-right: 8px;
-  color: color-mix(in srgb, var(--color-content) 35%, transparent);
-  font-size: 10px;
+  width: calc(var(--markdown-code-digits, 2) * 1ch);
+  margin-right: 16px;
+  color: color-mix(in srgb, var(--color-content) 30%, transparent);
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Wrapped lines hang past the gutter, so continuation rows stay clear of
+   the line number. The ::before font is 0.85em of the line's. */
+.agent-markdown .markdown-code-shell[data-wrap] [data-streamdown="code-block-body"] {
+  overflow-x: hidden;
+}
+
+.agent-markdown
+  .markdown-code-shell[data-wrap]
+  [data-streamdown="code-block-body"]
+  :is(pre, code > span) {
+  width: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.agent-markdown
+  .markdown-code-shell[data-wrap]
+  [data-streamdown="code-block-body"]
+  code
+  > .markdown-code-numbered-line {
+  position: relative;
+  padding-left: calc(var(--markdown-code-digits, 2) * 0.85ch + 16px);
+}
+
+.agent-markdown
+  .markdown-code-shell[data-wrap]
+  [data-streamdown="code-block-body"]
+  code
+  > .markdown-code-numbered-line::before {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .markdown-code-numbered-line::before {
@@ -1112,9 +1161,30 @@ html:not(.theme-light) .markdown-code-token {
   background: transparent;
 }
 
+/* Rules sit on cells so they follow the columns even where mobile turns the
+   table into a horizontal scroller; streamdown's row dividers are dropped. */
 .agent-markdown [data-streamdown="table"] > :not(:last-child),
 .agent-markdown [data-streamdown="table-body"] > :not(:last-child) {
-  border-color: color-mix(in srgb, var(--color-content) 5%, transparent);
+  border-bottom-width: 0;
+}
+
+.agent-markdown [data-streamdown="table-header"] {
+  background: transparent;
+}
+
+.agent-markdown [data-streamdown="table-header-cell"] {
+  border-top: 1.5px solid var(--markdown-table-rule);
+  border-bottom: 1px solid var(--markdown-table-midrule);
+  color: var(--color-content);
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+.agent-markdown [data-streamdown="table-body"] > [data-streamdown="table-row"]:last-child > [data-streamdown="table-cell"] {
+  border-bottom: 1.5px solid var(--markdown-table-rule);
+}
+
+.agent-markdown [data-streamdown="table-cell"] {
+  color: color-mix(in srgb, var(--color-content) 88%, transparent);
 }
 
 .agent-markdown [data-streamdown="table-header-cell"],
@@ -1559,8 +1629,7 @@ html:not(.theme-light) .markdown-code-token {
   margin-block: 0.5rem;
 }
 
-.zen-fold-prose .agent-markdown [data-streamdown="code-block"],
-.zen-fold-prose .agent-markdown [data-streamdown="table-wrapper"] {
+.zen-fold-prose .agent-markdown [data-streamdown="code-block"] {
   border-color: color-mix(in srgb, var(--color-content) 8%, transparent);
   background: color-mix(in srgb, var(--color-content) 4%, transparent);
 }
