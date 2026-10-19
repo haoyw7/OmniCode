@@ -274,10 +274,45 @@ it.each(["focus", "git", "review"])("silently rechecks an empty review on %s and
 it("labels the complete shared workspace recording and disables undo", async () => {
   vi.mocked(sessionCheckpointStatus).mockResolvedValue({ files, workspaceShared: true });
   await render();
-  expect(container.textContent).toContain("Workspace changes this turn (1)");
+  expect(container.textContent).toContain("Changed 1 file");
   expect(container.textContent).toContain("These changes may include their edits; undo is disabled.");
   expect(button("Undo")!.disabled).toBe(true);
   expect(button("Review")!.disabled).toBe(false);
+});
+
+it("folds workspace changes no edit of this turn reported and undoes only its own", async () => {
+  const other = { ...file("other.ts"), additions: 9, undoable: false, external: true };
+  vi.mocked(sessionCheckpointStatus).mockResolvedValue({ files: [file("a.ts"), other] });
+  await render();
+  expect(container.textContent).toContain("Changed 1 file");
+  expect(container.textContent).toContain("+2");
+  expect(container.textContent).not.toContain("+11");
+  expect(button("Undo")!.disabled).toBe(false);
+  const toggle = container.querySelector<HTMLButtonElement>("[data-session-review-others]")!;
+  expect(toggle.textContent).toContain("Other workspace changes (1)");
+  expect(toggle.textContent).toContain("+9");
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  expect(row("other.ts")).toBeNull();
+  await act(async () => toggle.click());
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  expect(row("other.ts")).not.toBeNull();
+  await act(async () => button("Undo")!.click());
+  expect(undoSessionChanges).toHaveBeenCalledWith("s1", "/repo");
+});
+
+it("lists workspace changes directly when the turn edited no files itself", async () => {
+  const other = { ...file("other.ts"), undoable: false, external: true };
+  vi.mocked(sessionCheckpointStatus).mockResolvedValue({ files: [other], workspaceShared: true });
+  await render();
+  expect(container.textContent).toContain("Workspace changed 1 file");
+  expect(container.textContent).toContain("+2");
+  expect(container.textContent).toContain("Can't be undone.");
+  // One hint only: the shared-workspace notice concerns Undo, which is absent.
+  expect(container.textContent).not.toContain("undo is disabled");
+  expect(row("other.ts")).not.toBeNull();
+  expect(container.querySelector("[data-session-review-others]")).toBeNull();
+  expect(button("Undo")).toBeUndefined();
+  expect(button("Keep")).not.toBeUndefined();
 });
 
 it("ignores old reads after the checkout changes or the review is hidden", async () => {
@@ -351,4 +386,32 @@ it("blocks undo while the Host reports another session running in the checkout",
     "Undo is unavailable while another session is running in this project",
   );
   expect(button("Keep")!.disabled).toBe(false);
+});
+
+
+it("retains the completed card when it becomes historical and opens that turn's snapshot", async () => {
+  await render({ turnId: "first" });
+  const archived = deferred<CheckpointStatus>();
+  vi.mocked(sessionCheckpointStatus).mockReturnValueOnce(archived.promise);
+  await render({ turnId: "first", historical: true });
+  expect(row("a.ts")).not.toBeNull();
+  expect(sessionCheckpointStatus).toHaveBeenLastCalledWith("s1", "/repo", undefined, "first");
+  await act(async () => archived.resolve({ files }));
+  await act(async () => button("Review")!.click());
+  expect(onOpenDiff).toHaveBeenLastCalledWith(undefined, { sessionId: "s1", cwd: "/repo", turnId: "first" });
+  expect(button("Undo")).toBeUndefined();
+  expect(button("Keep")).toBeUndefined();
+  await act(async () => row("a.ts")!.click());
+  expect(onOpenDiff).toHaveBeenLastCalledWith("/repo/a.ts", { sessionId: "s1", cwd: "/repo", turnId: "first" });
+});
+
+
+it("keeps a legacy current turn visible using the recording identity returned by status", async () => {
+  vi.mocked(sessionCheckpointStatus).mockResolvedValue({ files, turnId: "legacy" });
+  await render();
+  await render({ historical: true });
+  expect(row("a.ts")).not.toBeNull();
+  expect(sessionCheckpointStatus).toHaveBeenLastCalledWith("s1", "/repo", undefined, "legacy");
+  await act(async () => button("Review")!.click());
+  expect(onOpenDiff).toHaveBeenLastCalledWith(undefined, { sessionId: "s1", cwd: "/repo", turnId: "legacy" });
 });

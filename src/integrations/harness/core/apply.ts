@@ -481,6 +481,7 @@ function lastMatchingBlock(
 }
 
 type UserTurnExtra = {
+  checkpointTurnId?: string;
   secondOpinion?: Block["secondOpinion"];
   noteCard?: Block["noteCard"];
   ciContext?: string;
@@ -492,6 +493,7 @@ type UserTurnExtra = {
 
 function userTurnFields(extra?: UserTurnExtra) {
   return {
+    ...(extra?.checkpointTurnId ? { checkpointTurnId: extra.checkpointTurnId } : {}),
     ...(extra?.secondOpinion ? { secondOpinion: extra.secondOpinion } : {}),
     ...(extra?.noteCard ? { noteCard: extra.noteCard } : {}),
     ...(extra?.ciContext ? { ciContext: extra.ciContext } : {}),

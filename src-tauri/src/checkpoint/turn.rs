@@ -22,6 +22,10 @@ struct RecordedTurn {
     /// Retained for recovery of older, incomplete recordings.
     #[serde(default)]
     edited: BTreeSet<String>,
+    /// Set for turns that attribute changes by `edited`; recordings from older
+    /// versions keep presenting every workspace change as the turn's own.
+    #[serde(default)]
+    attributed: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -103,6 +107,7 @@ impl CheckpointStore {
                 .as_ref()
                 .map(|turn| turn.edited.clone())
                 .unwrap_or_default(),
+            attributed: true,
         };
         // Publish the pending state first. A failed baseline must not leave the
         // previous turn's card underneath the new response.
@@ -363,7 +368,8 @@ impl CheckpointStore {
             .into_iter()
             .filter(|change| !turn.dismissed.contains(&change.relative))
             .map(|change| {
-                let undoable = can_restore && restorable(&root, &change);
+                let external = is_external(turn, &change.relative);
+                let undoable = !external && can_restore && restorable(&root, &change);
                 CheckpointFile {
                     path: path_to_js(&root.join(&change.relative)),
                     relative: change.relative,
@@ -372,13 +378,77 @@ impl CheckpointStore {
                     deletions: change.deletions,
                     exact: true,
                     undoable,
+                    external,
                 }
             })
             .collect();
         Ok(Some(CheckpointStatus {
+            turn_id: Some(turn.id.clone()),
             files,
             workspace_shared: turn.shared.then_some(true),
         }))
+    }
+
+    fn saved_turn_review(
+        &self,
+        session_id: &str,
+        cwd: &str,
+        id: &str,
+    ) -> Result<Option<TurnReview>, String> {
+        validate_id(id, "turn")?;
+        let Some(mut review) = self.matching_turn_review(session_id, cwd)? else {
+            return Ok(None);
+        };
+        if review.latest.as_ref().is_none_or(|turn| turn.id != id) {
+            let path = self
+                .session_dir(session_id)
+                .join("turns")
+                .join(format!("{id}.json"));
+            let bytes = match std::fs::read(path) {
+                Ok(bytes) => bytes,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+                Err(error) => return Err(error.to_string()),
+            };
+            let saved: SavedTurn = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+            if saved.cwd != review.cwd {
+                return Ok(None);
+            }
+            review.latest = Some(saved.turn);
+        }
+        review.active = None;
+        Ok(Some(review))
+    }
+
+    pub(super) fn saved_turn_status(
+        &self,
+        session_id: &str,
+        cwd: &str,
+        id: &str,
+    ) -> Result<CheckpointStatus, String> {
+        let Some(review) = self.saved_turn_review(session_id, cwd, id)? else {
+            return Ok(CheckpointStatus::default());
+        };
+        let turn = completed_turn(&review)?;
+        let root = Path::new(&review.cwd);
+        let files = changes(root, turn)?
+            .into_iter()
+            .filter(|change| !turn.dismissed.contains(&change.relative))
+            .map(|change| CheckpointFile {
+                path: path_to_js(&root.join(&change.relative)),
+                external: is_external(turn, &change.relative),
+                relative: change.relative,
+                status: change.status,
+                additions: change.additions,
+                deletions: change.deletions,
+                exact: true,
+                undoable: false,
+            })
+            .collect();
+        Ok(CheckpointStatus {
+            turn_id: Some(turn.id.clone()),
+            files,
+            workspace_shared: turn.shared.then_some(true),
+        })
     }
 
     pub(super) fn turn_file_diff(
@@ -386,8 +456,16 @@ impl CheckpointStore {
         session_id: &str,
         cwd: &str,
         relative: &str,
+        turn_id: Option<&str>,
     ) -> Result<Option<CheckpointFileDiff>, String> {
-        let Some(review) = self.matching_turn_review(session_id, cwd)? else {
+        let review = match turn_id {
+            Some(id) => self.saved_turn_review(session_id, cwd, id)?,
+            None => self.matching_turn_review(session_id, cwd)?,
+        };
+        let Some(review) = review else {
+            if turn_id.is_some() {
+                return Err("No recorded turn is available".into());
+            }
             return Ok(None);
         };
         let turn = completed_turn(&review)?;
@@ -453,13 +531,14 @@ impl CheckpointStore {
         let status = self.turn_status(session_id, cwd)?.unwrap();
         let root = Path::new(&review.cwd);
         let relative = relative.map(resolve_turn_path).transpose()?;
+        // Undo all restores only the turn's own files; other workspace changes
+        // stay on disk and in the card.
         let selected: Vec<_> = status
             .files
             .iter()
-            .filter(|file| {
-                relative
-                    .as_ref()
-                    .is_none_or(|relative| *relative == file.relative)
+            .filter(|file| match &relative {
+                Some(relative) => *relative == file.relative,
+                None => !file.external,
             })
             .collect();
         if selected.iter().any(|file| !file.undoable) {
@@ -467,6 +546,7 @@ impl CheckpointStore {
         }
         let turn = completed_turn(&review)?;
         let selected: HashSet<_> = selected.iter().map(|file| file.relative.as_str()).collect();
+        let restored: Vec<String> = selected.iter().map(|path| path.to_string()).collect();
         let changes: Vec<_> = changes(root, turn)?
             .into_iter()
             .filter(|change| selected.contains(change.relative.as_str()))
@@ -493,7 +573,13 @@ impl CheckpointStore {
                 std::fs::remove_file(root.join(&change.relative)).map_err(|e| e.to_string())?;
             }
         }
-        self.keep_turn(session_id, cwd, relative.as_deref())
+        // Status may have dismissed committed files since `review` was read.
+        let mut review = self
+            .matching_turn_review(session_id, cwd)?
+            .ok_or("Missing turn review")?;
+        review.latest.as_mut().unwrap().dismissed.extend(restored);
+        write_review(&self.session_dir(session_id), &review)?;
+        self.turn_status(session_id, cwd)
     }
 
     pub(super) fn forget_turns(&self, session_id: &str) -> Result<(), String> {
@@ -559,6 +645,11 @@ fn completed_turn(review: &TurnReview) -> Result<&RecordedTurn, String> {
         return Err("The turn's workspace checkpoints are incomplete".into());
     }
     Ok(turn)
+}
+
+/// A recorded change that none of this session's edit tools reported.
+fn is_external(turn: &RecordedTurn, relative: &str) -> bool {
+    turn.attributed && !turn.edited.contains(relative)
 }
 
 fn turn_ref(session: &str, turn: &str, side: &str) -> String {
@@ -898,6 +989,16 @@ fn read_review(dir: &Path) -> Result<Option<TurnReview>, String> {
 }
 
 fn write_review(dir: &Path, review: &TurnReview) -> Result<(), String> {
+    if let Some(turn) = &review.latest {
+        write_json(
+            &dir.join("turns").join(format!("{}.json", turn.id)),
+            &SavedTurn {
+                cwd: review.cwd.clone(),
+                repo: review.repo.clone(),
+                turn: turn.clone(),
+            },
+        )?;
+    }
     write_json(&dir.join("turn-review.json"), review)
 }
 

@@ -14,6 +14,7 @@ import { useTranscriptLayout } from "../features/sessions/hooks/useTranscriptLay
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { ArrowDownCircle } from "../shared/ui/icons";
 import { useCollapseMotion } from "../shared/ui/AnimatedCollapse";
+import { TypingDots } from "../shared/ui/TypingDots";
 
 /** The phone conversation surface, shared by chats and subagent sheet pages. */
 export function MobileConversation({
@@ -104,7 +105,11 @@ export function MobileConversation({
           jump?.();
         }}
       >
-        <ArrowDownCircle size={24} />
+        {transcript.busy ? (
+          <TypingDots className="text-accent" />
+        ) : (
+          <ArrowDownCircle size={24} />
+        )}
       </motion.button>
     </div>
   );

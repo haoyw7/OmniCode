@@ -206,14 +206,14 @@ export class SessionCheckpoints {
     });
   }
 
-  status(sessionId: string, cwd: string): Promise<CheckpointStatus> {
+  status(sessionId: string, cwd: string, turnId?: string): Promise<CheckpointStatus> {
     return this.exclusive(async () =>
-      (await this.turns.status(sessionId, cwd)) ?? this.currentStatus(sessionId, cwd));
+      (await this.turns.status(sessionId, cwd, turnId)) ?? this.currentStatus(sessionId, cwd));
   }
 
-  fileDiff(sessionId: string, cwd: string, input: string): Promise<CheckpointFileDiff> {
+  fileDiff(sessionId: string, cwd: string, input: string, turnId?: string): Promise<CheckpointFileDiff> {
     return this.exclusive(async () => {
-      const recorded = await this.turns.fileDiff(sessionId, cwd, input);
+      const recorded = await this.turns.fileDiff(sessionId, cwd, input, turnId);
       if (recorded) return recorded;
       const root = await projectRoot(cwd);
       const dir = this.sessionDir(sessionId);

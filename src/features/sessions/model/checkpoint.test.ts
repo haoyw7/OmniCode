@@ -50,6 +50,21 @@ it("passes persisted edit evidence when resuming and reviewing a restored sessio
   });
 });
 
+it("passes the recorded turn identity to desktop snapshot reads", async () => {
+  await checkpoint.beginSessionTurn("s", "/repo", [], "first");
+  expect(invoke).toHaveBeenLastCalledWith("session_checkpoint_begin_turn", {
+    sessionId: "s", cwd: "/repo", editedPaths: [], turnId: "first",
+  });
+  await sessionCheckpointStatus("s", "/repo", undefined, "first");
+  expect(invoke).toHaveBeenLastCalledWith("session_checkpoint_status", {
+    sessionId: "s", cwd: "/repo", turnId: "first",
+  });
+  await sessionCheckpointFileDiff("s", "/repo", "a.ts", "first");
+  expect(invoke).toHaveBeenLastCalledWith("session_checkpoint_file_diff", {
+    sessionId: "s", cwd: "/repo", relative: "a.ts", turnId: "first",
+  });
+});
+
 function deferred() {
   let resolve!: () => void;
   const promise = new Promise<void>((done) => {

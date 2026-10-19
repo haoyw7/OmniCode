@@ -23,18 +23,22 @@ import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 type Props = {
   sessionId: string;
   cwd: string;
+  turnId?: string;
+  historical?: boolean;
   enabled?: boolean;
   busy?: boolean;
   undoLocked?: boolean;
   onOpenDiff: (
     path?: string,
-    session?: { sessionId: string; cwd: string },
+    session?: { sessionId: string; cwd: string; turnId?: string },
   ) => void;
 };
 
 export function SessionReview({
   sessionId,
   cwd,
+  turnId,
+  historical = false,
   enabled = true,
   busy = false,
   undoLocked = false,
@@ -43,11 +47,14 @@ export function SessionReview({
   const visible = useSurfaceVisibility();
   const { t: uiT } = useTranslation();
   const [files, setFiles] = useState<CheckpointFile[]>([]);
+  const [recordedTurnId, setRecordedTurnId] = useState<string>();
+  const reviewTurnId = historical ? turnId ?? recordedTurnId : recordedTurnId;
   const [hostLocked, setHostLocked] = useState(false);
   const [workspaceShared, setWorkspaceShared] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [expanded, setExpanded] = useState(false);
+  const [othersExpanded, setOthersExpanded] = useState(false);
   const [acting, setActing] = useState<"keep" | "undo" | null>(null);
   const [revision, refresh] = useReducer((value: number) => value + 1, 0);
   const filesRef = useRef(files);
@@ -55,8 +62,10 @@ export function SessionReview({
 
   useEffect(() => {
     setFiles([]);
+    setRecordedTurnId(undefined);
     setError(undefined);
     setExpanded(false);
+    setOthersExpanded(false);
   }, [sessionId, cwd]);
 
   useEffect(() => {
@@ -67,6 +76,7 @@ export function SessionReview({
       return;
     }
     if (!enabled || !visible || !cwd || cwd === "~") return;
+    if (historical && !reviewTurnId) return;
     let stale = false;
     let loading = false;
     let pending = false;
@@ -80,10 +90,13 @@ export function SessionReview({
       }
       loading = true;
       setLoading(true);
-      void sessionCheckpointStatus(sessionId, cwd)
+      void (historical && reviewTurnId
+        ? sessionCheckpointStatus(sessionId, cwd, undefined, reviewTurnId)
+        : sessionCheckpointStatus(sessionId, cwd))
         .then((status) => {
           if (stale) return;
           setFiles(status.files);
+          if (status.turnId) setRecordedTurnId(status.turnId);
           setHostLocked(!!status.undoLocked);
           setWorkspaceShared(!!status.workspaceShared);
           setError(undefined);
@@ -141,11 +154,23 @@ export function SessionReview({
       unsubReview();
       unsubGit();
     };
-  }, [enabled, visible, cwd, sessionId, busy, revision]);
+  }, [enabled, visible, cwd, sessionId, busy, revision, historical, historical ? reviewTurnId : undefined]);
 
+  // External files changed in the workspace during the turn without an edit
+  // event from this session: shell writes or another agent in the checkout.
+  const own = files.filter((file) => !file.external);
+  const others = files.filter((file) => file.external);
+  // Without own edits, the external files are the card's only list; folding
+  // them under an otherwise empty header would hide what changed.
+  const attributed = own.length > 0;
+  const primary = attributed ? own : others;
+  const secondary = attributed ? others : [];
   useEffect(() => {
-    if (files.length <= 3) setExpanded(false);
-  }, [files.length]);
+    if (primary.length <= 3) setExpanded(false);
+  }, [primary.length]);
+  useEffect(() => {
+    if (secondary.length === 0) setOthersExpanded(false);
+  }, [secondary.length]);
 
   if (busy) return null;
   const loadNotice = error ? (
@@ -169,24 +194,21 @@ export function SessionReview({
     // Status reads also run on focus and Git notifications. They discover
     // whether a review exists, so an empty result must not flash a loading card.
     return loadNotice ? (
-      <div className="px-4 pt-1 pb-2 font-sans" data-session-review-shell>
-        <div className="desktop-card rounded-xl border border-content/12 bg-content/3">
+      <div className="pt-1 pb-2 font-sans" data-session-review-shell>
+        <div className="desktop-card rounded-xl border border-content/12" data-session-review-border>
           {loadNotice}
         </div>
       </div>
     ) : null;
   }
 
-  const disabled = busy || acting != null;
+  const disabled = busy || historical || acting != null;
   const locked = undoLocked || hostLocked || workspaceShared;
-  const canUndoAll = !locked && files.every((file) => file.undoable);
-  const hiddenFileCount = files.length - 3;
-  const totals = files.reduce(
-    (sum, file) => ({
-      additions: sum.additions + file.additions,
-      deletions: sum.deletions + file.deletions,
-    }),
-    { additions: 0, deletions: 0 },
+  const canUndoAll = !locked && attributed && own.every((file) => file.undoable);
+  const hiddenFileCount = primary.length - 3;
+  const totals = sumChanges(primary);
+  const externalHint = uiT(
+    "Not from this session's edit tools, such as shell commands or other sessions. Can't be undone.",
   );
 
   const run = (action: "keep" | "undo") => {
@@ -209,22 +231,25 @@ export function SessionReview({
       .catch(() => refresh())
       .finally(() => setActing(null));
   };
+  const openDiff: Props["onOpenDiff"] = (path) =>
+    onOpenDiff(path, { sessionId, cwd, ...(reviewTurnId ? { turnId: reviewTurnId } : {}) });
   const fileRow = (file: CheckpointFile) => (
     <li key={file.relative}>
       <FileRow
         file={file}
         sessionId={sessionId}
         cwd={cwd}
-        onOpenDiff={onOpenDiff}
+        onOpenDiff={openDiff}
       />
     </li>
   );
 
   return (
-    <div className="px-4 pt-1 pb-2 font-sans" data-session-review-shell>
+    <div className="pt-1 pb-2 font-sans" data-session-review-shell>
       <div
-        className="desktop-card overflow-hidden rounded-xl border border-content/12 bg-content/3"
+        className="desktop-card overflow-hidden rounded-xl border border-content/12"
         data-session-review
+        data-session-review-border
       >
         {loadNotice}
         <div className="flex min-w-0 items-center gap-2.5 px-3 py-2.5">
@@ -234,10 +259,10 @@ export function SessionReview({
           <div className="min-w-0 flex-1">
             <div className="truncate text-[12px] font-medium text-content/80">
               {uiT(
-                workspaceShared
-                  ? "Workspace changes this turn ({count})"
-                  : files.length === 1 ? "Changed {count} file" : "Changed {count} files",
-                { count: String(files.length) },
+                attributed
+                  ? primary.length === 1 ? "Changed {count} file" : "Changed {count} files"
+                  : primary.length === 1 ? "Workspace changed {count} file" : "Workspace changed {count} files",
+                { count: String(primary.length) },
               )}
             </div>
             <div className="flex items-center gap-1.5 font-sans text-[11px] font-semibold tabular-nums -mt-0.5">
@@ -250,73 +275,83 @@ export function SessionReview({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-0.5">
-            <button
-              type="button"
-              title={
-                busy
-                  ? uiT(
-                      "Keep and undo are unavailable while the session is running",
-                    )
-                  : canUndoAll
-                    ? uiT("Undo all session changes")
-                    : workspaceShared
-                      ? uiT(
-                          "Other sessions were active in this workspace. These changes may include their edits; undo is disabled.",
-                        )
-                      : locked
+            {!historical && (
+              <>
+                {attributed ? (
+                  <button
+                    type="button"
+                    title={
+                      busy
                         ? uiT(
-                            "Undo is unavailable while another session is running in this project",
+                            "Keep and undo are unavailable while the session is running",
                           )
-                        : uiT(
-                            "Undo is unavailable because a file changed outside this session",
-                          )
-              }
-              disabled={disabled || !canUndoAll}
-              onClick={() => run("undo")}
-              className="h-7 rounded-md px-2.5 text-[11px] text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-35"
-            >
-              {uiT("Undo")}
-            </button>
-            <button
-              type="button"
-              title={
-                busy
-                  ? uiT(
-                      "Keep and undo are unavailable while the session is running",
-                    )
-                  : uiT("Keep all session changes and dismiss this card")
-              }
-              disabled={disabled}
-              onClick={() => run("keep")}
-              className="h-7 rounded-md px-2.5 text-[11px] text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-35"
-            >
-              {uiT("Keep")}
-            </button>
+                        : canUndoAll
+                          ? uiT("Undo all session changes")
+                          : workspaceShared
+                            ? uiT(
+                                "Other sessions were active in this workspace. These changes may include their edits; undo is disabled.",
+                              )
+                            : locked
+                              ? uiT(
+                                  "Undo is unavailable while another session is running in this project",
+                                )
+                              : uiT(
+                                  "Undo is unavailable because a file changed outside this session",
+                                )
+                    }
+                    disabled={disabled || !canUndoAll}
+                    onClick={() => run("undo")}
+                    className="h-7 rounded-md px-2.5 text-[11px] text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-35"
+                  >
+                    {uiT("Undo")}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  title={
+                    busy
+                      ? uiT(
+                          "Keep and undo are unavailable while the session is running",
+                        )
+                      : uiT("Keep all session changes and dismiss this card")
+                  }
+                  disabled={disabled}
+                  onClick={() => run("keep")}
+                  className="h-7 rounded-md px-2.5 text-[11px] text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-35"
+                >
+                  {uiT("Keep")}
+                </button>
+              </>
+            )}
             <button
               type="button"
               title={uiT("Review changes")}
-              onClick={() => onOpenDiff(undefined, { sessionId, cwd })}
+              data-session-review-border
+              onClick={() => openDiff()}
               className="h-7 rounded-md border border-content/12 bg-content/8 px-2.5 text-[11px] font-medium text-content/75 hover:bg-content/12 hover:text-content"
             >
               {uiT("Review")}
             </button>
           </div>
         </div>
-        {workspaceShared ? (
+        {!attributed ? (
+          <p className="px-3 pb-2 text-[11px] text-content/50">{externalHint}</p>
+        ) : workspaceShared ? (
           <p className="px-3 pb-2 text-[11px] text-content/60">
             {uiT("Other sessions were active in this workspace. These changes may include their edits; undo is disabled.")}
           </p>
         ) : null}
-        <div className="scrollbar-none max-h-64 overflow-y-auto border-t border-stroke py-1">
-          <ul>{files.slice(0, 3).map(fileRow)}</ul>
+        <div className="scrollbar-none max-h-64 overflow-y-auto border-t border-stroke py-1" data-session-review-border>
+          <ul>{primary.slice(0, 3).map(fileRow)}</ul>
           <AnimatedCollapse expanded={expanded}>
-            {() => <ul>{files.slice(3).map(fileRow)}</ul>}
+            {() => <ul>{primary.slice(3).map(fileRow)}</ul>}
           </AnimatedCollapse>
         </div>
-        {files.length > 3 ? (
+        {primary.length > 3 ? (
           <button
             type="button"
             aria-expanded={expanded}
+            data-session-review-border
             onClick={() => setExpanded((open) => !open)}
             className="flex h-8 w-full items-center gap-1.5 border-t border-stroke px-3 text-left text-[11px] text-content/45 hover:bg-content/3 hover:text-content/70"
           >
@@ -334,6 +369,39 @@ export function SessionReview({
             </span>
           </button>
         ) : null}
+        {secondary.length > 0 ? (
+          <>
+            <button
+              type="button"
+              aria-expanded={othersExpanded}
+              data-session-review-border
+              data-session-review-others
+              title={externalHint}
+              onClick={() => setOthersExpanded((open) => !open)}
+              className="flex h-8 w-full min-w-0 items-center gap-1.5 border-t border-stroke px-3 text-left text-[11px] text-content/45 hover:bg-content/3 hover:text-content/70"
+            >
+              {othersExpanded ? (
+                <ChevronDown className="size-3.5 shrink-0" />
+              ) : (
+                <ChevronRight className="size-3.5 shrink-0" />
+              )}
+              <span className="min-w-0 flex-1 truncate">
+                {uiT("Other workspace changes ({count})", {
+                  count: String(secondary.length),
+                })}
+              </span>
+              <DiffCounts file={sumChanges(secondary)} />
+            </button>
+            <AnimatedCollapse expanded={othersExpanded}>
+              {() => (
+                <div className="scrollbar-none max-h-64 overflow-y-auto pb-1">
+                  <p className="px-3 pb-1 text-[11px] text-content/45">{externalHint}</p>
+                  <ul>{secondary.map(fileRow)}</ul>
+                </div>
+              )}
+            </AnimatedCollapse>
+          </>
+        ) : null}
       </div>
     </div>
   );
@@ -350,7 +418,7 @@ function FileRow({
   cwd: string;
   onOpenDiff: (
     path?: string,
-    session?: { sessionId: string; cwd: string },
+    session?: { sessionId: string; cwd: string; turnId?: string },
   ) => void;
 }) {
   const name = basename(file.relative);
@@ -370,7 +438,17 @@ function FileRow({
   );
 }
 
-function DiffCounts({ file }: { file: CheckpointFile }) {
+function sumChanges(files: CheckpointFile[]) {
+  return files.reduce(
+    (sum, file) => ({
+      additions: sum.additions + file.additions,
+      deletions: sum.deletions + file.deletions,
+    }),
+    { additions: 0, deletions: 0 },
+  );
+}
+
+function DiffCounts({ file }: { file: Pick<CheckpointFile, "additions" | "deletions"> }) {
   return (
     <span className="flex shrink-0 gap-2 font-sans text-[11px] font-semibold tabular-nums">
       <span className="text-emerald-400">+{formatInteger(file.additions)}</span>

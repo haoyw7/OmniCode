@@ -344,6 +344,8 @@ export type TurnMetrics = {
 };
 
 export type Block = {
+  /** Durable workspace recording belonging to this user turn. */
+  checkpointTurnId?: string;
   id: string;
   role: BlockRole;
   /** Client-only copy of a user message the Host has not recorded yet. */

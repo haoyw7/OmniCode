@@ -836,13 +836,6 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
   overflow: hidden;
 }
 
-/* Queued messages use compact bubbles; touch actions live in an anchored menu. */
-/* The typing indicator after a sent message, aligned with the agent's reply. It
-   stands in for the live status line until the agent's first output. */
-.transcript-turn-live:has(.mobile-typing-bubble) .transcript-live-footer {
-  display: none;
-}
-.mobile-typing-bubble { width: 100%; }
 /* Pending approvals use their shared semantic markers at touch size. */
 .mobile-desktop-transcript [data-approval-controls] {
   gap: 8px;
@@ -926,13 +919,3 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
 .mobile-app .mobile-desktop-transcript [data-ui="response-actions"] [data-ui="response-action"] {
   color: var(--color-m-ink-secondary);
 }
-
-/* Provider identity and status text come from shared transcript behavior. */
-html[data-mobile-skin] [data-ui="assistant-status"] {
-  min-height: 44px;
-  padding: 0 16px;
-  gap: 12px;
-  color: var(--color-m-ink);
-}
-html[data-mobile-skin] [data-ui="assistant-status-icon"] { width: 24px; height: 24px; }
-html[data-mobile-skin] [data-ui="assistant-status"] .transcript-live-status { font-family: var(--font-serif); font-style: italic; font-size: 15px; line-height: 1.5; }

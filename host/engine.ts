@@ -790,16 +790,18 @@ export class HostEngine {
   }
 
   /** Review, keep or undo the edits a conversation made in its checkout. */
-  async sessionCheckpoint(sessionId: string, action: unknown, path: unknown): Promise<unknown> {
+  async sessionCheckpoint(sessionId: string, action: unknown, path: unknown, turnId?: unknown): Promise<unknown> {
     const value = this.session(sessionId);
     if (!value) throw new Error("Session not found");
     const { session } = value;
     if (path !== undefined && typeof path !== "string") throw new Error("Invalid workspace path");
+    if (turnId !== undefined && (typeof turnId !== "string" || !/^[A-Za-z0-9_-]{1,200}$/.test(turnId))) throw new Error("Invalid turn id");
     if (!this.checkpointed(session)) {
       if (action === "status") return { files: [] };
       throw new Error("Session changes are no longer available");
     }
     if (action === "status") {
+      if (typeof turnId === "string") return this.checkpoints.status(sessionId, sessionExecutionCwd(session), turnId);
       let read = this.checkpointStatusReads.get(sessionId);
       if (!read || read.cwd !== sessionExecutionCwd(session) || read.revision !== value.revision) {
         read = { cwd: sessionExecutionCwd(session), revision: value.revision, promise: this.checkpoints.status(sessionId, sessionExecutionCwd(session)) };
@@ -815,9 +817,10 @@ export class HostEngine {
     }
     if (action === "diff") {
       if (typeof path !== "string") throw new Error("Invalid workspace path");
-      return this.checkpoints.fileDiff(sessionId, sessionExecutionCwd(session), path);
+      return this.checkpoints.fileDiff(sessionId, sessionExecutionCwd(session), path, turnId as string | undefined);
     }
     if (action !== "undo" && action !== "keep") throw new Error("Unsupported checkpoint action");
+    if (turnId !== undefined) throw new Error("Historical changes are read-only");
     // Keep and Undo wait until the agent has finished writing to the checkout.
     if (value.status === "running" || this.running.has(sessionId))
       throw new Error("Keep and undo are unavailable while the session is running");
@@ -1635,6 +1638,7 @@ export class HostEngine {
                     ? { worktreeCreation: command.worktreeCreation }
                     : {}),
                   startedAt: Date.now(),
+                  checkpointTurnId: runId,
                   turnModel: {
                     harness: value.session.harness,
                     id: value.session.model,

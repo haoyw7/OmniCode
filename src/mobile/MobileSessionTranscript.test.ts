@@ -257,3 +257,36 @@ it("keeps the live status inside its AI turn as output grows", () => {
     expect(app.querySelectorAll("[data-live-footer]")).toHaveLength(1);
   }
 });
+
+it("shows startup phases above the project mascot and typing dots until output arrives", () => {
+  vi.spyOn(Date, "now").mockReturnValue(100_000);
+  const { update, store } = mount([user]);
+  const footer = app.querySelector("[data-live-footer]")!;
+  const fold = app.querySelector(".desktop-work-fold-line")!;
+  expect(footer.querySelector('[data-ui="omi"]')).not.toBeNull();
+  expect(footer.querySelectorAll(".typing-dots > span")).toHaveLength(3);
+  expect(app.textContent).not.toContain("Waiting for a reply");
+
+  for (const [phase, label] of [
+    ["starting", "Preparing to start…"],
+    ["awaiting-response", "Waiting for model response…"],
+  ] as const) {
+    const current = store.get()!;
+    act(() => store.set({ ...current, session: { ...current.session,
+      executionState: { runId: "run", phase, since: 99_000 },
+    } }));
+    expect(fold.textContent).toContain(`${label} · 1s`);
+    expect(app.querySelector("[data-live-footer]")).toBe(footer);
+    expect(footer.querySelectorAll(".typing-dots > span")).toHaveLength(3);
+    expect(footer.querySelector('[role="timer"]')).toBeNull();
+    expect(app.textContent).not.toContain("Waiting for a reply");
+  }
+
+  const current = store.get()!;
+  act(() => store.set({ ...current, session: { ...current.session,
+    executionState: { runId: "run", phase: "active", since: 100_000 },
+  } }));
+  update([user, reply("Hello")]);
+  expect(app.querySelector("[data-live-footer]")).toBe(footer);
+  expect(footer.textContent).toContain("Responding…");
+});

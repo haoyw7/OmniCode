@@ -42,6 +42,74 @@ impl Drop for Fixture {
 }
 
 #[test]
+fn historical_turns_survive_later_work_and_reopening() {
+    let f = Fixture::new();
+    f.store.begin_turn("session", f.cwd(), "first").unwrap();
+    f.write("a.txt", "first result\n");
+    f.store.finish_turn("session", f.cwd(), "first").unwrap();
+    f.store.begin_turn("session", f.cwd(), "second").unwrap();
+    f.write("a.txt", "second result\n");
+    assert_eq!(
+        f.store
+            .saved_turn_status("session", f.cwd(), "first")
+            .unwrap()
+            .files
+            .len(),
+        1
+    );
+    let first = f
+        .store
+        .turn_file_diff("session", f.cwd(), "a.txt", Some("first"))
+        .unwrap()
+        .unwrap();
+    assert_eq!(first.original, "original\n");
+    assert_eq!(first.current, "first result\n");
+    f.store.finish_turn("session", f.cwd(), "second").unwrap();
+    f.store.begin_turn("session", f.cwd(), "third").unwrap();
+    f.store.finish_turn("session", f.cwd(), "third").unwrap();
+    let reopened = CheckpointStore::new(f.dir.join("checkpoints"));
+    assert_eq!(
+        reopened
+            .saved_turn_status("session", f.cwd(), "first")
+            .unwrap()
+            .files
+            .len(),
+        1
+    );
+    let second = reopened
+        .turn_file_diff("session", f.cwd(), "a.txt", Some("second"))
+        .unwrap()
+        .unwrap();
+    assert_eq!(second.original, "first result\n");
+    assert_eq!(second.current, "second result\n");
+    assert!(reopened
+        .saved_turn_status("session", f.cwd(), "third")
+        .unwrap()
+        .files
+        .is_empty());
+    assert!(reopened
+        .saved_turn_status("session", f.cwd(), "../first")
+        .is_err());
+}
+
+#[test]
+fn kept_turns_stay_dismissed_in_history() {
+    let f = Fixture::new();
+    f.store.begin_turn("session", f.cwd(), "first").unwrap();
+    f.write("a.txt", "first result\n");
+    f.store.finish_turn("session", f.cwd(), "first").unwrap();
+    f.store.keep("session", f.cwd(), None).unwrap();
+    f.store.begin_turn("session", f.cwd(), "second").unwrap();
+    f.store.finish_turn("session", f.cwd(), "second").unwrap();
+    assert!(f
+        .store
+        .saved_turn_status("session", f.cwd(), "first")
+        .unwrap()
+        .files
+        .is_empty());
+}
+
+#[test]
 fn records_shell_changes_and_preserves_the_index_head_and_saved_result() {
     let f = Fixture::new();
     f.write("a.txt", "user change\n");
@@ -50,10 +118,18 @@ fn records_shell_changes_and_preserves_the_index_head_and_saved_result() {
     let index = std::fs::read(f.repo.join(".git/index")).unwrap();
     let head = run_git(&f.repo, &["rev-parse", "HEAD"]).unwrap();
     f.store.begin_turn("session", f.cwd(), "first").unwrap();
-    // No structured edit events: the actual file state is authoritative.
+    // The actual file state is authoritative for content; edit events only
+    // attribute the files to this turn.
     f.write("a.txt", "user change\nagent change\n");
     f.write("new.txt", "one\ntwo\n");
     std::fs::remove_file(f.repo.join("delete.txt")).unwrap();
+    f.store
+        .capture(
+            "session",
+            f.cwd(),
+            &["a.txt".into(), "new.txt".into(), "delete.txt".into()],
+        )
+        .unwrap();
     f.store.finish_turn("session", f.cwd(), "first").unwrap();
     let status = f.store.status("session", f.cwd()).unwrap();
     assert_eq!(
@@ -85,6 +161,46 @@ fn records_shell_changes_and_preserves_the_index_head_and_saved_result() {
     assert!(reopened.undo("session", f.cwd(), None).is_err());
     assert!(f.repo.join("new.txt").exists());
     assert!(!f.repo.join("delete.txt").exists());
+}
+
+#[test]
+fn unreported_workspace_changes_are_external_and_never_undone() {
+    let f = Fixture::new();
+    f.store.begin_turn("session", f.cwd(), "first").unwrap();
+    f.write("a.txt", "agent edit\n");
+    f.store
+        .capture("session", f.cwd(), &["a.txt".into()])
+        .unwrap();
+    // Another writer in the same checkout reports nothing to this session.
+    f.write("other.txt", "another agent\n");
+    f.store.finish_turn("session", f.cwd(), "first").unwrap();
+    let status = f.store.status("session", f.cwd()).unwrap();
+    let flags: Vec<_> = status
+        .files
+        .iter()
+        .map(|file| (file.relative.as_str(), file.external, file.undoable))
+        .collect();
+    assert_eq!(flags, [("a.txt", false, true), ("other.txt", true, false)]);
+    assert!(f.store.undo("session", f.cwd(), Some("other.txt")).is_err());
+    let status = f.store.undo("session", f.cwd(), None).unwrap();
+    assert_eq!(
+        std::fs::read_to_string(f.repo.join("a.txt")).unwrap(),
+        "original\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(f.repo.join("other.txt")).unwrap(),
+        "another agent\n"
+    );
+    assert_eq!(status.files.len(), 1);
+    assert!(status.files[0].external);
+    let saved = f
+        .store
+        .saved_turn_status("session", f.cwd(), "first")
+        .unwrap();
+    assert!(saved
+        .files
+        .iter()
+        .any(|file| file.relative == "other.txt" && file.external));
 }
 
 #[test]
@@ -323,6 +439,9 @@ fn nested_turns_share_work_but_sibling_path_prefixes_do_not() {
     f.store.begin_turn("child", child_cwd, "first").unwrap();
     f.store.begin_turn("sibling", sibling_cwd, "first").unwrap();
     f.write("nested/a.txt", "independent child change\n");
+    f.store
+        .capture("child", child_cwd, &["a.txt".into()])
+        .unwrap();
     f.store.finish_turn("child", child_cwd, "first").unwrap();
     let status = f.store.status("child", child_cwd).unwrap();
     assert_eq!(status.files.len(), 1);
@@ -360,6 +479,18 @@ fn undo_restores_only_recorded_files_and_keep_retains_history() {
     f.write("user.txt", "user baseline\nagent addition\n");
     f.write("new.txt", "created\n");
     std::fs::remove_file(f.repo.join("delete.txt")).unwrap();
+    f.store
+        .capture(
+            "session",
+            f.cwd(),
+            &[
+                "a.txt".into(),
+                "user.txt".into(),
+                "new.txt".into(),
+                "delete.txt".into(),
+            ],
+        )
+        .unwrap();
     f.store.finish_turn("session", f.cwd(), "first").unwrap();
     f.write("unrelated.txt", "later work\n");
     let index = std::fs::read(f.repo.join(".git/index")).unwrap();
@@ -617,6 +748,9 @@ fn linked_worktrees_have_independent_recordings_and_indexes() {
     f.store.begin_turn("linked", cwd, "second").unwrap();
     f.write("a.txt", "main change\n");
     std::fs::write(linked.join("delete.txt"), "linked change\n").unwrap();
+    f.store
+        .capture("linked", cwd, &["delete.txt".into()])
+        .unwrap();
     f.store.finish_turn("main", f.cwd(), "first").unwrap();
     f.store.finish_turn("linked", cwd, "second").unwrap();
     assert_eq!(
@@ -648,6 +782,19 @@ fn preserves_literal_paths_and_records_modes_and_symlinks_safely() {
     std::fs::set_permissions(f.repo.join("a.txt"), std::fs::Permissions::from_mode(0o755)).unwrap();
     std::fs::rename(f.repo.join("delete.txt"), f.repo.join("renamed.txt")).unwrap();
     symlink("a.txt", f.repo.join("link.txt")).unwrap();
+    f.store
+        .capture(
+            "session",
+            f.cwd(),
+            &[
+                path.into(),
+                "a.txt".into(),
+                "delete.txt".into(),
+                "renamed.txt".into(),
+                "link.txt".into(),
+            ],
+        )
+        .unwrap();
     f.store.finish_turn("session", f.cwd(), "first").unwrap();
     let status = f.store.status("session", f.cwd()).unwrap();
     assert_eq!(status.files.len(), 5);
@@ -682,6 +829,7 @@ fn checkpoints_scope_nested_workspaces_and_repositories_without_head() {
     f.store.begin_turn("nested", cwd, "first").unwrap();
     f.write("nested/a.txt", "nested\nchanged\n");
     f.write("a.txt", "outside scope\n");
+    f.store.capture("nested", cwd, &["a.txt".into()]).unwrap();
     f.store.finish_turn("nested", cwd, "first").unwrap();
     let status = f.store.status("nested", cwd).unwrap();
     assert_eq!(status.files.len(), 1);
@@ -702,6 +850,7 @@ fn checkpoints_scope_nested_workspaces_and_repositories_without_head() {
     let cwd = unborn.to_str().unwrap();
     f.store.begin_turn("unborn", cwd, "first").unwrap();
     std::fs::write(unborn.join("new.txt"), "new\n").unwrap();
+    f.store.capture("unborn", cwd, &["new.txt".into()]).unwrap();
     f.store.finish_turn("unborn", cwd, "first").unwrap();
     assert_eq!(f.store.status("unborn", cwd).unwrap().files[0].additions, 1);
     f.store.undo("unborn", cwd, None).unwrap();

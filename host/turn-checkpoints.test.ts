@@ -42,10 +42,12 @@ it("records shell changes and preserves the index, HEAD and saved result", async
   const index = readFileSync(join(f.repo, ".git/index"));
   const head = f.git("rev-parse", "HEAD");
   await f.store.beginTurn("session", f.repo, "first");
-  // No structured edit events: the actual file state is authoritative.
+  // The actual file state is authoritative for content; edit events only
+  // attribute the files to this turn.
   f.write("a.txt", "user change\nagent change\n");
   f.write("new.txt", "one\ntwo\n");
   unlinkSync(join(f.repo, "delete.txt"));
+  await f.store.capture("session", f.repo, ["a.txt", "new.txt", "delete.txt"]);
   await f.store.finishTurn("session", f.repo, "first");
   const status = await f.store.status("session", f.repo);
   expect(status.files.map((file) => file.relative)).toEqual(["a.txt", "delete.txt", "new.txt"]);
@@ -115,17 +117,45 @@ it("shared turns review the whole workspace without edit events and cannot undo"
   // Shell/Python writes need not report a structured edit event.
   // A prepared edit is not evidence that the reader changed a file.
   await f.store.prepare("reader", f.repo, [join(f.repo, "a.txt")]);
+  await f.store.capture("writer", f.repo, ["a.txt"]);
   await f.store.finishTurn("reader", f.repo, "first");
   await f.store.finishTurn("writer", f.repo, "second");
 
-  for (const session of ["reader", "writer"]) {
+  for (const [session, external] of [["reader", true], ["writer", false]] as const) {
     const status = await f.store.status(session, f.repo);
     expect(status.workspaceShared).toBe(true);
-    expect(status.files.map(({ relative, undoable }) => ({ relative, undoable }))).toEqual([
-      { relative: "a.txt", undoable: false },
+    expect(status.files.map(({ relative, undoable, external }) => ({ relative, undoable, external: !!external }))).toEqual([
+      { relative: "a.txt", undoable: false, external },
     ]);
-    await expect(f.store.undo(session, f.repo)).rejects.toThrow(/shared/);
   }
+  await expect(f.store.undo("writer", f.repo)).rejects.toThrow(/shared/);
+  // Undo all never restores another writer's change.
+  await f.store.undo("reader", f.repo);
+  expect(readFileSync(join(f.repo, "a.txt"), "utf8")).toBe("edited by the writer\n");
+});
+
+it("marks unreported workspace changes as external and never undoes them", async () => {
+  const f = fixture();
+  await f.store.beginTurn("session", f.repo, "first");
+  f.write("a.txt", "agent edit\n");
+  await f.store.capture("session", f.repo, ["a.txt"]);
+  // Another writer in the same checkout reports nothing to this session.
+  f.write("other.txt", "another agent\n");
+  await f.store.finishTurn("session", f.repo, "first");
+  const status = await f.store.status("session", f.repo);
+  expect(status.files.map(({ relative, undoable, external }) => ({ relative, undoable, external: !!external }))).toEqual([
+    { relative: "a.txt", undoable: true, external: false },
+    { relative: "other.txt", undoable: false, external: true },
+  ]);
+  await expect(f.store.undo("session", f.repo, "other.txt")).rejects.toThrow();
+  const after = await f.store.undo("session", f.repo);
+  expect(readFileSync(join(f.repo, "a.txt"), "utf8")).toBe("original\n");
+  expect(readFileSync(join(f.repo, "other.txt"), "utf8")).toBe("another agent\n");
+  expect(after.files).toMatchObject([{ relative: "other.txt", external: true }]);
+  // History hides undone files, like kept ones, but keeps the external flag.
+  expect((await f.store.status("session", f.repo, "first")).files).toMatchObject([
+    { relative: "other.txt", external: true },
+  ]);
 });
 
 it("treats dot-prefixed subfolders as overlapping and accepts their absolute edit paths", async () => {
@@ -156,6 +186,7 @@ it("undo restores only recorded files, keep retains history and forget removes r
   f.write("user.txt", "user baseline\nagent addition\n");
   f.write("new.txt", "created\n");
   unlinkSync(join(f.repo, "delete.txt"));
+  await f.store.capture("session", f.repo, ["a.txt", "user.txt", "new.txt", "delete.txt"]);
   await f.store.finishTurn("session", f.repo, "first");
   f.write("unrelated.txt", "later work\n");
   const index = readFileSync(join(f.repo, ".git/index"));
@@ -217,4 +248,35 @@ it("keeps structured-edit review for folders without Git under a Chinese locale"
   await store.capture("session", cwd, ["new.txt"]);
   await store.finishTurn("session", cwd, "first");
   expect((await store.status("session", cwd)).files.map((file) => file.relative)).toEqual(["new.txt"]);
+});
+
+
+it("reopens each recorded turn while later turns run and after a no-op turn", async () => {
+  const f = fixture();
+  await f.store.beginTurn("session", f.repo, "first");
+  f.write("a.txt", "first result\n");
+  await f.store.finishTurn("session", f.repo, "first");
+  await f.store.beginTurn("session", f.repo, "second");
+  f.write("a.txt", "second result\n");
+  expect((await f.store.status("session", f.repo, "first")).files.map((file) => file.relative)).toEqual(["a.txt"]);
+  expect(await f.store.fileDiff("session", f.repo, "a.txt", "first")).toMatchObject({ original: "original\n", current: "first result\n" });
+  await f.store.finishTurn("session", f.repo, "second");
+  await f.store.beginTurn("session", f.repo, "third");
+  await f.store.finishTurn("session", f.repo, "third");
+  const reopened = new SessionCheckpoints(f.data);
+  expect((await reopened.status("session", f.repo, "first")).files).toHaveLength(1);
+  expect(await reopened.fileDiff("session", f.repo, "a.txt", "second")).toMatchObject({ original: "first result\n", current: "second result\n" });
+  expect((await reopened.status("session", f.repo, "third")).files).toEqual([]);
+  await expect(reopened.status("session", f.repo, "../first")).rejects.toThrow("Invalid turn id");
+});
+
+it("does not resurrect explicitly kept changes when their turn becomes historical", async () => {
+  const f = fixture();
+  await f.store.beginTurn("session", f.repo, "first");
+  f.write("a.txt", "first result\n");
+  await f.store.finishTurn("session", f.repo, "first");
+  await f.store.keep("session", f.repo);
+  await f.store.beginTurn("session", f.repo, "second");
+  await f.store.finishTurn("session", f.repo, "second");
+  expect((await f.store.status("session", f.repo, "first")).files).toEqual([]);
 });

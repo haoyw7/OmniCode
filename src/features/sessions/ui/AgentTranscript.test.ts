@@ -31,7 +31,7 @@ function render(
   latestTurnAccessory?: ReactNode,
 ) {
   return renderToStaticMarkup(
-    createElement(AgentTranscript, { blocks, busy, latestTurnAccessory }),
+    createElement(AgentTranscript, { blocks, busy, turnAccessory: (_, latest) => latest ? latestTurnAccessory : null }),
   );
 }
 
@@ -929,3 +929,20 @@ describe.each(["chat", "full"] as const)(
     });
   },
 );
+
+
+it("keeps each turn accessory beside its reply while the next turn runs", () => {
+  const blocks: Block[] = [
+    { id: "u1", role: "user", text: "First", startedAt: 1000, durationMs: 500, checkpointTurnId: "first" },
+    { id: "a1", role: "assistant", text: "First reply" },
+    { id: "u2", role: "user", text: "Second", startedAt: 2000, checkpointTurnId: "second" },
+    { id: "a2", role: "assistant", text: "Second reply", streaming: true },
+  ];
+  const markup = renderToStaticMarkup(createElement(AgentTranscript, {
+    blocks, busy: true,
+    turnAccessory: (user, latest) => createElement("aside", {}, `${user?.checkpointTurnId}:${latest}`),
+  }));
+  expect(markup.indexOf("First reply")).toBeLessThan(markup.indexOf("first:false"));
+  expect(markup.indexOf("first:false")).toBeLessThan(markup.indexOf("Second reply"));
+  expect(markup).toContain("second:true");
+});

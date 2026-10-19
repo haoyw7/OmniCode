@@ -1744,11 +1744,13 @@ function ConnectedRemoteSession({
     const unregister = registerHostCheckpointRoute(shell.id, async <T,>(
       action: "status" | "diff" | "undo" | "keep",
       relative?: string,
+      turnId?: string,
     ) => {
       const result = await remoteRequest<{ path?: string; files?: { path: string }[] }>(
         machine.id,
         "sessions.checkpoint",
         { projectId: project.projectId, sessionId: hostSessionId, action,
+          ...(turnId ? { turnId } : {}),
           ...(relative === undefined ? {} : { path: relative }) },
       );
       return (result.files

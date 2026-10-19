@@ -34,6 +34,9 @@ type RecordedTurn = {
   dismissed: string[];
   /** Files reported by this session's successful structured edit tools. */
   edited: string[];
+  /** Set for turns that attribute changes by `edited`; recordings from older
+   * versions keep presenting every workspace change as the turn's own. */
+  attributed?: boolean;
 };
 
 type TurnReview = {
@@ -106,6 +109,7 @@ export class TurnCheckpoints {
       error: null,
       dismissed: [],
       edited: pending?.edited ?? [],
+      attributed: true,
     };
     // Publish the pending state first. A failed baseline must not leave the
     // previous turn's card underneath the new response.
@@ -179,7 +183,25 @@ export class TurnCheckpoints {
     return true;
   }
 
-  async status(sessionId: string, cwd: string): Promise<CheckpointStatus | undefined> {
+  async status(sessionId: string, cwd: string, turnId?: string): Promise<CheckpointStatus | undefined> {
+    if (turnId) {
+      const review = await this.saved(sessionId, cwd, turnId);
+      if (!review) return { files: [] };
+      const turn = completedTurn(review);
+      const files = (await changes(review.cwd, turn))
+        .filter((change) => !turn.dismissed.includes(change.relative))
+        .map((change) => ({
+          path: joinClient(review.cwd, change.relative),
+          relative: change.relative,
+          status: change.status,
+          additions: change.additions,
+          deletions: change.deletions,
+          exact: true,
+          undoable: false,
+          ...(isExternal(turn, change.relative) ? { external: true } : {}),
+        }));
+      return { files, ...(files.length ? { turnId: turn.id } : {}), ...(turn.shared ? { workspaceShared: true } : {}) };
+    }
     const review = await this.matching(sessionId, cwd);
     if (!review) return undefined;
     let turn = completedTurn(review);
@@ -203,6 +225,7 @@ export class TurnCheckpoints {
     const files: CheckpointFile[] = [];
     for (const change of recorded) {
       if (dismissed.has(change.relative)) continue;
+      const external = isExternal(turn, change.relative);
       files.push({
         path: joinClient(root, change.relative),
         relative: change.relative,
@@ -210,14 +233,16 @@ export class TurnCheckpoints {
         additions: change.additions,
         deletions: change.deletions,
         exact: true,
-        undoable: canRestore && (await restorable(root, change)),
+        undoable: !external && canRestore && (await restorable(root, change)),
+        ...(external ? { external: true } : {}),
       });
     }
-    return { files, ...(turn.shared ? { workspaceShared: true } : {}) };
+    return { files, ...(files.length ? { turnId: turn.id } : {}), ...(turn.shared ? { workspaceShared: true } : {}) };
   }
 
-  async fileDiff(sessionId: string, cwd: string, input: string): Promise<CheckpointFileDiff | undefined> {
-    const review = await this.matching(sessionId, cwd);
+  async fileDiff(sessionId: string, cwd: string, input: string, turnId?: string): Promise<CheckpointFileDiff | undefined> {
+    const review = turnId ? await this.saved(sessionId, cwd, turnId) : await this.matching(sessionId, cwd);
+    if (turnId && !review) throw new Error("No recorded turn is available");
     if (!review) return undefined;
     const turn = completedTurn(review);
     const root = review.cwd;
@@ -257,7 +282,10 @@ export class TurnCheckpoints {
     const status = (await this.status(sessionId, cwd))!;
     const root = review.cwd;
     const relativePath = input === undefined ? undefined : resolveTurnPath(input);
-    const selected = status.files.filter((file) => relativePath === undefined || file.relative === relativePath);
+    // Undo all restores only the turn's own files; other workspace changes
+    // stay on disk and in the card.
+    const selected = status.files.filter((file) =>
+      relativePath === undefined ? !file.external : file.relative === relativePath);
     if (selected.some((file) => !file.undoable))
       throw new Error("Cannot safely undo this turn: the workspace was shared, the branch moved, or a recorded file changed afterward");
     const turn = completedTurn(review);
@@ -273,7 +301,11 @@ export class TurnCheckpoints {
         await runGit(root, ["restore", "--source", turn.before!, "--worktree", "--", change.relative]);
       else await machineFs.unlink(machinePath.join(root, ...change.relative.split("/")));
     }
-    return this.keep(sessionId, cwd, relativePath);
+    // Status may have dismissed committed files since `review` was read.
+    const current = (await this.matching(sessionId, cwd))!;
+    current.latest!.dismissed = [...new Set([...current.latest!.dismissed, ...names])];
+    await writeReview(this.sessionDir(sessionId), current);
+    return this.status(sessionId, cwd);
   }
 
   async forget(sessionId: string): Promise<void> {
@@ -294,6 +326,18 @@ export class TurnCheckpoints {
       for (const reference of refs.split("\n"))
         if (reference.startsWith(prefix)) await runGit(repo, ["update-ref", "-d", reference]);
     }
+  }
+
+  private async saved(sessionId: string, cwd: string, turnId: string): Promise<TurnReview | undefined> {
+    validateId(turnId, "turn");
+    const review = await this.matching(sessionId, cwd);
+    if (!review) return undefined;
+    if (review.latest?.id === turnId) return { ...review, active: null };
+    const saved = await readFile(join(this.sessionDir(sessionId), "turns", `${turnId}.json`), "utf8")
+      .then((value) => JSON.parse(value) as { machine?: string; cwd: string; repo: string; turn: RecordedTurn },
+        (error: NodeJS.ErrnoException) => { if (error.code === "ENOENT") return undefined; throw error; });
+    if (!saved || saved.cwd !== review.cwd || (saved.machine ?? "local") !== currentMachineIO().key) return undefined;
+    return { ...review, active: null, latest: saved.turn };
   }
 
   private async matching(sessionId: string, cwd: string): Promise<TurnReview | undefined> {
@@ -322,6 +366,11 @@ function completedTurn(review: TurnReview): RecordedTurn {
   if (review.active) throw new Error("The turn ended without a final workspace checkpoint");
   if (!turn.before || !turn.after) throw new Error("The turn's workspace checkpoints are incomplete");
   return turn;
+}
+
+/** A recorded change that none of this session's edit tools reported. */
+function isExternal(turn: RecordedTurn, relative: string): boolean {
+  return !!turn.attributed && !turn.edited.includes(relative);
 }
 
 function turnRef(session: string, turn: string, side: string): string {
@@ -579,8 +628,11 @@ async function readReview(dir: string): Promise<TurnReview | undefined> {
   return review;
 }
 
-function writeReview(dir: string, review: TurnReview): Promise<void> {
-  return writeJson(join(dir, "turn-review.json"), review);
+async function writeReview(dir: string, review: TurnReview): Promise<void> {
+  if (review.latest) await writeJson(join(dir, "turns", `${review.latest.id}.json`), {
+    machine: review.machine, cwd: review.cwd, repo: review.repo, turn: review.latest,
+  });
+  await writeJson(join(dir, "turn-review.json"), review);
 }
 
 async function writeJson(path: string, value: unknown): Promise<void> {

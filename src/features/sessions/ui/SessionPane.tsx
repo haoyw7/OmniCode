@@ -210,7 +210,7 @@ export type SessionPaneProps = {
   onOpenFile: (path: string) => void;
   onOpenDiff: (
     path?: string,
-    session?: { sessionId: string; cwd: string },
+    session?: { sessionId: string; cwd: string; turnId?: string },
   ) => void;
   onOpenPlan: (sessionId: string, blockId: string) => void;
   onBuildPlan: (
@@ -1102,16 +1102,19 @@ const LocalSessionPane = memo(function LocalSessionPane({
                         }
                       : undefined
                   }
-                  latestTurnAccessory={
+                  turnAccessory={(user, latest) =>
                     (hostManaged && !hostFeatures?.checkpoint) ||
                     session.inboxAsk ||
                     session.worktreeRemoved ||
-                    draftBlock ? undefined : (
+                    (latest && draftBlock) ? undefined : (
                       <SessionReview
+                        key={user?.id}
+                        turnId={user?.checkpointTurnId}
+                        historical={!latest}
                         sessionId={session.id}
                         cwd={workCwd}
                         enabled={visible}
-                        busy={!!session.busy}
+                        busy={latest && !!session.busy}
                         undoLocked={
                           reviewUndoLocked ||
                           orchestrationRuns.some(

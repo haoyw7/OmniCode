@@ -1,4 +1,3 @@
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
 import { executionWarningText } from "../integrations/harness/core/executionWarnings";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -9,7 +8,7 @@ import { PlanActions, PlanDecision } from "../features/sessions/ui/PlanPreview";
 import { questionFollowUp } from "../features/sessions/model/questionHistory";
 import { TranscriptPlatformContext } from "../features/sessions/ui/TranscriptPlatform";
 import { motion } from "motion/react";
-import { popTransition, immediateTransition, msgTransition, motionDistance } from "../shared/motion/tokens";
+import { popTransition, immediateTransition } from "../shared/motion/tokens";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
 import { useCollapseMotion } from "../shared/ui/AnimatedCollapse";
 import type { Block } from "../features/sessions/model/session";
@@ -37,7 +36,6 @@ import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { useStableCallback } from "./useStableCallback";
 import { lazyMobileSheet } from "./mobileLazy";
 import { MobileConversation } from "./MobileConversation";
-import { AssistantStatus } from "../shared/ui/messaging/AssistantStatus";
 
 const MobileAgentSheet = lazyMobileSheet(async () => ({ default: (await import("./MobileAgentSheet")).MobileAgentSheet }));
 const MobileToolSheet = lazyMobileSheet(async () => ({ default: (await import("./MobileToolSheet")).MobileToolSheet }));
@@ -214,10 +212,6 @@ export const MobileTranscript = memo(function MobileTranscript({
     }
     return turn.filter((block) => selected.has(block.id));
   }, [session.blocks, detail.activity?.steps]);
-  // A sent message waits in a typing bubble until the agent's first output.
-  const lastBlock = session.blocks.at(-1);
-  const awaitingReply = lastBlock?.role === "user" && !lastBlock.draft &&
-    (!!lastBlock.sending || snapshot.status === "running");
   const git = useMobileGitIndex(gitSource, visible && gitEnabled, snapshot.status === "running");
   const sessionChanges = useMobileGitIndex(sessionChangesSource, visible && gitEnabled, snapshot.status === "running");
   const sessionChangeActions = useMemo(() => sessionChangesSource ? {
@@ -398,11 +392,6 @@ export const MobileTranscript = memo(function MobileTranscript({
         onApproval={onApproval}
         decidingPlanId={planDecision?.blockId}
         worktreeCreation={worktreeCreation}
-        latestTurnAccessory={awaitingReply ? (
-          <motion.div initial={reduced ? false : { opacity: 0, y: motionDistance.msg }} animate={{ opacity: 1, y: 0 }} transition={reduced ? immediateTransition : msgTransition} className="mobile-typing-bubble">
-            <AssistantStatus icon={<HarnessIcon harness={session.harness} />} role="status"><span className="transcript-live-status">{t("Waiting for a reply")}</span></AssistantStatus>
-          </motion.div>
-        ) : undefined}
       />
       {session.pendingQuestion && (
         <motion.div

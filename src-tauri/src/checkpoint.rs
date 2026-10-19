@@ -306,7 +306,7 @@ impl CheckpointStore {
         cwd: &str,
         relative: &str,
     ) -> Result<CheckpointFileDiff, String> {
-        if let Some(diff) = self.turn_file_diff(session_id, cwd, relative)? {
+        if let Some(diff) = self.turn_file_diff(session_id, cwd, relative, None)? {
             return Ok(diff);
         }
         let Some(manifest) = self.load_matching(session_id, cwd)? else {
@@ -559,12 +559,18 @@ pub struct CheckpointFile {
     /// so its net line ownership cannot be reconstructed exactly.
     pub exact: bool,
     pub undoable: bool,
+    /// The turn recorded this workspace change, but none of this session's
+    /// edit tools reported the file. It may belong to another writer.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub external: bool,
 }
 
 #[derive(Debug, Default, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct CheckpointStatus {
     pub files: Vec<CheckpointFile>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub turn_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workspace_shared: Option<bool>,
 }
@@ -698,11 +704,15 @@ pub async fn session_checkpoint_status(
     session_id: String,
     cwd: String,
     edited_paths: Option<Vec<String>>,
+    turn_id: Option<String>,
 ) -> Result<CheckpointStatus, String> {
     validate_id(&session_id, "session")?;
     let store = store.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         store.exclusive(|store| {
+            if let Some(id) = &turn_id {
+                return store.saved_turn_status(&session_id, &cwd, id);
+            }
             if let Some(paths) = &edited_paths {
                 store.recover_orphaned_turn(&session_id, &cwd, paths)?;
             }
@@ -763,11 +773,17 @@ pub async fn session_checkpoint_file_diff(
     session_id: String,
     cwd: String,
     relative: String,
+    turn_id: Option<String>,
 ) -> Result<CheckpointFileDiff, String> {
     validate_id(&session_id, "session")?;
     let store = store.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
-        store.exclusive(|store| store.file_diff(&session_id, &cwd, &relative))
+        store.exclusive(|store| match turn_id.as_deref() {
+            Some(id) => store
+                .turn_file_diff(&session_id, &cwd, &relative, Some(id))?
+                .ok_or_else(|| "No recorded turn is available".into()),
+            None => store.file_diff(&session_id, &cwd, &relative),
+        })
     })
     .await
     .map_err(|e| e.to_string())?
@@ -1097,6 +1113,7 @@ fn describe_change(
             deletions,
             exact,
             undoable,
+            external: false,
         };
     }
     if let Some(file) = git {
@@ -1108,6 +1125,7 @@ fn describe_change(
             deletions: file.deletions,
             exact,
             undoable,
+            external: false,
         };
     }
     let abs = root.join(relative);
@@ -1120,6 +1138,7 @@ fn describe_change(
         deletions: 0,
         exact,
         undoable,
+        external: false,
     }
 }
 

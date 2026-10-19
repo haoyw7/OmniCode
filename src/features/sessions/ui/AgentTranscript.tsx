@@ -132,8 +132,8 @@ type Props = {
   onNavigateReady?: (
     navigate: (blockId: string | null, query?: string) => boolean,
   ) => void;
-  /** Session-level output shown after the latest reply and before its action row. */
-  latestTurnAccessory?: ReactNode;
+  /** Per-turn output shown after the reply and before its action row. */
+  turnAccessory?: (user: Block | undefined, latest: boolean) => ReactNode;
   /** False while another tab is in front; local transcript state is retained. */
   visible?: boolean;
   /** Kept mounted after its pane closed. Showing it again counts as a new visit. */
@@ -190,7 +190,7 @@ function AgentTranscriptComponent({
   onJumpToBottomReady,
   onRevealReady,
   onNavigateReady,
-  latestTurnAccessory,
+  turnAccessory,
 
   visible = true,
   parked = false,
@@ -1041,9 +1041,10 @@ function AgentTranscriptComponent({
                 </AnimatedCollapse>
               ) : null}
               {/* The accessory keeps the pane's props, which go stale once parked. */}
-              {isLastTurn && latestTurnAccessory && !parked
-                ? latestTurnAccessory
-                : null}
+              {!parked && turnAccessory?.(
+                turn.find((block) => block.role === "user" && block.checkpointTurnId) ?? userBlock,
+                isLastTurn,
+              )}
               {durationMs != null && settled ? (
                 <AfterTextReveal entries={turn}>
                   <TurnDuration

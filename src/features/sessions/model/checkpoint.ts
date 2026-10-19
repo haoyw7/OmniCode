@@ -10,10 +10,15 @@ export type CheckpointFile = {
   exact: boolean;
   /** False when restoring could overwrite a change made outside this session. */
   undoable: boolean;
+  /** Recorded during the turn, but no edit tool of this session reported it;
+   * it may come from shell commands or another writer. Never undone in bulk. */
+  external?: boolean;
 };
 
 export type CheckpointStatus = {
   files: CheckpointFile[];
+  /** Identity of the durable Git recording, absent for structured-edit fallback. */
+  turnId?: string;
   /** This turn's workspace snapshot may include other concurrent sessions. */
   workspaceShared?: boolean;
   /** Host only: another running conversation shares this checkout. */
@@ -42,6 +47,7 @@ const REVIEW_CHANGED = "omnicode-review-changed";
 export type HostCheckpointRoute = <T>(
   action: "status" | "diff" | "undo" | "keep",
   relative?: string,
+  turnId?: string,
 ) => Promise<T>;
 const hostRoutes = new Map<string, HostCheckpointRoute>();
 
@@ -107,9 +113,10 @@ export async function beginSessionTurn(
   sessionId: string,
   cwd: string,
   editedPaths?: readonly string[],
+  turnId?: string,
 ): Promise<string | undefined> {
   if (!cwd || cwd === "~") return undefined;
-  const id = crypto.randomUUID();
+  const id = turnId ?? crypto.randomUUID();
   activeTurns.set(sessionId, { id, cwd });
   // Capture errors are also persisted by the backend and shown in the review.
   await enqueueCheckpoint(sessionId, () =>
@@ -184,14 +191,16 @@ export function sessionCheckpointStatus(
   sessionId: string,
   cwd: string,
   editedPaths?: readonly string[],
+  turnId?: string,
 ): Promise<CheckpointStatus> {
   const host = hostRoutes.get(sessionId);
-  if (host) return host("status");
+  if (host) return turnId ? host("status", undefined, turnId) : host("status");
   return enqueueCheckpoint(sessionId, () =>
     invoke<CheckpointStatus>("session_checkpoint_status", {
       sessionId,
       cwd,
       ...(editedPaths === undefined ? {} : { editedPaths }),
+      ...(turnId ? { turnId } : {}),
     }),
   );
 }
@@ -235,14 +244,16 @@ export function sessionCheckpointFileDiff(
   sessionId: string,
   cwd: string,
   relative: string,
+  turnId?: string,
 ): Promise<CheckpointFileDiff> {
   const host = hostRoutes.get(sessionId);
-  if (host) return host("diff", relative);
+  if (host) return turnId ? host("diff", relative, turnId) : host("diff", relative);
   return enqueueCheckpoint(sessionId, () =>
     invoke<CheckpointFileDiff>("session_checkpoint_file_diff", {
       sessionId,
       cwd,
       relative,
+      ...(turnId ? { turnId } : {}),
     }),
   );
 }

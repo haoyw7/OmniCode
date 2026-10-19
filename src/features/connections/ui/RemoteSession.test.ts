@@ -48,7 +48,7 @@ vi.mock("../../sessions/ui/AgentTranscript", () => ({
     onOpenDiff,
     onQuestionFollowUp,
     worktreeCreation,
-    latestTurnAccessory,
+    turnAccessory,
   }: {
     blocks: Block[];
     busy: boolean;
@@ -58,12 +58,12 @@ vi.mock("../../sessions/ui/AgentTranscript", () => ({
     onOpenDiff?: (path: string) => void;
     onQuestionFollowUp?: (answer: QuestionAnswer) => unknown;
     worktreeCreation?: WorktreeCreation;
-    latestTurnAccessory?: ReactNode;
+    turnAccessory?: (user: Block | undefined, latest: boolean) => ReactNode;
   }) =>
     createElement(
       "ol",
       { "aria-label": "Transcript", "data-busy": busy },
-      latestTurnAccessory,
+      turnAccessory?.(blocks.findLast((block) => block.role === "user"), true),
       createElement("button", { "aria-label": "Open transcript file", onClick: () => onOpenFile?.("src/app.ts") }),
       createElement("button", { "aria-label": "Open transcript diff", onClick: () => onOpenDiff?.("src/app.ts") }),
       worktreeCreation
@@ -766,6 +766,8 @@ it("reviews the tab's changes through the Host that captured its edits", async (
   const status = await sessionCheckpointStatus("shell", projectKey);
   expect(status.files.map((file) => file.path)).toEqual(["remote://env/home/me/repo/src/app.ts"]);
   expect(checkpointRequests).toContainEqual({ projectId: "project", sessionId: host!.session.id, action: "status" });
+  await sessionCheckpointStatus("shell", projectKey, undefined, "earlier-turn");
+  expect(checkpointRequests).toContainEqual({ projectId: "project", sessionId: host!.session.id, action: "status", turnId: "earlier-turn" });
 });
 
 it("shows Host Git changes in the status rail and refreshes review for a completed turn missed between polls", async () => {

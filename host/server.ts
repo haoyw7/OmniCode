@@ -624,7 +624,7 @@ export function createHostServer(
             const current = engine.store.session(sessionId);
             if (current.projectId !== params.projectId)
               throw new Error("Session does not belong to this project");
-            result = await engine.sessionCheckpoint(sessionId, params.action, params.path ?? undefined);
+            result = await engine.sessionCheckpoint(sessionId, params.action, params.path ?? undefined, params.turnId);
             break;
           }
           case "sessions.nativeAccess": {

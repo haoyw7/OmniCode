@@ -686,7 +686,9 @@ export function useSessionSubmission({
           : card
             ? SECOND_OPINION_TITLE
             : submittedText;
+      const checkpointId = crypto.randomUUID();
       const cards = {
+        checkpointTurnId: checkpointId,
         ...(rawCommand ? undefined : userTurnCards(noteCard, card)),
         ...(ciContext ? { ciContext } : {}),
         ...(operatorCommand.matched ? { omnicode: true } : {}),
@@ -1194,6 +1196,7 @@ export function useSessionSubmission({
                 sessionId,
                 workCwd,
                 sessionEditPaths(current.blocks),
+                checkpointId,
               )
             : undefined;
         if (turnGen.current.get(sessionId) !== gen) {

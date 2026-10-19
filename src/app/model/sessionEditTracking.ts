@@ -14,22 +14,37 @@ import { isEditTool } from "../../integrations/harness/core/preview";
 import { notifyGitChanged } from "../../platform/tauri/fs";
 import { resolveWorkspacePath } from "../../shared/lib/paths";
 
+/** Paths each in-flight edit call reported, keyed by session then call id. */
+const editCalls = new Map<string, Map<string, string[]>>();
+
 export function trackSessionEdits(
   sessionId: string,
   cwd: string,
   event: HarnessEvent,
 ) {
   if (event.type !== "tool.started" && event.type !== "tool.updated") return;
-  if (!isEditTool(event.kind, event.title, event.preview)) return;
-  const paths = [
+  // Completion updates may omit the kind and paths their start reported;
+  // they attribute the turn's changes to this session, so remember them.
+  const calls = editCalls.get(sessionId);
+  const known = calls?.get(event.callId);
+  if (!known && !isEditTool(event.kind, event.title, event.preview)) return;
+  const own = [
     ...(event.paths ?? []),
     ...(event.preview?.path ? [event.preview.path] : []),
   ].filter((path, index, all) => all.indexOf(path) === index);
+  const paths = own.length ? own : known ?? [];
+  const status = event.type === "tool.updated" ? event.status : undefined;
+  const completed = status === "completed" || status === "success";
+  if (completed || status === "failed" || status === "error") {
+    calls?.delete(event.callId);
+    if (calls?.size === 0) editCalls.delete(sessionId);
+  }
   if (paths.length === 0 || cwd === "~") return;
-  const completed =
-    event.type === "tool.updated" &&
-    (event.status === "completed" || event.status === "success");
   if (!completed) {
+    if (status === "failed" || status === "error") return;
+    const merged = [...new Set([...(known ?? []), ...paths])];
+    if (calls) calls.set(event.callId, merged);
+    else editCalls.set(sessionId, new Map([[event.callId, merged]]));
     void prepareSessionCheckpoint(sessionId, cwd, paths).catch(() => undefined);
     return;
   }
