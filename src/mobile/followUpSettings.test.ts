@@ -4,6 +4,8 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileApp } from "./MobileApp";
+// Compile the real lazy settings page before timing navigation and form input.
+import "./MobileSettings";
 import { setUiLanguage } from "../shared/i18n/language";
 import { loadTranscriptAnchor } from "../features/settings/model/appearance";
 import {
@@ -91,6 +93,7 @@ vi.mock("./useMobileActivity", () => ({
 
 let root: Root, node: HTMLDivElement;
 beforeEach(() => {
+  vi.useFakeTimers();
   startMotionClock();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.clearAllMocks();
@@ -100,10 +103,12 @@ beforeEach(() => {
   document.body.append(node);
   root = createRoot(node);
 });
-afterEach(() => {
-  stopMotionClock();
-  act(() => root.unmount());
+afterEach(async () => {
+  await act(async () => root.unmount());
   node.remove();
+  stopMotionClock();
+  vi.clearAllTimers();
+  vi.useRealTimers();
   localStorage.clear();
   setUiLanguage("en");
   vi.unstubAllGlobals();

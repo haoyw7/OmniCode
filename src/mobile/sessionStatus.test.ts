@@ -59,7 +59,7 @@ function render(session: Partial<HostSession["session"]> = {}) {
 }
 
 describe("mobile session status", () => {
-  it("shows the thread, working copy and remaining context", () => {
+  it("shows the thread, working copy and used context", () => {
     setUiLanguage("zh-CN");
     render({
       providerSessionId: "thread-1",
@@ -74,7 +74,8 @@ describe("mobile session status", () => {
     expect(text).toContain("thread-1");
     expect(text).toContain("/project/.worktrees/feature");
     expect(text).toContain("feature");
-    expect(text).toContain("剩余 79%（已用 140K / 660K）");
+    expect(text).toContain("已用 21%");
+    expect(text).toContain("140k / 660k tokens");
   });
 
   it("falls back to the OmniCode session ID and copies it", async () => {
@@ -82,7 +83,7 @@ describe("mobile session status", () => {
     render();
     const text = node.textContent ?? "";
     expect(text).toContain("Session ID");
-    expect(text).toContain("ContextNot reported by this agent yet");
+    expect(text).toContain("Context—");
     await act(async () => {
       node.querySelector<HTMLButtonElement>('button[aria-label="Copy"]')!.click();
     });

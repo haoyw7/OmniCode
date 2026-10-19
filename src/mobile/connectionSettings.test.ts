@@ -210,7 +210,7 @@ describe("mobile connection settings", () => {
     expect(rootPage.isConnected).toBe(false);
     expect(active(".mobile-glass-preview")).not.toBeNull();
     act(() => active<HTMLButtonElement>("#mobile-glass-effect")!.click());
-    act(() => [...node.querySelectorAll<HTMLButtonElement>('[role="radio"]')].filter(item => !item.closest('[inert]')).find((item) => item.textContent?.trim() === "Solid")!.click());
+    act(() => active<HTMLInputElement>('input[type="radio"][aria-label="Solid"]')!.click());
     expect(active<HTMLInputElement>("#mobile-glass-intensity")!.disabled).toBe(true);
     act(() => active<HTMLButtonElement>("#mobile-glass-effect")!.click());
     back();
@@ -473,9 +473,7 @@ describe("mobile connection settings", () => {
       language.click();
     });
     act(() => {
-      [...node.querySelectorAll<HTMLButtonElement>('[role="radio"]')].filter(item => !item.closest('[inert]'))
-        .find((item) => item.textContent?.trim() === "简体中文")!
-        .click();
+      active<HTMLInputElement>('input[type="radio"][aria-label="简体中文"]')!.click();
     });
     expect(localStorage.getItem(UI_LANGUAGE_KEY)).toBe("zh-CN");
     expect(active("header strong")!.textContent).toBe("OmniCode");
@@ -511,7 +509,7 @@ describe("mobile connection settings", () => {
       );
     });
     expect(
-      active('[role="radio"][aria-checked="true"]')!.textContent,
+      active('input[type="radio"]:checked')!.getAttribute("aria-label"),
     ).toBe("Dark");
     expect(
       active('.mobile-sheet-backdrop[data-placement="dialog"] .mobile-sheet-title')?.textContent,
@@ -528,9 +526,7 @@ describe("mobile connection settings", () => {
     expect(document.activeElement).toBe(appearance);
     act(() => appearance.click());
     act(() =>
-      [...node.querySelectorAll<HTMLButtonElement>('[role="radio"]')].filter(item => !item.closest('[inert]'))
-        .find((item) => item.textContent?.trim() === "Light")!
-        .click(),
+      active<HTMLInputElement>('input[type="radio"][aria-label="Light"]')!.click(),
     );
     expect(active('.mobile-sheet-backdrop:not([aria-hidden="true"]) [role="dialog"]')).toBeNull();
     expect(appearance.textContent).toBe("Light");

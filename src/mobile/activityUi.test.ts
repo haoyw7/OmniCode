@@ -1,11 +1,11 @@
 import { advanceMotionTimers, startMotionClock, stopMotionClock } from "./motionTestClock";
 // @vitest-environment happy-dom
-import { act, createElement } from "react";
+import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { MobileApp } from "./MobileApp";
 import type { HostSessionSummary } from "../features/connections/model/protocol";
-import type { SessionReference } from "../features/bots/model/botView";
+import type { MobileBots } from "./MobileBots";
 import { setUiLanguage } from "../shared/i18n/language";
 
 const mocked = vi.hoisted(() => ({
@@ -65,11 +65,15 @@ vi.mock("./MobileAppUpdates", () => ({
 vi.mock("./MobileTranscript", () => ({
   MobileTranscript: () => createElement("div", { "data-transcript": true }),
 }));
-vi.mock("./MobileAssistant", () => ({
-  MobileAssistant: ({ onOpen }: { onOpen: (ref: SessionReference) => Promise<void> }) =>
+vi.mock("./MobileBots", () => ({
+  MobileBots: ({ onOpen }: Pick<ComponentProps<typeof MobileBots>, "onOpen">) =>
     createElement("button", {
       "data-assistant-open": true,
-      onClick: () => onOpen({ environmentId: "host", projectId: "other-project", sessionId: "two" }),
+      onClick: async () => onOpen(
+        { environmentId: "host", projectId: "other-project", sessionId: "two" },
+        { project: { id: "other-project", name: "Other", cwd: "/other" }, session: await mocked.session("two") },
+        { id: "assistant", name: "Assistant", defaultScope: true },
+      ),
     }, "Open conversation"),
 }));
 vi.mock("./notifications", () => ({
@@ -405,16 +409,19 @@ describe("mobile project conversation Back navigation", () => {
     expect(headerButton("Back")).toBeNull();
   });
 
-  it("resets the source when the assistant opens the same conversation", async () => {
+  it("returns to the Bot when it opens the same conversation after a project visit", async () => {
     await openProjectPage();
     await openRow();
     await swipeOpenDrawer();
-    await act(async () => [...node.querySelectorAll<HTMLButtonElement>(".mobile-drawer-top > button")]
-      .find((button) => button.textContent === "Assistant")!.click());
+    await act(async () => node.querySelector<HTMLButtonElement>(".mobile-drawer-assistant")!.click());
+    await act(async () => vi.dynamicImportSettled());
     await act(async () => node.querySelector<HTMLButtonElement>("[data-assistant-open]")!.click());
     expect(node.querySelector("header strong")!.textContent).toBe("Other conversation");
-    expect(headerButton("Menu")).not.toBeNull();
+    expect(headerButton("Menu")).toBeNull();
     expect(headerButton("Back")).toBeNull();
+    await act(async () => headerButton("Back to Bot conversation")!.click());
+    expect(node.querySelector(".mobile-app")!.getAttribute("data-view")).toBe("bots");
+    expect(node.querySelector("[data-assistant-open]")).not.toBeNull();
   });
 
   it("keeps the menu when Home opens the same conversation after a project visit", async () => {

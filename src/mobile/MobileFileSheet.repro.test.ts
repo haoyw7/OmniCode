@@ -7,9 +7,11 @@ import { newSession } from "../features/sessions/model/session";
 import type { HostSession } from "../features/connections/model/protocol";
 import { MobileFileSheet } from "./MobileFileSheet";
 import { MobileTranscript } from "./MobileTranscript";
+import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motionTestClock";
 
 vi.mock("@capacitor/core", () => ({
   Capacitor: { isNativePlatform: () => false },
+  registerPlugin: vi.fn(() => ({})),
 }));
 
 // A portable regression for the reported tool -> View file flow. No private
@@ -19,6 +21,7 @@ describe("mobile file preview and tool navigation", () => {
   let app: HTMLDivElement;
   let uncaught: ReturnType<typeof vi.fn>;
   beforeEach(() => {
+    startMotionClock();
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     app = document.createElement("div");
     app.className = "mobile-app";
@@ -29,6 +32,7 @@ describe("mobile file preview and tool navigation", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     app.remove();
+    stopMotionClock();
     vi.unstubAllGlobals();
   });
 
@@ -109,6 +113,7 @@ describe("mobile file preview and tool navigation", () => {
     expect(app.querySelector('[role="log"]')?.textContent).toContain(
       "Test tools",
     );
+    await advanceMotionTimers(600);
     const back = app.querySelector<HTMLButtonElement>(
       'button[aria-label="Back"]',
     );
@@ -118,8 +123,9 @@ describe("mobile file preview and tool navigation", () => {
     const closingFile = app.querySelector(".mobile-file-sheet")!.closest(".mobile-sheet-backdrop")!;
     expect(closingFile.getAttribute("data-fold-state")).toBe("closing");
     expect(closingFile.hasAttribute("inert")).toBe(true);
-    await act(async () => closingFile.dispatchEvent(new Event("animationend", { bubbles: true })));
+    await advanceMotionTimers(600);
     expect(app.querySelector(".mobile-file-sheet")).toBeNull();
+    await advanceMotionTimers(600);
     await act(async () =>
       app
         .querySelector('[role="dialog"]')!
@@ -129,7 +135,7 @@ describe("mobile file preview and tool navigation", () => {
     );
     const closingTool = app.querySelector(".mobile-tool-sheet")!.closest(".mobile-sheet-backdrop")!;
     expect(closingTool.hasAttribute("inert")).toBe(true);
-    await act(async () => closingTool.dispatchEvent(new Event("animationend", { bubbles: true })));
+    await advanceMotionTimers(600);
     expect(app.querySelector('[role="dialog"]')).toBeNull();
     expect(uncaught).not.toHaveBeenCalled();
   });

@@ -8,6 +8,7 @@ import { MobileTranscript } from "./MobileTranscript";
 
 vi.mock("@capacitor/core", () => ({
   Capacitor: { isNativePlatform: () => false },
+  registerPlugin: vi.fn(() => ({})),
 }));
 
 const png = Uint8Array.from(atob(
@@ -72,6 +73,7 @@ describe("mobile image files in the bottom sheet", () => {
     );
     expect(chip).toBeDefined();
     await act(async () => chip!.click());
+    await act(async () => vi.dynamicImportSettled());
     expect(read).toHaveBeenCalledWith(path);
     const image = app.querySelector<HTMLImageElement>(".mobile-file-image");
     expect(image?.getAttribute("src")).toBe("blob:image-1");

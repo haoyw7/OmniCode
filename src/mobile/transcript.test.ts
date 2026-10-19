@@ -136,20 +136,15 @@ describe("mobile approval interaction", () => {
       decision: "allow",
     });
   });
-  it("disables approval after reconnect without a current run or while another command is pending", () => {
-    let result = render();
-    expect(
-      [...result.node.querySelectorAll("button")].every(
-        (button) => button.disabled,
-      ),
-    ).toBe(true);
-    act(() => root!.unmount());
-    result = render({ runId: "active-run", disabled: true });
-    expect(
-      [...result.node.querySelectorAll("button")].every(
-        (button) => button.disabled,
-      ),
-    ).toBe(true);
+  it("removes approval actions after reconnect without a current run or while another command is pending", () => {
+    for (const options of [{}, { runId: "active-run", disabled: true }]) {
+      const result = render(options);
+      expect(result.node.querySelector("[data-approval-controls]")).toBeNull();
+      expect(result.node.querySelector("[data-approval]")).toBeNull();
+      expect(result.commands).toEqual([]);
+      act(() => root!.unmount());
+      root = undefined;
+    }
   });
   it("shows resolved approval state without actionable buttons", () => {
     const { node } = render({

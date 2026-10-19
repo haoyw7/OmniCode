@@ -11,6 +11,8 @@ import type {
 import { HARNESS_TITLE } from "../features/sessions/model/session";
 import { setUiLanguage } from "../shared/i18n/language";
 import { MobileApp } from "./MobileApp";
+// Load the real settings module during collection, before timing interactions.
+import "./MobileSettings";
 import {
   loadMobileAgentDefaults,
   saveMobileAgentDefaults,

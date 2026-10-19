@@ -4,6 +4,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Capacitor } from "@capacitor/core";
 import { MobileApp } from "./MobileApp";
+// Compile the real lazy page before timing interactions; a cold transform can
+// otherwise time out inside act and leave later tests sharing unfinished work.
+import "./MobileBots";
 import type { Connection, MobileClient } from "./client";
 import { setUiLanguage } from "../shared/i18n/language";
 import { fullBotPolicy as fullAssistantPolicy, type BotMessage as AssistantMessage, type BotConfiguration as AssistantView } from "../features/bots/model/botView";
@@ -51,11 +54,14 @@ function respond(endpoint: string, { method }: { method: string }) {
   };
   if (method === "projects.list") return [{ ...project, name: `${host.name} project` }];
   if (method === "sessions.list") return [summary(host.name)];
-  if (method === "sessions.get") return {
-    projectId: project.id, revision: 1, updatedAt: 100, status: "idle",
-    session: { id: "shared-session", title: `${host.name} conversation`, harness: "codex", cwd: project.cwd,
-      model: "codex:model", modelSettings: {}, runtimeMode: "supervised", blocks: [] },
-  };
+  if (method === "sessions.get" || method === "sessions.sync") {
+    const value = {
+      projectId: project.id, revision: 1, updatedAt: 100, status: "idle",
+      session: { id: "shared-session", title: `${host.name} conversation`, harness: "codex", cwd: project.cwd,
+        model: "codex:model", modelSettings: {}, runtimeMode: "supervised", blocks: [] },
+    };
+    return method === "sessions.sync" ? { kind: "snapshot", value, serverTime: Date.now() } : value;
+  }
   if (method === "models.list") return { models: { codex: [{ id: "codex:model", name: "Model", harness: "codex" }] }, errors: {} };
   return null;
 }
@@ -128,6 +134,8 @@ it.each([false, true])("keeps unseen replies ready for the drawer after leaving 
   const badge = () => active(".mobile-drawer-assistant")?.querySelector(".mobile-drawer-assistant-badge");
   await mount();
   await act(async () => button("Menu").click());
+  await act(async () => button("Bots").click());
+  await act(async () => vi.dynamicImportSettled());
   await act(async () => { button("My assistant").click(); await vi.dynamicImportSettled(); });
   messages = [{ id: "seen", kind: "assistant", revision: 1, createdAt: 1, text: "Seen reply" }];
   await act(async () => vi.advanceTimersByTimeAsync(2000));
@@ -143,6 +151,8 @@ it.each([false, true])("keeps unseen replies ready for the drawer after leaving 
     await act(async () => appState({ isActive: true }));
     expect(localStorage.getItem("omnicode.assistant-read:a")).toBe("2");
   }
+  await act(async () => button("Back").click());
+  await act(async () => vi.advanceTimersByTimeAsync(300));
   await act(async () => button("Back").click());
   await act(async () => vi.advanceTimersByTimeAsync(300));
   messages.push({ id: "unseen", kind: "assistant", revision: 3, createdAt: 3, text: "New reply" });
@@ -340,7 +350,7 @@ it("lists every device from Home's device row and opens another device's convers
   await act(async () => vi.advanceTimersByTimeAsync(0));
   expect(fixture.client!.connection?.environmentId).toBe("b");
   expect(active(".mobile-header")!.textContent).toContain("Device B project");
-  expect(node.textContent).toContain("Update Host to share settings.");
+  expect(active('[data-view="chat"]')?.textContent).toContain("Transcript");
   expect(fixture.request).toHaveBeenCalledWith(b.endpoint, expect.objectContaining({
     method: "sessions.sync", params: expect.objectContaining({ sessionId: "shared-session" }),
   }));

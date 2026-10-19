@@ -5,6 +5,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HostSession, HostSessionSummary, HostModelCatalog } from "../features/connections/model/protocol";
 import { MobileApp } from "./MobileApp";
+// These tests cover navigation, not chunk loading. Keep cold page compilation
+// outside the interaction timeout and its pending React act scope.
+import "./MobileBots";
 import { setUiLanguage } from "../shared/i18n/language";
 import { NATIVE_SESSION_PROVIDERS, type NativeSessionAccess, type NativeSessionProvider } from "../integrations/harness/core/nativeSessions";
 import * as attachmentFiles from "./attachments";
@@ -296,11 +299,12 @@ describe("mobile conversation loading UI", () => {
     await act(async () => activePage().querySelector<HTMLButtonElement>('[data-ui="navigation-item"]')!.click());
     await advanceMotionTimers(500);
     const card = activePage().querySelector(".assistant-card")!;
-    expect(card.textContent).toContain("Execution Project");
+    const openCard = card.querySelector<HTMLButtonElement>('button[aria-label="Open session"]')!;
+    expect(openCard.title).toContain("Execution Project");
     expect(card.querySelector('[role="img"][aria-label="Codex"]')).not.toBeNull();
-    expect(card.textContent).toContain("existing");
+    expect(openCard.title).toContain("existing");
     expect(card.textContent).toContain("Source task");
-    expect(card.textContent).toContain("Session: task");
+    expect(openCard.title).toContain("Session: task");
     expect(card.textContent).toContain("Running");
     expect(card.textContent).not.toContain("Claude");
     await act(async () => card.querySelector<HTMLButtonElement>("button")!.click());

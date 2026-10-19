@@ -353,6 +353,10 @@ describe("MobileToolSheet", () => {
       const toggle = node.querySelector<HTMLButtonElement>(
         ".mobile-tool-diff .mobile-git-file-row",
       )!;
+      await vi.waitFor(async () => {
+        await act(async () => vi.advanceTimersByTimeAsync(0));
+        expect(toggle.hasAttribute("aria-busy")).toBe(false);
+      });
       expect(toggle.getAttribute("aria-expanded")).toBe("true");
       act(() => toggle.click());
       const closing = node.querySelector(

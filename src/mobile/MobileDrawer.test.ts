@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HostSessionSummary } from "../features/connections/model/protocol";
 import { setUiLanguage } from "../shared/i18n/language";
-import { startMotionClock, motionFrame, stopMotionClock } from "./motionTestClock";
+import { startMotionClock, motionFrame, stopMotionClock, advanceMotionTimers } from "./motionTestClock";
 import { MobileDrawer } from "./MobileDrawer";
 import { lightImpact } from "./haptics";
 import { applyReducedMotion } from "../shared/lib/reducedMotion";
@@ -731,6 +731,8 @@ describe("mobile sidebar recents", async () => {
     await act(async () => retry.click());
     await settle();
     expect(recentIds()).toEqual(["android-chat"]);
+    // AutoAnimate retains the removed error row until its exit finishes.
+    await advanceMotionTimers(300);
     expect(node.querySelector("button.mobile-drawer-group-status")).toBeNull();
   });
   it("shares an in-flight history request on reopening and refreshes at the next interval", async () => {
