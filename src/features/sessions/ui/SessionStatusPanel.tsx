@@ -46,8 +46,8 @@ import {
 } from "../../../shared/ui/icons";
 import { prettyParent, projectName } from "../../../shared/lib/paths";
 import { useSessionHeaderActions } from "../../workspace/ui/SessionHeaderActions";
-import { knownRemoteMachine } from "../../connections/model/connections";
-import { parseRemotePath } from "../../connections/model/remoteProjects";
+import { useRemoteMachines } from "../../connections/model/connections";
+import { isSharedHostMachine, parseRemotePath } from "../../connections/model/remoteProjects";
 import type { Block } from "../model/session";
 import {
   contextPercent,
@@ -407,20 +407,28 @@ function environmentPath(cwd: string): string {
 
 function EnvironmentRows({ cwd, branch }: { cwd: string; branch?: string }) {
   const { t: uiT } = useTranslation();
+  const { machines } = useRemoteMachines();
   const remote = parseRemotePath(cwd);
-  const machine = remote ? knownRemoteMachine(remote.environmentId) : undefined;
+  const machine = remote
+    ? machines.find((entry) => entry.environmentId === remote.environmentId)
+    : machines.find(isSharedHostMachine);
+  const localComputerName = !remote ? machine?.name.trim() : undefined;
+  const machineName = !remote
+    ? [uiT("This machine"), localComputerName].filter(Boolean).join(" · ")
+    : machine?.wsl
+      ? `WSL · ${machine.wsl.distribution}`
+      : machine?.name ?? uiT("Remote");
   const path = environmentPath(cwd);
   const parent = prettyParent(path);
   return (
     <>
-      <Row>
+      <Row title={machineName}>
         <RowIcon>{remote ? <Internet /> : <Laptop />}</RowIcon>
         <span className="min-w-0 flex-1 truncate">
-          {!remote
-            ? uiT("This machine")
-            : machine?.wsl
-              ? `WSL · ${machine.wsl.distribution}`
-              : machine?.name ?? uiT("Remote")}
+          {!remote ? <>
+            {uiT("This machine")}
+            {localComputerName ? <span className="text-content/45"> · {localComputerName}</span> : null}
+          </> : machineName}
         </span>
       </Row>
       {/* The full folder wraps rather than truncating; the icon stays on its first line. */}

@@ -11,6 +11,12 @@ import { railFits, SessionStatusPanel } from "./SessionStatusPanel";
 import { setUiLanguage } from "../../../shared/i18n/language";
 import type { ContextUsage } from "../model/contextUsage";
 import { loadStatusCardOrder, saveStatusCardOrder, saveStatusCardsVisible, STATUS_CARD_IDS } from "../model/statusCardOrder";
+import { useRemoteMachines } from "../../connections/model/connections";
+import { configureSharedHost } from "../../connections/model/remoteProjects";
+
+vi.mock("../../connections/model/connections", () => ({
+  useRemoteMachines: vi.fn(),
+}));
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
@@ -60,6 +66,7 @@ const agent: Block = {
 let root: Root;
 let host: HTMLDivElement;
 beforeEach(() => {
+  vi.mocked(useRemoteMachines).mockReturnValue({ machines: [], loaded: false });
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   setUiLanguage("en");
   host = document.createElement("div");
@@ -72,6 +79,7 @@ afterEach(() => {
   vi.useRealTimers();
   setUiLanguage("en");
   vi.unstubAllGlobals();
+  configureSharedHost(undefined, []);
 });
 
 let resize: ResizeObserverCallback | undefined;
@@ -130,6 +138,24 @@ const cardToggle = (title: string) =>
 const card = () => host.querySelector<HTMLElement>("[data-subagent-card]");
 
 describe("session status rail", () => {
+  it("adds the local computer name when machine metadata arrives and preserves it when localized", () => {
+    configureSharedHost("local-environment", [], "local-machine");
+    const { update } = render([], false);
+    const environment = host.querySelector('[data-status-card="environment"]')!;
+    expect(environment.textContent).toContain("This machine");
+    expect(environment.textContent).not.toContain("wy-ubuntu");
+    vi.mocked(useRemoteMachines).mockReturnValue({ loaded: true, machines: [
+      { id: "other-machine", environmentId: "other-environment", name: "Other PC", endpoint: "http://other:3774" },
+      { id: "local-machine", environmentId: "local-environment", name: "wy-ubuntu", endpoint: "http://127.0.0.1:3774" },
+    ] });
+    update();
+    expect(environment.textContent).toContain("This machine · wy-ubuntu");
+    expect(environment.textContent).not.toContain("Other PC");
+    act(() => setUiLanguage("zh-CN"));
+    expect(environment.textContent).toContain("本机 · wy-ubuntu");
+    expect(environment.querySelector('[title="本机 · wy-ubuntu"]')).not.toBeNull();
+  });
+
   it("reveals category accounting and deferred MCP tools inside the existing Context card", () => {
     render([], false, 1600, { used: 1000, window: 10000, breakdown: {
       used: 1000, window: 10000, updatedAt: Date.now(), estimated: true,
