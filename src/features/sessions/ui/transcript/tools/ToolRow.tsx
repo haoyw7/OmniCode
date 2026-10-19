@@ -62,11 +62,16 @@ export function ToolRow({
   // The question card beside the trail shows what was asked and answered.
   const bodyText =
     renderer === "question" ? undefined : toolBodyText(block, renderer);
+  const shell = renderer === "execute";
   // Shell previews retain the full command even when the summary is shortened.
-  // Let readers inspect it before the process has printed any output.
-  const command = renderer === "execute" && running
+  // Let readers inspect it before the process has printed any output, and keep
+  // it above the output once the call settles.
+  const input = block.tool?.input?.trim().startsWith("{")
+    ? undefined
+    : block.tool?.input;
+  const command = shell && (running || bodyText)
     ? (block.tool?.preview?.kind === "shell" ? block.tool.preview.title : undefined)
-      || block.tool?.input || block.tool?.title || block.text
+      || input || block.tool?.title || block.text
     : undefined;
   const expandable = !pending && !!(command || bodyText);
   // A command you are watching run shows its output; it folds once it is done.
@@ -166,22 +171,34 @@ export function ToolRow({
       ) : null}
       {expandable ? (
         <AnimatedCollapse expanded={open}>
-          {() => (
-            <>
-              {command ? (
-                <pre data-tool-command="" className="zen-detail-panel max-h-60 overflow-auto whitespace-pre-wrap break-words">
-                  {command}
-                </pre>
-              ) : null}
-              {bodyText ? (
-                <ToolOutput
-                  text={bodyText}
-                  live={live && running}
-                  failed={failed}
-                />
-              ) : null}
-            </>
-          )}
+          {() => {
+            const output = bodyText ? (
+              <ToolOutput
+                text={bodyText}
+                live={live && running}
+                failed={failed}
+                shell={shell}
+              />
+            ) : null;
+            return shell ? (
+              <div
+                className="zen-shell-log"
+                data-failed={failed ? "" : undefined}
+              >
+                {command ? (
+                  <pre
+                    data-tool-command=""
+                    className="zen-shell-command whitespace-pre-wrap break-words"
+                  >
+                    {command}
+                  </pre>
+                ) : null}
+                {output}
+              </div>
+            ) : (
+              output
+            );
+          }}
         </AnimatedCollapse>
       ) : null}
     </div>

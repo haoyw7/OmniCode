@@ -1346,6 +1346,57 @@ html:not(.theme-light) .markdown-code-token {
   background: transparent;
 }
 
+/*
+ * A command's log hangs off a thin rail under its row icon rather than in a
+ * card: the full command first, dimmed behind a prompt, then what it printed.
+ */
+.zen-shell-log {
+  min-width: 0;
+  margin: 2px 0 6px 6px;
+  border-left: 2px solid var(--color-stroke);
+  border-radius: 0;
+  padding: 2px 0 2px 12px;
+  font-family: var(--font-mono);
+  font-size: var(--text-ui-sm);
+  line-height: 1.55;
+}
+
+.zen-shell-log[data-failed] {
+  border-left-color: color-mix(in srgb, var(--color-danger) 40%, transparent);
+}
+
+.zen-shell-command {
+  max-height: 7.75em;
+  overflow: auto;
+  color: var(--color-foreground-subtlest);
+}
+
+.zen-shell-command::before {
+  content: "$ ";
+  user-select: none;
+}
+
+.zen-shell-command + .zen-shell-output {
+  margin-top: 4px;
+}
+
+.zen-shell-output {
+  min-width: 0;
+  color: var(--color-foreground-subtle);
+}
+
+.zen-shell-output [data-diff-line="add"] {
+  color: color-mix(in srgb, var(--color-success) 85%, transparent);
+}
+
+.zen-shell-output [data-diff-line="del"] {
+  color: color-mix(in srgb, var(--color-danger) 85%, transparent);
+}
+
+.zen-shell-output [data-diff-line="hunk"] {
+  color: var(--color-foreground-subtlest);
+}
+
 .zen-disclosure-chevron {
   color: var(--color-foreground-subtlest);
   opacity: 0;
