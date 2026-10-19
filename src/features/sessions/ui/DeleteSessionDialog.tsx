@@ -1,7 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useState } from "react";
 import { prettyCwd } from "../../../shared/lib/paths";
-import { Modal } from "../../../shared/ui/Modal";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 
 export type SessionDeleteChoice = {
   confirmed: boolean;
@@ -49,22 +50,14 @@ export function DeleteSessionDialog({
             </span>
           </span>
         </label>
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => onClose({ confirmed: false, deleteWorktree: false })}
-            className="rounded-md px-3 py-1.5 hover:bg-content/5 active:scale-[0.97]"
-          >
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => onClose({ confirmed: false, deleteWorktree: false })}>
             {uiT("Cancel")}
-          </button>
-          <button
-            type="button"
-            onClick={() => onClose({ confirmed: true, deleteWorktree })}
-            className="rounded-md bg-red-500/20 px-3 py-1.5 font-medium text-red-400 hover:bg-red-500/30 active:scale-[0.97]"
-          >
+          </Button>
+          <Button variant="danger" onClick={() => onClose({ confirmed: true, deleteWorktree })}>
             {uiT("Delete session")}
-          </button>
-        </div>
+          </Button>
+        </ModalFooter>
       </div>
     </Modal>
   );

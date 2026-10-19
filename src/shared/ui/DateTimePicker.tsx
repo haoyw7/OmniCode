@@ -248,7 +248,7 @@ export function DateTimePicker({
             {uiT("Local time, 24-hour")}
           </p>
         </div>
-        <div className="w-20 rounded border border-content/10 bg-content/5 focus-within:border-content/40 focus-within:outline-2 focus-within:outline-accent">
+        <div className="w-20 rounded border border-content/10 bg-content/5 focus-within:border-content/40 focus-within:outline-2 focus-within:outline-content/40">
           <input
             id={timeId}
             type="text"

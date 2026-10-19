@@ -1,3 +1,5 @@
+// Reuse the formatter across calls to avoid repeated initialization.
+// Use a fixed locale to keep count formatting consistent across environments.
 const INTEGER_FORMATTER = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });

@@ -176,6 +176,7 @@ function DialogFooter({
   return (
     <div
       data-slot="dialog-footer"
+      data-ui="dialog-actions"
       className={cn(
         "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
         className,

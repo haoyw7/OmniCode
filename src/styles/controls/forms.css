@@ -154,10 +154,11 @@ html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"],
 html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-ui="input-group"], [data-slot="select-trigger"]):not(.font-mono, [data-code-label]) { font-family: var(--font-sans); }
 html[data-skin] [data-ui="input"][data-size="lg"] { min-height: var(--desktop-field-large-height); padding-block: 9px; }
 html[data-skin] [data-ui="textarea"] { min-height: 132px; padding: 16px; border-width: .5px; border-color: var(--color-stroke); }
+html[data-skin] [data-ui="textarea"][data-size="sm"] { min-height: 64px; padding: 8px 12px; }
 html[data-skin] .desktop-field-leading-icon,
 html[data-skin] [data-ui="input"].desktop-field-leading-icon { padding-inline-start: 36px; }
 html[data-skin] [data-ui="input"].desktop-field-trailing-icon { padding-inline-end: 36px; }
-html[data-skin] [data-desktop-select-trigger]:not([data-desktop-select-trigger="panel"]):not([data-desktop-select-trigger="row"]):not([data-desktop-select-trigger="pill"]) {
+html[data-skin] [data-desktop-select-trigger]:not([data-desktop-select-trigger="panel"]):not([data-desktop-select-trigger="row"]):not([data-desktop-select-trigger="pill"]):not([data-desktop-select-trigger="icon"]) {
   min-height: var(--desktop-field-height);
   height: auto;
   padding: 5px 12px;
@@ -176,11 +177,12 @@ html[data-skin] [data-ui="input-group"]:has(> input) { display: flex; align-item
 html[data-skin] [data-ui="input-group"] > input { min-width: 0; font-size: inherit; line-height: inherit; }
 html[data-skin] :is([data-ui="input-group"]:has(> input:focus-visible), [data-ui="input-group"]:has([data-slot="input-group-control"]:focus-visible)) { box-shadow: var(--desktop-focus-shadow); }
 html[data-skin] [data-ui="input-group"][data-slot="input-group"] { padding: 0; }
-html[data-skin] .desktop-bots-workspace :is([data-ui="input"], [data-ui="textarea"]):focus-visible:not([aria-invalid="true"]) {
+html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-slot="select-trigger"]):focus-visible:not([aria-invalid="true"]) {
+  border-color: var(--color-input-border-hover);
   box-shadow: none;
 }
-html[data-skin] .desktop-bots-workspace [data-ui="input-group"]:has([data-ui="input-group-control"]:focus-visible):not(:has([aria-invalid="true"])) {
-  border-color: var(--color-input);
+html[data-skin] [data-ui="input-group"]:has(:focus-visible):not(:has([aria-invalid="true"])) {
+  border-color: var(--color-input-border-hover);
   box-shadow: none;
 }
 html[data-skin] [data-slot="input-group-control"] { min-height: 30px; padding-inline: 12px; font-size: var(--text-body-sm); line-height: var(--text-body-sm--line-height); }
@@ -260,7 +262,8 @@ html[data-skin] [data-ui="button-icon"] > svg { width: 20px; height: 20px; }
 html[data-skin] [data-ui="button"].rounded-full { border-radius: 999px; }
 html[data-skin] [data-ui="button"][data-size="sm"]:not(.rounded-full),
 html[data-skin] [data-ui="button"][data-size="xs"]:not(.rounded-full) { border-radius: 6px; }
-html[data-skin] :is([data-ui="input"], [data-ui="textarea"])[aria-invalid="true"] {
+html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-slot="select-trigger"])[aria-invalid="true"],
+html[data-skin] [data-ui="input-group"]:has([aria-invalid="true"]) {
   border-color: var(--desktop-danger);
   --desktop-focus-shadow: 0 0 0 2px var(--desktop-focus-gap), 0 0 0 3.5px var(--desktop-focus-danger);
 }

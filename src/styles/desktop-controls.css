@@ -146,9 +146,12 @@ html[data-skin] [data-menu-row] svg,
 html[data-skin] .panel-menu [role^="menuitem"] svg { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 html[data-skin] [role="menu"].panel-menu { border-radius: var(--desktop-menu-panel-radius); }
 html[data-skin] [data-desktop-select-option] > span { line-height: inherit; }
-html[data-skin] [data-desktop-select-option] > span:has(> svg) { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
+/* The check column keeps one width whether or not the row is selected. */
+html[data-skin] [data-desktop-select-option] > :is([data-ui="select-check-slot"], span:has(> svg)) { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 html[data-skin][data-desktop-mode] .desktop-project-menu [role="menuitem"] svg { width: 20px; height: 20px; }
 html[data-skin] :is([data-slot="select-item"], [data-slot^="dropdown-menu-"]) svg { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
+/* File glyphs keep the size requested by their label, including inside menus. */
+html[data-skin] [data-ui="file-type-icon"] > svg { max-width: 100%; max-height: 100%; }
 html[data-skin] :is(.popover-frame, .composer-popover, [data-slot^="dropdown-menu-"]) svg[data-menu-arrow] { width: 16px; height: 16px; }
 html[data-skin] [data-slot="dropdown-menu-separator"] { margin-inline: 0; flex-shrink: 0; }
 html[data-skin] [data-slot="select-separator"] { height: 1px; margin-block: 4px; background: var(--color-hairline); flex-shrink: 0; }
@@ -176,7 +179,7 @@ html[data-skin] :is(.popover-frame, .composer-popover, .panel-menu, [data-slot="
   background: var(--cds-fill-ghost-hover);
 }
 html[data-skin] :is([data-menu-row], [data-desktop-select-option], [role^="menuitem"]):focus-visible {
-  outline: 1px solid var(--color-focus);
+  outline: 1px solid var(--color-input-border-hover);
   outline-offset: -1px;
 }
 html[data-skin] [data-desktop-select-trigger]:not(:disabled, [aria-disabled="true"]):hover {
@@ -185,9 +188,10 @@ html[data-skin] [data-desktop-select-trigger]:not(:disabled, [aria-disabled="tru
 html[data-skin] [data-desktop-select-trigger][aria-expanded="true"]:not(:disabled, [aria-disabled="true"]) {
   background: var(--cds-fill-ghost-selected);
 }
-html[data-skin] [data-desktop-select-trigger]:focus-visible {
+html[data-skin] :is([data-desktop-select-trigger], [data-menu-trigger], [data-slot="dropdown-menu-trigger"]):focus-visible:not([aria-invalid="true"]) {
   outline: none;
-  box-shadow: var(--desktop-focus-shadow);
+  border-color: var(--color-input-border-hover);
+  box-shadow: none;
 }
 html[data-skin] button[data-menu-trigger="sidebar"] { width: var(--desktop-icon-sm); height: var(--desktop-icon-sm); border-radius: 6px; position: absolute; }
 html[data-skin] button[data-menu-trigger="sidebar"] svg { width: 16px; height: 16px; }
@@ -204,7 +208,7 @@ html[data-skin] [role^="menuitem"][data-variant="destructive"]:not(:has(> [data-
 
 html[data-skin] .popover-frame:has(.settings-font-select-menu) { width: 224px !important; }
 html[data-skin] .settings-font-select-menu { padding: 4px; }
-html[data-skin] .settings-font-select-menu [data-ui="select-list"] { padding: 0; max-height: 128px; overflow-y: auto; overscroll-behavior: contain; }
+html[data-skin] .settings-font-select-menu [data-ui="select-list"] { padding: 0; overflow-y: auto; overscroll-behavior: contain; }
 html[data-skin] .settings-font-select-menu [data-ui="select-option"] {
   height: auto;
   min-height: 32px;
@@ -304,8 +308,8 @@ html[data-skin] .branch-menu-search {
   background: color-mix(in srgb, var(--color-content) 4%, var(--color-menu));
 }
 html[data-skin] .branch-menu-search:focus-within {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border-color: var(--color-input-border-hover);
+  box-shadow: none;
 }
 html[data-skin] .branch-menu-search > svg { width: 12px; height: 12px; }
 html[data-skin] .branch-menu-search > input { padding: 0; font-size: 13px; line-height: 19px; }
@@ -326,6 +330,8 @@ html[data-skin] .branch-menu[data-submenu="true"] .branch-menu-create[data-creat
 html[data-skin] .branch-menu[data-submenu="true"] [data-code-label] { font-family: var(--font-sans); }
 html[data-skin] .desktop-modal-close { --icon-size: 32px; border-radius: 8px; }
 html[data-skin] :is(.modal-frame, [data-slot="dialog-content"]) { border-radius: var(--desktop-radius-dialog); border-width: var(--desktop-border); }
+/* Dialog actions share one size: the small button height with regular button text, pill-shaped. */
+html[data-skin] [data-ui="dialog-actions"] > [data-ui="button"]:not([data-size^="icon"]) { --button-height: var(--desktop-button-small-height); --button-padding: var(--desktop-button-small-padding); border-radius: 999px; font-size: var(--text-desktop-ui); line-height: var(--text-body-sm--line-height); font-feature-settings: normal; }
 html[data-skin] :is([data-slot="card"], .settings-card) { border-radius: var(--desktop-radius-card); border-color: var(--color-hairline); }
 html[data-skin] .settings-row { border-color: var(--color-hairline); }
 html[data-skin] [data-slot="tabs-trigger"] { font-size: var(--text-desktop-ui); line-height: 20px; transition: color var(--desktop-feedback) var(--desktop-popup-ease), background-color var(--desktop-feedback) var(--desktop-popup-ease); }

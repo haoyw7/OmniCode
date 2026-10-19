@@ -9,7 +9,8 @@ import {
 } from "react";
 import { prettyCwd } from "../../../shared/lib/paths";
 import { type Worktree } from "../model/worktrees";
-import { Modal } from "../../../shared/ui/Modal";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import {
   CircleAlert,
   CloudUpload,
@@ -194,28 +195,19 @@ export function DeleteWorktreeDialog({
             {error}
           </p>
         )}
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onClose}
-            className="rounded-md px-3 py-1.5 hover:bg-content/5 active:scale-[0.97]"
-          >
+        <ModalFooter>
+          <Button variant="secondary" disabled={busy} onClick={onClose}>
             {uiT("Cancel")}
-          </button>
-          <button
-            type="submit"
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-md bg-red-500/20 px-3 py-1.5 font-medium text-red-400 hover:bg-red-500/30 disabled:opacity-40 disabled:hover:bg-red-500/20 active:scale-[0.97]"
-          >
+          </Button>
+          <Button variant="danger" type="submit" disabled={busy}>
             {busy && <Loader className="size-3.5 animate-spin" />}
             {sessionCount && deleteSessions
               ? uiT("Delete worktree and session{value0}", {
                   value0: String(sessionCount === 1 ? "" : "s"),
                 })
               : uiT("Delete worktree")}
-          </button>
-        </div>
+          </Button>
+        </ModalFooter>
       </form>
     </Modal>
   );

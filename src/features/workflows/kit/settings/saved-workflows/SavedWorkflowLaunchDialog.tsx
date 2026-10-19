@@ -292,7 +292,6 @@ export function SavedWorkflowLaunchDialog({
             <Button
               type="button"
               variant="secondary"
-              size="lg"
               disabled={pending}
               onClick={() => onOpenChange(false)}
             >
@@ -300,7 +299,6 @@ export function SavedWorkflowLaunchDialog({
             </Button>
             <Button
               type="submit"
-              size="lg"
               data-icon="inline-start"
               data-testid={TID_WORKFLOW_LAUNCH_SUBMIT}
               disabled={noLocalProject || pending}

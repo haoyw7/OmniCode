@@ -18,6 +18,8 @@ const mergeUiClasses = extendTailwindMerge({
   },
 });
 
+// Resolve conditional class values before merging Tailwind utilities.
+// Custom text-ui sizes participate in font-size conflict resolution.
 export function cn(...inputs: ClassValue[]): string {
   return mergeUiClasses(clsx(inputs));
 }

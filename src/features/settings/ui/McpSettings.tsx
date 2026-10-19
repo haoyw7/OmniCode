@@ -17,7 +17,8 @@ import { revealPath } from "../../../platform/tauri/fs";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
 import type { RecentProject } from "../../projects/model/recents";
-import { Modal } from "../../../shared/ui/Modal";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { Popover } from "../../../shared/ui/Popover";
 import { LAYER } from "../../../shared/lib/layers";
 import {
@@ -260,7 +261,7 @@ function AddServerModal({
             value={name}
             pattern={provider === "opencode" ? undefined : "[A-Za-z0-9_-]*"}
             onChange={(event) => setName(event.target.value)}
-            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 text-sm text-content outline-none placeholder:text-content/35 focus:border-accent/50 focus:ring-2 focus:ring-accent/15"
+            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 text-sm text-content outline-none placeholder:text-content/35 focus:border-input-border-hover"
             placeholder="my-server"
           />
         </label>
@@ -272,7 +273,7 @@ function AddServerModal({
             onChange={(event) => setConfig(event.target.value)}
             rows={7}
             spellCheck={false}
-            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 font-mono text-xs text-content outline-none placeholder:text-content/35 focus:border-accent/50 focus:ring-2 focus:ring-accent/15"
+            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 font-mono text-xs text-content outline-none placeholder:text-content/35 focus:border-input-border-hover"
             placeholder={
               '{"mcpServers":{"my-server":{"command":"npx","args":["-y","example-mcp"]}}}'
             }
@@ -291,22 +292,14 @@ function AddServerModal({
             {error}
           </p>
         ) : null}
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md border border-stroke px-3 py-1.5 text-xs hover:bg-content/3"
-          >
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
             {uiT("Cancel")}
-          </button>
-          <button
-            type="submit"
-            disabled={busy}
-            className="rounded-md border border-stroke px-3 py-1.5 text-xs hover:bg-content/3 disabled:opacity-50"
-          >
+          </Button>
+          <Button variant="primary" type="submit" disabled={busy}>
             {busy ? uiT("Adding…") : uiT("Add server")}
-          </button>
-        </div>
+          </Button>
+        </ModalFooter>
       </form>
     </Modal>
   );

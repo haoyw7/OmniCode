@@ -799,7 +799,7 @@ function AddProviderAccount({
           value={label}
           disabled={running}
           placeholder={uiT("Work or Personal")}
-          className="mt-1.5 h-8 w-full rounded-lg border border-content/10 bg-content/[0.04] px-2.5 text-[11px] text-content outline-none placeholder:text-content/25 focus:border-accent/45 disabled:opacity-55"
+          className="mt-1.5 h-8 w-full rounded-lg border border-content/10 bg-content/[0.04] px-2.5 text-[11px] text-content outline-none placeholder:text-content/25 focus:border-input-border-hover disabled:opacity-55"
           onChange={(event) => setLabel(event.target.value)}
         />
       </label>

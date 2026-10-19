@@ -1,7 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Loader } from "../../../shared/ui/icons";
-import { Modal } from "../../../shared/ui/Modal";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 
 type Props = {
   busy: boolean;
@@ -68,26 +69,17 @@ export function CreateBranchDialog({ busy, error, onCreate, onCancel }: Props) {
           </p>
         ) : null}
 
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onCancel}
-            className="rounded-md px-3 py-1.5 text-[12px] text-content/70 hover:bg-content/5 hover:text-content disabled:opacity-40"
-          >
+        <ModalFooter>
+          <Button variant="secondary" disabled={busy} onClick={onCancel}>
             {uiT("Cancel")}
-          </button>
-          <button
-            type="submit"
-            disabled={!trimmed || busy}
-            className="inline-flex items-center gap-1.5 rounded-md bg-content px-3 py-1.5 text-[12px] font-medium text-background-base hover:bg-content/80 disabled:opacity-40"
-          >
+          </Button>
+          <Button variant="primary" type="submit" disabled={!trimmed || busy}>
             {busy ? (
               <Loader className="size-3.5 animate-spin" />
             ) : null}
             {uiT("Create branch")}
-          </button>
-        </div>
+          </Button>
+        </ModalFooter>
       </form>
     </Modal>
   );

@@ -68,6 +68,30 @@ describe("placePopover", () => {
     ).toBe(200);
   });
 
+  it("aligns the popover's upper-right corner with the anchor's lower-left corner", () => {
+    expect(
+      placePopover(anchor(400, 100, 24, 24), menu, viewport, {
+        align: "before",
+        gap: 0,
+      }),
+    ).toMatchObject({ side: "bottom", left: 200, top: 124, width: 200 });
+  });
+
+  it("preserves before alignment when flipping and clamps it at the viewport edge", () => {
+    expect(
+      placePopover(anchor(400, 560, 24, 24), menu, viewport, {
+        align: "before",
+        gap: 0,
+      }),
+    ).toMatchObject({ side: "top", left: 200, bottom: 40 });
+    expect(
+      placePopover(anchor(100, 100, 24, 24), menu, viewport, {
+        align: "before",
+        gap: 0,
+      }).left,
+    ).toBe(8);
+  });
+
   it("keeps the minimum height when neither side has room", () => {
     expect(
       placePopover(

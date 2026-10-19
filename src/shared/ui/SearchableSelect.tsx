@@ -30,6 +30,8 @@ export type SearchableSelectOption = {
   trailing?: ReactNode;
   disabled?: boolean;
   description?: string;
+  /** Secondary text after the label, such as a file's folder. */
+  detail?: string;
   renderSubmenu?: (handlers: MenuSubmenuHandlers) => ReactNode;
 };
 
@@ -55,11 +57,14 @@ export function SearchableSelect({
   checkPosition = "start",
   commitOnTab = false,
   side = "bottom",
+  gap = 4,
   triggerLabel,
   triggerIcon,
   triggerClassName = "",
   menuAnchor,
   onOpenChange,
+  limit,
+  overflowLabel,
 }: {
   label: string;
   value: string;
@@ -70,7 +75,8 @@ export function SearchableSelect({
   emptyLabel?: string;
   disabled?: boolean;
   layer?: number;
-  variant?: "field" | "transparent" | "row" | "panel" | "pill";
+  /** `icon` shows only `triggerIcon`, for toolbar pickers; `label` names it. */
+  variant?: "field" | "transparent" | "row" | "panel" | "pill" | "icon";
   searchable?: boolean;
   /** Render technical values with the desktop code font, including portal options. */
   codeLabels?: boolean;
@@ -83,12 +89,17 @@ export function SearchableSelect({
   checkPosition?: "start" | "end";
   commitOnTab?: boolean;
   side?: PopoverSide;
+  gap?: number;
   triggerLabel?: string;
   triggerIcon?: ReactNode;
   triggerClassName?: string;
   /** Render only the option panel, anchored to a parent menu row. */
   menuAnchor?: PopoverAnchor;
   onOpenChange?: (open: boolean) => void;
+  /** Render at most this many matches; the rest are reached by typing. */
+  limit?: number;
+  /** Footer for the matches `limit` leaves out. */
+  overflowLabel?: (hidden: number) => string;
 }) {
   const { t: uiT } = useTranslation();
   const reduced = useMotionPreference();
@@ -116,8 +127,10 @@ export function SearchableSelect({
         : [...options],
     [normalizedQuery, options],
   );
+  const shown = limit != null ? filtered.slice(0, limit) : filtered;
+  const hidden = filtered.length - shown.length;
   const activeId =
-    filtered[active] != null ? `${listId}-option-${active}` : undefined;
+    shown[active] != null ? `${listId}-option-${active}` : undefined;
   const popoverLayer =
     layer ??
     (menuAnchor ? LAYER.submenu : root.current?.closest('[role="dialog"]')
@@ -160,9 +173,9 @@ export function SearchableSelect({
   useEffect(() => {
     if (!open) return;
     setActive((index) =>
-      filtered.length === 0 ? 0 : Math.min(index, filtered.length - 1),
+      shown.length === 0 ? 0 : Math.min(index, shown.length - 1),
     );
-  }, [filtered.length, open]);
+  }, [shown.length, open]);
 
   useLayoutEffect(() => {
     if (!open) return;
@@ -191,7 +204,7 @@ export function SearchableSelect({
     const option = options.find((option) => option.value === next);
     if (option?.disabled) return;
     if (option?.renderSubmenu) {
-      const index = filtered.findIndex((entry) => entry.value === next);
+      const index = shown.findIndex((entry) => entry.value === next);
       document.getElementById(`${listId}-option-${index}`)?.click();
       return;
     }
@@ -201,22 +214,22 @@ export function SearchableSelect({
 
   const onSearchKeyDown = (event: ReactKeyboardEvent<HTMLElement>) => {
     if (["ArrowDown", "ArrowUp", "Home", "End", "Enter"].includes(event.key)) event.stopPropagation();
-    if (event.key === "ArrowRight" && filtered[active]?.renderSubmenu && !query) {
+    if (event.key === "ArrowRight" && shown[active]?.renderSubmenu && !query) {
       event.preventDefault();
       event.stopPropagation();
-      pick(filtered[active].value);
+      pick(shown[active].value);
       return;
     }
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      if (filtered.length > 0) {
-        setActive((index) => Math.min(filtered.length - 1, index + 1));
+      if (shown.length > 0) {
+        setActive((index) => Math.min(shown.length - 1, index + 1));
       }
       return;
     }
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      if (filtered.length > 0) {
+      if (shown.length > 0) {
         setActive((index) => Math.max(0, index - 1));
       }
       return;
@@ -228,24 +241,25 @@ export function SearchableSelect({
     }
     if (event.key === "End") {
       event.preventDefault();
-      setActive(Math.max(0, filtered.length - 1));
+      setActive(Math.max(0, shown.length - 1));
       return;
     }
     if (event.key === "Tab" && commitOnTab) {
-      const option = filtered[active];
+      const option = shown[active];
       if (option && !option.disabled && !option.renderSubmenu && option.value !== value) onChange(option.value);
       close(true);
       return;
     }
     if (event.key === "Enter") {
       event.preventDefault();
-      const option = filtered[active];
+      const option = shown[active];
       if (!option) return;
       pick(option.value);
     }
   };
 
   const compact = variant === "pill" || variant === "row";
+  const iconOnly = variant === "icon";
   const longMenu = searchable || options.length > 12;
 
   const content = (
@@ -254,7 +268,8 @@ export function SearchableSelect({
         ref={trigger}
         type="button"
         disabled={disabled}
-        aria-label={`${label}: ${triggerLabel ?? selected?.label ?? placeholder}`}
+        aria-label={iconOnly ? label : `${label}: ${triggerLabel ?? selected?.label ?? placeholder}`}
+        title={iconOnly ? label : undefined}
         aria-expanded={open}
         aria-haspopup={searchable ? "dialog" : "listbox"}
         data-desktop-select-trigger={variant}
@@ -266,7 +281,9 @@ export function SearchableSelect({
           openMenu();
         }}
         className={`${triggerClassName} ${
-          variant === "row"
+          iconOnly
+            ? "grid place-items-center outline-none disabled:opacity-50"
+            : variant === "row"
             ? "inline-flex h-7 max-w-full items-center gap-1 rounded-md bg-content/10 py-0 pr-1.5 pl-2 text-left text-[12px] outline-none hover:bg-content/[0.14] focus-visible:bg-content/[0.14] disabled:opacity-50"
             : variant === "panel"
               ? "flex h-14 w-full items-center justify-end gap-3 rounded-xl border border-content/6 bg-content/6 px-4 text-right text-[14px] font-medium outline-none hover:bg-content/8 focus:border-content/12 focus:bg-content/8 disabled:opacity-50 active:scale-[0.995]"
@@ -277,6 +294,7 @@ export function SearchableSelect({
                   : "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-content/10 bg-background-base px-2.5 text-left text-[13px] outline-none hover:border-content/20 focus:border-content/25 disabled:opacity-50 active:scale-[0.99]"
         }`}
       >
+        {iconOnly ? triggerIcon : <>
         {triggerIcon ?? selected?.icon ? <span className="grid size-4 shrink-0 place-items-center">{triggerIcon ?? selected?.icon}</span> : null}
         <span
           data-code-label={(codeLabels && !!selected) || undefined}
@@ -287,6 +305,7 @@ export function SearchableSelect({
         <motion.span animate={{ rotate: open ? 180 : 0 }} transition={reduced ? immediateTransition : popTransition} className="shrink-0">
           <ChevronDown className={`desktop-select-arrow text-content/45 ${variant === "pill" || variant === "row" ? "size-3" : "size-3.5"}`} />
         </motion.span>
+        </>}
       </button> : null}
       <MenuPanel
         open={open}
@@ -294,7 +313,7 @@ export function SearchableSelect({
         submenu={!!menuAnchor}
         side={menuAnchor ? "right" : side}
         align={align}
-        gap={4}
+        gap={gap}
         width={menuAnchor ? width ?? 260 : menuWidth}
         maxHeight={longMenu || maxHeight !== 240 ? maxHeight : undefined}
         constrainHeight={longMenu || maxHeight !== 240}
@@ -343,8 +362,8 @@ export function SearchableSelect({
           onKeyDown={onSearchKeyDown}
           className="min-h-0 flex-1 overflow-y-auto overscroll-none p-1 outline-none"
         >
-          {filtered.length > 0 ? (
-            filtered.map((option, index) => {
+          {shown.length > 0 ? (
+            shown.map((option, index) => {
               const highlighted = index === active;
               const isSelected = option.value === value;
               const rowProps = {
@@ -364,12 +383,13 @@ export function SearchableSelect({
                 className: `flex w-full items-center gap-2 rounded-md px-2 text-left leading-none ${option.disabled ? "opacity-45" : ""} ${compact ? "h-7 text-[12px]" : "h-8 text-[13px]"} ${highlighted ? "bg-selection text-content" : "text-content/75 hover:bg-content/3 hover:text-content"}`,
               };
               const rowContent = <>
-                  {checkPosition === "start" ? <span className="grid size-3.5 shrink-0 place-items-center">
+                  {checkPosition === "start" ? <span data-ui="select-check-slot" className="grid size-3.5 shrink-0 place-items-center">
                     {isSelected ? <Check data-ui="select-check" className="size-3" strokeWidth={2} /> : null}
                   </span> : null}
                   {option.icon ? <span className="grid size-4 shrink-0 place-items-center">{option.icon}</span> : null}
                   <span data-code-label={codeLabels || undefined} className="min-w-0 flex-1 truncate leading-normal">
                     {option.label}
+                    {option.detail ? <span data-ui="select-option-detail" className="ml-1.5 text-content/45">{option.detail}</span> : null}
                   </span>
                   {checkPosition === "end" && isSelected ? <Check data-ui="select-check" className="size-4 shrink-0" /> : null}
                   {option.renderSubmenu ? <ChevronRight className="size-4 shrink-0 text-content/50" /> : option.trailing}
@@ -378,7 +398,7 @@ export function SearchableSelect({
               return (
                 <Fragment key={option.value}>
                 {option.separatorBefore && index > 0 ? <div role="presentation" data-ui="select-separator" className="my-1 border-t border-stroke" /> : null}
-                {option.group && option.group !== filtered[index - 1]?.group ? <div role="presentation" data-ui="select-group-label" className="px-2 py-1 text-ui-sm font-medium text-content/50">{option.group}</div> : null}
+                {option.group && option.group !== shown[index - 1]?.group ? <div role="presentation" data-ui="select-group-label" className="px-2 py-1 text-ui-sm font-medium text-content/50">{option.group}</div> : null}
                 {option.renderSubmenu ? (
                   <MenuSubmenu
                     label={option.label} disabled={option.disabled}
@@ -396,6 +416,11 @@ export function SearchableSelect({
             </p>
           )}
         </div>
+        {hidden > 0 && overflowLabel ? (
+          <p data-ui="select-overflow" className="shrink-0 border-t border-stroke px-2.5 py-2 text-[12px] text-content/45">
+            {overflowLabel(hidden)}
+          </p>
+        ) : null}
       </MenuPanel>
     </>
   );
@@ -405,7 +430,7 @@ export function SearchableSelect({
   return menuAnchor ? content : (
     <div
       ref={root}
-      className={`${variant === "pill" || variant === "row" ? "relative inline-flex max-w-56 shrink-0" : "relative min-w-0"} ${className}`}
+      className={`${variant === "pill" || variant === "row" ? "relative inline-flex max-w-56 shrink-0" : iconOnly ? "relative inline-flex shrink-0" : "relative min-w-0"} ${className}`}
     >
       {content}
     </div>

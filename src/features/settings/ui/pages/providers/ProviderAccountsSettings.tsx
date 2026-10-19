@@ -649,7 +649,7 @@ function ProviderAccountEditor({
     >
       <div
         data-provider-account-editor-field
-        className="flex items-center pr-1 h-8 min-w-0 flex-1 overflow-hidden rounded-md border border-content/10 bg-content/[0.04] focus-within:border-accent/45"
+        className="flex items-center pr-1 h-8 min-w-0 flex-1 overflow-hidden rounded-md border border-content/10 bg-content/[0.04] focus-within:border-input-border-hover"
       >
         <label className="h-full min-w-0 flex-1">
           <span className="sr-only">{uiT("Account name")}</span>
@@ -700,7 +700,7 @@ function ProviderAccountEditor({
             ? (editor.provider === "codex" ? "~/.codex" : "~/.claude")
             : (editor.provider === "codex" ? "~/.codex-work" : "~/.claude-work")}
           onChange={event => onDataHome?.(event.target.value)}
-          className="mt-1 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 font-mono text-[12px] text-content outline-none focus:border-accent/45 disabled:opacity-50"
+          className="mt-1 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 font-mono text-[12px] text-content outline-none focus:border-input-border-hover disabled:opacity-50"
         />
         <span className="mt-1 block text-[10px] text-content/40">
           {uiT(editor.accountId

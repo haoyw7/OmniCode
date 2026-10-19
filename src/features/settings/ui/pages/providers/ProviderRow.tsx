@@ -271,7 +271,7 @@ function ProviderBinaryControl({
               disabled={working}
               autoFocus
               onChange={(event) => setDraft(event.target.value)}
-              className="mt-1.5 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2 font-mono text-[11px] text-content outline-none placeholder:font-sans placeholder:text-content/35 focus:border-accent/45 disabled:opacity-50"
+              className="mt-1.5 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2 font-mono text-[11px] text-content outline-none placeholder:font-sans placeholder:text-content/35 focus:border-input-border-hover disabled:opacity-50"
             />
             <p className="mt-1.5 text-[10px] text-content/40">
               {uiT(

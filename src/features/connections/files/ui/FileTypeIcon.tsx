@@ -70,6 +70,7 @@ export const FileTypeIcon = memo(function FileTypeIcon({
     return (
       <span
         aria-hidden
+        data-ui="file-type-icon"
         className="inline-block shrink-0"
         style={{ width: size, height: size }}
       />
@@ -79,6 +80,7 @@ export const FileTypeIcon = memo(function FileTypeIcon({
   return (
     <span
       aria-hidden
+      data-ui="file-type-icon"
       className="material-icon inline-block shrink-0 align-middle"
       style={{ width: size, height: size }}
       dangerouslySetInnerHTML={markup}

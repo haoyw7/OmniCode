@@ -5,7 +5,8 @@ import { useProjectBranchesState } from "../hooks/useProjectBranches";
 import { LAYER } from "../../../shared/lib/layers";
 import { createWorktree, type Worktree } from "../model/worktrees";
 import { prettyCwd } from "../../../shared/lib/paths";
-import { Modal } from "../../../shared/ui/Modal";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { Loader } from "../../../shared/ui/icons";
 
@@ -178,24 +179,15 @@ export function CreateWorktreeDialog({
             {error}
           </p>
         )}
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={onCancel}
-            className="rounded-md px-3 py-1.5 text-[12px] hover:bg-content/5 active:scale-[0.97]"
-          >
+        <ModalFooter>
+          <Button variant="secondary" disabled={busy} onClick={onCancel}>
             {uiT("Cancel")}
-          </button>
-          <button
-            type="submit"
-            disabled={busy || !name.trim()}
-            className="inline-flex items-center gap-1.5 rounded-md bg-content px-3 py-1.5 text-[12px] font-medium text-background-base disabled:opacity-40 active:scale-[0.97]"
-          >
+          </Button>
+          <Button variant="primary" type="submit" disabled={busy || !name.trim()}>
             {busy && <Loader className="size-3.5 animate-spin" />}
             {uiT("Create worktree")}
-          </button>
-        </div>
+          </Button>
+        </ModalFooter>
       </form>
     </Modal>
   );

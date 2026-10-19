@@ -120,12 +120,11 @@ export function SavedWorkflowMoveDialog({
             )}
           </div>
           <DialogFooter>
-            <Button type="button" variant="secondary" size="lg" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               {intl.formatMessage({ id: "workflows.hub.launch.cancel" })}
             </Button>
             <Button
               type="submit"
-              size="lg"
               data-testid={TID_WORKFLOW_MOVE_DIALOG_SUBMIT}
               disabled={noTargets || busy}
             >

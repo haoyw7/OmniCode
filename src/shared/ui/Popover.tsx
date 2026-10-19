@@ -83,7 +83,7 @@ const FRAME =
 
 /** Which corner the open animation grows from, so it reads as anchored. */
 function origin(side: PopoverSide, align: PopoverAlign): string {
-  const near = align === "start" ? "0%" : align === "end" ? "100%" : "50%";
+  const near = align === "start" ? "0%" : align === "center" ? "50%" : "100%";
   if (side === "bottom") return `${near} 0%`;
   if (side === "top") return `${near} 100%`;
   return side === "right" ? `0% ${near}` : `100% ${near}`;

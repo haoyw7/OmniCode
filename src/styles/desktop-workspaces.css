@@ -225,7 +225,7 @@ html[data-skin] [data-settings-segmented] {
   --segment-gap: 0px;
   --segment-pad: 2px;
   background: var(--color-inset); min-height: 32px; height: auto; gap: 0; padding: 2px; border-radius: 8px; }
-html[data-skin] [data-settings-segmented] > button { min-height: 28px; padding-inline: 10px; border-radius: 6px; font-size: 13px; line-height: 19px; }
+html[data-skin] [data-settings-segmented] > button { min-height: 28px; padding-inline: 10px; font-size: 13px; line-height: 19px; }
 html[data-skin] .settings-row[data-revealed] { background-color: transparent; }
 @container settings (width < 560px) {
   html[data-skin] [data-settings-content] { padding-inline: 16px; }

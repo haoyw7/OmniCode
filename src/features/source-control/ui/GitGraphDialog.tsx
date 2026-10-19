@@ -133,7 +133,7 @@ export function GitGraphDialog({
       >
         <header
           {...windowDragRegion()}
-          className="desktop-toolbar flex h-10 shrink-0 select-none items-center gap-2 border-b border-stroke px-3"
+          className="desktop-toolbar git-graph-toolbar flex h-10 shrink-0 select-none items-center gap-2 border-b border-stroke pl-3 pr-14"
         >
           <GitBranch className="size-4 shrink-0 text-content/65" />
           <span className="shrink-0 text-[13px] font-medium">

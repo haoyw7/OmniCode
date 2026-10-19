@@ -1,6 +1,7 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useState, type FormEvent } from "react";
-import { Modal } from "../../../shared/ui/Modal";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import type { LinkedWorkItem } from "../model/session";
 import { parseGithubWorkItemUrl } from "../model/sessionWorkItem";
 
@@ -73,30 +74,19 @@ export function LinkSessionWorkItemDialog({
             </span>
           )}
         </label>
-        <div className="flex items-center justify-end gap-2">
+        <ModalFooter>
           {initial ? (
-            <button
-              type="button"
-              onClick={() => onSave(undefined)}
-              className="mr-auto rounded-md px-3 py-1.5 text-red-400 hover:bg-red-400/10 active:scale-[0.97]"
-            >
+            <Button variant="secondary" className="mr-auto" onClick={() => onSave(undefined)}>
               {uiT("Remove link")}
-            </button>
+            </Button>
           ) : null}
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md px-3 py-1.5 hover:bg-content/5 active:scale-[0.97]"
-          >
+          <Button variant="secondary" onClick={onClose}>
             {uiT("Cancel")}
-          </button>
-          <button
-            type="submit"
-            className="rounded-md bg-accent px-3 py-1.5 font-medium text-white hover:brightness-110 active:scale-[0.97]"
-          >
+          </Button>
+          <Button variant="primary" type="submit">
             {initial ? uiT("Update link") : uiT("Link")}
-          </button>
-        </div>
+          </Button>
+        </ModalFooter>
       </form>
     </Modal>
   );

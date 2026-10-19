@@ -4,7 +4,8 @@ import { withStatusToast } from "../../../shared/ui/StatusToast";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Computer, Copy, Loader, RefreshCw, Smartphone } from "../../../shared/ui/icons";
 import type { HostDeviceInfo } from "../model/protocol";
-import { Modal } from "../../../shared/ui/Modal";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { remoteRequest } from "../model/connections";
 import { pairingLink } from "../model/pairingLink";
 import { PairingQrCode } from "./PairingQrCode";
@@ -341,11 +342,11 @@ function AddDeviceDialog({
               </p>
             </div>
           </div>
-          <div className="flex justify-end">
-            <button type="button" onClick={onClose} className={`${pill} bg-foreground text-background hover:opacity-85`}>
+          <ModalFooter>
+            <Button variant="primary" onClick={onClose}>
               {t("Done")}
-            </button>
-          </div>
+            </Button>
+          </ModalFooter>
         </div>
       ) : token ? (
         <div className="flex flex-col gap-3 p-4">
@@ -378,15 +379,11 @@ function AddDeviceDialog({
             </div>
           </div>
           {error ? <p role="alert" className="break-words text-ui-caption text-red-400">{error}</p> : null}
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className={`${pill} bg-foreground text-background hover:opacity-85`}
-            >
+          <ModalFooter>
+            <Button variant="primary" onClick={onClose}>
               {t("Done")}
-            </button>
-          </div>
+            </Button>
+          </ModalFooter>
         </div>
       ) : (
         <form
@@ -431,22 +428,14 @@ function AddDeviceDialog({
               {error}
             </p>
           ) : null}
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onClose}
-              className={`${pill} text-foreground-subtle hover:bg-surface-hover hover:text-foreground`}
-            >
+          <ModalFooter>
+            <Button variant="secondary" disabled={busy} onClick={onClose}>
               {t("Cancel")}
-            </button>
-            <button
-              disabled={busy || !name.trim()}
-              className={`${pill} bg-foreground text-background hover:opacity-85`}
-            >
+            </Button>
+            <Button variant="primary" type="submit" disabled={busy || !name.trim()}>
               {busy ? t("Creating…") : t("Create")}
-            </button>
-          </div>
+            </Button>
+          </ModalFooter>
         </form>
       )}
     </Modal>

@@ -4,7 +4,7 @@
  */
 
 export type PopoverSide = "top" | "bottom" | "left" | "right";
-export type PopoverAlign = "start" | "center" | "end";
+export type PopoverAlign = "start" | "center" | "end" | "before";
 
 export type AnchorRect = {
   left: number;
@@ -21,7 +21,7 @@ export type ViewportSize = { width: number; height: number };
 export type PopoverOptions = {
   /** Preferred side of the anchor; flips only when the space runs out. */
   side?: PopoverSide;
-  /** Cross-axis alignment against the anchor. */
+  /** Cross-axis alignment; `before` puts the popover's end at the anchor's start. */
   align?: PopoverAlign;
   /** Space between anchor and popover. Negative overlaps, as flyouts like to. */
   gap?: number;
@@ -82,6 +82,7 @@ function crossAxisStart(
 ): number {
   if (align === "start") return start;
   if (align === "end") return end - length;
+  if (align === "before") return start - length;
   return start + (end - start) / 2 - length / 2;
 }
 

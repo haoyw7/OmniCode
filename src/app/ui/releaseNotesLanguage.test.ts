@@ -14,6 +14,8 @@ vi.mock("../../features/sessions/ui/AgentMarkdown", () => ({
 vi.mock("../../shared/ui/Modal", () => ({
   Modal: ({ children }: { children: React.ReactNode }) =>
     createElement("div", null, children),
+  ModalFooter: ({ children }: { children: React.ReactNode }) =>
+    createElement("footer", null, children),
 }));
 
 let root: Root;

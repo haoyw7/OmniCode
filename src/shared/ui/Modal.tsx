@@ -6,9 +6,10 @@ import { useTranslation } from "../i18n/useTranslation";
 import { NativePopupHost } from "./NativePopupHost";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "./SurfaceVisibility";
 import { X } from "./icons";
-import { useContext, useEffect, useId, useRef, type ReactNode } from "react";
+import { useContext, useEffect, useId, useRef, type ComponentProps, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useLockOverscroll } from "../hooks/useLockOverscroll";
+import { cn } from "../lib/cn";
 import { LAYER } from "../lib/layers";
 import { GlassBackdrop } from "./GlassBackdrop";
 
@@ -157,6 +158,17 @@ export function ModalPanel({
         </div>
       </motion.div>
     </div>
+  );
+}
+
+/** The dialog's action row; shared desktop styles give its buttons one dialog size. */
+export function ModalFooter({ className, ...props }: ComponentProps<"footer">) {
+  return (
+    <footer
+      data-ui="dialog-actions"
+      className={cn("flex flex-wrap items-center justify-end gap-2", className)}
+      {...props}
+    />
   );
 }
 

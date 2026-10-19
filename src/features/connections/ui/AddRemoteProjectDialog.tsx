@@ -2,6 +2,8 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LAYER } from "../../../shared/lib/layers";
+import { Button } from "../../../shared/ui/forms/Button";
+import { ModalFooter } from "../../../shared/ui/Modal";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { ChevronRight, Folder } from "../../../shared/ui/icons";
 import {
@@ -145,25 +147,20 @@ export function AddRemoteProjectDialog({
                 "No machines are connected yet. Add one in Settings, then open a folder on it here.",
               )}
             </p>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={cancel}
-                className="rounded-md px-3 py-1.5 text-[12px] text-content/70 hover:bg-content/5 hover:text-content"
-              >
+            <ModalFooter>
+              <Button variant="secondary" onClick={cancel}>
                 {uiT("Cancel")}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={() => {
                   cancel();
                   window.dispatchEvent(new Event(OPEN_CONNECTIONS_EVENT));
                 }}
-                className="rounded-md bg-selection px-3 py-1.5 text-[12px] font-medium hover:bg-selection-hover"
               >
                 {uiT("Add a machine")}
-              </button>
-            </div>
+              </Button>
+            </ModalFooter>
           </>
         ) : (
           <>
@@ -234,22 +231,14 @@ export function AddRemoteProjectDialog({
                 {error}
               </p>
             ) : null}
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={cancel}
-                className="rounded-md px-3 py-1.5 text-[12px] text-content/70 hover:bg-content/5 hover:text-content"
-              >
+            <ModalFooter>
+              <Button variant="secondary" onClick={cancel}>
                 {uiT("Cancel")}
-              </button>
-              <button
-                type="submit"
-                disabled={opening || !path.trim()}
-                className="rounded-md bg-selection px-3 py-1.5 text-[12px] font-medium hover:bg-selection-hover disabled:opacity-40"
-              >
+              </Button>
+              <Button variant="primary" type="submit" disabled={opening || !path.trim()}>
                 {opening ? uiT("Opening…") : uiT("Open")}
-              </button>
-            </div>
+              </Button>
+            </ModalFooter>
           </>
         )}
       </form>

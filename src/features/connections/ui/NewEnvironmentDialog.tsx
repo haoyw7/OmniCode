@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { Modal } from "../../../shared/ui/Modal";
+import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Input } from "../../../shared/ui/forms/Input";
 import { Textarea } from "../../../shared/ui/forms/Textarea";
@@ -294,12 +294,12 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
         </div>
         {error ? <p role="alert" className="whitespace-pre-wrap break-words text-ui-sm text-red-400">{error}</p> : null}
       </div>
-      <div className="flex justify-end gap-2 border-t border-border px-4 py-3">
+      <ModalFooter className="border-t border-border px-4 py-3">
         <Button type="button" variant="secondary" onClick={onClose}>{t("Cancel")}</Button>
         <Button type="submit" disabled={!canCreate}>
           {busy ? t("Creating…") : t("Create environment")}
         </Button>
-      </div>
+      </ModalFooter>
     </form>
   );
 }

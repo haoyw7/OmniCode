@@ -2,7 +2,8 @@ import { Omi } from "../../shared/ui/branding/Omi";
 import { useRef, useState } from "react";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { formatBuildVersion } from "../../shared/lib/buildVersion";
-import { Modal } from "../../shared/ui/Modal";
+import { Button } from "../../shared/ui/forms/Button";
+import { Modal, ModalFooter } from "../../shared/ui/Modal";
 import { CalendarDays, Loader } from "../../shared/ui/icons";
 import { AgentMarkdown } from "../../features/sessions/ui/AgentMarkdown";
 import {
@@ -116,35 +117,20 @@ export function UpdateAvailableDialog({
           />
           {t("Automatically download and install future updates")}
         </label>
-        <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={onSkip}
-            disabled={busy}
-            className="mr-auto rounded-lg bg-content/8 px-4 py-2.5 text-[14px] transition-colors hover:bg-content/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-default disabled:opacity-50"
-          >
+        <ModalFooter className="mt-6">
+          <Button variant="secondary" className="mr-auto" onClick={onSkip} disabled={busy}>
             {t("Skip this version")}
-          </button>
-          <button
-            type="button"
-            autoFocus
-            onClick={onClose}
-            className="rounded-lg bg-content/8 px-4 py-2.5 text-[14px] transition-colors hover:bg-content/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
+          </Button>
+          <Button variant="secondary" autoFocus onClick={onClose}>
             {t("Later")}
-          </button>
-          <button
-            type="button"
-            onClick={() => void install()}
-            disabled={busy}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-[14px] text-primary-foreground transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-60"
-          >
+          </Button>
+          <Button variant="primary" onClick={() => void install()} disabled={busy}>
             {busy ? (
               <Loader className="size-4 animate-spin" aria-hidden />
             ) : null}
             {downloadLabel}
-          </button>
-        </div>
+          </Button>
+        </ModalFooter>
       </div>
     </Modal>
   );

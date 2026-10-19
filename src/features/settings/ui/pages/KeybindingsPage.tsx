@@ -172,7 +172,7 @@ function ShortcutEditor({
           onFocus={beginRecording}
           onClick={beginRecording}
           onBlur={() => setRecording(false)}
-          className={`h-6 w-28 shrink-0 truncate rounded-md border bg-transparent px-1.5 py-0 font-mono text-[11px] leading-none outline-none focus:border-accent ${
+          className={`h-6 w-28 shrink-0 truncate rounded-md border bg-transparent px-1.5 py-0 font-mono text-[11px] leading-none outline-none focus:border-input-border-hover ${
             busy ? "opacity-50" : ""
           } ${
             display === null

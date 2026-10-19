@@ -1043,9 +1043,6 @@ html.theme-light {
   border-color: var(--composer-border-hover);
 }
 
-html.has-user-accent
-  [data-composer-layout="desktop"]
-  [data-ui="message-input"]:focus-within,
 [data-composer-layout="desktop"]
   [data-ui="message-input"][data-composer-file-drag] {
   border-color: var(--user-accent-color, var(--color-accent));
@@ -1383,7 +1380,7 @@ html.has-user-accent
 }
 
 [data-composer-layout="desktop"] .composer-footer button:focus-visible {
-  outline: 1px solid var(--user-accent-color, var(--color-accent));
+  outline: 1px solid var(--color-input-border-hover);
   outline-offset: 2px;
 }
 

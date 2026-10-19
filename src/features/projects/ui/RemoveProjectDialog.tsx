@@ -2,6 +2,8 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LAYER } from "../../../shared/lib/layers";
+import { Button } from "../../../shared/ui/forms/Button";
+import { ModalFooter } from "../../../shared/ui/Modal";
 import { prettyCwd } from "../../../shared/lib/paths";
 import { projectSessionCount } from "../model/projectData";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
@@ -91,23 +93,14 @@ export function RemoveProjectDialog({
           </p>
         </div>
 
-        <div className="flex justify-end gap-2">
-          <button
-            ref={cancelRef}
-            type="button"
-            onClick={onCancel}
-            className="rounded-md px-3 py-1.5 text-[12px] text-content/70 hover:bg-content/5 hover:text-content"
-          >
+        <ModalFooter>
+          <Button ref={cancelRef} variant="secondary" onClick={onCancel}>
             {uiT("Cancel")}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-md bg-red-500/20 px-3 py-1.5 text-[12px] font-medium text-red-300 hover:bg-red-500/30"
-          >
+          </Button>
+          <Button variant="danger" onClick={onConfirm}>
             {uiT("Delete")}
-          </button>
-        </div>
+          </Button>
+        </ModalFooter>
       </div>
     </div>,
     document.body,

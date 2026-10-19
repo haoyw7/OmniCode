@@ -19,7 +19,7 @@ import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 
 const fieldClass =
-  "h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 text-[12px] text-content outline-none placeholder:text-content/35 focus:border-accent/45 disabled:opacity-50";
+  "h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 text-[12px] text-content outline-none placeholder:text-content/35 focus:border-input-border-hover disabled:opacity-50";
 
 export function TitleModelSettings({
   revealed = false,
