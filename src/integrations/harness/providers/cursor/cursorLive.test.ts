@@ -155,7 +155,7 @@ describe("cursor background subagents", () => {
       update({ sessionUpdate: "usage_update", used: 100_000, size: 200_000 });
       reply(promptId, { stopReason: "end_turn" });
       await turn;
-      expect(events.filter(e => e.type === "turn.metrics").at(-1)?.generationSample).toBeNull();
+      expect(events.filter(e => e.type === "turn.metrics").at(-1)?.generationSample).toMatchObject({ outputTokens: 4, durationMs: 2_000, tokenSource: "text-estimate", method: "stream-observed", estimator: "text-heuristic-v1" });
     } finally { clock.mockRestore(); }
   });
 

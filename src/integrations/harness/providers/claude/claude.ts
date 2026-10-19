@@ -1,7 +1,9 @@
 import {
   resetGenerationMetrics,
   measureGenerationTurn,
-  reportGenerationTotals,
+  observeGenerationDelta,
+  reportObservedGenerationUsage,
+  invalidateObservedGeneration,
 } from "../../core/generationMetrics";
 import { botContextKey } from "../../core/botContext";
 import { readClaudeNativeTitle } from "../../core/child";
@@ -625,6 +627,7 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
 }
 
 async function runTurn(live: Live, input: SendTurnInput): Promise<void> {
+  generationMessageIds.delete(live);
   const effort = input.modelSettings?.effort;
   const message = buildClaudeUserMessage({
     text: input.text,
@@ -841,6 +844,7 @@ function handleLine(sessionId: string, live: Live, line: string): void {
 
 type ChildStream = { messageId?: string; tools: Map<number, InFlightTool> };
 const childStreams = new WeakMap<Live, Map<string, ChildStream>>();
+const generationMessageIds = new WeakMap<Live, string>();
 function childStream(live: Live, parent: string): ChildStream {
   let streams = childStreams.get(live);
   if (!streams) { streams = new Map(); childStreams.set(live, streams); }
@@ -857,10 +861,22 @@ function emitAgentInfo(live: Live, tool: InFlightTool): void {
 }
 
 function handleStreamEvent(live: Live, rec: Record<string, unknown>): void {
+  const receivedAt = performance.now();
   const subagent = isSubagentMessage(rec);
   const parentId = stringField(rec, "parent_tool_use_id");
   const stream = parentId ? childStream(live, parentId) : undefined;
   const raw = asRecord(rec.event);
+  if (!subagent && raw?.type === "message_start") {
+    const id = stringField(asRecord(raw.message), "id");
+    if (id) generationMessageIds.set(live, id);
+    else generationMessageIds.delete(live);
+  }
+  const generationId = generationMessageIds.get(live);
+  if (!subagent && generationId && raw?.type === "message_delta") {
+    const usage = asRecord(raw.usage);
+    reportObservedGenerationUsage(live.onEvent, generationId,
+      typeof usage?.output_tokens === "number" ? usage.output_tokens : undefined);
+  }
   if (stream && raw?.type === "message_start") {
     stream.messageId = stringField(asRecord(raw.message), "id");
     stream.tools.clear();
@@ -873,6 +889,7 @@ function handleStreamEvent(live: Live, rec: Record<string, unknown>): void {
         kind: delta.kind === "assistant" ? "message" : "reasoning", text: delta.text, append: true, streaming: true });
       return;
     }
+    observeGenerationDelta(live.onEvent, delta.text, generationId, receivedAt);
     if (delta.kind === "assistant") {
       closePendingAssistantMessage(live);
       live.emittedAssistant = joinStreamText(live.emittedAssistant, delta.text);
@@ -928,6 +945,7 @@ function handleStreamEvent(live: Live, rec: Record<string, unknown>): void {
       }
       return;
     }
+    observeGenerationDelta(live.onEvent, jsonDelta.partial, generationId, receivedAt);
     const tool = live.toolsByIndex.get(jsonDelta.index);
     if (!tool) return;
     tool.partialJson += jsonDelta.partial;
@@ -969,9 +987,16 @@ function handleAssistant(live: Live, rec: Record<string, unknown>): void {
   if (snapshot) closePendingAssistantMessage(live);
   const extra = snapshotRemainder(live.emittedAssistant, snapshot);
   if (extra) {
+    invalidateObservedGeneration(live.onEvent, stringField(asRecord(rec.message), "id"));
     live.emittedAssistant = joinStreamText(live.emittedAssistant, extra);
     live.onEvent({ type: "message.delta", text: extra });
   }
+
+  const message = asRecord(rec.message);
+  const messageId = stringField(message, "id");
+  const outputTokens = asRecord(message?.usage)?.output_tokens;
+  if (messageId && typeof outputTokens === "number")
+    reportObservedGenerationUsage(live.onEvent, messageId, outputTokens);
 
   for (const use of assistantToolUses(rec)) {
     const streamed = live.toolsById.get(use.id);
@@ -1122,14 +1147,8 @@ function handleResult(live: Live, rec: Record<string, unknown>): void {
     const context = contextFromResult(rec);
     if (context) live.onEvent({ type: "context", ...context });
   }
-  // Claude reports the sum of API request durations separately from wall time.
-  const usage = asRecord(rec.usage);
-  if (!live.cancelled) {
-    reportGenerationTotals(live.onEvent, {
-      outputTokens: typeof usage?.output_tokens === "number" ? usage.output_tokens : undefined,
-      durationMs: typeof rec.duration_api_ms === "number" ? rec.duration_api_ms : undefined,
-    });
-  }
+  // Result totals can include child work and initial waits. Generation samples
+  // are paired with the parent's streamed message_delta usage instead.
   const metrics = turnMetricsFromResult(rec);
   if (metrics) live.onEvent({ type: "turn.metrics", ...metrics });
 

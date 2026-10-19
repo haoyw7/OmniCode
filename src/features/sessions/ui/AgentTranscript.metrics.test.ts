@@ -11,7 +11,7 @@ const sample: GenerationSample = {
   outputTokens: 76,
   durationMs: 227_000,
   tokenSource: "provider",
-  method: "request-total",
+  method: "stream-observed",
   scope: "turn",
 };
 function markup(element: ReactElement) {
@@ -34,11 +34,27 @@ it("shows a fractional speed without using whole-turn elapsed time", () => {
   setUiLanguage("en");
   const markup = render({ generationSample: sample });
   expect(markup).toContain("0.33 tok/s");
-  expect(markup).toContain("Total output tokens ÷ total LLM request time");
+  expect(markup).toContain("Estimated turn TPS 0.33 tok/s");
+  expect(markup).toContain("excludes initial waits and tool execution");
+});
+it("keeps older request totals distinct from generation TPS", () => {
+  setUiLanguage("en");
+  const result = render({ generationSample: { ...sample, method: "request-total" } });
+  expect(result).toContain("Request throughput 0.33 tok/s");
+  expect(result).toContain("Total output tokens ÷ total LLM request time");
+  expect(result).not.toContain("TPS");
 });
 it("shows very small positive rates", () => {
   setUiLanguage("en");
   expect(render({ generationSample: { ...sample, outputTokens: 1 } })).toContain("<0.01 tok/s");
+});
+it("identifies text-estimated token counts instead of claiming provider usage", () => {
+  setUiLanguage("en");
+  expect(render({ generationSample: { ...sample, tokenSource: "text-estimate", estimator: "text-heuristic-v1" } }))
+    .toContain("Tokens estimated from streamed text; provider output usage unavailable");
+  setUiLanguage("zh-CN");
+  expect(render({ generationSample: { ...sample, tokenSource: "text-estimate", estimator: "text-heuristic-v1" } }))
+    .toContain("token 按流式文本估算");
 });
 it("does not invent a speed for history or malformed samples", () => {
   setUiLanguage("en");
@@ -54,7 +70,7 @@ it("does not invent a speed for history or malformed samples", () => {
 it("localizes the shared desktop/mobile badge", () => {
   setUiLanguage("zh-CN");
   const metrics = { generationSample: sample };
-  expect(render(metrics)).toContain("本轮 TPS 0.33 tok/s");
+  expect(render(metrics)).toContain("本轮估算 TPS 0.33 tok/s");
   const mobile = markup(
     createElement(
       TranscriptPlatformContext.Provider,
@@ -70,5 +86,6 @@ it("localizes the shared desktop/mobile badge", () => {
       createElement(TurnMetricsBadge, { metrics }),
     ),
   );
-  expect(mobile).toContain("本轮 TPS 0.33 tok/s");
+  expect(mobile).toContain("本轮估算 TPS 0.33 tok/s");
+  expect(mobile).toContain("不含首段等待和工具执行");
 });

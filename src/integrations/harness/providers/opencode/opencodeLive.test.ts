@@ -206,7 +206,7 @@ describe("OpenCode subagent trails", () => {
     state: { status: "running", title: `Task ${callID}`, metadata: { sessionId: child } },
   });
 
-  it("leaves TPS unavailable when message usage has no API request duration", async () => {
+  it("pairs OpenCode message usage with observed streaming time", async () => {
     const events: HarnessEvent[] = [];
     const { done } = await startTurn(events);
     let now = 1_000;
@@ -221,7 +221,38 @@ describe("OpenCode subagent trails", () => {
       idle();
       await done;
       const samples = events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined);
-      expect(samples.at(-1)?.generationSample).toBeNull();
+      expect(samples.at(-1)?.generationSample).toMatchObject({ outputTokens: 20, durationMs: 2_000, tokenSource: "provider", method: "stream-observed" });
+    } finally { clock.mockRestore(); }
+  });
+
+  it("keeps OpenCode request spans separate and ignores child usage and replayed snapshots", async () => {
+    const events: HarnessEvent[] = [];
+    const { done } = await startTurn(events);
+    let now = 1_000;
+    const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
+    const delta = (id: string, text: string) => onSseEvent?.({ type: "message.part.delta",
+      properties: { sessionID: "session_1", partID: id, delta: text } });
+    const usage = (id: string, sessionID = "session_1") => onSseEvent?.({ type: "message.updated",
+      properties: { sessionID, info: { id, sessionID, role: "assistant", time: { completed: now },
+        tokens: { output: 20, reasoning: 10 } } } });
+    try {
+      for (const [index, id] of ["m1", "m2"].entries()) {
+        message("session_1", id);
+        part("session_1", { id, messageID: id, type: "reasoning", text: "" });
+        now = 10_000 + index * 200_000;
+        delta(id, "Thinking ");
+        now += 2_000;
+        delta(id, "done");
+        now += 10_000;
+        part("session_1", { id, messageID: id, type: "reasoning", text: "Thinking done", time: { end: now } });
+        usage(id);
+        usage(id);
+      }
+      usage("child", "child-session");
+      idle();
+      await done;
+      expect(events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined).at(-1)?.generationSample)
+        .toMatchObject({ outputTokens: 60, durationMs: 4_000, tokenSource: "provider", method: "stream-observed" });
     } finally { clock.mockRestore(); }
   });
 

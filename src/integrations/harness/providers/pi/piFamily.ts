@@ -1,7 +1,8 @@
 import {
   measureGenerationTurn,
   generationRequestStarted,
-  reportGenerationUsage,
+  generationStreamDelta,
+  reportGenerationStreamUsage,
   resetGenerationMetrics,
 } from "../../core/generationMetrics";
 import { botContextKey } from "../../core/botContext";
@@ -811,6 +812,7 @@ function handleFrame(
   live: Live,
   rec: Record<string, unknown>,
 ): void {
+  const receivedAt = performance.now();
   if (flavor.id === "omp" && rec.type === "available_commands_update") {
     try {
       live.availableCommands = ompCommandsFromRpcData(rec);
@@ -966,16 +968,16 @@ function handleFrame(
   if (type === "message_end" && asRecord(rec.message)?.role === "assistant") {
     const message = asRecord(rec.message)!;
     const usage = asRecord(message.usage) ?? asRecord(rec.usage);
-    // Pi and OMP expose request duration under different names. Both include TTFT.
-    const duration = flavor.id === "omp" ? message.duration : message.durationMs;
-    reportGenerationUsage(live.onEvent, {
-      outputTokens: typeof usage?.output === "number" ? usage.output : undefined,
-      durationMs: typeof duration === "number" ? duration : undefined,
-    });
+    // Native durationMs (Pi) / duration (OMP) includes the initial wait.
+    reportGenerationStreamUsage(
+      live.onEvent,
+      typeof usage?.output === "number" ? usage.output : undefined,
+    );
   }
 
   const delta = assistantDeltaFromEvent(rec);
   if (delta) {
+    generationStreamDelta(live.onEvent, delta.text, receivedAt);
     if (delta.kind === "text") {
       live.emittedAssistant += delta.text;
       live.onEvent({ type: "message.delta", text: delta.text });
@@ -992,6 +994,7 @@ function handleFrame(
 
   const jsonDelta = toolCallDeltaFromEvent(rec);
   if (jsonDelta) {
+    generationStreamDelta(live.onEvent, jsonDelta.delta, receivedAt);
     const tool = live.toolsByIndex.get(jsonDelta.index);
     if (tool) {
       tool.partialJson += jsonDelta.delta;

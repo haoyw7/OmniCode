@@ -1,6 +1,7 @@
 import {
   resetGenerationMetrics,
   measureGenerationTurn,
+  emitAcpGenerationEvent,
 } from "../../core/generationMetrics";
 import { nativeAcpTitleEvent, noteAcpTitleCapabilities, readAcpSessionTitle, readAcpTitleInProcess } from "../../core/nativeTitles";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
@@ -500,6 +501,7 @@ function ignoreUnsupportedControl(method: string, error: unknown): void {
 }
 
 function handleNotification(live: Live, method: string, params: unknown) {
+  const receivedAt = performance.now();
   if (method === "session/update") {
     const outer = asRecord(params);
     const update = asRecord(outer?.update) ?? outer;
@@ -526,7 +528,7 @@ function handleNotification(live: Live, method: string, params: unknown) {
     ) {
       live.onEvent({ ...event, window: live.contextWindow });
     } else {
-      live.onEvent(event);
+      emitAcpGenerationEvent(live.onEvent, event, updateParams, receivedAt, live.acpSessionId);
     }
   }
 }

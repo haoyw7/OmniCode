@@ -1,6 +1,7 @@
 import {
   resetGenerationMetrics,
   measureGenerationTurn,
+  emitAcpGenerationEvent,
 } from "../../core/generationMetrics";
 import { nativeAcpTitleEvent, noteAcpTitleCapabilities, readAcpSessionTitle, readAcpTitleInProcess } from "../../core/nativeTitles";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
@@ -786,12 +787,13 @@ async function handlePermission(live: Live, id: number, params: unknown) {
 }
 
 function handleSessionUpdate(live: Live, params: unknown) {
+  const receivedAt = performance.now();
   const rec = asRecord(params);
   const update = asRecord(rec?.update) ?? rec;
   if (!update) return;
   const emit = (event: HarnessEvent) => {
     for (const routed of live.subagents.route(params, [event]))
-      live.onEvent(routed);
+      emitAcpGenerationEvent(live.onEvent, routed, params, receivedAt, live.acpSessionId);
   };
   const kind = String(
     update.sessionUpdate ?? update.session_update ?? update.type ?? "",
@@ -815,7 +817,7 @@ function handleSessionUpdate(live: Live, params: unknown) {
     );
     if (text) {
       for (const event of live.subagents.route(params, [{ type: "message.delta", text }])) {
-        live.onEvent(event);
+        emitAcpGenerationEvent(live.onEvent, event, params, receivedAt, live.acpSessionId);
       }
     }
     return;

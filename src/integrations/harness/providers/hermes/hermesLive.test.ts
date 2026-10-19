@@ -100,7 +100,7 @@ describe("Hermes live ACP sequence", () => {
     await stopHermesSession(sessionId);
   });
 
-  it("leaves TPS unavailable without LLM request durations", async () => {
+  it("estimates TPS from streamed output without request or completion waits", async () => {
     const events: HarnessEvent[] = [];
     const turn = sendHermesTurn({ sessionId: "rate-test", cwd: "/repo", model: "hermes:nous:hermes-4", runtimeMode: "supervised", text: "Hello", onEvent: e => events.push(e) });
     await initialize();
@@ -117,7 +117,7 @@ describe("Hermes live ACP sequence", () => {
       chunk("世界");
       reply(parse().find(m => m.method === "session/prompt").id, { stopReason: "end_turn" });
       await turn;
-      expect(events.filter(e => e.type === "turn.metrics").at(-1)?.generationSample).toBeNull();
+      expect(events.filter(e => e.type === "turn.metrics").at(-1)?.generationSample).toMatchObject({ outputTokens: 4, durationMs: 2_000, tokenSource: "text-estimate", method: "stream-observed", estimator: "text-heuristic-v1" });
     } finally { clock.mockRestore(); await stopHermesSession("rate-test"); }
   });
 

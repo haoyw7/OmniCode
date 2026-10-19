@@ -1,9 +1,10 @@
-/** Sum of output tokens divided by the matching sum of LLM request durations. */
+/** Provider output tokens over matching request or observed streaming durations. */
 export type GenerationSample = {
   outputTokens: number;
   durationMs: number;
-  tokenSource: "provider";
-  method: "request-total";
+  tokenSource: "provider" | "text-estimate";
+  estimator?: "text-heuristic-v1";
+  method: "request-total" | "stream-observed";
   scope: "turn";
 };
 
@@ -12,7 +13,7 @@ export function sanitizeGenerationSample(
 ): GenerationSample | null {
   if (!value || typeof value !== "object") return null;
   const rec = value as Record<string, unknown>;
-  // Old stream samples cannot be reconstructed as request totals from history.
+  // Legacy text estimates for only the last segment are not whole-turn samples.
   if (
     typeof rec.outputTokens !== "number" ||
     !Number.isSafeInteger(rec.outputTokens) ||
@@ -20,17 +21,20 @@ export function sanitizeGenerationSample(
     typeof rec.durationMs !== "number" ||
     !Number.isFinite(rec.durationMs) ||
     rec.durationMs <= 0 ||
-    rec.method !== "request-total" ||
+    (rec.method !== "request-total" && rec.method !== "stream-observed") ||
     rec.scope !== "turn" ||
-    rec.tokenSource !== "provider"
+    (rec.tokenSource !== "provider" && rec.tokenSource !== "text-estimate") ||
+    (rec.tokenSource === "text-estimate" &&
+      (rec.method !== "stream-observed" || rec.estimator !== "text-heuristic-v1"))
   )
     return null;
   return {
     outputTokens: rec.outputTokens,
     durationMs: rec.durationMs,
-    tokenSource: "provider",
-    method: "request-total",
+    tokenSource: rec.tokenSource,
+    method: rec.method,
     scope: "turn",
+    ...(rec.tokenSource === "text-estimate" ? { estimator: "text-heuristic-v1" as const } : {}),
   };
 }
 

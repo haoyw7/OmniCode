@@ -163,7 +163,7 @@ describe.each(providers)("$id offline ACP transport", (provider) => {
       update({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: "世界" } });
       finishPrompt();
       await turn;
-      expect(events.filter(e => e.type === "turn.metrics").at(-1)?.generationSample).toBeNull();
+      expect(events.filter(e => e.type === "turn.metrics").at(-1)?.generationSample).toMatchObject({ outputTokens: 6, durationMs: 3_000, tokenSource: "text-estimate", method: "stream-observed" });
     } finally { clock.mockRestore(); }
   });
 

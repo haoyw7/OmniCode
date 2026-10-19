@@ -930,9 +930,13 @@ it("saves the exact CI context alongside the compact user message", () => {
   });
 });
 
-it("round-trips generation samples while retaining legacy metrics and clearing invalid samples", () => {
+it.each([
+  { method: "request-total", tokenSource: "provider" },
+  { method: "stream-observed", tokenSource: "provider" },
+  { method: "stream-observed", tokenSource: "text-estimate", estimator: "text-heuristic-v1" },
+] as const)("round-trips $method/$tokenSource generation samples while retaining legacy metrics and clearing invalid samples", (source) => {
   const session = newSession("cursor", "/repo");
-  const sample = { outputTokens: 4, durationMs: 1_000, tokenSource: "provider" as const, method: "request-total" as const, scope: "turn" as const };
+  const sample = { outputTokens: 4, durationMs: 1_000, ...source, scope: "turn" as const };
   session.blocks = [{ id: "u", role: "user", text: "Hello", turnMetrics: { generationSample: sample } }];
   const saved = JSON.parse(JSON.stringify(sanitizeSessionForPersist(session)));
   expect(sanitizeSessionForPersist(saved).blocks[0].turnMetrics).toEqual({ generationSample: sample });

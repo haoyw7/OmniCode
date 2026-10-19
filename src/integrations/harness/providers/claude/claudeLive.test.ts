@@ -287,7 +287,40 @@ afterEach(async () => {
 });
 
 describe("claude native context reads", () => {
-  it("uses total output and API duration, excluding wall time and chunk delivery timing", async () => {
+  it("accumulates parent reasoning and tool-argument spans without child tokens or tool waits", async () => {
+    const { events, turn } = await startTurn("claude-rate-multi");
+    let now = 1_000;
+    const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
+    const stream = (event: unknown, parent_tool_use_id?: string) =>
+      emit({ type: "stream_event", session_id: "sess_1", parent_tool_use_id, event });
+    try {
+      stream({ type: "message_start", message: { id: "m1" } });
+      now = 9_000;
+      stream({ type: "content_block_delta", index: 0, delta: { type: "thinking_delta", thinking: "Consider" } });
+      now = 10_000;
+      stream({ type: "content_block_delta", index: 1, delta: { type: "input_json_delta", partial_json: "{}" } });
+      now = 20_000;
+      stream({ type: "message_delta", usage: { output_tokens: 100 } });
+      stream({ type: "message_start", message: { id: "child" } }, "tool-child");
+      stream({ type: "message_delta", usage: { output_tokens: 9_999 } }, "tool-child");
+      now = 200_000;
+      stream({ type: "message_start", message: { id: "m2" } });
+      now = 210_000;
+      stream({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text: "Hello " } });
+      now = 213_000;
+      stream({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text: "world" } });
+      now = 220_000;
+      stream({ type: "message_delta", usage: { output_tokens: 300 } });
+      stream({ type: "message_delta", usage: { output_tokens: 300 } });
+      emit({ type: "result", subtype: "success", session_id: "sess_1",
+        usage: { output_tokens: 10_399 }, duration_api_ms: 220_000 });
+      await turn;
+      expect(events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined).at(-1)?.generationSample)
+        .toMatchObject({ outputTokens: 400, durationMs: 4_000, tokenSource: "provider", method: "stream-observed" });
+    } finally { clock.mockRestore(); await stopClaudeSession("claude-rate-multi"); }
+  });
+
+  it("pairs Claude parent message usage with streaming time instead of result totals", async () => {
     const { events, turn } = await startTurn("claude-rate");
     let now = 1_000;
     const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
@@ -301,7 +334,7 @@ describe("claude native context reads", () => {
       emit({ type: "result", subtype: "success", session_id: "sess_1", usage: { output_tokens: 500 }, duration_api_ms: 10_000, duration_ms: 200_000 });
       await turn;
       const samples = events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined);
-      expect(samples.at(-1)?.generationSample).toMatchObject({ outputTokens: 500, durationMs: 10_000, tokenSource: "provider", method: "request-total", scope: "turn" });
+      expect(samples.at(-1)?.generationSample).toMatchObject({ outputTokens: 20, durationMs: 2_000, tokenSource: "provider", method: "stream-observed", scope: "turn" });
     } finally { clock.mockRestore(); await stopClaudeSession("claude-rate"); }
   });
 

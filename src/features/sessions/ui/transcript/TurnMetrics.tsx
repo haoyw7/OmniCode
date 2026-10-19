@@ -131,15 +131,20 @@ export function TurnMetricsBadge({ metrics }: { metrics?: TurnMetrics }) {
   if (!metrics || !hasTurnMetrics(metrics)) return null;
 
   const sample = sanitizeGenerationSample(metrics.generationSample);
+  const streaming = sample?.method === "stream-observed";
   const headline = [
     metrics.cacheHitPercent != null
       ? uiT("Cache hit {percent}%", { percent: Math.round(metrics.cacheHitPercent) })
       : null,
     sample
-      ? uiT("Turn TPS {rate} tok/s", { rate: formatGenerationRate(sample, language) })
+      ? uiT(streaming ? "Estimated turn TPS {rate} tok/s" : "Request throughput {rate} tok/s", { rate: formatGenerationRate(sample, language) })
       : uiT("Generation rate unavailable"),
   ].filter(Boolean).join(" · ");
-  const sampleDetail = sample ? uiT("Total output tokens ÷ total LLM request time") : "";
+  const sampleDetail = sample ? uiT(streaming
+    ? "Output tokens ÷ observed streaming time; excludes initial waits and tool execution"
+    : "Total output tokens ÷ total LLM request time") : "";
+  const tokenDetail = sample?.tokenSource === "text-estimate"
+    ? uiT("Tokens estimated from streamed text; provider output usage unavailable") : "";
   const usageDetail = [
     metrics.inputTokens != null
       ? uiT("{count} input", { count: formatMetricCount(metrics.inputTokens) }) : null,
@@ -149,7 +154,7 @@ export function TurnMetricsBadge({ metrics }: { metrics?: TurnMetrics }) {
       ? uiT("{count} cached", { count: formatMetricCount(metrics.cacheReadTokens) }) : null,
   ].filter(Boolean).join(" · ");
   const detail = usageDetail ? uiT("Provider usage: {usage}", { usage: usageDetail }) : "";
-  const label = [headline, sampleDetail, detail].filter(Boolean).join(". ");
+  const label = [headline, sampleDetail, tokenDetail, detail].filter(Boolean).join(". ");
 
   return (
     <div
@@ -180,6 +185,7 @@ export function TurnMetricsBadge({ metrics }: { metrics?: TurnMetrics }) {
         >
           <div className="text-[12px] leading-4 text-content">{headline}</div>
           {sampleDetail ? <div className="text-[11px] leading-4 text-content/50">{sampleDetail}</div> : null}
+          {tokenDetail ? <div className="text-[11px] leading-4 text-content/50">{tokenDetail}</div> : null}
           {detail ? (
             <div className="text-[11px] leading-4 text-content/50">
               {detail}

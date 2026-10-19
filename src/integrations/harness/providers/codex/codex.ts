@@ -1,5 +1,7 @@
 import {
   measureGenerationTurn,
+  observeGenerationDelta,
+  invalidateObservedGeneration,
   resetGenerationMetrics,
 } from "../../core/generationMetrics";
 import { botContextKey } from "../../core/botContext";
@@ -510,6 +512,7 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
     input.sessionId,
     {
       onNotification: (method, params) => {
+        const receivedAt = performance.now();
         const live = liveRef.current;
         if (!live || live.muteUpdates) return;
         if (live.notificationQueue) {
@@ -524,12 +527,12 @@ async function ensureLive(input: HarnessSessionInput): Promise<Live> {
               ) {
                 return;
               }
-              return handleNotification(live, method, params);
+              return handleNotification(live, method, params, receivedAt);
             });
           trackNotificationQueue(live, queued.catch(() => undefined));
           return;
         }
-        const result = handleNotification(live, method, params);
+        const result = handleNotification(live, method, params, receivedAt);
         if (!result) return;
         trackNotificationQueue(live, result.catch(() => undefined));
       },
@@ -801,6 +804,7 @@ function handleNotification(
   live: Live,
   method: string,
   params: unknown,
+  receivedAt = performance.now(),
 ): void | Promise<void> {
   if (method === "thread/name/updated") {
     const title = asRecord(params);
@@ -875,11 +879,11 @@ function handleNotification(
     }
     trackAgentRow(live, event);
     if (event.type === "message.delta") {
-      publishCodexText(live, "assistant", event.text, snapshot, itemId);
+      publishCodexText(live, "assistant", event.text, snapshot, itemId, receivedAt);
       continue;
     }
     if (event.type === "reasoning.delta") {
-      publishCodexText(live, "reasoning", event.text, snapshot, itemId);
+      publishCodexText(live, "reasoning", event.text, snapshot, itemId, receivedAt);
       continue;
     }
     live.onEvent(event);
@@ -1275,6 +1279,7 @@ function publishCodexText(
   text: string,
   snapshot: boolean,
   itemId: string | undefined,
+  receivedAt: number,
 ): void {
   const emitted =
     role === "assistant"
@@ -1288,6 +1293,10 @@ function publishCodexText(
   // These are deltas (or a snapshot's missing suffix), so repeated tokens count.
   // Retain completed items until the turn ends to ignore repeated completions.
   emitted.set(key, already + emit);
+  // Token snapshots have no request identity, so use only observed output here;
+  // never attach a replayed last-request count to a later output span.
+  if (snapshot) invalidateObservedGeneration(live.onEvent, itemId);
+  else observeGenerationDelta(live.onEvent, emit, itemId, receivedAt);
   if (role === "assistant") {
     live.onEvent({ type: "message.delta", text: emit });
     return;

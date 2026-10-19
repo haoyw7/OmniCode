@@ -138,25 +138,32 @@ async function started(turnInput = input()) {
 }
 
 describe("Pi-family edit recovery", () => {
-  it("accumulates OMP native request durations using the shared Pi-family tracker", async () => {
+  it("measures OMP text and tool-argument output spans without waits", async () => {
     const { turn } = await started();
     let now = 1_000;
     const clock = vi.spyOn(performance, "now").mockImplementation(() => now);
     try {
       frame("omp-test", { type: "message_start", message: { role: "assistant" } });
+      now = 9_000;
       frame("omp-test", { type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "你好" } });
-      now = 3_000;
+      now = 11_000;
       frame("omp-test", { type: "message_update", assistantMessageEvent: { type: "text_delta", delta: "世界" } });
+      now = 20_000;
       frame("omp-test", { type: "message_end", message: { role: "assistant", content: [{ type: "text", text: "你好世界" }], usage: { output: 10 }, duration: 8_000 } });
       now = 200_000;
       frame("omp-test", { type: "message_start", message: { role: "toolResult" } });
       frame("omp-test", { type: "message_end", message: { role: "toolResult", usage: { output: 999 }, duration: 100_000 } });
       frame("omp-test", { type: "message_start", message: { role: "assistant" } });
+      now = 210_000;
+      frame("omp-test", { type: "message_update", assistantMessageEvent: { type: "toolcall_delta", contentIndex: 0, delta: "{" } });
+      now = 212_000;
+      frame("omp-test", { type: "message_update", assistantMessageEvent: { type: "toolcall_delta", contentIndex: 0, delta: "}" } });
+      now = 220_000;
       frame("omp-test", { type: "message_end", message: { role: "assistant", content: [], usage: { output: 90 }, duration: 2_000 } });
       frame("omp-test", { type: "agent_end", willRetry: false });
       await turn;
       const samples = events.filter(e => e.type === "turn.metrics" && e.generationSample !== undefined);
-      expect(samples.at(-1)?.generationSample).toMatchObject({ outputTokens: 100, durationMs: 10_000, tokenSource: "provider", method: "request-total", scope: "turn" });
+      expect(samples.at(-1)?.generationSample).toMatchObject({ outputTokens: 100, durationMs: 4_000, tokenSource: "provider", method: "stream-observed", scope: "turn" });
     } finally { clock.mockRestore(); }
   });
 

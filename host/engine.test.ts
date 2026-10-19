@@ -494,12 +494,16 @@ describe("headless session ownership", () => {
     turns[0].finish();
   });
 
-  it("preserves generation samples through Host snapshots and delta sync", async () => {
+  it.each([
+    { method: "request-total", tokenSource: "provider" },
+    { method: "stream-observed", tokenSource: "provider" },
+    { method: "stream-observed", tokenSource: "text-estimate", estimator: "text-heuristic-v1" },
+  ] as const)("preserves $method/$tokenSource generation samples through Host snapshots and delta sync", async (source) => {
     const { engine, store, turns, id } = setup();
     engine.command({ type: "send", commandId: "rate-turn", sessionId: id, text: "Hello" });
     await vi.waitFor(() => expect(turns).toHaveLength(1));
     const revision = store.session(id).revision;
-    const generationSample = { outputTokens: 4, durationMs: 1_000, tokenSource: "provider" as const, method: "request-total" as const, scope: "turn" as const };
+    const generationSample = { outputTokens: 4, durationMs: 1_000, ...source, scope: "turn" as const };
     turns[0].input.onEvent({ type: "turn.metrics", generationSample });
     await vi.waitFor(() => expect(store.session(id).revision).toBeGreaterThan(revision));
     const delta = JSON.parse(JSON.stringify(store.sync(id, revision)));

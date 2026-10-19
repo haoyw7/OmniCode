@@ -1,6 +1,9 @@
 import {
   resetGenerationMetrics,
   measureGenerationTurn,
+  observeGenerationDelta,
+  reportObservedGenerationUsage,
+  invalidateObservedGeneration,
 } from "../../core/generationMetrics";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
 import { modelContextWindow, nativeModelId } from "../../../../features/sessions/model/models";
@@ -641,6 +644,7 @@ async function handleEvent(
   live: Live,
   event: Record<string, unknown>,
 ): Promise<void> {
+  const receivedAt = performance.now();
   const type = typeof event.type === "string" ? event.type : "";
   const properties = asRecord(event.properties) ?? {};
   // Session lifecycle events establish ancestry, including nested subagents.
@@ -690,6 +694,13 @@ async function handleEvent(
       // reports the post-compaction window level.
       if (role === "assistant" && !hidden) {
         emitContext(live, info);
+        if (id && typeof asRecord(info?.time)?.completed === "number") {
+          const tokens = asRecord(info?.tokens);
+          const output = typeof tokens?.output === "number" ? tokens.output : undefined;
+          const reasoning = typeof tokens?.reasoning === "number" ? tokens.reasoning : 0;
+          reportObservedGenerationUsage(live.onEvent, id,
+            output != null ? output + reasoning : undefined);
+        }
       }
       break;
     }
@@ -715,7 +726,10 @@ async function handleEvent(
         live.partById.set(partID, { ...existing, text: nextText });
       }
       const mapped = textDeltaEvent(existing, deltaToEmit);
-      if (mapped) live.onEvent(mapped);
+      if (mapped) {
+        observeGenerationDelta(live.onEvent, deltaToEmit, existing.messageID, receivedAt);
+        live.onEvent(mapped);
+      }
       break;
     }
     case "message.part.updated": {
@@ -723,7 +737,7 @@ async function handleEvent(
       if (!part) break;
       live.partById.set(part.id, part);
       if (roleForPart(live, part) === "assistant") {
-        emitAssistantText(live, part);
+        emitAssistantText(live, part, receivedAt);
       }
       if (part.type === "tool") emitTool(live, part);
       break;
@@ -932,7 +946,7 @@ function emitContext(live: Live, info: Record<string, unknown> | null): void {
   live.onEvent({ type: "context", used, ...(window ? { window } : {}) });
 }
 
-function emitAssistantText(live: Live, part: OpenCodePart): void {
+function emitAssistantText(live: Live, part: OpenCodePart, receivedAt: number): void {
   const text = part.text;
   if (text === undefined) return;
   const previous = live.emittedTextByPartId.get(part.id);
@@ -942,7 +956,11 @@ function emitAssistantText(live: Live, part: OpenCodePart): void {
   );
   live.emittedTextByPartId.set(part.id, latestText);
   const mapped = textDeltaEvent(part, deltaToEmit);
-  if (mapped) live.onEvent(mapped);
+  if (mapped) {
+    if (part.time?.end != null) invalidateObservedGeneration(live.onEvent, part.messageID);
+    else observeGenerationDelta(live.onEvent, deltaToEmit, part.messageID, receivedAt);
+    live.onEvent(mapped);
+  }
 }
 
 function emitTool(live: Live, part: OpenCodePart): void {
