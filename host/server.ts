@@ -61,6 +61,8 @@ import { discoverOpenCodeModels } from "../src/integrations/harness/providers/op
 import { discoverPiModels, discoverOmpModels } from "../src/integrations/harness/providers/pi/piCatalog";
 import { discoverFxModels } from "../src/integrations/harness/providers/fx/fxCatalog";
 import { discoverHermesModels } from "../src/integrations/harness/providers/hermes/hermesCatalog";
+import { discoverDeepseekModels } from "../src/integrations/harness/providers/deepseek/deepseekCatalog";
+import { resolveDeepseekBinary } from "../src/integrations/harness/core/child";
 import { discoverAntigravityModels } from "../src/integrations/harness/providers/antigravity/antigravityCatalog";
 import { setHarnessModels, type AgentModel } from "../src/features/sessions/model/models";
 import {
@@ -79,6 +81,7 @@ import {
 // Providers also add models server-side, without a CLI update.
 const CATALOG_MAX_AGE_MS = 5 * 60_000;
 const resolveBinary: Record<RemoteProvider, () => Promise<{ path: string }>> = {
+  deepseek: () => resolveDeepseekBinary(),
   codex: () => resolveCodexBinary(),
   claude: () => resolveClaudeBinary(),
   cursor: () => resolveCursorBinary(),
@@ -95,6 +98,7 @@ const resolveBinary: Record<RemoteProvider, () => Promise<{ path: string }>> = {
 // A 20 MiB note image needs about 27 MiB after base64 encoding.
 const MAX_BODY = 32 * 1024 * 1024;
 const discoverModels: Record<RemoteProvider, (cwd: string) => Promise<AgentModel[]>> = {
+  deepseek: discoverDeepseekModels,
   codex: discoverCodexModels,
   claude: discoverClaudeModels,
   cursor: discoverCursorModels,

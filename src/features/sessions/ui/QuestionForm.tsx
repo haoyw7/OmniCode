@@ -436,6 +436,9 @@ function QuestionFields({
       >
         {question.prompt}
       </p>
+      {question.detail ? (
+        <div className="mt-2 whitespace-pre-wrap break-words text-sm text-content/80">{question.detail}</div>
+      ) : null}
       {question.multiSelect ? (
         <p className="mt-0.5 text-[11px] text-content/40" data-question-hint>
           {uiT("Select all that apply")}
@@ -663,6 +666,9 @@ function DockQuestionFields({
           >
             {question.prompt}
           </p>
+          {question.detail ? (
+            <div className="mt-2 whitespace-pre-wrap break-words text-sm text-content/80">{question.detail}</div>
+          ) : null}
           {question.multiSelect ? (
             <p className="mt-0.5 text-[12px] text-content/45">
               {uiT("Select all that apply")}

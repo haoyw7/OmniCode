@@ -400,6 +400,7 @@ async function resolveHarnessBinary(
     fx: "harness_resolve_fx",
     hermes: "harness_resolve_hermes",
     antigravity: "harness_resolve_antigravity",
+    deepseek: "harness_resolve_deepseek",
   };
   return invoke(command[provider]);
 }
@@ -456,6 +457,19 @@ export function resolveHermesBinary(
   binaryPath?: string | null,
 ): Promise<{ path: string }> {
   return resolveHarnessBinary("hermes", binaryPath);
+}
+
+export function resolveDeepseekBinary(binaryPath?: string | null): Promise<{ path: string }> {
+  return resolveHarnessBinary("deepseek", binaryPath);
+}
+
+/** Prepare application-owned bridge assets on the selected execution machine. */
+export function prepareDeepseekBridge(cwd: string, sessionId?: string): Promise<{ path: string; args: string[] }> {
+  return invoke("harness_prepare_deepseek_bridge", {
+    binaryPath: runtimeProviderBinaryPath("deepseek"),
+    cwd,
+    environmentSessionId: sessionId,
+  });
 }
 
 export function resolveAntigravityBinary(

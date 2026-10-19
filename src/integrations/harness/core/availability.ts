@@ -1,6 +1,7 @@
 import type { HarnessId } from "../../../features/sessions/model/session";
 import { HARNESSES } from "../../../features/sessions/model/session";
 import {
+  resolveDeepseekBinary,
   resolveAntigravityBinary,
   resolveClaudeBinary,
   resolveCodexBinary,
@@ -33,6 +34,7 @@ export {
  * authenticated, so the hint must not blame a login.
  */
 const CLI: Record<HarnessId, { name: string; install?: string }> = {
+  deepseek: { name: "DeepSeek Harness (dsh)", install: "npm install -g @deepseek-ai/dsh@0.2.1-rc.2" },
   claude: { name: "Claude Code CLI" },
   codex: { name: "Codex CLI" },
   cursor: { name: "Cursor CLI" },
@@ -150,6 +152,10 @@ export function probeHarnessAvailability(
         } catch {
           return [id, false] as const;
         }
+      }
+      if (id === "deepseek") {
+        try { await resolveDeepseekBinary(); return [id, true] as const; }
+        catch { return [id, false] as const; }
       }
       if (id === "antigravity") {
         try {

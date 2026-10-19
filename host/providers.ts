@@ -11,6 +11,7 @@ import * as pi from "../src/integrations/harness/providers/pi/pi";
 import * as omp from "../src/integrations/harness/providers/omp/omp";
 import * as fx from "../src/integrations/harness/providers/fx/fx";
 import * as hermes from "../src/integrations/harness/providers/hermes/hermes";
+import * as deepseek from "../src/integrations/harness/providers/deepseek/deepseek";
 import * as antigravity from "../src/integrations/harness/providers/antigravity/antigravity";
 import type {
   SendTurnInput,
@@ -54,10 +55,19 @@ export interface HostProvider {
   ): void;
   approve(id: string, request: number, decision: ApprovalDecision): void;
   answer(id: string, request: number, reply: UserQuestionReply): void;
+  keepQuestionOpen?(id: string, request: number): void;
   generateBranchName?(cwd: string, message: string): Promise<string | null>;
 }
 
 export const hostProviders: Record<RemoteProvider, HostProvider> = {
+  deepseek: {
+    botCapabilities: providerBotCapabilities("deepseek"),
+    send: deepseek.sendDeepseekTurn, steer: deepseek.steerDeepseekTurn,
+    cancel: deepseek.cancelDeepseekTurn, stop: deepseek.forgetDeepseekSession,
+    bind: deepseek.bindDeepseekSession, approve: deepseek.respondDeepseekApproval,
+    answer: deepseek.respondDeepseekQuestion,
+    keepQuestionOpen: deepseek.keepDeepseekQuestionOpen,
+  },
   codex: {
     botCapabilities: providerBotCapabilities("codex"),
     readSessionTitle: codex.readCodexSessionTitle,

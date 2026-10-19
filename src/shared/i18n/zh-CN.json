@@ -4216,5 +4216,19 @@
   "Target has user changes; worktree preserved until the target is clean": "目标目录含用户修改，成果已保留，等待目标目录恢复干净状态",
   "Target changed during verification; worktree preserved": "验证期间目标发生变化，成果已保留",
   "Task or target changed after verification; worktree preserved": "验证后任务或目标发生变化，成果已保留",
-  "Task checkout is being integrated or reclaimed; retry after it finishes": "正在合并或回收此工作副本，请稍后重试"
+  "Task checkout is being integrated or reclaimed; retry after it finishes": "正在合并或回收此工作副本，请稍后重试",
+  "No active DeepSeek Harness session": "没有正在运行的 DeepSeek Harness 会话",
+  "DeepSeek Harness process exited": "DeepSeek Harness 进程已退出",
+  "Unsupported DeepSeek Harness bridge version": "不支持此 DeepSeek Harness 桥接版本",
+  "Provider default": "服务商默认值",
+  "Image attachment has no readable content": "图片附件没有可读取的内容",
+  "DeepSeek Harness profile omnicode-v1 is not owned by OmniCode": "DeepSeek Harness 的 omnicode-v1 配置目录已有用户内容，无法由 OmniCode 接管",
+  "DeepSeek Harness requires dsh {version}; found {actual}": "DeepSeek Harness 需要 dsh {version}，当前版本为 {actual}",
+  "The selected DeepSeek model does not accept images": "所选 DeepSeek 模型不支持图片输入",
+  "DeepSeek session workspace does not match": "DeepSeek 会话的工作目录不匹配",
+  "DeepSeek question is no longer answerable": "此 DeepSeek 问题已无法继续作答",
+  "Wait for the active run before changing DeepSeek configuration": "请等待当前任务结束后再更改 DeepSeek 配置",
+  "DeepSeek assistant stream has a missing chunk": "DeepSeek 流式响应缺少数据片段",
+  "DeepSeek committed content differs from its live stream": "DeepSeek 保存的内容与实时响应不一致",
+  "DeepSeek Harness cannot use the shared WSL Host yet: sharing its DSH home, credentials and bridge profile across Windows and Linux has not been verified.": "DeepSeek Harness 暂不支持共享 WSL Host：尚未验证 Windows 与 Linux 之间共享 DSH 目录、凭据和桥接配置。"
 }

@@ -8,6 +8,7 @@ mod checkpoint;
 mod control;
 pub mod control_cli;
 mod cursor_store;
+mod deepseek;
 mod external_editor;
 mod fonts;
 mod fs;
@@ -468,6 +469,8 @@ pub fn run() {
             harness::harness_resolve_fx,
             harness::harness_resolve_grok,
             harness::harness_resolve_hermes,
+            harness::harness_resolve_deepseek,
+            harness::harness_prepare_deepseek_bridge,
             harness::harness_resolve_antigravity,
             harness::harness_free_port,
             harness::harness_spawn,

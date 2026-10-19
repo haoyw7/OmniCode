@@ -12,6 +12,9 @@ export type UserQuestion = {
   id: string;
   header?: string;
   prompt: string;
+  /** Provider-owned supporting content, including the complete plan under review. */
+  detail?: string;
+  intent?: { kind: "plan-review"; approve: string; callId?: string };
   multiSelect: boolean;
   allowCustom: boolean;
   options: UserQuestionOption[];
@@ -30,6 +33,8 @@ export type UserQuestionPrompt = {
   requestId: number;
   /** Persistent transcript identity; request IDs alone can be reused. */
   historyId?: string;
+  /** Stable native identity for providers with a structured late-answer API. */
+  providerQuestionId?: string;
   title?: string;
   questions: UserQuestion[];
   /** Answers can be sent as a later user message after this request closes. */
@@ -54,6 +59,11 @@ export type UserQuestionRecord = UserQuestionPrompt & {
 export type QuestionAnswer = {
   blockId: string;
   reply: Extract<UserQuestionReply, { kind: "answered" }>;
+};
+
+export type ProviderQuestionReply = {
+  requestId: string;
+  reply: UserQuestionReply;
 };
 
 export function questionsFromUnknown(value: unknown): UserQuestion[] {
@@ -187,6 +197,9 @@ function questionFromUnknown(
     ),
     ...(header ? { header } : {}),
     prompt: prompt || header || `Question ${index + 1}`,
+    ...(typeof rec.detail === "string" ? { detail: rec.detail } : {}),
+    ...(asRecord(rec.intent)?.kind === "plan-review" && typeof asRecord(rec.intent)?.approve === "string"
+      ? { intent: rec.intent as NonNullable<UserQuestion["intent"]> } : {}),
     multiSelect:
       rec.multiSelect === true ||
       rec.allowMultiple === true ||

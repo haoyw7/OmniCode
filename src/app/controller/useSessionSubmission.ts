@@ -88,6 +88,7 @@ import {
 import { preparePrompt } from "../../features/sessions/model/promptPreparation";
 import {
   questionFollowUp,
+  providerQuestionReply,
   recordQuestionAnswer,
 } from "../../features/sessions/model/questionHistory";
 import { SECOND_OPINION_TITLE } from "../../features/sessions/model/secondOpinion";
@@ -372,6 +373,9 @@ export function useSessionSubmission({
               block.id === options.planBlockId && block.role === "plan",
           )
         : undefined;
+      const questionReply = options?.questionAnswer
+        ? providerQuestionReply(current, options.questionAnswer)
+        : current.queuedMessages?.find(row => row.id === options?.queuedMessageId)?.questionReply;
       if (intent === "build" && !approvedPlan?.text.trim()) return false;
       if (options?.queuedMessageId) {
         const mode =
@@ -497,6 +501,7 @@ export function useSessionSubmission({
                       noteCard,
                       handoffCard,
                       intent,
+                      ...(questionReply ? { questionReply } : {}),
                     }, options?.queueReturnPosition),
                     queueStatus:
                       s.queueStatus === "paused" ? "paused" : "active",
@@ -547,6 +552,7 @@ export function useSessionSubmission({
               cwd: initialWorkCwd,
             });
             await steerHarnessTurn({
+              ...(questionReply ? { questionReply } : {}),
               harness: current.harness,
               nativeSession: current.nativeSession,
               sessionId,
@@ -1288,6 +1294,7 @@ export function useSessionSubmission({
           }
           const sendTurn = (text: string, turnAttachments = prepared) =>
             sendHarnessTurn({
+              ...(questionReply ? { questionReply } : {}),
               harness: current.harness,
               nativeSession: current.nativeSession,
               sessionId,

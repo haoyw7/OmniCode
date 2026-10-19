@@ -388,6 +388,13 @@ export type HostCommand =
       decision: "allow" | "deny";
     }
   | {
+      type: "keepQuestionOpen";
+      commandId: string;
+      sessionId: string;
+      runId: string;
+      requestId: number;
+    }
+  | {
       type: "answer";
       commandId: string;
       sessionId: string;

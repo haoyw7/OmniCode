@@ -1,5 +1,6 @@
 import { build } from "esbuild";
-import { copyFile } from "node:fs/promises";
+import { copyFile, readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { excludeEvaluationEsbuild } from "../scripts/production-inputs.mjs";
 
 await build({
@@ -11,7 +12,15 @@ await build({
   target: "node24",
   loader: { ".ps1": "text", ".sh": "text", ".md": "text" },
   define: { "import.meta.hot": "undefined" },
-  plugins: [excludeEvaluationEsbuild()],
+  plugins: [excludeEvaluationEsbuild(), {
+    name: "raw-resources",
+    setup(builder) {
+      builder.onLoad({ filter: /\.mjs\?raw$/ }, async args => ({
+        contents: await readFile(args.path.slice(0, -4), "utf8"), loader: "text",
+      }));
+      builder.onResolve({ filter: /\.mjs\?raw$/ }, args => ({ path: resolve(args.resolveDir, args.path) }));
+    },
+  }],
   sourcemap: true,
   // The workflow analyzer bundles the CommonJS TypeScript compiler, which reads
   // require/__filename at load time; provide them in the ESM output.

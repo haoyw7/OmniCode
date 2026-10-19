@@ -3340,7 +3340,10 @@ export function useWorkspaceController({
   const onQuestionInteraction = useCallback(
     (sessionId: string, requestId: number) => {
       const session = sessionsRef.current.find((s) => s.id === sessionId);
-      if (session && sessionUsesHost(session)) return;
+      if (session && sessionUsesHost(session)) {
+        remoteSessionActions(sessionId)?.keepQuestionOpen?.(requestId);
+        return;
+      }
       if (session && !session.worktreeRemoved)
         keepHarnessQuestionOpen(session.harness, sessionId, requestId);
     },

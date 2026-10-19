@@ -80,7 +80,7 @@ const SOURCE_ORDER: SkillSource[] = [
   "omnicode",
 ];
 
-function isHarnessSource(source: SkillSource): source is HarnessId {
+function isHarnessSource(source: SkillSource): source is Extract<SkillSource, HarnessId> {
   return source in HARNESS_TITLE;
 }
 

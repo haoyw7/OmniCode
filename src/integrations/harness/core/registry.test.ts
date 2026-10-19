@@ -23,7 +23,7 @@ import {
   type HarnessAdapter,
 } from "./registry";
 import type { SendTurnInput, SteerTurnInput } from "./types";
-import { registerBuiltinHarnesses } from "./register";
+import { registerBuiltinHarnesses } from "../register";
 
 function stub(
   id: "cursor" | "codex" | "claude" | "pi" | "omp",

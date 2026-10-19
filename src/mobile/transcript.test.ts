@@ -297,6 +297,16 @@ describe("mobile message streaming", () => {
 });
 
 describe("mobile question history", () => {
+  it("sends a run-scoped keep-open command when a DeepSeek question is edited", () => {
+    const { node, snapshot, update, commands } = render({ runId: "deepseek-run", blocks: [] });
+    snapshot.session.harness = "deepseek";
+    snapshot.session.pendingQuestion = { requestId: 4, autoResolveAt: Date.now() + 120000,
+      questions: [{ id: "q", prompt: "Choose", multiSelect: false, allowCustom: true, options: [{ id: "One", label: "One" }] }] };
+    update({ snapshot: { ...snapshot } });
+    const option = [...node.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(button => button.textContent?.includes("One"))!;
+    act(() => option.click());
+    expect(commands.some(command => command.type === "keepQuestionOpen" && command.sessionId === "session" && command.runId === "deepseek-run" && command.requestId === 4)).toBe(true);
+  });
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
   const dialog = () => document.querySelector<HTMLElement>('.mobile-sheet-backdrop:not([inert]) [role="dialog"]')!;

@@ -8,6 +8,7 @@ import type { HarnessId } from "../../../features/sessions/model/session";
 export type HarnessAvailability = Record<HarnessId, boolean>;
 
 let availability: HarnessAvailability = {
+  deepseek: false,
   claude: false,
   codex: false,
   cursor: false,

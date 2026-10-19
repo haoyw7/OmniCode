@@ -9,6 +9,7 @@ type RemoteActions = {
   compact: () => boolean;
   approve: (requestId: number, decision: ApprovalDecision) => void;
   answer: (requestId: number, reply: UserQuestionReply) => void;
+  keepQuestionOpen?: (requestId: number) => void;
   /** Move the Host conversation to another account; false when it cannot. */
   switchAccount: (providerAccountId: string) => boolean;
 };

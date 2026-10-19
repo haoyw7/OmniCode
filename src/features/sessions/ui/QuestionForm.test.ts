@@ -70,6 +70,15 @@ function keyDown(target: Element, key: string) {
   });
 }
 
+it.each(["card", "dock"] as const)("keeps the complete native plan visible in the %s review", variant => {
+  const review = prompt();
+  const plan = "# Native plan\n\n1. Inspect the project\n2. Preserve user work\n3. Verify the changes";
+  review.questions[0] = { ...review.questions[0], detail: plan,
+    intent: { kind: "plan-review", approve: "Run this plan", callId: "native-plan" } };
+  act(() => root.render(createElement(QuestionForm, { prompt: review, variant, onReply: vi.fn() })));
+  expect(container.textContent).toContain(plan);
+});
+
 it("shows an extension editor's multiline prefill and submits it verbatim", () => {
   const onReply = vi.fn();
   const value = "  first\nsecond  ";

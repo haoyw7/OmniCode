@@ -920,6 +920,22 @@ pub fn harness_resolve_hermes() -> Result<CursorBinary, String> {
         })
 }
 
+#[tauri::command(async)]
+pub fn harness_resolve_deepseek() -> Result<CursorBinary, String> {
+    resolve_harness_binary("deepseek", None).map(|path| CursorBinary {
+        path: path.to_string_lossy().into_owned(),
+    })
+}
+
+#[tauri::command(async)]
+pub fn harness_prepare_deepseek_bridge(
+    cwd: String,
+    binary_path: Option<String>,
+) -> Result<crate::deepseek::BridgeLaunch, String> {
+    let path = resolve_harness_binary("deepseek", binary_path.as_deref())?;
+    crate::deepseek::prepare(&path, &cwd)
+}
+
 /// Antigravity's ACP server is separate from the interactive agy CLI.
 #[tauri::command(async)]
 pub fn harness_resolve_antigravity() -> Result<AntigravityBinary, String> {
@@ -2075,6 +2091,7 @@ fn resolve_harness_binary_default(provider: &str) -> Option<PathBuf> {
         "omp" => resolve_omp(),
         "fx" => resolve_fx(),
         "hermes" => resolve_hermes(),
+        "deepseek" => resolve_deepseek(),
         "antigravity" => resolve_antigravity(),
         _ => None,
     }
@@ -2120,6 +2137,7 @@ fn resolve_harness_binary_override(provider: &str, binary_path: &str) -> Result<
         "omp" => &["omp"],
         "fx" => &["fx"],
         "hermes" => &["hermes"],
+        "deepseek" => &["dsh"],
         "antigravity" => &["agy_acp_server.par"],
         _ => {
             return Err(format!(
@@ -2569,6 +2587,30 @@ fn resolve_hermes() -> Option<PathBuf> {
         candidates.push(from_shell);
     }
 
+    first_binary(candidates)
+}
+
+fn resolve_deepseek() -> Option<PathBuf> {
+    let mut candidates = Vec::new();
+    #[cfg(windows)]
+    candidates.extend(binaries_on_search_path("dsh"));
+    if let Some(path) = std::env::var_os("PATH") {
+        if let Some(binary) = which_in_path(&path.to_string_lossy(), "dsh") {
+            candidates.push(binary);
+        }
+    }
+    if let Some(home) = dirs_home().map(PathBuf::from) {
+        candidates.push(home.join(".local/bin/dsh"));
+        candidates.push(home.join(".npm-global/bin/dsh"));
+        candidates.push(home.join("AppData/Roaming/npm/dsh"));
+    }
+    candidates.extend([
+        PathBuf::from("/opt/homebrew/bin/dsh"),
+        PathBuf::from("/usr/local/bin/dsh"),
+    ]);
+    if let Some(path) = which_via_login_shell("dsh") {
+        candidates.push(path);
+    }
     first_binary(candidates)
 }
 

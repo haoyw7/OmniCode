@@ -37,6 +37,7 @@ import {
 import { randomUUID } from "node:crypto";
 import { withProviderAccountLock } from "./provider-account-lock";
 import { sharedProviderHome } from "./wsl-provider-config";
+import { prepareDeepseekBridge } from "./deepseek-bridge";
 
 const exec = promisify(execFile);
 const ALLOWED_EXEC_ARGS = new Set([
@@ -189,6 +190,9 @@ export class HostChildBackend implements ChildBackend {
       } as T;
     }
     switch (command) {
+      case "harness_prepare_deepseek_bridge":
+        return await prepareDeepseekBridge(await this.resolve("deepseek"), String(args.cwd ?? process.cwd()),
+          { ...childEnvironment(), ...this.environmentForSession(String(args.environmentSessionId ?? "")) }) as T;
       case "harness_read_claude_title":
         return await readClaudeTitleFile({ cwd: String(args.cwd ?? ""), providerSessionId: String(args.providerSessionId ?? ""), providerAccountId: typeof args.providerAccountId === "string" ? args.providerAccountId : undefined }, this.desktopConfigPath) as T;
       case "harness_exec": {

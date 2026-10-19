@@ -1636,6 +1636,11 @@ function ConnectedRemoteSession({
       reply,
     });
   };
+  const keepQuestionOpen = (requestId: number) => {
+    if (!hostSession || !snapshot?.runId || hostSession.harness !== "deepseek") return;
+    void run({ type: "keepQuestionOpen", commandId: crypto.randomUUID(),
+      sessionId: hostSession.id, runId: snapshot.runId, requestId });
+  };
   const compact = () => {
     if (!hostSession || busy || pending || changes || !online) return false;
     void run(message(hostSession.id, "/compact"));
@@ -1756,9 +1761,10 @@ function ConnectedRemoteSession({
         compact,
         approve,
         answer,
+        keepQuestionOpen,
         switchAccount,
       }),
-    [shell.id, buildPlan, saveDraft, stopTurn, compact, approve, answer, switchAccount],
+    [shell.id, buildPlan, saveDraft, stopTurn, compact, approve, answer, keepQuestionOpen, switchAccount],
   );
 
   // The Host captures this conversation's edits; review, Keep and Undo run there.

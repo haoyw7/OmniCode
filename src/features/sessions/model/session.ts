@@ -2,7 +2,7 @@ import type { GenerationSample } from "./generationSample";
 import { loadSharedAgentDefaults } from "../../settings/model/agentPreferences";
 import { translate } from "../../../shared/i18n/language";
 import { dropContextWindow, type ContextUsage } from "./contextUsage";
-import type { QuestionAnswer, UserQuestionPrompt, UserQuestionRecord } from "./userQuestion";
+import type { ProviderQuestionReply, QuestionAnswer, UserQuestionPrompt, UserQuestionRecord } from "./userQuestion";
 import type { HandoffComposerCard } from "./handoff";
 import type { InboxComposerCard } from "../../inbox/model/githubTasks";
 import type { InboxAskContext } from "../../inbox/model/inboxAsk";
@@ -48,6 +48,7 @@ export type SessionExecutionState = {
 };
 
 export type HarnessId =
+  | "deepseek"
   | "claude"
   | "codex"
   | "cursor"
@@ -70,6 +71,7 @@ export const HARNESSES: HarnessId[] = [
   "fx",
   "hermes",
   "antigravity",
+  "deepseek",
 ];
 
 export type BlockRole =
@@ -305,6 +307,7 @@ export type TurnOrigin = {
 };
 
 export type QueuedMessage = {
+  questionReply?: ProviderQuestionReply;
   /** Retained for review; skipped until a human edits or removes the item. */
   blocked?: string;
   id: string;
@@ -604,6 +607,7 @@ export type PendingHarnessSwitch = {
 };
 
 export const HARNESS_LABEL: Record<HarnessId, string> = {
+  deepseek: "deepseek",
   claude: "claude",
   codex: "codex",
   cursor: "cursor",
@@ -617,6 +621,7 @@ export const HARNESS_LABEL: Record<HarnessId, string> = {
 };
 
 export const HARNESS_TITLE: Record<HarnessId, string> = {
+  deepseek: "DeepSeek Harness",
   claude: "Claude Code",
   codex: "Codex",
   cursor: "Cursor",

@@ -20,7 +20,7 @@ afterEach(async () => {
   vi.useRealTimers();
 });
 
-function setup(harness: "codex" | "claude" | "pi" | "omp" = "codex") {
+function setup(harness: "codex" | "claude" | "pi" | "omp" | "deepseek" = "codex") {
   const directory = mkdtempSync(join(tmpdir(), "omnicode-engine-test-"));
   const store = new HostStore(join(directory, "host.db"));
   const project = store.addProject(directory, "Test");
@@ -43,7 +43,7 @@ function setup(harness: "codex" | "claude" | "pi" | "omp" = "codex") {
     answer: vi.fn(),
   };
   // Native sources resolve inside the fixture, never in the developer's home.
-  const engine = new HostEngine(store, { codex: provider, claude: provider, pi: provider, omp: provider }, undefined, {
+  const engine = new HostEngine(store, { codex: provider, claude: provider, pi: provider, omp: provider, deepseek: provider }, undefined, {
     native: { environment: { home: join(directory, "home"), env: {} } },
   });
   const created = engine.command({
@@ -74,6 +74,31 @@ function setup(harness: "codex" | "claude" | "pi" | "omp" = "codex") {
 }
 
 describe("headless session ownership", () => {
+  it("keeps a DeepSeek question open across devices and forwards its saved native late reply", async () => {
+    const { engine, store, turns, provider, id } = setup("deepseek");
+    provider.keepQuestionOpen = vi.fn();
+    await engine.ready;
+    engine.command({ type: "send", commandId: "send-question", sessionId: id, text: "Ask" });
+    await vi.waitFor(() => expect(turns, JSON.stringify(store.session(id).session)).toHaveLength(1), { timeout: 10_000 });
+    turns[0].input.onEvent({ type: "question.asked", requestId: 3, providerQuestionId: "native-q", allowLateReply: true,
+      autoResolveAt: Date.now() + 1000,
+      questions: [{ id: "q", prompt: "Choose", multiSelect: false, allowCustom: true, options: [{ id: "One", label: "One" }] }] });
+    const keep = { type: "keepQuestionOpen", commandId: "keep", sessionId: id, runId: store.session(id).runId, requestId: 3 };
+    expect(() => engine.command({ ...keep, runId: "old" })).toThrow("finished or replaced");
+    engine.command(keep); engine.command(keep);
+    expect(provider.keepQuestionOpen).toHaveBeenCalledTimes(1);
+    expect(provider.keepQuestionOpen).toHaveBeenCalledWith(id, 3);
+    expect(store.session(id).session.pendingQuestion?.autoResolveAt).toBeUndefined();
+    turns[0].input.onEvent({ type: "question.resolved", requestId: 3, decision: "cancelled" });
+    turns[0].finish();
+    await vi.waitFor(() => expect(store.session(id).status).toBe("idle"));
+    const blockId = store.session(id).session.blocks.find(block => block.question)?.id;
+    engine.command({ type: "send", commandId: "late", sessionId: id, text: "One",
+      questionAnswer: { blockId, reply: { kind: "answered", answers: { q: ["One"] } } } });
+    await vi.waitFor(() => expect(turns).toHaveLength(2), { timeout: 10_000 });
+    expect(turns[1].input.questionReply).toEqual({ requestId: "native-q", reply: { kind: "answered", answers: { q: ["One"] } } });
+    turns[1].finish();
+  });
   it("rejects public Bot context and snapshots trusted context separately from user references", async () => {
     const { engine, store, provider, turns, id } = setup();
     await engine.ready;

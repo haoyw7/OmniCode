@@ -417,6 +417,10 @@ export const MobileTranscript = memo(function MobileTranscript({
               <QuestionForm
                 key={`${runId}:${session.pendingQuestion.requestId}`}
                 prompt={session.pendingQuestion}
+                onInteraction={session.harness === "deepseek" ? requestId => {
+                  if (!disabled && runId) onCommand({ type: "keepQuestionOpen", commandId: crypto.randomUUID(),
+                    sessionId: session.id, runId, requestId });
+                } : undefined}
                 onCollapse={onQuestionOpenChange ? () => onQuestionOpenChange(false) : undefined}
                 onReply={(requestId, reply) => {
                   if (!disabled && runId)

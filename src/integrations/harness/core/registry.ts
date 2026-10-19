@@ -7,7 +7,7 @@ import type {
 } from "../../../features/sessions/model/session";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import type { PrContent } from "../../../features/source-control/model/gitText";
-import { beginCatalogLoad, hasFreshCatalog } from "../../../features/sessions/model/models";
+import { beginCatalogLoad, hasFreshCatalog, setHarnessModels, type AgentModel } from "../../../features/sessions/model/models";
 import type { UserQuestionReply } from "../../../features/sessions/model/userQuestion";
 import { translate } from "../../../shared/i18n/language";
 import { generateTextBranchName } from "./branchName";
@@ -103,6 +103,11 @@ export type HarnessAdapter = {
 };
 
 const adapters = new Map<HarnessId, HarnessAdapter>();
+
+/** Publish provider discovery through the registry's existing model-store boundary. */
+export function publishHarnessCatalog(harness: HarnessId, models: AgentModel[]): void {
+  if (models.length) setHarnessModels(harness, models);
+}
 
 /**
  * After a turn settles, keep the child warm for follow-ups, then park it.

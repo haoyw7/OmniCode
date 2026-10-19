@@ -19,6 +19,7 @@ impl Drop for InstallGuard {
 // OpenCode intentionally uses the V1 package that our adapter supports.
 fn install_script(provider: &str, windows: bool) -> Result<String, String> {
     let npm_package = match provider {
+        "deepseek" => Some("@deepseek-ai/dsh@0.2.1-rc.2"),
         "codex" => Some("@openai/codex"),
         "opencode" => Some("opencode-ai"),
         "pi" => Some("@earendil-works/pi-coding-agent"),
@@ -81,7 +82,9 @@ fn install(provider: &str) -> Result<(), String> {
     if resolve_harness_binary(provider, None).is_ok() {
         return Ok(());
     }
-    if matches!(provider, "codex" | "opencode" | "pi") && resolve_gui_binary("npm").is_none() {
+    if matches!(provider, "codex" | "opencode" | "pi" | "deepseek")
+        && resolve_gui_binary("npm").is_none()
+    {
         return Err("Install Node.js with npm, then retry.".into());
     }
     let (command, args) = if cfg!(windows) {
@@ -146,6 +149,15 @@ mod tests {
             assert!(install_script(provider, false).is_err());
         }
         assert!(install_script("fx", true).is_err());
+    }
+
+    #[test]
+    fn deepseek_pins_the_verified_bridge_runtime() {
+        for windows in [true, false] {
+            assert!(install_script("deepseek", windows)
+                .unwrap()
+                .contains("@deepseek-ai/dsh@0.2.1-rc.2"));
+        }
     }
 
     #[test]

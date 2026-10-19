@@ -12,6 +12,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { providerLaunch, resolveProvider } from "./process";
 
+it.runIf(process.platform === "win32")("launches a DSH npm shim through its declared Node entry", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-dsh-shim-"));
+  const packageRoot = join(directory, "node_modules/@deepseek-ai/dsh");
+  const entry = join(packageRoot, "lib/bin.js");
+  mkdirSync(join(packageRoot, "lib"), { recursive: true });
+  writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name: "@deepseek-ai/dsh", bin: { dsh: "lib/bin.js" } }));
+  writeFileSync(entry, "throw Error('Discovery must not execute this')");
+  const shim = join(directory, "dsh.cmd"); writeFileSync(shim, '@echo off\nnode "%~dp0node_modules\\@deepseek-ai\\dsh\\lib\\bin.js" %*');
+  try { expect(await providerLaunch(shim, ["--version"])).toEqual({ command: process.execPath, args: [entry, "--version"] }); }
+  finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
 it.each(["cursor", "pi", "fx"] as const)(
   "does not execute an unrelated ambiguous %s binary while resolving providers",
   async (provider) => {

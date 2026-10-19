@@ -12,6 +12,9 @@ import type {
 } from "../../../features/sessions/model/session";
 import type { UserQuestion, UserQuestionReply } from "../../../features/sessions/model/userQuestion";
 import type { SessionModelSettings } from "../../../features/sessions/model/models";
+export type { AgentModel, ModelSetting } from "../../../features/sessions/model/models";
+export type { RuntimeMode, Attachment } from "../../../features/sessions/model/session";
+export type { UserQuestion, UserQuestionReply } from "../../../features/sessions/model/userQuestion";
 
 export type HarnessEvent =
   | { type: "session.titleUpdated"; providerSessionId: string; title: string }
@@ -145,6 +148,7 @@ export type HarnessEvent =
       callId?: string;
       autoResolveAt?: number;
       allowLateReply?: boolean;
+      providerQuestionId?: string;
     }
   | {
       type: "question.updated";
@@ -212,6 +216,7 @@ export type HarnessSessionInput = {
 };
 
 export type SendTurnInput = HarnessSessionInput & {
+  questionReply?: import("../../../features/sessions/model/userQuestion").ProviderQuestionReply;
   text: string;
   attachments?: Attachment[];
   /** Called once the provider has accepted the user turn. */
@@ -221,6 +226,7 @@ export type SendTurnInput = HarnessSessionInput & {
 export type CompactContextInput = HarnessSessionInput;
 
 export type SteerTurnInput = {
+  questionReply?: import("../../../features/sessions/model/userQuestion").ProviderQuestionReply;
   nativeSession?: NativeSessionLink;
   sessionId: string;
   cwd: string;

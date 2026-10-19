@@ -21,6 +21,7 @@ import {
 
 /** npm packages whose Windows .cmd shims OmniCode launches, by shim name. */
 const npmPackages: Record<string, string[]> = {
+  dsh: ["@deepseek-ai/dsh"],
   codex: ["@openai/codex"],
   claude: ["@anthropic-ai/claude-code"],
   opencode: ["opencode-ai", "@opencode/cli"],
@@ -32,6 +33,7 @@ const npmPackages: Record<string, string[]> = {
 };
 
 const binaryNames: Record<RemoteProvider, string[]> = {
+  deepseek: ["dsh"],
   codex: ["codex"],
   claude: ["claude"],
   cursor: ["cursor-agent", "agent"],

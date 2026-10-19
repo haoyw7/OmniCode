@@ -8,6 +8,7 @@ import {
   type UserQuestionRecord,
   type UserQuestion,
   type UserQuestionReply,
+  type ProviderQuestionReply,
 } from "./userQuestion";
 
 export function questionRecordAnswers(
@@ -26,7 +27,7 @@ export function questionTranscriptText(record: UserQuestionRecord): string {
       const labels = record.reply
         ? questionRecordAnswers(question, record.reply)
         : [];
-      return [question.prompt, ...labels].join("\n");
+      return [question.prompt, ...(question.detail ? [question.detail] : []), ...labels].join("\n");
     })
     .join("\n\n");
 }
@@ -39,7 +40,7 @@ export function questionFollowUp(
   const record = session.blocks.find(
     (block) => block.id === answer.blockId,
   )?.question;
-  if (session.harness !== "codex" || !record?.allowLateReply)
+  if (!["codex", "deepseek"].includes(session.harness) || !record?.allowLateReply)
     throw new Error("This question cannot be answered later");
   if (record.reply || record.decision === "answered")
     throw new Error("Question is already answered");
@@ -81,7 +82,7 @@ export function questionAnswerableLater(
     ? session.blocks.find((block) => block.id === blockId)?.question
     : undefined;
   return (
-    session.harness === "codex" &&
+    ["codex", "deepseek"].includes(session.harness) &&
     !!record?.allowLateReply &&
     !record.reply &&
     record.decision !== "answered" &&
@@ -168,6 +169,7 @@ export function restoreQuestionRecord(
   return {
     requestId: record.requestId!,
     historyId: blockId,
+    ...(typeof record.providerQuestionId === "string" ? { providerQuestionId: record.providerQuestionId } : {}),
     questions,
     ...(typeof record.title === "string" ? { title: record.title } : {}),
     ...(record.allowLateReply === true ? { allowLateReply: true } : {}),
@@ -179,6 +181,14 @@ export function restoreQuestionRecord(
           : "cancelled",
     ...(reply ? { reply } : {}),
   };
+}
+
+/** Resolve the native identity from saved history rather than a UI request number. */
+export function providerQuestionReply(session: Session, answer: QuestionAnswer): ProviderQuestionReply | undefined {
+  if (session.harness !== "deepseek") return undefined;
+  const record = session.blocks.find(block => block.id === answer.blockId)?.question;
+  if (!record?.providerQuestionId || !record.allowLateReply) throw new Error("This question cannot be answered later");
+  return { requestId: record.providerQuestionId, reply: answer.reply };
 }
 
 export function recordQuestionAnswer(

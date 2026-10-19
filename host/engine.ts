@@ -74,7 +74,7 @@ import { parseRemoteAttachments, resolveAttachments, saveGeneratedImageAttachmen
 import type { Attachment } from "../src/features/sessions/model/session";
 import { parsePersistedWorktreeCreation } from "../src/features/source-control/model/worktreeCreation";
 import type { UserQuestionReply } from "../src/features/sessions/model/userQuestion";
-import { questionFollowUp, recordQuestionAnswer } from "../src/features/sessions/model/questionHistory";
+import { providerQuestionReply, questionFollowUp, recordQuestionAnswer } from "../src/features/sessions/model/questionHistory";
 import {
   appendReadyHandoff,
   buildDeterministicHandoff,
@@ -342,6 +342,7 @@ export function parseCommand(input: unknown): HostCommand {
   if (!Number.isSafeInteger(v.requestId) || Number(v.requestId) < 0)
     throw new Error("Invalid request ID");
   const requestId = Number(v.requestId);
+  if (v.type === "keepQuestionOpen") return { type: "keepQuestionOpen", commandId, sessionId, runId, requestId };
   if (v.type === "approve" && (v.decision === "allow" || v.decision === "deny"))
     return {
       type: "approve",
@@ -1332,6 +1333,7 @@ export class HostEngine {
     if (command.type !== "create") this.flush(command.sessionId);
     let effect: ((saved: HostSession) => void) | undefined;
     let switchFrom: RemoteProvider | undefined;
+    let questionReply: import("../src/integrations/harness/core/types").SendTurnInput["questionReply"];
     const { receipt, saved } = this.store.transaction(() => {
       let value: HostSession;
       if (command.type === "create") {
@@ -1413,6 +1415,7 @@ export class HostEngine {
         const provider = this.provider(value.session.harness);
         if (command.type === "send" && command.questionAnswer) {
           const prompt = questionFollowUp(value.session, command.questionAnswer);
+          questionReply = providerQuestionReply(value.session, command.questionAnswer);
           value = { ...value, session: recordQuestionAnswer(value.session, command.questionAnswer) };
           command.text = prompt;
           command.followUpBehavior = "steer";
@@ -1479,6 +1482,7 @@ export class HostEngine {
                 attachments,
                 intent: command.intent,
                 origin,
+                ...(questionReply ? { questionReply } : {}),
               }, command.queueReturnPosition, value.queueSteeringId),
               queueStatus: value.session.queueStatus ?? (value.session.usageLimit || this.running.get(value.session.id)?.failed ? "paused" : "active"),
             },
@@ -1550,6 +1554,7 @@ export class HostEngine {
                   (row) => row.id === command.queuedMessageId,
                 )
               : undefined;
+          questionReply ??= queued?.questionReply;
           if (command.type === "send" && command.queuedMessageId) {
             if (
               !queued ||
@@ -1679,6 +1684,7 @@ export class HostEngine {
               attachments,
               command.type === "send" ? command.retryProposalBlockId : undefined,
               botContext,
+              questionReply,
             );
             if (firstTurn && command.type === "send") {
               this.generateFirstTurnNames(saved, prompt, placeholderTitle, command.refreshTitle);
@@ -1729,6 +1735,14 @@ export class HostEngine {
                 command.requestId,
                 command.decision,
               );
+          } else if (command.type === "keepQuestionOpen") {
+            if (value.session.pendingQuestion?.requestId !== command.requestId)
+              throw new Error("Question is already resolved");
+            if (!provider.keepQuestionOpen) throw new Error("This provider cannot keep questions open");
+            value = { ...value, session: applyHarnessEvent(value.session, {
+              type: "question.updated", requestId: command.requestId, autoResolveAt: undefined,
+            }) };
+            effect = () => provider.keepQuestionOpen!(command.sessionId, command.requestId);
           } else {
             if (value.session.pendingQuestion?.requestId !== command.requestId)
               throw new Error("Question is already resolved");
@@ -1977,6 +1991,7 @@ export class HostEngine {
         if (active.cancelled || active.finishing || this.closing) throw new Error("Turn stopped before the queued message could be steered");
         if (row.origin && !this.authorizeAssistantQueued?.(row.origin, value.projectId, value.session.id)) throw new Error("Assistant permission was revoked");
         await provider.steer!({
+          ...(row.questionReply ? { questionReply: row.questionReply } : {}),
           sessionId: session.id,
           cwd: sessionExecutionCwd(session),
           model: session.model,
@@ -2126,10 +2141,11 @@ export class HostEngine {
     attachments: Session["blocks"][number]["attachments"] = [],
     retryProposalBlockId?: string,
     botContext?: HarnessBotContext,
+    questionReply?: import("../src/integrations/harness/core/types").SendTurnInput["questionReply"],
   ): void {
     const { session, runId } = value;
     if (this.machines && currentMachineIO().key !== projectMachineKey(this.store.project(value.projectId).machine))
-      return this.machines.forSession(session.id, () => this.run(value, prompt, intent, attachments, retryProposalBlockId, botContext));
+      return this.machines.forSession(session.id, () => this.run(value, prompt, intent, attachments, retryProposalBlockId, botContext, questionReply));
     const parked = this.parked.get(session.id);
     if (parked) { clearTimeout(parked.timer); this.parked.delete(session.id); }
     const provider = this.provider(session.harness);
@@ -2213,6 +2229,7 @@ export class HostEngine {
               const prepared = await this.skills.prepare(turnPrompt!, { harness: session.harness as RemoteProvider, cwd: sessionExecutionCwd(session), sessionId: session.id }, provider);
               if (!this.closing && !active.cancelled) await provider.send({
                 ...input,
+                ...(questionReply ? { questionReply } : {}),
                 onAccepted: () => {
                   if (this.live.get(session.id)?.value.session.executionState?.phase === "starting")
                     this.executionPhase(session.id, runId!, "awaiting-response");

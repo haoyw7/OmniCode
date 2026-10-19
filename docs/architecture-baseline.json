@@ -163,17 +163,7 @@
       "src/integrations/harness/core/nativeSessionParser.ts -> src/integrations/harness/providers/claude/claudeSessionImport.ts",
       "src/integrations/harness/core/nativeSessionParser.ts -> src/integrations/harness/providers/codex/codexSessionImport.ts",
       "src/integrations/harness/core/nativeSessionParser.ts -> src/integrations/harness/providers/opencode/opencodeSessionImport.ts",
-      "src/integrations/harness/core/nativeSessionParser.ts -> src/integrations/harness/providers/pi/piSessionImport.ts",
-      "src/integrations/harness/core/register.ts -> src/integrations/harness/providers/antigravity/antigravityAdapter.ts",
-      "src/integrations/harness/core/register.ts -> src/integrations/harness/providers/claude/claudeAdapter.ts",
-      "src/integrations/harness/core/register.ts -> src/integrations/harness/providers/codex/codexAdapter.ts",
-      "src/integrations/harness/core/register.ts -> src/integrations/harness/providers/cursor/cursorAdapter.ts",
-      "src/integrations/harness/core/register.ts -> src/integrations/harness/providers/fx/fxAdapter.ts",
-      "src/integrations/harness/core/register.ts -> src/integrations/harness/providers/grok/grokAdapter.ts",
-      "src/integrations/harness/core/register.ts -> src/integrations/harness/providers/hermes/hermesAdapter.ts",
-      "src/integrations/harness/core/register.ts -> src/integrations/harness/providers/omp/ompAdapter.ts",
-      "src/integrations/harness/core/register.ts -> src/integrations/harness/providers/opencode/opencodeAdapter.ts",
-      "src/integrations/harness/core/register.ts -> src/integrations/harness/providers/pi/piAdapter.ts"
+      "src/integrations/harness/core/nativeSessionParser.ts -> src/integrations/harness/providers/pi/piSessionImport.ts"
     ],
     "features-to-app": [
       "src/features/connections/files/ui/FilePane.tsx -> src/app/ui/ReleaseNotesSurface.tsx",

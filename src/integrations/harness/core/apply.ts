@@ -130,6 +130,7 @@ export function applyHarnessEvent(
           requestId: event.requestId,
           historyId: crypto.randomUUID(),
           questions: event.questions,
+          ...(event.providerQuestionId ? { providerQuestionId: event.providerQuestionId } : {}),
           ...(event.title ? { title: event.title } : {}),
           ...(event.allowLateReply ? { allowLateReply: true } : {}),
           ...(event.autoResolveAt != null

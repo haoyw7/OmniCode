@@ -148,6 +148,7 @@ export function QuestionHistoryCard({
                   <p className="whitespace-pre-wrap font-medium text-content/80">
                     {item.prompt}
                   </p>
+                  {item.detail ? <div className="mt-2 whitespace-pre-wrap break-words text-content/80">{item.detail}</div> : null}
                   <p className="mt-1 whitespace-pre-wrap text-content/65">
                     {labels.length
                       ? labels.join("\n")

@@ -9,6 +9,7 @@ import {
   latestAnswerableQuestionId,
   questionFollowUp,
   recordQuestionAnswer,
+  providerQuestionReply,
 } from "./questionHistory";
 import type { QuestionAnswer, UserQuestion } from "./userQuestion";
 
@@ -39,6 +40,20 @@ const answer = (blockId: string): QuestionAnswer => ({
 });
 
 describe("question history", () => {
+  it("retains the native question and complete plan through persistence for late DeepSeek replies", () => {
+    const live = applyHarnessEvent(newSession("deepseek", "/repo"), {
+      type: "question.asked", requestId: 1, providerQuestionId: "native-call", allowLateReply: true,
+      questions: [{ ...questions[0], detail: "# Complete plan\n\n1. Verify", intent: { kind: "plan-review", approve: "Local", callId: "native-call" } }],
+    });
+    const saved = sanitizeSessionForPersist(live);
+    const record = saved.blocks[0].question!;
+    expect(record).toMatchObject({ providerQuestionId: "native-call", questions: [{ detail: "# Complete plan\n\n1. Verify", intent: { callId: "native-call" } }] });
+    const restored = { ...newSession("deepseek", "/repo"), blocks: saved.blocks };
+    const reply = answer(saved.blocks[0].id);
+    expect(latestAnswerableQuestionId(restored)).toBe(reply.blockId);
+    expect(questionFollowUp(restored, reply)).toContain("Use the archive");
+    expect(providerQuestionReply(restored, reply)).toEqual({ requestId: "native-call", reply: reply.reply });
+  });
   it("docks only the newest unanswered saved question until the user writes past it", () => {
     const live = ask();
     expect(latestAnswerableQuestionId(live)).toBeUndefined();
