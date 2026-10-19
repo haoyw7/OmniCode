@@ -19,6 +19,8 @@
 html[data-skin] {
   --color-bot-user: var(--color-accent);
   --color-bot-user-ink: var(--color-accent-ink);
+  --color-bot-send: var(--color-bot-user);
+  --color-bot-send-ink: var(--color-bot-user-ink);
   --color-bot-assistant: color-mix(in srgb, var(--color-content) 7%, var(--color-background-base));
   --shadow-bot-composer: 0 2px 12px color-mix(in srgb, var(--color-content) 5%, transparent);
   --color-omi-face: #20231e;
@@ -28,6 +30,10 @@ html[data-skin] {
   --color-omi-amber: #e4ba77;
   --color-omi-rose: #df9eb8;
   --color-omi-green: #9dc58a;
+}
+html[data-skin]:not(.theme-light) {
+  --color-bot-send: #ffffff;
+  --color-bot-send-ink: #20231e;
 }
 html[data-skin].theme-light {
   --color-bot-assistant: #f2f2f3;

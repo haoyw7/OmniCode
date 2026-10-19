@@ -59,6 +59,7 @@ import {
   useTranscriptRenderingPlatform,
 } from "../../sessions/ui/useTranscriptRenderingPlatform";
 import { Shimmer } from "../../../shared/ui/Shimmer";
+import { JumpToBottomButton } from "../../../shared/ui/messaging/JumpToBottomButton";
 import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
 import { usePauseOffscreenAnimation } from "../../../shared/hooks/usePauseOffscreenAnimation";
@@ -1222,7 +1223,13 @@ export function BotChat({
                     onClick={cancelReply}
                   />
                 )}
-                {botsLayout && <AnimatedCollapse expanded={awayFromBottom} className="desktop-bots-jump"><button type="button" aria-label={t("Scroll to bottom")} title={t("Scroll to bottom")} onClick={jumpToLatest}><ArrowUp size={18} style={{ transform: "rotate(180deg)" }} /></button></AnimatedCollapse>}
+                {botsLayout && <AnimatedCollapse expanded={awayFromBottom} className="desktop-bots-jump">
+                  <JumpToBottomButton
+                    label={t("Jump to latest")}
+                    busy={assistant.lifecycle === "running"}
+                    onClick={jumpToLatest}
+                  />
+                </AnimatedCollapse>}
                 <Composer
                   placeholder={botsLayout ? t("Message {bot}", { bot: assistant.name }) : undefined}
                   draft={draft}

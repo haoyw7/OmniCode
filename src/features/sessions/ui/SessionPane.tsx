@@ -3,7 +3,8 @@ import { AnimatePresence } from "motion/react";
 import { sessionComposerConfiguration } from "../model/composerConfiguration";
 import { SessionWorktreeIcon } from "./SessionWorktreeIcon";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { ChevronDown, GripVertical, X } from "../../../shared/ui/icons";
+import { GripVertical, X } from "../../../shared/ui/icons";
+import { JumpToBottomButton } from "../../../shared/ui/messaging/JumpToBottomButton";
 import {
   memo,
   useCallback,
@@ -1152,16 +1153,11 @@ const LocalSessionPane = memo(function LocalSessionPane({
               />
               {showJumpToBottom ? (
                 <div className="desktop-jump-lane pointer-events-none absolute inset-x-0 bottom-2 z-30 flex justify-center">
-                  <button
-                    type="button"
-                    title={uiT("Jump to latest")}
-                    aria-label={uiT("Jump to latest")}
-                    data-jump-to-bottom
+                  <JumpToBottomButton
+                    label={uiT("Jump to latest")}
+                    busy={session.busy}
                     onClick={() => jumpToBottomRef.current?.()}
-                    className="pointer-events-auto grid size-6 place-items-center rounded-md border border-content/15 bg-content/10 text-content shadow-md hover:bg-content/5 backdrop-blur-md"
-                  >
-                    <ChevronDown className="size-4" strokeWidth={2} />
-                  </button>
+                  />
                 </div>
               ) : null}
             </>

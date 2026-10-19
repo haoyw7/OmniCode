@@ -1231,6 +1231,30 @@ it.each([false, true])("enables the desktop Bots shell only with its Host capabi
   expect(rpc.mock.calls.some(([method]) => method.startsWith("bots."))).toBe(false);
 });
 
+it.each(["idle", "running"] as const)("jumps back to the latest Bot message with the shared button (%s)", async (lifecycle) => {
+  const base = chatRpc({ ...configuredView(), lifecycle });
+  const rpc = vi.fn(async (method: string, params?: object) => method === "environment.describe"
+    ? { capabilities: ["assistant.v1", "bots.shell.v1"] }
+    : base(method, params));
+  act(() => root.render(createElement(BotChat, {
+    hostKey: "jump", hostName: "Host", rpc: rpc as any, onOpen: () => {}, desktopBots: true,
+  })));
+  await flush();
+  const log = node.querySelector<HTMLDivElement>(".assistant-messages")!;
+  Object.defineProperty(log, "scrollHeight", { value: 1000 });
+  Object.defineProperty(log, "clientHeight", { value: 200 });
+  log.scrollTop = 100;
+  const scroll = vi.fn();
+  log.scrollTo = scroll;
+  act(() => log.dispatchEvent(new Event("scroll")));
+  const jump = node.querySelector<HTMLButtonElement>('[data-ui="jump-to-bottom"]')!;
+  expect(jump.getAttribute("aria-label")).toBe("Jump to latest");
+  expect(!!jump.querySelector(".typing-dots")).toBe(lifecycle === "running");
+  act(() => jump.click());
+  expect(scroll).toHaveBeenCalledWith(expect.objectContaining({ top: 1000 }));
+  expect(log.dataset.followLatest).toBe("true");
+});
+
 it("keeps Bots chat interactive and retains detail drafts through closing, reversal and Host updates", async () => {
   const motion = vi.spyOn(window, "matchMedia").mockReturnValue({ matches: false } as MediaQueryList);
   let view = configuredView();

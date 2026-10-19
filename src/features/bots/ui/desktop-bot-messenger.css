@@ -50,16 +50,17 @@
 .assistant-chat.desktop-bots-workspace .desktop-bot-file-card small { font-size: var(--text-ui-xs); color: var(--color-foreground-subtle); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-file-card [role="alert"] { flex-basis: 100%; color: var(--color-destructive); }
 .assistant-chat.desktop-bots-workspace .assistant-compose-dock { max-width: none; padding: 8px var(--bots-page-inset) 16px; }
-.assistant-chat.desktop-bots-workspace .assistant-compose { display: grid; grid-template-columns: var(--desktop-icon-md) minmax(0, 1fr) var(--desktop-icon-md); align-items: center; gap: 0 8px; padding: 10px; min-height: 56px; border-radius: var(--bots-composer-radius); box-shadow: var(--shadow-bot-composer); background: var(--color-background-base); border: .5px solid var(--color-stroke); }
+.assistant-chat.desktop-bots-workspace .assistant-compose { display: grid; grid-template-columns: var(--desktop-icon-md) minmax(0, 1fr) var(--desktop-icon-md); align-items: center; gap: 0 8px; padding: 5px 10px; min-height: 44px; border-radius: var(--bots-composer-radius); box-shadow: var(--shadow-bot-composer); background: var(--color-background-base); border: .5px solid var(--color-stroke); }
 .assistant-chat.desktop-bots-workspace .assistant-compose:focus-within { border-color: var(--color-stroke); }
 .assistant-chat.desktop-bots-workspace .assistant-compose > .zen-fold-item { grid-column: 1 / -1; }
 .assistant-chat.desktop-bots-workspace .assistant-compose [data-ui="textarea"] { grid-column: 2; grid-row: 2; padding: 0; min-height: 20px; max-height: 120px; line-height: 20px; border: 0; border-radius: 0; background: transparent; }
 .assistant-chat.desktop-bots-workspace .assistant-compose-actions { display: contents; }
 .assistant-chat.desktop-bots-workspace .assistant-compose-actions > .assistant-icon-button { grid-column: 1; grid-row: 2; align-self: center; }
 .assistant-chat.desktop-bots-workspace .assistant-compose-hint { display: none; }
-.assistant-chat.desktop-bots-workspace .assistant-send { grid-column: 3; grid-row: 2; background: var(--bots-dark-fill); color: var(--bots-light-ink); }
-.assistant-chat.desktop-bots-workspace .desktop-bots-jump { position: absolute; z-index: 3; right: 28px; bottom: 98px; }
-.assistant-chat.desktop-bots-workspace .desktop-bots-jump button { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--color-stroke); border-radius: 50%; background: var(--color-background-base); box-shadow: 0 3px 12px var(--color-stroke); }
+.assistant-chat.desktop-bots-workspace .assistant-send { grid-column: 3; grid-row: 2; }
+html[data-skin] .assistant-chat.desktop-bots-workspace [data-ui="icon-button"].assistant-send { color: var(--color-bot-send-ink); }
+html[data-skin] .assistant-chat.desktop-bots-workspace [data-ui="icon-button"].assistant-send > [data-menu-hover] { background: var(--color-bot-send); }
+.assistant-chat.desktop-bots-workspace .desktop-bots-jump { position: absolute; z-index: 3; left: 50%; bottom: 98px; transform: translateX(-50%); }
 .assistant-chat.desktop-bots-workspace .desktop-bots-new-messages { position: absolute; top: var(--desktop-bot-floating-header-height, 64px); left: 50%; transform: translateX(-50%); z-index: 3; }
 .assistant-chat.desktop-bots-workspace .desktop-bots-new-messages > div > div { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--color-stroke); border-radius: 20px; background: var(--color-background-base); box-shadow: 0 3px 12px var(--color-stroke); white-space: nowrap; font-size: var(--text-ui-sm); }
 .assistant-chat.desktop-bots-workspace .desktop-bots-new-messages button { display: flex; align-items: center; gap: 6px; }

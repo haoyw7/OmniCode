@@ -113,8 +113,8 @@
 .assistant-workspace .assistant-chat > .assistant-availability {
   padding-top: calc(var(--assistant-header-height) + 24px);
 }
-/* Loading sits in the middle of the page, below the floating header. */
-.assistant-chat > .assistant-loading {
+/* Center both the initial Host connection and conversation loading states. */
+.assistant-availability.assistant-loading {
   flex: 1;
   display: flex;
   flex-direction: column;
