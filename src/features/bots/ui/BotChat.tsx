@@ -59,7 +59,7 @@ import {
   useTranscriptRenderingPlatform,
 } from "../../sessions/ui/useTranscriptRenderingPlatform";
 import { Shimmer } from "../../../shared/ui/Shimmer";
-import { JumpToBottomButton } from "../../../shared/ui/messaging/JumpToBottomButton";
+import { JumpToBottomButton, useJumpToBottomVisibility } from "../../../shared/ui/messaging/JumpToBottomButton";
 import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
 import { withStatusToast } from "../../../shared/ui/StatusToast";
 import { usePauseOffscreenAnimation } from "../../../shared/hooks/usePauseOffscreenAnimation";
@@ -416,6 +416,9 @@ export function BotChat({
   const followLog = useRef(true);
   const lastScrollTop = useRef(0);
   const [awayFromBottom, setAwayFromBottom] = useState(false);
+  const showJumpToBottom = useJumpToBottomVisibility(awayFromBottom, botsLayout && visible);
+  const jumpingToLatest = useRef(false);
+  useEffect(() => { if (!visible) jumpingToLatest.current = false; }, [visible]);
   const [readThrough, setReadThrough] = useState(() => botReadRevision(cacheKey));
   const latestRevision = messages.reduce((latest, message) => Math.max(latest, message.revision), 0);
   const newMessages = botsLayout ? messages.filter(message => message.kind === "assistant" && message.revision > readThrough) : [];
@@ -425,6 +428,9 @@ export function BotChat({
     if (botsLayout && visible && followLog.current) setReadThrough(latestRevision);
   }, [botsLayout, visible, latestRevision]);
   const jumpToLatest = () => {
+    if (jumpingToLatest.current) return;
+    jumpingToLatest.current = true;
+    lastScrollTop.current = log.current?.scrollTop ?? 0;
     followLog.current = true; setAwayFromBottom(false); setReadThrough(latestRevision);
     markBotRead(cacheKey, messages);
     log.current?.scrollTo?.({ top: log.current.scrollHeight, behavior: reducedMotionQuery().matches ? "instant" : "smooth" });
@@ -1145,6 +1151,8 @@ export function BotChat({
                   role="log"
                   data-follow-latest={followLog.current}
                   aria-label={t("Assistant messages")}
+                  onWheel={(event) => { if (event.deltaY < 0) jumpingToLatest.current = false; }}
+                  onPointerDown={() => { jumpingToLatest.current = false; }}
                   onScroll={() => {
                     replyMenu.cancelHold();
                     const element = log.current;
@@ -1165,7 +1173,8 @@ export function BotChat({
                       // pulls the reader back down while they scroll up.
                       const movedUp = element.scrollTop < lastScrollTop.current - 0.5;
                       lastScrollTop.current = element.scrollTop;
-                      followLog.current = gap < 1 || (gap < 60 && !movedUp);
+                      if (gap < 1 || movedUp) jumpingToLatest.current = false;
+                      followLog.current = jumpingToLatest.current || gap < 1 || (gap < 60 && !movedUp);
                       element.dataset.followLatest = String(followLog.current);
                       if (botsLayout) {
                         setAwayFromBottom(!followLog.current);
@@ -1242,14 +1251,14 @@ export function BotChat({
                     onClick={cancelReply}
                   />
                 )}
-                {botsLayout && <AnimatedCollapse expanded={awayFromBottom} className="desktop-bots-jump">
-                  <JumpToBottomButton
-                    label={t("Jump to latest")}
-                    busy={assistant.lifecycle === "running"}
-                    onClick={jumpToLatest}
-                  />
-                </AnimatedCollapse>}
                 <Composer
+                  jumpToBottom={botsLayout ? <AnimatedCollapse expanded={showJumpToBottom} className="desktop-bots-jump">
+                    <JumpToBottomButton
+                      label={t("Jump to latest")}
+                      busy={assistant.lifecycle === "running"}
+                      onClick={jumpToLatest}
+                    />
+                  </AnimatedCollapse> : undefined}
                   placeholder={botsLayout ? t("Message {bot}", { bot: assistant.name }) : undefined}
                   draft={draft}
                   errorNotice={composerReadOnly ? <>

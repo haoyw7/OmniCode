@@ -219,6 +219,7 @@ export function DesktopBotsComposer({
   draft,
   placeholder,
   errorNotice,
+  jumpToBottom,
   onDraftChange,
   onSend,
   onStop,
@@ -297,6 +298,7 @@ export function DesktopBotsComposer({
           if (!sendDisabled) onSend();
         }}
       >
+        {jumpToBottom}
         <AnimatedCollapse expanded={!!attachments.length}>
           <AttachmentList
             className="assistant-attachments"

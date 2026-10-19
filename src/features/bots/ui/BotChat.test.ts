@@ -1300,12 +1300,39 @@ it.each(["idle", "running"] as const)("jumps back to the latest Bot message with
   const scroll = vi.fn();
   log.scrollTo = scroll;
   act(() => log.dispatchEvent(new Event("scroll")));
+  act(() => vi.advanceTimersByTime(100));
+  expect(node.querySelector(".desktop-bots-jump")).toBeNull();
+  // A brief excursion from the bottom must not flash the button.
+  log.scrollTop = 800;
+  act(() => log.dispatchEvent(new Event("scroll")));
+  act(() => vi.advanceTimersByTime(100));
+  expect(node.querySelector(".desktop-bots-jump")).toBeNull();
+  log.scrollTop = 100;
+  act(() => log.dispatchEvent(new Event("scroll")));
+  act(() => vi.advanceTimersByTime(149));
+  expect(node.querySelector(".desktop-bots-jump")).toBeNull();
+  act(() => vi.advanceTimersByTime(1));
   const jump = node.querySelector<HTMLButtonElement>('[data-ui="jump-to-bottom"]')!;
+  expect(jump.closest(".assistant-compose")).not.toBeNull();
   expect(jump.getAttribute("aria-label")).toBe("Jump to latest");
   expect(!!jump.querySelector(".typing-dots")).toBe(lifecycle === "running");
-  act(() => jump.click());
+  act(() => { jump.click(); jump.click(); });
+  expect(scroll).toHaveBeenCalledTimes(1);
   expect(scroll).toHaveBeenCalledWith(expect.objectContaining({ top: 1000 }));
   expect(log.dataset.followLatest).toBe("true");
+  // Intermediate smooth-scroll events must not bring the control back.
+  log.scrollTop = 400;
+  act(() => log.dispatchEvent(new Event("scroll")));
+  act(() => vi.advanceTimersByTime(200));
+  await act(async () => { await finishMotion(); });
+  expect(log.dataset.followLatest).toBe("true");
+  expect(node.querySelector(".desktop-bots-jump")).toBeNull();
+  // Scrolling upward during the jump restores manual reading.
+  log.scrollTop = 200;
+  act(() => log.dispatchEvent(new Event("scroll")));
+  act(() => vi.advanceTimersByTime(150));
+  expect(log.dataset.followLatest).toBe("false");
+  expect(node.querySelector(".desktop-bots-jump")).not.toBeNull();
 });
 
 it("keeps Bots chat interactive and retains detail drafts through closing, reversal and Host updates", async () => {

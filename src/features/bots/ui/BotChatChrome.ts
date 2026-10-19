@@ -43,6 +43,8 @@ export type BotComposerProps = {
   draft: string;
   placeholder?: string;
   errorNotice?: ReactNode;
+  /** Floating navigation anchored above the composer as its height changes. */
+  jumpToBottom?: ReactNode;
   replyText?: string;
   onCancelReply?: () => void;
   onDraftChange: (draft: string) => void;
