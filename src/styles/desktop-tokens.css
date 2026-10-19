@@ -128,7 +128,6 @@ html[data-skin] {
   --desktop-status-rail-reserve: calc(16.75rem + 24px);
   --desktop-pane-min-width: 280px;
   --desktop-transcript-edge-height: 20px;
-  --desktop-transcript-edge-blur: 4px;
   --desktop-tile-gap: 12px;
   --desktop-feedback: 60ms;
   --desktop-feedback-normal: 120ms;

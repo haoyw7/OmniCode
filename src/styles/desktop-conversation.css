@@ -540,10 +540,8 @@ html[data-skin][data-desktop-mode] .desktop-empty-greeting {
   padding: 0;
 }
 
-/* Keep the reading boundaries fixed while the transcript scrolls underneath. */
+/* Fade only transcript content so the shared pane background stays continuous. */
 html[data-skin][data-desktop-mode] [data-transcript-viewport] .agent-transcript {
-  /* Fade the content itself so the boundary remains visible even when the
-     WebView cannot sample the scrolling layer for backdrop blur. */
   --transcript-edge-mask: linear-gradient(
     to bottom,
     transparent,
@@ -553,31 +551,6 @@ html[data-skin][data-desktop-mode] [data-transcript-viewport] .agent-transcript 
   );
   -webkit-mask-image: var(--transcript-edge-mask);
   mask-image: var(--transcript-edge-mask);
-}
-
-html[data-skin][data-desktop-mode] [data-transcript-viewport]::before,
-html[data-skin][data-desktop-mode] [data-transcript-viewport]::after {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  height: var(--desktop-transcript-edge-height);
-  z-index: 2;
-  pointer-events: none;
-  background: color-mix(in srgb, var(--color-app) 12%, transparent);
-  -webkit-backdrop-filter: blur(var(--desktop-transcript-edge-blur));
-  backdrop-filter: blur(var(--desktop-transcript-edge-blur));
-}
-
-html[data-skin][data-desktop-mode] [data-transcript-viewport]::before {
-  top: 0;
-  -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
-  mask-image: linear-gradient(to bottom, #000, transparent);
-}
-
-html[data-skin][data-desktop-mode] [data-transcript-viewport]::after {
-  bottom: 0;
-  -webkit-mask-image: linear-gradient(to top, #000, transparent);
-  mask-image: linear-gradient(to top, #000, transparent);
 }
 
 html[data-skin][data-desktop-mode] .desktop-transcript-content {
