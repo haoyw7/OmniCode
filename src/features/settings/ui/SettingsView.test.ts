@@ -1109,6 +1109,35 @@ describe("settings pages", () => {
     },
   );
 
+  it("downloads missing CLIs, preserves busy state across navigation and offers retry", async () => {
+    const original = vi.mocked(invoke).getMockImplementation()!;
+    let fail!: (error: Error) => void;
+    vi.mocked(invoke).mockImplementation((command, args) => {
+      if (command === "harness_install") {
+        return new Promise((_, reject) => { fail = reject; });
+      }
+      return original(command, args);
+    });
+    await render("providers");
+    const download = () => container.querySelector<HTMLButtonElement>('[aria-label="Download and install Codex"]')!;
+    expect(download().textContent).toContain("One-click download");
+    expect(container.querySelector('[aria-label="Download and install Claude Code"]')).toBeNull();
+    await act(async () => download().click());
+    expect(download().disabled).toBe(true);
+    expect(download().getAttribute("aria-busy")).toBe("true");
+    expect(container.textContent).toContain("Downloading and installing CLI");
+    await render("general");
+    await render("providers");
+    expect(download().disabled).toBe(true);
+    await act(async () => fail(new Error("Download interrupted")));
+    expect(download().disabled).toBe(false);
+    expect(download().textContent).toContain("Retry download");
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Download interrupted");
+    await act(async () => download().click());
+    expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "harness_install")).toHaveLength(2);
+    await act(async () => fail(new Error("Still offline")));
+  });
+
   it("shows path details for every Agent CLI", async () => {
     await render("providers");
     expect(

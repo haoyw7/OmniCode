@@ -2037,6 +2037,14 @@ fn resolve_cursor_agent() -> Option<PathBuf> {
     let home = dirs_home().map(PathBuf::from);
     let mut candidates: Vec<PathBuf> = Vec::new();
 
+    #[cfg(windows)]
+    if let Some(local_app_data) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
+        // The native installer changes User PATH, not this running process's
+        // environment. Detect its launchers immediately after installation.
+        candidates.push(local_app_data.join("cursor-agent/cursor-agent"));
+        candidates.push(local_app_data.join("cursor-agent/agent"));
+    }
+
     // Stable shims first. `command -v` often returns a versioned path
     // (`…/versions/<build>/cursor-agent`); macOS TCC then treats each
     // upgrade as a new binary.
@@ -2447,6 +2455,11 @@ fn resolve_omp() -> Option<PathBuf> {
     let home = dirs_home().map(PathBuf::from);
     let mut candidates: Vec<PathBuf> = Vec::new();
 
+    #[cfg(windows)]
+    if let Some(local_app_data) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
+        candidates.push(local_app_data.join("omp/omp"));
+    }
+
     // Installer default first, then bun/brew, then anything on the login PATH.
     if let Some(home) = &home {
         candidates.push(home.join(".local/bin/omp"));
@@ -2804,6 +2817,10 @@ fn is_cursor_agent(path: &Path) -> bool {
         return true;
     }
     if binary_name_eq(path, "agent") {
+        #[cfg(windows)]
+        if path_has_component(path, "cursor-agent") {
+            return true;
+        }
         // One symlink hop. canonicalize() can walk into another .app
         // and trip macOS "data from other apps" TCC.
         if let Ok(target) = std::fs::read_link(path) {
@@ -2890,6 +2907,22 @@ fn existing_binary(path: PathBuf) -> Option<PathBuf> {
 #[cfg(all(test, windows))]
 mod windows_launcher_tests {
     use super::*;
+
+    #[test]
+    fn native_cursor_installer_launchers_are_identified_without_updated_path() {
+        let root = std::env::temp_dir().join(format!("omnicode-cursor-{}", uuid::Uuid::new_v4()));
+        let cursor = root.join("cursor-agent/agent.cmd");
+        let grok = root.join(".grok/agent.cmd");
+        let unrelated = root.join("other/agent.cmd");
+        for path in [&cursor, &grok, &unrelated] {
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, "@echo off").unwrap();
+        }
+        assert!(is_cursor_agent(&cursor));
+        assert!(!is_cursor_agent(&grok));
+        assert!(!is_cursor_agent(&unrelated));
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn independent_cli_wins_over_desktop_payload_on_path() {

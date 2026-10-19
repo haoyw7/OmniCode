@@ -17,6 +17,11 @@ import {
   type HarnessVersionInfo,
 } from "../../../../providers/model/harnessUpdates";
 import {
+  harnessInstallUnavailableReason,
+  runHarnessInstall,
+  useHarnessInstall,
+} from "../../../../providers/model/harnessInstall";
+import {
   runHarnessUpdate,
   type HarnessUpdateState,
 } from "../../../../providers/ui/HarnessUpdateNotice";
@@ -430,6 +435,8 @@ export function ProviderRow({
   const { t: uiT } = useTranslation();
   const models = modelsFor(harness);
   const available = isHarnessAvailable(harness);
+  const { state: installation, busy: installingAny } = useHarnessInstall(harness);
+  const installUnavailableReason = harnessInstallUnavailableReason(harness);
   const current =
     models.length > 0 ? resolveModel(harness, selectedModel) : null;
 
@@ -527,7 +534,15 @@ export function ProviderRow({
         </span>
       }
       description={
-        update.status === "failed" ? (
+        installation.status === "installing" ? (
+          <span role="status">{uiT("Downloading and installing CLI…")}</span>
+        ) : installation.status === "failed" ? (
+          <span role="alert" className="whitespace-pre-wrap break-words text-destructive">
+            {uiT("Installation failed: {error}", { error: installation.error })}
+          </span>
+        ) : !available && installUnavailableReason ? (
+          uiT(installUnavailableReason)
+        ) : update.status === "failed" ? (
           update.error
         ) : switchError ? (
           switchError
@@ -541,6 +556,26 @@ export function ProviderRow({
         )
       }
     >
+      {!available || installation.status === "installing" ? (
+        <Button variant="secondary"
+          aria-label={uiT("Download and install {value0}", {
+            value0: HARNESS_TITLE[harness],
+          })}
+          title={installUnavailableReason
+            ? uiT(installUnavailableReason)
+            : uiT("Download and install this CLI on this computer")}
+          aria-busy={installation.status === "installing"}
+          disabled={installingAny || Boolean(installUnavailableReason)}
+          onClick={() => void runHarnessInstall(harness).then(onUpdated)}
+        >
+          <ArrowDownCircle className="size-3.5 text-accent" aria-hidden />
+          {installation.status === "installing"
+            ? uiT("Installing…")
+            : installation.status === "failed"
+              ? uiT("Retry download")
+              : uiT("One-click download")}
+        </Button>
+      ) : null}
       {newerCopy && !switched ? (
         <Button variant="secondary"
           aria-label={uiT("Use {value0} {value1} at {value2}", {

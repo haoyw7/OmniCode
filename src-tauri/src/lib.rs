@@ -14,6 +14,7 @@ mod fs;
 mod fs_watch;
 mod gitlab;
 mod harness;
+mod harness_install;
 mod harness_updates;
 mod inbox_media;
 mod jira;
@@ -480,6 +481,7 @@ pub fn run() {
             harness_updates::harness_latest_version,
             harness_updates::harness_update_check_claim,
             harness_updates::harness_update,
+            harness_install::harness_install,
             harness_updates::harness_install_info,
             harness::provider_account_remove,
             provider_profiles::provider_accounts_publish,
