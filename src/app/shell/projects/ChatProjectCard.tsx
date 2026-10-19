@@ -4,6 +4,14 @@ import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Plus } from "../../../shared/ui/icons";
 import { useContext, useId, useState } from "react";
+import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
+import {
+  loadSidebarChatOrder,
+  orderSidebarChats,
+  reorderSidebarChats,
+  saveSidebarChatOrder,
+} from "../../model/sidebarChatOrder";
+import { sidebarDragPreview } from "../SidebarEntryReorder";
 import {
   PROJECT_COLLAPSE_DURATION_MS,
   type ProjectListEntry,
@@ -43,11 +51,27 @@ export function ChatProjectCard({
       }
       return !value;
     });
+  const [order, setOrder] = useState(loadSidebarChatOrder);
+  const rows = orderSidebarChats(
+    entries.map((entry) => ({ id: `chat:${entry.id}`, entry })),
+    order,
+  );
   const preview = useSidebarListPreview(
     entries.length,
     searchActive ? "search" : "",
     searchActive,
     { expanded },
+  );
+  const sortable = useAnimatedReorder(
+    rows.slice(0, preview.count).map((row) => row.id),
+    (visible) => {
+      const next = reorderSidebarChats(order, rows.map((row) => row.id), visible);
+      saveSidebarChatOrder(next);
+      setOrder(next);
+    },
+    "y",
+    undefined,
+    { activationDistance: 3, floatingPreview: sidebarDragPreview },
   );
   if (searchActive && entries.length === 0) return null;
   return (
@@ -86,10 +110,10 @@ export function ChatProjectCard({
                 {uiT("Chats you start will show up here")}
               </p>
             ) : null}
-            {entries.slice(0, preview.mountedCount).map((entry, index) => (
-              <AnimatedCollapse key={entry.id} expanded={index < preview.count}>
+            {rows.slice(0, preview.mountedCount).map(({ id, entry }, index) => (
+              <AnimatedCollapse key={id} expanded={index < preview.count}>
                 {() => (
-                  <SidebarEntry entry={entry} id={`chat:${entry.id}`} />
+                  <SidebarEntry entry={entry} id={id} sortable={sortable} />
                 )}
               </AnimatedCollapse>
             ))}
