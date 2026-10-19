@@ -168,7 +168,7 @@ html[data-skin] [data-session-status] [data-status-card] {
 }
 
 html[data-skin] [data-question-history] {
-  background: var(--color-card);
+  background: var(--desktop-panel-card);
   border-color: var(--color-composer-ring);
 }
 
@@ -176,7 +176,7 @@ html[data-skin] [data-question-card] {
   box-shadow: var(--shadow-panel);
   backdrop-filter: var(--glass-filter);
   color: var(--color-ink);
-  background: color-mix(in srgb, var(--color-panel) 88%, transparent);
+  background: var(--desktop-panel-fill);
   border-color: var(--color-hairline);
   padding: 12px 10px 10px;
   border-radius: var(--desktop-radius-card);

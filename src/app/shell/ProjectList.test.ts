@@ -129,6 +129,36 @@ it("filters visible project trees without pruning pins or persisted project orde
   expect(loadProjectRailOrder()).toEqual(paths);
 });
 
+it.each(["D:/A-Projects/OmniCode", "//Server/Share/Project"])(
+  "preserves a Windows project pin across remounts: %s",
+  async (path) => {
+    savePinnedProjects([path]);
+    await renderRail(path);
+    expect(loadPinnedProjects()).toEqual([path]);
+    expect(container.querySelector('[data-project-section="pinned"] [data-project-select]')).not.toBeNull();
+
+    act(() => root.unmount());
+    root = createRoot(container);
+    await renderRail(path);
+    expect(loadPinnedProjects()).toEqual([path]);
+    expect(container.querySelector('[data-project-section="pinned"] [data-project-select]')).not.toBeNull();
+  },
+);
+
+it("preserves saved pins while projects are still loading", async () => {
+  const path = "/work/pinned";
+  savePinnedProjects([path]);
+  await act(async () => root.render(createElement(ProjectList, {
+    cwd: "", recents: [],
+    onSelectProject: vi.fn(), onOpenProject: vi.fn(),
+  })));
+  expect(loadPinnedProjects()).toEqual([path]);
+
+  await renderRail(path);
+  expect(loadPinnedProjects()).toEqual([path]);
+  expect(container.querySelector('[data-project-section="pinned"] [data-project-select]')).not.toBeNull();
+});
+
 it.each([true, false])(
   "shows a local folder without remote decoration (registered: %s)",
   async (registered) => {

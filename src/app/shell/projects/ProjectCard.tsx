@@ -27,7 +27,6 @@ import {
   type RecentProject,
 } from "../../../features/projects/model/recents";
 import { resolveTabGroupLabel } from "../../../features/workspace/model/tabGroups";
-import { Shimmer } from "../../../shared/ui/Shimmer";
 import { TerminalSpinner } from "../../../features/sessions/ui/TerminalSpinner";
 import {
   useRemoteMachineOnline,
@@ -324,13 +323,7 @@ export function ProjectCard({
                 />
               </div>
             )}
-            {busy ? (
-              <Shimmer as="span" duration={1.4} className={labelClassName}>
-                {name}
-              </Shimmer>
-            ) : (
-              <span className={labelClassName}>{name}</span>
-            )}
+            <span className={labelClassName}>{name}</span>
             {machine ? (
               <span
                 data-project-machine

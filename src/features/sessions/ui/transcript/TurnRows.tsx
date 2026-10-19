@@ -92,7 +92,7 @@ export function WorkFoldLine({
       ) : null}
     </span>
   );
-  // While the agent runs, its status shimmers on the fold line.
+  // While the agent runs, show its live status on the fold line.
   const label = live ? (
     title
   ) : (
@@ -105,7 +105,7 @@ export function WorkFoldLine({
   }`;
 
   // Keep one host element as work becomes collapsible. Switching div/button
-  // remounts the live title, resetting its clock and desktop shimmer.
+  // remounts the live title, resetting its clock.
   return (
     <button
       type="button"

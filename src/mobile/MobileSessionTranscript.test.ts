@@ -36,6 +36,11 @@ const reply = (text: string, id = "reply"): Block => ({ id, role: "assistant", t
 const text = "离开会话期间已经收到的消息应当直接显示。".repeat(12);
 const replies = () => [...app.querySelectorAll(".agent-markdown")].map(node => node.textContent);
 
+function advanceText(milliseconds: number) {
+  for (let elapsed = 0; elapsed < milliseconds; elapsed += 25)
+    act(() => vi.advanceTimersByTime(25));
+}
+
 function mount(blocks: Block[], historyLoading = false) {
   const initial: HostSession = {
     projectId: "project", revision: 1, updatedAt: 1, status: "running", runId: "run",
@@ -70,13 +75,15 @@ it("opens the source Bot from a mobile conversation message", async () => {
   expect(onOpenBot).toHaveBeenCalledWith(origin);
 });
 
-it("shows restored history and subsequent streamed chunks immediately", () => {
+it("shows restored history immediately and paces subsequent streamed chunks", () => {
   const { render, update } = mount([user, reply("Cached")], true);
   update([user, reply(text), reply(text, "second")]);
   expect(replies()).toEqual([text, text]);
   render({ historyLoading: false });
   expect(replies()).toEqual([text, text]);
   update([user, reply(text), reply(text + text, "second")]);
+  expect(replies()).toEqual([text, text]);
+  advanceText(3000);
   expect(replies()).toEqual([text, text + text]);
 });
 
@@ -137,7 +144,7 @@ it.each(["drawer", "page"])("skips background output when returning from a hidde
   const entrances = () => animate.mock.contexts.filter(node => node.hasAttribute("data-transcript-content-motion")).length;
   const { render, update } = mount([user, reply("")]);
   update([user, reply(text)]);
-  act(() => vi.advanceTimersByTime(100));
+  advanceText(3000);
   expect(replies()).toEqual([text]);
   render({ active: kind !== "drawer" }, kind !== "page");
   const beforeReturn = entrances();
@@ -146,6 +153,8 @@ it.each(["drawer", "page"])("skips background output when returning from a hidde
   expect(replies()).toEqual([text + text, text]);
   expect(entrances()).toBe(beforeReturn);
   update([user, reply(text + text), reply(text + text, "second")]);
+  expect(replies()).toEqual([text + text, text]);
+  advanceText(3000);
   expect(replies()).toEqual([text + text, text + text]);
 });
 
@@ -158,12 +167,14 @@ it("shows new messages immediately without movement when reduced motion is enabl
   expect(animate.mock.contexts.filter(node => node.hasAttribute("data-transcript-content-motion"))).toHaveLength(0);
 });
 
-it("shows the entire first reply inside its message motion container without per-word animation", () => {
+it("paces the first reply without per-word animation", () => {
   const { render, update } = mount([user]);
   render({ animateFrom: user.id });
   update([user, reply(text)]);
-  expect(replies()).toEqual([text]);
+  expect(replies()[0]!.length).toBeGreaterThan(0);
+  expect(replies()[0]!.length).toBeLessThan(text.length);
   update([user, { ...reply(text + text), streaming: false }]);
+  advanceText(3000);
   expect(replies()).toEqual([text + text]);
   expect(app.querySelector(".agent-markdown")!.closest("[data-transcript-content-motion]")).not.toBeNull();
   expect(app.querySelector("[data-word-fade]")).toBeNull();
@@ -183,7 +194,7 @@ it.each(["assistant", "reasoning"] as const)("keeps the running row mounted when
   expect(app.querySelector('.transcript-turn [role="status"]')).toBe(running);
 });
 
-it("does not remount the running shimmer between send acknowledgement and the first reply", async () => {
+it("does not remount the running status between send acknowledgement and the first reply", async () => {
   const { render, update, store } = mount([user, { ...reply("Previous reply"), streaming: false }]);
   act(() => store.set({ ...store.get()!, status: "idle" }));
   const outgoing = { id: "next-user", text: "Hello", startedAt: Date.now(), placement: "transcript" as const };
@@ -193,7 +204,7 @@ it("does not remount the running shimmer between send acknowledgement and the fi
   update(history);
   const runningText = app.querySelector(".transcript-turn-live .transcript-live-fold-title")!;
   expect(runningText).not.toBeNull();
-  expect(runningText.classList.contains("shimmer-text")).toBe(true);
+  expect(runningText.classList.contains("shimmer-text")).toBe(false);
   const row = runningText.closest(".zen-fold-item");
   await advanceMotionTimers(400);
   render({ outgoing: undefined, animateFrom: recorded.id });
@@ -212,11 +223,11 @@ it("does not remount the running shimmer between send acknowledgement and the fi
   }
 });
 
-it("keeps the running shimmer mounted when work becomes collapsible", () => {
+it("keeps the running status mounted when work becomes collapsible", () => {
   const { update } = mount([{ ...user, sending: true }]);
   const runningText = app.querySelector(".transcript-live-fold-title");
   expect(runningText).not.toBeNull();
-  expect(runningText!.classList.contains("shimmer-text")).toBe(true);
+  expect(runningText!.classList.contains("shimmer-text")).toBe(false);
   const row = runningText!.closest(".zen-fold-item");
   const reasoning: Block = { id: "reasoning", role: "reasoning", text: "Thinking", streaming: true };
   update([user]);

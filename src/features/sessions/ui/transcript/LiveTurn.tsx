@@ -55,9 +55,7 @@ export function InitialThinking({
 
 /**
  * The clock on a turn's fold line: how long the agent has been at it, or what
- * it is waiting on. The band that sweeps the text is sized off this element,
- * so it shrinks to the words — stretched across the row, the sweep spends its
- * time on empty space and the line just sits there looking dim.
+ * it is waiting on.
  */
 export function LiveFoldTitle({
   startedAt,
@@ -103,9 +101,9 @@ export function LiveFoldTitle({
   const label = (
     <>
       {paused || responding || clockHidden ? null : <TypingDots className="transcript-typing mr-2 shrink-0" />}
-      <Shimmer className="transcript-live-fold-title min-w-0 truncate font-sans text-sm" duration={1}>
+      <span className="transcript-live-fold-title min-w-0 truncate font-sans text-sm text-content/50">
         {text}
-      </Shimmer>
+      </span>
     </>
   );
   return (

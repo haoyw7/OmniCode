@@ -248,15 +248,26 @@ function RailCards({
         id="environment"
         title={uiT("Environment")}
         foldedMeta={
-          <span className="min-w-0 truncate text-[12.5px] leading-4 text-content/45" title={environmentPath(cwd)}>
-            {projectName(environmentPath(cwd))}
+          <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] leading-4 text-content/45">
+            <span className="min-w-0 truncate" title={environmentPath(cwd)}>
+              {projectName(environmentPath(cwd))}
+            </span>
+            {branch ? <>
+              <span className="shrink-0">·</span>
+              <span className="min-w-0 truncate" title={branch}>{branch}</span>
+            </> : null}
           </span>
         }
       >
         <EnvironmentRows cwd={cwd} branch={branch} />
       </Card>,
       model.git ? (
-        <Card key="changes" id="changes" title={uiT("Changes")}>
+        <Card
+          key="changes"
+          id="changes"
+          title={uiT("Changes")}
+          foldedMeta={<DiffCounts additions={model.git.additions} deletions={model.git.deletions} />}
+        >
           <RowButton
             disabled={!actions}
             title={uiT("Review changes")}

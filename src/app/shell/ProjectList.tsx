@@ -34,7 +34,6 @@ import {
   loadPinnedProjects,
   loadProjectRailOrder,
   projectRailSections,
-  savePinnedProjects,
   saveProjectRailOrder,
   subscribeProjectPathsChanged,
   syncProjectRailOrder,
@@ -384,13 +383,6 @@ export function ProjectList({
       saveProjectRailOrder(synced);
       return synced;
     });
-  }, [allProjects]);
-
-  useEffect(() => {
-    // Saving announces the change, which reloads `pinnedPaths`.
-    const pinned = loadPinnedProjects();
-    const next = pinned.filter((path) => allProjects.has(path));
-    if (next.length !== pinned.length) savePinnedProjects(next);
   }, [allProjects]);
 
   useEffect(() => {
