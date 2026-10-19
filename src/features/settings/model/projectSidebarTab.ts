@@ -4,11 +4,12 @@ import { loadSidebarTabOrder, type SidebarTabId } from "./appearance";
 
 const KEY = "omnicode.projectSidebarTabs.v1";
 
-type ProjectSidebarTab = SidebarTabId;
+/** Changes open a review tab, so only these segments are ever remembered. */
+type ProjectSidebarTab = Exclude<SidebarTabId, "changes">;
 type StoredTabs = Record<string, ProjectSidebarTab>;
 
 function isProjectSidebarTab(value: unknown): value is ProjectSidebarTab {
-  return value === "sessions" || value === "files" || value === "changes";
+  return value === "sessions" || value === "files";
 }
 
 function readAll(): StoredTabs {

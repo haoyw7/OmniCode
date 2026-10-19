@@ -31,15 +31,23 @@ export function lineDiff(a: string, b: string): readonly Change[] {
 
   const offsetsA = offsets(linesA);
   const offsetsB = offsets(linesB);
-  return diff(encodedA, encodedB, LINE_PASS).map(
-    (change) =>
-      new Change(
-        offsetsA[change.fromA],
-        offsetsA[change.toA],
-        offsetsB[change.fromB],
-        offsetsB[change.toB],
-      ),
-  );
+  return diff(encodedA, encodedB, LINE_PASS).map((change) => {
+    let fromA = offsetsA[change.fromA];
+    let toA = offsetsA[change.toA];
+    let fromB = offsetsB[change.fromB];
+    let toB = offsetsB[change.toB];
+    // Chunk.build skips a shared leading newline when aligning to whole lines.
+    // For a pure insertion/deletion at an empty line, rotate that newline to
+    // the end of the change too, so the empty side and changed side stay aligned.
+    if (fromA === toA || fromB === toB) {
+      while (a[fromA] === "\n" && b[fromB] === "\n" &&
+        a[toA] === "\n" && b[toB] === "\n") {
+        fromA++; toA++;
+        fromB++; toB++;
+      }
+    }
+    return new Change(fromA, toA, fromB, toB);
+  });
 }
 
 export const LINE_DIFF_CONFIG: DiffConfig = { override: lineDiff };

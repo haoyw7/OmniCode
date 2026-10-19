@@ -16,7 +16,7 @@ it("recovers defaults from corrupt storage and fills missing sections without du
   expect(loadSidebarSectionOrder()).toEqual(DEFAULT_SIDEBAR_SECTION_ORDER);
   localStorage.setItem(
     key,
-    JSON.stringify(["projects", "unknown", null, "projects", "chats"]),
+    JSON.stringify(["projects", "remote-control", "unknown", null, "projects", "chats"]),
   );
   expect(loadSidebarSectionOrder()).toEqual([
     "projects",
@@ -24,7 +24,6 @@ it("recovers defaults from corrupt storage and fills missing sections without du
     "pinned",
     "workflows",
     "groups",
-    "remote-control",
   ]);
 });
 
@@ -33,7 +32,7 @@ it("preserves hidden sections while saving a reordered visible subset", () => {
     [...DEFAULT_SIDEBAR_SECTION_ORDER],
     ["projects", "workflows", "chats"],
   );
-  expect(next).toEqual(["pinned", "projects", "workflows", "groups", "chats", "remote-control"]);
+  expect(next).toEqual(["pinned", "projects", "workflows", "groups", "chats"]);
   saveSidebarSectionOrder(next);
   expect(loadSidebarSectionOrder()).toEqual(next);
 });

@@ -118,12 +118,15 @@ function removeSessionDocuments(
   const editorPanes: EditorPane[] = [];
 
   for (const pane of tab.editorPanes) {
-    const files = pane.files.filter(
-      (file) =>
-        file.plan?.sessionId !== sessionId &&
-        (!isSessionChangesTab(file) ||
-          file.sessionChanges.sessionId !== sessionId),
-    );
+    const files = pane.files.flatMap((file) => {
+      if (file.plan?.sessionId === sessionId) return [];
+      if (!isSessionChangesTab(file) || file.sessionChanges.sessionId !== sessionId)
+        return [file];
+      // The shared Changes review outlives the session; it only forgets it.
+      if (!file.changes) return [];
+      const { sessionChanges: _closed, ...rest } = file;
+      return [rest];
+    });
     if (files.length > 0) {
       editorPanes.push({
         ...pane,

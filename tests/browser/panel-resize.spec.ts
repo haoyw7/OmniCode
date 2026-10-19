@@ -213,6 +213,49 @@ test("keeps the split aligned with its sash when file content rerenders during a
   expect(Math.abs((await chat.boundingBox())!.width - preview)).toBeLessThan(1);
 });
 
+test("changes panel resizes from the visible card border on every dock side", async ({ page }) => {
+  await page.setViewportSize({ width: 1400, height: 1000 });
+  await page.goto("/tests/browser/desktop-tools.html?editor=source");
+  await page.evaluate(() => (window as FixtureWindow).toolsFixture.setTab("changes"));
+  const grid = page.locator(".desktop-tools-layout");
+  await expect(grid).toHaveAttribute("data-fold-state", "open");
+  const panel = grid.locator(":scope > .desktop-tools-panel");
+  const frame = panel.locator("[data-pane-card-frame]");
+  const terminal = page.locator(".xterm");
+  await terminal.evaluate(el => el.setAttribute("data-resize-retained", "true"));
+  const draft = panel.locator("textarea");
+  await draft.fill("Keep the commit draft while resizing");
+  for (const [side, key] of [["right", "ArrowRight"], ["left", "ArrowLeft"], ["top", "ArrowUp"], ["bottom", "ArrowDown"]] as const) {
+    await panel.locator("[data-surface-pane-drag]").focus();
+    await page.keyboard.press(key);
+    await expect(grid).toHaveAttribute("data-tools-side", side);
+    const vertical = side === "top" || side === "bottom";
+    const sign = side === "right" || side === "bottom" ? -1 : 1;
+    for (const cancel of [false, false, true]) {
+      const card = (await frame.boundingBox())!;
+      const initial = (await panel.boundingBox())![vertical ? "height" : "width"];
+      // Start just inside the visible frame, not at a synthetic separator center.
+      const x = side === "right" ? card.x + 1 : side === "left" ? card.x + card.width - 1 : card.x + card.width / 2;
+      const y = side === "bottom" ? card.y + 1 : side === "top" ? card.y + card.height - 1 : card.y + card.height / 2;
+      expect(await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('[role="separator"]')?.getAttribute("aria-label"), { x, y })).toBe("Resize panel");
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await expect(grid).toHaveAttribute("data-resizing", "true");
+      for (const delta of [64, 24]) {
+        await page.mouse.move(x + (vertical ? 0 : sign * delta), y + (vertical ? sign * delta : 0), { steps: 4 });
+        await expect.poll(async () => Math.abs((await panel.boundingBox())![vertical ? "height" : "width"] - initial - delta)).toBeLessThan(1);
+      }
+      if (cancel) await page.keyboard.press("Escape");
+      await page.mouse.up();
+      await expect.poll(async () => Math.abs((await panel.boundingBox())![vertical ? "height" : "width"] - initial - (cancel ? 0 : 24))).toBeLessThan(1);
+      await expect(page.locator("[data-resize-cursor]")).toHaveCount(0);
+      await expect.poll(() => resizing(page)).toBe(false);
+    }
+    await expect(draft).toHaveValue("Keep the commit draft while resizing");
+    await expect(terminal).toHaveAttribute("data-resize-retained", "true");
+  }
+});
+
 for (const kind of ["tools", "terminal", "explorer", "sidebar"] as const) {
   test(`${kind} resize follows the pointer and keeps terminal dimensions current`, async ({ page }) => {
     await openTools(page);

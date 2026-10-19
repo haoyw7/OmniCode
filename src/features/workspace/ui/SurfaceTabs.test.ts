@@ -62,17 +62,12 @@ describe("surfaceTabPresentation", () => {
     });
   });
 
-  it("labels a session-scoped review distinctly", () => {
+  it("labels a session's review as the working copy's Changes", () => {
     expect(
       surfaceTabPresentation(
         newSessionChangesTab("/repo", "session-a", "/repo/App.tsx"),
       ),
-    ).toEqual({
-      name: "Session Changes",
-      label: "Session Changes",
-      iconName: "CHANGES",
-      tooltip: "Changes captured for this session only",
-    });
+    ).toMatchObject({ name: "Changes", iconName: "CHANGES" });
   });
 
   it("labels a commit tab from the subject", () => {

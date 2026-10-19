@@ -3,6 +3,9 @@ import { panelTransition, immediateTransition } from "../../../shared/motion/tok
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { MenuHover } from "../../../shared/ui/MenuHover";
+import { Button } from "../../../shared/ui/forms/Button";
+import { IconButton } from "../../../shared/ui/forms/IconButton";
+import { Textarea } from "../../../shared/ui/forms/Textarea";
 import {
   AnimatedCollapse,
   useCollapseMotion,
@@ -34,6 +37,7 @@ import {
   X,
 } from "../../../shared/ui/icons";
 import {
+  memo,
   useCallback,
   useEffect,
   useId,
@@ -122,6 +126,7 @@ const prByCwd = new Map<string, GitPr | null>();
 type AmendTarget = { branch: string | null; head: string | null };
 
 type Props = {
+  branchControl?: ReactNode;
   cwd: string;
   enabled: boolean;
   textHarness?: HarnessId;
@@ -133,7 +138,8 @@ type Props = {
   onOpenCommit: (commit: GitHistoryCommit, pin?: boolean) => void;
 };
 
-export function GitChangesPanel({
+export const GitChangesPanel = memo(function GitChangesPanel({
+  branchControl,
   cwd,
   enabled,
   textHarness,
@@ -151,6 +157,9 @@ export function GitChangesPanel({
   const graphPaneRef = useRef<HTMLDivElement>(null);
   const branchMenuRef = useRef<HTMLDivElement>(null);
   const [branchMenuOpen, setBranchMenuOpen] = useState(false);
+  const [composerExpanded, setComposerExpanded] = useState(true);
+  const composerId = useId();
+  const composerToggleRef = useRef<HTMLButtonElement>(null);
   // Shared across the header and the changed-files list so no two Git
   // mutations ever run against the same checkout at once.
   const [busy, setBusy] = useState<string | null>(null);
@@ -218,12 +227,27 @@ export function GitChangesPanel({
   return (
     <div
       ref={paneRef}
+      data-git-changes-panel
+      aria-label={uiT("Changes")}
       className="flex h-full min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <header className="desktop-toolbar flex h-9 shrink-0 items-center gap-2 border-b border-stroke px-3">
-        <span className="text-[12px] font-medium text-content">
-          {uiT("Changes")}
-        </span>
+      <header className="git-panel-header git-changes-toolbar flex items-center border-b border-stroke">
+        <IconButton
+          ref={composerToggleRef}
+          size="xs"
+          label={uiT(composerExpanded ? "Collapse commit panel" : "Expand commit panel")}
+          aria-expanded={composerExpanded}
+          aria-controls={composerId}
+          onClick={() => {
+            if (composerExpanded && document.getElementById(composerId)?.contains(document.activeElement)) {
+              composerToggleRef.current?.focus();
+            }
+            setComposerExpanded((expanded) => !expanded);
+          }}
+        >
+          {composerExpanded ? <ChevronDown className="text-ink-secondary" /> : <ChevronRight className="text-ink-secondary" />}
+        </IconButton>
+        {branchControl ? <div className="flex min-w-0 flex-1 items-center gap-1">{branchControl}</div> : null}
         {status ? (
           <span role="status" className="text-[11px] text-content/50">
             {status}
@@ -232,37 +256,36 @@ export function GitChangesPanel({
         {index?.branch ? (
           <div
             ref={branchMenuRef}
-            className="relative ml-auto flex min-w-0 items-center gap-1"
+            className={`relative flex min-w-0 items-center gap-1 ${branchControl ? "ml-auto shrink-0" : "flex-1"}`}
           >
-            <span className="flex min-w-0 items-center gap-1 text-[11px] text-content/50">
-              <GitBranch className="size-3 shrink-0" />
-              <span data-code-label className="min-w-0 truncate">{index.branch}</span>
+            <span className="flex min-w-0 flex-1 items-center gap-1">
+              {!branchControl ? <><GitBranch className="size-3 shrink-0" />
+              <span data-code-label className="min-w-0 truncate">{index.branch}</span></> : null}
               {index.ahead > 0 ? (
-                <span className="shrink-0 tabular-nums text-content/40">
+                <span className="shrink-0 tabular-nums text-ink-tertiary">
                   ↑{index.ahead}
                 </span>
               ) : null}
               {index.behind > 0 ? (
-                <span className="shrink-0 tabular-nums text-content/40">
+                <span className="shrink-0 tabular-nums text-ink-tertiary">
                   ↓{index.behind}
                 </span>
               ) : null}
             </span>
-            <button
-              type="button"
+            <IconButton
+              size="xs"
               aria-haspopup="menu"
-              aria-label={uiT("Branch actions")}
+              label={uiT("Branch actions")}
               aria-expanded={branchMenuOpen}
               disabled={busy !== null}
               onClick={() => setBranchMenuOpen((open) => !open)}
-              className="grid size-5 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/6 hover:text-content disabled:opacity-40 aria-expanded:bg-content/10 aria-expanded:text-content"
             >
               {busy === "pull" ? (
-                <Loader className="size-3.5 animate-spin" />
+                <Loader className="animate-spin" />
               ) : (
-                <MoreHorizontal className="size-4" strokeWidth={2} />
+                <MoreHorizontal strokeWidth={2} />
               )}
-            </button>
+            </IconButton>
             {branchMenuOpen ? (
               <div
                 role="menu"
@@ -302,13 +325,14 @@ export function GitChangesPanel({
         )}
       </header>
       <ChangedFiles
+        composerId={composerId}
+        composerExpanded={composerExpanded}
         cwd={cwd}
         textHarness={textHarness}
         index={index}
         files={files}
         selected={selectedPath}
         selectedKind={selectedKind}
-        enabled={enabled}
         fill
         busy={busy}
         setBusy={setBusy}
@@ -322,9 +346,9 @@ export function GitChangesPanel({
         }}
       />
       <motionElement.div
-      initial={false} animate={{ gridTemplateRows: graphExpanded ? "minmax(0, 16px) minmax(0, var(--git-graph-height))" : "minmax(0, 0px) minmax(0, 28px)" }} transition={motionPreferenceQuery().matches ? immediateTransition : panelTransition} onAnimationComplete={graphMotion.finish}
+      initial={false} animate={{ gridTemplateRows: graphExpanded ? "minmax(0, 0px) minmax(0, var(--git-graph-height))" : "minmax(0, 0px) minmax(0, var(--desktop-control-md, 32px))" }} transition={motionPreferenceQuery().matches ? immediateTransition : panelTransition} onAnimationComplete={graphMotion.finish}
         ref={graphPaneRef}
-        className="git-history-panel animated-collapse-size grid shrink-0 overflow-hidden"
+        className="git-history-panel animated-collapse-size grid shrink-0 overflow-visible"
         style={
           {
             "--git-graph-height": `${graphHeight}px`,
@@ -334,7 +358,7 @@ export function GitChangesPanel({
 
       >
         <div
-          className="min-h-0 overflow-hidden"
+          className="min-h-0 overflow-visible"
           inert={!graphExpanded}
           aria-hidden={!graphExpanded || undefined}
         >
@@ -361,7 +385,7 @@ export function GitChangesPanel({
             ) : null}
           </SurfaceVisibilityContext.Provider>
         </div>
-        <div className="min-h-0 overflow-hidden border-t border-stroke">
+        <div className="min-h-0 overflow-hidden">
           <GitHistoryGraph
             cwd={cwd}
             enabled={enabled}
@@ -377,16 +401,17 @@ export function GitChangesPanel({
       </motionElement.div>
     </div>
   );
-}
+});
 
 function ChangedFiles({
+  composerId,
+  composerExpanded,
   cwd,
   textHarness,
   index,
   files,
   selected,
   selectedKind,
-  enabled,
   fill,
   busy,
   setBusy,
@@ -394,13 +419,14 @@ function ChangedFiles({
   onOpenAllChanges,
   onMutated,
 }: {
+  composerId: string;
+  composerExpanded: boolean;
   cwd: string;
   textHarness?: HarnessId;
   index: GitDiffIndex | null;
   files: GitChangedFile[];
   selected?: string;
   selectedKind?: GitFileDiffKind;
-  enabled: boolean;
   fill: boolean;
   busy: string | null;
   setBusy: (value: string | null) => void;
@@ -411,12 +437,14 @@ function ChangedFiles({
   const { t: uiT } = useTranslation();
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
   const menuRef = useRef<HTMLDivElement>(null);
-  const messageRef = useRef<HTMLTextAreaElement>(null);
   const generateAbortRef = useRef<AbortController | null>(null);
   const [message, setMessage] = useState("");
   const [amendTarget, setAmendTarget] = useState<AmendTarget | null>(null);
   const amend = amendTarget !== null;
   const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!composerExpanded) setMenuOpen(false);
+  }, [composerExpanded]);
   const [stagedExpanded, setStagedExpanded] = useState(stagedOpen);
   const [changesExpanded, setChangesExpanded] = useState(changesOpen);
   const [view, setView] = useState<ChangesView>(changesView);
@@ -470,14 +498,6 @@ function ChangedFiles({
   }, [amendTarget, index?.branch, index?.head]);
   const canOpenMenu = !!index?.branch && !busy;
 
-  useEffect(() => {
-    if (!enabled) return;
-    const el = messageRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-  }, [message, enabled]);
-
   useEffect(
     () => () => {
       if (generateAbortRef.current) {
@@ -504,9 +524,9 @@ function ChangedFiles({
     setView(changesView);
   };
 
-  const fail = (error: unknown) => {
+  const fail = useCallback((error: unknown) => {
     window.alert(error instanceof Error ? error.message : String(error));
-  };
+  }, []);
 
   const recordPrActivity = (number = pr?.number) => {
     if (!number) return;
@@ -528,7 +548,7 @@ function ChangedFiles({
     );
   };
 
-  const run = async (
+  const run = useCallback(async (
     file: GitChangedFile,
     action: "stage" | "unstage" | "discard",
   ) => {
@@ -555,7 +575,7 @@ function ChangedFiles({
     } finally {
       setBusy(null);
     }
-  };
+  }, [busy, cwd, setBusy, onMutated, fail]);
 
   const runAll = async (action: "stage" | "unstage" | "discard") => {
     if (busy) return;
@@ -589,7 +609,7 @@ function ChangedFiles({
     }
   };
 
-  const runFolder = async (relative: string, action: "stage" | "unstage") => {
+  const runFolder = useCallback(async (relative: string, action: "stage" | "unstage") => {
     if (busy) return;
     setBusy(`${action}:${relative}`);
     try {
@@ -605,7 +625,7 @@ function ChangedFiles({
     } finally {
       setBusy(null);
     }
-  };
+  }, [busy, cwd, setBusy, files, onMutated, fail]);
 
   const generate = async () => {
     if (!canGenerate || generateAbortRef.current) return;
@@ -748,167 +768,159 @@ function ChangedFiles({
     <aside
       className={`flex min-h-0 min-w-0 flex-col ${fill ? "flex-1" : "shrink-0"}`}
     >
-      <div className="shrink-0 border-b border-stroke p-2">
-        <div className="relative">
-          <textarea
-            data-code-label
-            ref={messageRef}
-            rows={1}
-            value={message}
-            placeholder={
-              amend
-                ? uiT("Amend message ({value0}↩ to amend)", {
-                    value0: String(MOD),
-                  })
-                : uiT("Message ({value0}↩ to commit)", { value0: String(MOD) })
-            }
-            disabled={!canEditMessage}
-            onChange={(event) => setMessage(event.target.value)}
-            onKeyDown={(event) => {
-              if (
-                (event.metaKey || event.ctrlKey) &&
-                event.key === "Enter" &&
-                canCommit
-              ) {
-                event.preventDefault();
-                void commit(false);
+      <AnimatedCollapse expanded={composerExpanded} keepMounted className="shrink-0">
+        <div id={composerId} className="git-commit-composer border-b border-stroke p-2">
+          <div className="relative">
+            <Textarea
+              size="sm"
+              aria-label={uiT("Commit message")}
+              rows={2}
+              value={message}
+              placeholder={
+                amend ? uiT("Amend Last Commit") : uiT("Commit message")
               }
-            }}
-            className="max-h-40 w-full resize-none overflow-y-auto rounded-md bg-content/10 py-1 pr-8 pl-2 text-[13px] leading-5 text-content outline-none placeholder:text-content/35 disabled:opacity-40"
-          />
-          <button
-            type="button"
-            title={
-              busy === "generate"
-                ? uiT("Cancel commit message generation")
-                : uiT("Generate commit message")
-            }
-            aria-label={
-              busy === "generate"
-                ? uiT("Cancel commit message generation")
-                : uiT("Generate commit message")
-            }
-            disabled={busy !== "generate" && !canGenerate}
-            onClick={() =>
-              busy === "generate" ? cancelGenerate() : void generate()
-            }
-            className="group absolute top-1 right-1 grid size-5 place-items-center rounded-md bg-content/10 text-content hover:bg-content/14 hover:text-content disabled:opacity-40"
-          >
-            {busy === "generate" ? (
-              <>
-                <Loader
-                  className="size-3.5 animate-spin group-hover:hidden group-focus-visible:hidden"
-                />
-                <X
-                  className="hidden size-3.5 group-hover:block group-focus-visible:block"
-                />
-              </>
-            ) : (
-              <WandSparkles className="size-3" strokeWidth={1} />
-            )}
-          </button>
-        </div>
-        <div ref={menuRef} className="relative mt-1.5 flex">
-          <button
-            type="button"
-            disabled={!canCommit}
-            onClick={() => void commit(false)}
-            className={`flex h-7 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-l-md text-[12px] font-medium ${
-              canCommit
-                ? "bg-content text-background-base"
-                : "bg-content/40 text-background-base"
-            }`}
-          >
-            <Check className="size-3.5" strokeWidth={2} />
-            {amend ? uiT("Amend Commit") : uiT("Commit")}
-          </button>
-
-          <button
-            type="button"
-            title={uiT("Commit options")}
-            aria-label={uiT("Commit options")}
-            aria-expanded={menuOpen}
-            disabled={!canOpenMenu}
-            onClick={() => setMenuOpen((open) => !open)}
-            className={`grid h-7 w-7 shrink-0 place-items-center rounded-r-md border-l border-background-base/10 ${
-              canCommit
-                ? "bg-content text-background-base hover:bg-content/80"
-                : "bg-content/40 text-background-base hover:bg-content"
-            } disabled:pointer-events-none aria-expanded:bg-content aria-expanded:text-background-base`}
-          >
-            <ChevronDown className="size-3.5" strokeWidth={2} />
-          </button>
-          {menuOpen ? (
-            <div
-              role="menu"
-              aria-label={uiT("Commit options")}
-              className="absolute top-full right-0 z-30 mt-1 min-w-48 rounded-md border border-content/10 panel-menu py-1 shadow-lg"
-              data-menu-density="compact"
+              disabled={!canEditMessage}
+              onChange={(event) => setMessage(event.target.value)}
+              onKeyDown={(event) => {
+                if (
+                  (event.metaKey || event.ctrlKey) &&
+                  event.key === "Enter" &&
+                  canCommit
+                ) {
+                  event.preventDefault();
+                  void commit(false);
+                }
+              }}
+              className="git-commit-message max-h-40 w-full overflow-y-auto"
+            />
+            <IconButton
+              size="xs"
+              label={
+                busy === "generate"
+                  ? uiT("Cancel commit message generation")
+                  : uiT("Generate commit message")
+              }
+              disabled={busy !== "generate" && !canGenerate}
+              onClick={() =>
+                busy === "generate" ? cancelGenerate() : void generate()
+              }
+              className="git-commit-generate group"
             >
-              <div data-menu-gutter>
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={!canCommitPush}
-                  onClick={() => void commit(true)}
-                  className="flex h-7 w-full items-center px-3 text-left text-[12px] text-content hover:bg-content/6 disabled:opacity-40"
+              {busy === "generate" ? (
+                <>
+                  <Loader
+                    className="size-3.5 animate-spin group-hover:hidden group-focus-visible:hidden"
+                  />
+                  <X
+                    className="hidden size-3.5 group-hover:block group-focus-visible:block"
+                  />
+                </>
+              ) : (
+                <WandSparkles className="size-3" strokeWidth={1} />
+              )}
+            </IconButton>
+          </div>
+          <div className="git-commit-hint flex items-center justify-between gap-2 text-ui-xs text-foreground-subtle">
+            <span>{!staged.length && !amend && files.length ? uiT("Stage changes to commit") : uiT("Staged") + ` · ${staged.length}`}</span>
+            <kbd className="shrink-0" title={uiT("Commit")}>{MOD}↵</kbd>
+          </div>
+          <div ref={menuRef} className="git-commit-actions relative mt-2 flex flex-wrap items-center gap-1">
+            <GitSyncActions
+              index={index}
+              pr={pr}
+              busy={busy}
+              hasRemote={hasRemote}
+              hasOpenPr={hasOpenPr}
+              onDefault={onDefault}
+              canSync={canSync}
+              canPublish={canPublish}
+              canCreatePr={canCreatePr}
+              canViewPr={canViewPr}
+              onSync={() => void sync()}
+              onCreatePr={() => void createPr()}
+              onViewPr={() => {
+                if (pr?.url) void openUrl(pr.url);
+              }}
+            >
+              <div className="flex min-w-0 flex-1 items-center gap-1">
+                <Button
+                  size="sm"
+                  disabled={!canCommit}
+                  onClick={() => void commit(false)}
+                  className="min-w-0 flex-1"
                 >
-                  <MenuHover />
-                  <span data-menu-title>{uiT("Commit & Push")}</span>
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={!canCommitPushPr}
-                  onClick={() => void commit(true, true)}
-                  className="flex h-7 w-full items-center px-3 text-left text-[12px] text-content hover:bg-content/6 disabled:opacity-40"
-                >
-                  <MenuHover />
-                  <span data-menu-title>{uiT("Commit, Push & Create PR")}</span>
-                </button>
-                <div role="separator" className="my-1 border-t border-content/10" />
-                <button
-                  type="button"
-                  role="menuitemcheckbox"
-                  aria-checked={amend}
-                  onClick={() => void toggleAmend()}
-                  className="flex h-7 w-full items-center justify-between gap-2 px-3 text-left text-[12px] text-content hover:bg-content/6"
-                >
-                  <MenuHover />
-                  <span data-menu-title>{uiT("Amend Last Commit")}</span>
-                  <span className="grid size-3.5 shrink-0 place-items-center">
-                    {amend ? (
-                      <Check className="size-3.5" strokeWidth={2} />
-                    ) : null}
+                  <Check className="size-3.5" strokeWidth={2} />
+                  <span className="min-w-0 truncate">
+                    {amend ? uiT("Amend Commit") : uiT("Commit")}
                   </span>
-                </button>
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  size="icon-md"
+                  title={uiT("Commit options")}
+                  aria-label={uiT("Commit options")}
+                  aria-expanded={menuOpen}
+                  disabled={!canOpenMenu}
+                  onClick={() => setMenuOpen((open) => !open)}
+                >
+                  <ChevronDown className="size-3.5" strokeWidth={2} />
+                </Button>
+                {composerExpanded && menuOpen ? (
+                  <div
+                    role="menu"
+                    aria-label={uiT("Commit options")}
+                    className="absolute top-full right-0 z-30 mt-1 min-w-48 rounded-md border border-content/10 panel-menu py-1 shadow-lg"
+                    data-menu-density="compact"
+                  >
+                    <div data-menu-gutter>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={!canCommitPush}
+                        onClick={() => void commit(true)}
+                        className="flex h-7 w-full items-center px-3 text-left text-[12px] text-content hover:bg-content/6 disabled:opacity-40"
+                      >
+                        <MenuHover />
+                        <span data-menu-title>{uiT("Commit & Push")}</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={!canCommitPushPr}
+                        onClick={() => void commit(true, true)}
+                        className="flex h-7 w-full items-center px-3 text-left text-[12px] text-content hover:bg-content/6 disabled:opacity-40"
+                      >
+                        <MenuHover />
+                        <span data-menu-title>{uiT("Commit, Push & Create PR")}</span>
+                      </button>
+                      <div role="separator" className="my-1 border-t border-content/10" />
+                      <button
+                        type="button"
+                        role="menuitemcheckbox"
+                        aria-checked={amend}
+                        onClick={() => void toggleAmend()}
+                        className="flex h-7 w-full items-center justify-between gap-2 px-3 text-left text-[12px] text-content hover:bg-content/6"
+                      >
+                        <MenuHover />
+                        <span data-menu-title>{uiT("Amend Last Commit")}</span>
+                        <span className="grid size-3.5 shrink-0 place-items-center">
+                          {amend ? (
+                            <Check className="size-3.5" strokeWidth={2} />
+                          ) : null}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            </div>
-          ) : null}
+            </GitSyncActions>
+          </div>
         </div>
-        {index ? (
-          <GitSyncActions
-            index={index}
-            pr={pr}
-            busy={busy}
-            hasRemote={hasRemote}
-            hasOpenPr={hasOpenPr}
-            onDefault={onDefault}
-            canSync={canSync}
-            canPublish={canPublish}
-            canCreatePr={canCreatePr}
-            canViewPr={canViewPr}
-            onSync={() => void sync()}
-            onCreatePr={() => void createPr()}
-            onViewPr={() => {
-              if (pr?.url) void openUrl(pr.url);
-            }}
-          />
-        ) : null}
-      </div>
+      </AnimatedCollapse>
       <div
         ref={lockOverscroll}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-none py-1"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-none pb-1"
       >
         {files.length === 0 ? (
           <p className="px-3 py-2 text-[12px] text-content/45">
@@ -1069,6 +1081,7 @@ function syncStatusLabel(index: GitDiffIndex): string {
 }
 
 function GitSyncActions({
+  children,
   index,
   pr,
   busy,
@@ -1083,7 +1096,8 @@ function GitSyncActions({
   onCreatePr,
   onViewPr,
 }: {
-  index: GitDiffIndex;
+  children: ReactNode;
+  index: GitDiffIndex | null;
   pr: GitPr | null;
   busy: string | null;
   hasRemote: boolean;
@@ -1098,7 +1112,7 @@ function GitSyncActions({
   onViewPr: () => void;
 }) {
   const { t: uiT } = useTranslation();
-  if (!hasRemote) return null;
+  if (!index || !hasRemote) return children;
   const ahead = index.ahead;
   const behind = index.behind;
   const dest =
@@ -1121,22 +1135,18 @@ function GitSyncActions({
   const viewTitle = pr?.title
     ? `View PR #${pr.number}: ${pr.title}`
     : "View pull request";
-  const btn =
-    "flex h-7 w-full min-w-0 items-center justify-center gap-1.5 rounded-md px-2 text-[12px] font-medium disabled:opacity-40";
-  const secondary = `${btn} bg-content/10 text-content hover:bg-content/15`;
   const showCreatePr = !hasOpenPr && !onDefault;
   const showViewPr = hasOpenPr;
-  if (!canPublish && !canSync && !showCreatePr && !showViewPr) return null;
+  if (!canPublish && !canSync && !showCreatePr && !showViewPr) return children;
 
   return (
-    <div className="mt-1.5 flex flex-col gap-1.5">
+    <>
       {canPublish ? (
-        <button
-          type="button"
+        <Button variant="secondary" size="sm"
           title={syncTitle}
           disabled={!!busy}
           onClick={onSync}
-          className={secondary}
+          className="min-w-0 flex-1"
         >
           {syncing ? (
             <Loader
@@ -1146,14 +1156,13 @@ function GitSyncActions({
             <CloudUpload className="size-3.5 shrink-0" />
           )}
           <span className="min-w-0 truncate">{uiT("Publish Branch")}</span>
-        </button>
+        </Button>
       ) : canSync ? (
-        <button
-          type="button"
+        <Button variant="secondary" size="sm"
           title={syncTitle}
           disabled={!!busy}
           onClick={onSync}
-          className={secondary}
+          className="min-w-0 flex-1"
         >
           <RefreshCw
             className={`size-3.5 shrink-0 ${syncing ? "animate-spin" : ""}`}
@@ -1169,15 +1178,15 @@ function GitSyncActions({
               ↑{ahead}
             </span>
           ) : null}
-        </button>
+        </Button>
       ) : null}
+      {children}
       {showCreatePr ? (
-        <button
-          type="button"
+        <Button variant="secondary" size="sm"
           title={createTitle}
           disabled={!canCreatePr || !!busy}
           onClick={onCreatePr}
-          className={secondary}
+          className="w-full min-w-0"
         >
           {busy === "pr" ? (
             <Loader
@@ -1187,15 +1196,14 @@ function GitSyncActions({
             <GitPullRequest className="size-3.5 shrink-0" />
           )}
           {uiT("Create PR")}
-        </button>
+        </Button>
       ) : null}
       {showViewPr ? (
-        <button
-          type="button"
+        <Button variant="secondary" size="sm"
           title={viewTitle}
           disabled={!canViewPr || !!busy}
           onClick={onViewPr}
-          className={secondary}
+          className="w-full min-w-0"
         >
           <ExternalLink className="size-3.5 shrink-0" />
           <span className="min-w-0 truncate">
@@ -1203,9 +1211,9 @@ function GitSyncActions({
               ? uiT("View PR #{value0}", { value0: String(pr.number) })
               : uiT("View PR")}
           </span>
-        </button>
+        </Button>
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -1229,32 +1237,37 @@ export function FileSection({
   children: ReactNode;
 }) {
   const { t: uiT } = useTranslation();
+  const visible = useSurfaceVisibility();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const childrenRef = useRef<HTMLUListElement>(null);
+  const contentId = useId();
   return (
-    <div>
-      <div className="flex h-7 items-center gap-1 px-1.5">
+    <div className="git-file-section">
+      <div className="git-panel-header git-file-section-header flex items-center">
         <button
+          ref={toggleRef}
           type="button"
-          onClick={onToggle}
+          aria-expanded={open}
+          aria-controls={contentId}
+          disabled={!visible}
+          onClick={() => {
+            if (open && childrenRef.current?.contains(document.activeElement)) toggleRef.current?.focus();
+            onToggle();
+          }}
           className="flex min-w-0 flex-1 items-center gap-1 text-left"
         >
-          {open ? (
-            <ChevronDown
-              className="size-3.5 shrink-0 text-content/50"
-            />
-          ) : (
-            <ChevronRight
-              className="size-3.5 shrink-0 text-content/50"
-            />
-          )}
-          <span className="min-w-0 truncate text-[10px] font-semibold tracking-[0.04em] text-content/55 uppercase">
+          <span className="grid size-5 shrink-0 place-items-center">
+            {open ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+          </span>
+          <span className="min-w-0 truncate">
             {title}
           </span>
-          <span className="ml-1 grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-accent/80 px-1 text-[8px] text-white">
+          <span className="git-file-count ml-1 grid h-4 min-w-4 shrink-0 place-items-center rounded px-1 text-ui-xs tabular-nums">
             {count}
           </span>
         </button>
-        <IconAction
-          title={view === "tree" ? uiT("View as List") : uiT("View as Tree")}
+        <IconButton size="xs" disabled={!visible}
+          label={view === "tree" ? uiT("View as List") : uiT("View as Tree")}
           onClick={onToggleView}
         >
           {view === "tree" ? (
@@ -1262,18 +1275,22 @@ export function FileSection({
           ) : (
             <FolderTree className="size-3.5" />
           )}
-        </IconAction>
+        </IconButton>
         {headerActions.map((action) => (
-          <IconAction
+          <IconButton size="xs" disabled={!visible}
             key={action.title}
-            title={action.title}
+            label={uiT(action.title)}
             onClick={action.onClick}
           >
             {action.icon}
-          </IconAction>
+          </IconButton>
         ))}
       </div>
-      {open ? <ul>{children}</ul> : null}
+      <AnimatedCollapse expanded={open} keepMounted>
+        <fieldset disabled={!open || !visible} className="m-0 min-w-0 border-0 p-0">
+          <ul ref={childrenRef} id={contentId}>{children}</ul>
+        </fieldset>
+      </AnimatedCollapse>
     </div>
   );
 }
@@ -1320,7 +1337,7 @@ type ChangeRowProps = {
   onFolderAction: (relative: string, action: "stage" | "unstage") => void;
 };
 
-export function ChangeList({ files, view, ...rest }: ChangeRowProps) {
+export const ChangeList = memo(function ChangeList({ files, view, ...rest }: ChangeRowProps) {
   const tree = useMemo(() => buildChangeTree(files), [files]);
   if (view === "tree") {
     return <ChangeDirChildren dir={tree} depth={0} {...rest} />;
@@ -1340,9 +1357,9 @@ export function ChangeList({ files, view, ...rest }: ChangeRowProps) {
       ))}
     </>
   );
-}
+});
 
-function ChangeDirChildren({
+const ChangeDirChildren = memo(function ChangeDirChildren({
   dir,
   depth,
   kind,
@@ -1386,7 +1403,7 @@ function ChangeDirChildren({
       ))}
     </>
   );
-}
+});
 
 function ChangeDirRow({
   dir,
@@ -1437,14 +1454,14 @@ function ChangeDirRow({
           </span>
         </button>
         <div className="hidden shrink-0 items-center group-focus-within:flex group-hover:flex">
-          <IconAction
-            title={uiT(
+          <IconButton size="xs"
+            label={uiT(
               kind === "staged"
                 ? "Unstage Changes in {path}"
                 : "Stage Changes in {path}",
               { path: dir.path },
             )}
-            disabled={rest.busy !== null}
+            disabled={!visible || rest.busy !== null}
             onClick={() =>
               rest.onFolderAction(
                 dir.path,
@@ -1457,7 +1474,7 @@ function ChangeDirRow({
             ) : (
               <Plus className="size-3.5" />
             )}
-          </IconAction>
+          </IconButton>
         </div>
         <span
           className={`grid w-3.5 shrink-0 place-items-center ${
@@ -1468,15 +1485,17 @@ function ChangeDirRow({
           <span className="size-1.5 rounded-full bg-current" />
         </span>
       </div>
-      <AnimatedCollapse expanded={open}>
-        <ul ref={childrenRef}>
-          <ChangeDirChildren
-            dir={dir}
-            depth={depth + 1}
-            kind={kind}
-            {...rest}
-          />
-        </ul>
+      <AnimatedCollapse expanded={open} keepMounted>
+        <fieldset disabled={!open || !visible} className="m-0 min-w-0 border-0 p-0">
+          <ul ref={childrenRef}>
+            <ChangeDirChildren
+              dir={dir}
+              depth={depth + 1}
+              kind={kind}
+              {...rest}
+            />
+          </ul>
+        </fieldset>
       </AnimatedCollapse>
     </li>
   );
@@ -1537,6 +1556,8 @@ function sortChangeDir(dir: ChangeDir): string | null {
   return dir.status;
 }
 
+// FileSection and ChangeDirRow disable their native fieldsets while hidden.
+// Leaf rows need not subscribe to visibility and rerender on every disclosure.
 function ChangeRow({
   file,
   active,
@@ -1550,7 +1571,7 @@ function ChangeRow({
   active: boolean;
   busy: boolean;
   kind: GitFileDiffKind;
-  /** Set in tree view: nesting level, and the folder path moves to the tree. */
+  /** Set in tree view: nesting level. */
   depth?: number;
   onOpenFile: (path: string, kind: GitFileDiffKind, pin?: boolean) => void;
   onAction: (
@@ -1559,14 +1580,13 @@ function ChangeRow({
   ) => void;
 }) {
   const { t: uiT } = useTranslation();
-  const visible = useSurfaceVisibility();
   const name = basename(file.relative);
   const tree = depth !== undefined;
-  const dir = tree ? "" : dirname(file.relative);
   const canOpen = file.status !== "deleted";
   return (
     <li>
       <div
+        data-git-change-row={tree ? "tree" : "list"}
         style={tree ? { paddingLeft: 8 + depth * 12 } : undefined}
         className={`group flex h-7 w-full items-center gap-1 pr-2 leading-none ${
           tree ? "" : "pl-2"
@@ -1579,22 +1599,18 @@ function ChangeRow({
         <button
           type="button"
           title={file.relative}
-          disabled={!visible}
           onClick={() => {
             if (canOpen) onOpenFile(file.path, kind);
           }}
           onDoubleClick={() => {
             if (canOpen) onOpenFile(file.path, kind, true);
           }}
-          className="flex h-full min-w-0 flex-1 items-center gap-1.5 text-left"
+          className="flex h-full min-w-0 flex-1 items-center gap-0.75 text-left"
         >
           {tree ? <span className="size-4 shrink-0" /> : null}
-          <FileTypeIcon name={name} isDir={false} size={16} />
-          <span data-file-label className="min-w-0 flex-1 truncate leading-label">
-            <span className="text-[13px] font-medium">{name}</span>
-            {dir ? (
-              <span className="ml-1.5 text-[11px] text-content/40">{dir}</span>
-            ) : null}
+          <FileTypeIcon name={name} isDir={false} size={12} />
+          <span data-file-label className="git-change-label min-w-0 flex-1 leading-label">
+            <span className="git-change-name block truncate text-[13px] font-medium">{name}</span>
           </span>
         </button>
         <div
@@ -1603,32 +1619,38 @@ function ChangeRow({
           }`}
         >
           {kind === "unstaged" ? (
-            <IconAction
-              title={uiT("Discard Changes")}
+            <IconButton size="xs"
+              label={uiT("Discard Changes")}
               disabled={busy}
               onClick={() => onAction(file, "discard")}
             >
               <Undo2 className="size-3.5" />
-            </IconAction>
+            </IconButton>
           ) : null}
           {kind === "staged" ? (
-            <IconAction
-              title={uiT("Unstage Changes")}
+            <IconButton size="xs"
+              label={uiT("Unstage Changes")}
               disabled={busy}
               onClick={() => onAction(file, "unstage")}
             >
               <Minus className="size-3.5" />
-            </IconAction>
+            </IconButton>
           ) : (
-            <IconAction
-              title={uiT("Stage Changes")}
+            <IconButton size="xs"
+              label={uiT("Stage Changes")}
               disabled={busy}
               onClick={() => onAction(file, "stage")}
             >
               <Plus className="size-3.5" />
-            </IconAction>
+            </IconButton>
           )}
         </div>
+        {file.additions || file.deletions ? (
+          <span data-git-change-stats className="flex shrink-0 gap-1 font-mono text-[11px] tabular-nums">
+            {file.additions ? <span className="text-emerald-400">+{file.additions}</span> : null}
+            {file.deletions ? <span className="text-red-400">-{file.deletions}</span> : null}
+          </span>
+        ) : null}
         <span
           className={`w-3.5 shrink-0 text-right font-mono text-[11px] font-semibold ${statusColor(file.status)}`}
         >
@@ -1637,37 +1659,6 @@ function ChangeRow({
       </div>
     </li>
   );
-}
-
-function IconAction({
-  title,
-  disabled,
-  onClick,
-  children,
-}: {
-  title: string;
-  disabled?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  const visible = useSurfaceVisibility();
-  return (
-    <button
-      type="button"
-      title={title}
-      aria-label={title}
-      disabled={disabled || !visible}
-      onClick={onClick}
-      className="grid size-5 place-items-center rounded text-content/55 hover:bg-content/6 hover:text-content disabled:opacity-40"
-    >
-      {children}
-    </button>
-  );
-}
-
-function dirname(relative: string): string {
-  const i = relative.lastIndexOf("/");
-  return i > 0 ? relative.slice(0, i) : "";
 }
 
 function statusLetter(status: string): string {

@@ -19,15 +19,15 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { createPortal } from "react-dom";
-import { createDragGhost, setGrabbing, suppressTextSelection } from "../../../shared/lib/drag";
-import { LAYER } from "../../../shared/lib/layers";
+import { usePaneDrag } from "../hooks/usePaneDrag";
+import { PaneDragOverlay } from "./PaneDragOverlay";
+import { PaneCardFrame, paneCardInset } from "./PaneCard";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { Maximize2 } from "../../../shared/ui/icons";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   overOpenTerminalDock,
-  paneDropFromDrag,
   setTerminalDockDrop,
   terminalDockOpen,
   TERMINAL_DOCK_BAND,
@@ -44,7 +44,6 @@ import {
   isTerminalTab,
   layoutLeaves,
   layoutSashes,
-  movePane,
   setSplitRatio,
   type EditorPane,
   type LayoutLeaf,
@@ -185,9 +184,10 @@ type Shared = {
   editorNavigation?: EditorNavigationTarget | null;
   onOpenDiff: (
     path?: string,
-    session?: { sessionId: string; cwd: string },
+    session?: { sessionId: string; cwd: string; turnId?: string },
   ) => void;
   onOpenPlan: (sessionId: string, blockId: string) => void;
+  onOpenBot?: SessionPaneProps["onOpenBot"];
   onUpdatePlan: (sessionId: string, blockId: string, text: string) => void;
   onBuildPlan: (
     sessionId: string,
@@ -228,15 +228,6 @@ type Shared = {
 
 type Props = Shared & { layout: LayoutNode };
 
-type PaneDrag = {
-  fromId: string;
-  overId: string | null;
-  edge: PaneEdge;
-  offsets: Map<string, string>;
-  insertion: CSSProperties | null;
-};
-
-const DRAG_THRESHOLD = 5;
 const PANE_BOUNDARY_EPSILON = 0.001;
 
 // The owning chat's heading lives in the full-width top bar.
@@ -316,6 +307,7 @@ function PaneTreeComponent({
   editorNavigation,
   onOpenDiff,
   onOpenPlan,
+  onOpenBot,
   onUpdatePlan,
   onBuildPlan,
   onSecondOpinion,
@@ -338,8 +330,7 @@ function PaneTreeComponent({
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
   const draft = useRef<LayoutNode | null>(null);
-  const [paneDrag, setPaneDrag] = useState<PaneDrag | null>(null);
-  const stopPaneDrag = useRef<(() => void) | null>(null);
+  const { state: paneDrag, start: beginPaneDrag, cancelRef: stopPaneDrag } = usePaneDrag<NonNullable<TerminalDockDrop>>();
   useLayoutEffect(() => () => stopPaneDrag.current?.(), [layout, visible]);
   // A card can temporarily fill the chat area; the rest stay mounted.
   const [maximizedId, setMaximizedId] = useState<string | null>(null);
@@ -705,156 +696,28 @@ function PaneTreeComponent({
 
   const startPaneDrag = useCallback(
     (fromId: string, event: ReactPointerEvent<HTMLElement>) => {
-      if (event.button !== 0) return;
-      stopPaneDrag.current?.();
       const container = treeRef.current;
       const source = Array.from(container?.children ?? []).find(
-        (element): element is HTMLElement =>
-          element instanceof HTMLElement && element.dataset.paneId === fromId,
+        (element): element is HTMLElement => element instanceof HTMLElement && element.dataset.paneId === fromId,
       );
       if (!container || !source) return;
-      // Pane headers can move or change during preview; capture on their stable parent.
-      const handle = container;
-      const pointerId = event.pointerId;
-      const startX = event.clientX;
-      const startY = event.clientY;
-      const base = layoutRef.current;
-      const baseLeaves = layoutLeaves(base);
-      const bounds = container.getBoundingClientRect();
-      // Keep hit regions stable while same-direction moves translate the panes.
-      const targets = Array.from(container.children)
-        .filter((element): element is HTMLElement => element instanceof HTMLElement && !!element.dataset.paneId)
-        .map((element) => ({ id: element.dataset.paneId!, rect: element.getBoundingClientRect() }));
-      const cardBounds = (source.querySelector<HTMLElement>("[data-pane-card-frame]") ?? source).getBoundingClientRect();
-      const centerOffset = {
-        x: cardBounds.left + cardBounds.width / 2 - startX,
-        y: cardBounds.top + cardBounds.height / 2 - startY,
-      };
-      let active = false;
-      let ended = false;
-      let ghost: ReturnType<typeof createDragGhost> | undefined;
-      let releaseResize: (() => void) | undefined;
-      let current: PaneDrag | null = null;
-      let lastX = startX;
-      let lastY = startY;
-      handle.setPointerCapture(pointerId);
-      const restoreSelection = suppressTextSelection();
-      const dockable =
-        !!onMovePaneToDockRef.current && dockablePaneIds.current.has(fromId);
-      const dockTarget = (x: number, y: number): TerminalDockDrop => {
-        if (!dockable) return null;
-        if (overOpenTerminalDock(x, y)) return "dock";
-        if (!treeRef.current || terminalDockOpen()) return null;
-        const inside = x >= bounds.left && x <= bounds.right && y <= bounds.bottom;
-        return inside && y >= bounds.bottom - TERMINAL_DOCK_BAND ? "band" : null;
-      };
-      const update = (x: number, y: number) => {
-        lastX = x;
-        lastY = y;
-        const toDock = dockTarget(x, y);
-        const over = toDock ? null : paneDropFromDrag(
-          targets,
-          { x, y },
-          { x: x + centerOffset.x, y: y + centerOffset.y, width: cardBounds.width, height: cardBounds.height },
-          fromId,
-        );
-        ghost?.move(x, y);
-        setTerminalDockDrop(toDock);
-        const overId = over?.id ?? null;
-        const edge = over?.edge ?? "left";
-        if (current && current.overId === overId && current.edge === edge) return;
-        const candidate = over && over.id !== fromId
-          ? movePane(base, fromId, over.id, edge) : base;
-        const nextRects = new Map(layoutLeaves(candidate).map(leaf => [leaf.id, leaf.rect]));
-        const changesSize = baseLeaves.some(({ id, rect }) => {
-          const next = nextRects.get(id)!;
-          return Math.abs(rect.w - next.w) > 1e-7 || Math.abs(rect.h - next.h) > 1e-7;
-        });
-        const offsets = new Map<string, string>();
-        if (!changesSize) {
-          for (const { id, rect } of baseLeaves) {
-            const next = nextRects.get(id)!;
-            offsets.set(id, `${(next.x - rect.x) * bounds.width}px ${(next.y - rect.y) * bounds.height}px`);
-          }
-        }
-        const next = nextRects.get(fromId)!;
-        const horizontal = edge === "top" || edge === "bottom";
-        const insertion: CSSProperties | null = !over || over.id === fromId ? null : horizontal
-          ? {
-              left: bounds.left + next.x * bounds.width,
-              top: bounds.top + (edge === "top" ? next.y : next.y + next.h) * bounds.height - (edge === "top" ? 0 : 3),
-              width: next.w * bounds.width,
-              height: 3,
-            }
-          : {
-              left: bounds.left + (edge === "left" ? next.x : next.x + next.w) * bounds.width - (edge === "left" ? 0 : 3),
-              top: bounds.top + next.y * bounds.height,
-              width: 3,
-              height: next.h * bounds.height,
-            };
-        current = { fromId, overId, edge, offsets, insertion };
-        setPaneDrag(current);
-      };
-      const onMove = (ev: PointerEvent) => {
-        if (ev.pointerId !== pointerId) return;
-        if (!active) {
-          if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < DRAG_THRESHOLD) return;
-          active = true;
-          ghost = createDragGhost(source, startX, startY, { className: "pane-drag-ghost", preserveContent: true });
-          releaseResize = beginPaneResize();
-          setGrabbing(true);
-          onFocusRef.current(fromId);
-        }
-        update(ev.clientX, ev.clientY);
-      };
-      const onUp = (ev: PointerEvent) => {
-        if (ev.pointerId !== pointerId) return;
-        if (active) update(ev.clientX, ev.clientY);
-        finish(true);
-      };
-      const onCancel = (ev: PointerEvent) => {
-        if (ev.pointerId === pointerId) finish(false);
-      };
-      const onBlur = () => finish(false);
-      const onKey = (ev: KeyboardEvent) => {
-        if (ev.key !== "Escape") return;
-        ev.preventDefault();
-        finish(false);
-      };
-      function finish(commit: boolean) {
-        if (ended) return;
-        ended = true;
-        stopPaneDrag.current = null;
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", onUp);
-        window.removeEventListener("pointercancel", onCancel);
-        window.removeEventListener("keydown", onKey);
-        window.removeEventListener("blur", onBlur);
-        handle.removeEventListener("lostpointercapture", onCancel);
-        restoreSelection();
-        setGrabbing(false);
-        ghost?.dispose();
-        setPaneDrag(null);
-        setTerminalDockDrop(null);
-        try { handle.releasePointerCapture(pointerId); } catch { /* already released */ }
-        if (active && commit) {
-          if (dockTarget(lastX, lastY)) onMovePaneToDockRef.current?.(fromId);
-          else if (current?.overId && current.overId !== fromId) {
-            onMovePaneRef.current(fromId, current.overId, current.edge);
-          }
-        }
-        // Let React commit the final geometry before terminals fit their PTYs.
-        requestAnimationFrame(() => releaseResize?.());
-      }
-      stopPaneDrag.current = () => finish(false);
-      window.addEventListener("pointermove", onMove);
-      window.addEventListener("pointerup", onUp);
-      window.addEventListener("pointercancel", onCancel);
-      window.addEventListener("keydown", onKey);
-      window.addEventListener("blur", onBlur);
-      handle.addEventListener("lostpointercapture", onCancel);
+      const dockable = !!onMovePaneToDockRef.current && dockablePaneIds.current.has(fromId);
+      beginPaneDrag(event, {
+        container, source, fromId, layout: layoutRef.current,
+        onFocus: () => onFocusRef.current(fromId),
+        onMove: (from, to, edge) => onMovePaneRef.current(from, to, edge),
+        externalTarget: (x, y, bounds) => {
+          if (!dockable) return null;
+          if (overOpenTerminalDock(x, y)) return "dock";
+          if (!treeRef.current || terminalDockOpen()) return null;
+          const inside = x >= bounds.left && x <= bounds.right && y <= bounds.bottom;
+          return inside && y >= bounds.bottom - TERMINAL_DOCK_BAND ? "band" : null;
+        },
+        onExternalPreview: setTerminalDockDrop,
+        onExternalDrop: () => onMovePaneToDockRef.current?.(fromId),
+      });
     },
-    [],
+    [beginPaneDrag],
   );
 
   // Keyed by the session ids only: a streamed token replaces a `Session`
@@ -1175,6 +1038,7 @@ function PaneTreeComponent({
                     onOpenFile={openSessionFileFor(session.id)}
                     onOpenDiff={onOpenDiff}
                     onOpenPlan={onOpenPlan}
+                    onOpenBot={onOpenBot}
                     onBuildPlan={onBuildPlan}
                     onSecondOpinion={onSecondOpinion}
                     onHandoff={onHandoff}
@@ -1192,9 +1056,7 @@ function PaneTreeComponent({
             </SessionSurfacePane>
           );
         })}
-        {paneDrag?.insertion ? (
-          createPortal(<div className="pane-insertion-line" data-pane-insertion={paneDrag.edge} style={{ ...paneDrag.insertion, zIndex: LAYER.dragHint }} aria-hidden="true" />, document.body)
-        ) : null}
+        <PaneDragOverlay drag={paneDrag} />
         {!unified &&
           sashes.map((sash) => (
             <Sash
@@ -1261,45 +1123,6 @@ function paneEnterFrom({ rect, axis }: LayoutLeaf): PaneEnterFrom {
 
 // Desktop themes can set their panel rhythm without changing split ratios or
 // the stable tracks used by collapsed editor and terminal panes.
-const PANE_CARD_OUTER = 4;
-const PANE_CARD_GAP = 2;
-
-/** Outer window edges get the full gutter; shared edges split the gap between two cards. */
-function paneCardInset(rect: LayoutLeaf["rect"]): CSSProperties {
-  const outer = `var(--desktop-pane-outer, ${PANE_CARD_OUTER}px)`;
-  const gap = `var(--desktop-pane-half-gap, ${PANE_CARD_GAP}px)`;
-  const side = (atEdge: boolean) => (atEdge ? outer : gap);
-  return {
-    paddingLeft: rect.x < PANE_BOUNDARY_EPSILON ? 0 : gap,
-    paddingTop: rect.y < PANE_BOUNDARY_EPSILON ? 0 : gap,
-    paddingRight: side(rect.x + rect.w > 1 - PANE_BOUNDARY_EPSILON),
-    paddingBottom: side(rect.y + rect.h > 1 - PANE_BOUNDARY_EPSILON),
-  };
-}
-
-function PaneCardFrame({
-  card,
-  focused,
-  children,
-}: {
-  card: boolean;
-  focused: boolean;
-  children: ReactNode;
-}) {
-  // Keep one element either way: folding a pane can toggle `card`, and a
-  // changed wrapper would remount the chat, editors and running terminals.
-  return (
-    <div
-      data-pane-background-geometry
-      data-pane-card-frame={card ? "" : undefined}
-      data-focused={card ? focused : undefined}
-      className={card ? "pane-card" : "contents"}
-    >
-      {children}
-    </div>
-  );
-}
-
 const DROP_HINT_RECT: Record<PaneEdge, CSSProperties> = {
   left: { left: 0, top: 0, width: "50%", height: "100%" },
   right: { left: "50%", top: 0, width: "50%", height: "100%" },

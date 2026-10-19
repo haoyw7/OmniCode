@@ -84,7 +84,7 @@ import { IconButton } from "../../shared/ui/forms/IconButton";
 import { WindowNavigationSpace } from "./WindowChrome";
 import { windowDragRegion } from "./startWindowDrag";
 import { SidebarTransition } from "./SidebarTransition";
-import { SidebarChromeDivider } from "./SidebarChromeDivider";
+import { SidebarChromeWidth } from "./SidebarChromeWidth";
 import { SidebarTabs } from "./SidebarTabs";
 import { ResizeHandle } from "../../shared/ui/ResizeHandle";
 import { ProjectList } from "./ProjectList";
@@ -805,8 +805,8 @@ function SidebarComponent(props: SidebarProps) {
     )
     .map(({ path }) => path);
 
-  const renderWorkingCopy = (): ReactNode => tab === "sessions" ? null : (
-    <ProjectToolsPanel {...props} tab={tab} showHeader={false}
+  const renderWorkingCopy = (): ReactNode => tab !== "files" ? null : (
+    <ProjectToolsPanel {...props} showHeader={false}
       contentHeight={props.recents === undefined ? workingCopyHeight : undefined} />
   );
 
@@ -842,7 +842,6 @@ function SidebarComponent(props: SidebarProps) {
             : resolveTabGroupLabel(projectKey(path), labels, basename(path))
           : undefined}
         flatPins={props.recents !== undefined}
-        excludeRemoteControl={props.desktopMode === "code" && !shortcutId}
         sessions={historyByProject.get(key) ?? []}
         openSessions={props.openSessions && projectOpenSessions(path)}
         activeSessionId={current ? props.activeSessionId : undefined}
@@ -972,7 +971,6 @@ function SidebarComponent(props: SidebarProps) {
           })
           .sort(compareSessionSummaries);
   const pinnedSessions = shortcutSessions.filter((session) => session.pinned);
-  const remoteControlSessions = shortcutSessions.filter((session) => session.remoteControl && !session.pinned);
   const chatSessions = shortcutSessions
     .filter((session) => !session.pinned && (session.cwd === "~" || isChatFolder(session.cwd)))
     .sort(
@@ -1026,7 +1024,7 @@ function SidebarComponent(props: SidebarProps) {
         className={`${props.desktopMode ? "" : "sidebar-glass "}relative flex h-full min-h-0 shrink-0 flex-col`}
         style={{ width: props.desktopMode || resize.dragging ? "100%" : resize.width }}
       >
-        {props.desktopMode ? <SidebarChromeDivider /> : null}
+        {props.desktopMode ? <SidebarChromeWidth /> : null}
         {props.desktopMode && !props.chromeInMenuBar ? (
           <header
             data-desktop-sidebar-header
@@ -1157,11 +1155,6 @@ function SidebarComponent(props: SidebarProps) {
               recents={recents}
               visibleProjectPaths={props.desktopMode ? new Set(projects.map(({ path }) => pathKey(path))) : undefined}
               showProjectSections={props.desktopMode !== "chat"}
-              showRemoteControlSection={props.desktopMode === "code"}
-              remoteControlEntries={remoteControlSessions.map((session) => ({
-                id: JSON.stringify([pathKey(session.cwd), session.id]),
-                content: () => renderChildren(session.cwd, session.id),
-              }))}
               busyPaths={busyPaths}
               needsApprovalPaths={approvalPaths}
               projectSummaries={projectSummaries}

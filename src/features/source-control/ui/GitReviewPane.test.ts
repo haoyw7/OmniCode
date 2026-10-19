@@ -57,6 +57,16 @@ vi.mock("../../sessions/model/checkpoint", () => ({
   subscribeReviewChanged: () => () => {},
 }));
 vi.mock("../../connections/files/ui/FileTypeIcon", () => ({ FileTypeIcon: () => null }));
+const rail = vi.hoisted(() => ({ props: undefined as undefined | Record<string, any>, renders: 0 }));
+vi.mock("./GitChangesPanel", async () => {
+  const { memo } = await import("react");
+  return { GitChangesPanel: memo((props: Record<string, any>) => {
+    rail.props = props;
+    rail.renders++;
+    return null;
+  }) };
+});
+vi.mock("./BranchPicker", () => ({ BranchPicker: () => null }));
 vi.mock("./ReviewDiffsWorkerPool", () => ({
   ReviewDiffsWorkerPool: ({ children }: { children: ReactNode }) => children,
 }));
@@ -159,9 +169,9 @@ const comparison = {
   tooLarge: false,
 };
 const scroller = () =>
-  container.querySelector<HTMLElement>(".overscroll-contain")!;
+  container.querySelector<HTMLElement>("[data-review-scroll]")!;
 const listHeight = () =>
-  Number.parseFloat((scroller().firstElementChild as HTMLElement).style.height);
+  Number.parseFloat(scroller().querySelector<HTMLElement>("[data-review-content] > div")!.style.height);
 const card = (index: number) =>
   container.querySelector<HTMLElement>(
     `[data-review-file="dir/file${index}.ts"]`,
@@ -174,6 +184,17 @@ async function click(title: string, within: ParentNode = container) {
       )!
       .click(),
   );
+}
+/** Choose an entry in the review options menu. */
+async function menu(label: string) {
+  const trigger = container.querySelector<HTMLButtonElement>("[data-review-options]")!;
+  await act(async () => {
+    trigger.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
+  });
+  const item = [...document.querySelectorAll<HTMLElement>("[role^=\"menuitem\"]")]
+    .find((node) => node.textContent === label);
+  expect(item, label).toBeDefined();
+  await act(async () => item!.click());
 }
 async function openFileMenu(index: number, keyboard = false) {
   await act(async () => {
@@ -299,14 +320,14 @@ it("virtualizes cards, supports multiple expansions, and removes offscreen expan
   });
   expect(card(0)).toBeNull();
   expect(card(1)).toBeNull();
-  await click("Collapse all");
+  await menu("Collapse all files");
   expect(listHeight()).toBe(32 * files.length);
   await act(async () => {
     scroller().scrollTop = 0;
     scroller().dispatchEvent(new Event("scroll"));
   });
   const loadsBefore = vi.mocked(gitFileDiff).mock.calls.length;
-  await click("Expand all");
+  await menu("Expand all files");
   // Rows are re-estimated at their expanded size in the same render, so only the
   // cards near the viewport mount and load instead of every collapsed row in view.
   expect(listHeight()).toBeGreaterThan(32 * files.length * 2);
@@ -321,13 +342,30 @@ it("virtualizes cards, supports multiple expansions, and removes offscreen expan
   expect(
     container.querySelectorAll("[data-diff-content]").length,
   ).toBeGreaterThan(1);
-  await click("Collapse all");
+  await menu("Collapse all files");
   expect(container.querySelector("[data-diff-content]")).not.toBeNull();
   await act(async () => vi.advanceTimersByTimeAsync(350));
   await act(async () => container.querySelectorAll('[data-fold-state="closing"]').forEach(completeMotionAnimation));
   await measure();
   expect(container.querySelector("[data-diff-content]")).toBeNull();
   expect(listHeight()).toBe(32 * files.length);
+});
+
+it("keeps source control idle while files animate and updates it when the selection changes", async () => {
+  await render();
+  rail.renders = 0;
+  await click("Expand file", card(0));
+  await settle();
+  await measure();
+  await click("Collapse file", card(0));
+  await settle();
+  await measure();
+  expect(rail.renders).toBe(0);
+
+  await act(async () => rail.props!.onOpenFile(files[1].path, "unstaged"));
+  await measure();
+  expect(rail.renders).toBeGreaterThan(0);
+  expect(rail.props?.selectedPath).toBe(files[1].path);
 });
 
 it("waits for a requested diff before expanding without changing the list height", async () => {
@@ -376,7 +414,7 @@ it("keeps the current diff mounted and disables hunk actions during a slow refre
   const body = card(0).querySelector("[data-diff-content]");
   let finish!: (value: typeof comparison) => void;
   vi.mocked(gitFileDiff).mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
-  await click("Refresh changes");
+  await menu("Refresh");
   await settle();
   expect(card(0).querySelector("[data-diff-content]")).toBe(body);
   expect(card(0).querySelector('.zen-fold-item')?.getAttribute("data-fold-state")).toBe("open");
@@ -403,7 +441,7 @@ it("retains the card and scroll position during refresh and reloads its invalida
     ...comparison,
     current: "refreshed\n",
   });
-  await click("Refresh changes");
+  await menu("Refresh");
   expect(card(0)).toBe(existing);
   expect(scroller().scrollTop).toBe(50);
   expect(card(0).textContent).toContain("refreshed");
@@ -465,6 +503,110 @@ it("initializes from the tab's staged source and expands and scrolls to the focu
   );
   expect(card(25).querySelector("[data-diff-content]")).not.toBeNull();
   expect(scroller().scrollTop).toBeGreaterThan(0);
+});
+
+it("carries source control beside working-tree reviews and opens its files in place", async () => {
+  await render();
+  const aside = container.querySelector<HTMLElement>('aside[aria-label="Source control"]')!;
+  expect(aside.inert).toBe(false);
+  expect(rail.props?.enabled).toBe(true);
+  await act(async () => rail.props!.onOpenFile(files[25].path, "staged"));
+  await act(async () => scroller().dispatchEvent(new Event("scroll")));
+  await measure();
+  expect(gitFileDiff).toHaveBeenCalledWith("/repo", files[25].relative, "staged");
+  expect(card(25).querySelector("[data-diff-content]")).not.toBeNull();
+  expect(rail.props?.selectedKind).toBe("staged");
+
+  const toggle = container.querySelector<HTMLButtonElement>("[data-review-rail-toggle]")!;
+  await act(async () => toggle.click());
+  expect(toggle.getAttribute("aria-pressed")).toBe("false");
+  expect(aside.inert).toBe(true);
+  expect(container.querySelector(".review-body")?.getAttribute("data-fold-state")).toBe("closing");
+  expect(rail.props?.enabled).toBe(false);
+  await act(async () => toggle.click());
+  expect(aside.inert).toBe(false);
+});
+
+it("folds source control away in a narrow review without forgetting the reader's choice", async () => {
+  const body = () => container.querySelector<HTMLElement>(".review-body")!;
+  await render();
+  const pane = container.querySelector<HTMLElement>("[data-git-review-pane]")!;
+  const aside = container.querySelector<HTMLElement>('aside[aria-label="Source control"]')!;
+  const toggle = container.querySelector<HTMLButtonElement>("[data-review-rail-toggle]")!;
+  const resizePane = (width: number) =>
+    act(async () => {
+      for (const observer of observers) {
+        if (!observer.targets.has(pane)) continue;
+        (observer as unknown as { callback: ResizeObserverCallback }).callback(
+          [{ target: pane, contentRect: { width } } as unknown as ResizeObserverEntry],
+          observer as unknown as ResizeObserver,
+        );
+      }
+    });
+  expect(aside.inert).toBe(false);
+
+  await resizePane(400);
+  expect(aside.inert).toBe(true);
+  expect(toggle.getAttribute("aria-pressed")).toBe("false");
+  // Folding from the width animates, like the toggle does.
+  expect(body().getAttribute("data-fold-state")).toBe("closing");
+  // The toggle still opens it while the review stays narrow.
+  await act(async () => toggle.click());
+  expect(aside.inert).toBe(false);
+  expect(body().getAttribute("data-fold-state")).toBe("opening");
+
+  await resizePane(1000);
+  expect(aside.inert).toBe(false);
+  expect(toggle.getAttribute("aria-pressed")).toBe("true");
+});
+
+it("keeps source control beside a session review in a repository, but not beside a commit", async () => {
+  vi.mocked(sessionCheckpointStatus).mockResolvedValue({ files: [] } as unknown as CheckpointStatus);
+  await render({ sessionId: "session", initialSource: "session" });
+  expect(container.querySelector('aside[aria-label="Source control"]')).not.toBeNull();
+  vi.mocked(gitCommitFiles).mockResolvedValue([files[0]]);
+  await render({ commit: "abc1234" });
+  expect(container.querySelector("aside")).toBeNull();
+  expect(container.querySelector("[data-review-rail-toggle]")).toBeNull();
+});
+
+it("jumps to a changed file picked from the search panel", async () => {
+  await render();
+  await click("Search changed files");
+  const search = document.querySelector<HTMLInputElement>('input[role="combobox"]')!;
+  expect(document.querySelector('[data-ui="select-overflow"]')?.textContent).toBe(
+    "18 more files. Keep typing to narrow.",
+  );
+  await act(async () => {
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    setValue.call(search, "file25");
+    search.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  const options = [...document.querySelectorAll<HTMLButtonElement>('[role="option"]')];
+  expect(options).toHaveLength(1);
+  expect(options[0].textContent).toContain("file25.ts");
+  expect(options[0].textContent).toContain("dir");
+  await act(async () => options[0].click());
+  await act(async () => scroller().dispatchEvent(new Event("scroll")));
+  await measure();
+  // The review keeps every file and opens the picked one in place.
+  expect(container.querySelectorAll("[data-review-file]").length).toBeGreaterThan(1);
+  expect(gitFileDiff).toHaveBeenCalledWith("/repo", files[25].relative, "unstaged");
+  expect(card(25).querySelector("[data-diff-content]")).not.toBeNull();
+  expect(scroller().scrollTop).toBeGreaterThan(0);
+});
+
+it("remembers diff view options from the options menu", async () => {
+  await render();
+  await menu("Side by side");
+  const item = [...document.querySelectorAll<HTMLElement>('[role="menuitemcheckbox"]')]
+    .find((node) => node.textContent === "Side by side");
+  expect(item?.getAttribute("aria-checked")).toBe("true");
+  expect(JSON.parse(localStorage.getItem("omnicode.reviewViewOptions.v1")!)).toMatchObject({
+    sideBySide: true,
+    wordWrap: true,
+    highlightWords: true,
+  });
 });
 
 it("offers session checkpoints only on a session tab and keeps Undo/Keep outside the pane", async () => {
@@ -573,9 +715,9 @@ it("renders a fixed commit with the shared diff, preserves folding on refresh, a
   await openFileMenu(0);
   expect(document.querySelector('[role="menu"]')?.textContent).not.toMatch(/Stage|Unstage|Discard/);
   await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })));
-  await click("Collapse all");
+  await menu("Collapse all files");
   await settle();
-  await click("Refresh changes");
+  await menu("Refresh");
   expect(card(0).querySelector("header button")?.getAttribute("aria-expanded")).toBe("false");
   await act(async () => container.querySelectorAll('[data-fold-state="closing"]').forEach(completeMotionAnimation));
   expect(card(0).querySelector("[data-diff-content]")).toBeNull();

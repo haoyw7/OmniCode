@@ -24,7 +24,6 @@ import { ProjectCard } from "./ProjectCard";
 
 
 export function ProjectSection({
-  sectionId,
   compact,
   hideHeader = false,
   label,
@@ -55,7 +54,6 @@ export function ProjectSection({
   groupLogos,
   groupMascots,
 }: {
-  sectionId?: "remote-control";
   compact: boolean;
   hideHeader?: boolean;
   label: string;
@@ -134,7 +132,7 @@ export function ProjectSection({
   return (
     <div
       className={compact ? "shrink-0" : `shrink-0 ${tree ? "mb-1" : "mb-2"}`}
-      data-project-section={sectionId ?? (pinned ? "pinned" : "projects")}
+      data-project-section={pinned ? "pinned" : "projects"}
     >
       {compact || hideHeader ? null : (
         <ProjectSectionHeader

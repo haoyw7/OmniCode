@@ -744,7 +744,6 @@ function sanitizeFile(raw: unknown): FilePaneTab | null {
     (value.plan != null ||
       releaseNotes != null ||
       commit != null ||
-      value.changes === true ||
       value.terminal === true)
   ) {
     return null;
@@ -780,7 +779,9 @@ function sanitizeFile(raw: unknown): FilePaneTab | null {
     ...(plan ? { plan } : {}),
     ...(releaseNotes ? { releaseNotes } : {}),
     ...(commit ? { commit } : {}),
-    ...(sessionChanges ? { sessionChanges, review: true } : {}),
+    // A session's changes open in the working copy's Changes review, including
+    // ones saved before the two tabs became one.
+    ...(sessionChanges ? { sessionChanges, review: true, changes: true } : {}),
     ...(value.review === true ? { review: true } : {}),
     ...(value.changes === true ? { changes: true, review: true } : {}),
     ...(value.changeKind === "staged" || value.changeKind === "unstaged"
@@ -822,8 +823,9 @@ function sanitizeSessionChanges(
 ): SessionChangesSource | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const sessionId = (raw as Record<string, unknown>).sessionId;
+  const turnId = (raw as Record<string, unknown>).turnId;
   return typeof sessionId === "string" && sessionId.trim()
-    ? { sessionId: sessionId.trim() }
+    ? { sessionId: sessionId.trim(), ...(typeof turnId === "string" && /^[A-Za-z0-9_-]{1,200}$/.test(turnId) ? { turnId } : {}) }
     : undefined;
 }
 

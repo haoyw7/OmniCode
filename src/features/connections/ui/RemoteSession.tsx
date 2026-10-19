@@ -435,6 +435,24 @@ function ConnectedRemoteSession({
     settings: shell.modelSettings ?? {},
     mode: shell.runtimeMode,
   }));
+  const [draftProjectId, setDraftProjectId] = useState(project.projectId);
+  if (draftProjectId !== project.projectId) {
+    // Folder changes reuse the unsent composer. Reset its project-owned state
+    // before rendering children, keeping the input and attachment reads mounted.
+    setDraftProjectId(project.projectId);
+    setSelectedCwd(project.cwd);
+    setDraftWorkspaceMode("current");
+    setDraftWorktreeBase("HEAD");
+    setWorktreeCreation(undefined);
+    setStarting(undefined);
+    setError("");
+    setDraft({
+      harness: isRemoteProvider(shell.harness) ? shell.harness : "codex",
+      model: shell.model,
+      settings: shell.modelSettings ?? {},
+      mode: shell.runtimeMode,
+    });
+  }
   // Changes to a started session, applied when it is idle.
   const [changes, setChanges] = useState<Configuration>();
   const alive = useRef(true);

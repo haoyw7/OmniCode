@@ -106,7 +106,6 @@ type ProjectSessionSectionProps = SidebarProps & {
   shortcutId?: string;
   projectLabel?: string;
   flatPins?: boolean;
-  excludeRemoteControl?: boolean;
   searchActive?: boolean;
   pollRemote?: boolean;
   sessionFilters: SessionSidebarFilters;
@@ -164,7 +163,6 @@ function ProjectSessionSectionComponent({
   shortcutId,
   projectLabel,
   flatPins = false,
-  excludeRemoteControl = false,
   scrollRef,
   onRetry,
 }: ProjectSessionSectionProps) {
@@ -368,6 +366,7 @@ function ProjectSessionSectionComponent({
             archived: session.archived,
             pinned: session.pinned,
             remoteControl: session.remoteControl,
+            remoteControlDevice: session.remoteControlDevice,
             linkedWorkItem: session.linkedWorkItem,
             draft: session.draft,
             repo: session.repo,
@@ -471,7 +470,6 @@ function ProjectSessionSectionComponent({
     (session) =>
       !session.orchestrationLeadId &&
       !session.workflowParentId &&
-      (!excludeRemoteControl || !session.remoteControl) &&
       (!flatPins || !!shortcutId || !session.pinned) &&
       (shortcutId || searchActive || inWorktreeFocus(session, focusedWorktree)),
   );

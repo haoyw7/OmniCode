@@ -1,4 +1,3 @@
-import { WorkspaceToolsDock } from "./shell/WorkspaceToolsDock";
 import { createPortal } from "react-dom";
 import { AppPageHeaderPortalContext } from "../features/workspace/ui/AppPageHeader";
 import { windowDragRegion } from "./shell/startWindowDrag";
@@ -50,9 +49,6 @@ import {
 appViewTitle,
 APP_PAGE_KINDS,leafIds
 } from "../features/workspace/model/layout";
-import {
-pickTextHarness
-} from "../integrations/harness";
 
 
 import {
@@ -80,7 +76,7 @@ prefetchRemoteProjectSessions
 import { AddRemoteProjectDialog } from "../features/connections/ui/AddRemoteProjectDialog";
 import { NewEnvironmentDialog } from "../features/connections/ui/NewEnvironmentDialog";
 
-import { selectedChangeKind,selectedChangePath,selectedCommitSha,tabIsOneCard } from "./model/workspaceSelectors";
+import { tabIsOneCard } from "./model/workspaceSelectors";
 import { LinkedWorkItemPanel } from "./ui/workspaceSurfaces";
 import type { WorkspaceViewModel } from "./controller/useWorkspaceController";
 import { SessionPageCountsContext, useSessionPageCounts } from "./shell/sessions/sessionPageCounts";
@@ -154,16 +150,13 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
     onNewChat,
     onNewInProject,
     onNewTerminal,
-    onOpenAllChanges,
     onOpenApprovalSession,
-    onOpenCommit,
     onOpenFile,
     onOpenInboxSession,
     onOpenLinkedWorkItem,
     onOpenNotificationSettings,
     onOpenSessionFile,
     onOpenTerminal,
-    onOpenWorkingTreeDiff,
     onPinFile,
     onPinHistorySession,
     onPinHistorySessions,
@@ -242,7 +235,6 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
     sidebarOpenSessionIds,
     sidebarTab,
     sidebarWorkflows,
-    sourceControlAvailable,
     surfaceModeToggle,
     tabVisitNav,
     tabs,
@@ -332,15 +324,6 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
     onOpenTerminal: onOpenTerminal,
     onFileMoved: onFileMoved,
     onFileDeleted: onFileDeleted,
-    onOpenDiff: onOpenWorkingTreeDiff,
-    onOpenAllChanges: onOpenAllChanges,
-    onOpenCommit: onOpenCommit,
-    selectedDiffPath: activeTab
-                      ? selectedChangePath(activeTab, gitCwd)
-                      : undefined,
-    selectedDiffKind: activeTab ? selectedChangeKind(activeTab) : undefined,
-    selectedCommitSha: activeTab ? selectedCommitSha(activeTab) : undefined,
-    textHarness: pickTextHarness(active?.harness),
     onNew: onNew,
     onNewChat: onNewChat,
     openSessions: openProjectSessions,
@@ -493,7 +476,6 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
                         <SurfaceVisibilityContext.Provider
                           value={workspaceVisible}
                         >
-                          <WorkspaceToolsDock sidebar={sidebarProps} visible={workspaceVisible && sourceControlAvailable}>
                           <TerminalDockLayout
                             projectTerminals={projectTerminals}
                             currentDock={currentProjectDock}
@@ -622,7 +604,6 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
                               </div>
                             </div>
                           </TerminalDockLayout>
-                          </WorkspaceToolsDock>
                           {[...linkedWorkItemPanels.values()].map((panel) => (
                             <LinkedWorkItemPanel
                               repairSessions={repairSessions}

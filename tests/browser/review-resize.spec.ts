@@ -1,5 +1,96 @@
 import { expect, test } from "@playwright/test";
 
+test("split rich diffs keep wrapping and gutters aligned during a resize", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("omnicode.reviewViewOptions.v1", JSON.stringify({
+    sideBySide: true, wordWrap: true, highlightWords: true,
+  })));
+  await page.setViewportSize({ width: 2200, height: 1000 });
+  await page.goto("/tests/browser/desktop-tools.html?editor=review&split=right&reviewResize&reviewStress");
+  const file = page.locator('[data-review-file="src/workspace.ts"]');
+  const host = file.locator("diffs-container");
+  await expect(host.locator("[data-line] span").first()).toBeVisible();
+  await expect(file.locator("[aria-busy=true]")).toHaveCount(0);
+  await host.evaluate(el => el.setAttribute("data-retained", "true"));
+  const handle = page.locator('[data-pane-sash="tools-split:0"] .resize-handle');
+  const box = (await handle.boundingBox())!;
+  const x = box.x + box.width / 2, y = box.y + 100;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (const offset of [-120, 80, -60]) {
+    await page.mouse.move(x + offset, y);
+    await expect(async () => {
+      const columns = await host.evaluate(el => [...el.shadowRoot!.querySelectorAll<HTMLElement>("[data-code]")].map(code => {
+        const lines = [...code.querySelectorAll<HTMLElement>("[data-line]")];
+        const numbers = [...code.querySelectorAll<HTMLElement>("[data-column-number]")];
+        return {
+          lines: lines.length,
+          overflow: code.scrollWidth - code.clientWidth,
+          alignment: Math.max(...lines.map((line, index) => {
+            const a = line.getBoundingClientRect(), b = numbers[index].getBoundingClientRect();
+            return Math.abs(a.y - b.y) + Math.abs(a.height - b.height);
+          })),
+        };
+      }));
+      expect(columns).toHaveLength(2);
+      for (const column of columns) {
+        expect(column.lines).toBeGreaterThan(0);
+        expect(column.overflow).toBeLessThanOrEqual(1);
+        expect(column.alignment).toBeLessThan(1);
+      }
+    }).toPass();
+  }
+  await page.mouse.up();
+  await expect(host).toHaveAttribute("data-retained", "true");
+  await page.getByRole("button", { name: "Review options", exact: true }).click();
+  await page.getByRole("menuitemcheckbox", { name: "Word wrap", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(host.locator('[data-overflow="scroll"]')).toHaveCount(1);
+  await expect(host.locator("[data-line] span").first()).toBeVisible();
+});
+
+test("large rich diffs keep every line reachable through the review scroll box", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width: 2200, height: 1000 });
+  await page.goto("/tests/browser/desktop-tools.html?editor=review&split=right&reviewResize&reviewStress");
+  const review = page.locator("[data-git-review-pane]");
+  const file = review.locator('[data-review-file="src/workspace.ts"]');
+  const host = file.locator("diffs-container");
+  await expect(host.locator("[data-line] span").first()).toBeVisible();
+  // Wait for the initial highlighter/worker handover before retaining nodes.
+  await expect(file.locator("[aria-busy=true]")).toHaveCount(0);
+  const scroller = review.locator("[data-review-scroll]");
+  const seen = new Set<string>();
+  let alignment = 0;
+  for (let step = 0; step < 120; step++) {
+    const state = await host.evaluate(el => {
+      const root = el.shadowRoot!;
+      const lines = [...root.querySelectorAll<HTMLElement>("[data-line]")];
+      const numbers = [...root.querySelectorAll<HTMLElement>("[data-column-number]")];
+      return {
+        lines: lines.map(line => line.textContent!),
+        tokens: root.querySelectorAll("[data-line] span").length,
+        alignment: Math.max(...lines.map((line, index) => {
+          const a = line.getBoundingClientRect(), b = numbers[index].getBoundingClientRect();
+          return Math.abs(a.y - b.y) + Math.abs(a.height - b.height);
+        })),
+      };
+    });
+    state.lines.forEach(line => seen.add(line));
+    alignment = Math.max(alignment, state.alignment);
+    expect(state.tokens).toBeGreaterThan(0);
+    expect(state.lines.length).toBeLessThan(400);
+    if (seen.size === 400) break;
+    await scroller.evaluate(el => { el.scrollTop += el.clientHeight * 0.6; });
+    await page.waitForTimeout(100);
+  }
+  expect(seen.size).toBe(400);
+  expect(alignment).toBeLessThan(1);
+  await scroller.evaluate(el => { el.scrollTop = 0; });
+  await expect(host.locator("[data-line]").first()).toContainText("setting0");
+  await expect(file.getByRole("button", { name: "Stage hunk", exact: true }).first()).toBeVisible();
+  await expect(file.locator(".review-diff-virtual")).toHaveCount(0);
+});
+
 test("review keeps wrapped code, gutters and hunk controls aligned while resizing", async ({ page }) => {
   await page.setViewportSize({ width: 1800, height: 1000 });
   await page.goto("/tests/browser/desktop-tools.html?editor=review&split=right&reviewResize");
@@ -31,9 +122,15 @@ test("review keeps wrapped code, gutters and hunk controls aligned while resizin
         .map(heading => Math.abs(heading.getBoundingClientRect().width - code.getBoundingClientRect().width)),
     };
   });
-  const initial = await snapshot();
-  expect(initial.tokens).toBeGreaterThan(0);
-  expect(initial.separators).toBeGreaterThan(0);
+  // The worker can replace the initial renderer between the first visible
+  // line and this read. Retry initialization before capturing the baseline.
+  let initial!: Awaited<ReturnType<typeof snapshot>>;
+  await expect(async () => {
+    const state = await snapshot();
+    expect(state.tokens).toBeGreaterThan(0);
+    expect(state.separators).toBeGreaterThan(0);
+    initial = state;
+  }).toPass();
   const heights: number[] = [];
   for (const width of [1050, 2300, 1400]) {
     await page.setViewportSize({ width, height: 1000 });

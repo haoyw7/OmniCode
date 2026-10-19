@@ -17,11 +17,7 @@ import {
   sessionExecutionCwd,
   type Session,
 } from "../../features/sessions/model/session";
-import { type SidebarTabId } from "../../features/settings/model/appearance";
-import {
-  loadDiffViewer,
-  loadFileTabMode,
-} from "../../features/settings/model/settings";
+import { loadFileTabMode } from "../../features/settings/model/settings";
 import {
   findSurfacePane,
   isFilesystemTab,
@@ -29,7 +25,6 @@ import {
   newFileTab,
   newPlanTab,
   openChangesTab,
-  openCommitTab,
   openEditorTab,
   openFileExplorer,
   openSessionChangesTab,
@@ -38,10 +33,7 @@ import {
   withSurfacePanes,
   type WorkspaceTab,
 } from "../../features/workspace/model/layout";
-import {
-  type GitFileDiffKind,
-  type GitHistoryCommit,
-} from "../../platform/tauri/fs";
+import { type GitFileDiffKind } from "../../platform/tauri/fs";
 import { isEqualOrInside, rebasePath } from "../../shared/lib/paths";
 import { orderByIds } from "../../shared/lib/reorder";
 import { dropOpenFiles } from "../model/workspaceSelectors";
@@ -60,7 +52,6 @@ type Options = {
   ensureContentTab: (cwd: string) => WorkspaceTab;
   activateTab: (id: string, paneId?: string) => void;
   showWorkspace: () => void;
-  setSidebarTab: (tab: SidebarTabId, project?: string) => void;
   setTabs: Dispatch<SetStateAction<WorkspaceTab[]>>;
   setComposerFocused: Dispatch<SetStateAction<boolean>>;
   setProjectTerminalFocused: Dispatch<SetStateAction<boolean>>;
@@ -133,14 +124,13 @@ export function useWorkspaceFiles(options: Options) {
     (tabId: string) => pendingTabResources.current.has(tabId),
     [],
   );
+  /**
+   * A file an agent touched opens in the review: a session's own checkpoint
+   * review when one is named, otherwise every working-tree change with source
+   * control beside it.
+   */
   const onOpenDiff = useCallback(
-    (
-      path?: string,
-      session?: { sessionId: string; cwd: string },
-      changeKind?: GitFileDiffKind,
-      pin = false,
-      options?: { exact?: boolean },
-    ) => {
+    (path?: string, session?: { sessionId: string; cwd: string; turnId?: string }) => {
       void (async () => {
         const diffCwd = session?.cwd ?? context().gitCwd;
         const diffProjectCwd = session
@@ -162,12 +152,10 @@ export function useWorkspaceFiles(options: Options) {
           target.surfaceMode ??
           (loadFileTabMode() === "workspace" ? "unified" : "split");
         const resolved = path
-          ? options?.exact
-            ? path
-            : ((await resolveTabResource(
-                target.id,
-                resolveOpenablePath(diffCwd, path),
-              )) ?? path)
+          ? ((await resolveTabResource(
+              target.id,
+              resolveOpenablePath(diffCwd, path),
+            )) ?? path)
           : undefined;
         if (
           !context().tabs.some(
@@ -186,51 +174,34 @@ export function useWorkspaceFiles(options: Options) {
             )
               return tab;
             tab = { ...tab, surfaceMode: tab.surfaceMode ?? initialMode };
-            if (session) {
-              return openSessionChangesTab(
-                tab,
-                session.cwd,
-                session.sessionId,
-                resolved,
-                diffProjectCwd,
-                pin,
-              );
-            }
-            if (loadDiffViewer() === "unified") {
-              return openChangesTab(
-                tab,
-                diffCwd,
-                resolved,
-                changeKind,
-                diffProjectCwd,
-              );
-            }
-            if (!resolved) return tab;
-            return openEditorTab(
-              tab,
-              newFileTab(resolved, diffCwd, true, changeKind, diffProjectCwd),
-              { pin },
-            );
+            return session
+              ? openSessionChangesTab(
+                  tab,
+                  session.cwd,
+                  session.sessionId,
+                  resolved,
+                  diffProjectCwd,
+                  false,
+                  session.turnId,
+                )
+              : openChangesTab(tab, diffCwd, resolved, undefined, diffProjectCwd);
           }),
         );
         if (context().activeTabId !== target.id) return;
-        latest.current.setSidebarTab("changes", diffProjectCwd);
         setComposerFocused(false);
       })();
     },
     [ensureContentTab],
   );
 
-  const onOpenWorkingTreeDiff = useCallback(
-    (path: string, kind?: GitFileDiffKind, pin?: boolean) =>
-      onOpenDiff(path, undefined, kind, pin, { exact: true }),
-    [onOpenDiff],
-  );
-
-  /** Stack one section's working-tree changes in one review, whatever the diff-view setting. */
+  /** Stack one section's working-tree changes in one review beside source control. */
   const onOpenAllChanges = useCallback(
-    (kind: GitFileDiffKind) => {
-      const target = ensureContentTab(context().sidebarCwd);
+    (kind: GitFileDiffKind, project = context().sidebarCwd) => {
+      if (!project || project === "~") return;
+      const target = ensureContentTab(project);
+      const workingCwd = sameProjectPath(project, context().sidebarCwd)
+        ? context().gitCwd
+        : project;
       setTabs((prev) =>
         prev.map((tab) =>
           tab.id === target.id
@@ -241,40 +212,10 @@ export function useWorkspaceFiles(options: Options) {
                     tab.surfaceMode ??
                     (loadFileTabMode() === "workspace" ? "unified" : "split"),
                 },
-                context().gitCwd,
+                workingCwd,
                 undefined,
                 kind,
-                context().sidebarCwd,
-              )
-            : tab,
-        ),
-      );
-      setComposerFocused(false);
-    },
-    [ensureContentTab],
-  );
-
-  const onOpenCommit = useCallback(
-    (commit: GitHistoryCommit, pin?: boolean) => {
-      const target = ensureContentTab(context().sidebarCwd);
-      setTabs((prev) =>
-        prev.map((tab) =>
-          tab.id === target.id
-            ? openCommitTab(
-                {
-                  ...tab,
-                  surfaceMode:
-                    tab.surfaceMode ??
-                    (loadFileTabMode() === "workspace" ? "unified" : "split"),
-                },
-                context().gitCwd,
-                {
-                  sha: commit.sha,
-                  shortSha: commit.shortSha,
-                  subject: commit.subject,
-                },
-                context().sidebarCwd,
-                pin,
+                project,
               )
             : tab,
         ),
@@ -588,9 +529,7 @@ export function useWorkspaceFiles(options: Options) {
     forgetDirtyFiles,
     hasPendingResources,
     onOpenDiff,
-    onOpenWorkingTreeDiff,
     onOpenAllChanges,
-    onOpenCommit,
     onReorderFiles,
     onFileMoved,
     onFileDeleted,

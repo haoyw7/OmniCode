@@ -542,11 +542,13 @@ describe("collectWorkspaceSnapshot", () => {
     expect(restored?.changeKind).toBe("staged");
   });
 
-  it("round-trips a session-scoped Changes tab", () => {
+  it.each([undefined, "first-turn"])("round-trips a session-scoped Changes tab (turn: %s)", (turnId) => {
     const file = newSessionChangesTab(
       "/tmp/a",
       "session-a",
       "/tmp/a/src/lib.rs",
+      undefined,
+      turnId,
     );
     const tab = {
       ...newTab("s1"),
@@ -562,8 +564,9 @@ describe("collectWorkspaceSnapshot", () => {
     );
     const restored = hydrateWorkspaceSnapshot(snapshot, new Map())?.tabs[0]
       ?.editorPanes[0]?.files[0];
-    expect(restored?.sessionChanges).toEqual({ sessionId: "session-a" });
+    expect(restored?.sessionChanges).toEqual({ sessionId: "session-a", ...(turnId ? { turnId } : {}) });
     expect(restored?.review).toBe(true);
+    expect(restored?.changes).toBe(true);
     expect(restored?.path).toBe("/tmp/a/src/lib.rs");
   });
 

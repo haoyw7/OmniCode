@@ -244,3 +244,155 @@ test("dragging a terminal pane keeps its PTY mounted and defers resizing", async
   await expect(terminal).toHaveAttribute("data-retained-terminal", "true");
   expect((await calls()).filter(call => call === "pty_spawn" || call === "pty_kill")).toEqual(before.filter(call => call === "pty_spawn" || call === "pty_kill"));
 });
+
+for (const reducedMotion of ["no-preference", "reduce"] as const) {
+  test(`changes trades places with the middle editor and preserves it during reversal (${reducedMotion})`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    const { chat, editor } = await openPanels(page);
+    await page.evaluate(() => (window as unknown as { toolsFixture: { setTab: (tab: string) => void } }).toolsFixture.setTab("changes"));
+    const grid = page.locator(".desktop-tools-layout");
+    await expect(grid).toHaveAttribute("data-fold-state", "open");
+    await expect.poll(() => page.evaluate(async () => (await import("/src/shared/lib/paneResize.ts")).isPaneResizing())).toBe(false);
+    const panel = grid.locator(":scope > .desktop-tools-panel");
+    const draft = panel.locator("textarea");
+    await draft.fill("Retain this while reordering");
+    await draft.evaluate(el => el.setAttribute("data-retained-draft", "true"));
+    const before = { chat: (await chat.boundingBox())!, editor: (await editor.boundingBox())!, panel: (await panel.boundingBox())! };
+    const grab = (await panel.locator("[data-surface-pane-drag]").boundingBox())!;
+    const start = { x: grab.x + grab.width / 2, y: grab.y + grab.height / 2 };
+    const target = { x: before.editor.x + 8, y: before.editor.y + before.editor.height / 2 };
+    const line = page.locator("[data-pane-insertion]");
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(target.x, target.y, { steps: 8 });
+    await expect(line).toHaveAttribute("data-pane-insertion", "left");
+    await expect.poll(async () => (await editor.boundingBox())!.x - before.editor.x).toBeGreaterThan(before.panel.width - 2);
+    expect(Math.abs((await chat.boundingBox())!.x - before.chat.x)).toBeLessThan(1);
+    expect(Math.abs((await chat.boundingBox())!.width - before.chat.width)).toBeLessThan(1);
+    // Reverse across the original boundary, then cross it again in one drag.
+    await page.mouse.move(before.editor.x + before.editor.width - 8, target.y, { steps: 4 });
+    await expect(line).toHaveAttribute("data-pane-insertion", "right");
+    await expect.poll(async () => Math.abs((await editor.boundingBox())!.x - before.editor.x)).toBeLessThan(1);
+    await page.mouse.move(target.x, target.y, { steps: 4 });
+    await expect(line).toHaveAttribute("data-pane-insertion", "left");
+    await page.mouse.up();
+    await expect(page.locator(".pane-drag-ghost, [data-pane-insertion]")).toHaveCount(0);
+    await expect.poll(async () => (await panel.boundingBox())!.x).toBeLessThan((await editor.boundingBox())!.x);
+    expect((await panel.boundingBox())!.x).toBeGreaterThan(before.chat.x + before.chat.width - 2);
+    for (const [element, original] of [[chat, before.chat], [editor, before.editor], [panel, before.panel]] as const) {
+      await expect.poll(async () => Math.abs((await element.boundingBox())!.width - original.width)).toBeLessThan(1);
+      await expect.poll(async () => Math.abs((await element.boundingBox())!.height - original.height)).toBeLessThan(1);
+    }
+    await expect(draft).toHaveAttribute("data-retained-draft", "true");
+    await expect(draft).toHaveValue("Retain this while reordering");
+    await expect(editor.locator(".cm-editor")).toHaveAttribute("data-retained-editor", "true");
+    await expect(page.locator(".xterm")).toHaveAttribute("data-retained-terminal", "true");
+    // A second drag in the other direction also includes the shell card.
+    const changesBox = (await panel.boundingBox())!;
+    const fileGrab = (await editor.locator("[data-surface-pane-drag]").first().boundingBox())!;
+    await page.mouse.move(fileGrab.x + fileGrab.width / 2, fileGrab.y + fileGrab.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(changesBox.x + 8, changesBox.y + changesBox.height / 3, { steps: 8 });
+    await expect(line).toHaveAttribute("data-pane-insertion", "left");
+    await page.mouse.up();
+    await expect.poll(async () => (await editor.boundingBox())!.x).toBeLessThan((await panel.boundingBox())!.x);
+    await page.evaluate(() => (window as unknown as { toolsFixture: { setTab: (tab: string) => void } }).toolsFixture.setTab("sessions"));
+    await expect(grid).toHaveAttribute("data-fold-state", "closed");
+    await expect(panel).toBeHidden();
+    await page.evaluate(() => (window as unknown as { toolsFixture: { setTab: (tab: string) => void } }).toolsFixture.setTab("changes"));
+    await expect(grid).toHaveAttribute("data-fold-state", "open");
+    await expect(draft).toHaveAttribute("data-retained-draft", "true");
+    await expect(draft).toHaveValue("Retain this while reordering");
+  });
+
+  test(`wide changes panel switches from top to right with its grab point above the workspace (${reducedMotion})`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    const { editor } = await openPanels(page);
+    await page.evaluate(() => (window as unknown as { toolsFixture: { setTab: (tab: string) => void } }).toolsFixture.setTab("changes"));
+    const grid = page.locator(".desktop-tools-layout");
+    await expect(grid).toHaveAttribute("data-fold-state", "open");
+    const panel = grid.locator(":scope > .desktop-tools-panel");
+    const handle = panel.locator("[data-surface-pane-drag]");
+    await handle.focus();
+    await page.keyboard.press("ArrowUp");
+    await expect(grid).toHaveAttribute("data-tools-side", "top");
+    await expect.poll(() => page.evaluate(async () => (await import("/src/shared/lib/paneResize.ts")).isPaneResizing())).toBe(false);
+    const chatBox = (await page.locator('[data-pane-id="tools-session"]').boundingBox())!;
+    const editorBox = (await editor.boundingBox())!;
+    const target = { x: Math.min(chatBox.x, editorBox.x), y: Math.min(chatBox.y, editorBox.y),
+      width: Math.max(chatBox.x + chatBox.width, editorBox.x + editorBox.width) - Math.min(chatBox.x, editorBox.x) };
+    const before = (await panel.boundingBox())!;
+    const grab = (await handle.boundingBox())!;
+    const start = { x: grab.x + grab.width / 2, y: grab.y + grab.height / 2 };
+    const y = target.y - 60;
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(target.x + 20, y, { steps: 8 });
+    const line = page.locator("[data-pane-insertion]");
+    await expect(line).toHaveAttribute("data-pane-insertion", "top");
+    for (const inset of [200, 80, 20]) {
+      await page.mouse.move(target.x + target.width - inset, y, { steps: 4 });
+      await expect(line).toHaveAttribute("data-pane-insertion", "right");
+      const floating = (await page.locator(".pane-drag-ghost > .drag-ghost-card").boundingBox())!;
+      expect(floating.x + floating.width / 2).toBeGreaterThan(target.x + target.width);
+      expect(Math.abs(floating.width - before.width)).toBeLessThan(1);
+      expect(Math.abs(floating.height - before.height)).toBeLessThan(1);
+    }
+    await page.mouse.up();
+    await expect(grid).toHaveAttribute("data-tools-side", "right");
+    await expect(page.locator(".pane-drag-ghost, [data-pane-insertion]")).toHaveCount(0);
+    await expect(editor.locator(".cm-editor")).toHaveAttribute("data-retained-editor", "true");
+    await expect(page.locator(".xterm")).toHaveAttribute("data-retained-terminal", "true");
+  });
+
+  test(`changes panel shares the full-card drag, insertion marker and retained content (${reducedMotion})`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    const { editor } = await openPanels(page);
+    await page.evaluate(() => (window as unknown as { toolsFixture: { setTab: (tab: string) => void } }).toolsFixture.setTab("changes"));
+    const grid = page.locator(".desktop-tools-layout");
+    await expect(grid).toHaveAttribute("data-fold-state", "open");
+    const panel = grid.locator(":scope > .desktop-tools-panel");
+    const draft = panel.locator("textarea");
+    await draft.fill("Keep this commit draft");
+    await draft.evaluate(el => el.setAttribute("data-retained-draft", "true"));
+    const frameStyle = (selector: string) => page.locator(selector).first().evaluate(el => {
+      const style = getComputedStyle(el);
+      return [style.borderRadius, style.borderTopWidth, style.borderTopColor];
+    });
+    expect(await frameStyle(".desktop-tools-panel [data-pane-card-frame]"))
+      .toEqual(await frameStyle('[data-pane-id="tools-editor"] [data-pane-card-frame]'));
+    await expect(panel.locator('[role="tab"][aria-selected="true"]')).toHaveText("Changes");
+    for (const side of ["left", "top", "bottom", "right"] as const) {
+      const target = (await editor.boundingBox())!;
+      const before = (await panel.boundingBox())!;
+      const handle = (await panel.locator("[data-surface-pane-drag]").boundingBox())!;
+      const x = side === "left" ? target.x + 2 : side === "right" ? target.x + target.width - 2 : target.x + target.width / 2;
+      const y = side === "top" ? target.y + 2 : side === "bottom" ? target.y + target.height - 2 : target.y + target.height / 4;
+      await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(x, y, { steps: 8 });
+      const ghost = page.locator(".pane-drag-ghost > .drag-ghost-card");
+      await expect(ghost).toBeVisible();
+      const floating = (await ghost.boundingBox())!;
+      expect(Math.abs(floating.width - before.width)).toBeLessThan(1);
+      expect(Math.abs(floating.height - before.height)).toBeLessThan(1);
+      await expect(ghost.locator("[data-git-changes-panel]")).toHaveCount(1);
+      await expect(ghost.locator("textarea")).toHaveValue("Keep this commit draft");
+      await expect(page.locator("[data-pane-insertion]")).toHaveAttribute("data-pane-insertion", side);
+      await expect(panel).toHaveAttribute("data-pane-floating", "");
+      if (side === "left" && reducedMotion === "no-preference")
+        await page.screenshot({ path: "build/browser-tests/changes-shared-pane-drag.png" });
+      await page.mouse.up();
+      await expect(grid).toHaveAttribute("data-tools-side", side);
+      await expect(page.locator(".pane-drag-ghost, [data-pane-insertion]")).toHaveCount(0);
+      await expect(draft).toHaveAttribute("data-retained-draft", "true");
+      await expect(draft).toHaveValue("Keep this commit draft");
+      await expect(editor.locator(".cm-editor")).toHaveAttribute("data-retained-editor", "true");
+      await expect(page.locator(".xterm")).toHaveAttribute("data-retained-terminal", "true");
+    }
+    await expect.poll(() => page.evaluate(async () => {
+      const module = "/src/shared/lib/paneResize.ts";
+      return (await import(module)).isPaneResizing();
+    })).toBe(false);
+  });
+}

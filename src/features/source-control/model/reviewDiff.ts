@@ -25,6 +25,7 @@ export type ReviewScope = {
   cwd: string;
   source: ReviewSource;
   sessionId?: string;
+  turnId?: string;
 };
 export type ReviewFile = {
   path: string;
@@ -50,10 +51,10 @@ export type ReviewDiffState =
   | { state: "error"; error: string };
 
 export function reviewScopeKey(scope: ReviewScope) {
-  return JSON.stringify([scope.cwd, scope.source, scope.sessionId ?? ""]);
+  return JSON.stringify([scope.cwd, scope.source, scope.sessionId ?? "", ...(scope.turnId ? [scope.turnId] : [])]);
 }
 export function reviewDiffKey(scope: ReviewScope, path: string) {
-  return JSON.stringify([scope.cwd, scope.source, scope.sessionId ?? "", path]);
+  return JSON.stringify([scope.cwd, scope.source, scope.sessionId ?? "", path, ...(scope.turnId ? [scope.turnId] : [])]);
 }
 
 const MAX_RICH_CHARS = 180_000;

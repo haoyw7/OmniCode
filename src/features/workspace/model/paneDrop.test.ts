@@ -27,6 +27,11 @@ describe("paneDropFromDrag", () => {
       .toEqual({ id: "other", edge: "right" });
     expect(paneDropFromDrag([source, other], { x: 0, y: 0 }, card(195, 60), "source"))
       .toEqual({ id: "other", edge: "right" });
+    // Even a wide card overlapping both panes must use the nearer center target.
+    expect(paneDropFromDrag([target, other], { x: 40, y: 20 }, card(195, 60, 240, 40), "source"))
+      .toEqual({ id: "other", edge: "right" });
+    expect(paneDropFromDrag([target, other], { x: 108, y: 30 }, card(150, 60, 200, 40), "source"))
+      .toEqual({ id: "other", edge: "left" });
   });
 
   it("compares pixels rather than percentages in a wide pane", () => {
@@ -47,9 +52,19 @@ describe("paneDropFromDrag", () => {
     }
   });
 
-  it("compares unsigned distances for a center beyond the target", () => {
+  it("keeps the crossed edge when a wide card center moves farther beyond it", () => {
     expect(paneDropFromDrag([target], { x: 50, y: 1 }, card(300, 50, 800, 40), "source"))
-      .toEqual({ id: "target", edge: "top" });
+      .toEqual({ id: "target", edge: "right" });
+  });
+
+  it("switches from top to right while the grab point stays above the target", () => {
+    const workspace = { id: "workspace", rect: { left: 0, top: 300, width: 1400, height: 700 } };
+    expect(paneDropFromDrag([workspace], { x: 20, y: 240 }, card(700, 380, 1400, 300), "source"))
+      .toEqual({ id: "workspace", edge: "top" });
+    for (const x of [740, 800, 1100, 1300]) {
+      expect(paneDropFromDrag([workspace], { x, y: 240 }, card(x + 680, 380, 1400, 300), "source"))
+        .toEqual({ id: "workspace", edge: "right" });
+    }
   });
 
   it("clears a candidate after both the pointer and the whole card leave", () => {

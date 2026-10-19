@@ -1,15 +1,8 @@
 import type { ReactNode } from "react";
 import type { WorktreeFocus } from "../../features/source-control/model/worktreeFocus";
 import type { SidebarTabId } from "../../features/settings/model/appearance";
-import type {
-  GitFileDiffKind,
-  GitHistoryCommit,
-} from "../../platform/tauri/fs";
 import type { OpenFileFn } from "../../features/search/model/search";
-import type {
-  HarnessId,
-  LinkedWorkItem,
-} from "../../features/sessions/model/session";
+import type { LinkedWorkItem } from "../../features/sessions/model/session";
 import type { SessionSummary } from "../../features/sessions/data/sessionStore";
 import type { SessionReminder } from "../../features/sessions/model/sessionReminders";
 import type { PaneEdge } from "../../features/workspace/model/layout";
@@ -109,13 +102,6 @@ export type SidebarProps = {
   onFilesSearchOpenChange: (open: boolean) => void;
   onOpenFilesSearch?: () => void;
   searchFocusToken?: number;
-  onOpenDiff?: (path: string, kind?: GitFileDiffKind, pin?: boolean) => void;
-  onOpenAllChanges?: (kind: GitFileDiffKind) => void;
-  onOpenCommit?: (commit: GitHistoryCommit, pin?: boolean) => void;
-  selectedDiffPath?: string;
-  selectedDiffKind?: GitFileDiffKind;
-  selectedCommitSha?: string;
-  textHarness?: HarnessId;
   onNew?: () => string | void;
   /** Starts a projectless chat; its folder is created on the first message. */
   onNewChat?: () => void;

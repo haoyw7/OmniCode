@@ -8,7 +8,6 @@ import {
   firstLeafId,
   focusedFileTab,
   isAppViewOnlyTab,
-  isCommitTab,
   isFilesystemTab,
   leafIds,
   removePane,
@@ -17,8 +16,7 @@ import {
   type FilePaneTab,
   type WorkspaceTab,
 } from "../../features/workspace/model/layout";
-import { type GitFileDiffKind } from "../../platform/tauri/fs";
-import { displayPath, projectName } from "../../shared/lib/paths";
+import { projectName } from "../../shared/lib/paths";
 
 export function sameWorktreeTabStats(
   a: ReadonlyMap<string, { tabs: number; busy: boolean }>,
@@ -49,31 +47,6 @@ export function filesInWorkspaceTabs(
     ...tab.editorPanes.flatMap((pane) => pane.files),
     ...(tab.terminalPanes ?? []).flatMap((pane) => pane.files),
   ]);
-}
-
-export function selectedChangePath(
-  tab: WorkspaceTab,
-  gitCwd?: string,
-): string | undefined {
-  const file = focusedFileTab(tab);
-  if (!file || !isFilesystemTab(file) || !file.review) return undefined;
-  return displayPath(file.path, gitCwd || file.cwd);
-}
-
-export function selectedChangeKind(
-  tab: WorkspaceTab,
-): GitFileDiffKind | undefined {
-  const file = focusedFileTab(tab);
-  return file?.review ? file.changeKind : undefined;
-}
-
-export function selectedCommitSha(tab: WorkspaceTab): string | undefined {
-  const focused = focusedFileTab(tab);
-  if (focused && isCommitTab(focused)) return focused.commit.sha;
-  for (const pane of tab.editorPanes) {
-    const file = pane.files.find((entry) => entry.id === pane.activeFileId);
-    if (file && isCommitTab(file)) return file.commit.sha;
-  }
 }
 
 export function isBlankWorkspaceTab(

@@ -5,6 +5,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
+import { rememberRemotePendingExecutionCwd } from "../../features/connections/model/connections";
 import {
   planProjectOpenRun,
   type ProjectOpenStep,
@@ -126,12 +127,10 @@ export function useProjectNavigation({
         setComposerFocused(true);
         return;
       }
-      if (
-        previous &&
-        !sameProjectPath(previous, normalized) &&
-        previous !== "~"
-      ) {
-        void keepSessionChanges(sessionId, previous).catch(() => undefined);
+      if (previous && !sameProjectPath(previous, normalized)) {
+        rememberRemotePendingExecutionCwd(sessionId);
+        if (previous !== "~")
+          void keepSessionChanges(sessionId, previous).catch(() => undefined);
       }
       setProjectCwd(normalized);
       setRecents(rememberProject(normalized));

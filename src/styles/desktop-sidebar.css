@@ -307,23 +307,13 @@ html[data-skin].compact-sidebar [data-desktop-sidebar] [data-session-project] {
   line-height: 18px;
 }
 
-/* The sidebar ends at its divider; the drag target overlays the workspace edge. */
-html[data-skin] [data-desktop-sidebar]::after {
+html[data-skin] .sidebar-transition:has([data-desktop-sidebar])::after {
   content: "";
   position: absolute;
   inset-block: 0;
   right: 0;
-  width: 0.5px;
-  background: var(--color-composer-ring);
-  pointer-events: none;
-}
-
-html[data-skin] [data-sidebar-chrome-divider] {
-  position: absolute;
-  inset-block: 0;
-  width: 0.5px;
-  margin-left: -0.5px;
-  background: var(--color-composer-ring);
+  width: 1px;
+  background: var(--color-sidebar-divider);
   pointer-events: none;
 }
 

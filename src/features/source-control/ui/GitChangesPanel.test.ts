@@ -313,6 +313,95 @@ async function showTree() {
   }
 }
 
+it.each([false, true])("retains the commit draft and closes its menu while folding (reduced motion: %s)", async (reduced) => {
+  vi.spyOn(window, "matchMedia").mockImplementation(query => ({
+    matches: reduced && query === "(prefers-reduced-motion: reduce)",
+  }) as MediaQueryList);
+  vi.mocked(gitDiffIndex).mockResolvedValue(index({ files: [changedFile("draft.ts")] }));
+  await renderPanel("/commit-fold");
+  const toggle = container.querySelector<HTMLButtonElement>('[aria-label="Collapse commit panel"]')!;
+  const composer = document.getElementById(toggle.getAttribute("aria-controls")!)!;
+  const draft = composer.querySelector("textarea")!;
+  const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!;
+  await act(async () => {
+    setValue.call(draft, "Keep this draft");
+    draft.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => composer.querySelector<HTMLButtonElement>('[aria-label="Commit options"]')!.click());
+  expect(composer.querySelector('[role="menu"]')).not.toBeNull();
+  draft.focus();
+  await act(async () => toggle.click());
+  expect(document.activeElement).toBe(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  expect(composer.closest<HTMLElement>(".zen-fold-item")?.inert).toBe(true);
+  expect(composer.querySelector('[role="menu"]')).toBeNull();
+  expect(container.querySelector<HTMLButtonElement>('button[title="draft.ts"]')?.disabled).toBe(false);
+  if (!reduced) {
+    expect(composer.closest(".zen-fold-item")?.getAttribute("data-fold-state")).toBe("closing");
+    await act(async () => finishMotion(5));
+  }
+  await act(async () => toggle.click());
+  await act(async () => finishMotion());
+  expect(composer.querySelector("textarea")).toBe(draft);
+  expect(draft.value).toBe("Keep this draft");
+  expect(composer.closest<HTMLElement>(".zen-fold-item")?.inert).toBe(false);
+  expect(composer.querySelector<HTMLButtonElement>('[aria-label="Commit options"]')?.getAttribute("aria-expanded")).toBe("false");
+  await act(async () => toggle.click());
+  await act(async () => finishMotion());
+  expect(composer.closest<HTMLElement>(".zen-fold-item")?.hidden).toBe(true);
+  expect(draft.isConnected).toBe(true);
+  await act(async () => setUiLanguage("zh-CN"));
+  expect(toggle.getAttribute("aria-label")).toBe("展开提交面板");
+  await act(async () => toggle.click());
+  await act(async () => finishMotion());
+  expect(draft.value).toBe("Keep this draft");
+  expect(toggle.getAttribute("aria-label")).toBe("收起提交面板");
+});
+
+it.each([false, true])("keeps file-group focus and visibility correct while folding (reduced motion: %s)", async (reduced) => {
+  vi.spyOn(window, "matchMedia").mockImplementation(query => ({
+    matches: reduced && query === "(prefers-reduced-motion: reduce)",
+  }) as MediaQueryList);
+  vi.mocked(gitDiffIndex).mockResolvedValue(index({ files: [changedFile("group-file.ts")] }));
+  await renderPanel("/group-fold");
+  const toggle = container.querySelector<HTMLButtonElement>(".git-file-section-header > button")!;
+  if (toggle.getAttribute("aria-expanded") !== "true") await act(async () => toggle.click());
+  await act(async () => finishMotion());
+  const file = container.querySelector<HTMLButtonElement>('button[title="group-file.ts"]')!;
+  file.focus();
+  await act(async () => toggle.click());
+  expect(document.activeElement).toBe(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  expect(file.isConnected).toBe(true);
+  expect(file.closest("fieldset")?.disabled).toBe(true);
+  expect(container.querySelector<HTMLElement>(".git-file-section > .zen-fold-item")?.inert).toBe(true);
+  if (reduced) expect(container.querySelector<HTMLElement>(".git-file-section > .zen-fold-item")?.hidden).toBe(true);
+  await act(async () => toggle.click());
+  await act(async () => finishMotion());
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  expect(container.querySelector<HTMLButtonElement>('button[title="group-file.ts"]')).toBe(file);
+  expect(file.closest("fieldset")?.disabled).toBe(false);
+});
+
+it("shows refreshed files when a retained group reopens", async () => {
+  vi.mocked(gitDiffIndex).mockResolvedValue(index({ files: [changedFile("before.ts")] }));
+  await renderPanel("/retained-group-refresh");
+  const toggle = container.querySelector<HTMLButtonElement>(".git-file-section-header > button")!;
+  if (toggle.getAttribute("aria-expanded") !== "true") await act(async () => toggle.click());
+  await act(async () => finishMotion());
+  const before = container.querySelector<HTMLButtonElement>('button[title="before.ts"]')!;
+  await act(async () => toggle.click());
+  await act(async () => finishMotion());
+  vi.mocked(gitDiffIndex).mockResolvedValue(index({ files: [changedFile("after.ts")] }));
+  await act(async () => window.dispatchEvent(new Event("focus")));
+  expect(before.isConnected).toBe(true);
+  expect(before.closest("fieldset")?.disabled).toBe(true);
+  await act(async () => toggle.click());
+  await act(async () => finishMotion());
+  expect(container.querySelector('button[title="before.ts"]')).toBeNull();
+  expect(container.querySelector('button[title="after.ts"]')).not.toBeNull();
+});
+
 describe("GitChangesPanel folder actions", () => {
   it("animates folder disclosure both ways, restores focus and reverses a close", async () => {
     vi.mocked(gitDiffIndex).mockResolvedValue(
@@ -338,21 +427,22 @@ describe("GitChangesPanel folder actions", () => {
     expect(fold()?.inert).toBe(true);
     expect(fold()?.getAttribute("aria-hidden")).toBe("true");
     expect(file.isConnected).toBe(true);
-    expect(file.disabled).toBe(true);
+    expect(file.closest("fieldset")?.disabled).toBe(true);
 
     await act(async () => finishMotion(5));
     await act(async () => folder.click());
     expect(fold()?.dataset.foldState).toBe("opening");
     expect(fold()?.inert).toBe(false);
-    expect(file.disabled).toBe(false);
+    expect(file.closest("fieldset")?.disabled).toBe(false);
     await act(async () => finishMotion(5));
     expect(fold()?.dataset.foldState).toBe("opening");
     await act(async () => finishMotion());
     expect(fold()?.dataset.foldState).toBe("open");
     await act(async () => folder.click());
     await act(async () => finishMotion());
-    expect(fold()).toBeNull();
-    expect(file.isConnected).toBe(false);
+    expect(fold()?.hidden).toBe(true);
+    expect(file.isConnected).toBe(true);
+    expect(file.closest("fieldset")?.disabled).toBe(true);
     await act(async () => folder.click());
     expect(fold()?.dataset.foldState).toBe("opening");
   });
@@ -373,9 +463,10 @@ describe("GitChangesPanel folder actions", () => {
       'button[title="reduced"]',
     )!;
     await act(async () => folder.click());
-    expect(
-      container.querySelector('button[title="reduced/file.ts"]'),
-    ).toBeNull();
+    const file = container.querySelector<HTMLButtonElement>('button[title="reduced/file.ts"]')!;
+    expect(file.isConnected).toBe(true);
+    expect(file.closest("fieldset")?.disabled).toBe(true);
+    expect(file.closest<HTMLElement>(".zen-fold-item")?.hidden).toBe(true);
     await act(async () => folder.click());
     expect(
       folder.parentElement!.parentElement!.querySelector<HTMLElement>(
@@ -433,7 +524,9 @@ describe("GitChangesPanel folder actions", () => {
       await act(async () => folder.click());
       expect(folder.getAttribute("aria-expanded")).toBe("false");
       await act(async () => finishMotion());
-      expect(container.querySelector('button[title="src/app.ts"]')).toBeNull();
+      const retainedFile = container.querySelector<HTMLButtonElement>('button[title="src/app.ts"]')!;
+      expect(retainedFile.closest<HTMLElement>(".zen-fold-item")?.hidden).toBe(true);
+      expect(retainedFile.closest("fieldset")?.disabled).toBe(true);
 
       invalidateWatchedFiles.mockClear();
       vi.mocked(notifyGitChanged).mockClear();

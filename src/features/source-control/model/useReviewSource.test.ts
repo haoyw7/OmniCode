@@ -73,12 +73,14 @@ function Harness({
   cwd,
   source,
   sessionId,
+  turnId,
 }: {
   cwd: string;
   source: ReviewSource;
   sessionId?: string;
+  turnId?: string;
 }) {
-  result = useReviewSource(cwd, source, sessionId);
+  result = useReviewSource(cwd, source, sessionId, turnId);
   return null;
 }
 async function render(
@@ -87,9 +89,10 @@ async function render(
   sessionId: string | undefined = "s1",
   strict = false,
   visible = true,
+  turnId?: string,
 ) {
   await act(async () => {
-    const node = createElement(SurfaceVisibilityContext.Provider, { value: visible }, createElement(Harness, { cwd, source, sessionId }));
+    const node = createElement(SurfaceVisibilityContext.Provider, { value: visible }, createElement(Harness, { cwd, source, sessionId, turnId }));
     root.render(strict ? createElement(StrictMode, null, node) : node);
   });
 }
@@ -288,4 +291,18 @@ it("survives StrictMode effect replay and drops responses from an old cwd/sessio
     "a.ts",
   );
   expect(result.getDiff("a.ts")?.state).toBe("loaded");
+});
+
+
+it("isolates historical file lists and diffs by turn", async () => {
+  await render("session", "/repo", "s1", false, true, "first");
+  const firstKey = result.scopeKey;
+  expect(sessionCheckpointStatus).toHaveBeenLastCalledWith("s1", "/repo", undefined, "first");
+  await act(async () => result.loadDiff("a.ts"));
+  expect(sessionCheckpointFileDiff).toHaveBeenLastCalledWith("s1", "/repo", "a.ts", "first");
+  await render("session", "/repo", "s1", false, true, "second");
+  expect(result.scopeKey).not.toBe(firstKey);
+  expect(result.getDiff("a.ts")).toBeUndefined();
+  await act(async () => result.loadDiff("a.ts"));
+  expect(sessionCheckpointFileDiff).toHaveBeenLastCalledWith("s1", "/repo", "a.ts", "second");
 });

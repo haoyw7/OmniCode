@@ -199,147 +199,6 @@ html[data-skin][data-desktop-mode].is-mac .desktop-titlebar-navigation {
 html[data-skin][data-desktop-mode].is-mac .desktop-titlebar-mode-slot {
   left: max(236px, calc(var(--desktop-sidebar-chrome-width, var(--desktop-sidebar-width)) - 80px));
 }
-html[data-skin][data-desktop-mode] .desktop-tools-layout {
-  position: relative;
-  container-type: inline-size;
-  isolation: isolate;
-  overflow: clip;
-  display: grid;
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  min-width: 0;
-  transition: grid-template-columns var(--collapse-duration) cubic-bezier(0.22, 1, 0.36, 1),
-    grid-template-rows var(--collapse-duration) cubic-bezier(0.22, 1, 0.36, 1);
-}
-html[data-skin][data-desktop-mode] .desktop-tools-layout[data-resizing],
-html.is-resizing .desktop-tools-layout {
-  transition: none;
-}
-html[data-skin][data-desktop-mode] .desktop-tools-workspace {
-  grid-area: workspace;
-  z-index: 0;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-html[data-skin][data-desktop-mode] .desktop-tools-layout:is([data-tools-side="left"], [data-tools-side="right"]) > .desktop-tools-workspace:has([data-pane-chat-edge]) {
-  width: 100%;
-  min-width: var(--desktop-conversation-min-width);
-  justify-self: start;
-}
-html[data-skin][data-desktop-mode] .desktop-tools-layout[data-tools-side="left"] > .desktop-tools-workspace:has([data-pane-chat-edge]) {
-  justify-self: end;
-}
-html[data-skin][data-desktop-mode] .desktop-tools-divider {
-  grid-area: divider;
-  z-index: 2;
-  position: relative;
-  min-width: 0;
-  min-height: 0;
-}
-/* The preceding card owns the gutter. Keep the zero-sized divider's hit
-   target in that space instead of adding a second gap between panels. */
-html[data-skin][data-desktop-mode] .desktop-tools-divider > [data-resize-edge="left"] {
-  left: calc(-1 * var(--desktop-pane-outer));
-  width: var(--desktop-pane-outer);
-}
-html[data-skin][data-desktop-mode] .desktop-tools-divider > [data-resize-edge="top"] {
-  top: calc(-1 * var(--desktop-pane-outer));
-  height: var(--desktop-pane-outer);
-}
-html[data-skin][data-desktop-mode] .desktop-tools-divider > .resize-handle::after {
-  inset: 0;
-  margin: auto;
-  transform: none;
-}
-html[data-skin][data-desktop-mode] .desktop-tools-panel {
-  grid-area: tools;
-  z-index: 1;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  border-radius: 10px;
-  margin: 0 var(--desktop-pane-outer) var(--desktop-pane-outer) 0;
-  overflow: hidden;
-  background: var(--color-card);
-  border: 1px solid var(--color-hairline);
-  box-shadow: var(--shadow-panel);
-}
-html[data-skin][data-desktop-mode] .desktop-tools-panel[hidden] {
-  display: none;
-}
-html[data-skin][data-desktop-mode] .desktop-tools-heading {
-  position: relative;
-  display: flex;
-  align-items: center;
-  height: 32px;
-  flex-shrink: 0;
-}
-html[data-skin][data-desktop-mode] .desktop-tools-heading > button {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--color-ink-secondary);
-  margin-right: 3px;
-}
-html[data-skin][data-desktop-mode] .desktop-tools-heading > button:hover {
-  background: var(--color-control);
-}
-html[data-skin][data-desktop-mode] .desktop-tools-heading > button svg {
-  width: 16px;
-  height: 16px;
-}
-html[data-skin][data-desktop-mode] .desktop-tools-heading > .desktop-tools-move {
-  position: absolute;
-  z-index: 2;
-  top: 0;
-  left: calc(50% - 22px);
-  width: 44px;
-  height: 12px;
-  margin: 0;
-  padding: 0;
-  border-radius: 5px;
-  background: transparent;
-  opacity: 0;
-  cursor: grab;
-  touch-action: none;
-  transition: opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-}
-html[data-skin][data-desktop-mode] .desktop-tools-move > span {
-  width: 32px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--color-ink-tertiary);
-}
-html[data-skin][data-desktop-mode] .desktop-tools-heading:hover > .desktop-tools-move,
-html[data-skin][data-desktop-mode] .desktop-tools-heading > .desktop-tools-move:focus-visible,
-html[data-skin][data-desktop-mode] .desktop-tools-layout[data-moving] .desktop-tools-move {
-  opacity: 1;
-}
-html[data-skin][data-desktop-mode] .desktop-tools-move:active {
-  cursor: grabbing;
-}
-/* Drag feedback must not blur/repaint the editor and terminal behind it. */
-html[data-skin][data-desktop-mode] .desktop-tools-drop-hint .pane-drop-hint-panel {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  box-shadow: none;
-}
-html[data-skin][data-desktop-mode] .drag-ghost > .desktop-tools-heading {
-  will-change: transform;
-  contain: layout paint;
-  border: 1px solid var(--color-hairline);
-  border-radius: 8px;
-}
 html[data-skin][data-desktop-mode] .desktop-projects-page {
   padding: 24px 40px 40px;
   flex: 1;
@@ -604,14 +463,10 @@ html[data-skin][data-desktop-mode] .desktop-collection-empty {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  html[data-skin][data-desktop-mode] .desktop-tools-layout,
-  html[data-skin][data-desktop-mode] .desktop-tools-move,
   html[data-skin][data-desktop-mode] [data-ui="navigation-icon"] svg {
     transition: none;
   }
 }
-html[data-reduced-motion="on"] .desktop-tools-layout,
-html[data-reduced-motion="on"] .desktop-tools-move,
 html[data-reduced-motion="on"] [data-ui="navigation-icon"] svg {
   transition: none !important;
 }

@@ -1,7 +1,7 @@
 import { preferenceStorage } from "./sharedPreferences";
 const KEY = "omnicode.sidebarSectionsCollapsed.v1";
 const CHANGED = "omnicode:sidebar-sections-collapsed-changed";
-const SECTIONS = ["pinned", "recent", "workflows", "groups", "projects", "remote-control"] as const;
+const SECTIONS = ["pinned", "recent", "workflows", "groups", "projects"] as const;
 
 export type SidebarSectionId = (typeof SECTIONS)[number];
 

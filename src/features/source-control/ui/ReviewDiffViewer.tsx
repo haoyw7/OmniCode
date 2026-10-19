@@ -2,15 +2,17 @@ import { observeNativeScrollbarEdges } from "../../../shared/ui/nativeScrollbarE
 import scrollbarCSS from "../../../shared/ui/scrollbar.css?raw";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 // Adapted from ZCode (Apache-2.0).
-import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Fragment, memo, useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { FileDiffOptions } from "@pierre/diffs";
 import { FileDiff, Virtualizer, useWorkerPool } from "@pierre/diffs/react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useColorScheme } from "../../../shared/hooks/useColorScheme";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import { REVIEW_THEMES } from "./reviewThemes";
+import { reviewThemes } from "./reviewThemes";
+import { useCodeThemePalette, useCodeThemes } from "../../settings/model/codeAppearance";
 import { createReviewSeparatorLayout } from "./reviewSeparatorLayout";
-import { MessageSquarePlus, Plus } from "../../../shared/ui/icons";
+import { ReviewViewOptionsContext } from "./ReviewViewOptionsContext";
+import { Plus } from "../../../shared/ui/icons";
 import {
   reviewCommentLine,
   reviewFileMetadata,
@@ -25,20 +27,9 @@ import {
 } from "./DiffCommentComposer";
 
 const viewerStyle = {
-  // Measured in claude-ui-analysis/evidence/diff-shadow-{light,dark}.json.
-  // Let Pierre mix line, gutter and word backgrounds once, in separate layers.
-  "--diffs-light-bg": "color-mix(in srgb, #ffffff calc(var(--panel-opacity) * 100%), transparent)",
-  "--diffs-dark-bg": "color-mix(in srgb, #1a1a19 calc(var(--panel-opacity) * 100%), transparent)",
-  "--diffs-light": "#1a1a1a",
-  "--diffs-dark": "#eaecf0",
-  "--diffs-light-addition-color": "#1e9e3c",
-  "--diffs-dark-addition-color": "#32d74b",
-  // The application overrides the Shiki theme's #ff3a30 deletion color.
-  "--diffs-deletion-color-override": "light-dark(#cd2054, #ff2c56)",
-  "--diffs-light-modified-color": "#0073e6",
-  "--diffs-dark-modified-color": "#0099ff",
-  "--diffs-fg-number-override": "#898781",
-  "--diffs-fg-number-deletion-override": "light-dark(#cd2054, #ff2c56)",
+  // Pass the active palette into Pierre's shadow root, including its error UI.
+  // Pierre mixes line, gutter and word backgrounds in separate layers.
+  "--diffs-modified-color-override": "var(--color-accent)",
   // Settings → Appearance → Code font and size.
   "--diffs-font-family": "var(--font-mono)",
   "--diffs-font-features": '"liga", "clig", "calt"',
@@ -77,6 +68,21 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
 }) {
   const { t } = useTranslation();
   const themeType = useColorScheme();
+  const codeThemes = useCodeThemes();
+  const lightPalette = useCodeThemePalette(codeThemes.light);
+  const darkPalette = useCodeThemePalette(codeThemes.dark);
+  const codePalette = themeType === "light" ? lightPalette : darkPalette;
+  const themedViewerStyle = {
+    ...viewerStyle,
+    "--diffs-light-bg": `color-mix(in srgb, ${lightPalette.background} calc(var(--panel-opacity) * 100%), transparent)`,
+    "--diffs-dark-bg": `color-mix(in srgb, ${darkPalette.background} calc(var(--panel-opacity) * 100%), transparent)`,
+    "--diffs-light": lightPalette.foreground,
+    "--diffs-dark": darkPalette.foreground,
+    "--diffs-addition-color-override": codePalette.added,
+    "--diffs-deletion-color-override": codePalette.removed,
+    "--diffs-fg-number-override": codePalette.comment,
+    "--diffs-fg-number-deletion-override": codePalette.removed,
+  } as CSSProperties;
   const workerPool = useWorkerPool();
   const visible = useSurfaceVisibility();
   const separatorLayout = useRef<ReturnType<typeof createReviewSeparatorLayout> | null>(null);
@@ -105,6 +111,7 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
     [diff, relative],
   );
   const virtualized = useMemo(() => virtualizeReviewDiff(diff), [diff]);
+  const { sideBySide, wordWrap, highlightWords } = useContext(ReviewViewOptionsContext);
   const hasText = !diff.binary && !diff.tooLarge && !!fileDiff &&
     !!diff.unified && !!(diff.unified.additions || diff.unified.deletions);
   useEffect(() => {
@@ -116,14 +123,14 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
   }, [diff, path, visible]);
   const options = useMemo<FileDiffOptions<number>>(
     () => ({
-      diffStyle: "unified",
+      diffStyle: sideBySide ? "split" : "unified",
       diffIndicators: "classic",
       disableFileHeader: true,
       hunkSeparators: fileDiff?.isPartial ? "simple" : "line-info",
-      lineDiffType: virtualized ? "none" : "word-alt",
+      lineDiffType: virtualized || !highlightWords ? "none" : "word-alt",
       maxLineDiffLength: 1000,
       tokenizeMaxLineLength: 1000,
-      overflow: "wrap",
+      overflow: wordWrap ? "wrap" : "scroll",
       onPostRender,
       // The viewer's shadow root does not inherit the global scrollbar rules.
       unsafeCSS: `
@@ -160,10 +167,14 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
         [data-overflow="wrap"] [data-line] {
           min-height: 1lh;
         }
+        /* The line number text sits at z-index 1; the comment button must be
+           above it or the number swallows the click. */
         [data-gutter-utility-slot] {
           right: unset;
           left: 5px;
+          z-index: 2;
           justify-content: flex-start;
+          align-items: center;
         }
         [data-separator="line-info"],
         [data-separator="line-info"] [data-expand-button],
@@ -201,12 +212,12 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
         }
         ${scrollbarCSS}
       `,
-      theme: REVIEW_THEMES,
+      theme: reviewThemes(codeThemes),
       themeType,
       preferredHighlighter: "shiki-wasm",
       enableGutterUtility: visible,
     }),
-    [themeType, visible, fileDiff?.isPartial, virtualized, onPostRender],
+    [themeType, codeThemes.light, codeThemes.dark, visible, fileDiff?.isPartial, virtualized, onPostRender, sideBySide, wordWrap, highlightWords],
   );
   const annotations = useMemo(
     () =>
@@ -226,7 +237,7 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
     <div
       className="w-full min-w-0 overflow-x-auto overflow-y-hidden"
       data-review-diff
-      style={viewerStyle}
+      style={themedViewerStyle}
     >
       <ScrollContainer {...(virtualized ? {
         className: "review-diff-virtual overflow-auto",
@@ -235,10 +246,10 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
       <FileDiff<number>
         key={workerPool ? "worker" : "main"}
         fileDiff={fileDiff}
-        metrics={virtualized ? virtualMetrics : undefined}
+        metrics={virtualMetrics}
         className="block min-h-full w-full"
         options={options}
-        style={viewerStyle}
+        style={themedViewerStyle}
         lineAnnotations={annotations}
         renderAnnotation={({ metadata }) => (
           <div className="review-stage-hunk flex items-center px-2 py-1">
@@ -259,7 +270,7 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
             title={t("Comment on line")}
             aria-label={t("Comment on line")}
             disabled={!visible}
-            className="grid size-5 place-items-center rounded bg-content text-background-base hover:opacity-80"
+            className="review-comment-button"
             onClick={(event) => {
               const hovered = getHoveredLine();
               if (!visible || !hovered) return;
@@ -275,7 +286,7 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
                 });
             }}
           >
-            <MessageSquarePlus className="size-3" />
+            <Plus className="size-3.5" strokeWidth={2.5} />
           </button>
         )}
       />

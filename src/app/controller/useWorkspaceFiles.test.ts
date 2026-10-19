@@ -27,7 +27,6 @@ const mocks = vi.hoisted(() => ({
   invalidate: vi.fn(),
   composerFocus: vi.fn(),
   terminalFocus: vi.fn(),
-  sidebar: vi.fn(),
 }));
 vi.mock("../../features/connections/files/model/fileIndex", () => ({
   resolveFileOpenRequest: mocks.open,
@@ -71,7 +70,6 @@ async function mount(initial = [sourceTab], dirty: string[] = []) {
       ensureContentTab: () => current[0],
       activateTab: () => {},
       showWorkspace: () => {},
-      setSidebarTab: mocks.sidebar,
       setTabs,
       setComposerFocused: mocks.composerFocus,
       setProjectTerminalFocused: mocks.terminalFocus,
@@ -155,13 +153,19 @@ it.each(["file", "diff"])(
     await act(async () => updateTabs([newTab("other")]));
     mocks.composerFocus.mockClear();
     mocks.terminalFocus.mockClear();
-    mocks.sidebar.mockClear();
     await act(async () => request.resolve("/repo/gone.ts"));
     expect(editorFiles()).toHaveLength(0);
     expect(files.editorNavigations[sourceTab.id]).toBeUndefined();
     expect(files.hasPendingResources(sourceTab.id)).toBe(false);
     expect(mocks.composerFocus).not.toHaveBeenCalled();
     expect(mocks.terminalFocus).not.toHaveBeenCalled();
-    expect(mocks.sidebar).not.toHaveBeenCalled();
   },
 );
+
+it("opens an agent-touched file in the working-tree review, whatever the diff view", async () => {
+  await mount();
+  await act(async () => files.onOpenDiff("src/a.ts"));
+  expect(editorFiles()).toMatchObject([
+    { path: "src/a.ts", cwd: "/repo", review: true, changes: true },
+  ]);
+});

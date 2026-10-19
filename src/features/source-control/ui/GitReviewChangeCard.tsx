@@ -140,16 +140,14 @@ export const GitReviewChangeCard = memo(function GitReviewChangeCard({
             setMenu({ x: rect.left + 12, y: rect.bottom });
           }}
           title={file.relative}
-          className={`review-file-toggle flex h-8 w-full min-w-0 items-center gap-1 px-2 text-left transition-colors focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${focused ? "ring-1 ring-inset ring-accent/30" : ""}`}
+          className={`review-file-toggle flex h-8 w-full min-w-0 items-center gap-0.5 px-2 text-left transition-colors focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${focused ? "ring-1 ring-inset ring-accent/30" : ""}`}
         >
           {loading || preparing ? (
             <LoaderCircle className="review-file-chevron size-4 shrink-0 motion-safe:animate-spin" aria-hidden="true" />
           ) : (
             <RotatingIcon icon={ChevronRight} angle={expanded ? motionGeometry.disclosureAngle : 0} className="review-file-chevron size-4 shrink-0" />
           )}
-          <span className="review-file-icon flex size-4 shrink-0 items-center justify-center" data-markdown={/\.(md|markdown)$/i.test(name) || undefined}>
-            <FileTypeIcon name={file.relative} isDir={false} />
-          </span>
+          <ReviewFileIcon relative={file.relative} />
           <span data-file-label className="flex min-w-0 items-baseline gap-1 overflow-hidden">
             <span className="review-file-name truncate">{name}</span>
             {dir ? (
@@ -323,6 +321,18 @@ function reviewMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
             ? items.length - 1
             : (index + items.length - 1) % items.length;
   items[next].focus();
+}
+
+/** A changed file's type icon, as the review shows it in cards and search. */
+export function ReviewFileIcon({ relative }: { relative: string }) {
+  return (
+    <span
+      className="review-file-icon flex size-4 shrink-0 items-center justify-center"
+      data-markdown={/\.(md|markdown)$/i.test(relative) || undefined}
+    >
+      <FileTypeIcon name={relative} isDir={false} size={12} />
+    </span>
+  );
 }
 
 export function ReviewIconButton({

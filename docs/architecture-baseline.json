@@ -252,7 +252,6 @@
       "src/features/connections/files/ui/FilePane.tsx -> src/features/sessions/ui/SecondOpinionButton.tsx",
       "src/features/connections/files/ui/FilePane.tsx -> src/features/sessions/ui/SubagentTabView.tsx",
       "src/features/connections/files/ui/FilePane.tsx -> src/features/source-control/ui/CommitDiff.tsx",
-      "src/features/connections/files/ui/FilePane.tsx -> src/features/source-control/ui/SessionChangesDiff.tsx",
       "src/features/connections/files/ui/FilePane.tsx -> src/features/source-control/ui/WorkingTreeDiff.tsx",
       "src/features/connections/files/ui/FilePane.tsx -> src/features/terminal/ui/TerminalView.tsx",
       "src/features/connections/files/ui/FilePane.tsx -> src/features/workflows/ui/WorkflowTabs.tsx",

@@ -271,7 +271,72 @@ html[data-skin] .desktop-pane-heading { font-size: 15px; line-height: 20px; font
 html[data-skin] .desktop-pane-description { font-size: 14px; line-height: 20px; color: var(--color-ink-secondary); }
 html[data-skin] .desktop-section-heading { font-size: 13px; line-height: 19px; font-weight: var(--font-weight-medium); }
 html[data-skin] .desktop-toolbar { gap: 8px; border-color: var(--color-hairline); min-height: 52px; padding-inline: 12px; border-bottom-width: var(--desktop-border); }
+/* Leave room for the dialog's absolute close button and a gap after refresh. */
+html[data-skin] .app-view-dialog .git-graph-toolbar { padding-inline-end: 56px; }
 html[data-skin] .desktop-card { border-radius: var(--desktop-radius-card); border-color: var(--color-composer-ring); background-color: var(--color-card); border-width: var(--desktop-border); }
+
+/* Source control keeps the commit form compact so files retain the main space. */
+html[data-skin] [data-git-changes-panel] :is(.git-changes-toolbar, .git-commit-composer) {
+  border-block-end: var(--desktop-border) solid var(--color-hairline);
+}
+html[data-skin] [data-git-changes-panel] :is(.git-file-section + .git-file-section, .git-history-panel) {
+  border-block-start: var(--desktop-border) solid var(--color-hairline);
+}
+html[data-skin] [data-git-changes-panel] .git-panel-header {
+  height: var(--desktop-control-md);
+  min-height: var(--desktop-control-md);
+  flex-shrink: 0;
+  gap: 4px;
+  padding-inline: 8px;
+  background: var(--desktop-panel-fill);
+  color: var(--color-ink-secondary);
+  font-size: var(--text-body-xs);
+  line-height: var(--text-body-xs--line-height);
+  font-weight: var(--font-weight-medium);
+}
+html[data-skin] [data-git-changes-panel] .git-panel-header [data-ui="git-picker-trigger"] {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+html[data-skin] [data-git-changes-panel] .git-panel-header [data-ui="git-picker-trigger"]:enabled:hover {
+  color: var(--color-ink);
+}
+html[data-skin] [data-git-changes-panel] .git-commit-composer {
+  padding: 10px;
+}
+html[data-skin] [data-git-changes-panel] .git-commit-message {
+  padding-inline-end: 36px;
+  background: var(--desktop-panel-card);
+}
+html[data-skin] [data-git-changes-panel] .git-commit-generate {
+  position: absolute;
+  inset-block-start: 8px;
+  inset-inline-end: 8px;
+}
+html[data-skin] [data-git-changes-panel] .git-commit-hint {
+  margin-top: 6px;
+  font-size: var(--text-body-xs);
+  line-height: 17px;
+}
+html[data-skin] [data-git-changes-panel] .git-file-section-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+html[data-skin] [data-git-changes-panel] .git-file-count {
+  background: var(--color-control);
+  color: var(--color-ink-secondary);
+}
+html[data-skin] [data-git-changes-panel] [data-git-change-row="list"] {
+  height: 28px;
+  margin-inline: 4px;
+  width: calc(100% - 8px);
+  border-radius: 6px;
+}
+html[data-skin] [data-git-changes-panel] .git-change-name {
+  line-height: 18px;
+}
 html[data-skin] .desktop-empty-description { font-size: 14px; line-height: 20px; color: var(--color-ink-secondary); }
 html[data-skin] .desktop-badge { padding: 1px 5px; border-radius: 4px; font-size: 12px; line-height: 17px; }
 
@@ -410,10 +475,3 @@ html[data-reduced-motion="on"] .desktop-file-explorer-body { transition: none; }
 
 .desktop-file-breadcrumb-menu { display: flex; flex-direction: column; padding: 4px; }
 .desktop-file-breadcrumb-menu > div { height: auto; min-height: 28px; max-height: 100%; }
-
-html[data-skin] [data-git-changes-panel] .git-panel-header {
-  background: var(--desktop-panel-fill);
-}
-html[data-skin] [data-git-changes-panel] .git-commit-message {
-  background: var(--desktop-panel-card);
-}

@@ -8,7 +8,7 @@ import {
   Workflow,
   X,
 } from "../../../shared/ui/icons";
-import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type { KeyboardEventHandler, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { copyText } from "../../../platform/tauri/clipboard";
 import {
@@ -30,7 +30,6 @@ import {
   isPlanTab,
   isReleaseNotesTab,
   isReviewTab,
-  isSessionChangesTab,
   isTerminalTab,
   type FilePaneTab,
 } from "../model/layout";
@@ -73,6 +72,7 @@ type Props = {
   onPinFile?: (fileId: string) => void;
   onReorder: (ids: string[]) => void;
   onPaneDragStart?: (event: ReactPointerEvent<HTMLElement>) => void;
+  onPaneDragKeyDown?: KeyboardEventHandler<HTMLElement>;
   label?: string;
   /** Persistent surface selector, such as the owning session's Chat tab. */
   leading?: ReactNode;
@@ -169,18 +169,9 @@ export function surfaceTabPresentation(
     const staged = file.changeKind === "staged";
     return {
       name: staged ? "Staged Changes" : "Changes",
-      label: staged ? "Staged Changes" : "Changes",
+      label: translateUi(staged ? "Staged Changes" : "Changes"),
       iconName: "CHANGES",
       tooltip: staged ? "Staged changes" : "Working tree changes",
-    };
-  }
-
-  if (isSessionChangesTab(file)) {
-    return {
-      name: "Session Changes",
-      label: translateUi("Session Changes"),
-      iconName: "CHANGES",
-      tooltip: "Changes captured for this session only",
     };
   }
 
@@ -262,6 +253,7 @@ export function SurfaceTabs({
   onPinFile,
   onReorder,
   onPaneDragStart,
+  onPaneDragKeyDown,
   label = "Open files",
   leading,
   trailing,
@@ -343,7 +335,10 @@ export function SurfaceTabs({
             role="button"
             title={uiT("Drag to reorder pane")}
             aria-label={uiT("Drag to reorder pane")}
-            tabIndex={-1}
+            tabIndex={onPaneDragKeyDown ? 0 : -1}
+            aria-keyshortcuts={onPaneDragKeyDown ? "ArrowLeft ArrowRight ArrowUp ArrowDown" : undefined}
+            data-tauri-drag-region="false"
+            onKeyDown={onPaneDragKeyDown}
             className="grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded-md text-content/35 hover:bg-content/3 hover:text-content/70 active:cursor-grabbing touch-none"
             onPointerDown={(event) => {
               if (event.button !== 0) return;

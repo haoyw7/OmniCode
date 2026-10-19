@@ -4,7 +4,6 @@ import { createRoot } from "react-dom/client";
 import { MotionConfig } from "motion/react";
 import { WindowResizeHandles } from "../../src/app/shell/WindowResizeHandles";
 import { WindowResizeObserver } from "../../src/app/shell/WindowResizeObserver";
-import { WorkspaceToolsDock } from "../../src/app/shell/WorkspaceToolsDock";
 import { TerminalDockLayout } from "../../src/app/shell/TerminalDockLayout";
 import { Sidebar } from "../../src/app/shell/Sidebar";
 import { SidebarMain } from "../../src/app/shell/SidebarMain";
@@ -45,14 +44,16 @@ function readTerminal(paneId = "tools-editor") {
 const query = new URLSearchParams(location.search);
 const cwd = "/fixture/omnicode";
 const sourcePath = `${cwd}/src/workspace.ts`;
-const reviewLines = Array.from({ length: 90 }, (_, index) =>
-  `export const setting${index} = "${"Review resizing preserves syntax, line numbers and annotations. ".repeat(5)}";`,
+const reviewLines = Array.from({ length: query.has("reviewStress") ? 320 : 90 }, (_, index) =>
+  query.has("reviewStress")
+    ? `export const setting${index} = { enabled: true, priority: ${index}, label: "Review resizing preserves syntax and annotations", options: ["workspace", "changes", "terminal"] };`
+    : `export const setting${index} = "${"Review resizing preserves syntax, line numbers and annotations. ".repeat(5)}";`,
 );
 const original = query.has("reviewResize")
   ? reviewLines.join("\n") + "\n"
   : "export const workspace = {\n  panelGap: 8,\n  composerRadius: 12,\n};\n";
 const current = query.has("reviewResize")
-  ? reviewLines.map((line, index) => index === 8 || index === 70 ? line.replace("preserves", "retains") : line).join("\n") + "\n"
+  ? reviewLines.map((line, index) => (query.has("reviewStress") ? index % 4 === 0 : index === 8 || index === 70) ? line.replace("preserves", "retains") : line).join("\n") + "\n"
   : "export const workspace = {\n  panelGap: 12,\n  composerRadius: 14,\n  preserveSessions: true,\n};\n";
 const noop = () => {};
 setUiLanguage(query.get("lang") === "zh-CN" ? "zh-CN" : "en");
@@ -68,6 +69,12 @@ const files: GitDiffIndex["files"] = [
   { path: `${cwd}/README.md`, relative: "README.md", status: "modified", additions: 2, deletions: 1, staged: true, unstaged: false },
   { path: `${cwd}/docs/layout.md`, relative: "docs/layout.md", status: "untracked", additions: 4, deletions: 0, staged: false, unstaged: true },
 ];
+if (query.has("reviewManyFiles")) {
+  files.push(...Array.from({ length: 180 }, (_, index) => ({
+    path: `${cwd}/src/changes/file${index}.ts`, relative: `src/changes/file${index}.ts`,
+    status: "modified", additions: 3, deletions: 2, staged: false, unstaged: true,
+  })));
+}
 const index: GitDiffIndex = { branch: "main", head: "a1b2c3d", files, additions: 9, deletions: 3, remote: null, upstream: null, defaultBranch: "main", ahead: 0, behind: 0, aheadOfDefault: 0, headPushed: true };
 const history: GitHistory = { head: "a1b2c3d", commits: [
   { sha: "a1b2c3d", shortSha: "a1b2c3d", parents: ["b2c3d4e"], author: "Workspace owner", timestamp: 1791891000, subject: "Refine workspace spacing", refs: [{ name: "main", kind: "local" }], head: true },
@@ -119,7 +126,10 @@ Object.assign(window, { isTauri: query.get("native") === "1", __TAURI_EVENT_PLUG
     if (command === "read_file_preview") return current.split("\n");
     if (command === "git_diff_index" || command === "git_diff_files") return index;
     if (command === "git_diff_stats") return { additions: index.additions, deletions: index.deletions, files: files.length };
-    if (command === "git_file_diff" || command === "git_base_file_diff") return diff(String(args?.relative));
+    if (command === "git_file_diff" || command === "git_base_file_diff") {
+      if (query.has("reviewDelayedDiff")) await new Promise(resolve => setTimeout(resolve, 200));
+      return diff(String(args?.relative));
+    }
     if (command === "git_base_diff_files") return { base: "a1b2c3d", files };
     if (command === "git_history") return history;
     if (command === "git_pr_status") return null;
@@ -183,7 +193,7 @@ function DesktopToolsFixture() {
     onReorderFiles: noop, onFileDirtyChange: noop, onFileErrorCountChange: noop,
     onRatio: (splitId: string, index: number, ratio: number) => setWorkspaceTab(value => ({ ...value, layout: setSplitRatio(value.layout, splitId, index, ratio) })),
   };
-  const paneProps: ComponentProps<typeof PaneTree> = { ...handlers, visible: true, layout, sessions: [session], editorPanes: [pane, ...(query.has("stackedTools") ? [stackedTerminal] : [])], dirtyFileIds: new Set(), fileErrorCounts: new Map(), focusedId, surfaceMode: "split", composerFocused: false, recents: activity.recents, transcriptPool: pool, hideProjectPicker: false, onFocus: setFocusedId, onSubmit: () => true, onStop: noop, onCompactContext: () => true, onOpenFile: openFile, onOpenDiff: () => setPane(value => ({ ...value, activeFileId: review.id })), onNewTerminal: () => setDock(value => ({ ...value, open: true })), onSelectFile: (_pane: string, activeFileId: string) => setPane(value => ({ ...value, activeFileId })), autoArrangeTools: workspaceTab.autoArrangeTools, onFitLayout: (previous, next) => setWorkspaceTab(value => value.layout === previous ? { ...value, layout: next } : value) };
+  const paneProps: ComponentProps<typeof PaneTree> = { ...handlers, visible: true, layout, sessions: [session], editorPanes: [pane, ...(query.has("stackedTools") ? [stackedTerminal] : [])], dirtyFileIds: new Set(), fileErrorCounts: new Map(), focusedId, surfaceMode: "split", composerFocused: false, recents: activity.recents, transcriptPool: pool, hideProjectPicker: false, onFocus: setFocusedId, onSubmit: () => true, onStop: noop, onCompactContext: () => true, onOpenFile: openFile, onOpenDiff: () => setPane(value => ({ ...value, activeFileId: review.id })), onNewTerminal: () => setDock(value => ({ ...value, open: true })), onSelectFile: (_pane: string, activeFileId: string) => setPane(value => ({ ...value, activeFileId })), autoArrangeTools: workspaceTab.autoArrangeTools, onFitLayout: (previous, next, manual) => setWorkspaceTab(value => value.layout === previous ? { ...value, layout: next, ...(manual ? { autoArrangeTools: false } : {}) } : value) };
   const titlebar = <DesktopTitlebarNavigation menu={<WindowMenuButton handlers={{ "Tab: New": noop }} dispatch={() => true} />} modeToggle={<DesktopModeToggle mode="code" onChange={noop} />} canGoBack onGoBack={noop} panelActive={sidebarOpen} onTogglePanel={() => setSidebarOpen(value => !value)} />;
   const headerActions: SessionHeaderActions = {
     rename: noop, archive: noop, splitRight: noop,
@@ -199,7 +209,6 @@ function DesktopToolsFixture() {
     <Sidebar {...sidebar} tab="sessions" open={sidebarOpen} onToggleSidebar={() => setSidebarOpen(value => !value)} chromeInMenuBar navigation={{ primary: <DesktopNewSessionAction mode="code" onNew={noop} />, scrollable: <DesktopNavigation onProjects={noop} projectsActive={false} onBots={noop} botsActive={false} activity={activity} /> }} footer={<ActivityBar layout="sidebar-footer" {...activity} />} />
     <SidebarMain open={sidebarOpen}>
       <main className="desktop-workspace flex min-h-0 min-w-0 flex-1">
-        <WorkspaceToolsDock sidebar={sidebar} visible>
           <TerminalDockLayout projectTerminals={[dock]} currentDock={dock} projectCwd={cwd} workspaceVisible lastDockSide="bottom" focused={focusedId === dock.pane.id} onFocus={() => setFocusedId(dock.pane.id)} onHide={() => setDock(value => ({ ...value, open: false }))} onSideChange={side => setDock(value => ({ ...value, side }))} onSizeCommit={size => setDock(value => ({ ...value, size }))} onAddTerminal={noop} onSelectTerminal={noop} onCloseTerminal={noop} onCloseOtherTerminals={noop} onReorderTerminals={noop}>
             <div className="relative flex min-h-0 min-w-0 flex-row" style={{ gridArea: "main" }}>
               <div className="relative min-h-0 min-w-0 flex-1">
@@ -209,7 +218,6 @@ function DesktopToolsFixture() {
               </div>
             </div>
           </TerminalDockLayout>
-        </WorkspaceToolsDock>
       </main>
     </SidebarMain>
     </div>

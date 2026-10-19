@@ -9,7 +9,6 @@ export const DEFAULT_SIDEBAR_SECTION_ORDER = [
   "workflows",
   "groups",
   "projects",
-  "remote-control",
 ] as const;
 export type SidebarOrderedSectionId =
   (typeof DEFAULT_SIDEBAR_SECTION_ORDER)[number];

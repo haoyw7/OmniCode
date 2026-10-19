@@ -29,13 +29,14 @@ export function useReviewSource(
   cwd: string,
   source: ReviewSource,
   sessionId?: string,
+  turnId?: string,
 ) {
   const visible = useSurfaceVisibility();
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   const [revision, refreshRevision] = useReducer((n: number) => n + 1, 0);
   const scope = useMemo<ReviewScope>(
-    () => ({ cwd, source, sessionId }),
-    [cwd, source, sessionId],
+    () => ({ cwd, source, sessionId, turnId }),
+    [cwd, source, sessionId, turnId],
   );
   const scopeKey = reviewScopeKey(scope);
   const [index, setIndex] = useState<{
@@ -59,6 +60,7 @@ export function useReviewSource(
             request.sessionId!,
             request.cwd,
             path,
+            ...(request.turnId ? [request.turnId] : []),
           );
         case "uncommitted":
           return gitBaseFileDiff(request.cwd, "head", path);
@@ -74,17 +76,17 @@ export function useReviewSource(
     }, redraw);
     setCache(next);
     return () => next.dispose();
-  }, [cwd, sessionId]);
+  }, [cwd, sessionId, turnId]);
   const refresh = useCallback(
     (sources?: readonly ReviewSource[]) => {
       // A full refresh also reloads the selected commit, e.g. after a rebase.
       const kinds = sources ?? [...WORKTREE_REVIEW_SOURCES, "session", source];
       for (const kind of kinds)
-        cache?.invalidate({ cwd, source: kind, sessionId });
+        cache?.invalidate({ cwd, source: kind, sessionId, turnId });
       redraw();
       if (kinds.includes(source)) refreshRevision();
     },
-    [cache, cwd, sessionId, source],
+    [cache, cwd, sessionId, source, turnId],
   );
 
   useEffect(() => {
@@ -92,8 +94,8 @@ export function useReviewSource(
     // Hidden views miss change notifications; discard their mutable diff
     // contents on reveal as well as reloading the file list below.
     for (const kind of [...WORKTREE_REVIEW_SOURCES, "session"] as const)
-      cache?.invalidate({ cwd, source: kind, sessionId });
-  }, [visible, cache, cwd, sessionId]);
+      cache?.invalidate({ cwd, source: kind, sessionId, turnId });
+  }, [visible, cache, cwd, sessionId, turnId]);
 
   useEffect(() => {
     if (!visible) return;
@@ -121,7 +123,9 @@ export function useReviewSource(
             (diff) => diff.files,
           )
         : source === "session"
-          ? sessionCheckpointStatus(sessionId!, cwd).then(
+          ? (turnId
+              ? sessionCheckpointStatus(sessionId!, cwd, undefined, turnId)
+              : sessionCheckpointStatus(sessionId!, cwd)).then(
               (status) => {
                 workspaceShared = !!status.workspaceShared;
                 return status.files;
@@ -156,7 +160,7 @@ export function useReviewSource(
     return () => {
       stale = true;
     };
-  }, [visible, cwd, source, sessionId, scopeKey, revision]);
+  }, [visible, cwd, source, sessionId, scopeKey, revision, turnId]);
 
   useEffect(() => {
     if (!visible) return;

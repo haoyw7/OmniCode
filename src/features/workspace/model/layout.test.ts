@@ -14,7 +14,6 @@ import {
   isVirtualDocumentTab,
   isReleaseNotesTab,
   isReviewTab,
-  isSessionChangesTab,
   isTerminalTab,
   layoutLeaves,
   layoutSashes,
@@ -335,8 +334,9 @@ describe("editorTabKey", () => {
     expect(editorTabKey(newChangesTab(cwd, `${cwd}/other.ts`))).toBe(
       `changes:${cwd}`,
     );
+    // A session's changes open in the working copy's one review.
     expect(editorTabKey(newSessionChangesTab(cwd, "s1", path))).toBe(
-      `session-changes:${cwd}:s1`,
+      `changes:${cwd}`,
     );
     expect(isFilesystemTab(newSessionChangesTab(cwd, "s1", path))).toBe(false);
     expect(
@@ -357,36 +357,34 @@ describe("editorTabKey", () => {
 });
 
 describe("openSessionChangesTab", () => {
-  it("reuses one review per session without merging different sessions", () => {
+  it("opens every session's changes in the working copy's one Changes review", () => {
     const cwd = "/repo";
+    const working = openChangesTab(newTab("session-a"), cwd, undefined, "staged");
     const first = openSessionChangesTab(
-      newTab("session-a"),
+      working,
       cwd,
       "session-a",
       "/repo/a.ts",
       undefined,
       true,
     );
-    const focused = openSessionChangesTab(
-      first,
-      cwd,
-      "session-a",
-      "/repo/b.ts",
-    );
-    const second = openSessionChangesTab(
-      focused,
-      cwd,
-      "session-b",
-      "/repo/c.ts",
-    );
+    const second = openSessionChangesTab(first, cwd, "session-b", "/repo/c.ts");
     const reviews = second.editorPanes.flatMap((pane) =>
-      pane.files.filter(isSessionChangesTab),
+      pane.files.filter((file) => file.review),
     );
-    expect(reviews).toHaveLength(2);
-    expect(
-      reviews.find((file) => file.sessionChanges.sessionId === "session-a")
-        ?.path,
-    ).toBe("/repo/b.ts");
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0]).toMatchObject({
+      changes: true,
+      path: "/repo/c.ts",
+      sessionChanges: { sessionId: "session-b" },
+    });
+    expect(reviews[0].changeKind).toBeUndefined();
+
+    // Opening the working tree's Changes again leaves the session behind.
+    const back = openChangesTab(second, cwd);
+    const review = back.editorPanes.flatMap((pane) => pane.files)[0];
+    expect(review.changes).toBe(true);
+    expect(review.sessionChanges).toBeUndefined();
   });
 });
 

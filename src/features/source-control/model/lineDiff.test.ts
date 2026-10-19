@@ -61,6 +61,22 @@ describe("lineDiff", () => {
 });
 
 describe("buildUnifiedFile on large files", () => {
+  it.each([
+    ["head\n\ntail\n", "head\n\ninserted\n\ntail\n"],
+    ["head\n\nremoved\n\ntail\n", "head\n\ntail\n"],
+    ["head\n\n\ntail\n", "head\n\n\n\n\ntail\n"],
+  ])("preserves blank lines and staging at an empty-line boundary", (original, current) => {
+    const result = buildUnifiedFile(original, current);
+    const oldLines = result.lines.filter(line => line.oldNumber != null);
+    const newLines = result.lines.filter(line => line.newNumber != null);
+    expect(oldLines.map(line => line.text).join("\n") + "\n").toBe(original);
+    expect(newLines.map(line => line.text).join("\n") + "\n").toBe(current);
+    expect(oldLines.map(line => line.oldNumber)).toEqual(oldLines.map((_, index) => index + 1));
+    expect(newLines.map(line => line.newNumber)).toEqual(newLines.map((_, index) => index + 1));
+    const changed = result.lines.find(line => line.pos != null)!;
+    expect(stageChunkText(original, current, changed.pos!, null, LINE_DIFF_CONFIG)).toBe(current);
+  });
+
   it("reports only the edited lines instead of replacing the file", () => {
     const original = bigFile(12_000);
     const { next, changed } = scatterEdits(original);

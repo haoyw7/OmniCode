@@ -89,6 +89,7 @@ export type WorkflowArtifactTabSource = {
 
 export type SessionChangesSource = {
   sessionId: string;
+  turnId?: string;
 };
 
 export const APP_VIEW_KINDS = [
@@ -139,11 +140,11 @@ export type FilePaneTab = {
   plan?: PlanTabSource;
   releaseNotes?: ReleaseNotesTabSource;
   review?: boolean;
-  /** Single working-tree review of every changed file (unified diff). */
+  /** The one review per working copy: every change, with source control beside it. */
   changes?: boolean;
   /** Which side of a staged/unstaged path was selected in source control. */
   changeKind?: GitFileDiffKind;
-  /** Read-only diff built from one session's captured before/after snapshots. */
+  /** The session whose captured snapshots the review opened on, if any. */
   sessionChanges?: SessionChangesSource;
   /** Historical commit review (unified diff, read-only). */
   commit?: CommitTabSource;
@@ -258,6 +259,7 @@ export function newSessionChangesTab(
   sessionId: string,
   focusPath?: string,
   projectCwd?: string,
+  turnId?: string,
 ): FilePaneTab {
   return {
     id: crypto.randomUUID(),
@@ -265,7 +267,8 @@ export function newSessionChangesTab(
     cwd,
     ...(projectCwd && projectCwd !== cwd ? { projectCwd } : {}),
     review: true,
-    sessionChanges: { sessionId },
+    changes: true,
+    sessionChanges: { sessionId, ...(turnId ? { turnId } : {}) },
   };
 }
 
@@ -732,9 +735,10 @@ export function editorTabKey(file: FilePaneTab): string {
   if (file.plan) return `plan:${file.plan.blockId}`;
   if (file.releaseNotes) return `release-notes:${file.releaseNotes.version}`;
   if (file.commit) return `commit:${file.cwd}:${file.commit.sha}`;
-  if (file.sessionChanges)
-    return `session-changes:${file.cwd}:${file.sessionChanges.sessionId}`;
+  // Session and working-tree changes share one review per working copy.
   if (file.changes) return `changes:${file.cwd}`;
+  if (file.sessionChanges)
+    return `session-changes:${file.cwd}:${file.sessionChanges.sessionId}${file.sessionChanges.turnId ? `:${file.sessionChanges.turnId}` : ""}`;
   return file.review ? `review:${file.path}` : `file:${file.path}`;
 }
 
@@ -1048,7 +1052,12 @@ export function openChangesTab(
   const existingFile = existingPane?.files.find(matches);
 
   if (existingPane && existingFile) {
-    const { changeKind: _previousKind, ...rest } = existingFile;
+    // Opening the working tree's changes leaves any session's snapshots behind.
+    const {
+      changeKind: _previousKind,
+      sessionChanges: _previousSession,
+      ...rest
+    } = existingFile;
     const updated = {
       ...rest,
       ...(focusPath ? { path: focusPath } : {}),
@@ -1087,7 +1096,10 @@ export function openChangesTab(
   };
 }
 
-/** Focus one session's exact captured diff, creating a tab if needed. */
+/**
+ * Open the working copy's review on one session's captured snapshots. It is
+ * the same tab as the working tree's Changes; the session is its source.
+ */
 export function openSessionChangesTab(
   tab: WorkspaceTab,
   cwd: string,
@@ -1095,20 +1107,32 @@ export function openSessionChangesTab(
   focusPath?: string,
   projectCwd?: string,
   pin = false,
+  turnId?: string,
 ): WorkspaceTab {
-  const next = newSessionChangesTab(cwd, sessionId, focusPath, projectCwd);
+  tab = isolateTerminalPanes(tab);
+  const next = newSessionChangesTab(cwd, sessionId, focusPath, projectCwd, turnId);
   const key = editorTabKey(next);
-  const existingPane = tab.editorPanes.find((pane) =>
-    pane.files.some((file) => editorTabKey(file) === key),
-  );
-  const existingFile = existingPane?.files.find(
-    (file) => editorTabKey(file) === key,
-  );
-  if (!existingPane || !existingFile) return openEditorTab(tab, next, { pin });
+  const matches = (file: FilePaneTab) => editorTabKey(file) === key;
+  const existingPane = tab.editorPanes.find((pane) => pane.files.some(matches));
+  const existingFile = existingPane?.files.find(matches);
+  if (!existingPane || !existingFile) {
+    const opened = openEditorTab(tab, next, { pin });
+    return {
+      ...opened,
+      editorPanes: opened.editorPanes.map((pane) =>
+        pane.files.some(matches)
+          ? { ...pane, files: dropPerFileReviewTabs(pane.files, cwd) }
+          : pane,
+      ),
+    };
+  }
 
-  const focused = focusPath
-    ? { ...existingFile, path: focusPath }
-    : existingFile;
+  const { changeKind: _previousKind, ...rest } = existingFile;
+  const focused = {
+    ...rest,
+    sessionChanges: next.sessionChanges,
+    ...(focusPath ? { path: focusPath } : {}),
+  };
   const updated = pin ? withoutPreview(focused) : focused;
   return {
     ...tab,
@@ -1118,7 +1142,7 @@ export function openSessionChangesTab(
       pane.id === existingPane.id
         ? {
             ...pane,
-            files: pane.files.map((file) =>
+            files: dropPerFileReviewTabs(pane.files, cwd).map((file) =>
               file.id === updated.id ? updated : file,
             ),
             activeFileId: updated.id,

@@ -238,7 +238,6 @@ vi.mock("./shell/Sidebar", async () => {
       headerNavigation,
       open,
       onOpenFile,
-      onOpenDiff,
       cwd,
       gitCwd,
       projectHistory = [],
@@ -267,7 +266,6 @@ vi.mock("./shell/Sidebar", async () => {
         path: string,
         navigation?: { line: number; column?: number },
       ) => void;
-      onOpenDiff: (path: string) => void;
       cwd: string;
       gitCwd: string;
       projectHistory?: { id: string; cwd: string; title: string }[];
@@ -426,14 +424,6 @@ vi.mock("./shell/Sidebar", async () => {
             `Open file at line ${line}`,
           ),
         ),
-        el(
-          "button",
-          {
-            "data-open-diff": true,
-            onClick: () => onOpenDiff("/repo/file.ts"),
-          },
-          "Open diff",
-        ),
       ),
   };
 });
@@ -516,6 +506,7 @@ vi.mock("../features/sessions/ui/SessionPane", async () => {
       visible,
       onClose,
       onOpenDiff,
+      onOpenBot,
       renderHeader,
       onModelChange,
       onModelSettingsChange,
@@ -528,6 +519,7 @@ vi.mock("../features/sessions/ui/SessionPane", async () => {
       visible: boolean;
       onClose: (sessionId: string) => void;
       onOpenDiff: (path: string, session: { sessionId: string; cwd: string }) => void;
+      onOpenBot: SessionPaneProps["onOpenBot"];
       renderHeader?: (session: Session) => ReactNode;
       onModelChange: SessionPaneProps["onModelChange"];
       onModelSettingsChange: SessionPaneProps["onModelSettingsChange"];
@@ -535,7 +527,7 @@ vi.mock("../features/sessions/ui/SessionPane", async () => {
       onCwdChange: SessionPaneProps["onCwdChange"];
       onSubmit: SessionPaneProps["onSubmit"];
     }) => {
-      mocks.paneRendered({ session, onModelChange, onModelSettingsChange, onRuntimeModeChange, onCwdChange, onSubmit });
+      mocks.paneRendered({ session, onModelChange, onModelSettingsChange, onRuntimeModeChange, onCwdChange, onSubmit, onOpenBot });
       return el(
         "div",
         {
@@ -601,24 +593,17 @@ vi.mock("../features/connections/files/ui/FileEditor", async () => {
 vi.mock("../features/source-control/ui/WorkingTreeDiff", async () => {
   const { createElement: el } = await import("react");
   return {
-    WorkingTreeDiff: ({ cwd }: { cwd: string }) =>
-      el("div", { "data-diff-cwd": cwd }),
-  };
-});
-vi.mock("../features/source-control/ui/SessionChangesDiff", async () => {
-  const { createElement: el } = await import("react");
-  return {
-    SessionChangesDiff: ({ focusPath }: { focusPath?: string }) =>
-      el("div", { "data-session-diff-path": focusPath }),
+    WorkingTreeDiff: ({ cwd, sessionId, focusPath }: { cwd: string; sessionId?: string; focusPath?: string }) =>
+      el("div", sessionId ? { "data-session-diff-path": focusPath } : { "data-diff-cwd": cwd }),
   };
 });
 vi.mock("../features/bots/ui/DesktopBots", async () => {
   const { createElement: el } = await import("react");
   return {
-    DesktopBots: () =>
+    DesktopBots: ({ selectedMachineId }: { selectedMachineId?: string }) =>
       el(
         "section",
-        { "data-app-view": "assistant" },
+        { "data-app-view": "assistant", "data-bots-machine": selectedMachineId },
         el("textarea", { "aria-label": "Assistant draft" }),
       ),
   };
@@ -1447,11 +1432,9 @@ describe("App workspace app views", () => {
     expect(container.querySelector('[data-session-tool-toggle="changes"]')).toBeNull();
     const fileButton = (id: string) => `[data-session-surface-tabs="${id}"] [data-session-tool-toggle="files"]`;
     await click(fileButton("first"));
-    expect(container.querySelector('.desktop-tools-layout')?.getAttribute('data-tools-open')).toBe('false');
     expect(container.querySelector('.desktop-file-explorer')?.getAttribute('data-file-explorer-cwd')).toBe('/repo');
     expect(container.querySelector(fileButton("first"))?.getAttribute('aria-pressed')).toBe('true');
     await click(fileButton("first"));
-    expect(container.querySelector('.desktop-tools-layout')?.getAttribute('data-tools-open')).toBe('false');
     await selectSession("recent");
     await click(fileButton("recent"));
     expect(workspace(recentId).querySelector('.desktop-file-explorer')?.getAttribute('data-file-explorer-cwd')).toBe('/project-b');
@@ -1461,47 +1444,25 @@ describe("App workspace app views", () => {
   it.each([
     null,
     { current: null, detached: false, branches: [] },
-  ] satisfies (GitBranches | null)[])("hides saved changes panels and ignores the changes command without a repository: %j", async (branches) => {
+  ] satisfies (GitBranches | null)[])("ignores a saved changes choice and the changes command without a repository: %j", async (branches) => {
     mocks.projectBranches.mockReturnValue(branches);
     saveProjectSidebarTab("/repo", "changes");
     await mount();
-    expect(container.querySelector('.desktop-tools-layout')?.getAttribute('data-tools-open')).toBe('false');
-    expect(container.querySelector('[data-project-changes-content]')).toBeNull();
+    expect(workspace().querySelector('[data-diff-cwd]')).toBeNull();
     await click('[data-command="View: Toggle Changes"]');
-    expect(container.querySelector('.desktop-tools-layout')?.getAttribute('data-tools-open')).toBe('false');
+    expect(workspace().querySelector('[data-diff-cwd]')).toBeNull();
     expect(workspace().querySelector('[data-pane-id="first"]')).not.toBeNull();
-  });
-
-  it("closes changes in a non-repository and allows reopening after returning to a repository", async () => {
-    mocks.projectBranches.mockImplementation((cwd) => cwd === "/repo"
-      ? { current: "main", detached: false, branches: [] }
-      : { current: null, detached: false, branches: [] });
-    saveProjectSidebarTab("/repo", "changes");
-    saveProjectSidebarTab("/plain", "changes");
-    await mount(false, "bottom", { blocks: [{ id: "a", role: "user", text: "Repository chat" }] }, false,
-      { cwd: "/plain", blocks: [{ id: "b", role: "user", text: "Plain folder chat" }] });
-    expect(container.querySelector('.desktop-tools-layout')?.getAttribute('data-tools-open')).toBe('true');
-    await selectSession("recent");
-    await click('[data-command="View: Toggle Changes"]');
-    expect(container.querySelector('.desktop-tools-layout')?.getAttribute('data-tools-open')).toBe('false');
-    const transition = new Event("transitionend", { bubbles: true });
-    Object.defineProperty(transition, "propertyName", { value: "grid-template-columns" });
-    await act(async () => container.querySelector('.desktop-tools-layout')!.dispatchEvent(transition));
-    expect(container.querySelector<HTMLElement>('.desktop-tools-panel')?.hidden).toBe(true);
-    await selectSession("first");
-    await click('[data-command="View: Toggle Changes"]');
-    expect(container.querySelector('.desktop-tools-layout')?.getAttribute('data-tools-open')).toBe('true');
   });
 
   it.each([
     { current: "main", detached: false, branches: [] },
     { current: "a1b2c3d", detached: true, branches: [] },
-  ])("keeps changes open while opening and closing the independent file explorer: %j", async (branches) => {
+  ])("opens changes as the working-tree review beside the independent file explorer: %j", async (branches) => {
     mocks.projectBranches.mockReturnValue(branches);
     await mount();
     await click('[data-command="View: Toggle Changes"]');
+    expect(workspace().querySelector('[data-diff-cwd="/repo"]')).not.toBeNull();
     await click('[data-session-tool-toggle="files"]');
-    expect(container.querySelector('.desktop-tools-layout')?.getAttribute('data-tools-open')).toBe('true');
     expect(workspace().querySelector('.desktop-file-explorer')).not.toBeNull();
     await click('[data-open-file]');
     expect(workspace().querySelector('[data-file-editor="/repo/file.ts"]')).not.toBeNull();
@@ -1510,7 +1471,34 @@ describe("App workspace app views", () => {
     expect(workspace().querySelector('[data-file-editor]')).toBeNull();
     await click('.desktop-file-explorer [aria-label="Close panel"]');
     expect(workspace().querySelector('.desktop-file-explorer')).toBeNull();
-    expect(container.querySelector('.desktop-tools-layout')?.getAttribute('data-tools-open')).toBe('true');
+  });
+
+  it.each([false, true])("opens a message's originating Bot on its own Host (remote=%s)", async remote => {
+    const projects = await import("../features/connections/model/remoteProjects");
+    const connections = await import("../features/connections/model/connections");
+    const { readBotSelection } = await import("../features/bots/model/botSelection");
+    const environmentId = remote ? "origin-remote" : "origin-local";
+    const machineId = remote ? "remote-machine" : "local-machine";
+    projects.configureSharedHost("origin-local", [], "local-machine");
+    const cwd = remote ? projects.rememberRemoteProject(environmentId, { id: "origin-project", cwd: "/repo" }).key : "/repo";
+    vi.spyOn(connections, "remoteMachineFor").mockResolvedValue({ id: machineId, environmentId, name: "Origin Host", endpoint: "https://host.test" });
+    const request = vi.spyOn(connections, "remoteRequest").mockImplementation(async <T,>(_: string, method: string) => {
+      if (method === "environment.describe") return { capabilities: ["bots.v1"] } as T;
+      if (method === "bots.list") return { bots: [{ id: "bot", name: "Helper", defaultThreadId: "default" }], threads: [{ id: "source-thread", botId: "bot" }] } as T;
+      if (method === "sessions.activity") return { sessions: [] } as T;
+      return [] as T;
+    });
+    try {
+      await mount(false, "bottom", { cwd });
+      const pane = mocks.paneRendered.mock.calls.map(([props]) => props as SessionPaneProps).findLast(props => props.session.id === "first")!;
+      expect(pane.onOpenBot).toBeTypeOf("function");
+      await act(async () => pane.onOpenBot!("first", { kind: "assistant", assistantId: "bot", botId: "bot", threadId: "source-thread", actionId: "send", wakeupId: "wake" }));
+      expect(request).toHaveBeenCalledWith(machineId, "bots.list", undefined);
+      expect(readBotSelection(environmentId)).toEqual({ botId: "bot", threadId: "source-thread" });
+      expect(workspace().querySelector('[data-app-view="assistant"]')?.getAttribute("data-bots-machine")).toBe(machineId);
+    } finally {
+      projects.configureSharedHost(undefined, []);
+    }
   });
 
   it("opens Assistant as a reusable workspace page and retains its draft across chat switches", async () => {
@@ -1963,22 +1951,17 @@ describe("App workspace app views", () => {
   );
 
   it.each(["editor", "unified"])(
-    "opens a %s diff inside the current chat beside its Settings tool",
+    "opens changes inside the current chat beside its Settings tool under the %s diff view",
     async (viewer) => {
       localStorage.setItem("omnicode.diffViewer", viewer);
+      mocks.projectBranches.mockReturnValue({ current: "main", detached: false, branches: [] });
       await mount();
       await selectSession("recent");
       await click('[data-command="App: Settings"]');
-      await click("[data-open-diff]");
+      await click('[data-command="View: Toggle Changes"]');
       expect(mocks.diffOpen).not.toHaveBeenCalled();
       expect(activeTabId()).toBe(recentId);
-      expect(
-        workspace(recentId).querySelector(
-          viewer === "unified"
-            ? '[data-diff-cwd="/repo"]'
-            : '[data-file-editor="/repo/file.ts"][data-file-cwd="/repo"][data-file-diff="true"]',
-        ),
-      ).not.toBeNull();
+      expect(workspace(recentId).querySelector('[data-diff-cwd="/repo"]')).not.toBeNull();
       expect(workspace(firstId)).toBeNull();
     },
   );
@@ -2546,6 +2529,9 @@ describe("App multi-project history", () => {
       setComposerAttachmentCount("first", 1);
       const finishRead = beginComposerAttachmentRead("first");
       try {
+        const { rememberRemotePendingExecutionCwd, remotePendingExecutionCwd } =
+          await import("../features/connections/model/connections");
+        rememberRemotePendingExecutionCwd("first", "/repo-old-worktree");
         const pane = mocks.paneRendered.mock.calls.map(([props]) => props as SessionPaneProps)
           .filter((props) => props.session.id === "first").at(-1)!;
         await act(async () => pane.onCwdChange("first", cwd));
@@ -2556,6 +2542,7 @@ describe("App multi-project history", () => {
           .filter((props) => props.session.id === "first").at(-1)!.session;
         expect(moved.branch).toBeUndefined();
         expect(moved.executionCwd).toBeUndefined();
+        expect(remotePendingExecutionCwd("first")).toBeUndefined();
         expect(moved.workspaceMode).toBeUndefined();
         expect(moved.worktreeBase).toBeUndefined();
       } finally {

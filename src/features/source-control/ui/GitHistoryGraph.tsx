@@ -26,6 +26,7 @@ import { GitGraphDialog } from "./GitGraphDialog";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { beginResizeInteraction } from "../../../shared/lib/resizeInteraction";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
+import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { HoverSummary, useHoverSummary } from "../../../shared/ui/HoverSummary";
 import {
   gitCommitFiles,
@@ -90,36 +91,32 @@ export function GitHistoryGraph({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
-      <div className="relative flex h-7 shrink-0 items-center hover:bg-content/3">
+      <div className="git-panel-header git-history-header flex items-center">
         <button
           type="button"
           onClick={onToggleExpanded}
           aria-expanded={expanded}
           aria-label={expanded ? uiT("Collapse graph") : uiT("Expand graph")}
-          className="flex h-full min-w-0 w-full items-center gap-1 px-3 text-left leading-none"
+          className="flex min-w-0 flex-1 items-center gap-1 text-left"
         >
-          <span className="min-w-0 truncate pr-8 text-[10px] font-semibold tracking-[0.04em] text-content/55 uppercase">
-            {uiT("Graph")}
+          <span className="grid size-5 shrink-0 place-items-center">
+            {expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
           </span>
-          {expanded ? (
-            <ChevronDown className="ml-auto size-3.5 shrink-0 text-content/50" />
-          ) : (
-            <ChevronRight className="ml-auto size-3.5 shrink-0 text-content/50" />
-          )}
+          <span className="min-w-0 truncate">
+            {uiT("Commit history")}
+          </span>
         </button>
-        <button
+        <IconButton
           ref={expandButton}
-          type="button"
-          title={uiT("Open Git graph")}
-          aria-label={uiT("Open Git graph")}
+          size="xs"
+          label={uiT("Open Git graph")}
           aria-haspopup="dialog"
           aria-expanded={dialogOpen}
           disabled={!enabled || !cwd || cwd === "~"}
           onClick={() => setDialogCwd(cwd)}
-          className="absolute inset-y-0 right-8 grid w-6 place-items-center text-content/50 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-hover disabled:opacity-40"
         >
           <Maximize2 className="size-3" />
-        </button>
+        </IconButton>
       </div>
       {expanded || foldState !== "closed" ? (
         <SurfaceVisibilityContext.Provider value={visible && expanded}>
@@ -262,7 +259,6 @@ function HistoryRow({
         </svg>
         <span className="ml-1 flex min-w-0 flex-1 items-center overflow-hidden">
           <span
-            data-code-label
             className={`min-w-0 shrink truncate text-[12px] leading-[22px] ${
               row.kind === "HEAD" ? "font-semibold" : ""
             }`}
@@ -272,7 +268,7 @@ function HistoryRow({
           {commit.author ? (
             <span
               title={commit.author}
-              className="ml-2 max-w-[calc(100%-0.5rem)] shrink-0 truncate text-[12px] leading-[22px] text-content/45"
+              className="ml-2 max-w-16 shrink-0 truncate text-[12px] leading-[22px] text-content/45"
             >
               {commit.author}
             </span>
@@ -629,12 +625,12 @@ export function GraphResizeSash({
   };
 
   return (
-    <div className="relative z-10 h-4 shrink-0">
+    <div className="relative z-10 h-0 shrink-0">
       <ResizeHandle
         edge="top"
         dragging={dragging}
         className="resize-handle-centered"
-        style={{ top: 0 }}
+        style={{ top: -8 }}
         aria-label={uiT("Resize graph")}
         aria-valuenow={height}
         onPointerDown={onPointerDown}

@@ -726,7 +726,6 @@ export function useWorkspaceController({
     ensureContentTab: (cwd) => ensureContentTab(cwd),
     activateTab: (id, paneId) => activateTab(id, paneId),
     showWorkspace: () => showWorkspace(),
-    setSidebarTab: (tab, project) => setSidebarTab(tab, project),
     setTabs,
     setComposerFocused,
     setProjectTerminalFocused,
@@ -737,9 +736,7 @@ export function useWorkspaceController({
     editorNavigations,
     openFilePaths,
     onOpenDiff,
-    onOpenWorkingTreeDiff,
     onOpenAllChanges,
-    onOpenCommit,
     onReorderFiles,
     onFileMoved,
     onFileDeleted,
@@ -1093,10 +1090,16 @@ export function useWorkspaceController({
       ? sidebarTabSelection.tab
       : loadProjectSidebarTab(sidebarCwd);
   const showFileExplorerRef = useRef<(cwd: string) => void>(() => {});
+  const showChangesRef = useRef<(cwd: string) => void>(() => {});
   const setSidebarTab = useCallback((tab: SidebarTabId, project?: string) => {
     const cwd = project ?? sidebarCwdRef.current;
     if (tab === "files") {
       showFileExplorerRef.current(cwd);
+      return;
+    }
+    // Changes open as a review with source control beside it, not a panel.
+    if (tab === "changes") {
+      showChangesRef.current(cwd);
       return;
     }
     saveProjectSidebarTab(cwd, tab);
@@ -2211,15 +2214,9 @@ export function useWorkspaceController({
     [activateTab, deckProjectTabs],
   );
 
-  const onShowSourceControl = useCallback(() => {
-    saveSessionSidebarOpen(true);
-    setSessionSidebarOpen(loadSessionSidebarOpen());
+  const onToggleChanges = useCallback(() => {
     setSidebarTab("changes");
   }, []);
-
-  const onToggleChanges = useCallback(() => {
-    onShowSourceControl();
-  }, [onShowSourceControl]);
 
   const focusOpenSession = useCallback(
     (sessionId: string) => {
@@ -2897,6 +2894,7 @@ export function useWorkspaceController({
   );
 
   showFileExplorerRef.current = onShowFileExplorer;
+  showChangesRef.current = (cwd) => onOpenAllChanges("unstaged", cwd);
   useEffect(() => {
     if (sidebarTab !== "files") return;
     onShowFileExplorer(sidebarCwd);
@@ -4297,16 +4295,13 @@ export function useWorkspaceController({
     onNewChat,
     onNewInProject,
     onNewTerminal,
-    onOpenAllChanges,
     onOpenApprovalSession,
-    onOpenCommit,
     onOpenFile,
     onOpenInboxSession,
     onOpenLinkedWorkItem,
     onOpenNotificationSettings,
     onOpenSessionFile,
     onOpenTerminal,
-    onOpenWorkingTreeDiff,
     onPinFile,
     onPinHistorySession,
     onPinHistorySessions,

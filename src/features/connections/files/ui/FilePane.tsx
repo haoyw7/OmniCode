@@ -55,10 +55,6 @@ const FileEditor = lazySurface(async () => {
   const module = await import("./FileEditor");
   return { default: module.FileEditor };
 });
-const SessionChangesDiff = lazySurface(async () => {
-  const module = await import("../../../source-control/ui/SessionChangesDiff");
-  return { default: module.SessionChangesDiff };
-});
 const TerminalView = lazySurface(async () => {
   const module = await import("../../../terminal/ui/TerminalView");
   return { default: module.TerminalView };
@@ -148,12 +144,11 @@ function FilePaneComponent({
   );
   const activeFile = pane.files.find((file) => file.id === pane.activeFileId);
   const assistantPage = activeFile?.appView?.kind === "assistant";
-  const sessionReview =
-    activeFile && isSessionChangesTab(activeFile) ? activeFile : undefined;
+  // Session and working-tree changes are one review; the session is a source.
   const unifiedReview =
     !!activeFile &&
-    !sessionReview &&
     (isChangesTab(activeFile) ||
+      isSessionChangesTab(activeFile) ||
       (diffViewer === "unified" && isReviewTab(activeFile)));
   const commitReview = !!activeFile && isCommitTab(activeFile);
 
@@ -178,16 +173,7 @@ function FilePaneComponent({
 
   const content = (
       <div className="relative min-h-0 flex-1">
-        {sessionReview ? (
-          <div className="absolute inset-0 h-full">
-            <SessionChangesDiff
-              key={sessionReview.id}
-              cwd={sessionReview.cwd}
-              sessionId={sessionReview.sessionChanges.sessionId}
-              focusPath={sessionReview.path}
-            />
-          </div>
-        ) : commitReview && activeFile?.commit ? (
+        {commitReview && activeFile?.commit ? (
           <div className="absolute inset-0 h-full">
             <CommitDiff cwd={activeFile.cwd} sha={activeFile.commit.sha} />
           </div>
@@ -198,6 +184,8 @@ function FilePaneComponent({
               cwd={activeFile.cwd}
               focusPath={activeFile.path}
               focusKind={activeFile.changeKind}
+              sessionId={activeFile.sessionChanges?.sessionId}
+              turnId={activeFile.sessionChanges?.turnId}
             />
           </div>
         ) : null}

@@ -1289,6 +1289,46 @@ it("starts a remote session in the worktree chosen before its first message", as
   expect(byLabel("Workspace Worktree")).toBeNull();
 });
 
+it.each([
+  { local: false, worktree: false },
+  { local: true, worktree: false },
+  { local: false, worktree: true },
+])("updates Pi's execution directory when an unsent chat changes projects (local: $local, worktree: $worktree)", async ({ local, worktree }) => {
+  const model: AgentModel = { id: "pi:test", harness: "pi", name: "Pi Test", nativeId: "test", settings: [] };
+  providers = ["pi"];
+  catalog = { models: { pi: [model] }, errors: {} };
+  const targetProject = { id: "project-b", name: "A-Test", cwd: "/home/me/A-Test" };
+  if (local) configureSharedHost("env", [
+    { id: "project", name: "repo", cwd: "/home/me/repo" }, targetProject,
+  ], machine.id);
+  const initial = { ...shell(), cwd: local ? "/home/me/repo" : projectKey,
+    harness: "pi" as const, model: model.id, modelSettings: {} };
+  await render(initial);
+  if (worktree) {
+    await act(async () => byLabel("Workspace Current checkout")!.click());
+    const create = [...document.body.querySelectorAll<HTMLButtonElement>("button")]
+      .find(button => button.textContent?.trim() === "New worktree");
+    await act(async () => create!.click());
+    expect(byLabel("Workspace New worktree")).not.toBeNull();
+  }
+  await type("Keep this prompt when switching projects");
+  const textarea = container.querySelector("textarea")!;
+  const target = local ? targetProject.cwd : rememberRemoteProject("env", targetProject).key;
+
+  // Folder navigation retargets the same unsent chat and clears its checkout.
+  branchFailure = "fatal: not a git repository (or any of the parent directories): .git";
+  await render({ ...initial, cwd: target, executionCwd: undefined });
+  expect(container.querySelector("textarea")).toBe(textarea);
+  expect(textarea.value).toBe("Keep this prompt when switching projects");
+  await act(async () => byLabel("Send")!.click());
+  await settle();
+
+  expect(commands[0]).toMatchObject({ type: "create", projectId: targetProject.id,
+    harness: "pi", executionCwd: targetProject.cwd });
+  expect(commands[1]).toMatchObject({ type: "send", text: "Keep this prompt when switching projects" });
+  expect(invoke).not.toHaveBeenCalledWith("remote_request", expect.objectContaining({ method: "git.worktreeName" }));
+});
+
 it("creates a host worktree through the composer and selects it", async () => {
   await render();
   await act(async () => byLabel("Workspace Current checkout")!.click());

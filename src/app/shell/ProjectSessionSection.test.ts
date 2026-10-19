@@ -81,10 +81,6 @@ vi.mock("../../features/connections/files/ui/FileTree", () => ({
   FileTree: ({ cwd }: { cwd: string }) =>
     createElement("div", { "data-files-project": cwd }, "Files"),
 }));
-vi.mock("../../features/source-control/ui/SourceControl", () => ({
-  SourceControl: ({ cwd }: { cwd: string }) =>
-    createElement("div", { "data-changes-project": cwd }, "Changes"),
-}));
 vi.mock(
   "../../features/connections/model/connections",
   async (importOriginal) => ({
@@ -261,14 +257,18 @@ afterEach(() => {
 });
 
 describe("named project/session tree", () => {
-  it("places phone-controlled Shared Host conversations in Remote control while retaining pins and local projects", async () => {
+  it("keeps phone-controlled Shared Host conversations in their project with a remote-control indicator", async () => {
     // This test exercises routing and attribution, independently of disclosure interpolation.
     document.documentElement.dataset.reducedMotion = "on";
     try {
       configureSharedHost("local-machine", [{ id: "host-project", cwd: A, name: "alpha" }]);
       props.desktopMode = "code";
       props.onSelectRemoteSession = vi.fn();
-      const phone = { ...hostRow("phone", "codex · Phone conversation"), remoteControl: true };
+      const phone = {
+        ...hostRow("phone", "codex · Phone conversation"),
+        remoteControl: true,
+        remoteControlDevice: { id: "phone-device", name: "My phone", manufacturer: "Google", model: "Pixel 9" },
+      };
       remoteState.rows.set(A, [
         hostRow("desktop", "Desktop conversation"),
         phone,
@@ -278,13 +278,17 @@ describe("named project/session tree", () => {
       ]);
       props.openSessions = [summary("phone", A), summary("desktop", A)];
       await act(async () => render());
-      const remoteSection = () => container.querySelector('[data-project-section="remote-control"]')!;
-      expect(remoteSection().querySelectorAll("[data-session-card]")).toHaveLength(1);
-      const phoneCard = remoteSection().querySelector<HTMLElement>('[data-session-card="phone"]')!;
+      expect(container.querySelector('[data-project-section="remote-control"]')).toBeNull();
+      const phoneCard = project(A).querySelector<HTMLElement>('[data-session-card="phone"]')!;
       expect(phoneCard.textContent).toContain("Phone conversation");
       expect(phoneCard.textContent).not.toContain("codex ·");
       expect(phoneCard.querySelector("[data-session-avatar] img")).not.toBeNull();
-      for (const section of ["pinned", "projects", "remote-control"]) {
+      expect(phoneCard.querySelector('[data-session-remote-control]')?.getAttribute("aria-label")).toBe("Remote control from My phone · Google Pixel 9");
+      act(() => phoneCard.dispatchEvent(new MouseEvent("pointerover", { bubbles: true })));
+      expect(document.querySelector('[role="tooltip"]')?.textContent).toContain("Remote control from My phone · Google Pixel 9");
+      expect(phoneCard.querySelector('[data-session-menu]')).not.toBeNull();
+      expect(container.querySelectorAll('[data-session-card="phone"]')).toHaveLength(1);
+      for (const section of ["pinned", "projects"]) {
         const rows = container.querySelectorAll(`[data-project-section="${section}"] [data-session-card]`);
         expect(rows.length).toBeGreaterThan(0);
         for (const row of rows) {
@@ -292,18 +296,22 @@ describe("named project/session tree", () => {
           expect(row.querySelector("[data-session-project]")?.textContent).toBe("alpha");
         }
       }
-      expect(project(A).querySelector('[data-session-card="phone"]')).toBeNull();
       expect(project(A).querySelector('[data-session-card="desktop"]')).not.toBeNull();
+      expect(project(A).querySelector('[data-session-card="desktop"] [data-session-remote-control]')).toBeNull();
       expect(project(A).querySelector('[data-session-card="legacy"]')).not.toBeNull();
-      expect(container.querySelector('[data-project-section="pinned"] [data-session-card="phone-pin"]')).not.toBeNull();
+      expect(container.querySelector('[data-project-section="pinned"] [data-session-card="phone-pin"] [data-session-remote-control]')).not.toBeNull();
+      expect(container.querySelector('[data-session-card="phone-archive"]')).toBeNull();
       act(() => phoneCard.click());
       expect(props.onSelectSession).toHaveBeenCalledWith("phone", A);
 
-      // A phone can take over an existing session; the next history refresh moves it once.
+      // Taking over an existing conversation updates its indicator in place.
+      const legacyCard = project(A).querySelector('[data-session-card="legacy"]');
       remoteState.rows.set(A, [phone, { ...hostRow("legacy"), remoteControl: true }]);
       await act(async () => { window.dispatchEvent(new Event(REMOTE_HISTORY_UPDATED)); });
-      expect(remoteSection().querySelectorAll("[data-session-card]")).toHaveLength(2);
-      expect(project(A).querySelector('[data-session-card="legacy"]')).toBeNull();
+      expect(project(A).querySelector('[data-session-card="legacy"]')).toBe(legacyCard);
+      expect(legacyCard?.querySelector('[data-session-remote-control]')).not.toBeNull();
+      expect(legacyCard?.querySelector('[data-session-remote-control]')?.getAttribute("aria-label")).toBe("Remote control from an unknown device");
+      expect(container.querySelectorAll('[data-session-card="legacy"]')).toHaveLength(1);
     } finally {
       delete document.documentElement.dataset.reducedMotion;
     }
@@ -1186,7 +1194,7 @@ describe("named project/session tree", () => {
     );
   });
 
-  it.each(["files", "changes"] as const)(
+  it.each(["files"] as const)(
     "keeps the full-height %s working copy and header actions without project pickers",
     (tab) => {
       props.tab = tab;
@@ -1211,27 +1219,8 @@ describe("named project/session tree", () => {
     },
   );
 
-  it("lets the whole Changes surface scroll in the remaining sidebar height", () => {
-    props.tab = "changes";
-    measuredHeight = 300;
-    act(() => render());
-    const copy = container.querySelector<HTMLElement>(
-      "[data-project-working-copy]",
-    )!;
-    const content = copy.querySelector<HTMLElement>(
-      "[data-project-changes-content]",
-    )!;
-    expect(copy.style.height).toBe("");
-    expect(copy.style.maxHeight).toBe("");
-    expect(copy.classList.contains("overflow-y-auto")).toBe(true);
-    expect(content.style.height).toBe("");
-    expect(content.classList.contains("min-h-[480px]")).toBe(true);
-    expect(content.classList.contains("shrink-0")).toBe(true);
-    expect(container.querySelectorAll("[data-project-path]")).toHaveLength(0);
-  });
-
   it.each([
-    ["files", ""], ["files", "~"], ["changes", ""], ["changes", "~"],
+    ["files", ""], ["files", "~"],
   ] as const)("shows the %s empty hint without a project picker (%s)", (tab, cwd) => {
     props.tab = tab;
     props.cwd = cwd;
@@ -1242,7 +1231,7 @@ describe("named project/session tree", () => {
     expect(Array.from(container.querySelectorAll("p"), node => node.textContent)).toContain("Choose project");
   });
 
-  it.each(["files", "changes"] as const)(
+  it.each(["files"] as const)(
     "keeps the open-project header action in %s",
     (tab) => {
       props.tab = tab;
@@ -1286,7 +1275,7 @@ describe("named project/session tree", () => {
     expect(container.querySelector('button[aria-label="Filter sessions"]')).toBeNull();
   });
 
-  it.each(["files", "changes"] as const)(
+  it.each(["files"] as const)(
     "keeps the single-project %s working copy without a picker",
     (tab) => {
       props.tab = tab;
