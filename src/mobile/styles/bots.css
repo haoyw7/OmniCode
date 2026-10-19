@@ -1095,6 +1095,9 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
 .mobile-bots-list .assistant-availability { padding-block: 24px; text-align: center; color: var(--color-m-ink-secondary); }
 .mobile-bots-list .assistant-availability[role="status"] { display: flex; justify-content: center; align-items: center; gap: 8px; }
 .mobile-bots-create-content { flex: 1; min-height: 0; overflow-y: auto; padding: 12px var(--m-page-inset, 24px) 24px; }
+/* The create page owns scrolling. A nested non-overflowing scroll container
+   with overscroll containment traps swipes before they reach the page. */
+.mobile-bots-create-content .assistant-settings-body { overflow: visible; }
 .mobile-bots-error { color: var(--color-m-danger); margin-bottom: 12px; }
 .mobile-assistant-timeline { padding: 16px; overflow-wrap: anywhere; }
 .mobile-assistant-task { padding-block: 12px; border-bottom: 1px solid var(--mobile-fill); }
