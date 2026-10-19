@@ -1062,6 +1062,8 @@
   "Main pane glass": "主面板玻璃效果",
   "Compact sidebar": "紧凑侧栏",
   "Show projects and conversations in short rows with small icons, so more fit on screen.": "用较矮的行和小图标显示项目和对话，一屏能放下更多。",
+  "Indent conversations": "缩进对话",
+  "Show conversations one step in from their project in the sidebar.": "在侧栏中将对话相对所属项目缩进一级显示。",
   "Manage Inbox services and notification preferences for each project.": "管理各项目的收件箱服务和通知偏好。",
   "Manage MCP Servers…": "管理 MCP 服务器…",
   "Manage accounts…": "管理账号…",

@@ -4,6 +4,8 @@ html[data-skin] {
   --desktop-sidebar-row: 32px;
   --desktop-sidebar-row-pad: 0px;
   --desktop-sidebar-gap: 8px;
+  /* The agent mark already sits inside the avatar box, so titles hug it closer. */
+  --desktop-sidebar-session-gap: 4px;
   --desktop-sidebar-avatar: 20px;
   --desktop-sidebar-avatar-icon: 20px;
   --desktop-sidebar-tile-icon: 16px;
@@ -171,7 +173,7 @@ html[data-skin] [data-session-dense][data-density="compact"]:not([data-session-s
 }
 
 html[data-skin] [data-session-dense] [data-session-select] > span {
-  gap: var(--desktop-sidebar-gap);
+  gap: var(--desktop-sidebar-session-gap);
 }
 
 html[data-skin] [data-session-dense] [data-session-avatar] {
@@ -182,6 +184,8 @@ html[data-skin] [data-session-dense] [data-session-avatar] {
   padding: 0;
   place-items: center;
   border-radius: 999px;
+  /* Title glyphs sit above the line box center; lift the mark onto their optical center. */
+  translate: 0 -1px;
 }
 
 html[data-skin] [data-session-dense] [data-session-avatar] svg {
@@ -266,7 +270,7 @@ html[data-skin] [data-sidebar-list-toggle] {
 }
 
 html[data-skin] [data-sidebar-list-toggle][data-indented] {
-  padding-inline-start: calc(8px + var(--desktop-sidebar-nest) + var(--desktop-sidebar-avatar) + var(--desktop-sidebar-gap));
+  padding-inline-start: calc(8px + var(--desktop-sidebar-nest) + var(--desktop-sidebar-avatar) + var(--desktop-sidebar-session-gap));
 }
 
 html[data-skin] [data-desktop-sidebar] {
@@ -288,6 +292,11 @@ html[data-skin] [data-desktop-sidebar] {
   background: var(--desktop-sidebar-fill);
   font-size: 14px;
   line-height: 21px;
+}
+/* With indentation off, conversations line up with their project. */
+html[data-skin].flat-sidebar-sessions,
+html[data-skin].flat-sidebar-sessions [data-desktop-sidebar] {
+  --desktop-sidebar-nest: 0px;
 }
 /* Compact sidebar keeps the same hierarchy with shorter rows and smaller icons. */
 html[data-skin].compact-sidebar [data-desktop-sidebar] {
@@ -317,6 +326,7 @@ html[data-skin] .sidebar-transition:has([data-desktop-sidebar])::after {
   pointer-events: none;
 }
 
+/* The drag target overlays the workspace edge. */
 html[data-skin] .sidebar-transition:has([data-desktop-sidebar]) > .resize-handle[data-resize-edge="right"] {
   right: calc(-1 * var(--desktop-sidebar-inset));
   width: var(--desktop-sidebar-inset);
@@ -493,7 +503,7 @@ html[data-skin] [data-desktop-sidebar] [data-session-project] {
   display: block;
   overflow: hidden;
   margin-block-start: 2px;
-  padding-inline-start: calc(var(--desktop-sidebar-avatar) + var(--desktop-sidebar-gap));
+  padding-inline-start: calc(var(--desktop-sidebar-avatar) + var(--desktop-sidebar-session-gap));
   color: var(--color-ink-tertiary);
   font-size: 13px;
   line-height: 20px;

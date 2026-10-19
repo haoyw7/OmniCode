@@ -195,12 +195,10 @@ html[data-skin].theme-light {
   --desktop-on-primary: #ffffff;
   --desktop-danger: #b53333;
   --desktop-on-danger: #ffffff;
-  --desktop-control-surface: #ffffff;
   --desktop-control-ink: #141413;
   --desktop-control-placeholder: #73726c;
   --desktop-control-border: rgb(31 30 29 / 30%);
   --desktop-control-track: #faf9f5;
-  --desktop-focus-gap: #ffffff;
   --desktop-focus-info: rgb(50 102 173 / 50%);
 }
 

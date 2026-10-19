@@ -303,6 +303,12 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     keywords: "dense rows density list conversations projects smaller",
   },
   {
+    id: "indent-sidebar-sessions",
+    section: "appearance",
+    label: "Indent conversations",
+    keywords: "sidebar nest nested indentation hierarchy flat conversations projects 缩进 层级 侧栏 对话",
+  },
+  {
     id: "ui-font-size",
     section: "appearance",
     label: "Interface font size",

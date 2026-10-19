@@ -25,6 +25,8 @@ import {
   type ReducedMotionPreference,
 } from "../../../model/typography";
 import { useColorScheme } from "../../../../../shared/hooks/useColorScheme";
+import { DEFAULT_CODE_THEMES } from "../../../../../shared/theme/codeThemes";
+import { saveCodeTheme } from "../../../model/codeAppearance";
 import {
   applyChatBackground,
   applyChatBackgroundOpacity,
@@ -34,6 +36,7 @@ import {
   applyAccentColor,
   applyBodyGlass,
   applyCompactSidebar,
+  applyIndentSidebarSessions,
   applyPopoverOpacity,
   applySidebarBlur,
   applySidebarOpacity,
@@ -42,12 +45,14 @@ import {
   applyThemeTint,
   BODY_GLASS_DEFAULT,
   COMPACT_SIDEBAR_DEFAULT,
+  INDENT_SIDEBAR_SESSIONS_DEFAULT,
   ACCENT_COLOR_DEFAULT,
   CHAT_BACKGROUND_OPACITY_DEFAULT,
   CHAT_BACKGROUND_AREA_DEFAULT,
   THEME_PREFERENCE_DEFAULT,
   loadBodyGlass,
   loadCompactSidebar,
+  loadIndentSidebarSessions,
   loadPopoverOpacity,
   loadWindowOpacity,
   loadPanelOpacity,
@@ -64,6 +69,7 @@ import {
   loadThemeSaturation,
   saveBodyGlass,
   saveCompactSidebar,
+  saveIndentSidebarSessions,
   savePopoverOpacity,
   saveWindowOpacity,
   savePanelOpacity,
@@ -137,6 +143,9 @@ export function useAppearanceSettings() {
   );
   const [bodyGlass, setBodyGlass] = usePreferenceState(loadBodyGlass);
   const [compactSidebar, setCompactSidebar] = usePreferenceState(loadCompactSidebar);
+  const [indentSidebarSessions, setIndentSidebarSessions] = usePreferenceState(
+    loadIndentSidebarSessions,
+  );
   const [showExcludedFiles, setShowExcludedFiles] = usePreferenceState(
     loadShowExcludedFiles,
   );
@@ -296,6 +305,12 @@ export function useAppearanceSettings() {
     setCompactSidebar(next);
   }, []);
 
+  const onIndentSidebarSessions = useCallback((next: boolean) => {
+    applyIndentSidebarSessions(next);
+    saveIndentSidebarSessions(next);
+    setIndentSidebarSessions(next);
+  }, []);
+
   const onBodyGlass = useCallback((next: boolean) => {
     applyBodyGlass(next);
     saveBodyGlass(next);
@@ -396,6 +411,8 @@ export function useAppearanceSettings() {
   }, []);
 
   const restoreDefaults = useCallback(() => {
+    saveCodeTheme("light", DEFAULT_CODE_THEMES.light);
+    saveCodeTheme("dark", DEFAULT_CODE_THEMES.dark);
     for (const kind of ["ui", "content", "code"] as const)
       onFontSize(kind, FONT_SIZE_LIMITS[kind].default);
     onReducedMotion(REDUCED_MOTION_DEFAULT);
@@ -422,6 +439,7 @@ export function useAppearanceSettings() {
     onDarkLightness(THEME_DARK_LIGHTNESS_DEFAULT);
     onBodyGlass(BODY_GLASS_DEFAULT);
     onCompactSidebar(COMPACT_SIDEBAR_DEFAULT);
+    onIndentSidebarSessions(INDENT_SIDEBAR_SESSIONS_DEFAULT);
     onShowExcludedFiles(SHOW_EXCLUDED_FILES_DEFAULT);
     onChatBackgroundOpacity(Math.round(CHAT_BACKGROUND_OPACITY_DEFAULT * 100));
     onChatBackgroundArea(CHAT_BACKGROUND_AREA_DEFAULT);
@@ -436,6 +454,7 @@ export function useAppearanceSettings() {
     onBlur,
     onBodyGlass,
     onCompactSidebar,
+    onIndentSidebarSessions,
     onChatBackgroundOpacity,
     onChatBackgroundArea,
     onNewThreadBackgroundEffect,
@@ -480,6 +499,7 @@ export function useAppearanceSettings() {
     themeDarkLightness,
     bodyGlass,
     compactSidebar,
+    indentSidebarSessions,
     showExcludedFiles,
     chatBackgroundPath,
     chatBackgroundOpacity,
@@ -499,6 +519,7 @@ export function useAppearanceSettings() {
     onDarkLightness,
     onBodyGlass,
     onCompactSidebar,
+    onIndentSidebarSessions,
     onShowExcludedFiles,
     onChooseChatBackground,
     onClearChatBackground,

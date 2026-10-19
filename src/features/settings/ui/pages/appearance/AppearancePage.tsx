@@ -110,6 +110,19 @@ export function AppearancePage({ appearance }: { appearance: AppearanceSettings 
               onChange={appearance.onCompactSidebar}
             />
           </Row>
+          <Row
+            id="indent-sidebar-sessions"
+            label={uiT("Indent conversations")}
+            description={uiT(
+              "Show conversations one step in from their project in the sidebar.",
+            )}
+          >
+            <Toggle
+              label={uiT("Indent conversations")}
+              on={appearance.indentSidebarSessions}
+              onChange={appearance.onIndentSidebarSessions}
+            />
+          </Row>
         {appearance.separateSchemes ? null : (
           <AccentRow appearance={appearance} />
         )}

@@ -36,6 +36,7 @@ const PROJECT_RAIL_OPEN_KEY = "omnicode.projectRailOpen";
 const SESSION_SIDEBAR_OPEN_KEY = "omnicode.sessionSidebarOpen";
 const BODY_KEY = "omnicode.bodyGlass";
 const COMPACT_SIDEBAR_KEY = "omnicode.compactSidebar";
+const INDENT_SIDEBAR_SESSIONS_KEY = "omnicode.indentSidebarSessions";
 const SCHEME_KEY = "omnicode.colorScheme";
 const SIDEBAR_TAB_ORDER_KEY = "omnicode.sidebarTabOrder";
 const SIDEBAR_WIDTH_KEY = "omnicode.sidebarWidth";
@@ -195,6 +196,8 @@ export const SIDEBAR_WIDTH_DEFAULT = 256;
 export const BODY_GLASS_DEFAULT = !IS_LINUX;
 /** Skinned sidebars use the phone's 56px rows unless this is on. */
 export const COMPACT_SIDEBAR_DEFAULT = false;
+/** Conversations sit one step in from their project unless this is off. */
+export const INDENT_SIDEBAR_SESSIONS_DEFAULT = true;
 
 export const CHAT_BACKGROUND_OPACITY_MIN = 0.05;
 export const CHAT_BACKGROUND_OPACITY_MAX = 1;
@@ -367,6 +370,7 @@ export function initAppearance() {
   applySidebarBlur(loadSidebarBlur());
   applyBodyGlass(loadBodyGlass());
   applyCompactSidebar(loadCompactSidebar());
+  applyIndentSidebarSessions(loadIndentSidebarSessions());
   applyChatBackground(loadChatBackgroundPath());
   applyChatBackgroundOpacity(loadChatBackgroundOpacity());
   applyChatBackgroundArea(loadChatBackgroundArea());
@@ -687,6 +691,19 @@ export function saveCompactSidebar(value: boolean) {
 
 export function applyCompactSidebar(value: boolean) {
   document.documentElement.classList.toggle("compact-sidebar", value);
+  return value;
+}
+
+export function loadIndentSidebarSessions(): boolean {
+  return readFlag(INDENT_SIDEBAR_SESSIONS_KEY) ?? INDENT_SIDEBAR_SESSIONS_DEFAULT;
+}
+
+export function saveIndentSidebarSessions(value: boolean) {
+  writeFlag(INDENT_SIDEBAR_SESSIONS_KEY, value);
+}
+
+export function applyIndentSidebarSessions(value: boolean) {
+  document.documentElement.classList.toggle("flat-sidebar-sessions", !value);
   return value;
 }
 

@@ -167,6 +167,11 @@ html[data-skin] [data-session-status] [data-status-card] {
   background: var(--desktop-panel-card);
 }
 
+html[data-skin] [data-question-history] {
+  background: var(--color-card);
+  border-color: var(--color-composer-ring);
+}
+
 html[data-skin] [data-question-card] {
   box-shadow: var(--shadow-panel);
   backdrop-filter: var(--glass-filter);
@@ -297,6 +302,16 @@ html[data-skin] [data-jump-to-bottom] {
 html[data-skin] [data-jump-to-bottom] svg {
   width: 18px;
   height: 18px;
+}
+
+/* Running sessions swap the arrow for smaller dots that fit the round button. */
+[data-jump-to-bottom] .typing-dots {
+  gap: 3px;
+}
+
+[data-jump-to-bottom] .typing-dots > span {
+  width: 4px;
+  height: 4px;
 }
 
 html[data-skin] .agent-markdown img {

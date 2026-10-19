@@ -1,10 +1,20 @@
 /* Desktop semantic palette and utility color bindings. Layout belongs to each surface. */
 [data-skin] {
-  /* Surface fills keep the palette opaque and apply appearance preferences only where used. */
+  --color-sidebar: color-mix(in srgb, var(--color-app) 90%, white);
+  --color-sidebar-divider: color-mix(in srgb, var(--color-sidebar) 65%, white);
   --desktop-sidebar-fill: color-mix(in srgb, var(--color-sidebar, var(--color-panel)) calc(var(--sidebar-opacity) * 100%), transparent);
+  /* Surface fills keep the palette opaque and apply appearance preferences only where used. */
   --desktop-panel-card: color-mix(in srgb, var(--color-card) calc(var(--panel-opacity) * 100%), transparent);
   --desktop-panel-fill: color-mix(in srgb, var(--color-panel) calc(var(--panel-opacity) * 100%), transparent);
   --desktop-popover-fill: color-mix(in srgb, var(--color-menu) calc(var(--panel-opacity) * var(--popover-opacity) * 100%), transparent);
+}
+
+[data-skin="daylight"],
+[data-skin="atelier"],
+[data-skin="lagoon"],
+[data-skin="linen"],
+[data-skin="meadow"] {
+  --color-sidebar: color-mix(in srgb, var(--color-app) 95%, black);
 }
 
 :root {
@@ -45,6 +55,32 @@ html[data-skin].theme-light {
   --color-omi-rose: #ae5679;
   --color-omi-green: #5c7c3c;
 }
+
+/* Paint the window ground once so floating cards never expose a second tint. */
+html[data-skin][data-desktop-mode] .app-shell-root {
+  background: var(--desktop-window-ground, var(--color-app));
+}
+
+html[data-skin][data-desktop-mode].has-native-glass:not(.theme-light) {
+  --desktop-window-ground: color-mix(in srgb, var(--color-app) calc(var(--window-opacity) * 100%), transparent);
+}
+
+html[data-skin][data-desktop-mode] .app-shell-root :is([data-sidebar-main], .shell-chrome) {
+  background: transparent;
+}
+
+html[data-skin] [data-session-review-shell] > [data-session-review-border] {
+  background-color: transparent;
+}
+
+html[data-skin] [data-session-review-shell] [data-session-review-border] {
+  border-color: color-mix(in srgb, var(--color-ink) 12%, transparent);
+}
+
+html[data-skin].theme-light [data-session-review-shell] [data-session-review-border] {
+  border-color: color-mix(in srgb, var(--color-ink) 8%, transparent);
+}
+
 @theme {
   --animate-caret: caret-blink 1s step-end infinite;
   --animate-shimmer: shimmer 2s linear infinite;
@@ -144,10 +180,10 @@ html[data-skin].theme-light {
   --color-panel: #ecebe5;
   --color-raised: #d7d6cd;
   --color-raised-hover: #ccc9be;
-  --color-composer: #ffffff;
+  --color-composer: var(--color-card);
   --color-composer-ring: #918c80;
-  --color-card: #ffffff;
-  --color-menu: #ffffff;
+  --color-card: color-mix(in srgb, var(--color-panel) 50%, white);
+  --color-menu: var(--color-card);
   --color-inset: #eeece6;
   --color-control: #e3e0d7;
   --color-hairline: #c1bdb2;
@@ -306,9 +342,9 @@ html[data-skin].theme-light {
   --color-panel: #e9e2d7;
   --color-raised: #d8cdbb;
   --color-raised-hover: #cdbea6;
-  --color-card: #ffffff;
-  --color-menu: #ffffff;
-  --color-composer: #ffffff;
+  --color-card: color-mix(in srgb, var(--color-panel) 50%, white);
+  --color-menu: var(--color-card);
+  --color-composer: var(--color-card);
   --color-composer-ring: #91816b;
   --color-inset: #ece5d9;
   --color-control: #e3d8c7;
@@ -337,9 +373,9 @@ html[data-skin].theme-light {
   --color-panel: #c9dfdc;
   --color-raised: #b1ccc7;
   --color-raised-hover: #a5c1bc;
-  --color-card: #ffffff;
-  --color-menu: #ffffff;
-  --color-composer: #ffffff;
+  --color-card: color-mix(in srgb, var(--color-panel) 50%, white);
+  --color-menu: var(--color-card);
+  --color-composer: var(--color-card);
   --color-composer-ring: #628a84;
   --color-inset: #cfe2de;
   --color-control: #c3dcd7;
@@ -368,9 +404,9 @@ html[data-skin].theme-light {
   --color-panel: #dae1e9;
   --color-raised: #c2cdda;
   --color-raised-hover: #b4c2d4;
-  --color-card: #ffffff;
-  --color-menu: #ffffff;
-  --color-composer: #ffffff;
+  --color-card: color-mix(in srgb, var(--color-panel) 50%, white);
+  --color-menu: var(--color-card);
+  --color-composer: var(--color-card);
   --color-composer-ring: #778aa1;
   --color-inset: #dfe5ed;
   --color-control: #d5dfe9;
@@ -400,8 +436,8 @@ html[data-skin].theme-light {
   --color-raised: #c7ddcd;
   --color-raised-hover: #b9d5c1;
   --color-card: #f1f5f2;
-  --color-menu: #ffffff;
-  --color-composer: #ffffff;
+  --color-menu: var(--color-card);
+  --color-composer: var(--color-card);
   --color-composer-ring: #6f937a;
   --color-inset: #e1ebe4;
   --color-control: #d4e3d8;
@@ -483,7 +519,7 @@ html[data-skin] {
 .desktop-skin-option:has(:focus-visible) { outline-color: var(--color-focus); }
 .desktop-skin-preview { border-color: var(--color-hairline); }
 .desktop-skin-scene { background: var(--color-app); }
-.desktop-skin-scene-sidebar { background: var(--color-panel); }
+.desktop-skin-scene-sidebar { background: var(--color-sidebar); }
 .desktop-skin-scene-sidebar > span { background: var(--color-control); }
 .desktop-skin-scene-message { background: var(--color-card); }
 .desktop-skin-scene-user { background: var(--color-bubble-user); }
@@ -491,7 +527,14 @@ html[data-skin] {
 .desktop-skin-scene-composer > span { background: var(--color-accent); }
 
 .desktop-bot-settings-dialog { background: var(--color-panel); color: var(--color-ink); border-color: var(--color-hairline); }
-.desktop-bot-dialog-footer { background: var(--color-panel); }
+
+/* Review surfaces and metadata follow the desktop skin. */
+html[data-skin] .git-review-pane {
+  --review-bg: var(--color-card);
+  --review-secondary: var(--color-ink-secondary);
+  --review-muted: var(--color-ink-tertiary);
+  --review-header: color-mix(in srgb, var(--color-ink) 5%, var(--color-card));
+}
 
 /* Explicit accent choices override every palette without changing its surfaces. */
 html.has-user-accent[data-skin] {
