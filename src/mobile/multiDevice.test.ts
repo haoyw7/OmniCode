@@ -281,12 +281,29 @@ it("opens the selected device's error state on an offline launch and can switch 
   expect(list().textContent).toContain("Last online: September 15, 2026");
   // The device row stays, and the page has no skeleton or duplicate error banner.
   expect([...active(".mobile-device-chips")!.querySelectorAll("button")].map((chip) => chip.textContent))
-    .toEqual(["All", "Device A", "Device B"]);
+    .toEqual(["All", "Device B", "Device A"]);
+  expect(button("Device A").getAttribute("aria-checked")).toBe("true");
+  expect(fixture.client!.connection?.environmentId).toBe("a");
   expect(list().querySelector(".mobile-list-skeleton")).toBeNull();
   expect(active(".mobile-error")).toBeUndefined();
   expect(button("Retry")).toBeDefined();
-  await switchTo("Device B");
+  await act(async () => button("Device B").click());
   expect(list().textContent).toContain("Device B conversation");
+});
+
+it("restores saved device order when the active device comes back online", async () => {
+  fixture.request.mockImplementation((endpoint, input) => {
+    if (endpoint === a.endpoint) throw new Error("Device A offline");
+    return respond(endpoint, input);
+  });
+  await mount();
+  const names = () => [...active(".mobile-device-chips")!.querySelectorAll("button")]
+    .map((chip) => chip.textContent);
+  expect(names()).toEqual(["All", "Device B", "Device A"]);
+  fixture.request.mockImplementation(respond);
+  await act(async () => button("Retry").click());
+  expect(names()).toEqual(["All", "Device A", "Device B"]);
+  expect(button("Device A").getAttribute("aria-checked")).toBe("true");
 });
 
 it("keeps refreshing the original device when an unresolved command prevents switching", async () => {
