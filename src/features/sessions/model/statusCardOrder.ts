@@ -12,6 +12,7 @@ export const STATUS_CARD_IDS = [
   "subagents",
   "background",
   "context",
+  "usage",
 ] as const;
 
 export type StatusCardId = (typeof STATUS_CARD_IDS)[number];

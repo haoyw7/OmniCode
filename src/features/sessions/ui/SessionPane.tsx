@@ -61,6 +61,7 @@ import { PooledTranscript, type TranscriptPool } from "./TranscriptPool";
 import { agentWaitingForWorktree } from "../../source-control/model/worktreeCreation";
 import { TranscriptFind } from "./TranscriptFind";
 import { SessionStatusPanel } from "./SessionStatusPanel";
+import { hasSessionUsage, usageSessionFor } from "../../providers/model/sessionUsage";
 import { useOpenSubagent } from "./SubagentTabsContext";
 import { useProjectDiffStats } from "../../source-control/hooks/useProjectDiffStats";
 import { useProjectBranches } from "../../source-control/hooks/useProjectBranches";
@@ -1187,7 +1188,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
         ) : null}
         </div>
           <AnimatePresence>{visible &&
-          !isEmpty &&
+          (!isEmpty || hasSessionUsage(usageSessionFor(session))) &&
           !hostSessionLoading &&
           !session.inboxAsk &&
           !linkedNoticeShown ? (
@@ -1199,6 +1200,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
               cwd={session.cwd}
               branch={statusBranch}
               context={session.context}
+              usage={usageSessionFor(session)}
               scope={statusRow}
               onNavigate={navigateBlock}
               onOpenAgent={openSubagent}

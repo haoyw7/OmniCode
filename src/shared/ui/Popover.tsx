@@ -3,7 +3,7 @@ import {
   SurfaceVisibilityContext,
   useSurfaceVisibility,
 } from "./SurfaceVisibility";
-import { AnimatePresence, motion, usePresence, type HTMLMotionProps } from "motion/react";
+import { AnimatePresence, motion, useMotionValue, usePresence, type HTMLMotionProps } from "motion/react";
 import { immediateTransition, motionDistance, popAnimate, popExit, popInitial, popTransition } from "../motion/tokens";
 import { useMotionPreference } from "../motion/useMotionPreference";
 import {
@@ -44,6 +44,8 @@ export type PopoverDismissReason = "outside" | "escape";
 type Props = Omit<ComponentPropsWithoutRef<"div">, "style"> & {
   /** When supplied, retain the surface until its closing animation finishes. */
   open?: boolean;
+  /** Fires after a controlled surface finishes closing, excluding reversals. */
+  onExitComplete?: () => void;
   /** Hover surfaces can include the glass frame in their pointer boundary. */
   frameProps?: Pick<
     ComponentPropsWithoutRef<"div">,
@@ -185,19 +187,19 @@ function samePosition(a: PopoverPosition | null, b: PopoverPosition): boolean {
  * no local stacking context can paint over it, placed against its anchor with
  * viewport flipping, and animated in from the anchored edge.
  */
-export function Popover({ open, ...props }: Props) {
+export function Popover({ open, onExitComplete, ...props }: Props) {
   return open === undefined ? (
     <PresentPopover {...props} />
   ) : (
-    <AnimatedPopover {...props} open={open} />
+    <AnimatedPopover {...props} open={open} onExitComplete={onExitComplete} />
   );
 }
 
-function AnimatedPopover({ open, ...props }: Props & { open: boolean }) {
+function AnimatedPopover({ open, onExitComplete, ...props }: Props & { open: boolean }) {
   const visible = useSurfaceVisibility();
   if (!visible) return null;
   return (
-    <AnimatePresence propagate>
+    <AnimatePresence propagate onExitComplete={onExitComplete}>
       {visible && open ? <PresentPopover key="popover" {...props} /> : null}
     </AnimatePresence>
   );
@@ -366,6 +368,9 @@ function WebPopover({
   const frame = useRef<HTMLDivElement | null>(null);
   const surface = useRef<HTMLDivElement | null>(null);
   const [position, setPosition] = useState<PopoverPosition | null>(null);
+  const entryPlaced = useRef(false);
+  const offsetX = useMotionValue(0);
+  const offsetY = useMotionValue(0);
   const anchorRef = useRef(anchor);
   anchorRef.current = anchor;
   const dismissRef = useRef(onDismiss);
@@ -384,10 +389,19 @@ function WebPopover({
       { width: window.innerWidth, height: window.innerHeight },
       { side, align, gap, padding, width, minHeight, maxHeight },
     );
+    // Establish the offset on the measured side before the entrance starts.
+    // Reopening an unfinished exit must continue from its current position.
+    if (!entryPlaced.current) {
+      entryPlaced.current = true;
+      if (!reduced) {
+        offsetX.jump(next.side === "left" ? motionDistance.pop : next.side === "right" ? -motionDistance.pop : 0);
+        offsetY.jump(next.side === "top" ? motionDistance.pop : next.side === "bottom" ? -motionDistance.pop : 0);
+      }
+    }
     setPosition((prev) => (samePosition(prev, next) ? prev : next));
     // `key` stands in for the anchor, which is read through a ref.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, side, align, gap, padding, width, minHeight, maxHeight, constrainHeight]);
+  }, [key, side, align, gap, padding, width, minHeight, maxHeight, constrainHeight, reduced, offsetX, offsetY]);
 
   useLayoutEffect(() => {
     if (!visible) return;
@@ -505,7 +519,7 @@ function WebPopover({
     <motion.div
       {...frameProps}
       initial={reduced ? false : { opacity: popInitial.opacity }}
-      animate={{ opacity: popAnimate.opacity }}
+      animate={{ opacity: position ? popAnimate.opacity : popInitial.opacity }}
       exit={{ opacity: popExit.opacity }}
       transition={reduced ? immediateTransition : popTransition}
       onAnimationComplete={onPresenceComplete}
@@ -525,8 +539,8 @@ function WebPopover({
       {bare ? null : <GlassBackdrop />}
       <motion.div
         {...rest as HTMLMotionProps<"div">}
-        initial={reduced ? false : edgeMotion}
-        animate={{ ...popAnimate, x: 0 }}
+        initial={reduced ? false : { opacity: popInitial.opacity, scale: popInitial.scale }}
+        animate={position ? { ...popAnimate, x: 0 } : { opacity: popInitial.opacity, scale: popInitial.scale }}
         exit={edgeMotion}
         transition={reduced ? immediateTransition : popTransition}
         ref={(el) => {
@@ -537,6 +551,8 @@ function WebPopover({
         }}
         data-popover-side={position?.side ?? side}
         style={{
+          x: offsetX,
+          y: offsetY,
           ...(contentMaxHeight != null ? { maxHeight: contentMaxHeight } : {}),
           transformOrigin: origin(position?.side ?? side, align),
           ...style,

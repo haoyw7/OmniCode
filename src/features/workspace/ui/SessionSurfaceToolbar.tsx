@@ -32,6 +32,7 @@ import { SessionRenamePopover } from "./SessionTitleMenu";
 import { SessionOverflowMenu } from "./SessionOverflowMenu";
 import { useSessionHeaderActions } from "./SessionHeaderActions";
 import { SessionWorktreeIcon } from "../../sessions/ui/SessionWorktreeIcon";
+import { hasSessionUsage, usageSessionFor } from "../../providers/model/sessionUsage";
 
 export type SessionSurfaceMode = "split" | "unified";
 
@@ -310,8 +311,8 @@ function SessionToolToggles({ session }: { session: Session }) {
   return (
     <IconArtworkContext.Provider value={sessionToolIconArtwork}>
       <div className="flex shrink-0 items-stretch">
-        {/* Status cards only show beside a conversation that has started. */}
-        {session.blocks.length ? (
+        {/* Account usage stays accessible before the first message. */}
+        {session.blocks.length || hasSessionUsage(usageSessionFor(session)) ? (
           <>
             <button
               type="button"

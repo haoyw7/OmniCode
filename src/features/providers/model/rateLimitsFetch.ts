@@ -1,5 +1,7 @@
-import { sharedHostMachineId } from "../../connections/model/remoteProjects";
-import { providerAccounts, type ProviderAccountProvider } from "./providerAccounts";
+import { remoteRequest } from "../../connections/model/connections";
+import { loadRemoteHostDescriptor } from "../../connections/model/remoteHostMetadata";
+import type { ProviderAccountProvider } from "./providerAccounts";
+import { providerUsageHost, providerUsageSourceKey } from "./providerUsageSource";
 
 import { invoke } from "@tauri-apps/api/core";
 import { homeDir } from "../../../platform/tauri/fs";
@@ -15,9 +17,31 @@ import { resolveCodexBinary } from "../../../integrations/harness/core/child";
 import { asRecord } from "../../../integrations/harness/providers/codex/codexProtocol";
 import { runCodexAccountRequest } from "../../../integrations/harness/providers/codex/codexAccountRequest";
 
-function unconfiguredHostDefault(provider: ProviderAccountProvider, accountId: string): boolean {
-  return accountId === "default" && !!sharedHostMachineId() &&
-    !providerAccounts(provider).find(account => account.id === "default")?.dataHome;
+async function fetchHostUsage(
+  provider: ProviderAccountProvider,
+  accountId: string,
+  refresh: boolean,
+): Promise<ProviderRateLimits | undefined> {
+  const host = providerUsageHost();
+  if (!host) return undefined;
+  const source = providerUsageSourceKey();
+  const requireSameHost = () => {
+    if (source !== providerUsageSourceKey()) throw new Error("Host connection changed.");
+  };
+  try {
+    const descriptor = await loadRemoteHostDescriptor(host.machineId, host.environmentId);
+    requireSameHost();
+    if (!descriptor.capabilities.includes("providerAccounts.usage.v1"))
+      return unavailableRateLimits(provider, "This Host does not support account usage yet. Update and restart it, then refresh.");
+    const value = await remoteRequest<ProviderRateLimits>(host.machineId, "providerAccounts.usage", {
+      provider, accountId, refresh,
+    });
+    requireSameHost();
+    if (!value || value.provider !== provider) return errorRateLimits(provider, "Usage unavailable");
+    return value;
+  } catch (error) {
+    return errorRateLimits(provider, error instanceof Error ? error.message : "Usage unavailable");
+  }
 }
 
 type OpencodeGoUsageFetch = {
@@ -81,9 +105,10 @@ type ClaudeUsageFetch = {
 
 export async function fetchClaudeRateLimits(
   accountId = "default",
+  refresh = false,
 ): Promise<ProviderRateLimits> {
-  if (unconfiguredHostDefault("claude", accountId))
-    return unavailableRateLimits("claude", "Host CLI account usage is unavailable. Choose a named account.");
+  const hostUsage = await fetchHostUsage("claude", accountId, refresh);
+  if (hostUsage) return hostUsage;
   try {
     const result = await invoke<ClaudeUsageFetch>("fetch_claude_usage", {
       accountId,
@@ -116,9 +141,10 @@ export async function fetchClaudeRateLimits(
 
 export async function fetchCodexRateLimits(
   accountId = "default",
+  refresh = false,
 ): Promise<ProviderRateLimits> {
-  if (unconfiguredHostDefault("codex", accountId))
-    return unavailableRateLimits("codex", "Host CLI account usage is unavailable. Choose a named account.");
+  const hostUsage = await fetchHostUsage("codex", accountId, refresh);
+  if (hostUsage) return hostUsage;
   let path: string;
   try {
     path = (await resolveCodexBinary()).path;
@@ -164,8 +190,8 @@ export async function consumeCodexRateLimitResetCredit(
   creditId?: string,
   accountId = "default",
 ): Promise<CodexRateLimitResetOutcome> {
-  if (unconfiguredHostDefault("codex", accountId))
-    throw new Error("Host CLI account usage is unavailable. Choose a named account.");
+  if (providerUsageHost())
+    throw new Error("This Host does not support Codex usage resets.");
   const path = (await resolveCodexBinary()).path;
   const cwd = await homeDir();
   const result = await requestCodexAccount<unknown>(

@@ -63,6 +63,11 @@ import { taskListProgressLabel } from "../model/taskList";
 import { TaskState } from "./TaskListPreview";
 import { TerminalSpinner } from "./TerminalSpinner";
 import { ContextUsageDetails } from "./ContextUsageDetails";
+import { ProviderUsageBar } from "./ProviderUsageBar";
+import { hasSessionUsage, type UsageSession } from "../../providers/model/sessionUsage";
+import { accountHeadroomWindow, LOW_HEADROOM_PERCENT } from "../../providers/model/accountUsageStatus";
+import { formatUsagePercent, formatWindowLabel, type ProviderRateLimits } from "../../providers/model/rateLimits";
+import { useUsageClock } from "../../providers/model/useProviderUsage";
 
 /**
  * Card width, distance from the pane edge and the smallest gap kept before the
@@ -135,7 +140,7 @@ function useRailFits(scope: RefObject<HTMLElement | null>, enabled: boolean): bo
 
 /**
  * Session cards on the right of the conversation: environment, changes,
- * progress and context. `scope` is the pane row the cards float in.
+ * progress, context and usage. `scope` is the pane row the cards float in.
  */
 export function SessionStatusPanel({
   blocks,
@@ -145,6 +150,7 @@ export function SessionStatusPanel({
   cwd,
   branch,
   context,
+  usage,
   scope,
   onNavigate,
   onOpenAgent,
@@ -157,6 +163,7 @@ export function SessionStatusPanel({
   cwd: string;
   branch?: string;
   context?: ContextUsage;
+  usage?: UsageSession;
   scope: RefObject<HTMLElement | null>;
   onNavigate: (blockId: string) => void;
   onOpenAgent?: (block: Block) => void;
@@ -183,6 +190,7 @@ export function SessionStatusPanel({
             cwd={cwd}
             branch={branch}
             context={context}
+            usage={usage}
             onNavigate={onNavigate}
             onOpenAgent={
               onOpenAgent
@@ -213,6 +221,7 @@ function RailCards({
   cwd,
   branch,
   context,
+  usage,
   onNavigate,
   onOpenAgent,
 }: {
@@ -220,6 +229,7 @@ function RailCards({
   cwd: string;
   branch?: string;
   context?: ContextUsage;
+  usage?: UsageSession;
   onNavigate: (blockId: string) => void;
   onOpenAgent?: (blockId: string) => void;
 }) {
@@ -376,6 +386,18 @@ function RailCards({
           <ContextUsageDetails usage={context} />
         </Card>
       ) : null,
+      usage && hasSessionUsage(usage) ? (
+        <UsageCard
+          key="usage"
+          id="usage"
+          session={usage}
+          project={cwd}
+          onSelectAccount={(provider, accountId) => {
+            if (usage.id) actions?.selectProviderAccount?.(usage.id, provider, accountId);
+          }}
+          onManageAccounts={actions?.manageProviderAccounts}
+        />
+      ) : null,
   ].filter((card) => card !== null);
   const present = cards.map((card) => card.props.id);
   const visible = order.filter((id) => present.includes(id));
@@ -397,6 +419,50 @@ function RailCards({
         {visible.map((id) => cards.find((card) => card.props.id === id))}
       </CardReorderContext.Provider>
     </div>
+  );
+}
+
+function UsageCard({ id, ...props }: { id: "usage" } & React.ComponentProps<typeof ProviderUsageBar>) {
+  const { t: uiT } = useTranslation();
+  return (
+    <ProviderUsageBar
+      {...props}
+      render={(controls, limits) => (
+        <Card id={id} title={uiT("Usage")} foldedMeta={<UsageRemaining limits={limits} />}>
+          <div data-session-usage className="flex min-w-0 flex-wrap items-center gap-1 px-2 py-1 text-[11px] text-content/55">
+            {controls}
+          </div>
+        </Card>
+      )}
+    />
+  );
+}
+
+function UsageRemaining({ limits }: { limits?: ProviderRateLimits }) {
+  const { t: uiT } = useTranslation();
+  const now = useUsageClock();
+  const headroom = accountHeadroomWindow(limits, now);
+  const remaining = headroom?.remaining ?? null;
+  const window = headroom ? formatWindowLabel(headroom.window.windowMinutes) : null;
+  const loading = limits?.status === "idle" || limits?.status === "fetching";
+  const tone = remaining !== null && remaining <= 0
+    ? "text-red-400"
+    : remaining !== null && remaining <= LOW_HEADROOM_PERCENT
+      ? "text-amber-500"
+      : "text-content/55";
+  return (
+    <span
+      data-session-usage-remaining
+      className={`min-w-0 truncate text-[11px] tabular-nums ${tone}`}
+      title={remaining !== null ? uiT("Lowest remaining across usage limits") : undefined}
+    >
+      {remaining !== null
+        ? uiT(
+            window === "wk" ? "Weekly remaining {percent}" : window === "mo" ? "Monthly remaining {percent}" : "{window} remaining {percent}",
+            { window: window ?? "", percent: formatUsagePercent(remaining) },
+          )
+        : uiT(loading ? "Checking…" : "Usage unavailable")}
+    </span>
   );
 }
 

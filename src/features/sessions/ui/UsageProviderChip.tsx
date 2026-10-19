@@ -1,10 +1,8 @@
-import { Omi } from "../../shared/ui/branding/Omi";
-import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
-import { useTranslation } from "../../shared/i18n/useTranslation";
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { Omi } from "../../../shared/ui/branding/Omi";
+import { useTranslation } from "../../../shared/i18n/useTranslation";
+import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   clampUsedPercent,
-  formatRateLimitWindowChipLabel,
   formatResetDuration,
   formatUsagePercent,
   formatWindowLabel,
@@ -12,60 +10,60 @@ import {
   type ProviderRateLimits,
   type RateLimitResetCredit,
   type RateLimitWindow,
-} from "../../features/providers/model/rateLimits";
-import type { CodexRateLimitResetOutcome } from "../../features/providers/model/rateLimitsFetch";
+} from "../../providers/model/rateLimits";
+import type { CodexRateLimitResetOutcome } from "../../providers/model/rateLimitsFetch";
 import {
   projectMascot,
-} from "../../features/projects/model/projectMascots";
-import { projectKey, projectName } from "../../shared/lib/paths";
+} from "../../projects/model/projectMascots";
+import { projectKey, projectName } from "../../../shared/lib/paths";
 import {
   HARNESS_TITLE,
   type HarnessId,
-} from "../../features/sessions/model/session";
+} from "../model/session";
 import {
   loadTabGroupColors,
   loadTabGroupCustomColors,
   loadTabGroupMascots,
   resolveTabGroupColor,
   resolveTabGroupMascot,
-} from "../../features/workspace/model/tabGroups";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
+} from "../../workspace/model/tabGroups";
+import { HarnessIcon } from "./HarnessIcon";
 import {
   ArrowLeft,
   Check,
   ChevronRight,
   Plus,
   RefreshCw,
-} from "../../shared/ui/icons";
-import { Popover, type PopoverDismissReason } from "../../shared/ui/Popover";
+} from "../../../shared/ui/icons";
+import { Popover, type PopoverDismissReason } from "../../../shared/ui/Popover";
 import {
   ProviderSignInPanel,
   type ProviderSignInState,
-} from "../../features/sessions/ui/ProviderSignInPanel";
+} from "./ProviderSignInPanel";
 import {
   supportsProviderAccounts,
   type ProviderAccount,
-} from "../../features/providers/model/providerAccounts";
+} from "../../providers/model/providerAccounts";
 import {
   accountStatus,
   accountUsageKey,
   bestAlternativeAccount,
   useProviderAccountUsage,
-} from "../../features/providers/model/accountUsage";
+} from "../../providers/model/accountUsage";
 import {
   AccountStatusLabel,
   barClass,
   meterWindows,
+  ProviderAccountSubtitle,
   UsageMeter,
-} from "../../features/providers/ui/ProviderAccountUsage";
+} from "../../providers";
 import {
   identityKey,
   identityOrganizationTag,
   useProviderAccountIdentities,
   type ProviderAccountIdentity,
-} from "../../features/providers/model/providerAccountIdentity";
-import { ProviderAccountSubtitle } from "../../features/providers/ui/ProviderAccountSubtitle";
-import { useShowRemainingUsage } from "../../features/settings/model/displayPrefs";
+} from "../../providers/model/providerAccountIdentity";
+import { useShowRemainingUsage } from "../../settings/model/displayPrefs";
 
 type Translate = ReturnType<typeof useTranslation>["t"];
 
@@ -76,12 +74,6 @@ type UsageWindowEntry = {
 
 type ResetActionState =
   "idle" | "confirming" | "using" | CodexRateLimitResetOutcome | "error";
-
-export type UsageInline = {
-  expanded: boolean;
-  onExpand: () => void;
-  onCollapse: () => void;
-};
 
 export function UsageProviderChip({
   limits,
@@ -96,7 +88,6 @@ export function UsageProviderChip({
   onReconnect,
   presentation,
   identitySource,
-  inline,
 }: {
   limits: ProviderRateLimits;
   now: number;
@@ -110,20 +101,10 @@ export function UsageProviderChip({
   onManageAccounts?: () => void;
   onConsumeReset?: (creditId?: string) => Promise<CodexRateLimitResetOutcome>;
   onReconnect?: () => Promise<void>;
-  /** Render inside another menu: the chip expands into the details in place. */
-  inline?: UsageInline;
 }) {
   const { t: uiT } = useTranslation();
-  const showRemaining = useShowRemainingUsage();
   const trigger = useRef<HTMLButtonElement>(null);
-  const [chipOpen, setChipOpen] = useState(false);
-  const open = inline ? inline.expanded : chipOpen;
-  const setOpen = (value: boolean | ((current: boolean) => boolean)) => {
-    const next = typeof value === "function" ? value(open) : value;
-    if (!inline) setChipOpen(next);
-    else if (next) inline.onExpand();
-    else inline.onCollapse();
-  };
+  const [open, setOpen] = useState(false);
   const [accountView, setAccountView] = useState<"usage" | "accounts" | "add">(
     "usage",
   );
@@ -139,21 +120,15 @@ export function UsageProviderChip({
       !limits.session &&
       !limits.weekly &&
       !limits.monthly);
-  const disconnected = limits.status === "unavailable";
+  const disconnected = limits.status === "unavailable" && needsProviderLogin(limits);
   const windows = usageWindows(limits);
   const loginView = Boolean(
     onReconnect &&
     windows.length === 0 &&
     (needsProviderLogin(limits) || reconnectState !== "idle"),
   );
-  const tightest = windows.reduce<RateLimitWindow | null>((best, entry) => {
-    if (!best || entry.window.usedPercent > best.usedPercent) {
-      return entry.window;
-    }
-    return best;
-  }, null);
   const tooltip = windows
-    .map((entry) => rateLimitWindowTooltip(entry.window, now, showRemaining))
+    .map((entry) => rateLimitWindowTooltip(entry.window, now, true))
     .join(" · ");
   const providerLabel = presentation?.label ?? HARNESS_TITLE[limits.provider];
   const iconHarness = presentation?.harness ?? limits.provider;
@@ -179,7 +154,7 @@ export function UsageProviderChip({
       enabled: open && Boolean(accountProvider) && otherAccounts.length > 0,
     },
   );
-  // The footer's own snapshot is fresher for the active account.
+  // The conversation's snapshot is fresher for the active account.
   const usageFor = (account: ProviderAccount) =>
     account.id === accountId
       ? limits
@@ -202,15 +177,14 @@ export function UsageProviderChip({
     mascotProject,
   );
 
-  useEffect(() => {
-    if (open) return;
+  const resetPopup = () => {
     setResetAction("idle");
     setActiveResetKey(null);
     setResetError(null);
     setReconnectState("idle");
     setReconnectError(null);
     setAccountView("usage");
-  }, [open]);
+  };
 
   const dismiss = (reason: PopoverDismissReason) => {
     setOpen(false);
@@ -329,7 +303,7 @@ export function UsageProviderChip({
             {limits.status === "fetching" ? (
               <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-content/40">
                 <RefreshCw
-                  className="size-2.5 animate-spin"
+                  className="size-2.5 motion-safe:animate-spin"
                   aria-hidden
                 />
                 {uiT("Updating")}
@@ -420,94 +394,70 @@ export function UsageProviderChip({
     </>
   );
 
+  const harnessIcon = <HarnessIcon harness={iconHarness} className="size-3 shrink-0" />;
   return (
     <>
-      {inline?.expanded ? null : (
-        <button
-          ref={trigger}
-          type="button"
-          className={`${inline ? "flex h-7 flex-1 rounded-lg px-2" : "-mx-1 inline-flex h-5 shrink-0 rounded px-1"} min-w-0 items-center gap-1.5 whitespace-nowrap text-content/55 transition-[background-color,color,transform] duration-150 ease-out hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent active:scale-[0.97]`}
-          aria-label={uiT("{value0} usage details", {
-            value0: String(providerLabel),
-          })}
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          title={
-            tooltip ||
-            limits.error ||
-            (disconnected
-              ? uiT("Not connected")
-              : loading
-                ? uiT("Loading usage…")
-                : uiT("Usage details"))
-          }
-          onClick={() => setOpen((value) => !value)}
-        >
-          <HarnessIcon harness={iconHarness} className="size-3 shrink-0" />
-          {loading ? (
-            <span className="animate-pulse text-content/35">···</span>
-          ) : disconnected ? (
-            <span className="text-content/35">{uiT("not connected")}</span>
-          ) : windows.length === 0 ? (
-            <span className="text-content/35">{emptyUsageLabel(limits)}</span>
-          ) : (
-            <>
-              {accounts.length > 1 && activeAccount ? (
-                <span className="max-w-24 truncate text-content/45">
-                  {activeAccount.label}
-                </span>
-              ) : null}
-              {tightest ? <MiniBar usedPct={tightest.usedPercent} /> : null}
-              <span className="flex min-w-0 items-center gap-1 tabular-nums">
-                {windows.map((entry, index) => (
-                  <span
-                    key={entry.key}
-                    className="inline-flex items-center gap-1"
-                  >
-                    {index > 0 ? (
-                      <span className="text-content/25">·</span>
-                    ) : null}
-                    <span>
-                      {formatUsagePercent(
-                        showRemaining
-                          ? 100 - clampUsedPercent(entry.window.usedPercent)
-                          : entry.window.usedPercent,
-                      )}{" "}
-                      {formatRateLimitWindowChipLabel(entry.window, now)}
-                    </span>
-                  </span>
-                ))}
+      <button
+        ref={trigger}
+        type="button"
+        data-ui="session-usage-trigger"
+        className="flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
+        aria-label={uiT("{value0} usage details", {
+          value0: String(providerLabel),
+        })}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        title={
+          tooltip ||
+          limits.error ||
+          (disconnected
+            ? uiT("Not connected")
+            : loading
+              ? uiT("Loading usage…")
+              : uiT("Usage details"))
+        }
+        onClick={() => setOpen((value) => !value)}
+      >
+        {loading || disconnected || windows.length === 0 ? harnessIcon : null}
+        {loading ? (
+          <span className="animate-pulse text-content/35">···</span>
+        ) : disconnected ? (
+          <span className="text-content/35">{uiT("not connected")}</span>
+        ) : windows.length === 0 ? (
+          <span className="min-w-0 truncate text-content/35">
+            {limits.status === "unavailable" ? uiT("Usage unavailable") : emptyUsageLabel(limits)}
+          </span>
+        ) : (
+          <span className="grid min-w-0 flex-1 grid-cols-[max-content_max-content_minmax(0,1fr)_max-content] items-center gap-x-1.5 gap-y-1 py-1 text-left tabular-nums">
+            {accounts.length > 1 && activeAccount ? (
+              <span className="col-span-3 col-start-2 min-w-0 truncate text-content/45">
+                {activeAccount.label}
               </span>
-            </>
-          )}
-        </button>
-      )}
-      <PresenceBoundary propagate>{open && inline ? (
-        <div
-          role="group"
-          aria-label={detailsLabel}
-          className={`text-content ${panelPadding}`}
-        >
-          {panel}
-        </div>
-      ) : open ? (
-        <Popover
-          anchor={trigger}
-          side="top"
-          align="start"
-          gap={7}
-          width={accountView === "accounts" ? 340 : 300}
-          maxHeight={460}
-          autoFocus
-          onDismiss={dismiss}
-          role="dialog"
-          aria-label={detailsLabel}
-          tabIndex={-1}
-          className={`overflow-y-auto text-content ${panelPadding}`}
-        >
-          {panel}
-        </Popover>
-      ) : null}</PresenceBoundary>
+            ) : null}
+            {windows.map((entry, index) => (
+              <UsageWindowSummary key={entry.key} entry={entry} now={now} icon={index === 0 ? harnessIcon : null} />
+            ))}
+          </span>
+        )}
+      </button>
+      <Popover
+        open={open}
+        onExitComplete={resetPopup}
+        anchor={trigger}
+        side="top"
+        align="start"
+        gap={7}
+        width={accountView === "accounts" ? 340 : 300}
+        maxHeight={460}
+        autoFocus
+        onDismiss={dismiss}
+        role="dialog"
+        aria-label={detailsLabel}
+        tabIndex={-1}
+        className={`overflow-y-auto text-content ${panelPadding}`}
+      >
+        {panel}
+      </Popover>
     </>
   );
 }
@@ -523,19 +473,19 @@ function AccountSwitchRow({
   return (
     <div className="px-2.5 pt-2.5">
       <button
-        type="button"
-        className="flex h-8 w-full items-center gap-2 rounded-lg bg-content/[0.045] px-2.5 text-left text-[11px] ring-1 ring-inset ring-content/[0.06] hover:bg-content/[0.08]"
-        aria-label={uiT("Switch account from {value0}", {
-          value0: String(accountLabel),
-        })}
-        onClick={onClick}
-      >
-        <span className="min-w-0 flex-1 truncate">{accountLabel}</span>
-        <span className="text-[10px] text-content/40">{uiT("Switch")}</span>
-        <ChevronRight
-          className="size-3 shrink-0 text-content/35"
-          aria-hidden
-        />
+      type="button"
+      className="flex h-8 w-full items-center gap-2 rounded-lg bg-content/[0.045] px-2.5 text-left text-[11px] ring-1 ring-inset ring-content/[0.06] hover:bg-content/[0.08]"
+      aria-label={uiT("Switch account from {value0}", {
+        value0: String(accountLabel),
+      })}
+      onClick={onClick}
+    >
+      <span className="min-w-0 flex-1 truncate">{accountLabel}</span>
+      <span className="text-[10px] text-content/40">{uiT("Switch")}</span>
+      <ChevronRight
+        className="size-3 shrink-0 text-content/35"
+        aria-hidden
+      />
       </button>
     </div>
   );
@@ -665,12 +615,12 @@ function ProviderAccountPicker({
         })}
       </div>
       <button
-        type="button"
-        className="mt-2 flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-left text-[11px] text-content/55 hover:bg-content/[0.07] hover:text-content"
-        onClick={onAdd}
-      >
-        <Plus className="size-3.5" aria-hidden />
-        {uiT("Add account")}
+      type="button"
+      className="mt-2 flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-left text-[11px] text-content/55 hover:bg-content/[0.07] hover:text-content"
+      onClick={onAdd}
+    >
+      <Plus className="size-3.5" aria-hidden />
+      {uiT("Add account")}
       </button>
       {onManage ? (
         <button
@@ -726,11 +676,11 @@ function SwitchSuggestion({
         />
       </p>
       <button
-        type="button"
-        className="h-6 shrink-0 rounded-md bg-content px-2.5 text-[11px] font-medium text-background-base transition-transform duration-150 hover:bg-content/85 active:scale-[0.97]"
-        onClick={onSwitch}
-      >
-        {uiT("Switch")}
+      type="button"
+      className="h-6 shrink-0 rounded-md bg-content px-2.5 text-[11px] font-medium text-background-base transition-transform duration-150 hover:bg-content/85 active:scale-[0.97]"
+      onClick={onSwitch}
+    >
+      {uiT("Switch")}
       </button>
     </section>
   );
@@ -804,14 +754,14 @@ function AddProviderAccount({
         />
       </label>
       <button
-        type="submit"
-        className="mt-3 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-content px-3 text-[11px] font-medium text-background-base hover:bg-content/85 disabled:cursor-default disabled:opacity-45"
-        disabled={running || !label.trim()}
-      >
-        {running ? (
-          <RefreshCw className="size-3.5 animate-spin" aria-hidden />
-        ) : null}
-        {running ? uiT("Waiting for browser…") : uiT("Sign in and add account")}
+      type="submit"
+      className="mt-3 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-content px-3 text-[11px] font-medium text-background-base hover:bg-content/85 disabled:cursor-default disabled:opacity-45"
+      disabled={running || !label.trim()}
+    >
+      {running ? (
+        <RefreshCw className="size-3.5 animate-spin" aria-hidden />
+      ) : null}
+      {running ? uiT("Waiting for browser…") : uiT("Sign in and add account")}
       </button>
       {error ? (
         <p className="mt-2 text-[10px] leading-4 text-red-500" role="status">
@@ -832,6 +782,36 @@ function usageWindows(limits: ProviderRateLimits): UsageWindowEntry[] {
       ? ({ key: "monthly", window: limits.monthly } as const)
       : null,
   ].filter((entry): entry is UsageWindowEntry => entry != null);
+}
+
+function UsageWindowSummary({ entry, now, icon }: { entry: UsageWindowEntry; now: number; icon: ReactNode }) {
+  const { t: uiT } = useTranslation();
+  const { window } = entry;
+  const pct = window.resetsAt != null && window.resetsAt <= now
+    ? 0
+    : clampUsedPercent(window.usedPercent);
+  const remaining = 100 - pct;
+  const duration = formatWindowLabel(window.windowMinutes);
+  const label = duration === "wk" ? uiT("Week") : duration === "mo" ? uiT("Month") : duration;
+  return (
+    <span data-ui="session-usage-window" data-window={entry.key} className="contents">
+      <span aria-hidden>{icon}</span>
+      <span className="text-content/45">{label}</span>
+      <span
+        role="progressbar"
+        aria-label={uiT("{value0} limit {value1}", { value0: label, value1: uiT("remaining") })}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(remaining)}
+        className="h-1 min-w-0 overflow-hidden rounded-full bg-content/10"
+      >
+        <span className={`block h-full rounded-full ${barClass(pct)}`} style={{ width: `${remaining}%` }} />
+      </span>
+      <span className="text-content/60">
+        {uiT("{value0} left", { value0: formatUsagePercent(remaining) })}
+      </span>
+    </span>
+  );
 }
 
 function UsageWindowRow({
@@ -1148,13 +1128,13 @@ function EmptyUsageState({
       <p className="text-[11px] font-medium text-content/65">
         {loading
           ? uiT("Loading usage…")
-          : limits.status === "unavailable"
+          : needsProviderLogin(limits)
             ? uiT("Not connected")
             : uiT("Usage unavailable")}
       </p>
       {limits.error ? (
         <p className="mx-auto mt-1 max-w-[15rem] text-[10px] leading-4 text-content/40">
-          {limits.error}
+          {uiT(limits.error)}
         </p>
       ) : null}
     </div>
@@ -1162,15 +1142,16 @@ function EmptyUsageState({
 }
 
 export function needsProviderLogin(limits: ProviderRateLimits): boolean {
-  if (limits.status === "unavailable") return true;
-  if (limits.status !== "error") return false;
+  if (limits.status !== "error" && limits.status !== "unavailable") return false;
   const text = limits.error?.toLowerCase() ?? "";
   return (
     text.includes("expired") ||
     text.includes("sign-in") ||
     text.includes("not signed in") ||
     text.includes("not connected") ||
-    text.includes("authentication")
+    text.includes("not authenticated") ||
+    text.includes("authentication required") ||
+    text.includes("not logged in")
   );
 }
 
@@ -1215,20 +1196,4 @@ function emptyUsageLabel(limits: ProviderRateLimits): string {
   const text = limits.error?.toLowerCase() ?? "";
   if (text.includes("expired") || text.includes("sign-in")) return "expired";
   return "—";
-}
-
-function MiniBar({ usedPct }: { usedPct: number }) {
-  const showRemaining = useShowRemainingUsage();
-  const pct = clampUsedPercent(usedPct);
-  return (
-    <span
-      className="h-1 w-8 shrink-0 overflow-hidden rounded-full bg-content/10"
-      aria-hidden
-    >
-      <span
-        className={`block h-full rounded-full ${barClass(pct)}`}
-        style={{ width: `${showRemaining ? 100 - pct : pct}%` }}
-      />
-    </span>
-  );
 }

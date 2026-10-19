@@ -13,22 +13,22 @@ const rateLimitsFetch = vi.hoisted(() => ({
   fetchCodexRateLimits: vi.fn(),
 }));
 
-vi.mock("../../integrations/harness/core/auth", async (importOriginal) => ({
+vi.mock("../../../integrations/harness/core/auth", async (importOriginal) => ({
   ...(await importOriginal<
-    typeof import("../../integrations/harness/core/auth")
+    typeof import("../../../integrations/harness/core/auth")
   >()),
   loginHarness: auth.loginHarness,
 }));
 vi.mock(
-  "../../features/providers/model/rateLimitsFetch",
+  "../../providers/model/rateLimitsFetch",
   () => rateLimitsFetch,
 );
 
 import type {
   ProviderRateLimits,
   RateLimitProvider,
-} from "../../features/providers/model/rateLimits";
-import { clearCachedRateLimits } from "../../features/providers/model/rateLimitsCache";
+} from "../../providers/model/rateLimits";
+import { clearCachedRateLimits } from "../../providers/model/rateLimitsCache";
 import { ProviderUsageBar } from "./ProviderUsageBar";
 
 let container: HTMLDivElement;

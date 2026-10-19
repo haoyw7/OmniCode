@@ -13,6 +13,7 @@ import {
 } from "./providerAccounts";
 import { identityKey } from "./providerAccountIdentity";
 import { useNow } from "../../../shared/hooks/useNow";
+import { providerUsageSourceKey } from "./providerUsageSource";
 
 const CLOCK_MS = 30_000;
 export { accountHeadroom, accountStatus, bestAlternativeAccount, type AccountStatus, type AccountStatusTone } from "./accountUsageStatus";
@@ -46,6 +47,7 @@ export function useProviderAccountUsage(
     enabled = true,
   }: { provider?: ProviderAccountProvider; enabled?: boolean } = {},
 ): AccountUsage {
+  const source = providerUsageSourceKey();
   const usage = useSyncExternalStore(
     subscribeRateLimits,
     getAllRateLimits,
@@ -84,7 +86,7 @@ export function useProviderAccountUsage(
         (account) => !cached[accountUsageKey(account)],
       ),
     );
-  }, [accountsVersion, enabled, load, provider]);
+  }, [accountsVersion, enabled, load, provider, source]);
 
   const refresh = useCallback(
     () => void load(accountsFor(provider), true),

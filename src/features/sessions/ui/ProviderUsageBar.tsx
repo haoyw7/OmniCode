@@ -1,66 +1,41 @@
-import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
-import { useTranslation } from "../../shared/i18n/useTranslation";
-import { RefreshCw } from "../../shared/ui/icons";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
-import { Popover, type PopoverDismissReason } from "../../shared/ui/Popover";
-import { consumeCodexRateLimitResetCredit } from "../../features/providers/model/rateLimitsFetch";
+import { useTranslation } from "../../../shared/i18n/useTranslation";
+import { RefreshCw } from "../../../shared/ui/icons";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { HarnessIcon } from "./HarnessIcon";
+import { Popover, type PopoverDismissReason } from "../../../shared/ui/Popover";
+import { consumeCodexRateLimitResetCredit } from "../../providers/model/rateLimitsFetch";
 import {
   errorRateLimits,
+  type ProviderRateLimits,
   type RateLimitProvider,
-} from "../../features/providers/model/rateLimits";
+} from "../../providers/model/rateLimits";
 import {
   getCachedRateLimits,
   loadRateLimits,
   setCachedRateLimits,
-} from "../../features/providers/model/rateLimitsCache";
+} from "../../providers/model/rateLimitsCache";
 import {
   HARNESS_LABEL,
   HARNESS_TITLE,
-  type HarnessId,
-  type Session,
-} from "../../features/sessions/model/session";
+} from "../model/session";
 import {
   loginHarness,
   supportsHarnessLogin,
-} from "../../integrations/harness/core/auth";
-import { latestTurnNeedsHarnessLogin } from "../../integrations/harness/core/authSupport";
-import { UsageProviderChip, type UsageInline } from "./UsageProviderChip";
+} from "../../../integrations/harness/core/auth";
+import { UsageProviderChip } from "./UsageProviderChip";
 import { PiUsage } from "./PiUsage";
 import {
   ProviderSignInPanel,
   type ProviderSignInState,
-} from "../../features/sessions/ui/ProviderSignInPanel";
+} from "./ProviderSignInPanel";
 import {
-  conversationProviderAccountId,
   newProviderAccount,
   saveProviderAccount,
   selectProviderAccount,
   type ProviderAccountProvider,
-} from "../../features/providers/model/providerAccounts";
-import { useProviderUsage, useUsageClock } from "./useProviderUsage";
-
-export type UsageSession = {
-  id?: string;
-  harness: HarnessId;
-  model?: string;
-  authRequired?: boolean;
-  nativeSession?: boolean;
-  /** Pinned account of a started conversation; absent for a draft. */
-  providerAccountId?: string;
-};
-
-/** The usage identity of a conversation: its harness, model and account. */
-export function usageSessionFor(session: Session): UsageSession {
-  return {
-    id: session.id,
-    harness: session.harness,
-    model: session.model,
-    authRequired: latestTurnNeedsHarnessLogin(session.blocks),
-    nativeSession: !!session.nativeSession,
-    providerAccountId: conversationProviderAccountId(session),
-  };
-}
+} from "../../providers/model/providerAccounts";
+import { useProviderUsage, useUsageClock } from "../../providers/model/useProviderUsage";
+import type { UsageSession } from "../../providers/model/sessionUsage";
 
 function usageProvidersFor(session?: UsageSession): RateLimitProvider[] {
   return session?.harness === "claude" ||
@@ -71,8 +46,7 @@ function usageProvidersFor(session?: UsageSession): RateLimitProvider[] {
 }
 
 /**
- * Provider usage chips, refresh and sign-in for one conversation. `inline`
- * renders them inside another menu, expanding the details in place.
+ * Provider usage, refresh and sign-in for one conversation's status card.
  */
 export function ProviderUsageBar({
   providers: providerList,
@@ -80,7 +54,7 @@ export function ProviderUsageBar({
   project,
   onSelectAccount,
   onManageAccounts,
-  inline,
+  render,
 }: {
   providers?: RateLimitProvider[];
   session?: UsageSession;
@@ -90,7 +64,8 @@ export function ProviderUsageBar({
     accountId: string,
   ) => void;
   onManageAccounts?: (provider: ProviderAccountProvider) => void;
-  inline?: UsageInline;
+  /** Keeps usage loaded while a containing card hides its controls. */
+  render?: (controls: ReactNode, limits?: ProviderRateLimits) => ReactNode;
 }) {
   const { t: uiT } = useTranslation();
   const providers = providerList ?? usageProvidersFor(session);
@@ -111,6 +86,7 @@ export function ProviderUsageBar({
     accountId: codexAccountId,
     accounts: codexAccounts,
     available: codexAccountAvailable,
+    local: codexLocal,
   } = useProviderUsage("codex", session, project, wantCodex);
   const { limits: opencode } = useProviderUsage(
     "opencode",
@@ -241,8 +217,8 @@ export function ProviderUsageBar({
 
   const selectAccount = useCallback(
     (provider: ProviderAccountProvider, accountId: string) => {
-      // A started conversation switches itself; only drafts and the footer
-      // change this project's default for new conversations.
+      // A started conversation switches itself; drafts change this project's
+      // default for new conversations.
       if (!(session?.harness === provider && session.providerAccountId))
         selectProviderAccount(provider, project, accountId);
       onSelectAccount?.(provider, accountId);
@@ -270,21 +246,21 @@ export function ProviderUsageBar({
         key={`${session.id}:${session.model}`}
         model={session.model}
         now={now}
-        inline={inline}
+        render={render}
       />
     );
   if (!showUsage)
-    return session ? (
+    return present(session ? (
       <SessionChip
         key={session.id ?? session.harness}
         session={session}
-        inline={inline}
       />
-    ) : null;
-  return (
+    ) : null);
+  return present(
     <>
       {wantClaude ? (
         <UsageProviderChip
+          key={`claude:${session?.id ?? ""}`}
           limits={claude}
           now={now}
           accounts={claudeAccounts}
@@ -296,11 +272,11 @@ export function ProviderUsageBar({
             onManageAccounts ? () => onManageAccounts("claude") : undefined
           }
           onReconnect={reconnectClaude}
-          inline={inline}
         />
       ) : null}
       {wantCodex ? (
         <UsageProviderChip
+          key={`codex:${session?.id ?? ""}`}
           limits={codex}
           now={now}
           project={project}
@@ -312,55 +288,48 @@ export function ProviderUsageBar({
           onManageAccounts={
             onManageAccounts ? () => onManageAccounts("codex") : undefined
           }
-          onConsumeReset={consumeCodexReset}
+          onConsumeReset={codexLocal ? consumeCodexReset : undefined}
           onReconnect={reconnectCodex}
-          inline={inline}
         />
       ) : null}
       {showOpencodeChip ? (
         <UsageProviderChip
+          key={`opencode:${session?.id ?? ""}`}
           limits={opencode}
           now={now}
           project={project}
-          inline={inline}
         />
       ) : null}
-      {inline?.expanded ? null : (
-        <button
-          type="button"
-          className={`grid ${inline ? "size-7 rounded-lg" : "size-4.5 rounded"} shrink-0 place-items-center text-content/40 hover:bg-content/6 hover:text-content disabled:opacity-50`}
-          aria-label={uiT("Refresh usage")}
-          title={uiT("Refresh usage")}
-          disabled={refreshing}
-          onClick={() => void refresh()}
-        >
-          <RefreshCw
-            className={`size-2.5 ${refreshing ? "animate-spin" : ""}`}
-            aria-hidden
-          />
-        </button>
-      )}
-    </>
+      <button
+        type="button"
+        className="grid size-7 shrink-0 place-items-center rounded-lg text-content/40 hover:bg-content/6 hover:text-content disabled:opacity-50"
+        aria-label={uiT("Refresh usage")}
+        title={uiT("Refresh usage")}
+        disabled={refreshing}
+        onClick={() => void refresh()}
+      >
+        <RefreshCw
+          className={`size-2.5 ${refreshing ? "motion-safe:animate-spin" : ""}`}
+          aria-hidden
+        />
+      </button>
+    </>,
+    wantClaude ? claude : wantCodex ? codex : opencode,
   );
+
+  function present(controls: ReactNode, limits?: ProviderRateLimits) {
+    return render ? render(controls, limits) : controls;
+  }
 }
 
 function SessionChip({
   session,
-  inline,
 }: {
   session: UsageSession;
-  inline?: UsageInline;
 }) {
   const { t: uiT } = useTranslation();
   const trigger = useRef<HTMLButtonElement>(null);
-  const [chipOpen, setChipOpen] = useState(false);
-  const open = inline ? inline.expanded : chipOpen;
-  const setOpen = (next: boolean | ((current: boolean) => boolean)) => {
-    const value = typeof next === "function" ? next(open) : next;
-    if (!inline) setChipOpen(value);
-    else if (value) inline.onExpand();
-    else inline.onCollapse();
-  };
+  const [open, setOpen] = useState(false);
   const [loginState, setLoginState] = useState<ProviderSignInState>("idle");
   const [loginError, setLoginError] = useState<string | null>(null);
   const authRequired = Boolean(
@@ -399,7 +368,7 @@ function SessionChip({
   if (!canLogin) {
     return (
       <span
-        className={`${inline ? "flex h-7 flex-1 px-2" : "inline-flex"} min-w-0 items-center gap-1.5 whitespace-nowrap`}
+        className="inline-flex min-w-0 items-center gap-1.5 whitespace-nowrap"
         title={HARNESS_TITLE[session.harness]}
       >
         <HarnessIcon harness={session.harness} className="size-3 shrink-0" />
@@ -416,62 +385,49 @@ function SessionChip({
       onSignIn={() => void signIn()}
     />
   );
-  if (inline?.expanded)
-    return (
-      <div
-        role="group"
-        aria-label={uiT("{value0} sign-in", {
-          value0: String(HARNESS_TITLE[session.harness]),
-        })}
-        className="text-content"
-      >
-        {signInPanel}
-      </div>
-    );
 
   return (
     <>
       <button
-        ref={trigger}
-        type="button"
-        className={`${inline ? "flex h-7 flex-1 rounded-lg px-2" : "-mx-1 inline-flex h-5 shrink-0 rounded px-1"} min-w-0 items-center gap-1.5 whitespace-nowrap text-content/55 transition-[background-color,color,transform] duration-150 ease-out hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent active:scale-[0.97]`}
-        aria-label={uiT("{value0} sign-in required", {
-          value0: String(HARNESS_TITLE[session.harness]),
-        })}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        title={uiT("{value0} sign-in required", {
-          value0: String(HARNESS_TITLE[session.harness]),
-        })}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <HarnessIcon harness={session.harness} className="size-3 shrink-0" />
-        <span>{HARNESS_LABEL[session.harness]}</span>
-        {authRequired ? (
-          <span className="text-[10px] text-amber-600 dark:text-amber-300">
-            {uiT("sign in")}
-          </span>
-        ) : null}
+      ref={trigger}
+      type="button"
+      className="flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
+      aria-label={uiT("{value0} sign-in required", {
+        value0: String(HARNESS_TITLE[session.harness]),
+      })}
+      aria-expanded={open}
+      aria-haspopup="dialog"
+      title={uiT("{value0} sign-in required", {
+        value0: String(HARNESS_TITLE[session.harness]),
+      })}
+      onClick={() => setOpen((value) => !value)}
+    >
+      <HarnessIcon harness={session.harness} className="size-3 shrink-0" />
+      <span>{HARNESS_LABEL[session.harness]}</span>
+      {authRequired ? (
+        <span className="text-[10px] text-amber-600 dark:text-amber-300">
+          {uiT("sign in")}
+        </span>
+      ) : null}
       </button>
-      <PresenceBoundary propagate>{open && !inline ? (
-        <Popover
-          anchor={trigger}
-          side="top"
-          align="start"
-          gap={7}
-          width={300}
-          autoFocus
-          onDismiss={dismiss}
-          role="dialog"
-          aria-label={uiT("{value0} sign-in", {
-            value0: String(HARNESS_TITLE[session.harness]),
-          })}
-          tabIndex={-1}
-          className="text-content"
-        >
-          {signInPanel}
-        </Popover>
-      ) : null}</PresenceBoundary>
+      <Popover
+        open={open}
+        anchor={trigger}
+        side="top"
+        align="start"
+        gap={7}
+        width={300}
+        autoFocus
+        onDismiss={dismiss}
+        role="dialog"
+        aria-label={uiT("{value0} sign-in", {
+          value0: String(HARNESS_TITLE[session.harness]),
+        })}
+        tabIndex={-1}
+        className="text-content"
+      >
+        {signInPanel}
+      </Popover>
     </>
   );
 }

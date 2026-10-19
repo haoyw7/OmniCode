@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { saveMaskEmails, useMaskEmails } from "../../features/settings/model/displayPrefs";
 import { PrivateEmail } from "./PrivateEmail";
+import { SurfaceVisibilityContext } from "./SurfaceVisibility";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -67,4 +68,20 @@ it("masks an email when another window turns masking on", async () => {
   expect(revealButton()?.querySelector("span")?.className).toContain(
     "blur-[5px]",
   );
+});
+
+it("masks a revealed email when its retained surface closes and reopens", async () => {
+  const render = (visible: boolean) => act(async () => root.render(
+    createElement(SurfaceVisibilityContext.Provider, { value: visible },
+      createElement(PrivateEmail, { email: "user@example.com", masked: true })),
+  ));
+  await render(true);
+  const original = revealButton()!;
+  await act(async () => original.click());
+  expect(original.getAttribute("aria-label")).toBe("Hide email");
+  await render(false);
+  expect(revealButton()).toBe(original);
+  await render(true);
+  expect(revealButton()).toBe(original);
+  expect(original.getAttribute("aria-pressed")).toBe("false");
 });

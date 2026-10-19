@@ -14,35 +14,8 @@ import {
   type SessionHeaderActions,
 } from "./SessionHeaderActions";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
-import {
-  saveProviderAccount,
-  selectProviderAccount,
-} from "../../providers/model/providerAccounts";
-import { clearCachedRateLimits } from "../../providers/model/rateLimitsCache";
-import {
-  idleRateLimits,
-  unavailableRateLimits,
-} from "../../providers/model/rateLimits";
-import { saveShowRemainingUsage } from "../../settings/model/displayPrefs";
 import { setUiLanguage } from "../../../shared/i18n/language";
 import type { Session } from "../../sessions/model/session";
-
-const fetches = vi.hoisted(() => ({
-  codex: vi.fn(),
-  claude: vi.fn(),
-  opencode: vi.fn(),
-  pi: vi.fn(),
-}));
-vi.mock("../../providers/model/piUsage", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../providers/model/piUsage")>()),
-  fetchPiUsage: fetches.pi,
-}));
-vi.mock("../../providers/model/rateLimitsFetch", () => ({
-  fetchCodexRateLimits: fetches.codex,
-  fetchClaudeRateLimits: fetches.claude,
-  fetchOpencodeGoRateLimits: fetches.opencode,
-  consumeCodexRateLimitResetCredit: vi.fn(),
-}));
 
 let root: Root;
 let container: HTMLDivElement;
@@ -50,44 +23,12 @@ let actions: SessionHeaderActions;
 let sessions: Session[];
 let visible: boolean;
 
-const quota = (usedPercent: number) => ({
-  ...idleRateLimits("codex"),
-  status: "ok" as const,
-  session: { usedPercent, windowMinutes: 300, resetsAt: null },
-  updatedAt: Date.now(),
-});
-
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
   configureSharedHost(undefined, []);
   vi.mocked(delegateDesktopSession).mockClear();
   setUiLanguage("en");
-  clearCachedRateLimits();
-  saveProviderAccount({
-    provider: "codex",
-    id: "account-left",
-    label: "Left account",
-  });
-  saveProviderAccount({
-    provider: "codex",
-    id: "account-right",
-    label: "Right account",
-  });
-  selectProviderAccount("codex", "/left", "account-right");
-  selectProviderAccount("codex", "/right", "account-right");
-  fetches.codex
-    .mockReset()
-    .mockImplementation(async (id) => quota(id === "account-left" ? 17 : 44));
-  fetches.claude
-    .mockReset()
-    .mockResolvedValue(unavailableRateLimits("claude", "not signed in"));
-  fetches.opencode
-    .mockReset()
-    .mockResolvedValue(unavailableRateLimits("opencode", "not connected"));
-  fetches.pi
-    .mockReset()
-    .mockResolvedValue({ ...quota(23), provider: "claude" });
   actions = {
     rename: vi.fn(),
     archive: vi.fn(),
@@ -182,15 +123,6 @@ async function open(id = "left") {
   return document.querySelector<HTMLElement>('[role="menu"]')!;
 }
 
-const usageRow = () =>
-  document.querySelector<HTMLElement>("[data-session-usage]")!;
-const usageChip = () =>
-  usageRow().querySelector<HTMLButtonElement>('[aria-label$="usage details"]')!;
-const usageDetails = () =>
-  document.querySelector<HTMLElement>(
-    '[role="dialog"][aria-label="Usage details"]',
-  );
-
 // Menu items have stable action order; query by the visible label for clarity.
 function pick(label: string) {
   const menuItem = [
@@ -222,7 +154,7 @@ it("places the sole action trigger after tools and before window controls", asyn
 it("toggles the status cards from a started conversation's toolbar", async () => {
   sessions[0] = { ...sessions[0], blocks: [{ id: "ask", role: "user", text: "Hi" }] };
   await render();
-  expect(container.querySelector('[data-session-surface-tabs="right"] [data-session-tool-toggle="status"]')).toBeNull();
+  expect(container.querySelector('[data-session-surface-tabs="right"] [data-session-tool-toggle="status"]')).not.toBeNull();
   const toggle = () =>
     container.querySelector<HTMLButtonElement>('[data-session-surface-tabs="left"] [data-session-tool-toggle="status"]')!;
   const header = container.querySelector('[data-session-surface-tabs="left"]')!;
@@ -291,133 +223,11 @@ it("renames, splits and archives the owning pane while another pane is focused",
   expect(actions.archive).toHaveBeenCalledExactlyOnceWith("right");
 });
 
-it("shows this pane's account usage in the menu and opens its details in place", async () => {
+it("keeps account usage out of the session actions menu", async () => {
   await render();
-  await open();
-  expect(fetches.codex).toHaveBeenCalledExactlyOnceWith("account-left");
-  expect(usageRow().textContent).toContain("Left account");
-  expect(usageRow().textContent).toContain("17%");
-  await act(async () =>
-    usageRow()
-      .querySelector<HTMLButtonElement>('[aria-label="Refresh usage"]')!
-      .click(),
-  );
-  expect(fetches.codex).toHaveBeenLastCalledWith("account-left");
-  expect(fetches.codex).toHaveBeenCalledTimes(2);
-  await act(async () => usageChip().click());
-  await finishExits();
-  expect(document.querySelector('[role="menu"]')).toBeNull();
-  const dialog = usageDetails()!;
-  expect(dialog.textContent).toContain("Left account");
-  expect(dialog.textContent).toContain("17% used");
-  expect(dialog.textContent).not.toContain("44%");
-  act(() =>
-    dialog
-      .querySelector<HTMLButtonElement>("[data-session-usage-back]")!
-      .click(),
-  );
-  await finishExits();
-  expect(usageDetails()).toBeNull();
-  await finishExits();
-  expect(document.querySelector('[role="menu"]')).not.toBeNull();
-  await act(async () => usageChip().click());
-  act(() =>
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })),
-  );
-  await finishExits();
-  expect(usageDetails()).toBeNull();
-  await finishExits();
-  expect(document.querySelector('[role="menu"]')).not.toBeNull();
-});
-
-it("falls back to the owning project's account and follows usage display preferences", async () => {
-  sessions[0] = { ...sessions[0], providerAccountId: undefined };
-  selectProviderAccount("codex", "/left", "account-left");
-  await render();
-  await open();
-  expect(fetches.codex).toHaveBeenCalledExactlyOnceWith("account-left");
-  expect(usageRow().textContent).toContain("17%");
-  act(() => saveShowRemainingUsage(true));
-  expect(usageRow().textContent).toContain("83%");
-});
-
-it("uses the owning harness and reports disconnected/removed accounts without another account's fetch", async () => {
-  sessions[0] = {
-    ...sessions[0],
-    harness: "claude",
-    providerAccountId: "default",
-  };
-  await render();
-  await open();
-  expect(fetches.claude).toHaveBeenCalledExactlyOnceWith("default");
-  expect(fetches.codex).not.toHaveBeenCalled();
-  expect(usageChip().getAttribute("aria-label")).toContain("Claude Code");
-  expect(usageRow().textContent).toContain("not connected");
-  act(() =>
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })),
-  );
-  sessions[0] = {
-    ...sessions[0],
-    harness: "codex",
-    providerAccountId: "account-removed",
-  };
-  await render();
-  await open();
-  expect(fetches.codex).not.toHaveBeenCalled();
-  expect(usageRow().textContent).toContain("not connected");
-  await act(async () => usageChip().click());
-  // The footer's removed-account flow moved with it: sign in or switch.
-  expect(usageDetails()?.textContent).toContain("Removed account");
-  expect(usageDetails()?.textContent).toContain("Sign in to Codex");
-});
-
-it("uses the menu session's Pi model and saved OAuth usage without querying a Codex/Claude profile", async () => {
-  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
-  sessions[0] = {
-    ...sessions[0],
-    harness: "pi",
-    model: "pi:anthropic/claude-sonnet-4-6",
-  };
-  await render();
-  await open();
-  expect(fetches.pi).toHaveBeenCalledExactlyOnceWith("anthropic");
-  expect(fetches.codex).not.toHaveBeenCalled();
-  expect(fetches.claude).not.toHaveBeenCalled();
-  expect(usageChip().getAttribute("aria-label")).toContain("Pi · Anthropic");
-  expect(usageRow().textContent).toContain("23%");
-  await act(async () =>
-    usageRow()
-      .querySelector<HTMLButtonElement>('[aria-label="Refresh Pi usage"]')!
-      .click(),
-  );
-  expect(fetches.pi).toHaveBeenCalledTimes(2);
-  await act(async () => usageChip().click());
-  expect(usageDetails()?.textContent).toContain("Pi's saved OAuth account");
-});
-
-it("switches the owning conversation's account from the in-menu details", async () => {
-  actions.selectProviderAccount = vi.fn();
-  await render();
-  await open();
-  await act(async () => usageChip().click());
-  await act(async () =>
-    usageDetails()!
-      .querySelector<HTMLButtonElement>('[aria-label^="Switch"]')!
-      .click(),
-  );
-  const right = usageDetails()!.querySelector<HTMLButtonElement>(
-    '[aria-label="Right account"]',
-  )!;
-  await act(async () => right.click());
-  expect(actions.selectProviderAccount).toHaveBeenCalledExactlyOnceWith(
-    "left",
-    "codex",
-    "account-right",
-  );
-  await finishExits();
-  expect(usageDetails()).toBeNull();
-  await finishExits();
-  expect(document.querySelector('[role="menu"]')).not.toBeNull();
+  const menu = await open();
+  expect(menu.querySelector("[data-session-usage]")).toBeNull();
+  expect(menu.querySelector('[aria-label="Refresh usage"]')).toBeNull();
 });
 
 it("opens downward at the end, supports keyboard selection, Escape and outside dismissal", async () => {
@@ -432,7 +242,7 @@ it("opens downward at the end, supports keyboard selection, Escape and outside d
   expect(menu.dataset.popoverSide).toBe("bottom");
   expect(menu.parentElement?.style.left).toBe("450px");
   expect(menu.parentElement?.style.top).toBe("46px");
-  expect(menu.querySelectorAll('[role="separator"]')).toHaveLength(2);
+  expect(menu.querySelectorAll('[role="separator"]')).toHaveLength(1);
   expect(
     [...menu.querySelectorAll('[role="menuitem"]')].every(
       (node) => node.firstElementChild?.getAttribute("aria-hidden") === "true",
@@ -466,7 +276,7 @@ it("opens downward at the end, supports keyboard selection, Escape and outside d
   expect(document.querySelector('[role="menu"]')).toBeNull();
 });
 
-it("suppresses menu/details/rename portals when hidden and keeps title double-click rename", async () => {
+it("suppresses menu/rename portals when hidden and keeps title double-click rename", async () => {
   await render();
   await open();
   visible = false;
@@ -477,16 +287,6 @@ it("suppresses menu/details/rename portals when hidden and keeps title double-cl
   await render();
   await finishExits();
   expect(document.querySelector('[role="menu"]')).toBeNull();
-  await open();
-  await act(async () => usageChip().click());
-  await finishExits();
-  expect(usageDetails()).not.toBeNull();
-  visible = false;
-  await render();
-  await finishExits();
-  expect(document.querySelector('[role="dialog"]')).toBeNull();
-  visible = true;
-  await render();
   act(() =>
     container
       .querySelector('[data-session-chat-tab="left"]')!
@@ -501,7 +301,7 @@ it("suppresses menu/details/rename portals when hidden and keeps title double-cl
   expect(document.querySelector('[aria-label="Rename"]')).toBeNull();
 });
 
-it("localizes app-owned menu labels while keeping session and account names", async () => {
+it("localizes app-owned menu labels while keeping session names", async () => {
   setUiLanguage("zh-CN");
   await render();
   const menu = await open();
@@ -511,9 +311,7 @@ it("localizes app-owned menu labels while keeping session and account names", as
       ?.getAttribute("aria-label"),
   ).toBe("更多操作");
   expect(menu.textContent).toContain("重命名");
-  expect(usageRow().querySelector('[aria-label$="用量详情"]')).not.toBeNull();
-  expect(usageRow().querySelector('[aria-label="刷新用量"]')).not.toBeNull();
-  expect(menu.textContent).toContain("Left account");
+  expect(menu.querySelector("[data-session-usage]")).toBeNull();
   expect(container.textContent).toContain("left chat");
 });
 

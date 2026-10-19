@@ -1,18 +1,18 @@
-import { completeMotionAnimation } from "../../../tests/helpers/motionDriver";
+import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
 // @vitest-environment happy-dom
 // Keep this as .ts because the project test glob intentionally excludes .test.tsx.
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import type { ProviderRateLimits } from "../../features/providers/model/rateLimits";
-import { projectKey } from "../../shared/lib/paths";
-import { saveTabGroupMascot } from "../../features/workspace/model/tabGroups";
+import type { ProviderRateLimits } from "../../providers/model/rateLimits";
+import { projectKey } from "../../../shared/lib/paths";
+import { saveTabGroupMascot } from "../../workspace/model/tabGroups";
 import { needsProviderLogin, UsageProviderChip } from "./UsageProviderChip";
 import {
   saveMaskEmails,
   saveShowRemainingUsage,
-} from "../../features/settings/model/displayPrefs";
+} from "../../settings/model/displayPrefs";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => null),
@@ -92,6 +92,25 @@ function button(label: string): HTMLButtonElement {
 }
 
 describe("UsageProviderChip", () => {
+  it("reverses closing on the same account popup without restarting or duplicating it", async () => {
+    await act(async () => root.render(createElement(UsageProviderChip, { limits: codexLimits(), now })));
+    const trigger = button("Codex usage details");
+    await act(async () => trigger.click());
+    await act(async () => completeMotionAnimation(document.body));
+    const popup = document.querySelector<HTMLElement>('[role="dialog"]')!;
+    await act(async () => trigger.click());
+    expect(popup.inert).toBe(true);
+    await act(async () => trigger.click());
+    expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(1);
+    expect(document.querySelector('[role="dialog"]')).toBe(popup);
+    expect(popup.inert).toBe(false);
+    await act(async () => completeMotionAnimation(document.body));
+    expect(document.querySelector('[role="dialog"]')).toBe(popup);
+    await act(async () => trigger.click());
+    await act(async () => completeMotionAnimation(document.body));
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+
   it("offers the provider-owned login flow for an expired Claude session", async () => {
     const limits: ProviderRateLimits = {
       provider: "claude",
@@ -132,6 +151,22 @@ describe("UsageProviderChip", () => {
     expect(needsProviderLogin(limits)).toBe(false);
   });
 
+  it.each([
+    "Usage is unavailable for environment-based authentication.",
+    "No Codex usage data",
+    "This Host does not support account usage yet. Update and restart it, then refresh.",
+  ])("does not label unavailable usage as disconnected: %s", async (error) => {
+    const limits = { ...codexLimits(), status: "unavailable" as const, session: null, weekly: null, resetCredits: null, error };
+    const onReconnect = vi.fn();
+    expect(needsProviderLogin(limits)).toBe(false);
+    await act(async () => root.render(createElement(UsageProviderChip, { limits, now, onReconnect })));
+    expect(button("Codex usage details").textContent).toContain("Usage unavailable");
+    expect(button("Codex usage details").textContent).not.toContain("not connected");
+    await act(async () => button("Codex usage details").click());
+    expect(document.body.textContent).toContain(error);
+    expect([...document.querySelectorAll("button")].some(button => button.textContent?.includes("Sign in to Codex"))).toBe(false);
+  });
+
   it("opens a column of detailed progress bars", async () => {
     saveShowRemainingUsage(true);
     act(() =>
@@ -142,11 +177,21 @@ describe("UsageProviderChip", () => {
 
     const trigger = button("Codex usage details");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    expect(trigger.textContent).toBe("58% 2h·19% 2d 23h");
+    expect(trigger.textContent).toBe("5h58% leftWeek19% left");
     expect(trigger.title).toBe(
       "58% remaining · Resets in 2h · 19% remaining · Resets in 2d 23h",
     );
-    expect(trigger.querySelector(".w-8 > span")?.getAttribute("style")).toBe(
+    expect(trigger.querySelectorAll('[role="progressbar"]')).toHaveLength(2);
+    const sessionSummary = trigger.querySelector('[data-window="session"] [role="progressbar"]')!;
+    const weeklySummary = trigger.querySelector('[data-window="weekly"] [role="progressbar"]')!;
+    expect(sessionSummary.getAttribute("aria-valuenow")).toBe("58");
+    expect(sessionSummary.previousElementSibling?.textContent).toBe("5h");
+    expect(sessionSummary.nextElementSibling?.textContent).toBe("58% left");
+    expect(sessionSummary.querySelector("span")?.getAttribute("style")).toBe("width: 58%;");
+    expect(weeklySummary.getAttribute("aria-valuenow")).toBe("19");
+    expect(weeklySummary.previousElementSibling?.textContent).toBe("Week");
+    expect(weeklySummary.nextElementSibling?.textContent).toBe("19% left");
+    expect(weeklySummary.querySelector("span")?.getAttribute("style")).toBe(
       "width: 19%;",
     );
     await act(async () => trigger.click());
@@ -179,7 +224,7 @@ describe("UsageProviderChip", () => {
     );
   });
 
-  it("fills bars with used capacity by default", async () => {
+  it("keeps the card on remaining capacity while details follow the used capacity preference", async () => {
     act(() =>
       root.render(
         createElement(UsageProviderChip, { limits: codexLimits(), now }),
@@ -187,12 +232,12 @@ describe("UsageProviderChip", () => {
     );
 
     const trigger = button("Codex usage details");
-    expect(trigger.textContent).toBe("42% 2h·81% 2d 23h");
+    expect(trigger.textContent).toBe("5h58% leftWeek19% left");
     expect(trigger.title).toBe(
-      "42% used · Resets in 2h · 81% used · Resets in 2d 23h",
+      "58% remaining · Resets in 2h · 19% remaining · Resets in 2d 23h",
     );
-    expect(trigger.querySelector(".w-8 > span")?.getAttribute("style")).toBe(
-      "width: 81%;",
+    expect(trigger.querySelector('[data-window="weekly"] [role="progressbar"] > span')?.getAttribute("style")).toBe(
+      "width: 19%;",
     );
     await act(async () => trigger.click());
 
@@ -206,7 +251,7 @@ describe("UsageProviderChip", () => {
   });
 
   it.each(["this window", "another window"])(
-    "updates the footer and open popover when the preference changes in %s",
+    "keeps card summaries on remaining while updating the open popover's preference in %s",
     async (source) => {
       act(() =>
         root.render(
@@ -234,9 +279,9 @@ describe("UsageProviderChip", () => {
       };
 
       await changePreference(true);
-      expect(trigger.textContent).toBe("58% 2h·19% 2d 23h");
+      expect(trigger.textContent).toBe("5h58% leftWeek19% left");
       expect(trigger.title).toContain("19% remaining");
-      expect(trigger.querySelector(".w-8 > span")?.getAttribute("style")).toBe(
+      expect(trigger.querySelector('[data-window="weekly"] [role="progressbar"] > span')?.getAttribute("style")).toBe(
         "width: 19%;",
       );
       const remainingBar = document.querySelector(
@@ -248,10 +293,10 @@ describe("UsageProviderChip", () => {
       );
 
       await changePreference(false);
-      expect(trigger.textContent).toBe("42% 2h·81% 2d 23h");
-      expect(trigger.title).toContain("81% used");
-      expect(trigger.querySelector(".w-8 > span")?.getAttribute("style")).toBe(
-        "width: 81%;",
+      expect(trigger.textContent).toBe("5h58% leftWeek19% left");
+      expect(trigger.title).toContain("19% remaining");
+      expect(trigger.querySelector('[data-window="weekly"] [role="progressbar"] > span')?.getAttribute("style")).toBe(
+        "width: 19%;",
       );
       const usedBar = document.querySelector(
         '[aria-label="Weekly limit used"]',
@@ -272,7 +317,7 @@ describe("UsageProviderChip", () => {
 
     expect(
       button("Codex usage details")
-        .querySelector(".w-8 > span")
+        .querySelector('[data-window="weekly"] [role="progressbar"] > span')
         ?.getAttribute("style"),
     ).toBe("width: 0%;");
     await act(async () => button("Codex usage details").click());
@@ -541,6 +586,6 @@ describe("UsageProviderChip", () => {
 
 vi.mock("motion/react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("motion/react")>();
-  const { motionTestDriver } = await import("../../../tests/helpers/motionDriver");
+  const { motionTestDriver } = await import("../../../../tests/helpers/motionDriver");
   return { ...actual, ...motionTestDriver(actual, true) };
 });

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "../i18n/useTranslation";
+import { useSurfaceVisibility } from "./SurfaceVisibility";
 
 /**
  * With email masking on, keep account emails private in screenshots until
@@ -7,11 +8,14 @@ import { useTranslation } from "../i18n/useTranslation";
  */
 export function PrivateEmail({ email, masked }: { email: string; masked: boolean }) {
   const { t } = useTranslation();
+  const visible = useSurfaceVisibility();
   const [revealed, setRevealed] = useState(false);
   const [wasMasked, setWasMasked] = useState(masked);
-  if (masked !== wasMasked) {
-    // Turning masking back on hides an email revealed before it was turned off.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (masked !== wasMasked || visible !== wasVisible) {
+    // A retained closing surface must mask its email before it can reopen.
     setWasMasked(masked);
+    setWasVisible(visible);
     setRevealed(false);
   }
   if (!masked) {

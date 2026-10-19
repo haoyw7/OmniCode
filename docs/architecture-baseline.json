@@ -191,7 +191,6 @@
       "src/features/workspace/model/workspaceSnapshot.ts -> src/app/model/releaseNotes.ts",
       "src/features/workspace/ui/PaneTree.tsx -> src/app/shell/WindowChrome.tsx",
       "src/features/workspace/ui/SessionOverflowMenu.tsx -> src/app/commands/useCommandShortcut.ts",
-      "src/features/workspace/ui/SessionOverflowMenu.tsx -> src/app/shell/ProviderUsageBar.tsx",
       "src/features/workspace/ui/SessionSurfaceToolbar.tsx -> src/app/commands/useCommandShortcut.ts",
       "src/features/workspace/ui/SessionSurfaceToolbar.tsx -> src/app/shell/WindowChrome.tsx",
       "src/features/workspace/ui/SessionSurfaceToolbar.tsx -> src/app/shell/startWindowDrag.ts",

@@ -1,4 +1,4 @@
-import { clampUsedPercent, exhaustedWindowResetAt, formatResetDuration, type ProviderRateLimits } from "./rateLimits";
+import { clampUsedPercent, exhaustedWindowResetAt, formatResetDuration, type ProviderRateLimits, type RateLimitWindow } from "./rateLimits";
 import type { ProviderAccount } from "./providerAccounts";
 
 /** At or below this much headroom an account reads as "Running low". */
@@ -22,17 +22,25 @@ export function accountHeadroom(
   limits: ProviderRateLimits | undefined,
   now: number,
 ): number | null {
+  return accountHeadroomWindow(limits, now)?.remaining ?? null;
+}
+
+/** The limiting window and its remaining quota, so summaries can identify it. */
+export function accountHeadroomWindow(
+  limits: ProviderRateLimits | undefined,
+  now: number,
+): { window: RateLimitWindow; remaining: number } | null {
   const windows = [limits?.session, limits?.weekly, limits?.monthly].filter(
     (window) => window != null,
   );
-  if (windows.length === 0) return null;
-  return Math.min(
-    ...windows.map((window) =>
-      window.resetsAt != null && window.resetsAt <= now
-        ? 100
-        : 100 - clampUsedPercent(window.usedPercent),
-    ),
-  );
+  let tightest: { window: RateLimitWindow; remaining: number } | null = null;
+  for (const window of windows) {
+    const remaining = window.resetsAt != null && window.resetsAt <= now
+      ? 100
+      : 100 - clampUsedPercent(window.usedPercent);
+    if (!tightest || remaining < tightest.remaining) tightest = { window, remaining };
+  }
+  return tightest;
 }
 
 /** Ready / Running low / Exhausted for an account, shared by every surface. */

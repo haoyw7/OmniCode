@@ -1,22 +1,16 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useEffect, useRef, useState } from "react";
 import { useCommandShortcut } from "../../../app/commands/useCommandShortcut";
-import {
-  ProviderUsageBar,
-  usageSessionFor,
-} from "../../../app/shell/ProviderUsageBar";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   Archive,
   Bot,
-  ChevronLeft,
   IconArtworkContext,
   MoreHorizontal,
   PanelRight,
   Pencil,
   type IconComponent,
 } from "../../../shared/ui/icons";
-import { Popover } from "../../../shared/ui/Popover";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
@@ -52,7 +46,7 @@ const sessionActionIconArtwork = {
   ),
 };
 
-/** Scope the square artwork to menu actions, preserving provider and usage icons. */
+/** Scope the square artwork to session menu actions. */
 function SessionActionIcon({ icon: Icon }: { icon: IconComponent }) {
   return (
     <IconArtworkContext.Provider value={sessionActionIconArtwork}>
@@ -61,7 +55,7 @@ function SessionActionIcon({ icon: Icon }: { icon: IconComponent }) {
   );
 }
 
-/** The chat column's ⋯ menu: session actions plus this session's usage. */
+/** The chat column's ⋯ menu: actions for the owning session. */
 export function SessionOverflowMenu({
   session,
   onRename,
@@ -73,33 +67,18 @@ export function SessionOverflowMenu({
   const actions = useSessionHeaderActions();
   const visible = useSurfaceVisibility();
   const button = useRef<HTMLButtonElement>(null);
-  const [mode, setMode] = useState<"menu" | "usage" | null>(null);
+  const [open, setOpen] = useState(false);
   const splitShortcut = useCommandShortcut("Pane: Split Right");
   const archiveShortcut = useCommandShortcut("Session: Archive");
   useEffect(() => {
-    if (!visible) setMode(null);
+    if (!visible) setOpen(false);
   }, [visible]);
   if (!actions) return null;
 
   const close = () => {
-    setMode(null);
+    setOpen(false);
     button.current?.focus();
   };
-  const usage = (expanded: boolean) => (
-    <ProviderUsageBar
-      session={usageSessionFor(session)}
-      project={session.cwd}
-      onSelectAccount={(provider, accountId) =>
-        actions.selectProviderAccount?.(session.id, provider, accountId)
-      }
-      onManageAccounts={actions.manageProviderAccounts}
-      inline={{
-        expanded,
-        onExpand: () => setMode("usage"),
-        onCollapse: () => setMode("menu"),
-      }}
-    />
-  );
 
   return (
     <>
@@ -112,15 +91,15 @@ export function SessionOverflowMenu({
         aria-label={t("More actions")}
         title={t("More actions")}
         aria-haspopup="menu"
-        aria-expanded={mode !== null}
+        aria-expanded={open}
         onPointerDown={(event) => event.stopPropagation()}
-        onClick={() => setMode((current) => (current ? null : "menu"))}
+        onClick={() => setOpen((current) => !current)}
         className="mr-1 grid size-7.5 shrink-0 self-center place-items-center rounded-md text-content/60 hover:bg-content/3 hover:text-content"
       >
         <MenuHover />
         <MoreHorizontal className="size-4" />
       </button>
-      <PresenceBoundary propagate>{visible && mode === "menu" && button.current ? (
+      <PresenceBoundary propagate>{visible && open && button.current ? (
         <ExplorerMenu
           anchor={button.current}
           ownerId={session.id}
@@ -128,19 +107,6 @@ export function SessionOverflowMenu({
           align="end"
           width={280}
           ariaLabel={t("Session actions")}
-          header={
-            <div
-              data-session-usage
-              className="flex min-w-0 items-center gap-0.5 text-[11px] text-content/55"
-              // Keys on the usage controls belong to them, not the menu list.
-              onKeyDown={(event) => {
-                if (event.target !== event.currentTarget)
-                  event.stopPropagation();
-              }}
-            >
-              {usage(false)}
-            </div>
-          }
           items={[
             ...(remoteProjectFor(session.cwd) ? [{
               kind: "item" as const,
@@ -172,7 +138,7 @@ export function SessionOverflowMenu({
           ]}
           onPick={(id) => {
             if (id === "rename") {
-              setMode(null);
+              setOpen(false);
               onRename(button.current!);
               return;
             }
@@ -183,36 +149,6 @@ export function SessionOverflowMenu({
           }}
           onClose={close}
         />
-      ) : null}</PresenceBoundary>
-      <PresenceBoundary propagate>{visible && mode === "usage" && button.current ? (
-        <Popover
-          anchor={button.current}
-          side="bottom"
-          align="end"
-          gap={4}
-          width={320}
-          maxHeight={480}
-          autoFocus
-          onDismiss={(reason) => {
-            if (reason === "escape") setMode("menu");
-            else close();
-          }}
-          role="dialog"
-          tabIndex={-1}
-          aria-label={t("Usage details")}
-          className="overflow-y-auto overscroll-none p-1 text-content"
-        >
-          <button
-            type="button"
-            data-session-usage-back
-            onClick={() => setMode("menu")}
-            className="flex h-7 w-full items-center gap-1.5 rounded-lg px-2 text-left text-[12px] text-content/65 hover:bg-content/3 hover:text-content"
-          >
-            <ChevronLeft className="size-3.5" aria-hidden />
-            {t("Back")}
-          </button>
-          {usage(true)}
-        </Popover>
       ) : null}</PresenceBoundary>
     </>
   );

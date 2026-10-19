@@ -167,6 +167,24 @@ describe.each([false, true])(
       ).toBe("open");
     });
 
+    it("defers closed-state cleanup until the exit finishes and skips it on reversal", () => {
+      const closed = vi.fn();
+      const renderPopup = (open: boolean) => act(() => root.render(
+        createElement(NativePopupHost.Provider, { value: native ? host : null },
+          createElement(Popover, { open, anchor, onExitComplete: closed }, "Account details")),
+      ));
+      renderPopup(true);
+      renderPopup(false);
+      act(() => vi.advanceTimersByTime(70));
+      expect(closed).not.toHaveBeenCalled();
+      renderPopup(true);
+      act(() => vi.advanceTimersByTime(duration.pop * 1000));
+      expect(closed).not.toHaveBeenCalled();
+      renderPopup(false);
+      act(() => vi.advanceTimersByTime(duration.pop * 1000));
+      expect(closed).toHaveBeenCalledOnce();
+    });
+
     it("closes immediately with reduced motion and suppresses hidden portals", () => {
       vi.spyOn(window, "matchMedia").mockReturnValue({
         matches: true,

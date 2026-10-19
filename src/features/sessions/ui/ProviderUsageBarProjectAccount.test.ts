@@ -4,23 +4,24 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import type { ProviderRateLimits } from "../../features/providers/model/rateLimits";
+import type { ProviderRateLimits } from "../../providers/model/rateLimits";
 import {
   clearCachedRateLimits,
   setCachedRateLimits,
-} from "../../features/providers/model/rateLimitsCache";
+} from "../../providers/model/rateLimitsCache";
 import {
   DEFAULT_PROVIDER_ACCOUNT_ID,
   renameProviderAccount,
   saveProviderAccount,
   selectedProviderAccountId,
-} from "../../features/providers/model/providerAccounts";
+} from "../../providers/model/providerAccounts";
 import {
   newSession,
   retargetSessionToProject,
   type Session,
-} from "../../features/sessions/model/session";
+} from "../model/session";
 import { ProviderUsageBar } from "./ProviderUsageBar";
+import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => null),
@@ -129,6 +130,7 @@ describe("ProviderUsageBar account per project", () => {
     });
     await openAccountPicker();
     await act(async () => button("Work").click());
+    await act(async () => completeMotionAnimation(document.body));
     expect(selectedProviderAccountId("claude", PROJECT_A)).toBe(
       WORK_ACCOUNT_ID,
     );
@@ -145,4 +147,10 @@ describe("ProviderUsageBar account per project", () => {
     expect(button("Personal").getAttribute("aria-pressed")).toBe("true");
     expect(button("Work").getAttribute("aria-pressed")).toBe("false");
   });
+});
+
+vi.mock("motion/react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("motion/react")>();
+  const { motionTestDriver } = await import("../../../../tests/helpers/motionDriver");
+  return { ...actual, ...motionTestDriver(actual, true) };
 });

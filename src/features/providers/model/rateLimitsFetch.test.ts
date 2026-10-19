@@ -85,8 +85,8 @@ describe("fetchCodexRateLimits", () => {
   });
 });
 
-it("queries a configured built-in Home like a named profile even with a shared Host", async () => {
-  configureSharedHost("env", [], "shared-host");
+it("keeps native CLI queries for a configured built-in Home without a shared Host", async () => {
+  configureSharedHost(undefined, []);
   saveProviderAccount({ id: "default", provider: "codex", label: "Default account", dataHome: "/data/codex" });
   saveProviderAccount({ id: "default", provider: "claude", label: "Default account", dataHome: "/data/claude" });
   vi.mocked(invoke).mockResolvedValue({ status: "ok", body: JSON.stringify({ five_hour: { utilization: 20 } }) });
@@ -97,10 +97,11 @@ it("queries a configured built-in Home like a named profile even with a shared H
   configureSharedHost(undefined, []);
 });
 
-it("never queries or spends reset credits through the desktop environment for the shared Host CLI account", async () => {
+it("never spends Host account reset credits through the desktop environment", async () => {
   configureSharedHost("env", [], "shared-host");
-  expect((await fetchCodexRateLimits()).status).toBe("unavailable");
-  expect((await fetchClaudeRateLimits()).status).toBe("unavailable");
-  await expect(consumeCodexRateLimitResetCredit()).rejects.toThrow("Host CLI account usage is unavailable");
+  child.spawned = [];
+  await expect(consumeCodexRateLimitResetCredit()).rejects.toThrow("This Host does not support Codex usage resets.");
+  await expect(consumeCodexRateLimitResetCredit(undefined, "account-work")).rejects.toThrow("This Host does not support Codex usage resets.");
+  expect(child.spawned).toEqual([]);
   configureSharedHost(undefined, []);
 });

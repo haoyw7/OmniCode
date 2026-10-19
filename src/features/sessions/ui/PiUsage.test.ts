@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, createElement, StrictMode } from "react";
-import { RATE_LIMIT_POLL_MS } from "../../features/providers/model/rateLimits";
+import { RATE_LIMIT_POLL_MS } from "../../providers/model/rateLimits";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
@@ -55,7 +55,7 @@ it("renders Pi-owned quotas without fetching another CLI account", async () => {
   expect(invoke).toHaveBeenCalledExactlyOnceWith("fetch_pi_usage", {
     provider: "anthropic",
   });
-  expect(container.textContent).toContain("24%");
+  expect(container.textContent).toContain("76%");
   const trigger = container.querySelector<HTMLButtonElement>(
     '[aria-label="Pi · Anthropic usage details"]',
   );
@@ -78,10 +78,10 @@ it("clears old usage on provider changes and ignores late responses", async () =
   await show("pi:anthropic/claude-sonnet-4-6");
   vi.mocked(invoke).mockResolvedValueOnce(quota(32));
   await show("pi:openai-codex/gpt-5.4");
-  expect(container.textContent).toContain("32%");
+  expect(container.textContent).toContain("68%");
   await act(async () => finishOld?.(quota(99)));
-  expect(container.textContent).not.toContain("99%");
-  expect(container.textContent).toContain("32%");
+  expect(container.textContent).not.toContain("1%");
+  expect(container.textContent).toContain("68%");
   expect(invoke).toHaveBeenLastCalledWith("fetch_pi_usage", {
     provider: "openai-codex",
   });
@@ -102,7 +102,7 @@ it("does not guess a provider for defaults or unsupported models", async () => {
 
 it("clears quotas on failed refresh and can recover after a Pi login", async () => {
   await show("pi:anthropic/claude-sonnet-4-6");
-  expect(container.textContent).toContain("24%");
+  expect(container.textContent).toContain("76%");
   vi.mocked(invoke).mockResolvedValueOnce({
     status: "unavailable",
     message: "Sign in through Pi, then refresh usage.",
@@ -113,10 +113,10 @@ it("clears quotas on failed refresh and can recover after a Pi login", async () 
     );
   expect(refresh()).not.toBeNull();
   await act(async () => refresh()?.click());
-  expect(container.textContent).not.toContain("24%");
+  expect(container.textContent).not.toContain("76%");
   vi.mocked(invoke).mockResolvedValueOnce(quota(12));
   await act(async () => refresh()?.click());
-  expect(container.textContent).toContain("12%");
+  expect(container.textContent).toContain("88%");
 });
 
 it("isolates A to B to A and same-provider session changes", async () => {
@@ -132,11 +132,11 @@ it("isolates A to B to A and same-provider session changes", async () => {
   vi.mocked(invoke).mockResolvedValueOnce(quota(17));
   await show("pi:anthropic/claude", "a");
   await act(async () => finishOld?.(quota(99)));
-  expect(container.textContent).toContain("17%");
-  expect(container.textContent).not.toContain("99%");
+  expect(container.textContent).toContain("83%");
+  expect(container.textContent).not.toContain("1%");
   vi.mocked(invoke).mockResolvedValueOnce(quota(8));
   await show("pi:anthropic/claude", "c");
-  expect(container.textContent).toContain("8%");
+  expect(container.textContent).toContain("92%");
   expect(invoke).toHaveBeenCalledTimes(4);
 });
 
@@ -163,10 +163,10 @@ it("ignores a disposed Strict Mode request without blocking its replacement", as
       ),
     ),
   );
-  expect(container.textContent).toContain("24%");
+  expect(container.textContent).toContain("76%");
   await act(async () => finishOld?.(quota(99)));
-  expect(container.textContent).not.toContain("99%");
-  expect(container.textContent).toContain("24%");
+  expect(container.textContent).not.toContain("1%");
+  expect(container.textContent).toContain("76%");
 });
 
 it("refreshes on native window focus after the minimum interval", async () => {
@@ -175,7 +175,7 @@ it("refreshes on native window focus after the minimum interval", async () => {
   await act(async () => vi.advanceTimersByTimeAsync(5 * 60_000));
   vi.mocked(invoke).mockResolvedValueOnce(quota(13));
   await act(async () => window.dispatchEvent(new Event("focus")));
-  expect(container.textContent).toContain("13%");
+  expect(container.textContent).toContain("87%");
   expect(invoke).toHaveBeenCalledTimes(2);
 });
 
@@ -193,7 +193,7 @@ it("polls only while visible and retries unavailable credentials", async () => {
   expect(invoke).toHaveBeenCalledTimes(1);
   await act(async () => vi.advanceTimersByTimeAsync(RATE_LIMIT_POLL_MS));
   expect(invoke).toHaveBeenCalledTimes(2);
-  expect(container.textContent).toContain("24%");
+  expect(container.textContent).toContain("76%");
   vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
   await act(async () => vi.advanceTimersByTimeAsync(RATE_LIMIT_POLL_MS));
   expect(invoke).toHaveBeenCalledTimes(2);
