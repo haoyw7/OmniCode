@@ -203,8 +203,7 @@
   --popover-opacity: 0.02;
   --window-opacity: 1;
   --panel-opacity: 1;
-  --chat-background-empty-opacity: 0.24;
-  --chat-background-session-opacity: 0.24;
+  --chat-background-opacity: 0.24;
   --selection-subtle-strength: 5%;
   --selection-strength: 10%;
   --selection-strong-strength: 10%;
@@ -551,7 +550,7 @@ html.has-native-glass:not(.theme-light) .pane-card {
  * per-pane copies (project backgrounds stay in their panes). Two independent
  * controls:
  *   - image strength mixes the artwork over the theme colour inside the
- *     backdrop (--chat-background-empty-opacity);
+ *     backdrop (--chat-background-opacity);
  *   - Desktop transparency fades the backdrop as a whole under glass
  *     (--window-opacity), keeping that mix intact.
  * Interface surfaces add no fill of their own on top, apart from the
@@ -576,14 +575,14 @@ html.has-native-glass:not(.theme-light) .pane-card {
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  opacity: var(--chat-background-empty-opacity);
+  opacity: var(--chat-background-opacity);
 }
 
 .window-chat-background > .gradient-blur-background {
   display: none;
   position: absolute;
   inset: 0;
-  opacity: var(--chat-background-empty-opacity);
+  opacity: var(--chat-background-opacity);
 }
 
 html.chat-background-window.has-chat-background .window-chat-background {

@@ -8,16 +8,13 @@ import {
   CHAT_BACKGROUND_OPACITY_MAX,
   CHAT_BACKGROUND_OPACITY_MIN,
   chatBackgroundSrc,
-  loadChatBackgroundEmptyOpacity,
+  loadChatBackgroundOpacity,
   loadChatBackgroundPath,
-  loadChatBackgroundSessionOpacity,
-  loadChatBackgroundScope,
   loadNewThreadBackgroundEffect,
   NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
   NEW_THREAD_BACKGROUND_EFFECT_DESCRIPTIONS,
   NEW_THREAD_BACKGROUND_EFFECT_LABELS,
   NEW_THREAD_BACKGROUND_EFFECTS,
-  type ChatBackgroundScope,
   type NewThreadBackgroundEffect,
 } from "../../settings/model/appearance";
 import {
@@ -44,14 +41,8 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
   const { t: uiT } = useTranslation();
   const initial = loadProjectChatBackgroundSettings(project);
   const [path, setPath] = useState(initial?.path ?? null);
-  const [emptyOpacity, setEmptyOpacity] = useState(
-    initial?.emptyOpacity ?? loadChatBackgroundEmptyOpacity(),
-  );
-  const [sessionOpacity, setSessionOpacity] = useState(
-    initial?.sessionOpacity ?? loadChatBackgroundSessionOpacity(),
-  );
-  const [scope, setScope] = useState<ChatBackgroundScope>(
-    initial?.scope ?? loadChatBackgroundScope(),
+  const [opacity, setOpacity] = useState(
+    initial?.opacity ?? loadChatBackgroundOpacity(),
   );
   const [effect, setEffect] = useState<NewThreadBackgroundEffect>(
     initial?.effect ?? NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
@@ -68,9 +59,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
 
   const save = (
     nextPath: string,
-    nextEmptyOpacity: number,
-    nextSessionOpacity: number,
-    nextScope: ChatBackgroundScope,
+    nextOpacity: number,
     nextEffect: NewThreadBackgroundEffect,
     imageChanged = false,
   ) => {
@@ -78,9 +67,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
       project,
       {
         path: nextPath,
-        emptyOpacity: nextEmptyOpacity,
-        sessionOpacity: nextSessionOpacity,
-        scope: nextScope,
+        opacity: nextOpacity,
         effect: nextEffect,
       },
       imageChanged,
@@ -96,7 +83,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
       const nextPath = await pickAndSaveProjectChatBackground(project);
       if (!nextPath) return;
       showStatusToast(uiT("Background updated"));
-      save(nextPath, emptyOpacity, sessionOpacity, scope, effect, true);
+      save(nextPath, opacity, effect, true);
       setPath(nextPath);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -116,9 +103,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
       });
       clearProjectChatBackgroundSetting(project);
       setPath(null);
-      setEmptyOpacity(loadChatBackgroundEmptyOpacity());
-      setSessionOpacity(loadChatBackgroundSessionOpacity());
-      setScope(loadChatBackgroundScope());
+      setOpacity(loadChatBackgroundOpacity());
       setEffect(NEW_THREAD_BACKGROUND_EFFECT_DEFAULT);
       setRevision(projectChatBackgroundImageRevision());
     } catch (cause) {
@@ -128,26 +113,18 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
     }
   };
 
-  const updateOpacity = (kind: "empty" | "session", percent: number) => {
+  const updateOpacity = (percent: number) => {
     const next = Math.min(
       CHAT_BACKGROUND_OPACITY_MAX,
       Math.max(CHAT_BACKGROUND_OPACITY_MIN, percent / 100),
     );
-    const nextEmptyOpacity = kind === "empty" ? next : emptyOpacity;
-    const nextSessionOpacity = kind === "session" ? next : sessionOpacity;
-    if (kind === "empty") setEmptyOpacity(next);
-    else setSessionOpacity(next);
-    if (path) save(path, nextEmptyOpacity, nextSessionOpacity, scope, effect);
-  };
-
-  const updateScope = (next: ChatBackgroundScope) => {
-    setScope(next);
-    if (path) save(path, emptyOpacity, sessionOpacity, next, effect);
+    setOpacity(next);
+    if (path) save(path, next, effect);
   };
 
   const updateEffect = (next: NewThreadBackgroundEffect) => {
     setEffect(next);
-    if (path) save(path, emptyOpacity, sessionOpacity, scope, next);
+    if (path) save(path, opacity, next);
   };
 
   return (
@@ -173,7 +150,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
                     style={
                       {
                         "--chat-background-image": `url(${JSON.stringify(previewSrc)})`,
-                        opacity: emptyOpacity,
+                        opacity,
                       } as CSSProperties
                     }
                   />
@@ -184,7 +161,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
                   alt=""
                   draggable={false}
                   className="h-40 w-full object-cover"
-                  style={{ opacity: emptyOpacity }}
+                  style={{ opacity }}
                 />
               )
             ) : (
@@ -249,68 +226,21 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
           </div>
         ) : null}
 
-        <ProjectBackgroundRow label={uiT("Show on")}>
-          <div
-            role="radiogroup"
-            aria-label={uiT("Show project background on")}
-            className="grid w-44 grid-cols-2 gap-0.5 rounded-md border border-content/10 p-0.5 text-[12px]"
-          >
-            {[
-              { value: "empty" as const, label: uiT("Empty only") },
-              { value: "all" as const, label: uiT("All sessions") },
-            ].map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={scope === option.value}
-                onClick={() => updateScope(option.value)}
-                className={`rounded-[5px] px-1.5 py-1 ${
-                  scope === option.value
-                    ? "bg-selection text-content"
-                    : "text-content/50 hover:text-content"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </ProjectBackgroundRow>
-
-        <ProjectBackgroundRow label={uiT("Empty chat visibility")}>
+        <ProjectBackgroundRow label={uiT("Background image strength")}>
           <div className="flex w-56 items-center gap-3">
             <input
               type="range"
               min={Math.round(CHAT_BACKGROUND_OPACITY_MIN * 100)}
               max={Math.round(CHAT_BACKGROUND_OPACITY_MAX * 100)}
-              value={Math.round(emptyOpacity * 100)}
-              aria-label={uiT("Project background visibility in empty chats")}
+              value={Math.round(opacity * 100)}
+              aria-label={uiT("Background image strength")}
               className="sidebar-opacity-slider min-w-0 flex-1"
               onChange={(event) =>
-                updateOpacity("empty", Number(event.target.value))
+                updateOpacity(Number(event.target.value))
               }
             />
             <span className="w-10 shrink-0 text-right text-[12px] tabular-nums text-content">
-              {Math.round(emptyOpacity * 100)}%
-            </span>
-          </div>
-        </ProjectBackgroundRow>
-
-        <ProjectBackgroundRow label={uiT("Session visibility")}>
-          <div className="flex w-56 items-center gap-3">
-            <input
-              type="range"
-              min={Math.round(CHAT_BACKGROUND_OPACITY_MIN * 100)}
-              max={Math.round(CHAT_BACKGROUND_OPACITY_MAX * 100)}
-              value={Math.round(sessionOpacity * 100)}
-              aria-label={uiT("Project background visibility in sessions")}
-              className="sidebar-opacity-slider min-w-0 flex-1"
-              onChange={(event) =>
-                updateOpacity("session", Number(event.target.value))
-              }
-            />
-            <span className="w-10 shrink-0 text-right text-[12px] tabular-nums text-content">
-              {Math.round(sessionOpacity * 100)}%
+              {Math.round(opacity * 100)}%
             </span>
           </div>
         </ProjectBackgroundRow>

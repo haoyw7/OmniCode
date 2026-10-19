@@ -688,7 +688,6 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
         <main className="mobile-chat chat-pane-background isolate" inert={drawerOpen || pageOverlayOpen || hostPickerOpen}
           data-project-chat-background={!!projectBackground}
           data-project-background-effect={projectBackground?.effect}
-          data-project-background-scope={projectBackground?.scope}
           data-session-empty={!(snapshot?.hasBlocks || placeholder?.session.blocks.length)}
           data-new-conversation={!sessionId}
           style={projectBackgroundStyle}>

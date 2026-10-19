@@ -475,8 +475,7 @@ export function useMobileAppController() {
     projectBackground?.effect ?? "none", projectChatBackgroundImageRevision());
   const projectBackgroundStyle = projectBackground ? {
     "--chat-background-image": projectBackgroundUrl ? `url(${JSON.stringify(projectBackgroundUrl)})` : "none",
-    "--chat-background-empty-opacity": String(projectBackground.emptyOpacity),
-    "--chat-background-session-opacity": String(projectBackground.sessionOpacity),
+    "--chat-background-opacity": String(projectBackground.opacity),
   } as CSSProperties : undefined;
   const navigation = useRef(0);
   const appRoot = useRef<HTMLDivElement>(null);

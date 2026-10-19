@@ -3655,6 +3655,7 @@
   "Chat area": "对话区",
   "Full window": "全屏",
   "Background image strength": "背景图强度",
+  "Use the same background strength in new and existing conversations.": "新建对话和已有对话使用相同的背景强度。",
   "How strongly the image shows through the interface. Desktop transparency does not change it.": "图片透过界面显示的强度，不受桌面透明度影响。",
   "Panel transparency": "面板透明度",
   "Sidebar, panel and popover transparency work within the app. Light mode keeps the desktop behind the window opaque.": "侧栏、面板和弹出菜单透明度可在应用内部生效。浅色模式下，窗口仍不会透出桌面。",

@@ -168,15 +168,7 @@ html.has-chat-background.chat-background-effect-ready.chat-background-gradient-b
   > .gradient-blur-background,
 .chat-pane-background[data-project-background-effect="gradient-blur"]
   > .gradient-blur-background {
-  opacity: var(--chat-background-empty-opacity);
-}
-
-html.has-chat-background.chat-background-effect-ready.chat-background-gradient-blur
-  .chat-pane-background[data-project-chat-background="false"][data-session-empty="false"]
-  > .gradient-blur-background,
-.chat-pane-background[data-project-background-effect="gradient-blur"][data-session-empty="false"]
-  > .gradient-blur-background {
-  opacity: var(--chat-background-session-opacity);
+  opacity: var(--chat-background-opacity);
 }
 
 html.has-chat-background.chat-background-effect-ready:not(
@@ -186,53 +178,13 @@ html.has-chat-background.chat-background-effect-ready:not(
 .chat-pane-background[data-project-chat-background="true"]:not(
     [data-project-background-effect="gradient-blur"]
   )::before {
-  opacity: var(--chat-background-empty-opacity);
-}
-
-html.has-chat-background.chat-background-effect-ready:not(
-    .chat-background-gradient-blur
-  )
-  .chat-pane-background[data-project-chat-background="false"][data-session-empty="false"]::before,
-.chat-pane-background[data-project-chat-background="true"]:not(
-    [data-project-background-effect="gradient-blur"]
-  )[data-session-empty="false"]::before {
-  opacity: var(--chat-background-session-opacity);
-}
-
-/*
- * Sending the first message eases the background into its session look (or
- * out entirely when it only shows on empty sessions) alongside the composer.
- */
-.chat-pane-background[data-session-empty="false"]::before {
-  transition-duration: 600ms;
+  opacity: var(--chat-background-opacity);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chat-pane-background::before,
-  .chat-pane-background[data-session-empty="false"]::before {
+  .chat-pane-background::before {
     transition-duration: 0ms;
   }
-}
-
-html.has-chat-background.chat-background-effect-ready:not(
-    .chat-background-gradient-blur
-  ).chat-background-empty-only
-  .chat-pane-background[data-project-chat-background="false"][data-session-empty="false"]::before,
-.chat-pane-background[data-project-chat-background="true"][data-project-background-scope="empty"][data-session-empty="false"]::before {
-  opacity: 0;
-}
-
-/* Scope and visibility follow the same rules as the existing image layer. */
-html.has-chat-background.chat-background-effect-ready.chat-background-gradient-blur.chat-background-empty-only
-  .chat-pane-background[data-project-chat-background="false"][data-session-empty="false"]
-  > .gradient-blur-background,
-.chat-pane-background[data-project-background-scope="empty"][data-session-empty="false"]
-  > .gradient-blur-background {
-  opacity: 0;
-}
-
-.chat-pane-background[data-session-empty="false"] > .gradient-blur-background {
-  transition-duration: 600ms;
 }
 
 @media (prefers-reduced-motion: reduce) {

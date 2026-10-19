@@ -6,8 +6,7 @@ import { Button } from "../../../../../shared/ui/forms/Button";
 import { GradientBlurBackground } from "../../GradientBlurBackground";
 import { useColorScheme } from "../../../../../shared/hooks/useColorScheme";
 import {
-  applyChatBackgroundEmptyOpacity,
-  applyChatBackgroundSessionOpacity,
+  applyChatBackgroundOpacity,
   applyWindowOpacity,
   applyPanelOpacity,
   applyPopoverOpacity,
@@ -277,14 +276,8 @@ function ChatBackgroundCard({
   const { t: uiT } = useTranslation();
   const src = chatBackgroundSrc(appearance.chatBackgroundPath);
   const hasImage = Boolean(appearance.chatBackgroundPath && src);
-  const emptyVisibility = Math.round(
-    appearance.chatBackgroundEmptyOpacity * 100,
-  );
-  const sessionVisibility = Math.round(
-    appearance.chatBackgroundSessionOpacity * 100,
-  );
+  const visibility = Math.round(appearance.chatBackgroundOpacity * 100);
   const busy = appearance.chatBackgroundBusy;
-  const fullWindow = appearance.chatBackgroundArea === "window";
 
   return (
     <Group
@@ -303,7 +296,7 @@ function ChatBackgroundCard({
               {appearance.newThreadBackgroundEffect === "gradient-blur" ? (
                 <GradientBlurBackground
                   className="gradient-blur-preview absolute inset-0"
-                  style={{ opacity: appearance.chatBackgroundEmptyOpacity }}
+                  style={{ opacity: appearance.chatBackgroundOpacity }}
                 />
               ) : (
                 <div
@@ -311,13 +304,12 @@ function ChatBackgroundCard({
                   className="size-full bg-cover bg-center bg-no-repeat"
                   style={{
                     backgroundImage: "var(--chat-background-image)",
-                    opacity: appearance.chatBackgroundEmptyOpacity,
+                    opacity: appearance.chatBackgroundOpacity,
                   }}
                 />
               )}
               <span className="pointer-events-none absolute bottom-2 left-2 text-[11px] text-content/40">
-                {uiT("Empty chat preview at ")}
-                {emptyVisibility}%
+                {uiT("Background image strength")}: {visibility}%
               </span>
             </div>
           ) : (
@@ -399,68 +391,20 @@ function ChatBackgroundCard({
               onChange={appearance.onChatBackgroundArea}
             />
           </Row>
-          <AnimatedCollapse expanded={!fullWindow}>
-            <div className="border-t border-border">
-              <Row
-                label={uiT("Show on")}
-                description={uiT("Empty sessions only, or every conversation.")}
-              >
-                <Segmented
-                  label={uiT("Show background on")}
-                  value={appearance.chatBackgroundScope}
-                  options={[
-                    { value: "empty", label: uiT("Empty only") },
-                    { value: "all", label: uiT("All sessions") },
-                  ]}
-                  onChange={appearance.onChatBackgroundScope}
-                />
-              </Row>
-            </div>
-          </AnimatedCollapse>
           <Row
-            label={
-              fullWindow
-                ? uiT("Background image strength")
-                : uiT("Empty chat visibility")
-            }
-            description={
-              fullWindow
-                ? uiT(
-                    "How strongly the image shows through the interface. Desktop transparency does not change it.",
-                  )
-                : uiT("Background strength before a chat has messages.")
-            }
+            label={uiT("Background image strength")}
+            description={uiT("Use the same background strength in new and existing conversations.")}
           >
             <LiveSlider
-              label={uiT("Empty chat background visibility")}
-              value={emptyVisibility}
+              label={uiT("Background image strength")}
+              value={visibility}
               format={(value) => `${value}%`}
               min={Math.round(CHAT_BACKGROUND_OPACITY_MIN * 100)}
               max={Math.round(CHAT_BACKGROUND_OPACITY_MAX * 100)}
-              preview={(value) => applyChatBackgroundEmptyOpacity(value / 100)}
-              onChange={appearance.onChatBackgroundEmptyOpacity}
+              preview={(value) => applyChatBackgroundOpacity(value / 100)}
+              onChange={appearance.onChatBackgroundOpacity}
             />
           </Row>
-          <AnimatedCollapse expanded={!fullWindow}>
-            <div className="border-t border-border">
-              <Row
-                label={uiT("Session visibility")}
-                description={uiT(
-                  "Background strength once the conversation has messages.",
-                )}
-              >
-                <LiveSlider
-                  label={uiT("Session background visibility")}
-                  value={sessionVisibility}
-                  format={(value) => `${value}%`}
-                  min={Math.round(CHAT_BACKGROUND_OPACITY_MIN * 100)}
-                  max={Math.round(CHAT_BACKGROUND_OPACITY_MAX * 100)}
-                  preview={(value) => applyChatBackgroundSessionOpacity(value / 100)}
-                  onChange={appearance.onChatBackgroundSessionOpacity}
-                />
-              </Row>
-            </div>
-          </AnimatedCollapse>
         </>
       ) : null}
     </Group>

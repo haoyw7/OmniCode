@@ -10,7 +10,7 @@ it("keeps project background references portable and retains the legacy file as 
   localStorage.setItem("omnicode:project-chat-backgrounds", legacy);
   const store = new SharedPreferenceStore("host", localStorage, async () => { throw new Error("offline"); });
   activatePreferenceStore(store);
-  const settings = { path: "host-asset:host:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", emptyOpacity: 0.2, sessionOpacity: 0.3, scope: "all" as const, effect: "none" as const };
+  const settings = { path: "host-asset:host:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", opacity: 0.2, effect: "none" as const };
   saveProjectChatBackgroundSettings("@project:host:project", settings, true);
   await store.sync();
   expect(loadProjectChatBackgroundSettings("@project:host:project")).toEqual(settings);
@@ -25,7 +25,7 @@ it("does not borrow project backgrounds from another verified Host", async () =>
   const first = new SharedPreferenceStore("host-one", localStorage, offline);
   activatePreferenceStore(first);
   saveProjectChatBackgroundSettings("@project:host-one:project", {
-    path: "host-asset:host-one:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", emptyOpacity: 0.2, sessionOpacity: 0.3, scope: "all", effect: "none",
+    path: "host-asset:host-one:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", opacity: 0.2, effect: "none",
   });
   await first.sync();
   activatePreferenceStore(new SharedPreferenceStore("host-two", localStorage, offline));

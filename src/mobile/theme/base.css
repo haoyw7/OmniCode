@@ -172,8 +172,7 @@
   --panel-opacity: 1;
   --popover-opacity: 1;
   --window-opacity: 1;
-  --chat-background-empty-opacity: 0.24;
-  --chat-background-session-opacity: 0.24;
+  --chat-background-opacity: 0.24;
   --color-markdown-heading: var(--color-m-ink);
   --motion-feedback-duration: 0.2s;
   --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);

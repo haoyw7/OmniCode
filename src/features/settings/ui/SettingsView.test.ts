@@ -522,25 +522,42 @@ describe("settings pages", () => {
     expect(bar?.parentElement?.textContent).toContain("77% left");
   });
 
-  it("shows background effect choices above scope when artwork is available", async () => {
+  it("shows one background strength for new and existing conversations", async () => {
     localStorage.setItem(
       "omnicode.chatBackgroundPath",
       "/app-data/backgrounds/chat-background.png",
     );
+    localStorage.setItem("omnicode.chatBackgroundEmptyOpacity", "1");
+    localStorage.setItem("omnicode.chatBackgroundSessionOpacity", "0.35");
     await render("appearance");
 
     const effect = container.querySelector(
       "#new-thread-background-effect-dither",
     )!;
     const effectRow = effect.closest(".settings-row")!;
-    const scopeRow = container
-      .querySelector('[aria-label="Show background on"]')!
+    const strengthRow = container
+      .querySelector('[aria-label="Background image strength"]')!
       .closest(".settings-row")!;
     expect(effect).not.toBeNull();
     expect(
-      effectRow.compareDocumentPosition(scopeRow) &
+      effectRow.compareDocumentPosition(strengthRow) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).not.toBe(0);
+    expect(container.querySelectorAll('[aria-label="Background image strength"]')).toHaveLength(1);
+    expect(container.querySelector('[aria-label="Show background on"]')).toBeNull();
+    expect(container.querySelector('[aria-label="Empty chat background visibility"]')).toBeNull();
+    expect(container.querySelector('[aria-label="Session background visibility"]')).toBeNull();
+    const strength = strengthRow.querySelector<HTMLInputElement>('input[type="range"]')!;
+    expect(strength.value).toBe("35");
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(strength, "60");
+      strength.dispatchEvent(new Event("input", { bubbles: true }));
+      strength.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowRight", bubbles: true }));
+    });
+    expect(document.documentElement.style.getPropertyValue("--chat-background-opacity")).toBe("0.6");
+    expect(localStorage.getItem("omnicode.chatBackgroundOpacity")).toBe("0.6");
+    expect(localStorage.getItem("omnicode.chatBackgroundEmptyOpacity")).toBeNull();
+    expect(localStorage.getItem("omnicode.chatBackgroundSessionOpacity")).toBeNull();
 
     vi.stubGlobal(
       "fetch",

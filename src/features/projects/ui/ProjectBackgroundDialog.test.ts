@@ -50,19 +50,37 @@ afterEach(async () => {
 });
 
 describe("project background dialog", () => {
+  it("uses one strength control for migrated project backgrounds", async () => {
+    localStorage.setItem("omnicode:project-chat-backgrounds", JSON.stringify({
+      "/work/alpha": { path: "/backgrounds/alpha.png", emptyOpacity: 1,
+        sessionOpacity: 0.3, scope: "empty", effect: "none" },
+    }));
+    await act(async () => root.render(createElement(ProjectBackgroundDialog, {
+      project: "/work/alpha", name: "Alpha", onClose: vi.fn(),
+    })));
+    const sliders = document.querySelectorAll<HTMLInputElement>('input[type="range"]');
+    expect(sliders).toHaveLength(1);
+    expect(sliders[0].getAttribute("aria-label")).toBe("Background image strength");
+    expect(sliders[0].value).toBe("30");
+    expect(document.querySelector('[aria-label="Show project background on"]')).toBeNull();
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(sliders[0], "60");
+      sliders[0].dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(loadProjectChatBackgroundSettings("/work/alpha")).toEqual({
+      path: "/backgrounds/alpha.png", opacity: 0.6, effect: "none",
+    });
+  });
+
   it("changes the effect only for the selected project", async () => {
     saveProjectChatBackgroundSettings("/work/alpha", {
       path: "/backgrounds/alpha.png",
-      emptyOpacity: 0.2,
-      sessionOpacity: 0.3,
-      scope: "all",
+      opacity: 0.2,
       effect: "none",
     });
     saveProjectChatBackgroundSettings("/work/beta", {
       path: "/backgrounds/beta.png",
-      emptyOpacity: 0.2,
-      sessionOpacity: 0.3,
-      scope: "all",
+      opacity: 0.2,
       effect: "ascii",
     });
 
@@ -121,9 +139,7 @@ describe("project background dialog", () => {
   it("previews a project Haze background with its own image and visibility", async () => {
     saveProjectChatBackgroundSettings("/work/alpha", {
       path: "/backgrounds/alpha.png",
-      emptyOpacity: 0.35,
-      sessionOpacity: 0.55,
-      scope: "empty",
+      opacity: 0.35,
       effect: "gradient-blur",
     });
     await act(async () =>

@@ -416,12 +416,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
         "--chat-background-image": projectBackgroundUrl
           ? `url(${JSON.stringify(projectBackgroundUrl)})`
           : "none",
-        "--chat-background-empty-opacity": String(
-          projectBackground.emptyOpacity,
-        ),
-        "--chat-background-session-opacity": String(
-          projectBackground.sessionOpacity,
-        ),
+        "--chat-background-opacity": String(projectBackground.opacity),
       } as CSSProperties)
     : undefined;
   const approve = useCallback(
@@ -890,7 +885,6 @@ const LocalSessionPane = memo(function LocalSessionPane({
       data-session-empty={isEmpty}
       data-project-chat-background={!!projectBackground}
       data-project-background-effect={projectBackground?.effect}
-      data-project-background-scope={projectBackground?.scope}
       style={projectBackgroundStyle}
       className="desktop-session-pane chat-pane-background relative isolate flex h-full min-h-0 min-w-0 flex-1 flex-col"
       onMouseDown={() => onFocus(session.id)}

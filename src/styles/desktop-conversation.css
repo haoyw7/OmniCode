@@ -325,7 +325,7 @@ html[data-skin] .user-message-media .attachment-chip-image button {
  * and xterm content keep their own measured typography and virtual row sizes.
  */
 html[data-skin][data-desktop-mode] .desktop-session-pane {
-  background-color: var(--color-app);
+  background-color: color-mix(in srgb, var(--color-app) calc(var(--panel-opacity) * 100%), transparent);
 }
 
 .composer-git-controls,
@@ -737,7 +737,7 @@ html[data-skin][data-desktop-mode] [data-fixture-main-card] {
 }
 
 html[data-skin][data-desktop-mode] [data-session-surface-tabs] {
-  background: var(--color-app);
+  background: color-mix(in srgb, var(--color-app) calc(var(--panel-opacity) * 100%), transparent);
 }
 
 html[data-skin][data-desktop-mode] [data-surface-tab-strip],

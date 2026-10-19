@@ -43,10 +43,10 @@ const TRANSCRIPT_LAYOUT_KEY = "omnicode.transcriptLayout";
 const TRANSCRIPT_ANCHOR_KEY = "omnicode.transcriptAnchor";
 const CHAT_BACKGROUND_PATH_KEY = "omnicode.chatBackgroundPath";
 const CHAT_BACKGROUND_OPACITY_KEY = "omnicode.chatBackgroundOpacity";
-const CHAT_BACKGROUND_EMPTY_OPACITY_KEY = "omnicode.chatBackgroundEmptyOpacity";
-const CHAT_BACKGROUND_SESSION_OPACITY_KEY =
+const LEGACY_CHAT_BACKGROUND_EMPTY_OPACITY_KEY =
+  "omnicode.chatBackgroundEmptyOpacity";
+const LEGACY_CHAT_BACKGROUND_SESSION_OPACITY_KEY =
   "omnicode.chatBackgroundSessionOpacity";
-const CHAT_BACKGROUND_SCOPE_KEY = "omnicode.chatBackgroundScope";
 const CHAT_BACKGROUND_AREA_KEY = "omnicode.chatBackgroundArea";
 const NEW_THREAD_BACKGROUND_EFFECT_KEY = "omnicode.newThreadBackgroundEffect";
 const CHANGES_VIEW_KEY = "omnicode.changesView";
@@ -66,7 +66,6 @@ export const CHAT_BACKGROUND_PATH_CHANGE_EVENT =
 export type ColorScheme = "dark" | "light";
 export type ThemePreference = ColorScheme | "system";
 export type TranscriptLayout = "full" | "chat";
-export type ChatBackgroundScope = "empty" | "all";
 /** Where the global background is painted: each chat pane, or the whole window. */
 export type ChatBackgroundArea = "chat" | "window";
 export type NewThreadBackgroundEffect =
@@ -200,11 +199,6 @@ export const COMPACT_SIDEBAR_DEFAULT = false;
 export const CHAT_BACKGROUND_OPACITY_MIN = 0.05;
 export const CHAT_BACKGROUND_OPACITY_MAX = 1;
 export const CHAT_BACKGROUND_OPACITY_DEFAULT = 0.24;
-export const CHAT_BACKGROUND_EMPTY_OPACITY_DEFAULT =
-  CHAT_BACKGROUND_OPACITY_DEFAULT;
-export const CHAT_BACKGROUND_SESSION_OPACITY_DEFAULT =
-  CHAT_BACKGROUND_OPACITY_DEFAULT;
-export const CHAT_BACKGROUND_SCOPE_DEFAULT: ChatBackgroundScope = "all";
 export const CHAT_BACKGROUND_AREA_DEFAULT: ChatBackgroundArea = "chat";
 
 function clamp(value: number, min: number, max: number) {
@@ -374,9 +368,7 @@ export function initAppearance() {
   applyBodyGlass(loadBodyGlass());
   applyCompactSidebar(loadCompactSidebar());
   applyChatBackground(loadChatBackgroundPath());
-  applyChatBackgroundEmptyOpacity(loadChatBackgroundEmptyOpacity());
-  applyChatBackgroundSessionOpacity(loadChatBackgroundSessionOpacity());
-  applyChatBackgroundScope(loadChatBackgroundScope());
+  applyChatBackgroundOpacity(loadChatBackgroundOpacity());
   applyChatBackgroundArea(loadChatBackgroundArea());
   void applyUiScale(loadUiScale());
 }
@@ -823,7 +815,16 @@ export function setNewThreadBackgroundEffect(
 }
 
 export function loadChatBackgroundOpacity(): number {
-  return loadChatBackgroundEmptyOpacity();
+  // Prefer the previous conversation setting when merging split visibility.
+  // Saving the unified value removes those legacy keys.
+  return clamp(
+    readNumber(LEGACY_CHAT_BACKGROUND_SESSION_OPACITY_KEY) ??
+      readNumber(LEGACY_CHAT_BACKGROUND_EMPTY_OPACITY_KEY) ??
+      readNumber(CHAT_BACKGROUND_OPACITY_KEY) ??
+      CHAT_BACKGROUND_OPACITY_DEFAULT,
+    CHAT_BACKGROUND_OPACITY_MIN,
+    CHAT_BACKGROUND_OPACITY_MAX,
+  );
 }
 
 export function saveChatBackgroundOpacity(value: number) {
@@ -832,96 +833,27 @@ export function saveChatBackgroundOpacity(value: number) {
     CHAT_BACKGROUND_OPACITY_MIN,
     CHAT_BACKGROUND_OPACITY_MAX,
   );
-  saveChatBackgroundEmptyOpacity(next);
-  saveChatBackgroundSessionOpacity(next);
   writeNumber(CHAT_BACKGROUND_OPACITY_KEY, next);
-}
-
-function loadChatBackgroundOpacityValue(key: string): number {
-  const next = clamp(
-    readNumber(key) ??
-      readNumber(CHAT_BACKGROUND_OPACITY_KEY) ??
-      CHAT_BACKGROUND_OPACITY_DEFAULT,
-    CHAT_BACKGROUND_OPACITY_MIN,
-    CHAT_BACKGROUND_OPACITY_MAX,
-  );
-  return next;
-}
-
-function saveChatBackgroundOpacityValue(key: string, value: number) {
-  writeNumber(
-    key,
-    clamp(value, CHAT_BACKGROUND_OPACITY_MIN, CHAT_BACKGROUND_OPACITY_MAX),
-  );
-}
-
-function applyChatBackgroundOpacityValue(variable: string, value: number) {
-  const next = clamp(
-    value,
-    CHAT_BACKGROUND_OPACITY_MIN,
-    CHAT_BACKGROUND_OPACITY_MAX,
-  );
-  document.documentElement.style.setProperty(variable, String(next));
-  return next;
-}
-
-export function loadChatBackgroundEmptyOpacity(): number {
-  return loadChatBackgroundOpacityValue(CHAT_BACKGROUND_EMPTY_OPACITY_KEY);
-}
-
-export function saveChatBackgroundEmptyOpacity(value: number) {
-  saveChatBackgroundOpacityValue(CHAT_BACKGROUND_EMPTY_OPACITY_KEY, value);
-}
-
-export function applyChatBackgroundEmptyOpacity(value: number) {
-  return applyChatBackgroundOpacityValue(
-    "--chat-background-empty-opacity",
-    value,
-  );
-}
-
-export function loadChatBackgroundSessionOpacity(): number {
-  return loadChatBackgroundOpacityValue(CHAT_BACKGROUND_SESSION_OPACITY_KEY);
-}
-
-export function saveChatBackgroundSessionOpacity(value: number) {
-  saveChatBackgroundOpacityValue(CHAT_BACKGROUND_SESSION_OPACITY_KEY, value);
-}
-
-export function applyChatBackgroundSessionOpacity(value: number) {
-  return applyChatBackgroundOpacityValue(
-    "--chat-background-session-opacity",
-    value,
-  );
-}
-
-function isChatBackgroundScope(value: unknown): value is ChatBackgroundScope {
-  return value === "empty" || value === "all";
-}
-
-export function loadChatBackgroundScope(): ChatBackgroundScope {
   try {
-    const raw = preferenceStorage.getItem(CHAT_BACKGROUND_SCOPE_KEY);
-    return isChatBackgroundScope(raw) ? raw : CHAT_BACKGROUND_SCOPE_DEFAULT;
-  } catch {
-    return CHAT_BACKGROUND_SCOPE_DEFAULT;
-  }
-}
-
-export function saveChatBackgroundScope(value: ChatBackgroundScope) {
-  try {
-    preferenceStorage.setItem(CHAT_BACKGROUND_SCOPE_KEY, value);
+    preferenceStorage.removeItem(LEGACY_CHAT_BACKGROUND_EMPTY_OPACITY_KEY);
+    preferenceStorage.removeItem(LEGACY_CHAT_BACKGROUND_SESSION_OPACITY_KEY);
+    preferenceStorage.removeItem("omnicode.chatBackgroundScope");
   } catch {
     // private mode / quota
   }
 }
 
-export function applyChatBackgroundScope(value: ChatBackgroundScope) {
-  document.documentElement.classList.toggle(
-    "chat-background-empty-only",
-    value === "empty",
+export function applyChatBackgroundOpacity(value: number) {
+  const next = clamp(
+    value,
+    CHAT_BACKGROUND_OPACITY_MIN,
+    CHAT_BACKGROUND_OPACITY_MAX,
   );
-  return value;
+  document.documentElement.style.setProperty(
+    "--chat-background-opacity",
+    String(next),
+  );
+  return next;
 }
 
 function isChatBackgroundArea(value: unknown): value is ChatBackgroundArea {

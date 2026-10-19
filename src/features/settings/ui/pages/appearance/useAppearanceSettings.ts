@@ -27,9 +27,7 @@ import {
 import { useColorScheme } from "../../../../../shared/hooks/useColorScheme";
 import {
   applyChatBackground,
-  applyChatBackgroundEmptyOpacity,
-  applyChatBackgroundSessionOpacity,
-  applyChatBackgroundScope,
+  applyChatBackgroundOpacity,
   applyChatBackgroundArea,
   applyWindowOpacity,
   applyPanelOpacity,
@@ -45,9 +43,7 @@ import {
   BODY_GLASS_DEFAULT,
   COMPACT_SIDEBAR_DEFAULT,
   ACCENT_COLOR_DEFAULT,
-  CHAT_BACKGROUND_EMPTY_OPACITY_DEFAULT,
-  CHAT_BACKGROUND_SESSION_OPACITY_DEFAULT,
-  CHAT_BACKGROUND_SCOPE_DEFAULT,
+  CHAT_BACKGROUND_OPACITY_DEFAULT,
   CHAT_BACKGROUND_AREA_DEFAULT,
   THEME_PREFERENCE_DEFAULT,
   loadBodyGlass,
@@ -56,10 +52,8 @@ import {
   loadWindowOpacity,
   loadPanelOpacity,
   loadAccentColor,
-  loadChatBackgroundEmptyOpacity,
+  loadChatBackgroundOpacity,
   loadChatBackgroundPath,
-  loadChatBackgroundSessionOpacity,
-  loadChatBackgroundScope,
   loadChatBackgroundArea,
   loadNewThreadBackgroundEffect,
   loadThemeDarkLightness,
@@ -74,10 +68,8 @@ import {
   saveWindowOpacity,
   savePanelOpacity,
   saveAccentColor,
-  saveChatBackgroundEmptyOpacity,
+  saveChatBackgroundOpacity,
   saveChatBackgroundPath,
-  saveChatBackgroundSessionOpacity,
-  saveChatBackgroundScope,
   saveChatBackgroundArea,
   setNewThreadBackgroundEffect,
   saveThemeDarkLightness,
@@ -100,7 +92,6 @@ import {
   THEME_HUE_DEFAULT,
   THEME_SATURATION_DEFAULT,
   type ThemePreference,
-  type ChatBackgroundScope,
   type ChatBackgroundArea,
   NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
   type NewThreadBackgroundEffect,
@@ -152,13 +143,9 @@ export function useAppearanceSettings() {
   const [chatBackgroundPath, setChatBackgroundPath] = usePreferenceState(
     loadChatBackgroundPath,
   );
-  const [chatBackgroundEmptyOpacity, setChatBackgroundEmptyOpacity] = usePreferenceState(
-    loadChatBackgroundEmptyOpacity,
+  const [chatBackgroundOpacity, setChatBackgroundOpacity] = usePreferenceState(
+    loadChatBackgroundOpacity,
   );
-  const [chatBackgroundSessionOpacity, setChatBackgroundSessionOpacity] =
-    usePreferenceState(loadChatBackgroundSessionOpacity);
-  const [chatBackgroundScope, setChatBackgroundScope] =
-    usePreferenceState<ChatBackgroundScope>(loadChatBackgroundScope);
   const [chatBackgroundArea, setChatBackgroundArea] =
     usePreferenceState<ChatBackgroundArea>(loadChatBackgroundArea);
   const [newThreadBackgroundEffect, setBackgroundEffect] =
@@ -357,22 +344,10 @@ export function useAppearanceSettings() {
     }
   }, []);
 
-  const onChatBackgroundEmptyOpacity = useCallback((percent: number) => {
-    const next = applyChatBackgroundEmptyOpacity(percent / 100);
-    saveChatBackgroundEmptyOpacity(next);
-    setChatBackgroundEmptyOpacity(next);
-  }, []);
-
-  const onChatBackgroundSessionOpacity = useCallback((percent: number) => {
-    const next = applyChatBackgroundSessionOpacity(percent / 100);
-    saveChatBackgroundSessionOpacity(next);
-    setChatBackgroundSessionOpacity(next);
-  }, []);
-
-  const onChatBackgroundScope = useCallback((next: ChatBackgroundScope) => {
-    applyChatBackgroundScope(next);
-    saveChatBackgroundScope(next);
-    setChatBackgroundScope(next);
+  const onChatBackgroundOpacity = useCallback((percent: number) => {
+    const next = applyChatBackgroundOpacity(percent / 100);
+    saveChatBackgroundOpacity(next);
+    setChatBackgroundOpacity(next);
   }, []);
 
   const onChatBackgroundArea = useCallback((next: ChatBackgroundArea) => {
@@ -448,13 +423,7 @@ export function useAppearanceSettings() {
     onBodyGlass(BODY_GLASS_DEFAULT);
     onCompactSidebar(COMPACT_SIDEBAR_DEFAULT);
     onShowExcludedFiles(SHOW_EXCLUDED_FILES_DEFAULT);
-    onChatBackgroundEmptyOpacity(
-      Math.round(CHAT_BACKGROUND_EMPTY_OPACITY_DEFAULT * 100),
-    );
-    onChatBackgroundSessionOpacity(
-      Math.round(CHAT_BACKGROUND_SESSION_OPACITY_DEFAULT * 100),
-    );
-    onChatBackgroundScope(CHAT_BACKGROUND_SCOPE_DEFAULT);
+    onChatBackgroundOpacity(Math.round(CHAT_BACKGROUND_OPACITY_DEFAULT * 100));
     onChatBackgroundArea(CHAT_BACKGROUND_AREA_DEFAULT);
     onNewThreadBackgroundEffect(NEW_THREAD_BACKGROUND_EFFECT_DEFAULT);
     if (chatBackgroundPath) void onClearChatBackground();
@@ -467,9 +436,7 @@ export function useAppearanceSettings() {
     onBlur,
     onBodyGlass,
     onCompactSidebar,
-    onChatBackgroundEmptyOpacity,
-    onChatBackgroundSessionOpacity,
-    onChatBackgroundScope,
+    onChatBackgroundOpacity,
     onChatBackgroundArea,
     onNewThreadBackgroundEffect,
     onClearChatBackground,
@@ -515,9 +482,7 @@ export function useAppearanceSettings() {
     compactSidebar,
     showExcludedFiles,
     chatBackgroundPath,
-    chatBackgroundEmptyOpacity,
-    chatBackgroundSessionOpacity,
-    chatBackgroundScope,
+    chatBackgroundOpacity,
     chatBackgroundArea,
     newThreadBackgroundEffect,
     chatBackgroundBusy,
@@ -537,9 +502,7 @@ export function useAppearanceSettings() {
     onShowExcludedFiles,
     onChooseChatBackground,
     onClearChatBackground,
-    onChatBackgroundEmptyOpacity,
-    onChatBackgroundSessionOpacity,
-    onChatBackgroundScope,
+    onChatBackgroundOpacity,
     onChatBackgroundArea,
     onNewThreadBackgroundEffect,
     onUiScale,

@@ -8,17 +8,14 @@ import {
   SIDEBAR_WIDTH_MAX,
   ACCENT_COLOR_DEFAULT,
   CHAT_BACKGROUND_OPACITY_DEFAULT,
-  CHAT_BACKGROUND_SCOPE_DEFAULT,
   loadChatBackgroundOpacity,
   loadAccentColor,
   loadChatBackgroundPath,
-  loadChatBackgroundScope,
   loadNewThreadBackgroundEffect,
   loadTranscriptLayout,
   saveChatBackgroundOpacity,
   saveAccentColor,
   saveChatBackgroundPath,
-  saveChatBackgroundScope,
   saveNewThreadBackgroundEffect,
   saveTranscriptLayout,
   TRANSCRIPT_LAYOUT_DEFAULT,
@@ -192,14 +189,27 @@ describe("chat background setting", () => {
     expect(loadChatBackgroundOpacity()).toBe(0.05);
   });
 
-  it("persists where the background is shown", () => {
-    expect(loadChatBackgroundScope()).toBe(CHAT_BACKGROUND_SCOPE_DEFAULT);
-    saveChatBackgroundScope("empty");
-    expect(loadChatBackgroundScope()).toBe("empty");
-    saveChatBackgroundScope("all");
-    expect(loadChatBackgroundScope()).toBe("all");
-    localStorage.setItem(CHAT_BACKGROUND_SCOPE_KEY, "transcript");
-    expect(loadChatBackgroundScope()).toBe(CHAT_BACKGROUND_SCOPE_DEFAULT);
+  it("merges split visibility using the existing conversation value", () => {
+    localStorage.setItem("omnicode.chatBackgroundEmptyOpacity", "1");
+    localStorage.setItem("omnicode.chatBackgroundSessionOpacity", "0.35");
+    localStorage.setItem(CHAT_BACKGROUND_SCOPE_KEY, "empty");
+    expect(loadChatBackgroundOpacity()).toBe(0.35);
+
+    saveChatBackgroundOpacity(0.6);
+    expect(loadChatBackgroundOpacity()).toBe(0.6);
+    expect(localStorage.getItem(CHAT_BACKGROUND_OPACITY_KEY)).toBe("0.6");
+    expect(localStorage.getItem("omnicode.chatBackgroundEmptyOpacity")).toBeNull();
+    expect(localStorage.getItem("omnicode.chatBackgroundSessionOpacity")).toBeNull();
+    expect(localStorage.getItem(CHAT_BACKGROUND_SCOPE_KEY)).toBeNull();
+  });
+
+  it("falls back through legacy visibility values and ignores malformed numbers", () => {
+    localStorage.setItem("omnicode.chatBackgroundSessionOpacity", "NaN");
+    localStorage.setItem("omnicode.chatBackgroundEmptyOpacity", "0.5");
+    expect(loadChatBackgroundOpacity()).toBe(0.5);
+    localStorage.setItem("omnicode.chatBackgroundEmptyOpacity", "Infinity");
+    localStorage.setItem(CHAT_BACKGROUND_OPACITY_KEY, "0.3");
+    expect(loadChatBackgroundOpacity()).toBe(0.3);
   });
 
   it("defaults, persists, and validates the new-thread background effect", () => {

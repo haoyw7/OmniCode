@@ -1,13 +1,9 @@
 import {
   CHAT_BACKGROUND_OPACITY_MAX,
   CHAT_BACKGROUND_OPACITY_MIN,
-  CHAT_BACKGROUND_SCOPE_DEFAULT,
   NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
-  loadChatBackgroundEmptyOpacity,
-  loadChatBackgroundSessionOpacity,
-  loadChatBackgroundScope,
+  loadChatBackgroundOpacity,
   NEW_THREAD_BACKGROUND_EFFECTS,
-  type ChatBackgroundScope,
   type NewThreadBackgroundEffect,
 } from "../../settings/model/appearance";
 import { activePreferenceStore, preferenceStorage, SHARED_PREFERENCES_CHANGED } from "../../settings/model/sharedPreferences";
@@ -21,24 +17,15 @@ const projectKey = (project: string) => activePreferenceStore() ? pathKey(projec
 export const PROJECT_CHAT_BACKGROUND_CHANGED =
   "omnicode:project-chat-background-changed";
 
-export type ProjectChatBackground = {
-  path: string;
-  opacity: number;
-  scope: ChatBackgroundScope;
-};
-
 export type ProjectChatBackgroundSettings = {
   path: string;
-  emptyOpacity: number;
-  sessionOpacity: number;
-  scope: ChatBackgroundScope;
+  opacity: number;
   effect: NewThreadBackgroundEffect;
 };
 
-type StoredProjectChatBackground = Partial<ProjectChatBackground> & {
+type StoredProjectChatBackground = Partial<ProjectChatBackgroundSettings> & {
   emptyOpacity?: number;
   sessionOpacity?: number;
-  effect?: NewThreadBackgroundEffect;
 };
 
 let revision = Date.now();
@@ -73,10 +60,6 @@ function write(value: Record<string, StoredProjectChatBackground>) {
   }
 }
 
-function validScope(value: unknown): value is ChatBackgroundScope {
-  return value === "empty" || value === "all";
-}
-
 function validEffect(value: unknown): value is NewThreadBackgroundEffect {
   return NEW_THREAD_BACKGROUND_EFFECTS.includes(
     value as NewThreadBackgroundEffect,
@@ -96,27 +79,15 @@ export function loadProjectChatBackgroundSettings(
   const path = typeof stored?.path === "string" ? stored.path.trim() : "";
   if (!path) return null;
   if (activePreferenceStore() && !parsePreferenceAsset(path)) return null;
-  const legacyOpacity = storedOpacity(
-    stored.opacity,
-    loadChatBackgroundEmptyOpacity(),
-  );
-  const hasStoredOpacity =
-    typeof stored.opacity === "number" && Number.isFinite(stored.opacity);
-  const hasStoredEmptyOpacity =
-    typeof stored.emptyOpacity === "number" &&
-    Number.isFinite(stored.emptyOpacity);
   return {
     path,
-    emptyOpacity: storedOpacity(stored.emptyOpacity, legacyOpacity),
-    sessionOpacity: storedOpacity(
+    opacity: storedOpacity(
       stored.sessionOpacity,
-      hasStoredEmptyOpacity
-        ? storedOpacity(stored.emptyOpacity, legacyOpacity)
-        : hasStoredOpacity
-          ? legacyOpacity
-          : loadChatBackgroundSessionOpacity(),
+      storedOpacity(
+        stored.emptyOpacity,
+        storedOpacity(stored.opacity, loadChatBackgroundOpacity()),
+      ),
     ),
-    scope: validScope(stored.scope) ? stored.scope : loadChatBackgroundScope(),
     effect: validEffect(stored.effect)
       ? stored.effect
       : NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
@@ -134,48 +105,13 @@ export function saveProjectChatBackgroundSettings(
   const next = read();
   next[projectKey(project)] = {
     path,
-    emptyOpacity: clampOpacity(value.emptyOpacity),
-    sessionOpacity: clampOpacity(value.sessionOpacity),
-    scope: validScope(value.scope)
-      ? value.scope
-      : CHAT_BACKGROUND_SCOPE_DEFAULT,
+    opacity: clampOpacity(value.opacity),
     effect: validEffect(value.effect)
       ? value.effect
       : NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
   };
   write(next);
   notifyProjectChatBackgroundChanged(imageChanged);
-}
-
-export function loadProjectChatBackground(
-  project: string,
-): ProjectChatBackground | null {
-  const settings = loadProjectChatBackgroundSettings(project);
-  if (!settings) return null;
-  return {
-    path: settings.path,
-    opacity: settings.emptyOpacity,
-    scope: settings.scope,
-  };
-}
-
-export function saveProjectChatBackground(
-  project: string,
-  value: ProjectChatBackground,
-) {
-  const path = value.path.trim();
-  if (!project || !path) return;
-  if (activePreferenceStore() && !parsePreferenceAsset(path)) throw new Error("Upload the background to its Host before saving.");
-  const next = read();
-  next[projectKey(project)] = {
-    path,
-    opacity: clampOpacity(value.opacity),
-    scope: validScope(value.scope)
-      ? value.scope
-      : CHAT_BACKGROUND_SCOPE_DEFAULT,
-  };
-  write(next);
-  notifyProjectChatBackgroundChanged();
 }
 
 export function clearProjectChatBackgroundSetting(project: string) {

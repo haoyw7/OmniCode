@@ -18,12 +18,8 @@ import {
   loadThemeDarkLightness,
   applyChatBackground,
   loadChatBackgroundPath,
-  applyChatBackgroundEmptyOpacity,
-  loadChatBackgroundEmptyOpacity,
-  applyChatBackgroundSessionOpacity,
-  loadChatBackgroundSessionOpacity,
-  applyChatBackgroundScope,
-  loadChatBackgroundScope,
+  applyChatBackgroundOpacity,
+  loadChatBackgroundOpacity,
 } from "../features/settings/model/appearance";
 import { initSounds } from "../features/settings/model/sounds";
 import { initTypography } from "../features/settings/model/typography";
@@ -45,9 +41,7 @@ initTypography();
 const applyBackground = () => {
   const path = loadChatBackgroundPath();
   applyChatBackground(path && parsePreferenceAsset(path) ? path : null);
-  applyChatBackgroundEmptyOpacity(loadChatBackgroundEmptyOpacity());
-  applyChatBackgroundSessionOpacity(loadChatBackgroundSessionOpacity());
-  applyChatBackgroundScope(loadChatBackgroundScope());
+  applyChatBackgroundOpacity(loadChatBackgroundOpacity());
 };
 applyBackground();
 subscribeSharedPreferences(() => {
