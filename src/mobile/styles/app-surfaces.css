@@ -210,7 +210,7 @@ html[data-mobile-skin] .mobile-git-file-path {
   font-size: var(--text-m-body);
   font-weight: var(--font-weight-medium);
 }
-html[data-mobile-skin] .assistant-chat[data-layout="mobile"] :is(.assistant-card, .assistant-input) {
+html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .assistant-input {
   border-radius: var(--m-page-radius);
   border: 1px solid var(--m-page-divider);
   background: var(--color-m-panel);

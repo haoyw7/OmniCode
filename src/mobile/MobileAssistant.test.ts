@@ -1076,9 +1076,9 @@ it("shows only the latest compact card for a repeated session", async () => {
   await flush();
   expect(node.querySelectorAll(".assistant-card")).toHaveLength(1);
   expect(node.querySelector(".assistant-card")?.textContent).toContain("Task 3");
-  expect(node.querySelector(".assistant-card")?.textContent).toContain("Project");
+  expect(button("Open session").title).toContain("Project");
   expect(node.querySelector('.assistant-card [role="img"][aria-label="Codex"]')).not.toBeNull();
-  expect(node.querySelector(".assistant-card")?.textContent).toContain("Session: task");
+  expect(button("Open session").title).toContain("Session: task");
   expect(node.querySelector(".assistant-card")?.textContent).toContain("Completed");
   expect(node.querySelector('.assistant-card button[aria-label="Open session"]')).not.toBeNull();
   expect(data.rpc.mock.calls.some(([method]) => method === "assistant.timeline")).toBe(false);
