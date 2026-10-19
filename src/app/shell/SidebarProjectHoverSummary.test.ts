@@ -170,6 +170,19 @@ it("keeps the session tree while separating projectless chats from local and rem
   expect(props.recents).toHaveLength(3);
 });
 
+it("lists a chat once when its folder arrives with different path spellings", () => {
+  const registered = "C:\\Users\\me\\Documents\\omnicode\\2026-10-13\\chat-120000-abcdef";
+  const stored = "c:/Users/me/Documents/omnicode/2026-10-13/chat-120000-abcdef";
+  localStorage.setItem("omnicode.chatFolders.v1", JSON.stringify([registered]));
+  props.projectHistory = [row("chat", stored)];
+  props.openSessions = [row("chat", stored)];
+  props.desktopMode = "chat";
+  act(() => render());
+  expect(captured.projectList!.chatEntries?.map(({ id }) => id)).toEqual([
+    "c:/users/me/documents/omnicode/2026-10-13/chat-120000-abcdef:chat",
+  ]);
+});
+
 it("loads a collapsed local project once per in-flight hover and recognizes successful empty", async () => {
   const request = deferred();
   props.onLoadProject = vi.fn(() => request.promise);

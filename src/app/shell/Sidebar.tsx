@@ -169,11 +169,20 @@ function SidebarComponent(props: SidebarProps) {
     [allProjects, props.desktopMode],
   );
   const chatFolders = useChatFolders(props.recents !== undefined);
-  const chatPaths = useMemo(() => [...new Set([
-    ...chatFolders,
-    ...projectHistory.filter((row) => row.cwd === "~" || isChatFolder(row.cwd)).map((row) => row.cwd),
-    ...(props.openSessions ?? []).filter((row) => row.cwd === "~" || isChatFolder(row.cwd)).map((row) => row.cwd),
-  ])], [chatFolders, projectHistory, props.openSessions]);
+  // The same chat folder can arrive with different separators or drive case;
+  // dedupe by key so its sessions are not listed once per spelling.
+  const chatPaths = useMemo(() => {
+    const byKey = new Map<string, string>();
+    for (const path of [
+      ...chatFolders,
+      ...projectHistory.filter((row) => row.cwd === "~" || isChatFolder(row.cwd)).map((row) => row.cwd),
+      ...(props.openSessions ?? []).filter((row) => row.cwd === "~" || isChatFolder(row.cwd)).map((row) => row.cwd),
+    ]) {
+      const key = pathKey(path);
+      if (!byKey.has(key)) byKey.set(key, path);
+    }
+    return [...byKey.values()];
+  }, [chatFolders, projectHistory, props.openSessions]);
   const visibleChatPaths = props.desktopMode === "code" ? [] : chatPaths;
   const projectPathsKey = [
     ...projects.map((project) => project.path),
