@@ -112,6 +112,10 @@ fn resolve_candidates(candidates: Vec<PathBuf>, macos: bool) -> Result<PathBuf, 
                 pair,
                 (Some("https://www.workbuddy.cn"), Some("workbuddy-desktop"))
                     | (
+                        Some("https://copilot.tencent.com"),
+                        Some("workbuddy-desktop")
+                    )
+                    | (
                         Some("https://www.workbuddy.ai"),
                         Some("workbuddy-desktop-ai")
                     )
@@ -273,6 +277,22 @@ mod tests {
                     assert_eq!(resolve_candidates(vec![bundle], true).unwrap(), executable);
                 }
             }
+        }
+    }
+
+    #[test]
+    fn discovers_tencent_china_endpoint_without_accepting_international_auth() {
+        for macos in [false, true] {
+            let fixture = Fixture::new();
+            let (bundle, executable, cli) = fixture.install(macos, false);
+            std::fs::write(cli.join("product.json"), r#"{"endpoint":"https://copilot.tencent.com","authentication":{"id":"workbuddy-desktop"}}"#).unwrap();
+            let candidate = if macos { bundle } else { executable.clone() };
+            assert_eq!(
+                resolve_candidates(vec![candidate.clone()], macos).unwrap(),
+                executable
+            );
+            std::fs::write(cli.join("product.json"), r#"{"endpoint":"https://copilot.tencent.com","authentication":{"id":"workbuddy-desktop-ai"}}"#).unwrap();
+            assert!(resolve_candidates(vec![candidate], macos).is_err());
         }
     }
 

@@ -22,7 +22,7 @@ function installation(edition: "cn" | "global", uid: string = edition, custom?: 
   const resources = macos ? join(dirname(dirname(executable)), "Resources") : join(dirname(executable), "resources");
   const cli = join(resources, "app.asar.unpacked", "cli");
   mkdirSync(join(cli, "bin"), { recursive: true }); mkdirSync(dirname(executable), { recursive: true }); writeFileSync(executable, ""); writeFileSync(join(cli, "bin", "codebuddy"), "");
-  writeFileSync(join(cli, "product.json"), JSON.stringify({ endpoint: edition === "cn" ? "https://www.workbuddy.cn" : "https://www.workbuddy.ai", authentication: { id: authId }, version: "5.test" }));
+  writeFileSync(join(cli, "product.json"), JSON.stringify({ endpoint: edition === "cn" ? "https://copilot.tencent.com" : "https://www.workbuddy.ai", authentication: { id: authId }, version: "5.test" }));
   writeFileSync(join(cli, "package.json"), JSON.stringify({ publishConfig: { customPackage: { version: "2.test-" + edition } } }));
   const data = macos ? join(root, "Library/Application Support") : root;
   const auth = join(data, "CodeBuddyExtension", "Data", "Public", "auth"); mkdirSync(auth, { recursive: true });

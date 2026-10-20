@@ -8,14 +8,15 @@ const { spawn, spawnSync } = require('node:child_process');
 const { StringDecoder } = require('node:string_decoder');
 
 const EDITIONS = [
-  { edition: 'cn', directory: 'WorkBuddy', executable: 'WorkBuddy.exe', bundle: 'WorkBuddy.app', origin: 'https://www.workbuddy.cn', authId: 'workbuddy-desktop', label: 'WorkBuddy China' },
-  { edition: 'global', directory: 'WorkBuddyAI', executable: 'WorkBuddyAI.exe', bundle: 'WorkBuddy AI.app', origin: 'https://www.workbuddy.ai', authId: 'workbuddy-desktop-ai', label: 'WorkBuddy International' },
+  { edition: 'cn', directory: 'WorkBuddy', executable: 'WorkBuddy.exe', bundle: 'WorkBuddy.app', origins: ['https://www.workbuddy.cn', 'https://copilot.tencent.com'], authId: 'workbuddy-desktop', label: 'WorkBuddy China' },
+  { edition: 'global', directory: 'WorkBuddyAI', executable: 'WorkBuddyAI.exe', bundle: 'WorkBuddy AI.app', origins: ['https://www.workbuddy.ai'], authId: 'workbuddy-desktop-ai', label: 'WorkBuddy International' },
 ];
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 class BridgeError extends Error {}
 function fail(message) { throw new BridgeError(message); }
 function json(file) { return JSON.parse(fs.readFileSync(file, 'utf8')); }
 function hash(value) { return createHash('sha256').update(value).digest('hex'); }
+function acceptsOrigin(installation, origin) { return installation.origins.includes(origin); }
 
 function discoveryLocations(platform = process.platform, home = os.homedir(), local = process.env.LOCALAPPDATA) {
   if (platform === 'win32') {
@@ -47,7 +48,7 @@ function installations(options = {}, locations = discoveryLocations()) {
     try {
       const { executable, resources, cli } = installationLayout(candidate, locations.platform);
       const product = json(path.join(cli, 'product.json'));
-      const edition = EDITIONS.find(e => e.authId === product.authentication?.id && e.origin === product.endpoint);
+      const edition = EDITIONS.find(e => e.authId === product.authentication?.id && acceptsOrigin(e, product.endpoint));
       if (!edition || found.has(edition.edition) || !fs.statSync(executable).isFile()) continue;
       if (!fs.statSync(path.join(cli, 'bin', 'codebuddy')).isFile()) continue;
       if (candidate === options.binaryPath) overrideValid = true;
@@ -100,35 +101,55 @@ function readAsarEntry(archive, name) {
     return bytes;
   } finally { if (fd !== undefined) fs.closeSync(fd); process.noAsar = noAsar; }
 }
-function accessToken(installation, configRoot, expectedAccountId) {
+function authenticationCodec(installation, configRoot, getPayload = () => process._linkedBinding('electron_browser_workbuddy_storage').loggerGet()) {
   const archive = path.join(installation.resources, 'app.asar');
-  const modules = ['app-lifetime-job.js', 'rolldown-runtime.js', 'logger2.js'].map(name => ({ name, bytes: readAsarEntry(archive, 'main/' + name) }));
+  const readModules = names => names.map(name => ({ name, bytes: readAsarEntry(archive, 'main/' + name) }));
+  let modules, named = false;
+  try { modules = readModules(['app-lifetime-job.js', 'rolldown-runtime.js', 'logger2.js']); }
+  catch { modules = readModules(['dist.js', 'chunk.js']); named = true; }
   const cryptoDir = path.join(configRoot, 'bridge-code', hash(Buffer.concat(modules.map(m => m.bytes))));
   fs.mkdirSync(cryptoDir, { recursive: true, mode: 0o700 });
   for (const module of modules) {
     const destination = path.join(cryptoDir, module.name);
     if (!fs.existsSync(destination)) fs.writeFileSync(destination, module.bytes, { mode: 0o600, flag: 'wx' });
   }
-  const c = require(path.join(cryptoDir, 'app-lifetime-job.js'));
-  if (typeof c.D !== 'function') fail('This WorkBuddy authentication version is not supported');
-  c.D();
-  if (![c.G, c.R, c.K].every(f => typeof f === 'function')) fail('This WorkBuddy authentication version is not supported');
-  const caps = c.G(process._linkedBinding('electron_browser_workbuddy_storage').loggerGet());
-  if (caps.symmetric.status !== 'available') fail('WorkBuddy authentication storage is unavailable');
-  const codec = new c.R(caps.symmetric.value);
-  let plain;
+  const c = require(path.join(cryptoDir, named ? 'dist.js' : 'app-lifetime-job.js'));
+  const Crypto = named ? c.AtRestCrypto : c.R;
+  const parse = named ? c.parseSupportedEnvelope : c.K;
+  if (![Crypto, parse, named ? c.normalizeAtRestKeyPayload : c.G].every(f => typeof f === 'function') || (!named && typeof c.D !== 'function'))
+    fail('This WorkBuddy authentication version is not supported');
+  let key;
+  if (named) key = c.normalizeAtRestKeyPayload(getPayload());
+  else {
+    c.D();
+    const caps = c.G(getPayload());
+    if (caps.symmetric.status !== 'available') fail('WorkBuddy authentication storage is unavailable');
+    key = caps.symmetric.value;
+  }
+  try {
+    const codec = new Crypto(key);
+    return { open: bytes => codec.open(parse(bytes), { framing: 'field' }),
+      dispose: () => { try { codec.dispose(); } finally { key.key.fill(0); } } };
+  } catch (error) { key?.key.fill(0); throw error; }
+}
+function accessToken(installation, configRoot, expectedAccountId) {
+  let plain, codec;
   try {
     const doc = json(installation.authFile);
     if ('wb-' + installation.edition + '-' + hash(String(doc.account?.uid)).slice(0, 32) !== expectedAccountId) fail('This WorkBuddy conversation belongs to another account');
-    if (doc.auth?.accessToken?.$wbEncrypted !== 1) fail('Unsupported WorkBuddy login record');
-    plain = codec.open(c.K(Buffer.from(doc.auth.accessToken.envelope, 'base64')), { framing: 'field' });
-    const value = plain.toString('utf8');
+    let value = doc.auth?.accessToken;
+    if (typeof value !== 'string') {
+      if (value?.$wbEncrypted !== 1 || typeof value.envelope !== 'string') fail('Unsupported WorkBuddy login record');
+      codec = authenticationCodec(installation, configRoot);
+      plain = codec.open(Buffer.from(value.envelope, 'base64'));
+      value = plain.toString('utf8');
+    }
     const token = value.startsWith('"') ? JSON.parse(value) : value;
     const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
-    if (new URL(claims.iss).origin !== installation.origin || String(claims.sub) !== String(doc.account.uid)) fail('WorkBuddy login does not match the selected region and account');
+    if (!acceptsOrigin(installation, new URL(claims.iss).origin) || String(claims.sub) !== String(doc.account.uid)) fail('WorkBuddy login does not match the selected region and account');
     if (!Number.isFinite(claims.exp) || claims.exp * 1000 <= Date.now()) fail('WorkBuddy login has expired. Sign in on the execution machine and refresh accounts.');
     return token;
-  } finally { plain?.fill(0); codec.dispose(); caps.symmetric.value.key.fill(0); }
+  } finally { plain?.fill(0); codec?.dispose(); }
 }
 function environment(installation, token, configDir) {
   const env = { ...process.env };
@@ -271,7 +292,7 @@ async function main() {
   if (mode === 'run') { run(options, args); return undefined; }
   fail('Unsupported WorkBuddy bridge operation');
 }
-module.exports = { accounts, accountFor, installations, discoveryLocations, select, readAsarEntry, imageMime, imageResults, sanitize, environment };
+module.exports = { accounts, accountFor, installations, discoveryLocations, select, readAsarEntry, imageMime, imageResults, sanitize, environment, acceptsOrigin, authenticationCodec, accessToken };
 if (require.main === module) main().then(value => { if (value !== undefined) { process.stdout.write(JSON.stringify(value) + '\n'); process.exit(0); } }).catch(error => {
   // Do not serialize native exceptions: malformed JWT/envelope errors may quote secrets.
   process.stdout.write(JSON.stringify({ error: error instanceof BridgeError ? error.message : 'WorkBuddy authentication or initialization failed. Refresh the login on the execution machine.' }) + '\n');
