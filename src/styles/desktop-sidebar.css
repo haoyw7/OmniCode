@@ -532,6 +532,9 @@ html[data-skin] [data-desktop-sidebar] [data-session-dense] :is([data-session-me
 html[data-skin] [data-desktop-sidebar] [data-session-dense]:is(:hover, :focus-within) :is([data-session-menu], [data-session-archive]) {
   display: inline-flex;
 }
+html[data-skin] [data-desktop-sidebar="chat"] [data-session-dense] [data-session-archive] {
+  margin-inline-end: var(--desktop-sidebar-action-gap);
+}
 html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-worktree], [data-session-remote-control], [data-session-trailing-status], [data-automation-icon], [data-orchestration-icon]) {
   display: grid;
   place-items: center;
