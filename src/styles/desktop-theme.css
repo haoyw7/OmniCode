@@ -126,12 +126,14 @@ html[data-skin].theme-light [data-session-review-shell] [data-session-review-bor
   60% { opacity: 0.25; }
 }
 
-html[data-skin]:not(.theme-light) {
+html[data-skin][data-skin]:not(.theme-light) {
+  --scrollbar-thumb-color: rgb(240 239 236 / 40%);
+  --scrollbar-thumb-hover-color: rgb(240 239 236 / 60%);
   /* Native scrollbar buttons cannot use CSS masks; keep their SVG ink here. */
-  --scrollbar-arrow-up-idle: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.15'/%3E%3C/svg%3E");
-  --scrollbar-arrow-up-edge: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.32'/%3E%3C/svg%3E");
-  --scrollbar-arrow-down-idle: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.15' transform='rotate%28180 3.5 3.5%29'/%3E%3C/svg%3E");
-  --scrollbar-arrow-down-edge: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.32' transform='rotate%28180 3.5 3.5%29'/%3E%3C/svg%3E");
+  --scrollbar-arrow-up-idle: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.4'/%3E%3C/svg%3E");
+  --scrollbar-arrow-up-edge: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.6'/%3E%3C/svg%3E");
+  --scrollbar-arrow-down-idle: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.4' transform='rotate%28180 3.5 3.5%29'/%3E%3C/svg%3E");
+  --scrollbar-arrow-down-edge: url("data:image/svg+xml,%3Csvg xmlns='http%3A//www.w3.org/2000/svg' viewBox='0 0 7 7'%3E%3Cpath d='M2.9 .5Q3.5 -.5 4.1 .5L6.85 5.7Q7.5 7 6 7H1Q-.5 7 .15 5.7Z' fill='%23f0efec' opacity='.6' transform='rotate%28180 3.5 3.5%29'/%3E%3C/svg%3E");
 }
 
 [data-skin="midnight"] {
