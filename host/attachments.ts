@@ -9,7 +9,7 @@ import {
   unlinkSync,
 } from "node:fs";
 import { randomUUID } from "node:crypto";
-import { decodeGeneratedPng } from "../src/integrations/harness/core/generatedImage";
+import { decodeGeneratedImage } from "../src/integrations/harness/core/generatedImage";
 import { join } from "node:path";
 import type { Attachment } from "../src/features/sessions/model/session";
 import type { RemoteAttachment } from "../src/features/connections/model/protocol";
@@ -21,8 +21,8 @@ const MAX_CHUNK_BYTES = 512 * 1024;
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export function saveGeneratedImageAttachment(store: HostStore, data: string, name: string): Attachment {
-  const bytes = decodeGeneratedPng(data);
+export function saveGeneratedImageAttachment(store: HostStore, data: string, name: string, mimeType = "image/png"): Attachment {
+  const bytes = decodeGeneratedImage(data, mimeType);
   const id = randomUUID();
   const path = attachmentPath(store, id);
   mkdirSync(store.attachmentDir, { recursive: true, mode: 0o700 });
@@ -41,7 +41,7 @@ export function saveGeneratedImageAttachment(store: HostStore, data: string, nam
     if (!saved) { try { unlinkSync(path); } catch { /* Preserve the write error. */ } }
   }
   return { id, path, name: name.trim().slice(0, 255) || "generated.png",
-    kind: "image", mimeType: "image/png", size: bytes.length };
+    kind: "image", mimeType, size: bytes.length };
 }
 
 export function attachmentPath(store: HostStore, id: string): string {

@@ -6,6 +6,7 @@ import { homedir } from "node:os";
 import { delimiter, dirname, extname, join, basename, isAbsolute } from "node:path";
 import { promisify } from "node:util";
 import type { RemoteProvider } from "../src/features/connections/model/protocol";
+import { resolveWorkBuddy } from "./workbuddy";
 import { isWindowsDesktopProviderPath, resolveWindowsDesktopProvider } from "./windows-provider-cli";
 import {
   ensureProviderRuntime,
@@ -32,6 +33,7 @@ const npmPackages: Record<string, string[]> = {
 };
 
 const binaryNames: Record<RemoteProvider, string[]> = {
+  workbuddy: ["WorkBuddy.exe", "WorkBuddyAI.exe"],
   codex: ["codex"],
   claude: ["claude"],
   cursor: ["cursor-agent", "agent"],
@@ -229,6 +231,7 @@ async function resolveInstalledProvider(
 
 /** Discovery stays offline; desktop-owned Hosts may explicitly request installation. */
 export async function resolveProvider(provider: RemoteProvider): Promise<string> {
+  if (provider === "workbuddy") return resolveWorkBuddy();
   try { return await resolveInstalledProvider(provider); } catch (error) {
     if (supportsProviderRuntime(provider)) {
       const managed = await findManagedProviderRuntime(provider);

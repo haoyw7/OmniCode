@@ -285,7 +285,7 @@ export function ProviderAccountsSettings() {
             id: editor.accountId, provider: editor.provider,
             label: editor.label, ...(editor.homeEdited ? { dataHome: editor.dataHome ?? "" } : {}),
           });
-          clearCachedRateLimits(editor.provider, editor.accountId);
+          if (editor.provider !== "workbuddy") clearCachedRateLimits(editor.provider, editor.accountId);
           setVersion((value) => value + 1);
         } else if (editor.importCurrent) {
           await importCurrentCodexAccount(editor.label);
@@ -315,7 +315,7 @@ export function ProviderAccountsSettings() {
         success: uiT("Signed in to {account}", { account: account.label }),
         error: false,
       });
-      clearCachedRateLimits(account.provider, account.id);
+      if (account.provider !== "workbuddy") clearCachedRateLimits(account.provider, account.id);
       setVersion((value) => value + 1);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
@@ -345,7 +345,7 @@ export function ProviderAccountsSettings() {
         { loading: uiT("Removing account…"), success: uiT("Account removed"), error: false },
       );
       removeProviderAccount(account.provider, account.id);
-      clearCachedRateLimits(account.provider, account.id);
+      if (account.provider !== "workbuddy") clearCachedRateLimits(account.provider, account.id);
       if (
         editor?.provider === account.provider &&
         editor.accountId === account.id
@@ -379,6 +379,11 @@ export function ProviderAccountsSettings() {
         usage.refresh();
       } }} />}
     >
+      {providerAccounts("workbuddy").length > 0 && <div className="border-b border-content/5 px-4 py-3.5">
+        <div className="flex items-center gap-2.5"><HarnessIcon harness="workbuddy" className="size-4" /><span>WorkBuddy</span></div>
+        <p className="mt-1 text-[11px] text-content/50">{uiT("Manage this login in WorkBuddy on the execution machine")}</p>
+        {providerAccounts("workbuddy").map(account => <div key={account.id} className="mt-2 text-[12px] text-content/80">{uiT(account.label)}</div>)}
+      </div>}
       {PROVIDER_ACCOUNT_PROVIDERS.map((provider) => {
         const accounts = providerAccounts(provider);
         const adding = editor?.provider === provider && !editor.accountId;

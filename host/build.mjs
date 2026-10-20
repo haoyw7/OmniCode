@@ -1,5 +1,6 @@
 import { build } from "esbuild";
-import { copyFile } from "node:fs/promises";
+import { copyFile, readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { excludeEvaluationEsbuild } from "../scripts/production-inputs.mjs";
 
 await build({
@@ -11,7 +12,13 @@ await build({
   target: "node24",
   loader: { ".ps1": "text", ".sh": "text", ".md": "text" },
   define: { "import.meta.hot": "undefined" },
-  plugins: [excludeEvaluationEsbuild()],
+  plugins: [excludeEvaluationEsbuild(), {
+    name: "workbuddy-runtime-source",
+    setup(build) {
+      build.onResolve({ filter: /workbuddyRuntime\.cjs\?raw$/ }, args => ({ path: resolve(args.resolveDir, args.path.slice(0, -4)), namespace: "workbuddy-runtime" }));
+      build.onLoad({ filter: /.*/, namespace: "workbuddy-runtime" }, async args => ({ contents: await readFile(args.path, "utf8"), loader: "text" }));
+    },
+  }],
   sourcemap: true,
   // The workflow analyzer bundles the CommonJS TypeScript compiler, which reads
   // require/__filename at load time; provide them in the ESM output.

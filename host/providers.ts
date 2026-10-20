@@ -12,6 +12,7 @@ import * as omp from "../src/integrations/harness/providers/omp/omp";
 import * as fx from "../src/integrations/harness/providers/fx/fx";
 import * as hermes from "../src/integrations/harness/providers/hermes/hermes";
 import * as antigravity from "../src/integrations/harness/providers/antigravity/antigravity";
+import { workbuddyAdapter } from "../src/integrations/harness/providers/workbuddy/workbuddyAdapter";
 import type {
   SendTurnInput,
   CompactContextInput,
@@ -58,6 +59,12 @@ export interface HostProvider {
 }
 
 export const hostProviders: Record<RemoteProvider, HostProvider> = {
+  workbuddy: {
+    botCapabilities: providerBotCapabilities("workbuddy"),
+    send: workbuddyAdapter.sendTurn, cancel: workbuddyAdapter.cancelTurn,
+    stop: workbuddyAdapter.forgetSession, bind: workbuddyAdapter.bindSession,
+    approve: workbuddyAdapter.respondApproval, answer: workbuddyAdapter.respondQuestion!,
+  },
   codex: {
     botCapabilities: providerBotCapabilities("codex"),
     readSessionTitle: codex.readCodexSessionTitle,

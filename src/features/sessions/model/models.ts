@@ -34,6 +34,7 @@ export function withSessionModelSettings(
 }
 
 export type AgentModel = {
+  supportsImages?: boolean;
   id: string;
   harness: HarnessId;
   name: string;
@@ -214,6 +215,7 @@ export const MODELS: AgentModel[] = [
 ];
 
 export const DEFAULT_MODEL_ID: Record<HarnessId, string> = {
+  workbuddy: "workbuddy:cn:auto",
   claude: "claude:sonnet-5",
   codex: "",
   cursor: "cursor:composer-2.5",
@@ -243,6 +245,7 @@ export type LastModelChoice = {
 };
 
 const HARNESS_ORDER: HarnessId[] = [
+  "workbuddy",
   "claude",
   "codex",
   "cursor",

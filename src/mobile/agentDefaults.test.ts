@@ -253,6 +253,14 @@ describe("mobile defaults scoped to Host and Agent", () => {
       ),
     ).toEqual([]);
   });
+  it("keeps a WorkBuddy default account and model in the same region", () => {
+    const previous: MobileAgentDefaults = { agents: { workbuddy: { model: "workbuddy:cn:auto", modelSettings: { unsupported: "value" } } } };
+    const next = withDefaultAccount(previous, "workbuddy", "wb-global-one");
+    expect(next.agents?.workbuddy).toEqual({ model: "workbuddy:global:fast-model", modelSettings: {}, accountId: "wb-global-one" });
+    expect(previous.agents?.workbuddy?.model).toBe("workbuddy:cn:auto");
+    expect(defaultProviderAccount("workbuddy", next, "workbuddy:global:fast-model")).toBe("wb-global-one");
+    expect(defaultProviderAccount("workbuddy", next, "workbuddy:cn:auto")).toBeUndefined();
+  });
   it("ignores corrupt storage and unknown provider fields", () => {
     localStorage.setItem("omnicode.mobileAgentDefaults", "broken");
     expect(loadMobileAgentDefaults("one")).toEqual({});

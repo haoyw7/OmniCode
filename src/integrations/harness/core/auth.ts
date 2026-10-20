@@ -5,6 +5,7 @@ import { supportsProviderAccounts } from "../../../features/providers/model/prov
 import { HARNESS_TITLE, type HarnessId } from "../../../features/sessions/model/session";
 import * as child from "./child";
 import { harnessLoginArgs } from "./authSupport";
+import { translate } from "../../../shared/i18n/language";
 
 export {
   harnessLoginArgs,
@@ -54,6 +55,7 @@ export function loginHarness(
   harness: HarnessId,
   accountId?: string,
 ): Promise<void> {
+  if (harness === "workbuddy") return Promise.reject(new Error(translate("Manage this login in WorkBuddy on the execution machine")));
   const key = `${harness}:${accountId ?? "default"}`;
   const current = inflight.get(key);
   if (current) return current;

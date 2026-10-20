@@ -19,6 +19,7 @@ import { activePreferenceStore, preferenceStorage } from "../features/settings/m
 const KEY = "omnicode.mobileAgentDefaults";
 const SHARED_KEY = "omnicode.agentDefaults";
 export const ACCOUNT_AGENTS = [
+  "workbuddy",
   "codex",
   "claude",
 ] as const satisfies readonly RemoteProvider[];
@@ -278,6 +279,13 @@ export function withDefaultAccount(
 ): MobileAgentDefaults {
   const { accountNeedsConfirmation: _pending, ...previous } =
     defaults.agents?.[agent] ?? {};
+  if (agent === "workbuddy") {
+    const edition = accountId.startsWith("wb-global-") ? "global" : "cn";
+    if (!previous.model?.startsWith(`workbuddy:${edition}:`)) {
+      previous.model = edition === "global" ? "workbuddy:global:fast-model" : "workbuddy:cn:auto";
+      previous.modelSettings = {};
+    }
+  }
   return {
     ...defaults,
     agents: { ...defaults.agents, [agent]: { ...previous, accountId } },
@@ -301,8 +309,10 @@ export function confirmLegacyAccounts(
 export function defaultProviderAccount(
   harness: RemoteProvider,
   defaults: MobileAgentDefaults,
+  model?: string,
 ): string | undefined {
   const id = defaults.agents?.[harness]?.accountId;
+  if (harness === "workbuddy" && model && id && id.startsWith("wb-global-") !== model.startsWith("workbuddy:global:")) return undefined;
   return id &&
     id !== "default" &&
     ACCOUNT_AGENTS.some((agent) => agent === harness)

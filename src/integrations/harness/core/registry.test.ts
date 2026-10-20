@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   hydrateCachedModelCatalogs,
   resetHarnessModelOverlays,
+  resolveModel,
   setHarnessModels,
 } from "../../../features/sessions/model/models";
 import type { HarnessId } from "../../../features/sessions/model/session";
@@ -23,7 +24,7 @@ import {
   type HarnessAdapter,
 } from "./registry";
 import type { SendTurnInput, SteerTurnInput } from "./types";
-import { registerBuiltinHarnesses } from "./register";
+import { registerBuiltinHarnesses } from "../providers/register";
 
 function stub(
   id: "cursor" | "codex" | "claude" | "pi" | "omp",
@@ -256,6 +257,17 @@ describe("harness registry", () => {
 
     expect(claude).toHaveBeenCalledOnce();
     expect(pi).not.toHaveBeenCalled();
+  });
+
+  it("publishes adapter-owned catalog results and retains native capabilities", async () => {
+    const refreshCatalog = vi.fn(async () => [{ id: "cursor:returned", nativeId: "returned", name: "Provider value", supportsImages: false }]);
+    registerHarness(stub("cursor", { refreshCatalog }));
+    await refreshHarnessCatalogs(["cursor"]);
+    expect(resolveModel("cursor", "cursor:returned")).toMatchObject({
+      harness: "cursor", id: "cursor:returned", nativeId: "returned", name: "Provider value", supportsImages: false,
+    });
+    await refreshHarnessCatalogs(["cursor"]);
+    expect(refreshCatalog).toHaveBeenCalledOnce();
   });
 
   it("does not spawn a catalog probe twice after a live list lands", async () => {

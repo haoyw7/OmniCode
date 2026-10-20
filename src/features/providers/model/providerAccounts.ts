@@ -2,6 +2,7 @@ import { loadSharedAgentDefaults, updateSharedAgentDefault } from "../../setting
 import { preferenceStorage } from "../../settings/model/sharedPreferences";
 import { pathKey } from "../../../shared/lib/paths";
 import type { HarnessId } from "../../sessions/model/session";
+import { translate } from "../../../shared/i18n/language";
 
 const ACCOUNTS_KEY = "omnicode.providerAccounts.v1";
 const SELECTIONS_KEY = "omnicode.providerAccountSelections.v1";
@@ -48,15 +49,18 @@ export const PROVIDER_ACCOUNT_PROVIDERS = [
 ] as const satisfies readonly HarnessId[];
 
 export type ProviderAccountProvider =
-  (typeof PROVIDER_ACCOUNT_PROVIDERS)[number];
+  (typeof PROVIDER_ACCOUNT_PROVIDERS)[number] | "workbuddy";
+export type ManagedProviderAccountProvider = (typeof PROVIDER_ACCOUNT_PROVIDERS)[number];
 
 export function supportsProviderAccounts(
   provider: HarnessId,
 ): provider is ProviderAccountProvider {
-  return PROVIDER_ACCOUNT_PROVIDERS.some((candidate) => candidate === provider);
+  return provider === "workbuddy" || PROVIDER_ACCOUNT_PROVIDERS.some((candidate) => candidate === provider);
 }
 
 export type ProviderAccount = {
+  edition?: "cn" | "global";
+  readOnly?: boolean;
   id: string;
   provider: ProviderAccountProvider;
   label: string;
@@ -79,6 +83,9 @@ export function providerAccounts(
   provider: ProviderAccountProvider,
 ): ProviderAccount[] {
   const stored = readRecord<StoredAccounts>(ACCOUNTS_KEY);
+  if (provider === "workbuddy") return (Array.isArray(stored.workbuddy) ? stored.workbuddy : [])
+    .filter(account => isRecord(account) && validAccountId(account.id) && (account.edition === "cn" || account.edition === "global"))
+    .map(account => ({ ...account, provider, readOnly: true }));
   const seen = new Set<string>([DEFAULT_PROVIDER_ACCOUNT_ID]);
   const accounts = Array.isArray(stored[provider]) ? stored[provider] : [];
   let defaultLabel = DEFAULT_PROVIDER_ACCOUNT_LABEL;
@@ -120,11 +127,19 @@ export function providerAccounts(
   ];
 }
 
+/** A model choice is also an explicit region choice for a new WorkBuddy turn. */
+export function workBuddyAccountIdForModel(model: string, preferred?: string): string | undefined {
+  const edition = model.startsWith("workbuddy:global:") ? "global" : "cn";
+  const available = providerAccounts("workbuddy").filter(account => account.edition === edition);
+  return available.find(account => account.id === preferred)?.id ?? available[0]?.id;
+}
+
 export function newProviderAccount(
   provider: ProviderAccountProvider,
   label: string,
   dataHome?: string,
 ): ProviderAccount {
+  if (provider === "workbuddy") throw new Error(translate("Manage this login in WorkBuddy on the execution machine"));
   return {
     id: `account-${crypto.randomUUID()}`,
     provider,
@@ -135,6 +150,7 @@ export function newProviderAccount(
 }
 
 export function saveProviderAccount(account: ProviderAccount): void {
+  if (account.provider === "workbuddy") throw new Error(translate("Manage this login in WorkBuddy on the execution machine"));
   if (!validAccountId(account.id)) {
     return;
   }
@@ -158,6 +174,7 @@ export function renameProviderAccount(
   accountId: string,
   label: string,
 ): ProviderAccount | null {
+  if (provider === "workbuddy") return null;
   if (!validAccountId(accountId)) return null;
   const nextLabel = cleanLabel(label);
   if (!nextLabel) return null;
@@ -179,6 +196,7 @@ export function removeProviderAccount(
   provider: ProviderAccountProvider,
   accountId: string,
 ): boolean {
+  if (provider === "workbuddy") return false;
   if (accountId === DEFAULT_PROVIDER_ACCOUNT_ID || !validAccountId(accountId)) {
     return false;
   }
@@ -250,7 +268,7 @@ export function sharedProviderAccountId(
   provider: ProviderAccountProvider,
 ): string {
   const id = readRecord<SharedProviderDefaults>(SHARED_DEFAULTS_KEY)[provider];
-  return validAccountId(id) ? id : DEFAULT_PROVIDER_ACCOUNT_ID;
+  return validAccountId(id) ? id : provider === "workbuddy" ? providerAccounts(provider)[0]?.id ?? DEFAULT_PROVIDER_ACCOUNT_ID : DEFAULT_PROVIDER_ACCOUNT_ID;
 }
 
 export function selectedProviderAccountId(
@@ -326,11 +344,12 @@ export function subscribeProviderAccounts(listener: () => void): () => void {
 export function restoreProviderAccounts(value: unknown): void {
   if (!isRecord(value)) return;
   const stored: StoredAccounts = {};
-  for (const provider of PROVIDER_ACCOUNT_PROVIDERS) {
+  for (const provider of [...PROVIDER_ACCOUNT_PROVIDERS, "workbuddy"] as const) {
     const entries = value[provider];
     stored[provider] = Array.isArray(entries) ? entries.flatMap(entry => {
       if (!isRecord(entry) || !validAccountId(entry.id) || !cleanLabel(entry.label)) return [];
-      return [{ id: entry.id, provider, label: cleanLabel(entry.label) }];
+      return [{ id: entry.id, provider, label: cleanLabel(entry.label),
+        ...(provider === "workbuddy" ? { readOnly: true, ...(entry.edition === "cn" || entry.edition === "global" ? { edition: entry.edition } : {}) } : {}) }];
     }) : [];
   }
   writeAccounts(stored);

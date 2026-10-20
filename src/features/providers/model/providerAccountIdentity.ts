@@ -33,6 +33,10 @@ export async function readProviderAccountIdentity(
       );
     }
     if (source === "host") return null;
+    if (provider === "workbuddy") {
+      const accounts = await invoke<import("../../../integrations/harness/core/catalog").WorkBuddyAccount[]>("harness_workbuddy_accounts");
+      return accounts.find(account => account.id === accountId)?.identity ?? null;
+    }
     return (await invoke<ProviderAccountIdentity | null>(
       "provider_account_identity",
       { provider, accountId },

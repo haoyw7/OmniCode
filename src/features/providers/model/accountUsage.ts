@@ -21,6 +21,7 @@ export { accountHeadroom, accountStatus, bestAlternativeAccount, type AccountSta
 export const accountUsageKey = identityKey;
 
 function accountsFor(provider?: ProviderAccountProvider): ProviderAccount[] {
+  if (provider === "workbuddy") return [];
   return provider
     ? providerAccounts(provider)
     : PROVIDER_ACCOUNT_PROVIDERS.flatMap((entry) => providerAccounts(entry));
@@ -66,7 +67,7 @@ export function useProviderAccountUsage(
       try {
         await Promise.allSettled(
           targets.map((account) =>
-            loadRateLimits(account.provider, account.id, force),
+            account.provider === "workbuddy" ? Promise.resolve() : loadRateLimits(account.provider, account.id, force),
           ),
         );
       } finally {
