@@ -11,6 +11,7 @@ export function SessionWorktreeIcon({
   if (!session.linkedWorktree || session.worktreeRemoved) return null;
   return (
     <span
+      data-session-worktree
       role="img"
       aria-label={t("Worktree")}
       title={`${t("Worktree")}\n${session.executionCwd || session.cwd || ""}`}

@@ -403,7 +403,8 @@ html[data-skin] [data-desktop-sidebar] [data-ui="icon-button"][data-sidebar-row-
 html[data-skin] [data-desktop-sidebar] .group:is(:hover, :has(:focus-visible)) > [data-ui="icon-button"][data-sidebar-row-action] {
   display: inline-flex;
 }
-html[data-skin] [data-desktop-sidebar] [data-ui="icon-button"][data-sidebar-toolbar-action] > svg {
+html[data-skin] [data-desktop-sidebar] [data-ui="icon-button"][data-sidebar-toolbar-action] > svg,
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-worktree], [data-session-remote-control], [data-automation-icon], [data-orchestration-icon]) > svg {
   width: var(--desktop-sidebar-icon);
   height: var(--desktop-sidebar-icon);
   flex-shrink: 0;
@@ -494,9 +495,7 @@ html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] {
   height: var(--desktop-sidebar-session-row);
   min-height: var(--desktop-sidebar-session-row);
   padding-block: 4px;
-}
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] [data-session-select] {
-  padding-inline-end: var(--desktop-sidebar-toolbar-action);
+  column-gap: var(--desktop-sidebar-action-gap);
 }
 html[data-skin] [data-desktop-sidebar] [data-session-project] {
   position: relative;
@@ -510,19 +509,32 @@ html[data-skin] [data-desktop-sidebar] [data-session-project] {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-html[data-skin] [data-desktop-sidebar] [data-session-menu] {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-end: calc(var(--desktop-sidebar-action-inset) - 1px);
+/* Indicators and visible actions share the title line without reserved button slots. */
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] [data-session-actions] {
+  align-self: flex-start;
+  height: var(--desktop-sidebar-toolbar-action);
+  margin-block-start: calc((var(--desktop-sidebar-title-line) - var(--desktop-sidebar-toolbar-action)) / 2);
 }
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-remote-control], [data-session-trailing-status]) {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-end: calc(var(--desktop-sidebar-action-inset) - 1px);
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] [data-session-action-buttons] {
+  gap: var(--desktop-sidebar-action-gap);
+}
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-menu], [data-session-archive]) {
+  display: none;
+  position: relative;
+  inset: auto;
+  transform: none;
+}
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:is(:hover, :focus-within) :is([data-session-menu], [data-session-archive]) {
+  display: inline-flex;
+}
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-worktree], [data-session-remote-control], [data-session-trailing-status], [data-automation-icon], [data-orchestration-icon]) {
   display: grid;
   place-items: center;
   width: var(--desktop-sidebar-toolbar-action);
   height: var(--desktop-sidebar-toolbar-action);
+  margin-inline: 0;
+}
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-remote-control], [data-session-trailing-status]) {
   pointer-events: none;
 }
 html[data-skin] [data-desktop-sidebar] [data-session-trailing-status] .terminal-spinner {
@@ -530,28 +542,14 @@ html[data-skin] [data-desktop-sidebar] [data-session-trailing-status] .terminal-
   height: var(--desktop-sidebar-state);
   font-size: var(--desktop-sidebar-state);
 }
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-trailing-status]) [data-session-remote-control] {
-  inset-inline-end: calc(var(--desktop-sidebar-action-inset) - 1px + var(--desktop-sidebar-toolbar-action));
-}
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-trailing-status]):has([data-session-remote-control]) [data-session-select] {
-  padding-inline-end: calc(var(--desktop-sidebar-toolbar-action) * 2);
-}
 html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-menu]):is(:hover, :focus-within) [data-session-trailing-status],
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:is(:hover, :focus-within) [data-session-remote-control] {
-  opacity: 0;
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-menu], [data-session-archive]):is(:hover, :focus-within) [data-session-remote-control] {
+  display: none;
 }
 html[data-skin] [data-desktop-sidebar] [data-session-card]:not(:has([data-session-remote-control], [data-session-trailing-status])):is([data-session-active="true"], [data-session-selected="true"]) [data-session-menu] {
+  display: inline-flex;
   opacity: 1;
   pointer-events: auto;
-}
-/* Archive sits just before the actions menu; the title yields its room only while it shows. */
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] [data-session-archive] {
-  inset-block-start: 0;
-  inset-inline-end: calc(var(--desktop-sidebar-action-inset) - 1px + var(--desktop-sidebar-toolbar-action));
-  transform: none;
-}
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-archive]):is(:hover, :focus-within) [data-session-select] {
-  padding-inline-end: calc(var(--desktop-sidebar-toolbar-action) * 2);
 }
 html[data-skin] [data-desktop-sidebar] [data-session-rename-row][data-session-layout="two-line"] {
   flex-direction: column;

@@ -594,12 +594,12 @@ export const SessionCard = memo(function SessionCard({
                 />
               </span>
             </span>
-            {dense || (compact && !orchestrationExpanded) ? (
+            {(dense || (compact && !orchestrationExpanded)) && !twoLine ? (
               <span className="flex shrink-0 items-center gap-1.5">
                 {linkedUpdateDot}
                 <SessionWorktreeIcon session={session} />
-                {dense ? (twoLine ? null : denseStatus) : status}
-                {dense && !denseStatus && !twoLine ? (
+                {dense ? denseStatus : status}
+                {dense && !denseStatus ? (
                   <time
                     data-session-time
                     dateTime={new Date(sessionRecencyAt(session)).toISOString()}
@@ -657,6 +657,12 @@ export const SessionCard = memo(function SessionCard({
             <span className="min-w-0 flex-1" />
           )}
           <span data-session-action-buttons className="relative flex shrink-0 items-center gap-px">
+            {twoLine ? (
+              <>
+                {linkedUpdateDot}
+                <SessionWorktreeIcon session={session} />
+              </>
+            ) : null}
             {archiveButton}
             {twoLine && denseStatus ? (
               <span data-session-trailing-status>{denseStatus}</span>
