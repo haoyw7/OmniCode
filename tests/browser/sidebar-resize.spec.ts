@@ -12,6 +12,49 @@ async function painted(page: Page) {
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
 }
 
+for (const [width, reducedMotion] of [[260, "no-preference"], [360, "no-preference"], [260, "reduce"]] as const) {
+  test(`macOS mode switch stays inside the sidebar (${width}px, ${reducedMotion})`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.addInitScript(width => localStorage.setItem("omnicode.sidebarWidth", String(width)), width);
+    await page.goto("/tests/browser/desktop-visual.html?page=workspace&state=conversation&mode=chat");
+    await expect(page.locator("[data-desktop-sidebar]")).toBeVisible();
+    await page.evaluate(() => document.documentElement.classList.add("is-mac"));
+    await painted(page);
+    const history = page.locator(".desktop-titlebar-navigation [data-window-history-action]");
+    if (width === 260) await expect(history.first()).toBeHidden();
+    else await expect(history.first()).toBeVisible();
+    await expect(page.locator('[data-desktop-sidebar="chat"] [data-session-card]').first()).toBeVisible();
+    const samples = await page.evaluate(async () => {
+      const fixture = (window as unknown as { desktopFixture: { setMode(mode: "chat" | "code"): void } }).desktopFixture;
+      const violations: { mode: string; element: string; right: number; boundary: number }[] = [];
+      let count = 0;
+      for (const mode of ["code", "chat", "code", "chat"] as const) {
+        fixture.setMode(mode);
+        const start = performance.now();
+        while (performance.now() - start < 400) {
+          await new Promise(requestAnimationFrame);
+          count++;
+          const boundary = document.querySelector("[data-desktop-sidebar]")!.getBoundingClientRect().right;
+          for (const element of document.querySelectorAll<HTMLElement>(".desktop-mode-toggle, [data-session-card], [data-project-header]")) {
+            const rect = element.getBoundingClientRect();
+            if (rect.width && rect.height && rect.right > boundary + 0.6)
+              violations.push({ mode, element: element.className, right: rect.right, boundary });
+          }
+        }
+      }
+      return { count, violations };
+    });
+    expect(samples.count).toBeGreaterThan(4);
+    expect(samples.violations).toEqual([]);
+    await expect(page.locator('[data-desktop-sidebar="chat"] [data-session-card]').first()).toBeVisible();
+    await page.evaluate(() => {
+      (window as unknown as { desktopFixture: { setSidebar(open: boolean): void } }).desktopFixture.setSidebar(false);
+    });
+    await expect(page.locator("[data-sidebar-transition]")).toHaveAttribute("data-fold-state", "closed");
+    await expect(history.first()).toBeVisible();
+  });
+}
+
 test("opening sidebar does not intercept the workspace beyond its animated width", async ({ page }) => {
   await page.goto("/tests/browser/sidebar-transition.html");
   const pane = page.locator("[data-sidebar-transition]");
@@ -105,7 +148,7 @@ for (const mode of ["code", "chat"] as const) {
       const bounds = await sidebar.evaluate(el => {
         const rect = el.getBoundingClientRect();
         const shell = el.closest("[data-sidebar-transition]")!;
-        const line = document.querySelector("[data-sidebar-chrome-divider]")!;
+        const chrome = document.querySelector<HTMLElement>("[data-window-drag-bar]")!;
         const main = document.querySelector("[data-sidebar-main]")!;
         const handle = shell.querySelector(".resize-handle")!;
         const point = document.elementFromPoint(rect.right + 4, rect.top + 100);
@@ -113,15 +156,15 @@ for (const mode of ["code", "chat"] as const) {
           sidebar: rect.right,
           shell: shell.getBoundingClientRect().right,
           clip: shell.querySelector(".sidebar-transition-clip")!.getBoundingClientRect().right,
-          line: line.getBoundingClientRect().right,
+          line: chrome.getBoundingClientRect().left + parseFloat(getComputedStyle(chrome).getPropertyValue("--desktop-sidebar-chrome-background-width")),
           main: main.getBoundingClientRect().left,
           handle: handle.getBoundingClientRect().left,
-          dividerInset: getComputedStyle(el, "::after").right,
+          dividerInset: getComputedStyle(shell, "::after").right,
           resizeHit: handle.contains(point) || !!point?.closest("[data-resize-cursor]"),
         };
       });
       for (const edge of [bounds.shell, bounds.clip, bounds.line, bounds.main, bounds.handle]) {
-        expect(Math.abs(edge - bounds.sidebar)).toBeLessThan(0.6);
+        expect(Math.abs(edge - bounds.sidebar), JSON.stringify(bounds)).toBeLessThan(0.6);
       }
       expect(bounds.dividerInset).toBe("0px");
       expect(bounds.resizeHit).toBe(true);
@@ -140,6 +183,7 @@ for (const mode of ["code", "chat"] as const) {
       await check();
     }
     await page.mouse.up();
+    await painted(page);
     await check();
     await page.evaluate(() => {
       (window as unknown as { desktopFixture: { setSidebar(open: boolean): void } }).desktopFixture.setSidebar(false);

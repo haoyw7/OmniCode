@@ -20,6 +20,9 @@ import { TabVisitNav } from "./WindowChrome";
 import type { DesktopMode } from "../model/desktopMode";
 import type { ActivityBarProps } from "./ActivityBar";
 import { desktopNavigationIconArtwork, desktopTitlebarIconArtwork } from "../desktopIconArtwork";
+import { useInlineBreakpoints } from "../../shared/hooks/useInlineBreakpoints";
+
+const TITLEBAR_NAVIGATION_BREAKPOINTS = [206];
 
 /** Keep window navigation outside the animated sidebar and main surface. */
 export function DesktopTitlebarNavigation({
@@ -32,10 +35,13 @@ export function DesktopTitlebarNavigation({
 }) {
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
+  const navigationRef = useInlineBreakpoints(TITLEBAR_NAVIGATION_BREAKPOINTS);
   return (
     <IconArtworkContext.Provider value={desktopTitlebarIconArtwork}>
       <nav
+        ref={navigationRef}
         className="desktop-titlebar-navigation"
+        data-sidebar-open={navigation.panelActive || undefined}
         data-window-navigation={visible || undefined}
         aria-label={t("Window navigation")}
         data-tauri-drag-region="false"

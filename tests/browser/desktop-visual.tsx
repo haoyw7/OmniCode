@@ -54,7 +54,7 @@ Object.assign(window, { __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: 
     if (command === "session_checkpoint_status") return { files: [], undoLocked: false, workspaceShared: false };
     if (/git_branches/.test(command)) return { current: "main", detached: false, branches: [{ name: "main", current: true, remote: null }] };
     if (/git_diff_stats/.test(command)) return { additions: 12, deletions: 4, files: [] };
-    if (command === "chat_folders_list") return ["/fixture/Documents/OmniCode/2026-10-13/chat-090000-aaaaaa"];
+    if (command === "chat_folders_list") return ["/fixture/Documents/omnicode/2026-10-13/chat-090000-aaaaaa"];
     if (/notification_preferences/.test(command)) return {};
     if (command === "system_fonts") return { sans: [], mono: [] };
     if (/list|recents|accounts|sessions|notifications/.test(command)) return [];
@@ -121,7 +121,7 @@ function Gallery() {
   </main>
  </div></SurfaceAppearance.Provider>;
 }
-const CHAT_CWD = "/fixture/Documents/OmniCode/2026-10-13/chat-090000-aaaaaa";
+const CHAT_CWD = "/fixture/Documents/omnicode/2026-10-13/chat-090000-aaaaaa";
 const CODE_CWD = "/fixture/omnicode";
 const attachment: Attachment = { id: "fixture-file", name: "layout-notes.md", mimeType: "text/markdown", kind: "file", size: 128, path: "/fixture/layout-notes.md" };
 const transcript: Block[] = [

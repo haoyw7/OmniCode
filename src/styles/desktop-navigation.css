@@ -194,10 +194,13 @@ html[data-skin][data-desktop-mode].is-mac [data-window-drag-bar] > div:has(> .de
   padding-left: 78px;
 }
 html[data-skin][data-desktop-mode].is-mac .desktop-titlebar-navigation {
-  width: max(228px, calc(var(--desktop-sidebar-chrome-width, var(--desktop-sidebar-width)) - 88px));
+  width: max(0px, calc(var(--desktop-sidebar-chrome-width, var(--desktop-sidebar-width)) - 88px));
 }
 html[data-skin][data-desktop-mode].is-mac .desktop-titlebar-mode-slot {
-  left: max(236px, calc(var(--desktop-sidebar-chrome-width, var(--desktop-sidebar-width)) - 80px));
+  left: calc(var(--desktop-sidebar-chrome-width, var(--desktop-sidebar-width)) - 80px);
+}
+html[data-skin][data-desktop-mode].is-mac .desktop-titlebar-navigation[data-sidebar-open][data-inline-below~="206"] [data-window-history-action] {
+  display: none;
 }
 html[data-skin][data-desktop-mode] .desktop-projects-page {
   padding: 24px 40px 40px;
