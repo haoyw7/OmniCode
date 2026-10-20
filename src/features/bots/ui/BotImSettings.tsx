@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
-import type { ImConfigure, ImControl, ImView } from "../model/im";
+import type { ImBind, ImControl, ImView } from "../model/im";
+import { openBrowser } from "../../../platform/tauri/browser";
+import { copyText } from "../../../platform/tauri/clipboard";
 import { getUiLanguage } from "../../../shared/i18n/language";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { ChevronDown } from "../../../shared/ui/icons";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
 
 const stateLabels: Record<ImView["status"]["state"], string> = {
   stopped: "Disconnected",
@@ -13,8 +17,6 @@ const stateLabels: Record<ImView["status"]["state"], string> = {
   reconnecting: "Reconnecting…",
   failed: "Connection failed",
 };
-type Draft = { appId: string; ownerOpenId: string; appSecret: string };
-
 /** Live Host configuration is independent of the surrounding assistant draft. */
 export function BotImSettings({
   rpc,
@@ -32,19 +34,14 @@ export function BotImSettings({
   const { t, language } = useTranslation();
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<ImView>();
-  const [draft, setDraft] = useState<Draft>({
-    appId: "",
-    ownerOpenId: "",
-    appSecret: "",
-  });
   const [error, setError] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
   const [pending, setPending] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [documentVisible, setDocumentVisible] = useState(
     () => document.visibilityState !== "hidden",
   );
-  const edited = useRef(false);
   const pendingRef = useRef(false);
   const reads = useRef(0);
   const mounted = useRef(true);
@@ -64,32 +61,20 @@ export function BotImSettings({
     };
   }, []);
 
-  const receive = useCallback((next: ImView, replaceDraft = false) => {
-    setView(next);
-    if (replaceDraft || !edited.current) {
-      edited.current = false;
-      setDraft({
-        appId: next.config?.appId ?? "",
-        ownerOpenId: next.config?.ownerOpenId ?? "",
-        appSecret: "",
-      });
-    }
-  }, []);
-
   const load = useCallback(async () => {
     if (pendingRef.current) return;
     const request = ++reads.current;
     try {
       const next = await rpc<ImView>("im.get", {});
       if (mounted.current && request === reads.current) {
-        receive(next);
+        setView(next);
         setLoadError(undefined);
       }
     } catch (cause) {
       if (mounted.current && request === reads.current)
         setLoadError(cause instanceof Error ? cause.message : String(cause));
     }
-  }, [rpc, receive]);
+  }, [rpc]);
 
   useEffect(() => {
     if (!polling) return;
@@ -108,55 +93,79 @@ export function BotImSettings({
   }, [polling, load]);
 
   const mutate = async (
-    method: "im.configure" | "im.control",
-    params: ImConfigure | ImControl,
+    method: "im.bind" | "im.control",
+    params: ImBind | ImControl,
   ) => {
     if (pendingRef.current) return;
     pendingRef.current = true;
     reads.current++;
     setPending(true);
+    setGenerating(method === "im.bind" && params.action === "start");
     setError(undefined);
-    setSaved(false);
+    setCopied(false);
+    let result: ImView | undefined;
     try {
       const next = await rpc<ImView>(method, params);
       if (!mounted.current) return;
-      receive(next, method === "im.configure");
-      if (method === "im.configure") setSaved(true);
+      setView(next);
+      result = next;
     } catch (cause) {
       if (mounted.current)
         setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       pendingRef.current = false;
-      if (mounted.current) setPending(false);
+      if (mounted.current) {
+        setPending(false);
+        setGenerating(false);
+      }
     }
-    if (mounted.current && pollingRef.current) await load();
+    if (method === "im.control" && mounted.current && pollingRef.current)
+      await load();
+    return result;
   };
 
-  const edit = (key: keyof Draft, value: string) => {
-    edited.current = true;
-    setSaved(false);
-    setDraft((current) => ({ ...current, [key]: value }));
-  };
   const busy = disabled || pending || !view;
-  const allowSavedSecret =
-    !!view?.config?.secretConfigured &&
-    draft.appId.trim() === view.config.appId;
-  const bindingChanged =
-    !!view?.config &&
-    (draft.appId.trim() !== view.config.appId ||
-      draft.ownerOpenId.trim() !== view.config.ownerOpenId);
-  const valid =
-    !!draft.appId.trim() &&
-    !!draft.ownerOpenId.trim() &&
-    (!!draft.appSecret.trim() || allowSavedSecret);
-  const save = () => {
-    if (busy || !valid) return;
-    void mutate("im.configure", {
-      appId: draft.appId.trim(),
-      ownerOpenId: draft.ownerOpenId.trim(),
-      ...(draft.appSecret.trim() ? { appSecret: draft.appSecret.trim() } : {}),
+  const binding = view?.binding;
+  const waiting = binding?.state === "pending";
+  const openBindingLink = async (url: string) => {
+    try {
+      await openBrowser(url);
+      if (mounted.current) setError(undefined);
+    } catch {
+      if (mounted.current)
+        setError(
+          "Could not open the browser. Copy the binding link and open it manually.",
+        );
+    }
+  };
+  const bind = async () => {
+    if (busy || !assistantEnabled) return;
+    const next = await mutate("im.bind", {
+      action: "start",
       language: getUiLanguage(),
     });
+    if (
+      mounted.current &&
+      pollingRef.current &&
+      next?.binding?.state === "pending" &&
+      next.binding.verificationUrl
+    )
+      await openBindingLink(next.binding.verificationUrl);
+  };
+  const copyLink = async () => {
+    if (!binding?.verificationUrl) return;
+    try {
+      await copyText(binding.verificationUrl);
+      if (mounted.current) {
+        setCopied(true);
+        setError(undefined);
+      }
+    } catch {
+      if (mounted.current)
+        setError(
+          "Could not copy the binding link. Select and copy it manually.",
+        );
+    }
   };
   const control = (input: ImControl) => void mutate("im.control", input);
   const time = (value: number) => new Date(value).toLocaleString(language);
@@ -165,7 +174,7 @@ export function BotImSettings({
     : view
       ? t(stateLabels[view.status.state])
       : t("Connect your assistant");
-  const notice = error ?? loadError;
+  const notice = error ?? loadError ?? binding?.error;
 
   return (
     <section
@@ -192,20 +201,7 @@ export function BotImSettings({
             )}
           </p>
         ) : (
-          <div
-            className="assistant-im"
-            onKeyDown={(event) => {
-              // Enter in this live configuration must never submit the assistant draft.
-              if (
-                event.key === "Enter" &&
-                !event.nativeEvent.isComposing &&
-                event.target instanceof HTMLInputElement
-              ) {
-                event.preventDefault();
-                save();
-              }
-            }}
-          >
+          <div className="assistant-im">
             <p className="assistant-im-hint">
               {t(
                 "Connect your personal assistant to Feishu on this Host. Only direct messages from your authorized account are accepted.",
@@ -219,83 +215,130 @@ export function BotImSettings({
             {notice && (
               <div className="assistant-field-notice" role="alert">
                 <span>{t(notice)}</span>
-                <button
-                  type="button"
+                <Button
+                  variant="link"
                   className="assistant-link-button"
-                  disabled={pending}
+                  disabled={
+                    disabled ||
+                    pending ||
+                    (!assistantEnabled &&
+                      (binding?.state === "failed" || (!!error && !waiting)))
+                  }
                   onClick={() => {
                     setError(undefined);
-                    void load();
+                    if (binding?.state === "failed" || (error && !waiting))
+                      void bind();
+                    else void load();
                   }}
                 >
                   {t("Retry")}
-                </button>
+                </Button>
               </div>
             )}
             {!view && !notice && (
               <p role="status">{t("Loading Feishu settings…")}</p>
             )}
-            <label>
-              {t("App ID")}
-              <input data-ui="input"
-                value={draft.appId}
-                onChange={(event) => edit("appId", event.target.value)}
-                disabled={busy}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </label>
-            <label>
-              {t("App Secret")}
-              <input data-ui="input"
-                type="password"
-                value={draft.appSecret}
-                onChange={(event) => edit("appSecret", event.target.value)}
-                disabled={busy}
-                autoComplete="new-password"
-                spellCheck={false}
-                placeholder={
-                  allowSavedSecret
-                    ? t("Saved; leave blank to keep it")
-                    : t("Enter the App Secret")
-                }
-              />
-            </label>
-            <label>
-              {t("Your Feishu open_id")}
-              <input data-ui="input"
-                value={draft.ownerOpenId}
-                onChange={(event) => edit("ownerOpenId", event.target.value)}
-                disabled={busy}
-                autoComplete="off"
-                spellCheck={false}
-              />
-              <small>
-                {t(
-                  "Use your open_id for this app. Other users and group messages cannot control your assistant.",
+            {waiting && binding.verificationUrl ? (
+              <>
+                <p role="status">{t("Waiting for Feishu authorization…")}</p>
+                <p className="assistant-im-hint">
+                  {t(
+                    "Open the binding link in your browser and complete Feishu authorization. If prompted, scan the code with Feishu. This Host will connect automatically.",
+                  )}
+                </p>
+                <label>
+                  {t("Feishu binding link")}
+                  <Input
+                    readOnly
+                    value={binding.verificationUrl}
+                    onFocus={(event) => event.currentTarget.select()}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") event.preventDefault();
+                    }}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </label>
+                {binding.expiresAt !== undefined && (
+                  <small>
+                    {t("Binding link expires: {time}", {
+                      time: time(binding.expiresAt),
+                    })}
+                  </small>
                 )}
-              </small>
-            </label>
-            {bindingChanged && (
-              <p className="assistant-im-hint" role="status">
+                <div className="assistant-im-actions">
+                  <Button
+                    disabled={busy}
+                    onClick={() =>
+                      void openBindingLink(binding.verificationUrl!)
+                    }
+                  >
+                    {t("Open in browser")}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => void copyLink()}
+                  >
+                    {t(copied ? "Copied" : "Copy binding link")}
+                  </Button>
+                  <Button
+                    variant="link"
+                    disabled={busy}
+                    onClick={() =>
+                      void mutate("im.bind", {
+                        action: "cancel",
+                        bindingId: binding.id,
+                      })
+                    }
+                  >
+                    {t("Cancel")}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="assistant-im-actions">
+                <Button
+                  disabled={busy || !assistantEnabled}
+                  onClick={() => void bind()}
+                >
+                  {t(
+                    generating
+                      ? "Generating binding link…"
+                      : view?.configured
+                        ? "Bind another Feishu account"
+                        : "Bind Feishu",
+                  )}
+                </Button>
+              </div>
+            )}
+            {binding?.state === "expired" && (
+              <p role="status">
                 {t(
-                  "Changing the app or authorized account stops pending deliveries for the previous connection. Save, then connect again.",
+                  "The Feishu binding link expired. Generate a new link to try again.",
                 )}
               </p>
             )}
-            <div className="assistant-im-actions">
-              <button data-ui="button" data-variant="primary"
-                type="button"
-                className="assistant-primary"
-                disabled={busy || !valid}
-                onClick={save}
-              >
-                {t("Save Feishu settings")}
-              </button>
-              {saved && (
-                <small role="status">{t("Feishu settings saved")}</small>
-              )}
-            </div>
+            {binding?.state === "cancelled" && (
+              <p role="status">{t("Feishu binding cancelled.")}</p>
+            )}
+            {binding?.state === "completed" && (
+              <p role="status">{t("Feishu account bound.")}</p>
+            )}
+            {view?.configured && !waiting && (
+              <p className="assistant-im-hint">
+                {t("Bound account: {account}", {
+                  account: view.config?.ownerOpenId ?? "",
+                })}
+              </p>
+            )}
+            {view?.configured && waiting && (
+              <p className="assistant-im-hint" role="status">
+                {t(
+                  "Your current connection stays active until authorization succeeds. Binding a different account stops pending deliveries for the previous connection.",
+                )}
+              </p>
+            )}
             {view && (
               <div className="assistant-im-connection">
                 <p role="status">
@@ -318,37 +361,36 @@ export function BotImSettings({
                 <div className="assistant-im-actions">
                   {view.config?.enabled ? (
                     <>
-                      <button
-                        type="button"
+                      <Button
+                        variant="link"
                         className="assistant-link-button"
                         disabled={busy}
                         onClick={() => control({ action: "disable" })}
                       >
                         {t("Disconnect Feishu")}
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        variant="link"
                         className="assistant-link-button"
                         disabled={busy || !assistantEnabled}
                         onClick={() => control({ action: "reconnect" })}
                       >
                         {t("Reconnect")}
-                      </button>
+                      </Button>
                     </>
                   ) : (
-                    <button
-                      type="button"
+                    <Button
+                      variant="link"
                       className="assistant-link-button"
-                      disabled={busy || !view.configured || !assistantEnabled}
+                      disabled={
+                        busy || waiting || !view.configured || !assistantEnabled
+                      }
                       onClick={() => control({ action: "enable" })}
                     >
                       {t("Connect Feishu")}
-                    </button>
+                    </Button>
                   )}
                 </div>
-                <small className="assistant-im-hint">
-                  {t("Connection controls use the saved settings.")}
-                </small>
               </div>
             )}
             {view && (view.pending > 0 || view.deliveries.length > 0) && (
@@ -386,8 +428,8 @@ export function BotImSettings({
                         </small>
                       )}
                       <div className="assistant-im-actions">
-                        <button
-                          type="button"
+                        <Button
+                          variant="link"
                           className="assistant-link-button"
                           disabled={busy || !view.config?.enabled}
                           onClick={() =>
@@ -402,9 +444,9 @@ export function BotImSettings({
                               ? "Retry (may duplicate)"
                               : "Retry delivery",
                           )}
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="link"
                           className="assistant-link-button"
                           disabled={busy}
                           onClick={() =>
@@ -415,7 +457,7 @@ export function BotImSettings({
                           }
                         >
                           {t("Stop delivery")}
-                        </button>
+                        </Button>
                       </div>
                     </li>
                   ))}

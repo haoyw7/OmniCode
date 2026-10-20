@@ -241,6 +241,7 @@ export function createHostServer(
       "bots.teams.v1",
       "bots.rooms.v1",
       "im.feishu.v1",
+      "im.feishu.binding.v1",
       "resources",
       "workflows.v1",
     ],
@@ -812,6 +813,7 @@ export function createHostServer(
           case "im.get":
           case "im.configure":
           case "im.control":
+          case "im.bind":
             result = await engine.im.rpc(input.method, params);
             break;
           case "attachments.upload":

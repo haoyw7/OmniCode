@@ -17,6 +17,7 @@ host/im/
   providers/
     feishu/adapter.ts      # 飞书 SDK 工厂按需加载与配置类型
     feishu/channel.ts      # 本人私聊、收发、附件与连接状态
+    feishu/registration.ts # 浏览器创建/绑定个人机器人
     telegram/adapter.ts    # Telegram SDK 工厂按需加载与配置类型
   index.ts                # 公共接口、渠道注册与运行时启停
   index.mjs               # 兼容先前 JS 加载入口
@@ -44,6 +45,21 @@ unbind 查询或移除。channelId 区分多个平台账户 / 配置实例，不
 启停期间拒绝重入；关闭后或旧运行期的消息与回复被拒绝。
 
 ## 飞书个人私聊
+
+设置页通过「一键绑定飞书」生成官方授权链接，在浏览器完成授权（飞书页面可能
+要求客户端扫码）后自动连接，无需手填 App ID、App Secret 或 open_id。
+`registration.ts` 使用官方 `@larksuite/openclaw-lark-tools@1.0.47` 的个人机器人
+注册协议：`https://accounts.feishu.cn/oauth/v1/app/registration` 的 init、begin、poll。
+这不是单独的用户 OAuth 登录；它会返回机器人凭证及授权人的 open_id。
+此流程不再追加文档、日历等用户 OAuth 授权。
+
+Host 的 `im.bind` 接受 `start`（可附界面语言）或 `cancel`（附本次绑定 ID），
+通过 `im.get.binding` 返回链接、有效期和状态；客户端依赖 `im.feishu.binding.v1`
+能力。device_code 仅保留在 Host 内存，App Secret 只保存到原有 Host 配置。
+不需要公网回调地址；Host 负责按服务端间隔轮询、限流退避和过期处理。
+取消、失败或过期不改写当前配置，Host 关闭会中止请求；新授权成功后才替换
+旧连接并停止旧绑定的待投递消息。原有配置和 `im.configure` 接口继续可用。
+支持飞书账号；Lark 账号会明确报错，不会误连到飞书消息接口。
 
 `FeishuChannel({ id, appId, appSecret, ownerOpenId })` 只接收指定 `open_id`
 用户发送的私聊文本、富文本、图片和文件；群聊和机器人消息不会交给处理器。

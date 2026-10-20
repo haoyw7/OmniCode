@@ -374,8 +374,11 @@ describe("remote host API", () => {
     const s = await setup();
     await s.engine.workflows.ready;
     expect((await s.call("im.get", {}, "invalid-token")).status).toBe(401);
+    expect((await s.call("im.bind", { action: "start" }, "invalid-token")).status).toBe(401);
     const described = await s.call("environment.describe");
     expect(described.value.result.capabilities).toContain("im.feishu.v1");
+    expect(described.value.result.capabilities).toContain("im.feishu.binding.v1");
+    expect((await s.call("im.bind", { action: "cancel", bindingId: "absent-attempt" })).status).toBe(200);
     const configured = await s.call("im.configure", {
       appId: "cli_1234567890abcdef", appSecret: "private-test-secret", ownerOpenId: "ou_owner", language: "zh-CN",
     });

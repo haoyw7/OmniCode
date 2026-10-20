@@ -507,7 +507,7 @@ export function BotChat({
         setPersonaSupported(
           descriptor.capabilities?.includes("assistant.persona") ?? false,
         );
-        setImSupported(descriptor.capabilities?.includes("im.feishu.v1") ?? false);
+        setImSupported(descriptor.capabilities?.includes("im.feishu.binding.v1") ?? false);
         if (!available) return;
         capable = true;
         historySupported = descriptor.capabilities?.includes("assistant.history") ?? false;

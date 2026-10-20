@@ -1,8 +1,18 @@
 import type { BotScope } from "./bots";
 
+export type ImBinding = {
+  id: string;
+  state: "pending" | "completed" | "cancelled" | "expired" | "failed";
+  verificationUrl?: string;
+  expiresAt?: number;
+  error?: string;
+};
+
 /** Public IM configuration and delivery status. Credentials stay on the Host. */
 export type ImView = {
   configured: boolean;
+  /** Short-lived browser binding; the device code and secret never leave the Host. */
+  binding?: ImBinding;
   config?: {
     appId: string;
     ownerOpenId: string;
@@ -39,3 +49,7 @@ export type ImConfigure = {
 export type ImControl =
   | { action: "enable" | "disable" | "reconnect" }
   | { action: "retry" | "discard"; deliveryId: string };
+
+export type ImBind =
+  | { action: "start"; language?: "en" | "zh-CN" }
+  | { action: "cancel"; bindingId: string };

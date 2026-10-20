@@ -7,8 +7,9 @@ import { assertReplyAttachmentAccess } from "../bots/thread/attachments";
 import { receiveSignature, signature } from "../bots/thread/store";
 import { attachmentPath, MAX_REMOTE_ATTACHMENT_BYTES } from "../attachments";
 import { ImRuntime } from "../im/core/runtime";
+import { FeishuRegistration, FeishuRegistrationError, type FeishuRegistrationClient, type FeishuRegistrationAttempt } from "../im/providers/feishu/registration";
 import type { ImAttachmentDescriptor, ImChannel, ImOutgoingMessage } from "../im/core/types";
-import type { ImView } from "../../src/features/bots/model/im";
+import type { ImBinding, ImView } from "../../src/features/bots/model/im";
 import type { BotMessage, BotReceipt } from "../../src/features/bots/model/botView";
 import { translate } from "../../src/shared/i18n/language";
 import { ImStore, type ImSettings, type InboxEntry, type OutboxEntry } from "./store";
@@ -20,6 +21,7 @@ export interface HostImChannel extends ImChannel {
   downloadAttachment(messageId: string, attachment: ImAttachmentDescriptor): Promise<{ bytes: Uint8Array; mimeType: string }>;
 }
 export type HostImOptions = {
+  registrationClient?: FeishuRegistrationClient;
   channelFactory?: (config: { id: string; appId: string; appSecret: string; ownerOpenId: string }) => HostImChannel | Promise<HostImChannel>;
   /** Tests drive the durable worker explicitly. */
   pollMs?: number;
@@ -44,6 +46,8 @@ export class HostImService {
   private nextSendAt = 0;
   private connectionRetryAt?: number;
   private connectionAttempts = 0;
+  private binding?: { view: ImBinding; controller: AbortController };
+  private bindingTasks = new Set<Promise<void>>();
   constructor(readonly host: HostStore, readonly assistant: BotThreadRuntime, private options: HostImOptions = {}) {
     const scope = assistant.store.scope, defaultScope = assistant.store.bots.defaultScope();
     if (scope.botId !== defaultScope.botId || scope.threadId !== defaultScope.threadId)
@@ -73,6 +77,7 @@ export class HostImService {
     const outbox = config ? this.store.outbox(config.bindingId) : [];
     return {
       configured: !!config,
+      ...(this.binding ? { binding: { ...this.binding.view } } : {}),
       ...(config ? {
         bindingId: config.bindingId,
         scope: this.store.scope,
@@ -107,26 +112,37 @@ export class HostImService {
   private async mutate(method: string, raw: Record<string, unknown>): Promise<ImView> {
     if (this.closing) throw new Error("IM service is stopped");
     const old = this.store.settings();
-    if (method === "im.configure") {
-      fields(raw, ["appId", "appSecret", "ownerOpenId", "language"]);
-      const appId = id(raw.appId, "App ID").trim(), ownerOpenId = id(raw.ownerOpenId, "open_id").trim();
-      if (!/^cli_[0-9a-fA-F]{16}$/.test(appId) || !/^ou_[\w-]+$/.test(ownerOpenId)) throw new Error("Invalid Feishu App ID or open_id");
+    if (method === "im.bind") {
+      fields(raw, ["action", "bindingId", "language"]);
+      if (raw.action === "cancel") {
+        if (raw.language !== undefined) throw new Error("Invalid language");
+        if (id(raw.bindingId, "binding ID") === this.binding?.view.id) this.cancelBinding();
+        return this.view();
+      }
+      if (raw.action !== "start" || raw.bindingId !== undefined) throw new Error("Unknown IM action");
       if (raw.language !== undefined && raw.language !== "en" && raw.language !== "zh-CN") throw new Error("Invalid language");
-      const appSecret = raw.appSecret === undefined ? (old?.appId === appId ? old.appSecret : undefined) : id(raw.appSecret, "App Secret", 2048).trim();
-      if (!appSecret) throw new Error("Enter the App Secret");
-      const sameBinding = old?.appId === appId && old.ownerOpenId === ownerOpenId;
-      await this.disconnect();
-      this.store.configure({
-        appId, appSecret, ownerOpenId, language: raw.language as ImSettings["language"] ?? old?.language ?? "en",
-        bindingId: sameBinding ? old.bindingId : randomUUID(),
-        enabled: sameBinding ? old.enabled : false,
-        activated: sameBinding ? old.activated : false,
-        cursor: sameBinding ? this.store.settings()!.cursor : this.assistant.store.get()?.chatRevision ?? 0,
-      });
-      this.error = undefined;
-      this.connectionAttempts = 0;
-      if (this.store.settings()!.enabled) this.connect();
+      if (this.binding?.view.state === "pending") return this.view();
+      const binding = { view: { id: randomUUID(), state: "pending" } as ImBinding, controller: new AbortController() };
+      this.binding = binding;
+      const client = this.options.registrationClient ?? new FeishuRegistration();
+      try {
+        const attempt = await client.begin(binding.controller.signal);
+        if (this.closing || binding.controller.signal.aborted) return this.view();
+        binding.view = { ...binding.view, verificationUrl: attempt.verificationUrl, expiresAt: attempt.expiresAt };
+        const task = this.pollBinding(binding, attempt, client, raw.language as ImSettings["language"] ?? old?.language ?? "en");
+        this.bindingTasks.add(task);
+        void task.finally(() => this.bindingTasks.delete(task));
+      } catch (error) {
+        if (!binding.controller.signal.aborted) {
+          // Provider requests deliberately report fixed, credential-free errors.
+          binding.view = { id: binding.view.id, state: "failed", error: error instanceof FeishuRegistrationError ? error.message : "Feishu binding failed. Try again." };
+        }
+      }
       return this.view();
+    }
+    if (method === "im.configure") {
+      this.cancelBinding();
+      return this.configure(raw);
     }
     if (method !== "im.control") throw new Error("Unknown IM operation");
     fields(raw, ["action", "deliveryId"]);
@@ -147,6 +163,7 @@ export class HostImService {
     }
     if (raw.deliveryId !== undefined) throw new Error("Unexpected delivery ID");
     if (!["enable", "disable", "reconnect"].includes(action)) throw new Error("Unknown IM action");
+    this.cancelBinding();
     // Disable is persisted before yielding, so a worker cannot send while stop
     // waits for an SDK handshake or an in-flight attachment download.
     this.store.configure({ ...old, enabled: false });
@@ -160,6 +177,77 @@ export class HostImService {
       this.connect();
     }
     return this.view();
+  }
+
+  private async configure(raw: Record<string, unknown>, connectNow = false): Promise<ImView> {
+    fields(raw, ["appId", "appSecret", "ownerOpenId", "language"]);
+    const old = this.store.settings();
+    const appId = id(raw.appId, "App ID").trim(), ownerOpenId = id(raw.ownerOpenId, "open_id").trim();
+    if (!/^cli_[0-9a-fA-F]{16}$/.test(appId) || !/^ou_[\w-]+$/.test(ownerOpenId)) throw new Error("Invalid Feishu App ID or open_id");
+    if (raw.language !== undefined && raw.language !== "en" && raw.language !== "zh-CN") throw new Error("Invalid language");
+    const appSecret = raw.appSecret === undefined ? (old?.appId === appId ? old.appSecret : undefined) : id(raw.appSecret, "App Secret", 2048).trim();
+    if (!appSecret) throw new Error("Enter the App Secret");
+    const sameBinding = old?.appId === appId && old.ownerOpenId === ownerOpenId;
+    await this.disconnect();
+    // Shutdown may arrive while an SDK stop or durable worker is finishing.
+    if (this.closing) throw new Error("IM service is stopped");
+    this.store.configure({
+      appId, appSecret, ownerOpenId, language: raw.language as ImSettings["language"] ?? old?.language ?? "en",
+      bindingId: sameBinding ? old.bindingId : randomUUID(),
+      enabled: connectNow || (sameBinding ? old.enabled : false),
+      activated: connectNow || (sameBinding ? old.activated : false),
+      cursor: sameBinding && (!connectNow || old.activated) ? this.store.settings()!.cursor : this.assistant.store.get()?.chatRevision ?? 0,
+    });
+    this.error = undefined;
+    this.connectionAttempts = 0;
+    if (this.store.settings()!.enabled) this.connect();
+    return this.view();
+  }
+
+  private cancelBinding(): void {
+    if (this.binding?.view.state !== "pending") return;
+    this.binding.controller.abort();
+    this.binding.view = { id: this.binding.view.id, state: "cancelled" };
+  }
+
+  private async pollBinding(binding: NonNullable<HostImService["binding"]>, attempt: FeishuRegistrationAttempt,
+    client: FeishuRegistrationClient, language: ImSettings["language"]): Promise<void> {
+    const signal = binding.controller.signal;
+    const current = () => !this.closing && this.binding === binding && !signal.aborted;
+    let interval = attempt.interval;
+    try {
+      while (current()) {
+        await waitForBindingPoll(Math.min(interval, Math.max(0, attempt.expiresAt - Date.now())), signal);
+        if (!current()) return;
+        if (Date.now() >= attempt.expiresAt) {
+          binding.view = { id: binding.view.id, state: "expired" };
+          return;
+        }
+        const result = await client.poll(attempt.deviceCode, signal);
+        if (!current()) return;
+        // A response received after expiry must not install a binding either.
+        if (Date.now() >= attempt.expiresAt) {
+          binding.view = { id: binding.view.id, state: "expired" };
+          return;
+        }
+        if (result.state === "pending") continue;
+        if (result.state === "slow_down") { interval += 5000; continue; }
+        if (result.state !== "complete") {
+          binding.view = { id: binding.view.id, state: result.state };
+          return;
+        }
+        const command = this.commands.then(async () => {
+          if (!current()) return;
+          await this.configure({ appId: result.appId, appSecret: result.appSecret, ownerOpenId: result.ownerOpenId, language }, true);
+          if (current()) binding.view = { id: binding.view.id, state: "completed" };
+        });
+        this.commands = command.catch(() => undefined);
+        await command;
+        return;
+      }
+    } catch (error) {
+      if (current()) binding.view = { id: binding.view.id, state: "failed", error: error instanceof FeishuRegistrationError ? error.message : "Feishu binding failed. Try again." };
+    }
   }
 
   private connect(): void {
@@ -399,11 +487,23 @@ export class HostImService {
   }
   async close(): Promise<void> {
     this.closing = true;
+    this.cancelBinding();
     clearInterval(this.timer);
     await this.ready;
     await this.commands;
+    await Promise.all(this.bindingTasks);
     await this.disconnect();
   }
+}
+
+function waitForBindingPoll(milliseconds: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const finish = () => { clearTimeout(timer); signal.removeEventListener("abort", finish); resolve(); };
+    const timer = setTimeout(finish, milliseconds);
+    timer.unref?.();
+    signal.addEventListener("abort", finish, { once: true });
+    if (signal.aborted) finish();
+  });
 }
 
 function deliveryKind(error: unknown): "unknown" | "retryable" | "permanent" {

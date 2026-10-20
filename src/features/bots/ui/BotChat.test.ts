@@ -71,7 +71,7 @@ it("uses capability fallback without polling an old Host", async () => {
 });
 it.each([false, true])("gates shared Feishu settings on the Host capability (%s)", async (supported) => {
   const rpc = vi.fn(async (method: string) => {
-    if (method === "environment.describe") return { capabilities: ["assistant.v1", ...(supported ? ["im.feishu.v1"] : [])] };
+    if (method === "environment.describe") return { capabilities: ["assistant.v1", "im.feishu.v1", ...(supported ? ["im.feishu.binding.v1"] : [])] };
     if (method === "assistant.get") return null;
     if (method === "models.list") return { models: {}, errors: {} };
     if (method === "projects.list") return [];

@@ -7,16 +7,20 @@ import { HostEngine } from "../engine";
 import { HostStore } from "../store";
 import type { HostProvider } from "../providers";
 import type { HostImChannel } from "./index";
+import type { FeishuRegistrationClient, FeishuRegistrationResult } from "../im/providers/feishu/registration";
 import type { ImMessageHandler, ImIncomingMessage, ImOutgoingMessage } from "../im/core/types";
 import { ImDeliveryError } from "../im/core/errors";
 import { attachmentPath } from "../attachments";
 import { splitImText } from "./projection";
 
 const cleanups: Array<() => Promise<void>> = [];
-afterEach(async () => { for (const cleanup of cleanups.splice(0)) await cleanup(); });
+afterEach(async () => {
+  try { for (const cleanup of cleanups.splice(0)) await cleanup(); }
+  finally { vi.useRealTimers(); }
+});
 const config = { appId: "cli_1234567890abcdef", appSecret: "private-bot-secret", ownerOpenId: "ou_owner", language: "zh-CN" };
 
-async function setup(options: { failFirstStart?: boolean } = {}) {
+async function setup(options: { failFirstStart?: boolean; registrationClient?: FeishuRegistrationClient } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "omnicode-im-"));
   let store: HostStore, engine: HostEngine;
   const channels: Array<HostImChannel & { receive: ImMessageHandler }> = [];
@@ -26,7 +30,7 @@ async function setup(options: { failFirstStart?: boolean } = {}) {
   const provider: HostProvider = { send: vi.fn(async () => {}), stop: vi.fn(async () => {}), cancel: vi.fn(async () => {}), bind: vi.fn(), approve: vi.fn(), answer: vi.fn() };
   async function start() {
     store = new HostStore(join(directory, "host.db"));
-    engine = new HostEngine(store, { codex: provider }, undefined, { im: { pollMs: 0, sendIntervalMs: 0, channelFactory: input => {
+    engine = new HostEngine(store, { codex: provider }, undefined, { im: { pollMs: 0, sendIntervalMs: 0, registrationClient: options.registrationClient, channelFactory: input => {
       let handler: ImMessageHandler, state: "connected" | "stopped" = "stopped";
       const channel = {
         id: input.id, platform: "feishu" as const,
@@ -320,4 +324,125 @@ it("upgrades legacy binding scope in place and keeps IM routing on the default B
     expect(s.engine.bots.assistant(scope).store.latestMessages().filter(entry => entry.kind === "user")).toHaveLength(0);
   await s.engine.im.rpc("im.configure", { ...config, appSecret: "new-secret" });
   expect(s.engine.im.store.settings()).toMatchObject({ bindingId: legacy.bindingId, cursor: legacy.cursor, scope: defaultScope });
+});
+
+function registration() {
+  const begin = vi.fn<FeishuRegistrationClient["begin"]>(async () => ({ deviceCode: "host-device-code", verificationUrl: "https://accounts.feishu.cn/bind?user_code=public-code", interval: 1000, expiresAt: Date.now() + 60_000 }));
+  const poll = vi.fn<FeishuRegistrationClient["poll"]>(async () => ({ state: "pending" }));
+  return { begin, poll };
+}
+const registered = { state: "complete" as const, appId: "cli_abcdef1234567890", appSecret: "new-private-secret", ownerOpenId: "ou_authorized" };
+
+it("automatically configures and connects the authorized bot without exposing credentials or replaying history", async () => {
+  const client = registration(), s = await setup({ registrationClient: client });
+  s.engine.assistant.store.message({ id: "old-history", kind: "assistant", text: "Do not replay" });
+  vi.useFakeTimers();
+  client.poll.mockResolvedValueOnce(registered);
+  const view = await s.engine.im.rpc("im.bind", { action: "start", language: "zh-CN" });
+  expect(view.configured).toBe(false);
+  expect(view.binding).toMatchObject({ state: "pending", verificationUrl: expect.stringContaining("user_code=") });
+  expect(JSON.stringify(view)).not.toContain("host-device-code");
+  const duplicate = await s.engine.im.rpc("im.bind", { action: "start", language: "zh-CN" });
+  expect(duplicate.binding?.id).toBe(view.binding?.id);
+  expect(client.begin).toHaveBeenCalledOnce();
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(s.engine.im.store.settings()).toMatchObject({ appId: registered.appId, appSecret: registered.appSecret,
+    ownerOpenId: registered.ownerOpenId, language: "zh-CN", enabled: true, activated: true,
+    cursor: s.engine.assistant.store.get()!.chatRevision });
+  expect(s.engine.im.view()).toMatchObject({ binding: { id: view.binding!.id, state: "completed" }, status: { state: "connected" } });
+  expect(s.engine.im.view().binding?.verificationUrl).toBeUndefined();
+  expect(JSON.stringify(s.engine.im.view())).not.toContain(registered.appSecret);
+  expect(client.poll).toHaveBeenCalledWith("host-device-code", expect.any(AbortSignal));
+  await s.engine.im.pump();
+  expect(s.send).not.toHaveBeenCalled();
+});
+
+it("keeps the current connection until a successful replacement and retires its pending deliveries", async () => {
+  const client = registration(), s = await setup({ registrationClient: client }); await s.enable();
+  const previous = s.engine.im.store.settings()!;
+  s.engine.im.store.enqueue({ bindingId: previous.bindingId, key: "retire", text: "Old pending output" });
+  vi.useFakeTimers();
+  await s.engine.im.rpc("im.bind", { action: "start" });
+  expect(s.engine.im.store.settings()).toEqual(previous);
+  expect(s.engine.im.view().status.state).toBe("connected");
+  expect(s.engine.im.store.outbox(previous.bindingId)[0].state).toBe("pending");
+  client.poll.mockResolvedValueOnce(registered);
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(s.engine.im.view().config?.ownerOpenId).toBe(registered.ownerOpenId);
+  expect(s.engine.im.view().bindingId).not.toBe(previous.bindingId);
+  expect(s.engine.im.store.outbox(previous.bindingId)[0].state).toBe("discarded");
+  expect(s.engine.im.view().status.state).toBe("connected");
+});
+
+it("ignores a late authorization after cancellation and scopes cancellation to its attempt", async () => {
+  const client = registration(), s = await setup({ registrationClient: client }); await s.enable();
+  const previous = s.engine.im.store.settings()!;
+  let complete!: (result: FeishuRegistrationResult) => void;
+  client.poll.mockImplementationOnce(() => new Promise(resolve => { complete = resolve; }));
+  vi.useFakeTimers();
+  const first = await s.engine.im.rpc("im.bind", { action: "start" });
+  await vi.advanceTimersByTimeAsync(1000);
+  await s.engine.im.rpc("im.bind", { action: "cancel", bindingId: first.binding!.id });
+  expect(s.engine.im.view().binding).toEqual({ id: first.binding!.id, state: "cancelled" });
+  const second = await s.engine.im.rpc("im.bind", { action: "start" });
+  expect(second.binding!.id).not.toBe(first.binding!.id);
+  const staleCancel = await s.engine.im.rpc("im.bind", { action: "cancel", bindingId: first.binding!.id });
+  expect(staleCancel.binding?.state).toBe("pending");
+  complete(registered);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(s.engine.im.store.settings()).toEqual(previous);
+  expect(s.engine.im.view().binding).toEqual(second.binding);
+  expect(s.channels).toHaveLength(1);
+});
+
+it("honors polling backoff and expires without changing a saved binding", async () => {
+  const client = registration(), s = await setup({ registrationClient: client });
+  await s.engine.im.rpc("im.configure", config);
+  const previous = s.engine.im.store.settings();
+  vi.useFakeTimers();
+  client.begin.mockImplementationOnce(async () => ({ deviceCode: "private-code", verificationUrl: "https://accounts.feishu.cn/bind", interval: 1000, expiresAt: Date.now() + 8000 }));
+  client.poll.mockResolvedValueOnce({ state: "slow_down" });
+  await s.engine.im.rpc("im.bind", { action: "start" });
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(client.poll).toHaveBeenCalledOnce();
+  await vi.advanceTimersByTimeAsync(5999);
+  expect(client.poll).toHaveBeenCalledOnce();
+  await vi.advanceTimersByTimeAsync(1);
+  expect(client.poll).toHaveBeenCalledTimes(2);
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(s.engine.im.view().binding?.state).toBe("expired");
+  expect(s.engine.im.view().binding?.verificationUrl).toBeUndefined();
+  expect(s.engine.im.store.settings()).toEqual(previous);
+  expect(client.poll).toHaveBeenCalledTimes(2);
+});
+
+it("cancels registration when saved connection controls are used and keeps the secret Host-only on errors", async () => {
+  const client = registration(), s = await setup({ registrationClient: client }); await s.enable();
+  vi.useFakeTimers();
+  await s.engine.im.rpc("im.bind", { action: "start" });
+  await s.engine.im.rpc("im.control", { action: "disable" });
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(s.engine.im.view().binding?.state).toBe("cancelled");
+  expect(client.poll).not.toHaveBeenCalled();
+  client.poll.mockRejectedValueOnce(new Error("new-private-secret host-device-code"));
+  await s.engine.im.rpc("im.bind", { action: "start" });
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(s.engine.im.view().binding).toMatchObject({ state: "failed", error: "Feishu binding failed. Try again." });
+  expect(JSON.stringify(s.engine.im.view())).not.toMatch(/new-private-secret|host-device-code/);
+  expect(s.engine.im.view().config?.appId).toBe(config.appId);
+});
+
+it("aborts a registration request when the Host shuts down", async () => {
+  const client = registration(), s = await setup({ registrationClient: client });
+  let requestSignal: AbortSignal | undefined;
+  client.begin.mockImplementationOnce(signal => new Promise((_resolve, reject) => {
+    requestSignal = signal;
+    signal.addEventListener("abort", () => reject(new Error("Request cancelled")), { once: true });
+  }));
+  const request = s.engine.im.rpc("im.bind", { action: "start" });
+  await vi.waitFor(() => expect(requestSignal).toBeDefined());
+  await s.engine.im.close();
+  await request;
+  expect(requestSignal?.aborted).toBe(true);
+  expect(s.engine.im.store.settings()).toBeUndefined();
 });

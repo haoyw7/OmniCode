@@ -576,6 +576,7 @@ fn supported_remote_method(method: &str) -> bool {
             | "im.get"
             | "im.configure"
             | "im.control"
+            | "im.bind"
             | "workflows.request"
     )
 }
@@ -945,6 +946,10 @@ mod tests {
             "botDelegations.list",
             "botDelegations.get",
             "botDelegations.cancel",
+            "im.get",
+            "im.configure",
+            "im.control",
+            "im.bind",
         ] {
             assert!(supported_remote_method(method), "{method}");
         }
@@ -952,6 +957,7 @@ mod tests {
         assert!(!supported_remote_method("bots.arbitrary"));
         assert!(!supported_remote_method("botThreads.arbitrary"));
         assert!(!supported_remote_method("botMemory.arbitrary"));
+        assert!(!supported_remote_method("im.arbitrary"));
     }
     #[test]
     fn endpoints_require_an_encrypted_route_and_no_embedded_secrets() {
