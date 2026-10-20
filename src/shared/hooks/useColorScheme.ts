@@ -7,9 +7,12 @@ import {
 } from "../../features/settings/model/appearance";
 
 function currentColorScheme(): ColorScheme {
-  // Named desktop skins override the stored light/dark preference. A viewer
+  // Desktop and mobile skins override the stored light/dark preference. A viewer
   // mounted after the scheme event must start with that already-applied skin.
-  if (typeof document !== "undefined" && document.documentElement.dataset.skin) {
+  if (
+    typeof document !== "undefined" &&
+    (document.documentElement.dataset.skin || document.documentElement.dataset.mobileSkin)
+  ) {
     return document.documentElement.classList.contains("theme-light") ? "light" : "dark";
   }
   return resolveColorScheme(loadThemePreference());

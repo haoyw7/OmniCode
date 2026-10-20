@@ -27,6 +27,7 @@ afterEach(() => {
   act(() => root.unmount());
   container.remove();
   delete document.documentElement.dataset.skin;
+  delete document.documentElement.dataset.mobileSkin;
   document.documentElement.classList.remove("theme-light");
   vi.unstubAllGlobals();
 });
@@ -49,4 +50,23 @@ it("keeps the preference fallback before a desktop skin is applied", () => {
   preference.value = "light";
   act(() => root.render(createElement(Probe)));
   expect(container.textContent).toBe("light");
+});
+
+it.each([
+  ["linen", "light", "dark"],
+  ["graphite", "dark", "light"],
+  ["daylight", "light", "dark"],
+  ["midnight", "dark", "light"],
+] as const)("starts newly mounted mobile viewers in the applied %s skin", (skin, scheme, stored) => {
+  preference.value = stored;
+  document.documentElement.dataset.mobileSkin = skin;
+  document.documentElement.classList.toggle("theme-light", scheme === "light");
+  act(() => root.render(createElement(Probe)));
+  expect(container.textContent).toBe(scheme);
+  const next = scheme === "light" ? "dark" : "light";
+  act(() => {
+    document.documentElement.classList.toggle("theme-light", next === "light");
+    window.dispatchEvent(new CustomEvent("omnicode:schemechange", { detail: next }));
+  });
+  expect(container.textContent).toBe(next);
 });
