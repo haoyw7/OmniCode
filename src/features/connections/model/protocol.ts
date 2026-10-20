@@ -85,6 +85,8 @@ export type HostDirectory = {
 export type HostModelCatalog = {
   models: Partial<Record<RemoteProvider, AgentModel[]>>;
   errors: Partial<Record<RemoteProvider, string>>;
+  /** Present only for progressive reads; these providers are still discovering. */
+  pending?: RemoteProvider[];
 };
 /** Named login profiles the paired desktop shares; `default` is the CLI's own. */
 export type HostAccountIdentity = { email?: string; name?: string; plan?: string; organization?: string };

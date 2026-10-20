@@ -240,6 +240,8 @@ type Props = {
   hideTopBar?: boolean;
   /** Queue presentation supplied by the owning runtime. */
   messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
+  /** Runtime notices share the queue's lane above the input. */
+  composerNotice?: ReactNode;
   /** Host commands and capabilities apply to both local and remote workspaces. */
   hostManaged?: boolean;
   /** Workspace location is independent of Host ownership. */
@@ -350,6 +352,7 @@ export function Composer({
   hideBranchPicker = false,
   hideTopBar = false,
   messageQueue,
+  composerNotice,
   hostManaged = false,
   remoteSession = false,
   hostFeatures,
@@ -2155,11 +2158,15 @@ export function Composer({
             onResume={onResumeQueue}
           />
         )}
+        <AnimatedCollapse expanded={!!composerNotice}>
+          {composerNotice}
+        </AnimatedCollapse>
       </>
     ),
     [
       busy,
       children,
+      composerNotice,
       disabled,
       messageQueue,
       onDeleteQueuedMessage,

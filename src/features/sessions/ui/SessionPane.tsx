@@ -265,6 +265,7 @@ type Props = SessionPaneProps & {
   initialPromptId?: string;
   /** Queue presentation supplied by the owning runtime. */
   messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
+  composerNotice?: ReactNode;
   hostManaged?: boolean;
   remoteSession?: boolean;
   hostFeatures?: { attachments: boolean; plan: boolean; draft: boolean; orchestration?: boolean; checkpoint?: boolean };
@@ -299,6 +300,7 @@ export const SessionPane = memo(function SessionPane(props: SessionPaneProps) {
 const LocalSessionPane = memo(function LocalSessionPane({
   clockOffsetMs,
   messageQueue,
+  composerNotice,
   hostManaged = false,
   remoteSession = false,
   hostFeatures,
@@ -723,6 +725,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
       }
       readOnlyReason={nativeAccessHint}
       messageQueue={messageQueue}
+      composerNotice={composerNotice}
       hostManaged={hostManaged}
       remoteSession={remoteSession}
       hostFeatures={hostFeatures}

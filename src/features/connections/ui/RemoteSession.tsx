@@ -13,6 +13,8 @@ import {
   type OutgoingMessage,
 } from "../model/outgoing";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
+import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
+import { AlertCircle, Info } from "../../../shared/ui/icons";
 import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useStableHandlers } from "../../../shared/hooks/useStableHandlers";
 import { hostOrchestrationClient } from "../../orchestration/model/orchestrationClient";
@@ -52,8 +54,10 @@ import {
   type PersistedWorktreeCreation,
   type WorktreeCreation,
 } from "../../source-control/model/worktreeCreation";
-import type { AgentModel } from "../../sessions/model/models";
+import { fallbackModelName, type AgentModel } from "../../sessions/model/models";
+import { HARNESSES } from "../../sessions/model/session";
 import {
+  LOCAL_MODEL_SOURCE,
   ModelSourceContext,
   type ModelSource,
 } from "../../sessions/ui/modelSource";
@@ -113,6 +117,7 @@ import {
 export type RemoteSessionOverrides = Partial<SessionPaneProps> & {
   initialPromptId?: string;
   messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
+  composerNotice?: ReactNode;
   hostManaged: boolean;
   remoteSession: boolean;
   hostFeatures: { attachments: boolean; plan: boolean; draft: boolean; orchestration?: boolean; checkpoint?: boolean };
@@ -328,6 +333,9 @@ function ConnectedRemoteSession({
   render: (overrides: RemoteSessionOverrides) => ReactNode;
 }) {
   const { t: uiT } = useTranslation();
+  // A native local chat already has a catalog before its first send mounts
+  // this Host pane. Keep it until the project-specific Host catalog arrives.
+  const fallbackModelSource = project.local && !project.machine ? LOCAL_MODEL_SOURCE : undefined;
   const [descriptor, setDescriptor] = useState<HostDescriptor | undefined>(() =>
     cachedDescriptors.get(descriptorKey(machine.id, machine.environmentId)),
   );
@@ -730,15 +738,19 @@ function ConnectedRemoteSession({
   useEffect(() => {
     if (!descriptor || descriptor.environmentId !== machine.environmentId) return;
     let disposed = false;
-    void loadRemoteHostCatalog(machine.id, machine.environmentId, project.projectId)
-      .then((value) => {
-        if (disposed) return;
-        cachedCatalogs.set(catalogKey(machine.id, machine.environmentId, project.projectId), value);
-        setCatalog(value);
-        setCatalogError("");
-      })
+    const applyCatalog = (value: HostModelCatalog) => {
+      if (disposed) return;
+      cachedCatalogs.set(catalogKey(machine.id, machine.environmentId, project.projectId), value);
+      setCatalog(value);
+      setCatalogError("");
+    };
+    void loadRemoteHostCatalog(machine.id, machine.environmentId, project.projectId, applyCatalog)
+      .then(applyCatalog)
       .catch((reason) => {
-        if (!disposed) setCatalogError(String(reason));
+        if (!disposed) {
+          setCatalogError(String(reason));
+          setCatalog(value => value ? { ...value, pending: [] } : value);
+        }
       });
     return () => {
       disposed = true;
@@ -752,8 +764,10 @@ function ConnectedRemoteSession({
   ]);
 
   const providers = useMemo(
-    () => (descriptor?.providers ?? []).filter(isRemoteProvider),
-    [descriptor],
+    () => (descriptor?.providers ??
+      (fallbackModelSource ? HARNESSES.filter(id => fallbackModelSource.available(id)) : [])
+    ).filter(isRemoteProvider),
+    [descriptor, fallbackModelSource],
   );
   // A new session starts with the tab's model when the host offers it, and
   // otherwise with the host's first model. Settings follow the host's entry:
@@ -805,7 +819,7 @@ function ConnectedRemoteSession({
       findRemoteModel(
         catalog?.models[configuration.harness] ?? [],
         configuration.model,
-      )?.name ?? configuration.model.replace(/^[^:]+:/, ""),
+      )?.name ?? fallbackModelName(configuration.harness, configuration.model),
   });
   const optimisticTurn = (
     text: string,
@@ -1386,17 +1400,18 @@ function ConnectedRemoteSession({
 
   const modelSource = useMemo<ModelSource>(() => {
     const models = (harness: HarnessId) =>
-      catalog?.models[harness as RemoteProvider] ?? [];
-    const savedModel = composerConfiguration?.model;
-    const savedSettings = composerConfiguration?.modelSettings ?? {};
+      catalog ? catalog.models[harness as RemoteProvider] ?? [] : fallbackModelSource?.modelsFor(harness) ?? [];
+    const savedModel = configuration.model;
+    const savedSettings = configuration.settings;
     return {
       id: `remote:${machine.environmentId}`,
       modelsFor: models,
       resolve: (harness, id = "") => {
+        if (!catalog && fallbackModelSource) return fallbackModelSource.resolve(harness, id);
         const provider = harness as RemoteProvider;
         // Keep the saved model's effort visible even when the host catalog is
         // loading, failed, or no longer lists it.
-        const sameHarness = provider === composerConfiguration?.harness;
+        const sameHarness = provider === configuration.harness;
         const controls = remoteModelControls(
           catalog,
           provider,
@@ -1409,7 +1424,7 @@ function ConnectedRemoteSession({
           ...(listed ?? {
             id,
             harness,
-            name: id ? id.replace(/^[a-z]+:/, "") : "Loading models…",
+            name: id ? fallbackModelName(harness, id) : "Loading models…",
             nativeId: id.replace(/^[a-z]+:/, ""),
           }),
           settings: controls.settings,
@@ -1422,7 +1437,8 @@ function ConnectedRemoteSession({
       available: (harness) =>
         providers.includes(harness as RemoteProvider) &&
         (!hostSession || handoffEnabled || hostSession.harness === harness),
-      probed: () => !!descriptor,
+      probed: () => !!descriptor || !!fallbackModelSource?.probed(),
+      loading: (harness) => !!catalog?.pending?.includes(harness as RemoteProvider) && !models(harness).length,
       // The host re-probes when a provider CLI changes or its catalog ages,
       // so each picker opening asks again.
       refresh: () => setCatalogRefresh((value) => value + 1),
@@ -1431,12 +1447,32 @@ function ConnectedRemoteSession({
     catalog,
     catalogError,
     descriptor,
+    fallbackModelSource,
     handoffEnabled,
+    hostSession?.harness,
     providers,
     machine.environmentId,
-    composerConfiguration?.harness,
-    composerConfiguration?.model,
-    composerConfiguration?.modelSettings,
+    configuration.harness,
+    configuration.model,
+    configuration.settings,
+  ]);
+
+  const startingExecution = useMemo<Session["executionState"]>(() => {
+    // A queued or steering message must not replace the running turn's phase.
+    if (hostSession?.busy) return undefined;
+    const turn = outgoing?.placement === "transcript"
+      ? outgoing
+      : startingActive && starting && !starting.draft
+        ? { id: starting.commandId, startedAt: starting.startedAt }
+        : initialSubmission;
+    return turn ? {
+      runId: turn.id,
+      phase: "starting",
+      since: (turn.startedAt ?? Date.now()) + (hostSession ? snapshot?.clockOffsetMs ?? 0 : 0),
+    } : undefined;
+  }, [
+    hostSession, snapshot?.clockOffsetMs, outgoing?.id, outgoing?.placement,
+    outgoing?.startedAt, startingActive, starting, initialSubmission,
   ]);
 
   // Show a message the host has not confirmed yet in the transcript.
@@ -1514,6 +1550,7 @@ function ConnectedRemoteSession({
       harness: configuration.harness, model: configuration.model,
       modelSettings: configuration.settings, runtimeMode: configuration.mode,
     } : undefined,
+    executionState: startingExecution ?? viewSession?.executionState,
     busy: busy || !!initialSubmission,
     blocks: (unconfirmed ? [...blocks, unconfirmed] : blocks).map(block => {
       const edit = proposalEdits.get(block.id);
@@ -1547,16 +1584,16 @@ function ConnectedRemoteSession({
   const notice =
     pending && !sending
       ? {
-          text: "Waiting for the host to confirm your request.",
+          text: uiT("Waiting for the host to confirm your request."),
           detail: error,
-          action: { label: uiT("Retry"), run: () => void retryPending() },
+          action: { label: "Retry", run: () => void retryPending() },
         }
       : starting?.failed
         ? {
-            text: `Couldn’t ${starting.draft ? "save the draft" : "send the message"} on ${machine.name}.`,
+            text: uiT(starting.draft ? "Couldn’t save the draft on {name}." : "Couldn’t send the message on {name}.", { name: machine.name }),
             detail: error,
             action: {
-              label: uiT("Try again"),
+              label: "Try again",
               run: () => {
                 const turn = { ...starting, failed: false };
                 setStarting(turn);
@@ -1583,18 +1620,19 @@ function ConnectedRemoteSession({
         : error
           ? {
               text: error,
-              action: { label: uiT("Dismiss"), run: () => setError("") },
+              action: { label: "Dismiss", run: () => setError("") },
             }
           : catalogProblem
             ? {
-                text: `Couldn’t load models from ${machine.name}.`,
+                text: uiT("Couldn’t load models from {name}.", { name: machine.name }),
                 detail: catalogProblem,
                 action: {
-                  label: uiT("Retry"),
+                  label: "Retry",
                   run: () => setCatalogRefresh((value) => value + 1),
                 },
               }
             : undefined;
+  const noticeIsError = !!(error || catalogProblem || starting?.failed);
 
   const selectWorktree = async (tree: Worktree) => {
     const parsed = project.local && !project.machine ? { hostPath: tree.path, environmentId: machine.environmentId, machine: undefined }
@@ -1869,6 +1907,27 @@ function ConnectedRemoteSession({
   // forwarders keep the pane and every transcript block memoized.
   const overrides = useStableHandlers<RemoteSessionOverrides>({
     session,
+    composerNotice: notice ? (
+      <div className="px-2 pb-1.5" data-host-notice>
+        <ComposerNotice
+          size="compact"
+          tone={noticeIsError ? "danger" : "info"}
+          role={noticeIsError ? "alert" : "status"}
+          icon={noticeIsError ? <AlertCircle className="size-3.5" /> : <Info className="size-3.5" />}
+          detail={notice.detail ? localizeOrchestrationMessage(notice.detail, uiT) : undefined}
+          actions={notice.action ? (
+            <ComposerNoticeButton
+              disabled={!online && notice.action.label !== "Dismiss"}
+              onClick={notice.action.run}
+            >
+              {uiT(notice.action.label)}
+            </ComposerNoticeButton>
+          ) : undefined}
+        >
+          {localizeOrchestrationMessage(notice.text, uiT)}
+        </ComposerNotice>
+      </div>
+    ) : undefined,
     initialPromptId,
     transcriptHistory: transcriptHistory?.session.id === hostSession?.id
       ? transcriptHistory?.session.blocks
@@ -1922,6 +1981,13 @@ function ConnectedRemoteSession({
     onSubmit: (_, text, attachments, options) =>
       submit(text, attachments, options),
     onStop: stopTurn,
+    onStopBackgroundTask: descriptor?.capabilities.includes("sessions.stopBackgroundTask") && hostSession && ["claude", "deepseek"].includes(hostSession.harness)
+      ? async (_, taskId) => {
+          await remoteRequest(machine.id, "sessions.stopBackgroundTask", {
+            projectId: project.projectId, sessionId: hostSession.id, taskId,
+          });
+        }
+      : undefined,
     onApproval: (_, requestId, decision) => approve(requestId, decision),
     onQuestionReply: (_, requestId, reply) => answer(requestId, reply),
     onCompactContext: compact,
@@ -2012,29 +2078,6 @@ function ConnectedRemoteSession({
         openDetails: parentWorkers.openDetails ? worker => parentWorkers.openDetails?.(hostWorker(worker)) : undefined,
       }}>
       <div data-pane-background-geometry className="relative flex h-full min-h-0 flex-col">
-        {notice ? (
-          <div
-            role={error ? "alert" : "status"}
-            className="desktop-toolbar flex shrink-0 items-center gap-3 border-b border-stroke px-4 py-2 text-[12px] text-content/65"
-          >
-            <span className="min-w-0 flex-1 truncate" title={notice.detail}>
-              {localizeOrchestrationMessage(notice.text, uiT)}
-              {notice.detail ? (
-                <span className="text-content/40"> {localizeOrchestrationMessage(notice.detail, uiT)}</span>
-              ) : null}
-            </span>
-            {notice.action ? (
-              <button
-                type="button"
-                disabled={!online && notice.action.label !== "Dismiss"}
-                className="shrink-0 rounded-md px-2 py-1 text-content/70 hover:bg-content/5 hover:text-content disabled:opacity-40"
-                onClick={notice.action.run}
-              >
-                {notice.action.label}
-              </button>
-            ) : null}
-          </div>
-        ) : null}
         {snapshot?.executionWarnings?.length ? (
           <div role="status" className="desktop-toolbar shrink-0 border-b border-stroke px-4 py-2 text-[12px] text-content/65">
             {snapshot.executionWarnings.map((warning, index) => <p key={`${index}:${warning}`}>{executionWarningText(warning, uiT)}</p>)}

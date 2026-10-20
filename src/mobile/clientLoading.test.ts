@@ -39,6 +39,44 @@ async function setup(handler: (method: string, params: any) => unknown) {
 }
 
 describe("mobile loading critical path", () => {
+  it("shares progressive warmup with navigation and caches models before all providers finish", async () => {
+    vi.useFakeTimers();
+    try {
+      const partial = { models: { codex: [{ id: "codex:fast", harness: "codex", name: "Fast" }] }, errors: {}, pending: ["pi"] };
+      const { client, rpc } = await setup((_method, params) =>
+        params.providers ? { models: {}, errors: { pi: "Not signed in" }, pending: [] } : partial);
+      const warm = client.models("project");
+      await vi.advanceTimersByTimeAsync(0);
+      expect(client.cachedModels("project")).toBe(partial);
+      const update = vi.fn();
+      const navigation = client.models("project", false, update);
+      expect(update).toHaveBeenCalledWith(partial);
+      await vi.advanceTimersByTimeAsync(500);
+      const completed = await navigation;
+      expect(await warm).toBe(completed);
+      expect(completed.models).toEqual(partial.models);
+      expect(client.cachedModels("project")?.pending).toEqual([]);
+      expect((rpc as ReturnType<typeof vi.fn>).mock.calls.filter(call => (call[2] as any).method === "models.list"))
+        .toHaveLength(2);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("stops progressive polling after switching Hosts", async () => {
+    vi.useFakeTimers();
+    try {
+      const { client, rpc } = await setup(() => ({ models: {}, errors: {}, pending: ["pi"] }));
+      const pending = client.models("project");
+      const rejected = expect(pending).rejects.toThrow("Host connection changed.");
+      await vi.advanceTimersByTimeAsync(0);
+      await client.connect("http://second-host", "123");
+      await vi.advanceTimersByTimeAsync(500);
+      await rejected;
+      expect(client.cachedModels("project")).toBeUndefined();
+      expect((rpc as ReturnType<typeof vi.fn>).mock.calls.filter(call => (call[2] as any).method === "models.list"))
+        .toHaveLength(1);
+    } finally { vi.useRealTimers(); }
+  });
+
   it("loads a global catalog without a project and keeps its cache separate", async () => {
     const { client, rpc } = await setup((_method, params) => ({ models: {}, errors: params.projectId ? { codex: params.projectId } : {} }));
     const global = await client.models();
@@ -47,7 +85,9 @@ describe("mobile loading critical path", () => {
     expect(client.cachedModels()).toBe(global);
     expect(client.cachedModels("project")?.errors.codex).toBe("project");
     const calls = (rpc as ReturnType<typeof vi.fn>).mock.calls.filter((call) => (call[2] as any).method === "models.list");
-    expect(calls.map((call) => (call[2] as any).params)).toEqual([{}, { projectId: "project" }]);
+    expect(calls.map((call) => (call[2] as any).params)).toEqual([
+      { progressive: true }, { projectId: "project", progressive: true },
+    ]);
     await client.models(undefined, true);
     expect(client.cachedModels()).not.toBe(global);
   });

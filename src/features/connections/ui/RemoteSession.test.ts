@@ -13,6 +13,7 @@ import {
 import type { Block, Session } from "../../sessions/model/session";
 import type { QuestionAnswer } from "../../sessions/model/userQuestion";
 import type { AgentModel } from "../../sessions/model/models";
+import { resetHarnessModelOverlays, setHarnessModels } from "../../sessions/model/models";
 import { rememberRemoteProject, configureSharedHost } from "../model/remoteProjects";
 import { clearRemoteSessionSubmission, pendingRemoteSessionSubmission, stageRemoteSessionSubmission } from "../model/remoteSessionActions";
 import { useSessionSubmission } from "../../../app/controller/useSessionSubmission";
@@ -47,6 +48,7 @@ vi.mock("../../sessions/ui/AgentTranscript", () => ({
   AgentTranscript: ({
     blocks,
     busy,
+    executionState,
     animateFrom,
     onSendDraft,
     onRemoveDraft,
@@ -58,6 +60,7 @@ vi.mock("../../sessions/ui/AgentTranscript", () => ({
   }: {
     blocks: Block[];
     busy: boolean;
+    executionState?: Session["executionState"];
     animateFrom?: string;
     onSendDraft?: (block: Block) => void;
     onRemoveDraft?: (block: Block) => void;
@@ -69,7 +72,8 @@ vi.mock("../../sessions/ui/AgentTranscript", () => ({
   }) =>
     createElement(
       "ol",
-      { "aria-label": "Transcript", "data-busy": busy, "data-animate-from": animateFrom },
+      { "aria-label": "Transcript", "data-busy": busy, "data-animate-from": animateFrom,
+        "data-execution-phase": executionState?.phase, "data-execution-since": executionState?.since },
       turnAccessory?.(blocks.findLast((block) => block.role === "user"), true),
       createElement("button", { "aria-label": "Open transcript file", onClick: () => onOpenFile?.("src/app.ts") }),
       createElement("button", { "aria-label": "Open transcript diff", onClick: () => onOpenDiff?.("src/app.ts") }),
@@ -349,6 +353,7 @@ afterEach(async () => {
   localStorage.clear();
   configureSharedHost(undefined, []);
   clearRemoteSessionSubmission("shell");
+  resetHarnessModelOverlays();
 });
 
 /** A minimal host engine: persists commands the way the real one does. */
@@ -494,6 +499,41 @@ async function settle() {
     });
 }
 
+it.each([false, true])("routes DSH background task stops only through a capable Host (supported: %s)", async (supported) => {
+  providers = ["deepseek"];
+  host = { projectId: "project", revision: 1, status: "running", updatedAt: 0, runId: "run",
+    session: { ...shell(), id: "host-session", cwd: "/home/me/repo", harness: "deepseek", model: "deepseek:default" } };
+  rememberRemoteSession("shell", "host-session");
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  const stop = vi.fn();
+  vi.mocked(invoke).mockImplementation(async (command, input) => {
+    const rpc = input as { method?: string; params?: object } | undefined;
+    if (command === "remote_request" && rpc?.method === "sessions.stopBackgroundTask") {
+      stop(rpc.params);
+      return { stopped: true };
+    }
+    const result = await original(command, input);
+    if (command === "remote_request" && rpc?.method === "environment.describe" && supported) {
+      const descriptor = result as HostDescriptor;
+      return { ...descriptor, capabilities: [...descriptor.capabilities, "sessions.stopBackgroundTask"] };
+    }
+    return result;
+  });
+  let handler: SessionPaneProps["onStopBackgroundTask"];
+  await act(async () => root.render(createElement(RemoteSession, {
+    shell: { ...shell(), harness: "deepseek", model: "deepseek:default" }, visible: true,
+    onSnapshot: vi.fn(), onOpenFile: vi.fn(), onOpenDiff: vi.fn(), onOpenPlan: vi.fn(),
+    render: (overrides) => { handler = overrides.onStopBackgroundTask; return createElement("span", null, "DSH"); },
+  })));
+  await settle();
+  if (supported) {
+    expect(handler!).toBeDefined();
+    await act(async () => handler!("shell", "bash-1"));
+    expect(stop).toHaveBeenCalledWith({ projectId: "project", sessionId: "host-session", taskId: "bash-1" });
+    expect(commands.some((command) => command.type === "cancel")).toBe(false);
+  } else expect(handler!).toBeUndefined();
+});
+
 it("shares startup Host metadata across restored panes while syncing each conversation", async () => {
   const original = vi.mocked(invoke).getMockImplementation()!;
   let describe!: () => void;
@@ -591,8 +631,11 @@ async function send(text: string) {
 it("delivers a projectless chat's first message after its Host pane mounts", async () => {
   const cwd = "/home/me/Documents/omnicode/2026-10-19/chat-120000-abcdef";
   configureSharedHost("env", [], machine.id);
+  setHarnessModels("codex", [gpt]);
   let openProject!: () => void;
+  let listModels!: () => void;
   const opening = new Promise<void>(resolve => { openProject = resolve; });
+  const listing = new Promise<void>(resolve => { listModels = resolve; });
   const original = vi.mocked(invoke).getMockImplementation()!;
   vi.mocked(invoke).mockImplementation(async (command, input) => {
     if (command === "create_path") return cwd;
@@ -600,10 +643,11 @@ it("delivers a projectless chat's first message after its Host pane mounts", asy
       await opening;
       return { id: "new-chat-project", name: "chat", cwd };
     }
+    if (command === "remote_request" && (input as { method: string }).method === "models.list") await listing;
     return original(command, input);
   });
   function Harness() {
-    const [sessions, setSessions] = useState([{ ...shell(), cwd: "~" }]);
+    const [sessions, setSessions] = useState([{ ...shell(), cwd: "~", harness: "codex" as const, model: gpt.id }]);
     const [, setProjectCwd] = useState("~");
     const sessionsRef = useRef(sessions);
     sessionsRef.current = sessions;
@@ -634,6 +678,9 @@ it("delivers a projectless chat's first message after its Host pane mounts", asy
   await act(async () => root.render(createElement(Harness)));
   const initialPane = container.querySelector("[data-session-drop]");
   const initialComposer = container.querySelector("textarea");
+  const modelLabel = container.querySelector("[data-model-picker-trigger]")?.getAttribute("aria-label");
+  expect(modelLabel).toBe("Codex GPT Test");
+  expect(byLabel("Reasoning: High")).not.toBeNull();
   await send("Keep my first message");
   expect(commands).toEqual([]);
   expect(container.querySelector("[data-session-drop]")).toBe(initialPane);
@@ -643,6 +690,15 @@ it("delivers a projectless chat's first message after its Host pane mounts", asy
   expect(container.querySelector("textarea")?.value).toBe("Keep this next message as a draft");
   expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "create_path")).toHaveLength(1);
   await act(async () => openProject());
+  await settle();
+  expect(commands).toEqual([]);
+  expect(container.querySelector("[data-model-picker-trigger]")?.getAttribute("aria-label")).toBe(modelLabel);
+  expect(byLabel("Reasoning: High")).not.toBeNull();
+  expect(container.querySelector('[aria-label="Transcript"]')?.getAttribute("data-execution-phase")).toBe("starting");
+  await act(async () => container.querySelector<HTMLButtonElement>("[data-model-picker-trigger]")!.click());
+  expect(document.body.querySelector('[role="option"][aria-label="GPT Test, Codex"]')).not.toBeNull();
+  await act(async () => container.querySelector<HTMLButtonElement>("[data-model-picker-trigger]")!.click());
+  await act(async () => listModels());
   await settle();
   expect(commands.filter(command => command.type === "create")).toHaveLength(1);
   expect(commands.filter(command => command.type === "send")).toEqual([
@@ -680,6 +736,7 @@ it("keeps the staged first message visible until Host metadata is ready, then se
   const initial = pendingRemoteSessionSubmission("shell")!;
   await render();
   expect(container.textContent).toContain("Plan the first message");
+  expect(container.querySelector('[aria-label="Transcript"]')?.getAttribute("data-execution-phase")).toBe("starting");
   const initialMessage = container.querySelector(`[data-block-id="${initial.id}"]`);
   expect(initialMessage).not.toBeNull();
   expect(container.querySelector('[aria-label="Transcript"]')?.getAttribute("data-animate-from")).toBe(initial.id);
@@ -688,6 +745,7 @@ it("keeps the staged first message visible until Host metadata is ready, then se
   await settle();
   expect(commands).toEqual([]);
   expect(container.textContent).toContain("Plan the first message");
+  expect(container.querySelector('[aria-label="Transcript"]')?.getAttribute("data-execution-phase")).toBe("starting");
   await act(async () => listModels());
   await settle();
   expect(commands.filter(command => command.type === "send")).toEqual([
@@ -696,6 +754,41 @@ it("keeps the staged first message visible until Host metadata is ready, then se
   expect(container.querySelector(`[data-block-id="${initial.id}"]`)).toBe(initialMessage);
   expect(commands.find(command => command.type === "create")).toMatchObject({ harness: "codex", model: gpt.id });
   await render();
+  expect(commands.filter(command => command.type === "send")).toHaveLength(1);
+});
+
+it("sends the staged first message from a ready Agent while another catalog remains pending", async () => {
+  projectKey = rememberRemoteProject("env", {
+    id: "progressive-project", name: "progressive chat", cwd: "/home/me/progressive-chat",
+  }).key;
+  providers = ["codex", "pi"];
+  catalog = { models: { codex: [gpt] }, errors: {}, pending: ["pi"] };
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  let finish!: () => void;
+  const waiting = new Promise<void>(resolve => { finish = resolve; });
+  let pendingRequests = 0;
+  vi.mocked(invoke).mockImplementation(async (command, input) => {
+    const request = input as { method?: string; params?: { providers?: string[] } };
+    if (command === "remote_request" && request.method === "models.list" && request.params?.providers) {
+      pendingRequests++;
+      await waiting;
+      return { models: {}, errors: { pi: "Unavailable" }, pending: [] };
+    }
+    return original(command, input);
+  });
+  stageRemoteSessionSubmission("shell", "Send without waiting for Pi", []);
+  try {
+    await render();
+    expect(commands.filter(command => command.type === "send")).toEqual([
+      expect.objectContaining({ text: "Send without waiting for Pi" }),
+    ]);
+    expect(commands.find(command => command.type === "create")).toMatchObject({ harness: "codex", model: gpt.id });
+    expect(container.querySelector('[data-model-picker-trigger] [aria-label="Loading models…"]')).toBeNull();
+    await vi.waitFor(() => expect(pendingRequests).toBe(1));
+  } finally {
+    await act(async () => finish());
+    await settle();
+  }
   expect(commands.filter(command => command.type === "send")).toHaveLength(1);
 });
 
@@ -1375,6 +1468,7 @@ it("does not flash a status banner while an ordinary message is in flight", asyn
   await act(async () => byLabel("Send")!.click());
   expect(container.textContent).toContain("Second");
   expect(container.textContent).not.toContain("Waiting for the host to confirm");
+  expect(container.querySelector('[aria-label="Transcript"]')?.getAttribute("data-execution-phase")).toBe("starting");
 
   await act(async () => {
     releaseDispatch();
@@ -1396,6 +1490,7 @@ it("keeps the first turn active while its accepted message awaits host sync", as
     container.querySelector("ol[aria-label='Transcript']");
   expect(transcript()?.textContent).toContain("First remote turn");
   expect(transcript()?.getAttribute("data-busy")).toBe("true");
+  expect(transcript()?.getAttribute("data-execution-phase")).toBe("starting");
   await act(async () => {
     releaseSync();
     syncDelay = undefined;
@@ -1403,6 +1498,7 @@ it("keeps the first turn active while its accepted message awaits host sync", as
   await settle();
   expect(transcript()?.querySelectorAll("li")).toHaveLength(2);
   expect(transcript()?.getAttribute("data-busy")).toBe("false");
+  expect(transcript()?.getAttribute("data-execution-phase")).toBeNull();
 });
 
 it("starts a remote session in the worktree chosen before its first message", async () => {
@@ -1901,6 +1997,41 @@ it("restores the current provider after a definitive switch rejection without au
   expect(host?.session.harness).toBe("codex");
 });
 
+it("keeps DeepSeek route IDs out of the model label while the Host catalog loads and fails", async () => {
+  const id = 'deepseek:["deepseek-account","deepseek-flash"]';
+  providers = ["deepseek"];
+  catalog = new Error("DeepSeek catalog is offline");
+  let releaseModels!: () => void;
+  const listing = new Promise<void>(resolve => { releaseModels = resolve; });
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  vi.mocked(invoke).mockImplementation(async (command, input) => {
+    if (command === "remote_request" && (input as { method?: string })?.method === "models.list")
+      await listing;
+    return original(command, input);
+  });
+  const trigger = () => container.querySelector<HTMLButtonElement>("[data-model-picker-trigger]")!;
+  try {
+    await render({ ...shell(), harness: "deepseek", model: id, modelSettings: {} });
+    expect(trigger().textContent).toContain("deepseek-flash");
+    expect(trigger().textContent).not.toContain("[");
+    await act(async () => releaseModels());
+    await settle();
+    expect(container.textContent).toContain("DeepSeek catalog is offline");
+    expect(trigger().textContent).toContain("deepseek-flash");
+    expect(trigger().textContent).not.toContain("[");
+    catalog = { models: { deepseek: [{ id, harness: "deepseek", name: "DeepSeek-V4.1-Flash" }] }, errors: {} };
+    await act(async () => {
+      [...container.querySelectorAll("button")].find(button => button.textContent === "Retry")!.click();
+    });
+    await settle();
+    expect(trigger().textContent).toContain("DeepSeek-V4.1-Flash");
+    expect(commands).toEqual([]);
+  } finally {
+    releaseModels();
+    await settle();
+  }
+});
+
 it("keeps a saved model's effort editable when the host catalog fails", async () => {
   await render();
   await send("First");
@@ -2094,7 +2225,8 @@ it("retains the Host queue and desktop draft when take-back attachment reading f
 it("puts a send to a busy Host conversation straight into the queue, never the transcript", async () => {
   dispatch({ type: "create", commandId: "queue-session", projectId: "project", harness: "codex", model: gpt.id, runtimeMode: "supervised" });
   host = { ...host!, status: "running", runId: "shared-run", supportsQueue: true, canSteer: true,
-    session: { ...host!.session, busy: true, blocks: [{ id: "old", role: "user", text: "Current work" }] } };
+    session: { ...host!.session, busy: true, executionState: { runId: "shared-run", phase: "active", since: 1 },
+      blocks: [{ id: "old", role: "user", text: "Current work" }] } };
   rememberRemoteSession("shell", "host-session");
   await render();
   let releaseDispatch = () => {};
@@ -2104,6 +2236,7 @@ it("puts a send to a busy Host conversation straight into the queue, never the t
   // In flight: already a queue row, and never a transcript bubble.
   expect(container.querySelector('[data-message-queue]')?.textContent).toContain("Next up");
   expect(container.querySelector('[aria-label="Transcript"]')?.textContent).not.toContain("Next up");
+  expect(container.querySelector('[aria-label="Transcript"]')?.getAttribute("data-execution-phase")).toBe("active");
   await act(async () => {
     releaseDispatch();
     dispatchDelay = undefined;

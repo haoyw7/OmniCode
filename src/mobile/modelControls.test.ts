@@ -6,6 +6,7 @@ import {
   MobileModelControls,
   configurationForModel,
   configurationForSession,
+  configurationLabels,
   type MobileConfiguration,
 } from "./MobileModelControls";
 import type { HostModelCatalog } from "../features/connections/model/protocol";
@@ -144,6 +145,19 @@ function render(
   return { node, changes, change, row };
 }
 describe("mobile Agent, model and reasoning controls", () => {
+  it("shows the DeepSeek model component while retaining catalog display names when available", () => {
+    const configuration: MobileConfiguration = {
+      harness: "deepseek", model: 'deepseek:["deepseek-account","deepseek-flash"]',
+      modelSettings: {}, runtimeMode: "supervised",
+    };
+    expect(configurationLabels(undefined, configuration).modelName).toBe("deepseek-flash");
+    expect(configurationLabels({ models: {}, errors: { deepseek: "offline" } }, configuration).modelName)
+      .toBe("deepseek-flash");
+    expect(configurationLabels({ models: { deepseek: [{
+      id: configuration.model, harness: "deepseek", name: "DeepSeek-V4.1-Flash",
+    }] }, errors: {} }, configuration).modelName).toBe("DeepSeek-V4.1-Flash");
+  });
+
   it("shows the next-send choice while the session still belongs to the original agent", () => {
     const pendingConfiguration = configurationForModel(catalog.models.claude![0]);
     const snapshot = {
@@ -191,6 +205,30 @@ describe("mobile Agent, model and reasoning controls", () => {
     update(false, { models: {}, errors: { codex: "Model discovery failed" } });
     expect(node.querySelector(".mobile-spin")).toBeNull();
     expect(node.querySelector('[role="alert"]')?.textContent).toBe("Model discovery failed");
+  });
+
+  it("allows choosing a ready Agent while the current Agent is still loading", () => {
+    const node = document.createElement("div");
+    document.body.append(node);
+    root = createRoot(node);
+    const change = vi.fn();
+    act(() => root.render(createElement(MobileModelControls, {
+      catalog: { models: { claude: catalog.models.claude }, errors: {}, pending: ["codex"] },
+      loading: true, configuration: configurationForModel(catalog.models.codex![0]),
+      lockedAgent: false, disabled: false, onChange: change, onClose: () => {},
+    })));
+    const row = [...node.querySelectorAll<HTMLButtonElement>("button")]
+      .find(button => button.querySelector("strong")?.textContent === "Agent")!;
+    expect(row.disabled).toBe(false);
+    act(() => row.click());
+    const agents = [...node.querySelectorAll<HTMLButtonElement>('[role="radio"]')];
+    const codex = agents.find(button => button.textContent?.includes(HARNESS_TITLE.codex))!;
+    const claude = agents.find(button => button.textContent?.includes(HARNESS_TITLE.claude))!;
+    expect(codex.disabled).toBe(true);
+    expect(codex.querySelector('[role="status"]')).not.toBeNull();
+    expect(claude.disabled).toBe(false);
+    act(() => claude.click());
+    expect(change).toHaveBeenCalledWith(expect.objectContaining({ harness: "claude", model: "claude:test" }));
   });
 
   it("opens separate Agent, model and reasoning dialogs without changing settings on back", () => {

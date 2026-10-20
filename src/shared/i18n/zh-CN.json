@@ -2428,6 +2428,7 @@
   "File is too large to preview ({size}).": "文件过大，无法预览（{size}）。",
   "Show {count} more lines": "再显示 {count} 行",
   "Host connection changed.": "Host 连接已变更。",
+  "Model discovery timed out": "模型列表加载超时",
   "Conversation request is no longer current.": "对话加载请求已失效。",
   "Host returned a different conversation.": "Host 返回了另一段对话。",
   "Window navigation": "窗口导航",

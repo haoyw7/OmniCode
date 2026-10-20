@@ -985,15 +985,19 @@ export function useMobileAppController() {
     setError("");
     // Provider discovery can launch CLIs; it is independent of history and
     // must never hold the conversation's first paint behind the slowest CLI.
-    void client.models(item.id).then((catalog) => {
+    const applyCatalog = (catalog: HostModelCatalog) => {
       if (projectGeneration.current !== projectTurn) return;
       setCatalog(catalog);
       const first = firstConfiguration(catalog, defaults);
       if (first && !draftConfigurationChanged.current) setConfiguration((current) => ({
         ...first, runtimeMode: current.runtimeMode,
       }));
-    }).catch((problem) => {
-      if (projectGeneration.current === projectTurn) setError(message(problem));
+    };
+    void client.models(item.id, false, applyCatalog).then(applyCatalog).catch((problem) => {
+      if (projectGeneration.current === projectTurn) {
+        setError(message(problem));
+        setCatalog(value => value ? { ...value, pending: [] } : value);
+      }
     }).finally(() => {
       if (projectGeneration.current === projectTurn) setCatalogLoading(false);
     });
@@ -1174,14 +1178,19 @@ export function useMobileAppController() {
           setProject(owner);
           if (changedProject) {
             const projectTurn = ++projectGeneration.current;
-            setCatalog(undefined);
-            setCatalogLoading(true);
-            try {
-              const nextCatalog = await client.models(owner.id);
-              if (projectGeneration.current === projectTurn) setCatalog(nextCatalog);
-            } finally {
+            const cached = client.cachedModels(owner.id);
+            setCatalog(cached);
+            setCatalogLoading(!cached);
+            const applyCatalog = (value: HostModelCatalog) => {
+              if (projectGeneration.current === projectTurn) setCatalog(value);
+            };
+            void client.models(owner.id, false, applyCatalog).then(applyCatalog).catch(problem => {
+              if (projectGeneration.current !== projectTurn) return;
+              setError(message(problem));
+              setCatalog(value => value ? { ...value, pending: [] } : value);
+            }).finally(() => {
               if (projectGeneration.current === projectTurn) setCatalogLoading(false);
-            }
+            });
           }
         }
         setSessionId(receipt.sessionId);
@@ -2046,7 +2055,8 @@ export function useMobileAppController() {
     backgroundPath,
     busy,
     catalog,
-    catalogLoading,
+    catalogLoading: (catalog?.pending ? catalog.pending.includes(configuration.harness) : catalogLoading) &&
+      !catalog?.models[configuration.harness]?.length,
     changeSettingsPage,
     chatSupported,
     composerPanel,

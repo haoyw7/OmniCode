@@ -263,6 +263,7 @@ export function createHostServer(
       probed: number;
       models: Promise<AgentModel[]>;
       refreshing?: Promise<void>;
+      failedAt?: number;
     }
   >();
   const transfers = new SyncTransfers();
@@ -279,19 +280,33 @@ export function createHostServer(
     (projectId, action) => engine.withIdleProject(projectId, action),
     (path) => engine.assertWorkspaceWrite(path),
   );
-  const discover = (cwd: string, provider: RemoteProvider) =>
-    discoverModels[provider](cwd).then((discovered) => {
+  // A cold catalog can start an entire CLI (and its extensions) per provider.
+  // Share the budget across projects, clients and stale-cache refreshes.
+  let activeProbes = 0;
+  const waitingProbes: Array<() => void> = [];
+  const discover = async (cwd: string, provider: RemoteProvider) => {
+    if (activeProbes >= 2)
+      await new Promise<void>(resolve => waitingProbes.push(resolve));
+    else activeProbes++;
+    try {
+      const discovered = await discoverModels[provider](cwd);
       if (discovered.length) setHarnessModels(provider, discovered);
       return discovered;
-    });
+    } finally {
+      const next = waitingProbes.shift();
+      if (next) next();
+      else activeProbes--;
+    }
+  };
   // Cached per project and provider so one failing or slow CLI never forces
   // every other provider to be probed again. An expired list keeps answering
   // while its replacement is discovered in the background.
-  const providerModels = async (cwd: string, provider: RemoteProvider) => {
+  const providerModels = async (cwd: string, provider: RemoteProvider, retainFailure = false) => {
     const key = `${cwd}\n${provider}`;
     const binary = await providerBinary(provider);
     const cached = catalogs.get(key);
-    if (cached?.binary === binary) {
+    if (cached?.binary === binary &&
+        (!cached.failedAt || (retainFailure && Date.now() - cached.failedAt < 15_000))) {
       if (cached.probed && Date.now() - cached.probed >= CATALOG_MAX_AGE_MS && !cached.refreshing) {
         const next = discover(cwd, provider);
         cached.refreshing = next.then(
@@ -301,32 +316,49 @@ export function createHostServer(
       }
       return cached.models;
     }
-    const entry = { binary, probed: 0, models: discover(cwd, provider) };
+    const entry = { binary, probed: 0, models: discover(cwd, provider), failedAt: 0 };
     catalogs.set(key, entry);
     entry.models.then(
       () => { entry.probed = Date.now(); },
-      () => { if (catalogs.get(key) === entry) catalogs.delete(key); },
+      // A failure between progressive polls must be returned by the next poll,
+      // rather than silently starting the same slow, failing probe again.
+      () => { entry.failedAt = Date.now(); },
     );
     return entry.models;
   };
-  const models = async (projectId?: unknown) => {
-    const project = typeof projectId === "string" ? engine.store.project(projectId) : undefined;
-    // Catalogs use the desktop's CLI and accounts, even for a WSL project.
-    // A Linux project path is not a working directory for a Windows process.
-    const cwd = project && !project.machine ? project.cwd : homedir();
-    const available = await availableProviders();
+  const models = async (projectId?: unknown, progressive = false, requested?: unknown) => {
+    const cwd = engine.modelCatalogDirectory(typeof projectId === "string" ? projectId : undefined);
+    const available = (await availableProviders()).filter(provider =>
+      !Array.isArray(requested) || requested.includes(provider));
     const result: HostModelCatalog = { models: {}, errors: {} };
-    await Promise.all(
+    const pending = new Set(available);
+    const complete = Promise.all(
       available.map(async (provider) => {
         try {
-          result.models[provider] = await providerModels(cwd, provider);
+          result.models[provider] = await providerModels(cwd, provider, progressive && Array.isArray(requested));
         } catch (error) {
           result.errors[provider] =
             error instanceof Error ? error.message : String(error);
+        } finally {
+          pending.delete(provider);
         }
       }),
     );
-    return result;
+    if (!progressive) {
+      await complete;
+      return result;
+    }
+    // A cold/slow CLI must not hold already available models behind its timeout.
+    // Keep discovery in the provider cache; subsequent reads join the same work.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([complete, new Promise<void>(resolve => {
+        timer = setTimeout(resolve, 150);
+      })]);
+    } finally {
+      clearTimeout(timer);
+    }
+    return { models: { ...result.models }, errors: { ...result.errors }, pending: [...pending] };
   };
   engine.orchestration.setCatalog(async (projectId) => {
     const catalog = await models(projectId);
@@ -491,7 +523,7 @@ export function createHostServer(
             result = await engine.createChat();
             break;
           case "models.list":
-            result = await models(params.projectId);
+            result = await models(params.projectId, params.progressive === true, params.providers);
             break;
           case "providerAccounts.list":
             result = accounts.read().accounts;

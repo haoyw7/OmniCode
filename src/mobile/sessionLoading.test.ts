@@ -312,7 +312,7 @@ describe("mobile conversation loading UI", () => {
     expect(host.rpc).toHaveBeenCalledWith("sessions.get", { sessionId: "task" });
     expect(transcript()?.textContent).toBe("task revision 1");
     expect(node.querySelector("header")?.textContent).toContain(owner.name);
-    expect(host.models).toHaveBeenCalledWith(owner.id);
+    expect(host.models).toHaveBeenCalledWith(owner.id, false, expect.any(Function));
     expect(composer().disabled).toBe(kind !== "task");
     await act(async () => node.querySelector<HTMLButtonElement>('[aria-label="Back to Bot conversation"]')!.click());
     await advanceMotionTimers(500);
@@ -635,6 +635,25 @@ describe("mobile conversation loading UI", () => {
     await act(async () => models.resolve(catalog));
     expect(composer().getAttribute("data-model")).toBe("codex:existing");
     expect(composer().getAttribute("data-catalog-loading")).toBe("false");
+  });
+
+  it("unlocks the current Agent from a partial catalog while another Agent is still discovering", async () => {
+    const models = deferred<HostModelCatalog>();
+    const listeners: ((catalog: HostModelCatalog) => void)[] = [];
+    host.models.mockImplementation((_project, _refresh, update) => {
+      if (update) listeners.push(update);
+      return models.promise;
+    });
+    await mount();
+    await open("one");
+    expect(composer().getAttribute("data-catalog-loading")).toBe("true");
+    await act(async () => {
+      for (const update of listeners) update({ ...catalog, pending: ["pi"] });
+    });
+    expect(composer().getAttribute("data-catalog-loading")).toBe("false");
+    expect(composer().getAttribute("data-model")).toBe("codex:existing");
+    await act(async () => models.resolve({ ...catalog, errors: { pi: "Unavailable" }, pending: [] }));
+    expect(composer().getAttribute("data-model")).toBe("codex:existing");
   });
 
   it("keeps history and text available when model discovery fails", async () => {

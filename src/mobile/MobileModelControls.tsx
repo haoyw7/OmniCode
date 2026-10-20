@@ -18,6 +18,7 @@ import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
 import { modelGroups } from "../features/sessions/model/modelGroups";
 import {
   isEffortSettingId,
+  fallbackModelName,
   type AgentModel,
   type ModelSetting,
 } from "../features/sessions/model/models";
@@ -84,8 +85,7 @@ export function configurationLabels(
   )?.label;
   const modelName =
     (controls.model?.name ??
-      (configuration.model.split(":").slice(1).join(":") ||
-        configuration.model)) ||
+      fallbackModelName(configuration.harness, configuration.model)) ||
     HARNESS_TITLE[configuration.harness];
   return { modelName, effort };
 }
@@ -153,6 +153,7 @@ export function MobileModelControls({
     (provider) =>
       catalog?.models[provider] ||
       catalog?.errors[provider] ||
+      catalog?.pending?.includes(provider) ||
       provider === configuration.harness,
   );
   // Return to the overview so several settings can be adjusted in one visit.
@@ -187,7 +188,7 @@ export function MobileModelControls({
               <button
                 type="button"
                 className="mobile-sheet-row"
-                disabled={disabled || agentLocked || loading}
+                disabled={disabled || agentLocked || (loading && !catalog)}
                 aria-busy={loading || undefined}
                 onClick={() => setPage("agents")}
               >
@@ -387,7 +388,9 @@ export function MobileModelControls({
                 <span className="mobile-sheet-row-text">
                   <strong>{HARNESS_TITLE[provider]}</strong>
                 </span>
-                {configuration.harness === provider && <Check size={20} />}
+                {catalog?.pending?.includes(provider) && !catalog.models[provider]?.length
+                  ? <MobileSpinner size={20} className="mobile-spin" role="status" aria-label={t("Loading…")} />
+                  : configuration.harness === provider && <Check size={20} />}
               </button>
             ))}
           </div>

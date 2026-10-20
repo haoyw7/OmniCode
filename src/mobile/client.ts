@@ -1,4 +1,5 @@
 import { readMobileDeviceInfo } from "./deviceInfo";
+import { ModelCatalogLoad } from "../features/connections/model/modelCatalogLoad";
 import { readMobileInstallationId } from "./deviceIdentity";
 import { walkTranscript } from "../features/sessions/model/agentTranscript";
 import type { Note, NoteUpsert } from "../features/notes/notesText";
@@ -254,7 +255,7 @@ export class MobileClient {
   private sessionLoads = new Map<string, Promise<HostSession>>();
   private previewLoads = new Map<string, Promise<HostSession | undefined>>();
   private catalogs = new Map<string, { value: HostModelCatalog; expires: number }>();
-  private modelLoads = new Map<string, Promise<HostModelCatalog>>();
+  private modelLoads = new Map<string, ModelCatalogLoad>();
   private projectList?: HostProject[];
   private projectLoad?: Promise<HostProject[]>;
   private projectTurn = 0;
@@ -324,7 +325,7 @@ export class MobileClient {
         if (this.snapshots.size > OFFLINE_SESSION_LIMIT) this.snapshots.delete(this.snapshots.keys().next().value!);
       } else if (entry.kind === "models" && isOfflineModels(value)) {
         // A persisted catalog is a preview, never proof that a provider is still available.
-        if (!this.catalogs.has(entry.id)) this.catalogs.set(entry.id, { value: { ...value }, expires: 0 });
+        if (!this.catalogs.has(entry.id)) this.catalogs.set(entry.id, { value: { ...value, pending: [] }, expires: 0 });
         if (this.catalogs.size > 8) this.catalogs.delete(this.catalogs.keys().next().value!);
       } else if (entry.kind === "projects" && isOfflineProjects(value)) {
         this.projectList ??= value;
@@ -954,31 +955,36 @@ export class MobileClient {
   models(projectId?: string, refresh = false, onUpdate?: (catalog: HostModelCatalog) => void) {
     const key = JSON.stringify(projectId ?? null);
     const cached = this.cacheReadable() ? this.catalogs.get(key) : undefined;
-    if (cached) onUpdate?.(this.cachedModels(projectId)!);
-    if (!refresh && cached && Date.now() < cached.expires) return Promise.resolve(this.cachedModels(projectId)!);
-    const existing = this.modelLoads.get(key);
-    if (existing) {
-      if (onUpdate) void existing.then(onUpdate, () => {});
-      return existing;
+    if (!refresh && cached && Date.now() < cached.expires) {
+      onUpdate?.(cached.value);
+      return Promise.resolve(this.cachedModels(projectId)!);
     }
+    if (cached) {
+      const preview = this.cachedModels(projectId)!;
+      onUpdate?.(preview);
+    }
+    const existing = this.modelLoads.get(key);
+    if (existing) return existing.observe(onUpdate);
     const epoch = this.cacheEpoch;
-    const pending = this.rpc<HostModelCatalog>("models.list", projectId === undefined ? {} : { projectId }).then((value) => {
+    const load = new ModelCatalogLoad(async params => {
       if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
+      const value = await this.rpc<HostModelCatalog>("models.list", { ...(projectId === undefined ? {} : { projectId }), ...params });
+      if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
+      return value;
+    }, value => {
       // The Host caches each provider, so a partial catalog is retried sooner
       // without discarding the providers that already answered.
-      const ttl = Object.keys(value.errors).length ? 15_000 : 5 * 60_000;
+      const ttl = value.pending?.length ? 0 : Object.keys(value.errors).length ? 15_000 : 5 * 60_000;
       this.catalogs.delete(key);
       this.catalogs.set(key, { value, expires: Date.now() + ttl });
       this.queueOffline({ kind: "models", id: key, value });
-      onUpdate?.(value);
       if (this.catalogs.size > 8)
         this.catalogs.delete(this.catalogs.keys().next().value!);
-      return value;
-    }).finally(() => {
-      if (this.modelLoads.get(key) === pending) this.modelLoads.delete(key);
     });
-    this.modelLoads.set(key, pending);
-    return pending;
+    const clear = () => { if (this.modelLoads.get(key) === load) this.modelLoads.delete(key); };
+    void load.promise.then(clear, clear);
+    this.modelLoads.set(key, load);
+    return load.observe(onUpdate);
   }
   async providerAccounts(): Promise<HostProviderAccounts | null> {
     const epoch = this.cacheEpoch;

@@ -48,6 +48,14 @@ const catalog: HostModelCatalog = {
 };
 afterEach(() => { activatePreferenceStore(undefined); localStorage.clear(); });
 
+it("waits for the preferred Agent during partial discovery and falls back only after it fails", () => {
+  const partial: HostModelCatalog = { models: { codex: catalog.models.codex }, errors: {}, pending: ["claude"] };
+  expect(defaultConfiguration(partial, { harness: "claude" })).toBeUndefined();
+  expect(defaultConfiguration({ ...partial, pending: [], errors: { claude: "Unavailable" } }, { harness: "claude" })?.harness)
+    .toBe("codex");
+  expect(defaultConfiguration({ ...catalog, pending: ["pi"] }, { harness: "claude" })?.harness).toBe("claude");
+});
+
 it("uses the shared Last selection mode for drafts and keeps project overrides", async () => {
   const store = new SharedPreferenceStore("host", localStorage, async () => { throw new Error("offline"); });
   activatePreferenceStore(store);

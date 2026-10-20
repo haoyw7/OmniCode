@@ -1026,6 +1026,60 @@ describe("remote host API", () => {
         .value.result,
     ).toContain("changed");
   });
+  it.each(["resolve", "reject"])("returns fast models while a slow provider is pending, then collects its %s", async (outcome) => {
+    const s = await setup(["codex", "pi"]);
+    const binary = join(s.directory, "provider-cli");
+    writeFileSync(binary, "");
+    binaries.codex = binary;
+    binaries.pi = binary;
+    let finish!: (models: any[]) => void;
+    let fail!: (error: Error) => void;
+    const slow = new Promise<any[]>((resolve, reject) => { finish = resolve; fail = reject; });
+    cleanups.push(async () => {
+      finish([]);
+      delete binaries.codex;
+      delete binaries.pi;
+      modelProbe.mockReset();
+      piModelProbe.mockReset();
+    });
+    modelProbe.mockReset().mockResolvedValue([{ id: "codex:fast", harness: "codex", name: "Fast" }]);
+    piModelProbe.mockReset().mockReturnValue(slow);
+    const first = (await s.call("models.list", { projectId: s.project.id, progressive: true })).value.result;
+    expect(first).toEqual({
+      models: { codex: [{ id: "codex:fast", harness: "codex", name: "Fast" }] },
+      errors: {}, pending: ["pi"],
+    });
+    // The legacy read still waits for the complete list and joins both probes.
+    let completed = false;
+    const legacy = s.call("models.list", { projectId: s.project.id }).then(value => {
+      completed = true;
+      return value.value.result;
+    });
+    expect(completed).toBe(false);
+    if (outcome === "resolve") finish([{ id: "pi:slow", harness: "pi", name: "Slow" }]);
+    else fail(new Error("Login required"));
+    const full = await legacy;
+    const last = (await s.call("models.list", {
+      projectId: s.project.id, progressive: true, providers: ["pi"],
+    })).value.result;
+    expect(last.pending).toEqual([]);
+    expect(last.models.codex).toBeUndefined();
+    if (outcome === "resolve") expect(last.models.pi).toEqual(full.models.pi);
+    else expect(last.errors.pi).toBe("Login required");
+    expect(modelProbe).toHaveBeenCalledOnce();
+    // Legacy errors may retry immediately; progressive polling must retain errors.
+    expect(piModelProbe.mock.calls.length).toBeLessThanOrEqual(2);
+    const attempts = piModelProbe.mock.calls.length;
+    await s.call("models.list", { projectId: s.project.id, progressive: true, providers: ["pi"] });
+    expect(piModelProbe).toHaveBeenCalledTimes(attempts);
+    if (outcome === "reject") {
+      piModelProbe.mockResolvedValueOnce([{ id: "pi:recovered", harness: "pi", name: "Recovered" }]);
+      const retried = (await s.call("models.list", { projectId: s.project.id, progressive: true })).value.result;
+      expect(retried.models.pi[0].id).toBe("pi:recovered");
+      expect(retried.errors).toEqual({});
+      expect(piModelProbe).toHaveBeenCalledTimes(attempts + 1);
+    }
+  });
   it("retries model discovery after a provider becomes available", async () => {
     const s = await setup();
     modelProbe.mockRejectedValueOnce(new Error("Login required"));
@@ -1037,6 +1091,57 @@ describe("remote host API", () => {
       { id: "codex:test", name: "Test" },
     ]);
     expect(modelProbe).toHaveBeenCalledTimes(2);
+  });
+  it("reuses the user catalog across new projectless chats while keeping project catalogs separate", async () => {
+    const s = await setup();
+    const binary = join(s.directory, "provider-cli");
+    writeFileSync(binary, "");
+    binaries.codex = binary;
+    cleanups.push(async () => {
+      delete binaries.codex;
+      modelProbe.mockReset();
+    });
+    modelProbe.mockReset().mockResolvedValue([{ id: "codex:test", name: "Test", harness: "codex" }]);
+    const first = s.store.addProject(join(homedir(), "Documents/omnicode/2026-10-20/chat-120000-aaaaaa"), "Chat 1");
+    const second = s.store.addProject(join(homedir(), "Documents/omnicode/2026-10-20/chat-120001-bbbbbb"), "Chat 2");
+    for (const projectId of [undefined, first.id, second.id])
+      expect((await s.call("models.list", { projectId })).value.result.models.codex).toHaveLength(1);
+    expect(modelProbe).toHaveBeenCalledExactlyOnceWith(homedir());
+    await s.call("models.list", { projectId: s.project.id });
+    expect(modelProbe).toHaveBeenCalledTimes(2);
+    expect(modelProbe).toHaveBeenLastCalledWith(s.project.cwd);
+  });
+  it("bounds cold catalog probes across clients and projects and releases capacity after failures", async () => {
+    const s = await setup();
+    const binary = join(s.directory, "provider-cli");
+    writeFileSync(binary, "");
+    binaries.codex = binary;
+    const pending: Array<{ resolve: (models: any[]) => void; reject: (error: Error) => void }> = [];
+    modelProbe.mockReset().mockImplementation(() => new Promise((resolve, reject) => {
+      pending.push({ resolve, reject });
+    }));
+    cleanups.push(async () => {
+      for (const probe of pending) probe.resolve([]);
+      delete binaries.codex;
+      modelProbe.mockReset();
+    });
+    const projects = [s.project, s.store.addProject(join(s.directory, "second"), "Second"),
+      s.store.addProject(join(s.directory, "third"), "Third")];
+    const read = (index: number) => s.call("models.list", { projectId: projects[index].id, progressive: true });
+    await read(0);
+    await read(1);
+    const queued = await read(2);
+    expect(queued.value.result.pending).toEqual(["codex"]);
+    expect(modelProbe).toHaveBeenCalledTimes(2);
+    // Polling and a second client must join the queued cache entry.
+    await read(2);
+    expect(modelProbe).toHaveBeenCalledTimes(2);
+    pending[0].reject(new Error("Probe failed"));
+    await vi.waitFor(() => expect(modelProbe).toHaveBeenCalledTimes(3));
+    pending[1].resolve([]);
+    pending[2].resolve([{ id: "codex:queued", name: "Queued", harness: "codex" }]);
+    expect((await read(2)).value.result.models.codex[0].id).toBe("codex:queued");
+    expect(modelProbe).toHaveBeenCalledTimes(3);
   });
   it("discovers desktop models from a local directory for WSL projects", async () => {
     const s = await setup();

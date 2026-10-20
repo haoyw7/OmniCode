@@ -1,4 +1,5 @@
 import { remoteRequest } from "./connections";
+import { ModelCatalogLoad } from "./modelCatalogLoad";
 import {
   REMOTE_PROVIDERS,
   requireHostDescriptor,
@@ -7,7 +8,7 @@ import {
 } from "./protocol";
 
 const descriptors = new Map<string, Promise<HostDescriptor>>();
-const catalogs = new Map<string, Promise<HostModelCatalog>>();
+const catalogs = new Map<string, ModelCatalogLoad>();
 
 /** Share concurrent pane reads, but let every later reconnect revalidate the Host. */
 function inFlight<T>(requests: Map<string, Promise<T>>, key: string, read: () => Promise<T>): Promise<T> {
@@ -40,8 +41,20 @@ export function loadRemoteHostDescriptor(machineId: string, environmentId: strin
   });
 }
 
-export function loadRemoteHostCatalog(machineId: string, environmentId: string, projectId: string): Promise<HostModelCatalog> {
-  return inFlight(catalogs, JSON.stringify([machineId, environmentId, projectId]), () =>
-    remoteRequest<HostModelCatalog>(machineId, "models.list", { projectId }),
-  );
+export function loadRemoteHostCatalog(
+  machineId: string,
+  environmentId: string,
+  projectId: string,
+  onUpdate?: (catalog: HostModelCatalog) => void,
+): Promise<HostModelCatalog> {
+  const key = JSON.stringify([machineId, environmentId, projectId]);
+  let load = catalogs.get(key);
+  if (!load) {
+    load = new ModelCatalogLoad(params =>
+      remoteRequest<HostModelCatalog>(machineId, "models.list", { projectId, ...params }));
+    catalogs.set(key, load);
+    const clear = () => { if (catalogs.get(key) === load) catalogs.delete(key); };
+    void load.promise.then(clear, clear);
+  }
+  return load.observe(onUpdate);
 }

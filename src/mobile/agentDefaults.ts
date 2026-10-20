@@ -259,10 +259,12 @@ export function defaultConfiguration(
       defaults.harness,
     );
     if (preferred) return preferred;
+    if (catalog.pending?.includes(defaults.harness)) return undefined;
   }
   for (const provider of REMOTE_PROVIDERS) {
     const configuration = configurationForAgent(catalog, defaults, provider);
     if (configuration) return configuration;
+    if (catalog.pending?.includes(provider)) return undefined;
   }
 }
 export function withDefaultConfiguration(

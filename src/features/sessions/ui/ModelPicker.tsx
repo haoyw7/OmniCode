@@ -380,13 +380,14 @@ export function ModelPicker({
   ]);
   // Show loading on the trigger rather than only inside the opened menu:
   // agents are still being detected, or a selectable agent has no real model
-  // list yet. A cached list refreshing in the background is not loading.
+  // list yet. Remote catalogs arrive per Agent, so their trigger only tracks
+  // the selected Agent. A cached list refreshing in the background is quiet.
   const harnessLoading = (id: HarnessId) =>
     source.loading?.(id) === true && (source.id != null || !hasLiveCatalog(id));
   const triggerLoading =
     !source.probed() ||
     harnessLoading(harness) ||
-    pickerHarnesses.some(harnessLoading);
+    (source.id == null && pickerHarnesses.some(harnessLoading));
   const providerKey = pickerHarnesses.join(",");
   const visibleTab = coerceModelPickerTab(tab, (id) =>
     pickerHarnesses.includes(id),

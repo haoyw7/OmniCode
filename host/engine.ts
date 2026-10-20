@@ -22,7 +22,7 @@ import { mkdir } from "node:fs/promises";
 import { readFileSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
-import { CHAT_ROOT, chatFolderRelativePath } from "../src/features/projects/model/chatFolderPath";
+import { CHAT_ROOT, chatFolderRelativePath, isChatFolder } from "../src/features/projects/model/chatFolderPath";
 import { hostWorktreeAt, hostWorktrees, renameHostWorktreeBranch, resolveHostWorktree, resolveHostWorktreeAsync, withValidatedHostWorktree } from "./git-worktrees";
 import { hostBranches } from "./git-branches";
 import { availableWorktreeBranch, generateWorktreeBranch } from "../src/features/source-control/model/worktreeNaming";
@@ -913,6 +913,14 @@ export class HostEngine {
     authorize?.(cwd);
     return this.store.addProject(cwd, io.path.basename(cwd), undefined,
       io.key.startsWith("wsl:") ? { kind: "wsl", distribution: io.key.slice(4) } : undefined);
+  }
+
+  /** Projectless chats share the user's catalog instead of booting every CLI
+   * for each fresh chat directory. Real projects retain their local config.
+   * WSL catalogs also use the desktop's CLI/accounts and need a local cwd. */
+  modelCatalogDirectory(projectId?: string): string {
+    const project = projectId === undefined ? undefined : this.store.project(projectId);
+    return project && !project.machine && !isChatFolder(project.cwd) ? project.cwd : homedir();
   }
 
   /** A projectless chat: a new dated folder under `~/Documents/omnicode`. */
