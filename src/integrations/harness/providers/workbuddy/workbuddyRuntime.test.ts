@@ -112,7 +112,7 @@ describe("execution-side WorkBuddy credential boundary", () => {
     record("https://www.workbuddy.cn", "fixture", 1);
     expect(() => runtime.accessToken(installation, root, account.id)).toThrow("expired");
   });
-  it.each(["legacy", "named"])("loads the %s crypto layout and clears key material on disposal and initialization failure", format => {
+  it.each(["legacy", "lazy", "named"])("loads the %s crypto layout and clears key material on disposal and initialization failure", format => {
     const root = temporary();
     const code = `class Crypto {
       constructor(current) { if (current.fail) throw new Error('fixture failure'); this.key = Buffer.from(current.key); }
@@ -120,8 +120,11 @@ describe("execution-side WorkBuddy credential boundary", () => {
       dispose() { this.key.fill(0); this.disposed = true; }
     }
     const parse = bytes => JSON.parse(bytes.toString());
+    let initialized = false;
     module.exports = ${format === "named"
       ? "{ AtRestCrypto: Crypto, parseSupportedEnvelope: parse, normalizeAtRestKeyPayload: value => value }"
+      : format === "lazy"
+      ? "{ D() { initialized = true; }, get R() { return initialized ? Crypto : undefined; }, K: parse, G: value => ({ symmetric: { status: 'available', value } }) }"
       : "{ D() {}, R: Crypto, K: parse, G: value => ({ symmetric: { status: 'available', value } }) }"};`;
     asar(join(root, "app.asar"), format === "named"
       ? { "dist.js": code, "chunk.js": "" }

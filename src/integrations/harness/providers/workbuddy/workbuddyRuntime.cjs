@@ -114,14 +114,18 @@ function authenticationCodec(installation, configRoot, getPayload = () => proces
     if (!fs.existsSync(destination)) fs.writeFileSync(destination, module.bytes, { mode: 0o600, flag: 'wx' });
   }
   const c = require(path.join(cryptoDir, named ? 'dist.js' : 'app-lifetime-job.js'));
+  if (!named) {
+    if (typeof c.D !== 'function') fail('This WorkBuddy authentication version is not supported');
+    // Rolldown's class export getters are populated by the lazy initializer.
+    c.D();
+  }
   const Crypto = named ? c.AtRestCrypto : c.R;
   const parse = named ? c.parseSupportedEnvelope : c.K;
-  if (![Crypto, parse, named ? c.normalizeAtRestKeyPayload : c.G].every(f => typeof f === 'function') || (!named && typeof c.D !== 'function'))
+  if (![Crypto, parse, named ? c.normalizeAtRestKeyPayload : c.G].every(f => typeof f === 'function'))
     fail('This WorkBuddy authentication version is not supported');
   let key;
   if (named) key = c.normalizeAtRestKeyPayload(getPayload());
   else {
-    c.D();
     const caps = c.G(getPayload());
     if (caps.symmetric.status !== 'available') fail('WorkBuddy authentication storage is unavailable');
     key = caps.symmetric.value;
