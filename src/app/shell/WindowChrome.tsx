@@ -62,10 +62,10 @@ export function TabVisitNav({
           <PanelLeft className="size-4" />
         </IconButton>
       ) : null}
-      <IconButton size="sm" data-tauri-drag-region="false" label={backLabel} aria-disabled={!canGoBack} onClick={onGoBack}>
+      <IconButton size="sm" data-window-history-action data-tauri-drag-region="false" label={backLabel} aria-disabled={!canGoBack} onClick={onGoBack}>
         <ArrowLeft className="size-4" />
       </IconButton>
-      <IconButton size="sm" data-tauri-drag-region="false"
+      <IconButton size="sm" data-window-history-action data-tauri-drag-region="false"
         label={forwardLabel}
         aria-disabled={!canGoForward}
         onClick={onGoForward}
