@@ -235,7 +235,7 @@ html[data-skin] [data-session-dense] > [role="img"][aria-label] {
 }
 
 html[data-skin] [data-session-dense]:has([data-session-archive]):is(:hover, :focus-within) [data-session-time] {
-  opacity: 0;
+  display: none;
 }
 
 html[data-skin] [data-session-dense] :is([data-session-actions], [data-session-action-buttons]) {
@@ -404,9 +404,14 @@ html[data-skin] [data-desktop-sidebar] .group:is(:hover, :has(:focus-visible)) >
   display: inline-flex;
 }
 html[data-skin] [data-desktop-sidebar] [data-ui="icon-button"][data-sidebar-toolbar-action] > svg,
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-worktree], [data-session-remote-control], [data-automation-icon], [data-orchestration-icon]) > svg {
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-automation-icon], [data-orchestration-icon]) > svg {
   width: var(--desktop-sidebar-icon);
   height: var(--desktop-sidebar-icon);
+  flex-shrink: 0;
+}
+html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-worktree], [data-session-remote-control]) > svg {
+  width: var(--desktop-sidebar-state);
+  height: var(--desktop-sidebar-state);
   flex-shrink: 0;
 }
 html[data-skin] [data-desktop-sidebar] [data-project-list-scroll] {
@@ -518,13 +523,13 @@ html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] [data-se
 html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] [data-session-action-buttons] {
   gap: var(--desktop-sidebar-action-gap);
 }
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-menu], [data-session-archive]) {
+html[data-skin] [data-desktop-sidebar] [data-session-dense] :is([data-session-menu], [data-session-archive]) {
   display: none;
   position: relative;
   inset: auto;
   transform: none;
 }
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:is(:hover, :focus-within) :is([data-session-menu], [data-session-archive]) {
+html[data-skin] [data-desktop-sidebar] [data-session-dense]:is(:hover, :focus-within) :is([data-session-menu], [data-session-archive]) {
   display: inline-flex;
 }
 html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"] :is([data-session-worktree], [data-session-remote-control], [data-session-trailing-status], [data-automation-icon], [data-orchestration-icon]) {
@@ -543,7 +548,7 @@ html[data-skin] [data-desktop-sidebar] [data-session-trailing-status] .terminal-
   font-size: var(--desktop-sidebar-state);
 }
 html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-menu]):is(:hover, :focus-within) [data-session-trailing-status],
-html[data-skin] [data-desktop-sidebar] [data-session-layout="two-line"]:has([data-session-menu], [data-session-archive]):is(:hover, :focus-within) [data-session-remote-control] {
+html[data-skin] [data-desktop-sidebar] [data-session-dense]:has([data-session-menu], [data-session-archive]):is(:hover, :focus-within) [data-session-remote-control] {
   display: none;
 }
 html[data-skin] [data-desktop-sidebar] [data-session-card]:not(:has([data-session-remote-control], [data-session-trailing-status])):is([data-session-active="true"], [data-session-selected="true"]) [data-session-menu] {
