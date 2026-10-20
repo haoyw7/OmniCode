@@ -10,6 +10,7 @@ import {
 
 const sent: string[] = [];
 const spawned: string[][] = [];
+const readTaskOutput = vi.hoisted(() => vi.fn(async (_path: string) => "exit=1\n[exited with code 0]"));
 let onLine: ((line: string) => void) | undefined;
 let onExit: ((code?: number | null) => void) | undefined;
 let contextSnapshot: Record<string, unknown> | undefined;
@@ -27,6 +28,7 @@ const writeChild = vi.fn(async (_id: string, line: string) => {
 });
 
 vi.mock("../../core/child", () => ({
+  readHarnessTextFile: readTaskOutput,
   resolveClaudeBinary: async () => ({ path: "/fake/claude" }),
   spawnChild: async (_id: string, _path: string, args: string[]) => {
     spawned.push(args);
@@ -47,6 +49,7 @@ vi.mock("../../core/child", () => ({
 const {
   bindClaudeSession,
   cancelClaudeTurn,
+  stopClaudeBackgroundTask,
   compactClaudeContext,
   respondClaudeApproval,
   respondClaudeQuestion,
@@ -301,6 +304,7 @@ beforeEach(() => {
   onLine = undefined;
   onExit = undefined;
   writeChild.mockClear();
+  readTaskOutput.mockClear();
   __claudeTestReset();
 });
 
@@ -2050,6 +2054,46 @@ describe("claude subagents", () => {
 });
 
 describe("claude background tasks", () => {
+  it("stops only the selected task and waits for its provider notification", async () => {
+    const { events } = await startTurn("s1");
+    emitBackgroundBash("selected");
+    const before = events.length;
+    await stopClaudeBackgroundTask("s1", "selected");
+    const requests = parse().flatMap((frame) => frame.request ? [frame.request] : []);
+    expect(requests).toContainEqual({ subtype: "stop_task", task_id: "selected" });
+    expect(requests).not.toContainEqual({ subtype: "interrupt" });
+    expect(events.slice(before)).toEqual([]);
+    emit({ type: "system", subtype: "task_notification", task_id: "selected", status: "stopped", summary: "Stopped" });
+    const session = events.reduce(applyHarnessEvent, newSession("claude", "/repo"));
+    expect(session.blocks.find((block) => block.tool?.background)?.tool).toMatchObject({
+      backgroundTaskId: "selected", status: "cancelled", preview: { title: "sleep 30 && echo done" },
+    });
+  });
+
+  it("reads completed command output through the runtime backend without losing the command", async () => {
+    const { events } = await startTurn("s1");
+    emitBackgroundBash();
+    emit({ type: "system", subtype: "task_notification", task_id: "b1", tool_use_id: "toolu_bash",
+      status: "completed", summary: "Finished", output_file: "/tmp/b1.output" });
+    await vi.waitFor(() => expect(events.some((event) => event.type === "tool.updated" && event.preview?.output?.includes("exit=1"))).toBe(true));
+    expect(readTaskOutput).toHaveBeenCalledWith("/tmp/b1.output");
+    const session = events.reduce(applyHarnessEvent, newSession("claude", "/repo"));
+    expect(session.blocks.find((block) => block.tool?.background)?.tool?.preview).toMatchObject({
+      title: "sleep 30 && echo done", output: "exit=1\n[exited with code 0]",
+    });
+  });
+
+  it("keeps the provider summary when a completed task's output file is unavailable", async () => {
+    const { events } = await startTurn("s1");
+    emitBackgroundBash();
+    readTaskOutput.mockRejectedValueOnce(new Error("File removed"));
+    emit({ type: "system", subtype: "task_notification", task_id: "b1", tool_use_id: "toolu_bash",
+      status: "completed", summary: "Build completed", output_file: "/tmp/removed.output" });
+    await vi.waitFor(() => expect(readTaskOutput).toHaveBeenCalledWith("/tmp/removed.output"));
+    const session = events.reduce(applyHarnessEvent, newSession("claude", "/repo"));
+    expect(session.blocks.find((block) => block.tool?.background)?.tool?.detail).toBe("Build completed");
+  });
+
   it("keeps the turn working through a background command and Claude's follow-up", async () => {
     const { events, turn } = await startTurn("s1");
     let settled = false;

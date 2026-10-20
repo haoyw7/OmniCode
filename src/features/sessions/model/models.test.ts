@@ -5,6 +5,7 @@ import {
   coerceModelPickerTab,
   defaultModelId,
   defaultSessionChoice,
+  fallbackModelName,
   encodeModelLaunchId,
   firstEnabledHarness,
   hasFreshCatalog,
@@ -450,6 +451,27 @@ describe("live catalog overlays", () => {
     expect(modelsFor("deepseek")).toEqual([model]);
     expect(defaultModelId("deepseek")).toBe(model.id);
     expect(resolveModel("deepseek", "deepseek:default")).toEqual(model);
+  });
+
+  it("displays a saved DeepSeek route without exposing or changing its provider identity", () => {
+    const nativeId = '["deepseek-account","deepseek-flash"]';
+    const id = `deepseek:${nativeId}`;
+    const saved = resolveModel("deepseek", id);
+    expect(saved).toMatchObject({ id, nativeId, name: "deepseek-flash" });
+    expect(fallbackModelName("deepseek", id)).toBe("deepseek-flash");
+    expect(nativeModelId(saved)).toBe(nativeId);
+    expect(nativeModelId(id)).toBe(nativeId);
+    const other: AgentModel = {
+      id: 'deepseek:["another-provider","deepseek-flash"]',
+      harness: "deepseek", name: "Another provider's Flash",
+      nativeId: '["another-provider","deepseek-flash"]',
+    };
+    setHarnessModels("deepseek", [other]);
+    expect(resolveModel("deepseek", id)).toMatchObject({ id, nativeId, name: "deepseek-flash" });
+    const listed = { ...saved, name: "DeepSeek-V4.1-Flash" };
+    setHarnessModels("deepseek", [other, listed]);
+    expect(resolveModel("deepseek", id)).toBe(listed);
+    expect(resolveModel("deepseek", nativeId)).toBe(listed);
   });
 
   it("restores the previous run's catalog as live but not fresh", () => {

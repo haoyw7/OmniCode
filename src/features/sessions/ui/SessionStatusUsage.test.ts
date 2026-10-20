@@ -22,12 +22,22 @@ import {
 import { saveShowRemainingUsage } from "../../settings/model/displayPrefs";
 import { setUiLanguage } from "../../../shared/i18n/language";
 import type { Session } from "../../sessions/model/session";
+import type { DeepseekAccount } from "../../../integrations/harness/providers/deepseek/deepseekAccount";
+import { configureSharedHost, remotePath } from "../../connections/model/remoteProjects";
 
 const fetches = vi.hoisted(() => ({
   codex: vi.fn(),
   claude: vi.fn(),
   opencode: vi.fn(),
   pi: vi.fn(),
+  remote: vi.fn(),
+}));
+const hosts = vi.hoisted(() => ({ machines: [] as { id: string; environmentId: string; name: string }[] }));
+vi.mock("../../connections/model/connections", async original => ({
+  ...await original<typeof import("../../connections/model/connections")>(),
+  remoteRequest: fetches.remote,
+  useRemoteMachines: () => ({ machines: hosts.machines, loaded: true }),
+  knownRemoteMachine: (environmentId: string) => hosts.machines.find(machine => machine.environmentId === environmentId),
 }));
 vi.mock("../../providers/model/piUsage", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../providers/model/piUsage")>()),
@@ -44,6 +54,7 @@ let root: Root;
 let container: HTMLDivElement;
 let actions: SessionHeaderActions;
 let sessions: Session[];
+let deepseek: DeepseekAccount;
 
 const quota = (usedPercent: number) => ({
   ...idleRateLimits("codex"),
@@ -57,6 +68,21 @@ beforeEach(() => {
   localStorage.clear();
   setUiLanguage("en");
   clearCachedRateLimits();
+  configureSharedHost(undefined, []);
+  hosts.machines = [];
+  deepseek = {
+    status: "credential-stored", profileStatus: "ready", profile: { name: "DSH user", contact: "155****95" },
+    balanceStatus: "ready", wallets: [{ currency: "CNY", balance: "7.10985202" }],
+    bonusWallets: [{ currency: "CNY", balance: "15.05836248" }],
+  };
+  fetches.remote.mockReset().mockImplementation(async (machine, method) => {
+    if (method === "environment.describe") return {
+      protocolVersion: 1, environmentId: machine === "remote-machine" ? "remote-env" : "shared-env",
+      name: "Host", providers: ["deepseek"], capabilities: ["providerAccounts.deepseek.v1"],
+    };
+    if (method === "providerAccounts.deepseek") return deepseek;
+    throw new Error(`Unexpected method ${method}`);
+  });
   saveProviderAccount({
     provider: "codex",
     id: "account-left",
@@ -123,6 +149,8 @@ afterEach(() => {
   act(() => root.unmount());
   container.remove();
   localStorage.clear();
+  configureSharedHost(undefined, []);
+  vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -334,6 +362,130 @@ it("omits usage for harnesses without account usage", async () => {
   expect(container.querySelector('[data-status-card="usage"]')).toBeNull();
   expect(fetches.codex).not.toHaveBeenCalled();
   expect(fetches.claude).not.toHaveBeenCalled();
+});
+
+function useDeepseekSession(model = 'deepseek:["deepseek-account","deepseek-flash"]') {
+  configureSharedHost("shared-env", [], "shared-machine");
+  sessions[0] = { ...sessions[0], harness: "deepseek", model };
+}
+
+it("shows and refreshes DSH account wallets in the conversation usage card", async () => {
+  useDeepseekSession();
+  await render();
+  expect(usageRow().textContent).toContain("DSH user");
+  expect(usageRow().textContent).toContain("155****95");
+  expect(usageRow().textContent).toContain("Balance: 7.10985202 CNY");
+  expect(usageRow().textContent).toContain("Bonus balance: 15.05836248 CNY");
+  expect(fetches.remote).toHaveBeenCalledWith("shared-machine", "providerAccounts.deepseek", {
+    client: { version: expect.any(String), locale: "en", timezoneOffsetSeconds: expect.any(Number) },
+  });
+  deepseek = { ...deepseek, wallets: [{ currency: "USD", balance: "0.00" }] };
+  await act(async () => usageRow().querySelector<HTMLButtonElement>('[aria-label="Refresh usage"]')!.click());
+  expect(usageRow().textContent).toContain("Balance: 0.00 USD");
+  expect(usageRow().textContent).not.toContain("7.10985202");
+  expect(fetches.remote.mock.calls.filter(([, method]) => method === "providerAccounts.deepseek")).toHaveLength(2);
+  expect(fetches.codex).not.toHaveBeenCalled();
+  expect(fetches.claude).not.toHaveBeenCalled();
+});
+
+it.each([
+  'deepseek:["deepseek-official","deepseek-flash"]',
+  'deepseek:["custom-api","deepseek-flash"]',
+  "deepseek:default",
+  'deepseek:["deepseek-account"]',
+])("omits DSH account usage and account queries for %s", async model => {
+  useDeepseekSession(model);
+  sessions[0].blocks = [{ id: "error", role: "system", notice: "error", text: "Please sign in" }];
+  await render();
+  expect(container.querySelector('[data-status-card="usage"]')).toBeNull();
+  expect(fetches.remote).not.toHaveBeenCalled();
+});
+
+it("keeps DSH balances current while the usage card is folded", async () => {
+  vi.useFakeTimers();
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+  useDeepseekSession();
+  await render();
+  act(() => usageToggle().click());
+  await finishExits();
+  expect(usageRow()).toBeNull();
+  expect(remaining()?.textContent).toBe("Balance: 7.10985202 CNY");
+  deepseek = { ...deepseek, wallets: [{ currency: "CNY", balance: "6.50" }] };
+  await act(async () => vi.advanceTimersByTime(15 * 60_000));
+  expect(remaining()?.textContent).toBe("Balance: 6.50 CNY");
+  await act(async () => usageToggle().click());
+  await finishExits();
+  expect(usageRow().textContent).toContain("Balance: 6.50 CNY");
+  expect(fetches.remote.mock.calls.filter(([, method]) => method === "providerAccounts.deepseek")).toHaveLength(2);
+});
+
+it("removes DSH account usage when switching to an API route and ignores the previous response", async () => {
+  useDeepseekSession();
+  let complete!: (value: DeepseekAccount) => void;
+  const request = fetches.remote.getMockImplementation()!;
+  fetches.remote.mockImplementation((machine, method) => method === "providerAccounts.deepseek"
+    ? new Promise(resolve => { complete = resolve; }) : request(machine, method));
+  await render();
+  expect(usageRow().textContent).toContain("Checking…");
+  sessions[0] = { ...sessions[0], model: 'deepseek:["custom-api","deepseek-flash"]' };
+  await render();
+  await finishExits();
+  await act(async () => (globalThis as { __advanceTestWebAnimations?: (elapsed: number) => void }).__advanceTestWebAnimations?.(1_000));
+  await act(async () => complete(deepseek));
+  expect(container.querySelector('[data-status-card="usage"]')).toBeNull();
+  expect(container.textContent).not.toContain("DSH user");
+});
+
+it("uses the conversation's remote Host and clears the previous Host's balances", async () => {
+  useDeepseekSession();
+  await render();
+  expect(usageRow().textContent).toContain("DSH user");
+  hosts.machines = [{ id: "remote-machine", environmentId: "remote-env", name: "Remote" }];
+  sessions[0] = { ...sessions[0], cwd: remotePath("remote-env", "/project") };
+  let complete!: (value: DeepseekAccount) => void;
+  const request = fetches.remote.getMockImplementation()!;
+  fetches.remote.mockImplementation((machine, method) => method === "providerAccounts.deepseek"
+    ? new Promise(resolve => { complete = resolve; }) : request(machine, method));
+  await render();
+  expect(usageRow().textContent).not.toContain("DSH user");
+  expect(fetches.remote).toHaveBeenLastCalledWith("remote-machine", "providerAccounts.deepseek", expect.any(Object));
+  await act(async () => complete({ ...deepseek, profile: { name: "Remote user", contact: null }, wallets: [{ currency: "USD", balance: "2.00" }] }));
+  expect(usageRow().textContent).toContain("Remote user");
+  expect(usageRow().textContent).toContain("Balance: 2.00 USD");
+  expect(usageRow().textContent).not.toContain("7.10985202");
+});
+
+it("clears stale DSH balances after errors and sign-out, keeping app copy localized", async () => {
+  useDeepseekSession();
+  setUiLanguage("zh-CN");
+  await render();
+  expect(usageRow().textContent).toContain("DSH user");
+  expect(usageRow().textContent).toContain("赠送余额：15.05836248 CNY");
+  const request = fetches.remote.getMockImplementation()!;
+  fetches.remote.mockImplementation((machine, method) => {
+    if (method === "providerAccounts.deepseek") throw new Error("private provider error");
+    return request(machine, method);
+  });
+  const refresh = () => usageRow().querySelector<HTMLButtonElement>('[aria-label="刷新用量"]')!;
+  await act(async () => refresh().click());
+  expect(usageRow().textContent).not.toContain("DSH user");
+  expect(usageRow().textContent).not.toContain("7.10985202");
+  expect(usageRow().textContent).not.toContain("private provider error");
+  expect(usageRow().textContent).toContain("无法读取 DeepSeek 账号");
+  deepseek = { status: "signed-out" };
+  fetches.remote.mockImplementation(request);
+  await act(async () => refresh().click());
+  expect(usageRow().textContent).toContain("未登录");
+  expect(usageRow().textContent).not.toContain("余额：");
+});
+
+it("does not show the shared Host's DSH account for a disconnected remote conversation", async () => {
+  useDeepseekSession();
+  sessions[0] = { ...sessions[0], cwd: remotePath("remote-env", "/project") };
+  await render();
+  expect(usageRow().textContent).toContain("Connect to the conversation's Host");
+  expect(usageRow().textContent).not.toContain("DSH user");
+  expect(fetches.remote).not.toHaveBeenCalled();
 });
 
 it("closes the usage portal when its card folds and supports reopening", async () => {

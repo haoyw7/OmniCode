@@ -138,6 +138,48 @@ const cardToggle = (title: string) =>
 const card = () => host.querySelector<HTMLElement>("[data-subagent-card]");
 
 describe("session status rail", () => {
+  it("opens background task history, expands multiple outputs and clears only finished panel rows", () => {
+    const blocks: Block[] = [
+      { id: "done", role: "tool", text: "Build Windows installer", tool: { kind: "execute", status: "completed", background: true,
+        preview: { kind: "shell", title: "npm run build:windows", output: "exit=1\n[exited with code 0]" } } },
+      { id: "running", role: "tool", text: "Rebuild Windows installer", streaming: true, tool: { kind: "execute", status: "in_progress", background: true,
+        preview: { kind: "shell", title: "npm run build:windows -- --release" } } },
+    ];
+    const { update } = render(blocks);
+    const summary = host.querySelector('[data-status-card="background"]')!;
+    expect(summary.textContent).toContain("1 finished");
+    act(() => [...summary.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent?.includes("1 finished"))!.click());
+    const panel = host.querySelector<HTMLElement>("[data-background-tasks-panel]")!;
+    const toggle = (name: string) => [...panel.querySelectorAll<HTMLButtonElement>("button")].find((button) => button.title === name)!;
+    act(() => toggle("Build Windows installer").click());
+    act(() => toggle("Rebuild Windows installer").click());
+    expect(panel.textContent).toContain("$ npm run build:windows");
+    expect(panel.textContent).toContain("exit=1");
+    expect(panel.textContent).toContain("Waiting for output…");
+    act(() => panel.querySelector<HTMLButtonElement>('[aria-label="Expand panel"]')!.click());
+    expect(panel.hasAttribute("data-wide")).toBe(true);
+    act(() => panel.querySelector<HTMLButtonElement>('[aria-label="Clear finished tasks"]')!.click());
+    expect(panel.querySelector('[data-background-task="done"]')).toBeNull();
+    expect(panel.querySelector('[data-background-task="running"]')).not.toBeNull();
+    expect(blocks).toHaveLength(2);
+    update([...blocks, { id: "new-done", role: "tool", text: "New result", tool: { background: true, status: "completed" } }]);
+    expect(panel.textContent).toContain("New result");
+    act(() => panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+    expect(host.querySelector("[data-background-tasks-panel]")?.hasAttribute("inert") ?? true).toBe(true);
+  });
+
+  it("keeps background task history reachable when the conversation is too narrow for status cards", () => {
+    render([{ id: "background", role: "tool", text: "Finished command", tool: { background: true, status: "completed" } }], false, 600);
+    const compact = host.querySelector('[data-background-tasks-compact]')!;
+    expect(compact.textContent).toContain("1 finished");
+    act(() => compact.querySelector<HTMLButtonElement>("button")!.click());
+    expect(host.querySelector('[data-background-tasks-panel]')?.textContent).toContain("Finished command");
+    act(() => saveStatusCardsVisible(false));
+    expect(compact.hasAttribute("inert")).toBe(true);
+    expect(host.querySelector('[data-background-tasks-panel]')?.hasAttribute("inert") ?? true).toBe(true);
+    act(() => saveStatusCardsVisible(true));
+  });
+
   it("adds the local computer name when machine metadata arrives and preserves it when localized", () => {
     configureSharedHost("local-environment", [], "local-machine");
     const { update } = render([], false);

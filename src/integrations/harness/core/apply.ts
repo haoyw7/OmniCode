@@ -96,6 +96,9 @@ export function applyHarnessEvent(
         streaming: true,
         agentModel: event.agentModel,
         ...(event.background ? { background: true } : {}),
+        ...(event.backgroundTaskId ? { backgroundTaskId: event.backgroundTaskId } : {}),
+        startedAt: event.startedAt,
+        durationMs: event.durationMs,
       });
     case "tool.updated":
       return upsertTool(session, {
@@ -104,6 +107,8 @@ export function applyHarnessEvent(
         kind: event.kind,
         status: event.status,
         detail: event.detail,
+        output: event.output,
+        durationMs: event.durationMs,
         preview: event.preview,
         paths: event.paths,
         streaming: event.status !== "completed" && event.status !== "failed",
@@ -1031,6 +1036,10 @@ function upsertTool(
     streaming: boolean;
     agentModel?: string;
     background?: boolean;
+    backgroundTaskId?: string;
+    startedAt?: number;
+    durationMs?: number;
+    output?: string;
   },
 ): Session {
   if (!session.blocks.some((block) => block.tool?.callId === patch.callId)) {
@@ -1049,8 +1058,8 @@ function upsertTool(
     "completed", "success", "failed", "error", "cancelled", "canceled",
   ].includes(status.toLowerCase());
   const streaming = patch.streaming && !finished;
-  const startedAt = previous?.startedAt ?? (streaming ? Date.now() : undefined);
-  const durationMs = previous?.durationMs ?? (
+  const startedAt = previous?.startedAt ?? patch.startedAt ?? (streaming ? Date.now() : undefined);
+  const durationMs = patch.durationMs ?? previous?.durationMs ?? (
     finished && startedAt != null ? Math.max(0, Date.now() - startedAt) : undefined
   );
   if (index < 0) {
@@ -1068,6 +1077,7 @@ function upsertTool(
       text: label,
       streaming,
       ...(startedAt != null ? { startedAt } : {}),
+      ...(durationMs != null ? { durationMs } : {}),
       ...(patch.agentModel
         ? { agentRun: { name: label, model: patch.agentModel, steps: [] } }
         : {}),
@@ -1077,9 +1087,11 @@ function upsertTool(
         kind: patch.kind,
         status: patch.status,
         ...(detail ? { detail } : {}),
+        ...(patch.output !== undefined ? { output: patch.output } : {}),
         ...(preview ? { preview } : {}),
         ...(patch.paths ? { paths: patch.paths } : {}),
         ...(patch.background ? { background: true } : {}),
+        ...(patch.backgroundTaskId ? { backgroundTaskId: patch.backgroundTaskId } : {}),
       },
     });
   }
@@ -1110,6 +1122,7 @@ function upsertTool(
     prev.tool?.kind === kind &&
     prev.tool?.status === status &&
     prev.tool?.detail === detail &&
+    (patch.output === undefined || prev.tool?.output === patch.output) &&
     prev.tool?.paths === paths &&
     (!patch.agentModel || prev.agentRun?.model === patch.agentModel) &&
     (!prev.agentRun || prev.agentRun.name === agentName) &&
@@ -1141,6 +1154,7 @@ function upsertTool(
       kind,
       status,
       ...(detail ? { detail } : {}),
+      ...(patch.output !== undefined ? { output: patch.output } : {}),
       ...(preview ? { preview } : {}),
       ...(paths ? { paths } : {}),
       ...(prev.tool?.background ? { background: true } : {}),

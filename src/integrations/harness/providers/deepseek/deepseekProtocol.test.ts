@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { applyHarnessEvent } from "../../core/apply";
+import { newSession } from "../../../../features/sessions/model/session";
+import { backgroundTaskItems } from "../../../../features/sessions/model/backgroundTasks";
 import {
   DeepseekEventMapper,
   deepseekModels,
@@ -8,6 +11,39 @@ import {
 } from "./deepseekProtocol";
 
 describe("DeepSeek bridge projection", () => {
+  it("keeps background job output, precise timing and terminal history without duplicate rows", () => {
+    const mapper = new DeepseekEventMapper();
+    let session = newSession("deepseek", "/repo");
+    const job = { id: "bash-1", owner: "root", label: "npm test", kind: "bash", status: "running", startedAt: 1000 };
+    const project = (patch: object, output?: string) => {
+      const events = mapper.events({ kind: "job", data: { job: { ...job, ...patch }, output } }, "root");
+      session = events.reduce(applyHarnessEvent, session);
+    };
+    project({}, "first line\n");
+    expect(backgroundTaskItems(session.blocks)[0]).toMatchObject({
+      taskId: "bash-1", state: "running", command: "npm test", output: "first line\n", startedAt: 1000,
+    });
+    project({}, "first line\nsecond line\n");
+    project({ status: "failed", finishedAt: 3500, detail: "exit code: 1" }, "first line\nsecond line\n");
+    project({ status: "failed", finishedAt: 3500, detail: "exit code: 1" });
+    expect(session.blocks).toHaveLength(1);
+    expect(backgroundTaskItems(session.blocks)[0]).toMatchObject({
+      state: "failed", durationMs: 2500, output: "first line\nsecond line\n",
+    });
+    project({ id: "bash-2", status: "killed", finishedAt: 1500 });
+    project({ owner: "child", status: "completed", finishedAt: 1800 });
+    expect(backgroundTaskItems(session.blocks).map((task) => task.state)).toEqual(["completed", "stopped", "failed"]);
+    expect(session.blocks[1].durationMs).toBe(500);
+    expect(session.blocks[2].durationMs).toBe(800);
+  });
+
+  it("keeps old description-only job lists compatible and ignores malformed job snapshots", () => {
+    const mapper = new DeepseekEventMapper();
+    expect(mapper.events({ kind: "jobs", data: { jobs: [{ id: "old", label: "Old Host job" }] } }, "root"))
+      .toEqual([{ type: "background.updated", tasks: ["Old Host job"] }]);
+    expect(mapper.events({ kind: "job", data: { job: { id: "" } } }, "root")).toEqual([]);
+  });
+
   it("shows native retry failures without ending the turn and deduplicates durable replay", () => {
     const mapper = new DeepseekEventMapper();
     const envelope = { kind: "durable", data: { seq: 1, type: "llm/retry", data: {

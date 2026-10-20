@@ -1,7 +1,7 @@
 import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
-import { randomUUID } from "node:crypto";
+import { dirname, join, resolve } from "node:path";
+import { createHash, randomUUID } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import source from "../src/integrations/harness/providers/deepseek/bridge/bridge.mjs?raw";
@@ -11,7 +11,7 @@ export const DEEPSEEK_VERSION = "0.2.1-rc.2";
 export const DEEPSEEK_PROFILE = "omnicode-v1";
 const preparations = new Map<
   string,
-  Promise<{ path: string; args: string[] }>
+  Promise<{ path: string; args: string[]; cwd: string; deepseekHome: string }>
 >();
 
 /** Prepare only our reserved profile; credentials and sessions stay in the existing DSH home. */
@@ -19,7 +19,7 @@ export async function prepareDeepseekBridge(
   path: string,
   cwd: string,
   env: NodeJS.ProcessEnv = process.env,
-): Promise<{ path: string; args: string[] }> {
+) {
   const home =
     env[process.platform === "win32" ? "USERPROFILE" : "HOME"] || homedir();
   const override = env.DSH_HOME?.trim() || join(home, ".dsh");
@@ -30,13 +30,20 @@ export async function prepareDeepseekBridge(
         ? join(home, override.slice(2))
         : override;
   const root = resolve(cwd, expanded, "profiles", DEEPSEEK_PROFILE);
+  // Only identical process environments can share a runtime. Never return or
+  // log their values: project variables may include credentials.
+  const runtimeKey = createHash("sha256").update(JSON.stringify([
+    path, root, Object.entries(env).sort(([a], [b]) => a.localeCompare(b)),
+  ])).digest("hex");
+  // Profile writes are shared even when the resulting runtimes need different
+  // environments; concurrent first use must not race ownership/file creation.
   const key = `${path}\0${root}`;
   const pending = preparations.get(key);
-  if (pending) return pending;
+  if (pending) return { ...await pending, runtimeKey };
   const task = prepare(path, cwd, root, env);
   preparations.set(key, task);
   try {
-    return await task;
+    return { ...await task, runtimeKey };
   } finally {
     if (preparations.get(key) === task) preparations.delete(key);
   }
@@ -128,6 +135,8 @@ async function prepare(
   }
   return {
     path,
+    cwd: root,
+    deepseekHome: dirname(dirname(root)),
     args: [
       "--profile",
       DEEPSEEK_PROFILE,

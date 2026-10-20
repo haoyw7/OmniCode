@@ -11,8 +11,10 @@ const transport = vi.hoisted(() => ({
   headless: true,
   save: vi.fn(),
   remove: vi.fn(async () => {}),
+  root: "",
 }));
 vi.mock("../../core/child", () => ({
+  selectedChildMachine: () => "local",
   prepareDeepseekBridge: async () => ({
     path: "/fake/dsh",
     args: ["--profile", "omnicode-v1"],
@@ -43,6 +45,7 @@ vi.mock("../../../../platform/tauri/fs", () => ({
 import {
   sendDeepseekTurn,
   cancelDeepseekTurn,
+  stopDeepseekBackgroundTask,
   stopDeepseekSession,
   forgetDeepseekSession,
   respondDeepseekApproval,
@@ -56,7 +59,7 @@ const notify = (
   kind: string,
   data: object,
   runId = "run",
-  sessionId = "root",
+  sessionId = transport.root,
 ) =>
   transport.line!(
     JSON.stringify({
@@ -71,7 +74,7 @@ const request = (id: number, method: string, params: object) =>
       jsonrpc: "2.0",
       id,
       method,
-      params: { sessionId: "root", ...params },
+      params: { sessionId: transport.root, ...params },
     }),
   );
 const events: HarnessEvent[] = [];
@@ -94,12 +97,12 @@ beforeEach(() => {
   transport.headless = true;
   transport.handle = (frame) => {
     if (frame.method === "initialize")
-      reply(frame.id, { protocolVersion: 1, runtimeVersion: "0.2.1-rc.2" });
+      reply(frame.id, { protocolVersion: 1, runtimeVersion: "0.2.1-rc.2", capabilities: { multiplex: true } });
     else if (
       frame.method === "session/new" ||
       frame.method === "session/resume"
     )
-      reply(frame.id, { sessionId: "root" });
+      reply(frame.id, { sessionId: transport.root = frame.params.sessionId });
     else if (
       frame.method === "session/prompt" ||
       frame.method === "question/answer"
@@ -117,6 +120,22 @@ afterEach(async () => {
 });
 
 describe("DeepSeek adapter lifecycle", () => {
+  it("stops one provider job without cancelling or completing the parent turn", async () => {
+    let finished = false;
+    const turn = sendDeepseekTurn(input()).then(() => { finished = true; });
+    await vi.waitFor(() => expect(sent("session/prompt")).toBeDefined());
+    notify("job", { job: { id: "bash-1", owner: transport.root, kind: "bash", label: "npm test", status: "running", startedAt: 1000 }, output: "starting\n" });
+    await stopDeepseekBackgroundTask("ui", "bash-1");
+    expect(sent("job/stop").params).toEqual({ sessionId: transport.root, jobId: "bash-1" });
+    expect(sent("session/cancel")).toBeUndefined();
+    expect(finished).toBe(false);
+    notify("job", { job: { id: "bash-1", owner: transport.root, kind: "bash", label: "npm test", status: "killed", startedAt: 1000, finishedAt: 1200 } });
+    notify("run.completed", { runId: "run" });
+    await turn;
+    expect(events).toContainEqual(expect.objectContaining({ type: "tool.started", background: true, backgroundTaskId: "bash-1" }));
+    expect(events).toContainEqual(expect.objectContaining({ type: "tool.updated", status: "cancelled", durationMs: 200 }));
+  });
+
   it("accepts early completion, waits for the matching run and retains native resume identity", async () => {
     const normal = transport.handle;
     transport.handle = (frame) => {
@@ -139,7 +158,7 @@ describe("DeepSeek adapter lifecycle", () => {
       finished = true;
     });
     await vi.waitFor(() => expect(sent("session/prompt")).toBeDefined());
-    expect(sent("session/resume").params.sessionId).toBe("root");
+    expect(sent("session/resume").params.sessionId).toBe(transport.root);
     notify("run.completed", { runId: "old" });
     await Promise.resolve();
     expect(finished).toBe(false);
@@ -159,8 +178,8 @@ describe("DeepSeek adapter lifecycle", () => {
       error: "Fixture inference failed",
     });
     await rejected;
-    expect(transport.kill).toHaveBeenCalledWith("ui");
-    expect(transport.unwatch).toHaveBeenCalledWith("ui");
+    expect(transport.kill).toHaveBeenCalledWith(expect.stringMatching(/^omnicode-deepseek-runtime-/));
+    expect(transport.unwatch).toHaveBeenCalledWith(expect.stringMatching(/^omnicode-deepseek-runtime-/));
   });
 
   it("does not submit a prompt after cancellation during configuration", async () => {

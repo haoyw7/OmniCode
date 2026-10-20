@@ -102,9 +102,25 @@ describe("DeepSeek bridge preparation", () => {
       "omnicode-v1",
     );
     expect(launch.args.at(-1)).toBe(join(profile, "omnicode.patch.yml"));
+    expect(launch.cwd).toBe(profile);
+    expect(launch.deepseekHome).toBe(join(root, "relative session home"));
     expect(
       JSON.parse(await readFile(join(profile, "package.json"), "utf8"))
         .omnicodeBridge,
     ).toBe(1);
+  });
+
+  it("shares a runtime identity across workspaces while separating process environments", async () => {
+    const { root, binary } = await fixture();
+    const second = join(root, "another project");
+    await mkdir(second);
+    const [a, b, c] = await Promise.all([
+      prepareDeepseekBridge(binary, root),
+      prepareDeepseekBridge(binary, second),
+      prepareDeepseekBridge(binary, second, { ...process.env, EXAMPLE_API_KEY: "fixture-secret" }),
+    ]);
+    expect(a.runtimeKey).toBe(b.runtimeKey);
+    expect(c.runtimeKey).not.toBe(a.runtimeKey);
+    expect(JSON.stringify(c)).not.toContain("fixture-secret");
   });
 });

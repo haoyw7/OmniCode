@@ -35,8 +35,9 @@ import {
   type ProviderAccountProvider,
 } from "../../providers/model/providerAccounts";
 import { useProviderUsage, useUsageClock } from "../../providers/model/useProviderUsage";
-import type { UsageSession } from "../../providers/model/sessionUsage";
+import { hasSessionUsage, type UsageSession } from "../../providers/model/sessionUsage";
 import { WorkBuddyAccountPicker } from "./WorkBuddyAccountPicker";
+import { DeepseekUsage } from "./DeepseekUsage";
 
 function usageProvidersFor(session?: UsageSession): RateLimitProvider[] {
   return session?.harness === "claude" ||
@@ -66,7 +67,7 @@ export function ProviderUsageBar({
   ) => void;
   onManageAccounts?: (provider: ProviderAccountProvider) => void;
   /** Keeps usage loaded while a containing card hides its controls. */
-  render?: (controls: ReactNode, limits?: ProviderRateLimits) => ReactNode;
+  render?: (controls: ReactNode, limits?: ProviderRateLimits, summary?: ReactNode) => ReactNode;
 }) {
   const { t: uiT } = useTranslation();
   const providers = providerList ?? usageProvidersFor(session);
@@ -240,6 +241,10 @@ export function ProviderUsageBar({
 
   const showOpencodeChip = wantOpencode && opencode.status !== "unavailable";
   const showUsage = wantClaude || wantCodex || showOpencodeChip;
+  if (session?.harness === "deepseek")
+    return hasSessionUsage(session)
+      ? <DeepseekUsage key={session.id} project={project} render={render} />
+      : null;
   if (session?.harness === "workbuddy") return present(<WorkBuddyAccountPicker session={session} onChange={id => selectAccount("workbuddy", id)} />);
 
   if (session?.harness === "pi")

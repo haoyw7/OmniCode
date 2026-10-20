@@ -982,6 +982,14 @@ export class HostEngine {
     );
   }
 
+  async stopBackgroundTask(id: string, taskId: string): Promise<void> {
+    this.orchestration.assertSessionWrite(id, "metadata");
+    const value = this.store.session(id);
+    const provider = this.provider(value.session.harness);
+    if (!provider.stopBackgroundTask) throw new Error("Stopping background tasks is unavailable for this provider.");
+    await provider.stopBackgroundTask(id, taskId);
+  }
+
   updateSession(id: string, patch: Parameters<HostStore["updateSession"]>[1], accepted?: (result: ReturnType<HostStore["updateSession"]>) => void) {
     this.orchestration.assertSessionWrite(id, "metadata");
     if (patch.title !== undefined) this.titles.cancel(id);

@@ -9,6 +9,7 @@ import {
   sendDeepseekTurn,
   steerDeepseekTurn,
   stopDeepseekSession,
+  stopDeepseekBackgroundTask,
 } from "./deepseek";
 import { refreshDeepseekCatalog } from "./deepseekCatalog";
 
@@ -19,6 +20,7 @@ export const deepseekAdapter: HarnessAdapter = {
   sendTurn: sendDeepseekTurn,
   steerTurn: steerDeepseekTurn,
   cancelTurn: cancelDeepseekTurn,
+  stopBackgroundTask: stopDeepseekBackgroundTask,
   respondApproval: respondDeepseekApproval,
   respondQuestion: respondDeepseekQuestion,
   keepQuestionOpen: keepDeepseekQuestionOpen,

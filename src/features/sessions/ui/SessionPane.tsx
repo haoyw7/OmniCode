@@ -33,6 +33,8 @@ import { SessionReview } from "./SessionReview";
 import { PromptOutline } from "./PromptOutline";
 import {
   canCompactHarnessContext,
+  canStopHarnessBackgroundTask,
+  stopHarnessBackgroundTask,
   type ApprovalDecision,
   type UserQuestionReply,
 } from "../../../integrations/harness";
@@ -179,6 +181,7 @@ export type SessionPaneProps = {
   ) => boolean | void;
   onRemoveDraft: (sessionId: string, draftBlockId: string) => boolean | void;
   onStop: (sessionId: string) => void;
+  onStopBackgroundTask?: (sessionId: string, taskId: string) => Promise<void>;
   onCompactContext: (sessionId: string) => boolean;
   onDeleteQueuedMessage: (sessionId: string, messageId: string) => void;
   onReorderQueuedMessage: (
@@ -329,6 +332,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onRemoveDraft,
   onSubmit,
   onStop,
+  onStopBackgroundTask,
   onCompactContext,
   onDeleteQueuedMessage,
   onReorderQueuedMessage,
@@ -1197,6 +1201,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
           !session.inboxAsk &&
           !linkedNoticeShown ? (
             <SessionStatusPanel
+              key={session.id}
               blocks={session.blocks}
               backgroundTasks={session.backgroundTasks}
               busy={!!session.busy}
@@ -1208,6 +1213,12 @@ const LocalSessionPane = memo(function LocalSessionPane({
               scope={statusRow}
               onNavigate={navigateBlock}
               onOpenAgent={openSubagent}
+              clockOffsetMs={clockOffsetMs}
+              onStopBackgroundTask={onStopBackgroundTask
+                ? (taskId) => onStopBackgroundTask(session.id, taskId)
+                : !hostManaged && canStopHarnessBackgroundTask(session.harness)
+                  ? (taskId) => stopHarnessBackgroundTask(session.harness, session.id, taskId)
+                  : undefined}
             />
           ) : null}</AnimatePresence>
         </div>

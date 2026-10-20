@@ -7,6 +7,7 @@ import type {
 } from "../../core/types";
 import { extractToolPreview, titleFromToolInput } from "../../core/preview";
 import { translate } from "../../../../shared/i18n/language";
+import { parseDeepseekModelRoute } from "./deepseekModelId";
 
 export const DEEPSEEK_BRIDGE_PROTOCOL = 1;
 export const DEEPSEEK_RUNTIME_VERSION = "0.2.1-rc.2";
@@ -46,21 +47,10 @@ export function deepseekSelection(
   settings?: Record<string, string>,
 ) {
   const native = model.replace(/^deepseek:/, "");
-  let route: unknown;
-  try {
-    route = JSON.parse(native);
-  } catch {
-    /* The built-in default is resolved by the runtime. */
-  }
-  const [provider, id] =
-    Array.isArray(route) &&
-    route.length === 2 &&
-    route.every((value) => typeof value === "string" && value)
-      ? route
-      : [
-          "deepseek-official",
-          native === "default" ? "deepseek-v4-flash" : native,
-        ];
+  const [provider, id] = parseDeepseekModelRoute(model) ?? [
+    "deepseek-official",
+    native === "default" ? "deepseek-v4-flash" : native,
+  ];
   return {
     provider,
     model: id,
@@ -194,6 +184,7 @@ export class DeepseekEventMapper {
   >();
   private readonly sequences = new Map<string, number>();
   private readonly failedAgents = new Set<string>();
+  private readonly backgroundJobs = new Set<string>();
   private usage: Partial<
     Record<
       "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWriteTokens",
@@ -300,6 +291,33 @@ export class DeepseekEventMapper {
           ...(child ? { agentCallId: `dsh-agent:${source}` } : {}),
         },
       ];
+    if (envelope.kind === "job") {
+      const job = asRecord(data.job);
+      if (typeof job.id !== "string" || !job.id || typeof job.owner !== "string") return [];
+      const status = job.status === "killed" ? "cancelled"
+        : job.status === "failed" ? "failed"
+        : job.status === "completed" ? "completed" : "in_progress";
+      const callId = `dsh-job:${job.owner}:${job.id}`;
+      const title = String(job.label ?? job.id);
+      const startedAt = typeof job.startedAt === "number" && Number.isFinite(job.startedAt) ? job.startedAt : undefined;
+      const durationMs = startedAt !== undefined && typeof job.finishedAt === "number" && Number.isFinite(job.finishedAt)
+        ? Math.max(0, job.finishedAt - startedAt) : undefined;
+      const preview = ["bash", "pwsh"].includes(job.kind)
+        ? { kind: "shell" as const, title } : undefined;
+      if (!this.backgroundJobs.has(callId)) {
+        this.backgroundJobs.add(callId);
+        events.push({ type: "tool.started", callId, title, kind: "execute", status,
+          background: true, backgroundTaskId: job.id, startedAt, durationMs,
+          ...(preview ? { preview } : {}),
+        });
+      }
+      events.push({ type: "tool.updated", callId, title, status, durationMs,
+        ...(typeof data.output === "string" && data.output ? { output: data.output } : {}),
+        ...(job.detail || job.progress ? { detail: String(job.detail || job.progress) } : {}),
+        ...(preview ? { preview } : {}),
+      });
+      return events;
+    }
     if (envelope.kind === "jobs")
       return [
         {

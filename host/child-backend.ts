@@ -418,7 +418,11 @@ export class HostChildBackend implements ChildBackend {
       ?? (["codex", "claude"].includes(String(args.binaryProvider))
         ? { id: "default", provider: String(args.binaryProvider) } : undefined);
     const env = childEnvironment();
-    Object.assign(env, this.sessionEnvironment?.(id));
+    const shared = args.binaryProvider === "deepseek"
+      ? args.sharedProcess as { environmentSessionId?: string; deepseekHome?: string } | undefined
+      : undefined;
+    Object.assign(env, this.sessionEnvironment?.(shared?.environmentSessionId ?? id));
+    if (shared?.deepseekHome) env.DSH_HOME = shared.deepseekHome;
     if (account?.provider !== "workbuddy" && account?.id && (account.id !== "default" || ["codex", "claude"].includes(account.provider ?? ""))) {
       if (!this.desktopConfigPath && account.id !== "default")
         throw new Error("Named provider accounts require a desktop-owned Host");
@@ -466,7 +470,9 @@ export class HostChildBackend implements ChildBackend {
       args.args as string[],
     );
     if (this.closing) throw new Error("Host is stopping");
-    const release = this.store ? claimCheckoutResource(this.store, `host-guard:${randomUUID()}`, String(args.cwd)) : undefined;
+    // Shared DSH lives outside project directories. The engine owns a checkout
+    // lease for every attached session, rather than pinning the first project.
+    const release = this.store && !shared ? claimCheckoutResource(this.store, `host-guard:${randomUUID()}`, String(args.cwd)) : undefined;
     if (this.supervisor) {
       let pid: number;
       try {

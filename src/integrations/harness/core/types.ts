@@ -79,6 +79,11 @@ export type HarnessEvent =
       status?: string;
       /** Work the agent left running when it yielded. */
       background?: boolean;
+      /** Provider identity used to stop this task without interrupting its turn. */
+      backgroundTaskId?: string;
+      /** Provider-reported epoch time and duration, when available. */
+      startedAt?: number;
+      durationMs?: number;
       preview?: ToolPreview;
       /** Every path affected when one structured edit changes multiple files. */
       paths?: string[];
@@ -91,6 +96,9 @@ export type HarnessEvent =
       kind?: string;
       status?: string;
       detail?: string;
+      /** Observer output, independent of the short transcript row detail. */
+      output?: string;
+      durationMs?: number;
       preview?: ToolPreview;
       /** Every path affected when one structured edit changes multiple files. */
       paths?: string[];

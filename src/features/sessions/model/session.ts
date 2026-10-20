@@ -406,6 +406,8 @@ export type Block = {
     paths?: string[];
     /** Left running by the agent when it yielded; the turn waits on it. */
     background?: boolean;
+    /** Provider identity for independently stopping a background task. */
+    backgroundTaskId?: string;
   };
   approval?: {
     requestId: number;

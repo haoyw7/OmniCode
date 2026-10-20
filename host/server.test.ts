@@ -18,7 +18,7 @@ import { HostEngine } from "./engine";
 import { HostStore } from "./store";
 import { createHostServer } from "./server";
 import { HostChildBackend } from "./child-backend";
-import { configureChildBackend } from "../src/integrations/harness/core/child";
+import { acquireHarnessBridge, configureChildBackend } from "../src/integrations/harness/core/child";
 import type { SendTurnInput } from "../src/integrations/harness/core/types";
 import type { RemoteProvider } from "../src/features/connections/model/protocol";
 import { checkoutPath, withCheckoutRemoval } from "./checkout-guards";
@@ -130,6 +130,22 @@ async function setup(providers: RemoteProvider[] = ["codex"], discoverProviders?
     finish: () => finish(),
   };
 }
+
+it("scopes background task stop requests to the owning project", async () => {
+  const s = await setup();
+  const created = await s.call("commands.dispatch", {
+    type: "create", commandId: "background-create", projectId: s.project.id,
+    harness: "codex", model: "codex:test", runtimeMode: "supervised",
+  });
+  const sessionId = created.value.result.sessionId;
+  const stop = vi.spyOn(s.engine, "stopBackgroundTask").mockResolvedValue();
+  const rejected = await s.call("sessions.stopBackgroundTask", { projectId: "wrong", sessionId, taskId: "task-1" });
+  expect(rejected.value.error).toContain("Session does not belong to this project");
+  expect(stop).not.toHaveBeenCalled();
+  const accepted = await s.call("sessions.stopBackgroundTask", { projectId: s.project.id, sessionId, taskId: "task-1" });
+  expect(accepted.value.result).toEqual({ stopped: true });
+  expect(stop).toHaveBeenCalledWith(sessionId, "task-1");
+});
 
 it("attributes remote-control conversations to the authenticated device and keeps the attribution in history", async () => {
   const s = await setup();
@@ -245,7 +261,43 @@ it("shares DeepSeek account details with paired devices and validates requests b
   const result = await s.call("providerAccounts.deepseek", { client }, s.second.token);
   expect(result.status).toBe(200);
   expect(result.value.result).toEqual({ status: "signed-out" });
-  expect(deepseekAccountProbe).toHaveBeenCalledWith(client);
+  expect(deepseekAccountProbe).toHaveBeenCalledWith(client, homedir());
+});
+
+it("reads the DeepSeek account through the headless child backend without desktop APIs", async () => {
+  const s = await setup(["deepseek"]);
+  const binary = join(s.directory, "dsh-account.mjs");
+  writeFileSync(binary, `
+    import { createInterface } from "node:readline";
+    if (process.argv.includes("--version")) {
+      console.log("0.2.1-rc.2");
+    } else {
+      createInterface({ input: process.stdin }).on("line", line => {
+        const frame = JSON.parse(line);
+        const result = frame.method === "initialize"
+          ? { protocolVersion: 1, runtimeVersion: "0.2.1-rc.2", capabilities: { multiplex: true } }
+          : frame.method === "account/read" ? { status: "signed-out" } : {};
+        console.log(JSON.stringify({ jsonrpc: "2.0", id: frame.id, result }));
+      });
+    }
+  `);
+  vi.stubEnv("DSH_HOME", join(s.directory, "DSH home"));
+  binaries.deepseek = binary;
+  const { discoverDeepseekAccount } = await vi.importActual<typeof import("../src/integrations/harness/providers/deepseek/deepseekCatalog")>(
+    "../src/integrations/harness/providers/deepseek/deepseekCatalog",
+  );
+  deepseekAccountProbe.mockImplementationOnce(discoverDeepseekAccount);
+  const release = await acquireHarnessBridge();
+  try {
+    const result = await s.call("providerAccounts.deepseek", {
+      client: { version: "0.1.0", locale: "en", timezoneOffsetSeconds: 0 },
+    });
+    expect(result.status, result.value.error).toBe(200);
+    expect(result.value.result).toEqual({ status: "signed-out" });
+  } finally {
+    release();
+    delete binaries.deepseek;
+  }
 });
 
 it("keeps environment variables readable and writable only by this computer's desktop", async () => {

@@ -3,6 +3,7 @@ import { preferenceStorage } from "../../settings/model/sharedPreferences";
 import type { HarnessId } from "./session";
 import { HARNESSES } from "./session";
 import { loadProjectProviderSettings } from "./projectProviders";
+import { parseDeepseekModelRoute } from "../../../integrations/harness/providers/deepseek/deepseekModelId";
 import {
   hasProbedHarnessAvailability,
   isHarnessAvailable,
@@ -460,11 +461,30 @@ function lookupModel(id: string): AgentModel | undefined {
   return findModel(id) ?? bundledById.get(id);
 }
 
+/** A readable saved selection while its execution Host's catalog is unavailable. */
+export function fallbackModelName(harness: HarnessId, id: string): string {
+  if (harness === "deepseek") {
+    const route = parseDeepseekModelRoute(id);
+    if (route) return route[1];
+  }
+  return id.replace(/^[a-z]+:/, "");
+}
+
 export function resolveModel(harness: HarnessId, id?: string): AgentModel {
   const available = modelsFor(harness);
   if (id) {
     const exact = findModel(id);
     if (exact && exact.harness === harness) return exact;
+    if (harness === "deepseek") {
+      const route = parseDeepseekModelRoute(id);
+      if (route) {
+        const nativeId = id.replace(/^deepseek:/, "");
+        return available.find(model => model.nativeId === nativeId) ?? {
+          id, harness, nativeId, name: route[1],
+          provider: { id: route[0], name: route[0] },
+        };
+      }
+    }
     const slug = nativeIdFrom(id);
     const byNative = available.find(
       (model) => (model.nativeId ?? nativeIdFrom(model.id)) === slug,
@@ -587,6 +607,8 @@ export function nativeModelId(model: AgentModel | string): string {
  */
 function nativeIdForUnknownKey(id: string): string {
   const trimmed = id.trim();
+  if (trimmed.startsWith("deepseek:") && parseDeepseekModelRoute(trimmed))
+    return trimmed.slice("deepseek:".length);
   const slug = nativeIdFrom(trimmed);
   const colon = trimmed.indexOf(":");
   const harness = colon >= 0 ? trimmed.slice(0, colon).toLowerCase() : "";

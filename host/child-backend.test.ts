@@ -8,6 +8,28 @@ import { join, resolve } from "node:path";
 import { HostChildBackend } from "./child-backend";
 import { REMOTE_PROVIDERS } from "../src/features/connections/model/protocol";
 
+it("launches shared DSH outside the checkout using the requesting session's environment", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "omnicode-dsh-environment-"));
+  const file = join(directory, "probe.cjs");
+  const backend = new HostChildBackend();
+  backend.configureSessionEnvironment(id => ({ DSH_FIXTURE: id === "chat" ? "selected" : "wrong" }));
+  writeFileSync(file, "console.log(JSON.stringify({value:process.env.DSH_FIXTURE,home:process.env.DSH_HOME,cwd:process.cwd()})); setInterval(()=>{},1000);");
+  let received: { value: string; home: string; cwd: string } | undefined;
+  const release = await backend.listen<{ line: string }>("harness-stdout", ({ payload }) => { received = JSON.parse(payload.line); });
+  try {
+    await backend.invoke("harness_spawn", {
+      sessionId: "shared-dsh", command: file, args: [], cwd: directory, binaryProvider: "deepseek",
+      sharedProcess: { environmentSessionId: "chat", deepseekHome: directory },
+    });
+    await vi.waitFor(() => expect(received).toBeDefined(), { timeout: 5_000 });
+    expect(received).toEqual({ value: "selected", home: directory, cwd: directory });
+  } finally {
+    release();
+    await backend.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 it.each(["codex", "pi", "omp"] as const)(
   "uses the desktop's configured %s CLI for discovery and execution without falling back",
   async (provider) => {

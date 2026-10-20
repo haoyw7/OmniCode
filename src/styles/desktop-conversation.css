@@ -167,6 +167,59 @@ html[data-skin] [data-session-status] [data-status-card] {
   background: var(--desktop-panel-card);
 }
 
+.background-tasks-compact,
+[data-background-tasks-panel] {
+  position: absolute;
+  z-index: 40;
+  top: 8px;
+  right: 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--desktop-radius-card);
+  background: var(--color-card);
+  color: var(--color-content);
+  box-shadow: var(--shadow-sheet);
+  font-size: var(--desktop-menu-font);
+}
+
+.background-tasks-compact { width: min(256px, calc(100% - 24px)); padding: 4px; }
+[data-background-tasks-panel] {
+  bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  width: min(352px, calc(100% - 24px));
+  overflow: hidden;
+  transition: width 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-background-tasks-panel][data-wide] { width: calc(100% - 24px); }
+.background-tasks-header { display: flex; align-items: center; gap: 2px; padding: 8px 10px; }
+.background-tasks-list { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 12px; }
+.background-tasks-section-title { margin-top: 12px; padding: 4px 8px; color: var(--color-foreground-subtle); }
+.background-task-row { display: flex; min-width: 0; align-items: center; gap: 4px; }
+.background-task-open {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--desktop-menu-row);
+  padding: var(--desktop-menu-pad-y) var(--desktop-menu-pad-x);
+  line-height: var(--desktop-menu-leading);
+  border-radius: var(--desktop-menu-radius);
+  text-align: left;
+}
+.background-task-open:hover { background: var(--color-surface-hover); }
+.background-task-open:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+.background-task-elapsed { flex-shrink: 0; color: var(--color-foreground-subtle); font-size: 11px; font-variant-numeric: tabular-nums; }
+.background-task-stop { position: relative; flex-shrink: 0; }
+.background-task-stop-error { position: absolute; right: 0; top: 100%; z-index: 1; width: max-content; padding: 4px 8px; background: var(--color-card); color: var(--color-content); border: 1px solid var(--color-hairline); border-radius: 6px; }
+.background-task-details { display: flex; flex-direction: column; gap: 8px; padding: 6px 8px 10px; }
+.background-task-details pre { max-height: 240px; overflow: auto; border-radius: 10px; padding: 10px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.background-task-command { border: 1px solid var(--color-hairline); }
+.background-task-output { background: var(--color-raised); }
+@media (prefers-reduced-motion: reduce) {
+  [data-background-tasks-panel] { transition: none; }
+}
+
 html[data-skin] [data-question-history] {
   background: var(--desktop-panel-card);
   border-color: var(--color-composer-ring);

@@ -84,6 +84,18 @@ afterEach(() => {
 });
 
 describe("background work", () => {
+  it("retains provider output and timing independently of short status details", () => {
+    let session = applyHarnessEvent(newSession("deepseek", "/repo"), {
+      type: "tool.started", callId: "job", title: "Build", kind: "execute", status: "in_progress",
+      background: true, backgroundTaskId: "job-1", startedAt: 10,
+    });
+    session = applyHarnessEvent(session, { type: "tool.updated", callId: "job", status: "completed", durationMs: 2500, output: "build output", detail: "exit code: 0" });
+    session = applyHarnessEvent(session, { type: "tool.updated", callId: "job", status: "completed", detail: "Finished" });
+    expect(session.blocks[0]).toMatchObject({ startedAt: 10, durationMs: 2500, streaming: false,
+      tool: { output: "build output", detail: "Finished", backgroundTaskId: "job-1" } });
+    expect(sanitizeSessionForPersist(session).blocks[0].tool?.output).toBe("build output");
+  });
+
   it("tracks what a yielded turn waits on and drops it when the turn ends", () => {
     let session = appendUser(newSession("claude", "/tmp"), "hi");
     session = applyHarnessEvent(session, {

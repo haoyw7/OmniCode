@@ -6,7 +6,7 @@ import {
   invalidateObservedGeneration,
 } from "../../core/generationMetrics";
 import { botContextKey } from "../../core/botContext";
-import { readClaudeNativeTitle } from "../../core/child";
+import { readClaudeNativeTitle, readHarnessTextFile } from "../../core/child";
 import type { NativeTitleInput } from "../../core/titleCoordinator";
 import type { NativeSessionLink } from "../../../../features/sessions/model/session";
 import { nativeModelId } from "../../../../features/sessions/model/models";
@@ -344,6 +344,15 @@ export function respondClaudeQuestion(
   const pending = live?.questions.get(requestId);
   if (!pending) return;
   pending.resolve(reply);
+}
+
+export async function stopClaudeBackgroundTask(sessionId: string, taskId: string): Promise<void> {
+  const live = liveByThread.get(sessionId);
+  if (!live || !live.backgroundTasks.has(taskId) || live.cancelled) return;
+  await writeJson(sessionId, buildControlRequest(nextControlId(live), {
+    subtype: "stop_task", task_id: taskId,
+  }));
+  // Keep the row running until the provider confirms it stopped.
 }
 
 export async function cancelClaudeTurn(sessionId: string): Promise<void> {
@@ -1823,7 +1832,8 @@ function showBackgroundRows(live: Live): void {
       kind: source ? toolKindFromName(source.name) : "execute",
       status: "in_progress",
       background: true,
-      ...(source ? { preview: previewFromTool(source.name, source.input) } : {}),
+      backgroundTaskId: taskId,
+      ...(source ? { preview: backgroundTaskPreview(source) } : {}),
     });
   }
 }
@@ -1839,7 +1849,8 @@ function settleBackgroundRow(
   live.onEvent({
     type: "tool.updated",
     callId,
-    status: status === "completed" ? "completed" : "failed",
+    status: status === "completed" ? "completed"
+      : ["stopped", "killed", "cancelled", "canceled"].includes(status) ? "cancelled" : "failed",
     ...(detail ? { detail } : {}),
   });
 }
@@ -1860,6 +1871,17 @@ function noteTaskNotification(
       notice.status,
       notice.summary || undefined,
     );
+    const callId = live.backgroundRows.get(notice.taskId)!;
+    if (notice.outputFile) {
+      const source = notice.toolUseId ? live.toolsById.get(notice.toolUseId) : undefined;
+      const preview = source ? backgroundTaskPreview(source) : undefined;
+      void readHarnessTextFile(notice.outputFile).then((output) => {
+        if (live.muteUpdates || live.cancelled || !output) return;
+        live.onEvent({ type: "tool.updated", callId,
+          preview: { kind: "shell", ...preview, output: output.length > 24_000 ? `${output.slice(0, 24_000)}\n…` : output },
+        });
+      }).catch(() => { /* Keep the notification summary if the log was removed. */ });
+    }
     return;
   }
   const tool = notice.toolUseId ? live.toolsById.get(notice.toolUseId) : null;
@@ -1873,6 +1895,12 @@ function clearAwaitingResume(live: Live): void {
   if (!live.awaitingResume) return;
   clearTimeout(live.awaitingResume);
   live.awaitingResume = null;
+}
+
+function backgroundTaskPreview(source: InFlightTool) {
+  const preview = previewFromTool(source.name, source.input);
+  const command = stringField(source.input, "command") ?? stringField(source.input, "cmd");
+  return command ? { ...preview, kind: "shell" as const, title: command } : preview;
 }
 
 /**

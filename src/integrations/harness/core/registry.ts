@@ -59,6 +59,7 @@ export type HarnessAdapter = {
   rewindLastTurn?(input: RewindLastTurnInput): Promise<RewindLastTurnResult>;
   steerTurn(input: SteerTurnInput): Promise<void>;
   cancelTurn(sessionId: string): Promise<void>;
+  stopBackgroundTask?(sessionId: string, taskId: string): Promise<void>;
   respondApproval(
     sessionId: string,
     requestId: number,
@@ -315,6 +316,16 @@ export function steerHarnessTurn(
     assertHostNative(input);
     await adapter.steerTurn(input);
   });
+}
+
+export function canStopHarnessBackgroundTask(harness: HarnessId): boolean {
+  return !!getHarness(harness)?.stopBackgroundTask;
+}
+
+export async function stopHarnessBackgroundTask(harness: HarnessId, sessionId: string, taskId: string): Promise<void> {
+  const adapter = requireHarness(harness);
+  if (!adapter.stopBackgroundTask) throw new Error("Stopping background tasks is unavailable for this provider.");
+  await adapter.stopBackgroundTask(sessionId, taskId);
 }
 
 export async function cancelHarnessTurn(

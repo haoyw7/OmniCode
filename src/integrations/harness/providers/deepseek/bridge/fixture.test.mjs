@@ -151,6 +151,11 @@ export function apply(ctx) {
           ? "native late answer received"
           : imageInput
             ? "image received"
+            : prompt.includes("fixture:history")
+              ? messages.filter(message => message.role === "user")
+                .flatMap(message => message.content ?? [])
+                .filter(block => block.type === "text")
+                .map(block => block.text).join("\n")
             : "live response";
       const split = Math.min(5, text.length);
       yield { type: "block-start", index: 0, blockType: "text" };
@@ -192,13 +197,19 @@ export function apply(ctx) {
           kind: "fixture",
           label: "Fixture background job",
           owner: exec.agent.session.id,
-          run() {
+          run(job) {
             const controller = new AbortController();
+            job.append("fixture job started\n");
             const done = setTimeout(800, undefined, {
               signal: controller.signal,
             }).then(
-              () => ({ status: "completed" }),
-              () => ({ status: "killed" }),
+              () => {
+                job.append("fixture job completed\n");
+                // The UI observer must leave all bytes for the model's cursor.
+                const output = ctx.jobs.read(job.id, exec.agent.session.id).chunks.map((chunk) => chunk.text).join("");
+                return { status: "completed", detail: output };
+              },
+              () => { job.append("fixture job stopped\n"); return { status: "killed" }; },
             );
             return { done, cancel: () => controller.abort() };
           },

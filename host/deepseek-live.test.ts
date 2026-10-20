@@ -6,6 +6,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { prepareDeepseekBridge } from "./deepseek-bridge";
 import { providerLaunch } from "./process";
+import { DeepseekEventMapper } from "../src/integrations/harness/providers/deepseek/deepseekProtocol";
+import { applyHarnessEvent } from "../src/integrations/harness/core/apply";
+import { newSession } from "../src/features/sessions/model/session";
+import { backgroundTaskItems } from "../src/features/sessions/model/backgroundTasks";
 
 // Opt in with an installed DSH CLI. All inference uses the local fixture adapter.
 const binary = process.env.OMNICODE_TEST_DSH;
@@ -110,7 +114,7 @@ describe.skipIf(!binary)("DeepSeek real runtime bridge", () => {
       ),
     );
     child = spawn(target.command, target.args, {
-      cwd,
+      cwd: launch.cwd,
       env,
       windowsHide: true,
       stdio: ["pipe", "pipe", "pipe"],
@@ -219,6 +223,7 @@ describe.skipIf(!binary)("DeepSeek real runtime bridge", () => {
     expect(initialized.catalog).toBeUndefined();
     expect(await request("account/read", { client: { version: "0.1.0", locale: "en", timezoneOffsetSeconds: 0 } }))
       .toEqual({ status: "signed-out" });
+    expect((await request("models/list")).some((provider: any) => provider.id === "omnicode-fixture")).toBe(true);
   });
 
   it("streams before completion and accepts subsequent turns", async () => {
@@ -564,6 +569,16 @@ describe.skipIf(!binary)("DeepSeek real runtime bridge", () => {
     expect(notifications.indexOf(jobFrames.at(-1))).toBeLessThan(
       notifications.indexOf(end),
     );
+    const observed = notifications.filter((frame) => frame.params.runId === job.runId && frame.params.kind === "job");
+    expect(observed.some((frame) => frame.params.data.output === "fixture job started\n")).toBe(true);
+    const finished = observed.find((frame) => frame.params.data.job.status === "completed");
+    expect(finished.params.data.output).toBe("fixture job started\nfixture job completed\n");
+    expect(finished.params.data.job.detail).toBe("fixture job started\nfixture job completed\n");
+    const mapper = new DeepseekEventMapper();
+    const events = observed.flatMap((frame) => mapper.events(frame.params, sessionId));
+    const projected = events.reduce(applyHarnessEvent, newSession("deepseek", cwd));
+    expect(backgroundTaskItems(projected.blocks)).toMatchObject([{ state: "completed", output: "fixture job started\nfixture job completed\n" }]);
+    expect(projected.blocks[0].durationMs).toBe(finished.params.data.job.finishedAt - finished.params.data.job.startedAt);
     const cancelled = await prompt("fixture:job cancel");
     await receive(
       (frame) =>
@@ -573,5 +588,114 @@ describe.skipIf(!binary)("DeepSeek real runtime bridge", () => {
     );
     await request("session/cancel", { sessionId });
     expect((await completed(cancelled.runId)).params.data.cancelled).toBe(true);
+  });
+
+  it("stops a single background job, rejects foreign identities and keeps the parent session usable", async () => {
+    await request("session/configure", { sessionId, runtimeMode: "full-access" });
+    const receipt = await prompt("fixture:job selected");
+    const started = await receive((frame) => frame.params.runId === receipt.runId && frame.params.kind === "job" && frame.params.data.job.status === "running");
+    await expect(request("job/stop", { sessionId, jobId: "foreign-job" })).rejects.toThrow("Unknown or foreign");
+    const result = await request("job/stop", { sessionId, jobId: started.params.data.job.id });
+    expect(result.status).toBe("requested");
+    const end = await completed(receipt.runId);
+    expect(end.params.data.cancelled).toBe(false);
+    expect(end.params.data.error).toBeUndefined();
+    const stopped = await receive((frame) => frame.params.runId === receipt.runId && frame.params.kind === "job" && frame.params.data.job.status === "killed");
+    expect(stopped.params.data.output).toContain("fixture job stopped");
+    expect((await request("job/stop", { sessionId, jobId: started.params.data.job.id })).status).toBe("already-finished");
+    const next = await prompt("fixture:after-job-stop");
+    expect((await completed(next.runId)).params.data.error).toBeUndefined();
+  });
+
+  const promptFor = (id: string, text: string) =>
+    request("session/prompt", { sessionId: id, content: [{ type: "text", text }] });
+  const openPeer = async (name: string, runtimeMode = "full-access") => {
+    const directory = join(root, name);
+    await mkdir(directory, { recursive: true });
+    const created = await request("session/new", {
+      cwd: directory, selection: { provider: "omnicode-fixture", model: "fixture" }, runtimeMode,
+    });
+    return { id: created.sessionId as string, cwd: directory };
+  };
+  const textFor = (runId: string) => notifications
+    .filter(frame => frame.params.runId === runId && frame.params.kind === "assistant.stream" &&
+      frame.params.data.chunk?.type === "text-delta")
+    .map(frame => frame.params.data.chunk.text).join("");
+
+  it("isolates concurrent sessions, workspace files, permission modes and histories within one DSH process", async () => {
+    const pid = child.pid;
+    const [a, b] = await Promise.all([openPeer("multiplex a", "supervised"), openPeer("multiplex b")]);
+    try {
+      approval = "allow";
+      const before = requests.length;
+      const [ra, rb] = await Promise.all([
+        promptFor(a.id, "fixture:write marker-a file=a.txt"),
+        promptFor(b.id, "fixture:write marker-b file=b.txt"),
+      ]);
+      const ends = await Promise.all([completed(ra.runId), completed(rb.runId)]);
+      expect(ends.every(end => !end.params.data.error)).toBe(true);
+      expect(await readFile(join(a.cwd, "a.txt"), "utf8")).toBe("fixture result");
+      expect(await readFile(join(b.cwd, "b.txt"), "utf8")).toBe("fixture result");
+      await expect(readFile(join(a.cwd, "b.txt"), "utf8")).rejects.toThrow();
+      await expect(readFile(join(b.cwd, "a.txt"), "utf8")).rejects.toThrow();
+      expect(requests.slice(before).filter(frame => frame.method === "approval/request").map(frame => frame.params.sessionId))
+        .toEqual([a.id]);
+      const [ha, hb] = await Promise.all([promptFor(a.id, "fixture:history"), promptFor(b.id, "fixture:history")]);
+      await Promise.all([completed(ha.runId), completed(hb.runId)]);
+      expect(textFor(ha.runId)).toContain("marker-a");
+      expect(textFor(ha.runId)).not.toContain("marker-b");
+      expect(textFor(hb.runId)).toContain("marker-b");
+      expect(textFor(hb.runId)).not.toContain("marker-a");
+      for (const [id, runs] of [[a.id, [ra, ha]], [b.id, [rb, hb]]] as const)
+        for (const run of runs)
+          expect(new Set(notifications.filter(frame => frame.params.runId === run.runId).map(frame => frame.params.sessionId)))
+            .toEqual(new Set([id]));
+      expect(child.pid).toBe(pid);
+      expect(child.exitCode).toBeNull();
+    } finally {
+      await Promise.all([a, b].map(peer => request("session/close", { sessionId: peer.id })));
+    }
+  });
+
+  it("closes one session's pending question while another streams, then resumes it on the same runtime", async () => {
+    const [a, b] = await Promise.all([openPeer("question a"), openPeer("stream b")]);
+    questionMode = "wait";
+    try {
+      const question = await promptFor(a.id, "fixture:question held");
+      await vi.waitFor(() => expect(requests.some(frame => frame.method === "question/request" && frame.params.sessionId === a.id)).toBe(true));
+      const streaming = await promptFor(b.id, "fixture:slow surviving");
+      await receive(frame => frame.params.sessionId === b.id && frame.params.data.chunk?.type === "text-delta");
+      await request("session/close", { sessionId: a.id });
+      expect((await completed(streaming.runId)).params.data.error).toBeUndefined();
+      expect(textFor(streaming.runId)).toBe("live response");
+      expect((await completed(question.runId)).params.sessionId).toBe(a.id);
+      await expect(promptFor(a.id, "closed")).rejects.toThrow("Unknown or closed");
+      await request("session/resume", { sessionId: a.id, cwd: a.cwd,
+        selection: { provider: "omnicode-fixture", model: "fixture" }, runtimeMode: "supervised" });
+      const next = await promptFor(a.id, "fixture:resumed peer");
+      expect((await completed(next.runId)).params.data.error).toBeUndefined();
+    } finally {
+      questionMode = "answer";
+      await Promise.all([a, b].map(peer => request("session/close", { sessionId: peer.id }).catch(() => {})));
+    }
+  });
+
+  it("isolates native background jobs and cancellation across simultaneous root sessions", async () => {
+    const [a, b] = await Promise.all([openPeer("jobs a"), openPeer("jobs b")]);
+    try {
+      const [ra, rb] = await Promise.all([promptFor(a.id, "fixture:job a"), promptFor(b.id, "fixture:job b")]);
+      const [ja, jb] = await Promise.all([a, b].map(peer =>
+        receive(frame => frame.params.sessionId === peer.id && frame.params.kind === "job" && frame.params.data.job.status === "running")));
+      await expect(request("job/stop", { sessionId: a.id, jobId: jb.params.data.job.id })).rejects.toThrow("Unknown or foreign");
+      await request("session/cancel", { sessionId: a.id });
+      expect((await completed(ra.runId)).params.data.cancelled).toBe(true);
+      expect((await completed(rb.runId)).params.data).toMatchObject({ cancelled: false });
+      const doneB = await receive(frame => frame.params.sessionId === b.id && frame.params.kind === "job" && frame.params.data.job.status === "completed");
+      expect(doneB.params.data.job.id).toBe(jb.params.data.job.id);
+      expect(notifications.some(frame => frame.params.sessionId === b.id && frame.params.kind === "job" &&
+        frame.params.data.job.id === ja.params.data.job.id)).toBe(false);
+    } finally {
+      await Promise.all([a, b].map(peer => request("session/close", { sessionId: peer.id })));
+    }
   });
 });

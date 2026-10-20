@@ -43,21 +43,19 @@ export function apply(ctx) {
     throw new Error(
       `OmniCode bridge requires dsh ${DSH_VERSION}; found ${version}`,
     );
-  let session;
-  let opening;
+  const sessions = new Map();
+  const owners = new Map();
+  const openings = new Map();
   let initialized = false;
   let closing = false;
   let nextRequest = 1;
   let output = Promise.resolve();
-  let controls = Promise.resolve();
-  const serial = (operation) => {
-    const task = controls.then(operation);
-    controls = task.catch(() => {});
+  const serial = (rec, operation) => {
+    const task = rec.controls.then(operation);
+    rec.controls = task.catch(() => {});
     return task;
   };
   const pending = new Map();
-  const claims = new Map();
-  const descendants = new Set();
   const emit = (method, params) => write({ jsonrpc: "2.0", method, params });
   const write = (message) => {
     const line = JSON.stringify(message) + "\n";
@@ -73,22 +71,16 @@ export function apply(ctx) {
     output.catch(() => {});
     return output;
   };
-  const owned = (agent) =>
-    session && (agent === session.handle.agent || descendants.has(agent));
-  const activeJobs = () =>
-    !session
-      ? []
-      : [session.handle.agent, ...descendants].flatMap((agent) =>
-          ctx.jobs
-            .list(agent.session.id)
-            .filter(
-              (job) =>
-                job.owner === agent.session.id &&
-                ["running", "stopping"].includes(job.status),
-            ),
-        );
-  const cancelJobs = () => {
-    for (const job of activeJobs())
+  const ownerOf = (agent) => agent && owners.get(agent.session.id);
+  const activeJobs = (rec) =>
+    [rec.handle.agent, ...rec.descendants].flatMap((agent) =>
+      ctx.jobs.list(agent.session.id).filter(
+        (job) => job.owner === agent.session.id &&
+          ["running", "stopping"].includes(job.status),
+      ),
+    );
+  const cancelJobs = (rec) => {
+    for (const job of activeJobs(rec))
       ctx.jobs.kill(job.id, job.owner, "OmniCode turn cancelled");
   };
   // Observe without using jobs.wait(): a model waiter suppresses the native completion notice.
@@ -120,21 +112,21 @@ export function apply(ctx) {
         resolve();
       }
     });
-  const notify = (kind, data, source = session?.handle.agent) =>
+  const notify = (rec, kind, data, source = rec.handle.agent) =>
     emit("session/event", {
-      sessionId: session?.handle.agent.session.id,
+      sessionId: rec.handle.agent.session.id,
       sourceSessionId: source?.session.id,
-      runId: session?.run?.id,
+      runId: rec.run?.id,
       kind,
       data,
     });
-  const ask = (method, params, signal) => {
+  const ask = (rec, method, params, signal) => {
     const id = nextRequest++;
     return new Promise((resolve, reject) => {
       const abort = () => {
         if (!pending.delete(id)) return;
         signal?.removeEventListener("abort", abort);
-        void notify("interaction.closed", { requestId: id }).catch(() => {});
+        void notify(rec, "interaction.closed", { requestId: id }).catch(() => {});
         reject(signal?.reason ?? new Error("Interaction cancelled"));
       };
       if (signal?.aborted) {
@@ -142,6 +134,7 @@ export function apply(ctx) {
         return;
       }
       pending.set(id, {
+        rec,
         resolve: (result) => {
           signal?.removeEventListener("abort", abort);
           resolve(result);
@@ -159,24 +152,22 @@ export function apply(ctx) {
     });
   };
   const requireSession = (params) => {
-    if (
-      !session ||
-      session.handle.agent.session.id !== params.sessionId ||
-      closing
-    )
+    const rec = sessions.get(params.sessionId);
+    if (!rec || rec.closing || closing)
       throw new Error("Unknown or closed DeepSeek session");
-    if (ctx.agents.get(session.handle.agent.id) !== session.handle.agent)
+    if (ctx.agents.get(rec.handle.agent.id) !== rec.handle.agent)
       throw new Error("DeepSeek session was disposed");
-    return session;
+    return rec;
   };
-  const cancelInteractions = () => {
+  const cancelInteractions = (rec) => {
     for (const [id, waiter] of pending) {
+      if (waiter.rec !== rec) continue;
+      pending.delete(id);
       waiter.reject(new Error("Interaction cancelled"));
-      void notify("interaction.closed", { requestId: id }).catch(() => {});
+      void notify(rec, "interaction.closed", { requestId: id }).catch(() => {});
     }
-    pending.clear();
-    for (const claim of claims.values()) claim.abort();
-    claims.clear();
+    for (const claim of rec.claims.values()) claim.abort();
+    rec.claims.clear();
   };
   const wait = async (rec) => {
     const agent = rec.handle.agent;
@@ -184,7 +175,7 @@ export function apply(ctx) {
       await agent.whenIdle();
       const seq = agent.session.seq;
       const children = await ctx.get("subagents")?.waitForChildren(agent);
-      const jobs = activeJobs();
+      const jobs = activeJobs(rec);
       if (jobs.length) await waitForJobs(jobs);
       if (
         !children &&
@@ -202,15 +193,12 @@ export function apply(ctx) {
     "agent/created",
     ({ agent }) => {
       const parent = agent.session.header.parentSession;
-      if (
-        !session ||
-        !parent ||
-        (parent !== session.handle.agent.session.id &&
-          ![...descendants].some((child) => child.session.id === parent))
-      )
-        return;
-      descendants.add(agent);
+      const rec = owners.get(parent);
+      if (!rec) return;
+      rec.descendants.add(agent);
+      owners.set(agent.session.id, rec);
       void notify(
+        rec,
         "agent.started",
         { sessionId: agent.session.id, parentSessionId: parent },
         agent,
@@ -221,8 +209,11 @@ export function apply(ctx) {
   ctx.on(
     "agent/disposed",
     ({ agent }) => {
-      if (!descendants.delete(agent)) return;
+      const rec = ownerOf(agent);
+      if (!rec || !rec.descendants.delete(agent)) return;
+      owners.delete(agent.session.id);
       void notify(
+        rec,
         "agent.finished",
         { sessionId: agent.session.id },
         agent,
@@ -233,60 +224,74 @@ export function apply(ctx) {
   ctx.on(
     "agent/status",
     ({ agent, status }) => {
-      if (descendants.has(agent))
-        void notify("agent.status", { status }, agent).catch(() => {});
+      const rec = ownerOf(agent);
+      if (rec?.descendants.has(agent))
+        void notify(rec, "agent.status", { status }, agent).catch(() => {});
     },
     { global: true },
   );
   ctx.jobs.events.subscribe({ owners: "all" }, (event) => {
-    if (event.type === "output" || !session) return;
-    const owner = event.job.owner;
-    if (
-      owner !== session.handle.agent.session.id &&
-      ![...descendants].some((agent) => agent.session.id === owner)
-    )
-      return;
-    void notify("jobs", { jobs: activeJobs() }).catch(() => {});
+    const owner = event.type === "output" ? event.owner : event.job.owner;
+    const rec = owners.get(owner);
+    if (!rec) return;
+    try {
+      const job = event.type === "output" ? ctx.jobs.get(event.id, owner) : event.job;
+      let output;
+      // Observers must never advance the model's consuming cursor or suppress
+      // its native completion notice by registering a waiter.
+      if (event.type !== "removed") {
+        const read = ctx.jobs.readAt(job.id, 0, owner);
+        const text = read.chunks.map((chunk) => chunk.text).join("");
+        output = `${read.lossy || text.length > 24_000 ? "…\n" : ""}${text.slice(-24_000)}`;
+      }
+      void notify(rec, "job", { job, ...(output === undefined ? {} : { output }) }).catch(() => {});
+    } catch (error) {
+      ctx.logger.warn(`OmniCode job observation failed: ${error.message}`);
+    }
+    if (event.type !== "output")
+      void notify(rec, "jobs", { jobs: activeJobs(rec) }).catch(() => {});
   });
   ctx.on(
     "agent/error",
     ({ agent, error }) => {
-      if (!owned(agent)) return;
+      const rec = ownerOf(agent);
+      if (!rec) return;
       const message = error instanceof Error ? error.message : String(error);
-      if (agent === session.handle.agent && session.run)
-        session.run.error = message;
-      else void notify("agent.error", { message }, agent).catch(() => {});
+      if (agent === rec.handle.agent && rec.run)
+        rec.run.error = message;
+      else void notify(rec, "agent.error", { message }, agent).catch(() => {});
     },
     { global: true },
   );
   ctx.on(
     "agent/assistant-stream",
     ({ agent, frame }) => {
-      if (owned(agent))
-        void notify("assistant.stream", frame, agent).catch(() => {});
+      const rec = ownerOf(agent);
+      if (rec)
+        void notify(rec, "assistant.stream", frame, agent).catch(() => {});
     },
     { global: true },
   );
   // Durable events remain authoritative; image bytes are sent through the attachment store.
-  let durableOutput = Promise.resolve();
   ctx.on(
     "session/event",
     (source, event) => {
       const agent = ctx.agents.get(source.id);
-      if (!agent || !owned(agent)) return;
+      const rec = ownerOf(agent);
+      if (!rec) return;
       if (
-        agent === session.handle.agent &&
-        session.run &&
+        agent === rec.handle.agent &&
+        rec.run &&
         event.type === "turn/end" &&
         event.data.reason?.kind === "error"
       ) {
-        session.run.error ??=
+        rec.run.error ??=
           event.data.reason.error?.message ?? "DeepSeek Harness turn failed";
       }
-      durableOutput = durableOutput
+      rec.durableOutput = rec.durableOutput
         .catch(() => {})
         .then(async () => {
-          await notify("durable", event, agent);
+          await notify(rec, "durable", event, agent);
           const blocks =
             event.type === "assistant/message" || event.type === "tool/result"
               ? (event.data.message?.content ?? [])
@@ -295,6 +300,7 @@ export function apply(ctx) {
             if (block.type !== "image") continue;
             const image = await ctx.attachments.readImage(block.attachment);
             await notify(
+              rec,
               "image",
               {
                 itemId: `${source.id}:${event.seq}:${index}`,
@@ -306,8 +312,8 @@ export function apply(ctx) {
             );
           }
         });
-      durableOutput.catch((error) => {
-        if (session?.run) session.run.error = error.message;
+      rec.durableOutput.catch((error) => {
+        if (rec.run) rec.run.error = error.message;
       });
     },
     { global: true },
@@ -315,13 +321,15 @@ export function apply(ctx) {
   ctx.on(
     "approval/request",
     async (request, next) => {
-      if (!owned(request.agent)) return next();
-      await durableOutput;
+      const rec = ownerOf(request.agent);
+      if (!rec) return next();
+      await rec.durableOutput;
       try {
         const answer = await ask(
+          rec,
           "approval/request",
           {
-            sessionId: session.handle.agent.session.id,
+            sessionId: rec.handle.agent.session.id,
             sourceSessionId: request.agent.session.id,
             callId: request.callId,
             toolName: request.toolName,
@@ -339,8 +347,9 @@ export function apply(ctx) {
   ctx.on(
     "user-questions/request",
     async (request, next) => {
-      if (!session || request.agent !== session.handle.agent) return next();
-      await durableOutput;
+      const rec = ownerOf(request.agent);
+      if (!rec || request.agent !== rec.handle.agent) return next();
+      await rec.durableOutput;
       const callId =
         request.wait?.callId ??
         request.questions.find((question) => question.intent?.callId)?.intent
@@ -350,7 +359,7 @@ export function apply(ctx) {
       const timeout = new AbortController();
       if (request.wait?.timed) {
         const controller = new AbortController();
-        claims.set(callId, {
+        rec.claims.set(callId, {
           abort: () => {
             clearTimeout(timer);
             controller.abort();
@@ -383,9 +392,10 @@ export function apply(ctx) {
       }
       try {
         const answer = await ask(
+          rec,
           "question/request",
           {
-            sessionId: session.handle.agent.session.id,
+            sessionId: rec.handle.agent.session.id,
             callId,
             questions: request.questions,
             autoResolveAt: deadline,
@@ -414,8 +424,8 @@ export function apply(ctx) {
         };
       } finally {
         clearTimeout(timer);
-        claims.get(callId)?.abort();
-        claims.delete(callId);
+        rec.claims.get(callId)?.abort();
+        rec.claims.delete(callId);
       }
     },
     { global: true },
@@ -426,8 +436,9 @@ export function apply(ctx) {
     "tools/pre-execute",
     async (exec, next) => {
       const decision = await next();
-      if (!owned(exec.agent) || decision.kind !== "allow") return decision;
-      const mode = session.mode;
+      const rec = ownerOf(exec.agent);
+      if (!rec || decision.kind !== "allow") return decision;
+      const mode = rec.mode;
       const mutating =
         effects.has(exec.name) ||
         ![
@@ -519,13 +530,23 @@ export function apply(ctx) {
     };
   }
   async function open(params, resume) {
-    if (session || opening || closing)
-      throw new Error("DeepSeek bridge already owns a session");
-    const cwd = await realpath(requiredString(params.cwd, "cwd"));
-    if (!isAbsolute(params.cwd)) throw new Error("cwd must be absolute");
-    const sessionId = resume
+    if (closing) throw new Error("DeepSeek bridge is closing");
+    const sessionId = resume || params.sessionId !== undefined
       ? requiredString(params.sessionId, "sessionId")
       : randomUUID();
+    if (sessions.has(sessionId) || openings.has(sessionId))
+      throw new Error("DeepSeek session is already open");
+    const task = openSession(params, resume, sessionId);
+    openings.set(sessionId, task);
+    try {
+      return await task;
+    } finally {
+      openings.delete(sessionId);
+    }
+  }
+  async function openSession(params, resume, sessionId) {
+    const cwd = await realpath(requiredString(params.cwd, "cwd"));
+    if (!isAbsolute(params.cwd)) throw new Error("cwd must be absolute");
     if (resume) {
       const stat = await ctx.sessionPersistence.stat(sessionId);
       if (
@@ -553,32 +574,38 @@ export function apply(ctx) {
     const task = resume
       ? ctx.agents.resume({ ...options, resumeSessionId: sessionId })
       : ctx.agents.create({ ...options, sessionId, meta: { cwd } });
-    opening = task;
+    let rec;
     try {
       const handle = await task;
-      session = {
+      rec = {
         handle,
         selection,
         cwd,
         mode: "supervised",
         run: undefined,
         image: false,
+        closing: false,
+        controls: Promise.resolve(),
+        durableOutput: Promise.resolve(),
+        descendants: new Set(),
+        claims: new Map(),
       };
+      sessions.set(sessionId, rec);
+      owners.set(sessionId, rec);
       // Control-only creation must also work before credentials are configured.
-      if (params.configure !== false) await configure(session, params);
+      if (params.configure !== false) await configure(rec, params);
       await ctx.sessions.flush(handle.agent.session);
       return {
         sessionId,
-        ...(params.configure === false ? {} : await describe(session)),
+        ...(params.configure === false ? {} : await describe(rec)),
       };
     } catch (error) {
-      if (session) {
-        await session.handle.dispose();
-        session = undefined;
+      if (rec) {
+        await rec.handle.dispose();
+        sessions.delete(sessionId);
+        owners.delete(sessionId);
       }
       throw error;
-    } finally {
-      opening = undefined;
     }
   }
   async function describe(rec) {
@@ -624,7 +651,7 @@ export function apply(ctx) {
       ),
     );
     const admitted = await ctx.attachments.admitPromptContent(parts);
-    if (closing || session !== rec || (rec.epoch ?? 0) !== epoch)
+    if (closing || rec.closing || (rec.epoch ?? 0) !== epoch)
       throw new Error("DeepSeek session cancelled during prompt admission");
     const message = createUserMessage({
       content: admitted,
@@ -649,12 +676,12 @@ export function apply(ctx) {
       run.done = (async () => {
         try {
           await wait(rec);
-          await durableOutput;
+          await rec.durableOutput;
         } catch (error) {
           run.error ??= error.message;
         }
         if (rec.run === run) rec.run = undefined;
-        await notify("run.completed", {
+        await notify(rec, "run.completed", {
           runId: run.id,
           cancelled: run.cancelled,
           error: run.error,
@@ -663,19 +690,29 @@ export function apply(ctx) {
       run.done.catch(() => {});
     };
   }
-  async function close() {
-    cancelInteractions();
-    const rec = session;
-    if (!rec) return {};
-    cancelJobs();
+  async function close(rec) {
+    rec.closing = true;
+    rec.epoch = (rec.epoch ?? 0) + 1;
+    if (rec.run) rec.run.cancelled = true;
+    cancelInteractions(rec);
+    cancelJobs(rec);
+    await rec.controls;
     rec.handle.agent.cancel({ kind: "user" });
     await ctx.get("subagents")?.drainDescendants([rec.handle.agent]);
     await rec.run?.done;
     await ctx.sessions.flush(rec.handle.agent.session);
     await rec.handle.dispose();
-    await durableOutput.catch(() => {});
-    session = undefined;
-    descendants.clear();
+    await rec.durableOutput.catch(() => {});
+    sessions.delete(rec.handle.agent.session.id);
+    owners.delete(rec.handle.agent.session.id);
+    for (const agent of rec.descendants) owners.delete(agent.session.id);
+    rec.descendants.clear();
+    return {};
+  }
+  async function shutdown() {
+    closing = true;
+    await Promise.allSettled(openings.values());
+    await Promise.all([...sessions.values()].map(close));
     return {};
   }
   async function dispatch(method, params) {
@@ -690,15 +727,18 @@ export function apply(ctx) {
         protocolVersion: PROTOCOL_VERSION,
         runtimeVersion: version,
         capabilities: {
+          multiplex: true,
           steer: true,
           questions: true,
           planning: !!ctx.get("planMode"),
           images: true,
+          backgroundTasks: true,
         },
         ...(params.includeCatalog === false ? {} : { catalog: await catalog() }),
       };
     }
     if (!initialized) throw new Error("Initialize the OmniCode bridge first");
+    if (method === "models/list") return catalog();
     if (method === "account/read") {
       const account = ctx.get("deepseekAccount");
       if (!account) return { status: "unsupported" };
@@ -724,48 +764,50 @@ export function apply(ctx) {
         } : {}),
       };
     }
-    if (method === "session/new") return serial(() => open(params, false));
-    if (method === "session/resume") return serial(() => open(params, true));
+    if (method === "session/new") return open(params, false);
+    if (method === "session/resume") return open(params, true);
     if (method === "session/close") {
-      requireSession(params);
-      closing = true;
-      try {
-        await controls;
-        return await close();
-      } finally {
-        closing = false;
-      }
+      await openings.get(params.sessionId)?.catch(() => {});
+      return close(requireSession(params));
     }
-    if (method === "shutdown") {
-      closing = true;
-      await controls;
-      return close();
-    }
+    if (method === "shutdown") return shutdown();
     if (method === "session/configure")
-      return serial(() => configure(requireSession(params), params));
-    if (method === "session/prompt") return serial(() => submit(params, false));
-    if (method === "session/steer") return serial(() => submit(params, true));
+      return serial(requireSession(params), () => configure(requireSession(params), params));
+    if (method === "session/prompt") return serial(requireSession(params), () => submit(params, false));
+    if (method === "session/steer") return serial(requireSession(params), () => submit(params, true));
     if (method === "session/cancel") {
       const rec = requireSession(params);
       rec.epoch = (rec.epoch ?? 0) + 1;
       if (rec.run) rec.run.cancelled = true;
-      cancelJobs();
-      cancelInteractions();
+      cancelJobs(rec);
+      cancelInteractions(rec);
       rec.handle.agent.cancel({ kind: "user" });
+      await ctx.get("subagents")?.drainDescendants([rec.handle.agent]);
       await rec.run?.done;
       return {};
     }
+    if (method === "job/stop") {
+      const rec = requireSession(params);
+      const id = requiredString(params.jobId, "jobId");
+      // A caller supplies only the id. Resolve the owner inside this bridge's
+      // session tree rather than accepting a foreign owner from the client.
+      const job = [rec.handle.agent, ...rec.descendants].flatMap((agent) =>
+        ctx.jobs.list(agent.session.id).filter((job) => job.owner === agent.session.id),
+      ).find((job) => job.id === id);
+      if (!job) throw new Error("Unknown or foreign DeepSeek background job");
+      return { status: ctx.jobs.kill(job.id, job.owner, "Stopped by user") };
+    }
     if (method === "question/claim") {
-      requireSession(params);
+      const rec = requireSession(params);
       // The existing claim remains alive until answer/cancel; tell the UI to stop its countdown.
-      if (claims.has(params.callId)) {
-        claims.get(params.callId).hold();
+      if (rec.claims.has(params.callId)) {
+        rec.claims.get(params.callId).hold();
         return { claimed: true };
       }
       return { claimed: false };
     }
     if (method === "question/answer")
-      return serial(async () => {
+      return serial(requireSession(params), async () => {
         const rec = requireSession(params);
         const question = ctx.sessionProjections
           .stateOf(rec.handle.agent.session, "userQuestions")
@@ -855,8 +897,11 @@ export function apply(ctx) {
         );
         if (message.id !== undefined)
           await write({ jsonrpc: "2.0", id: message.id, result });
-        session?.run?.start?.();
-        if (session?.run) delete session.run.start;
+        const rec = sessions.get(message.params?.sessionId);
+        if (rec?.run?.id === result?.runId) {
+          rec.run.start?.();
+          delete rec.run.start;
+        }
       } catch (error) {
         if (message.id !== undefined)
           await write({
@@ -874,12 +919,8 @@ export function apply(ctx) {
   });
   ctx.effect(
     () => async () => {
-      closing = true;
       lines.close();
-      cancelInteractions();
-      await controls;
-      await opening?.catch(() => {});
-      await close();
+      await shutdown();
     },
     "omnicode-bridge: transport and owned agent",
   );

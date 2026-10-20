@@ -17,6 +17,7 @@ export class ChildBackendRegistry implements ChildBackend {
   private children = new Map<string, string>();
 
   setSelector(select: () => string): void { this.select = select; }
+  selectedMachine(): string { return this.select(); }
 
   usesSelectedMachine(id: string): boolean {
     const owner = this.children.get(id);

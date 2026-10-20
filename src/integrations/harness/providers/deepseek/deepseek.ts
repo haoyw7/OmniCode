@@ -1,8 +1,9 @@
-import { JsonRpcClient, type JsonRpcId } from "../../core/jsonRpc";
+import { JsonRpcClient, type JsonRpcHandlers, type JsonRpcId } from "../../core/jsonRpc";
 import {
   hasHeadlessChildBackend,
   killChild,
   prepareDeepseekBridge,
+  selectedChildMachine,
   spawnChild,
   unwatchChild,
   watchChild,
@@ -38,6 +39,8 @@ import {
 import { translate } from "../../../../shared/i18n/language";
 
 type Live = {
+  runtime: Runtime;
+  handlers: JsonRpcHandlers;
   rpc: JsonRpcClient;
   root: string;
   cwd: string;
@@ -54,6 +57,15 @@ type Live = {
   output: Promise<void>;
   runId?: string;
 };
+type Runtime = {
+  key: string;
+  id: string;
+  rpc: JsonRpcClient;
+  ready: Promise<void>;
+  clients: Map<string, Live>;
+  users: number;
+};
+const runtimes = new Map<string, Runtime>();
 const lives = new Map<string, Live>();
 const resumes = new Map<string, { root: string; cwd: string }>();
 const cancelled = new Set<string>();
@@ -66,17 +78,6 @@ export function sendDeepseekTurn(input: SendTurnInput): Promise<void> {
     if (cancelled.delete(input.sessionId)) return;
     live.emit = measured.onEvent;
     live.cancelled = false;
-    await live.rpc.request(
-      "session/configure",
-      {
-        sessionId: live.root,
-        selection: deepseekSelection(input.model, input.modelSettings),
-        runtimeMode: input.runtimeMode,
-        planning: input.intent === "plan",
-      },
-      CONTROL_TIMEOUT,
-    );
-    if (live.cancelled || cancelled.delete(input.sessionId)) return;
     let resolve!: () => void;
     let reject!: (error: Error) => void;
     const promise = new Promise<void>((yes, no) => {
@@ -86,6 +87,17 @@ export function sendDeepseekTurn(input: SendTurnInput): Promise<void> {
     promise.catch(() => {});
     live.done = { resolve, reject };
     try {
+      await live.rpc.request(
+        "session/configure",
+        {
+          sessionId: live.root,
+          selection: deepseekSelection(input.model, input.modelSettings),
+          runtimeMode: input.runtimeMode,
+          planning: input.intent === "plan",
+        },
+        CONTROL_TIMEOUT,
+      );
+      if (live.cancelled || cancelled.delete(input.sessionId)) return;
       const receipt = await live.rpc.request<{ runId: string }>(
         input.questionReply ? "question/answer" : "session/prompt",
         {
@@ -138,10 +150,13 @@ async function ensureLive(input: SendTurnInput): Promise<Live> {
 }
 
 async function start(input: SendTurnInput): Promise<Live> {
-  const launch = await prepareDeepseekBridge(input.cwd, input.sessionId);
+  const runtime = await acquireRuntime(input);
+  const resume = resumes.get(input.sessionId);
   const live: Live = {
-    rpc: undefined!,
-    root: "",
+    runtime,
+    handlers: {},
+    rpc: runtime.rpc,
+    root: resume?.root ?? crypto.randomUUID(),
     cwd: input.cwd,
     emit: input.onEvent,
     mapper: new DeepseekEventMapper(),
@@ -151,7 +166,12 @@ async function start(input: SendTurnInput): Promise<Live> {
     nextRequest: 1,
     output: Promise.resolve(),
   };
-  const rpc = new JsonRpcClient(input.sessionId, {
+  const rpc = runtime.rpc;
+  if (runtime.clients.has(live.root)) {
+    await releaseRuntime(runtime);
+    throw new Error(translate("DeepSeek session is already open"));
+  }
+  live.handlers = {
     onNotification(method, params) {
       if (method !== "session/event") return;
       const envelope = asRecord(params);
@@ -287,55 +307,24 @@ async function start(input: SendTurnInput): Promise<Live> {
         });
       }
     },
-  });
-  live.rpc = rpc;
-  let stderr = "";
-  watchChild(
-    input.sessionId,
-    (line) => rpc.pushLine(line),
-    (_code, error) => {
-      const failure = new Error(
-        error ?? translate("DeepSeek Harness process exited"),
-      );
-      rpc.close(failure);
-      live.done?.reject(failure);
-      lives.delete(input.sessionId);
-    },
-    (line) => {
-      stderr = `${stderr}\n${line}`.slice(-4000);
-    },
-  );
+  };
+  runtime.clients.set(live.root, live);
   try {
-    await spawnChild(
-      input.sessionId,
-      launch.path,
-      launch.args,
-      input.cwd,
-      undefined,
-      "deepseek",
-    );
-    const initialized = await rpc.request<{
-      protocolVersion: number;
-      runtimeVersion: string;
-    }>("initialize", { protocolVersion: DEEPSEEK_BRIDGE_PROTOCOL }, 60_000);
-    if (
-      initialized.protocolVersion !== DEEPSEEK_BRIDGE_PROTOCOL ||
-      initialized.runtimeVersion !== DEEPSEEK_RUNTIME_VERSION
-    )
-      throw new Error(translate("Unsupported DeepSeek Harness bridge version"));
-    const resume = resumes.get(input.sessionId);
     const created = await rpc.request<{ sessionId: string }>(
       resume ? "session/resume" : "session/new",
       {
-        ...(resume ? { sessionId: resume.root } : {}),
+        sessionId: live.root,
         cwd: input.cwd,
+        // sendDeepseekTurn applies the complete configuration once before prompt.
+        configure: false,
         selection: deepseekSelection(input.model, input.modelSettings),
         runtimeMode: input.runtimeMode,
         planning: input.intent === "plan",
       },
       CONTROL_TIMEOUT,
     );
-    live.root = created.sessionId;
+    if (created.sessionId !== live.root || rpc.isClosed)
+      throw new Error(translate("DeepSeek session could not be opened"));
     resumes.set(input.sessionId, { root: live.root, cwd: input.cwd });
     lives.set(input.sessionId, live);
     input.onEvent({
@@ -345,13 +334,96 @@ async function start(input: SendTurnInput): Promise<Live> {
     input.onEvent({ type: "session.started" });
     return live;
   } catch (error) {
-    rpc.close();
-    unwatchChild(input.sessionId);
-    await killChild(input.sessionId).catch(() => {});
-    throw new Error(
-      `${error instanceof Error ? error.message : String(error)}${stderr ? `\n${stderr}` : ""}`,
-    );
+    await rpc.request("session/close", { sessionId: live.root }, CONTROL_TIMEOUT).catch(() => {});
+    runtime.clients.delete(live.root);
+    await releaseRuntime(runtime);
+    throw error;
   }
+}
+
+/** Catalog/account reads borrow the same transport without owning an Agent. */
+export async function readDeepseekRuntime<T>(cwd: string, read: (rpc: JsonRpcClient) => Promise<T>): Promise<T> {
+  const runtime = await acquireRuntime({ cwd });
+  try {
+    return await read(runtime.rpc);
+  } finally {
+    await releaseRuntime(runtime);
+  }
+}
+
+async function acquireRuntime(input: { cwd: string; sessionId?: string }): Promise<Runtime> {
+  const machine = selectedChildMachine();
+  const launch = await prepareDeepseekBridge(input.cwd, input.sessionId);
+  const key = JSON.stringify([machine, launch.runtimeKey ?? [launch.path, launch.args]]);
+  let runtime = runtimes.get(key);
+  if (!runtime) {
+    const id = `omnicode-deepseek-runtime-${crypto.randomUUID()}`;
+    const clients = new Map<string, Live>();
+    const rpc = new JsonRpcClient(id, {
+      onNotification: (method, params) =>
+        clients.get(asRecord(params).sessionId)?.handlers.onNotification?.(method, params),
+      onRequest: async (wire, method, params) => {
+        const live = clients.get(asRecord(params).sessionId);
+        if (live) await live.handlers.onRequest?.(wire, method, params);
+        else await rpc.respondError(wire, { code: -32800, message: "Unknown DeepSeek session" });
+      },
+    });
+    runtime = { key, id, rpc, ready: Promise.resolve(), clients, users: 0 };
+    const current = runtime;
+    runtimes.set(key, current);
+    let stderr = "";
+    watchChild(id, line => rpc.pushLine(line), (_code, error) => {
+      failRuntime(current, new Error(error ?? translate("DeepSeek Harness process exited")));
+      unwatchChild(id);
+    }, line => { stderr = `${stderr}\n${line}`.slice(-4000); });
+    current.ready = (async () => {
+      try {
+        await spawnChild(id, launch.path, launch.args, launch.cwd ?? input.cwd, undefined, "deepseek", {
+          environmentSessionId: input.sessionId,
+          deepseekHome: launch.deepseekHome,
+        });
+        const initialized = await rpc.request<{
+          protocolVersion: number; runtimeVersion: string; capabilities?: { multiplex?: boolean };
+        }>("initialize", { protocolVersion: DEEPSEEK_BRIDGE_PROTOCOL, includeCatalog: false }, 60_000);
+        if (initialized.protocolVersion !== DEEPSEEK_BRIDGE_PROTOCOL ||
+            initialized.runtimeVersion !== DEEPSEEK_RUNTIME_VERSION || !initialized.capabilities?.multiplex)
+          throw new Error(translate("Unsupported DeepSeek Harness bridge version"));
+      } catch (error) {
+        const failure = new Error(`${error instanceof Error ? error.message : String(error)}${stderr ? `\n${stderr}` : ""}`);
+        failRuntime(current, failure);
+        await killChild(id).catch(() => {});
+        throw failure;
+      }
+    })();
+  }
+  runtime.users++;
+  try {
+    await runtime.ready;
+    return runtime;
+  } catch (error) {
+    runtime.users--;
+    throw error;
+  }
+}
+
+function failRuntime(runtime: Runtime, error: Error): void {
+  if (runtimes.get(runtime.key) === runtime) runtimes.delete(runtime.key);
+  runtime.rpc.close(error);
+  for (const [id, live] of lives) {
+    if (live.runtime !== runtime) continue;
+    lives.delete(id);
+    live.done?.reject(error);
+  }
+}
+
+async function releaseRuntime(runtime: Runtime): Promise<void> {
+  runtime.users--;
+  if (runtime.users > 0) return;
+  if (runtimes.get(runtime.key) === runtime) runtimes.delete(runtime.key);
+  await runtime.rpc.request("shutdown", {}, 5_000).catch(() => {});
+  failRuntime(runtime, new Error(translate("DeepSeek Harness process exited")));
+  unwatchChild(runtime.id);
+  await killChild(runtime.id).catch(() => {});
 }
 
 export async function steerDeepseekTurn(input: SteerTurnInput) {
@@ -385,6 +457,11 @@ export async function cancelDeepseekTurn(id: string) {
     { sessionId: live.root },
     CONTROL_TIMEOUT,
   );
+}
+export async function stopDeepseekBackgroundTask(id: string, taskId: string): Promise<void> {
+  const live = lives.get(id);
+  if (!live || live.cancelled) return;
+  await live.rpc.request("job/stop", { sessionId: live.root, jobId: taskId }, CONTROL_TIMEOUT);
 }
 export function respondDeepseekApproval(
   id: string,
@@ -447,14 +524,17 @@ export async function stopDeepseekSession(id: string) {
   lives.delete(id);
   if (live) {
     live.cancelled = true;
-    await live.rpc
-      .request("session/close", { sessionId: live.root }, CONTROL_TIMEOUT)
-      .catch(() => {});
-    live.rpc.close();
+    try {
+      await live.rpc.request("session/close", { sessionId: live.root }, CONTROL_TIMEOUT);
+    } catch (error) {
+      // A wedged shared transport cannot safely leave an unowned Agent running.
+      failRuntime(live.runtime, error instanceof Error ? error : new Error(String(error)));
+      await killChild(live.runtime.id).catch(() => {});
+    }
+    live.runtime.clients.delete(live.root);
     live.done?.resolve();
+    await releaseRuntime(live.runtime);
   }
-  unwatchChild(id);
-  await killChild(id).catch(() => {});
 }
 export async function forgetDeepseekSession(id: string) {
   await stopDeepseekSession(id);

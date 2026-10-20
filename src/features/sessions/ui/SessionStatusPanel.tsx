@@ -42,7 +42,6 @@ import {
   GripVertical,
   Internet,
   Laptop,
-  Terminal,
 } from "../../../shared/ui/icons";
 import { prettyParent, projectName } from "../../../shared/lib/paths";
 import { useSessionHeaderActions } from "../../workspace/ui/SessionHeaderActions";
@@ -68,6 +67,9 @@ import { hasSessionUsage, type UsageSession } from "../../providers/model/sessio
 import { LOW_HEADROOM_PERCENT } from "../../providers/model/accountUsageStatus";
 import { clampUsedPercent, formatUsagePercent, formatWindowLabel, type ProviderRateLimits } from "../../providers/model/rateLimits";
 import { useUsageClock } from "../../providers/model/useProviderUsage";
+import { backgroundTaskItems } from "../model/backgroundTasks";
+import { BackgroundTasksPanel, BackgroundTasksSummary } from "./BackgroundTasksPanel";
+import { TranscriptClockOffset } from "./transcript/transcriptClock";
 
 /**
  * Card width, distance from the pane edge and the smallest gap kept before the
@@ -154,6 +156,8 @@ export function SessionStatusPanel({
   scope,
   onNavigate,
   onOpenAgent,
+  onStopBackgroundTask,
+  clockOffsetMs = 0,
 }: {
   blocks: Block[];
   backgroundTasks?: string[];
@@ -167,15 +171,26 @@ export function SessionStatusPanel({
   scope: RefObject<HTMLElement | null>;
   onNavigate: (blockId: string) => void;
   onOpenAgent?: (block: Block) => void;
+  onStopBackgroundTask?: (taskId: string) => Promise<void>;
+  clockOffsetMs?: number;
 }) {
   const model = useMemo(
     () => buildSessionStatusPanelModel({ blocks, backgroundTasks, busy, git }),
     [blocks, backgroundTasks, busy, git],
   );
-  const fits = useRailFits(scope, useStatusCardsVisible());
+  const statusCardsVisible = useStatusCardsVisible();
+  const fits = useRailFits(scope, statusCardsVisible);
   const reduced = useMotionPreference();
   const { t: uiT } = useTranslation();
+  const [backgroundOpen, setBackgroundOpen] = useState(false);
+  const [initialTaskId, setInitialTaskId] = useState<string>();
+  const [clearedTasks, setClearedTasks] = useState<Set<string>>(() => new Set());
+  const background = useMemo(() => backgroundTaskItems(blocks, backgroundTasks)
+    .filter((task) => task.state === "running" || !clearedTasks.has(task.id)), [blocks, backgroundTasks, clearedTasks]);
+  const openBackground = (id?: string) => { setInitialTaskId(id); setBackgroundOpen(true); };
+  const summary = <BackgroundTasksSummary tasks={background} onOpen={openBackground} onStop={onStopBackgroundTask} />;
   return (
+    <TranscriptClockOffset.Provider value={clockOffsetMs}>
     <AnimatePresence propagate>
       {fits ? (
         <RailFrame
@@ -191,6 +206,7 @@ export function SessionStatusPanel({
             branch={branch}
             context={context}
             usage={usage}
+            backgroundContent={background.length ? summary : undefined}
             onNavigate={onNavigate}
             onOpenAgent={
               onOpenAgent
@@ -202,8 +218,17 @@ export function SessionStatusPanel({
             }
           />
         </RailFrame>
+      ) : statusCardsVisible && background.length ? (
+        <RailFrame key="background-compact" reduced={reduced} data-background-tasks-compact className="background-tasks-compact">
+          <button type="button" onClick={() => openBackground()} className="background-task-open font-medium">{uiT("Background tasks")}</button>
+          {summary}
+        </RailFrame>
       ) : null}
+      {backgroundOpen && statusCardsVisible ? <BackgroundTasksPanel key="background-panel" tasks={background} initialTaskId={initialTaskId}
+        onClose={() => setBackgroundOpen(false)} onStop={onStopBackgroundTask}
+        onClear={() => setClearedTasks((current) => new Set([...current, ...background.filter((task) => task.state !== "running").map((task) => task.id)]))} /> : null}
     </AnimatePresence>
+    </TranscriptClockOffset.Provider>
   );
 }
 
@@ -224,6 +249,7 @@ function RailCards({
   usage,
   onNavigate,
   onOpenAgent,
+  backgroundContent,
 }: {
   model: SessionStatusPanelModel;
   cwd: string;
@@ -232,6 +258,7 @@ function RailCards({
   usage?: UsageSession;
   onNavigate: (blockId: string) => void;
   onOpenAgent?: (blockId: string) => void;
+  backgroundContent?: ReactNode;
 }) {
   const { t: uiT } = useTranslation();
   const actions = useSessionHeaderActions();
@@ -370,15 +397,9 @@ function RailCards({
           ))}
         </Card>
       ) : null,
-      model.background.length ? (
+      backgroundContent ? (
         <Card key="background" id="background" title={uiT("Background tasks")}>
-          {model.background.map((description, index) => (
-            <Row key={`${index}:${description}`}>
-              <RowIcon><Terminal /></RowIcon>
-              <span className="min-w-0 flex-1 truncate font-mono text-[12px]">{description}</span>
-              <TerminalSpinner className="grid size-4 shrink-0 place-items-center text-[11px] leading-none text-content/45 select-none" />
-            </Row>
-          ))}
+          {backgroundContent}
         </Card>
       ) : null,
       context && percent !== null ? (
@@ -438,8 +459,8 @@ function UsageCard({ id, ...props }: { id: "usage" } & React.ComponentProps<type
   return (
     <ProviderUsageBar
       {...props}
-      render={(controls, limits) => (
-        <Card id={id} title={uiT("Usage")} foldedMeta={<UsageRemaining limits={limits} />}>
+      render={(controls, limits, summary) => (
+        <Card id={id} title={uiT("Usage")} foldedMeta={summary ?? <UsageRemaining limits={limits} />}>
           <div data-session-usage className="flex min-w-0 flex-wrap items-center gap-1 px-2 py-1 text-[11px] text-content/55">
             {controls}
           </div>

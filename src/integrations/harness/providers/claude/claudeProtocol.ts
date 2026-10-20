@@ -741,6 +741,7 @@ export type ClaudeAgentTaskNotification = {
   toolUseId?: string;
   status: string;
   summary: string;
+  outputFile?: string;
   ambient: boolean;
 };
 
@@ -760,6 +761,7 @@ export function parseTaskNotification(
     toolUseId: stringField(rec, "tool_use_id"),
     status: stringField(rec, "status") ?? "completed",
     summary: stringField(rec, "summary") ?? "",
+    ...(stringField(rec, "output_file") ? { outputFile: stringField(rec, "output_file") } : {}),
     ambient: rec.ambient === true,
   };
 }

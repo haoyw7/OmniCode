@@ -228,6 +228,7 @@ export function createHostServer(
       "sessions.nativeAccess",
       "sessions.refreshNative",
       "sessions.switchAccount",
+      "sessions.stopBackgroundTask",
       "sessions.checkpoint",
       "nativeSources.list",
       "nativeSources.import",
@@ -521,7 +522,8 @@ export function createHostServer(
                 typeof client.locale !== "string" || client.locale.length > 40 ||
                 !Number.isInteger(client.timezoneOffsetSeconds) || Math.abs(client.timezoneOffsetSeconds) > 86_400)
               throw new Error("Invalid DeepSeek account client");
-            result = await discoverDeepseekAccount(client);
+            // Host utilities cannot use the desktop Tauri home-directory API.
+            result = await discoverDeepseekAccount(client, homedir());
             break;
           }
           case "titleModel.status":
@@ -628,6 +630,15 @@ export function createHostServer(
             }
             if (Object.keys(patch).length === 0) throw new Error("No session changes supplied");
             result = engine.updateSession(sessionId, patch);
+            break;
+          }
+          case "sessions.stopBackgroundTask": {
+            const sessionId = String(params.sessionId ?? "");
+            const current = engine.store.session(sessionId);
+            if (current.projectId !== params.projectId)
+              throw new Error("Session does not belong to this project");
+            await engine.stopBackgroundTask(sessionId, String(params.taskId ?? ""));
+            result = { stopped: true };
             break;
           }
           case "sessions.switchAccount": {

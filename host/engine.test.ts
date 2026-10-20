@@ -74,6 +74,18 @@ function setup(harness: "codex" | "claude" | "pi" | "omp" | "deepseek" = "codex"
 }
 
 describe("headless session ownership", () => {
+  it.each(["claude", "deepseek"] as const)("stops a selected %s background task without cancelling its parent turn", async (harness) => {
+    const { engine, provider, id, turns, store } = setup(harness);
+    await engine.ready;
+    provider.stopBackgroundTask = vi.fn(async () => {});
+    engine.command({ type: "send", commandId: "background-send", sessionId: id, text: "Build" });
+    await vi.waitFor(() => expect(turns).toHaveLength(1), { timeout: 5000 });
+    await engine.stopBackgroundTask(id, "task-1");
+    expect(provider.stopBackgroundTask).toHaveBeenCalledWith(id, "task-1");
+    expect(provider.cancel).not.toHaveBeenCalled();
+    expect(store.session(id).status).toBe("running");
+  });
+
   it.each([false, true])("persists thrown provider failures as one visible error (event already sent: %s)", async (emitted) => {
     const { engine, store, provider, id } = setup("deepseek");
     await engine.ready;

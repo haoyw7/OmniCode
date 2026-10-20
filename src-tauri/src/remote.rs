@@ -464,6 +464,7 @@ fn supported_remote_method(method: &str) -> bool {
             | "providerAccounts.list"
             | "providerAccounts.read"
             | "providerAccounts.usage"
+            | "providerAccounts.deepseek"
             | "providerAccounts.save"
             | "providerAccounts.remove"
             | "providerAccounts.setDefault"
@@ -879,6 +880,7 @@ mod tests {
             "providerAccounts.list",
             "providerAccounts.read",
             "providerAccounts.usage",
+            "providerAccounts.deepseek",
             "providerAccounts.save",
             "providerAccounts.remove",
             "providerAccounts.setDefault",

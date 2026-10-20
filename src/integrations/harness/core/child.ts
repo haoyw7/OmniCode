@@ -38,6 +38,10 @@ export function childUsesSelectedMachine(sessionId: string): boolean {
   return !backend || backends.usesSelectedMachine(sessionId);
 }
 
+export function selectedChildMachine(): string {
+  return backend ? backends.selectedMachine() : "local";
+}
+
 /** Provider-owned transcript files are read on the machine running the child. */
 export function readHarnessTextFile(path: string): Promise<string> {
   return invoke<string>(backend ? "harness_read_text_file" : "read_text_file", {
@@ -319,6 +323,7 @@ export async function spawnChild(
   cwd: string,
   account?: { provider: "claude" | "codex" | "workbuddy"; id: string },
   binaryProvider?: ConfigurableBinaryProvider,
+  sharedProcess?: { environmentSessionId?: string; deepseekHome?: string },
 ): Promise<void> {
   livePid.delete(sessionId);
   pendingExit.delete(sessionId);
@@ -334,6 +339,7 @@ export async function spawnChild(
     account,
     binaryProvider,
     binaryPath,
+    ...(sharedProcess ? { sharedProcess } : {}),
   });
   if (typeof pid !== "number" || pid <= 0) return;
   livePid.set(sessionId, pid);
@@ -477,7 +483,9 @@ export function resolveDeepseekBinary(binaryPath?: string | null): Promise<{ pat
 }
 
 /** Prepare application-owned bridge assets on the selected execution machine. */
-export function prepareDeepseekBridge(cwd: string, sessionId?: string): Promise<{ path: string; args: string[] }> {
+export function prepareDeepseekBridge(cwd: string, sessionId?: string): Promise<{
+  path: string; args: string[]; runtimeKey?: string; cwd?: string; deepseekHome?: string;
+}> {
   return invoke("harness_prepare_deepseek_bridge", {
     binaryPath: runtimeProviderBinaryPath("deepseek"),
     cwd,

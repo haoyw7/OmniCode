@@ -50,6 +50,7 @@ export interface HostProvider {
   compact?(input: CompactContextInput): Promise<void>;
   steer?(input: SteerTurnInput): Promise<void>;
   cancel(id: string): Promise<void>;
+  stopBackgroundTask?(id: string, taskId: string): Promise<void>;
   stop(id: string): Promise<void>;
   bind(
     id: string,
@@ -71,6 +72,7 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     idleTimeoutMs: 30 * 60_000,
     send: deepseek.sendDeepseekTurn, steer: deepseek.steerDeepseekTurn,
     cancel: deepseek.cancelDeepseekTurn, stop: deepseek.forgetDeepseekSession,
+    stopBackgroundTask: deepseek.stopDeepseekBackgroundTask,
     bind: deepseek.bindDeepseekSession, approve: deepseek.respondDeepseekApproval,
     answer: deepseek.respondDeepseekQuestion,
     keepQuestionOpen: deepseek.keepDeepseekQuestionOpen,
@@ -101,6 +103,7 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     steer: claude.steerClaudeTurn,
     compact: claude.compactClaudeContext,
     cancel: claude.cancelClaudeTurn,
+    stopBackgroundTask: claude.stopClaudeBackgroundTask,
     stop: claude.forgetClaudeSession,
     bind: claude.bindClaudeSession,
     approve: claude.respondClaudeApproval,
