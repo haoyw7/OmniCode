@@ -5,7 +5,7 @@ type Props = {
   isDir: boolean;
   isOpen?: boolean;
   isRoot?: boolean;
-  size?: number;
+  size?: number | string;
 };
 
 type IconPack = typeof import("react-material-icon-theme");

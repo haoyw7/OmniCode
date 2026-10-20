@@ -159,7 +159,7 @@ export function ToolCallSummary({
           <button
             type="button"
             aria-label={uiT("Open {value0}", { value0: String(target) })}
-            className={`-my-0.5 flex min-w-0 cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-left hover:text-sky-300 ${
+            className={`-my-px flex min-w-0 cursor-pointer items-center gap-1 rounded px-1 py-px leading-[1.2] text-left hover:text-sky-300 ${
               chip
                 ? `max-w-full bg-content/6 hover:bg-content/10 ${targetTone}`
                 : `flex-1 hover:underline ${targetTone}`
@@ -170,19 +170,19 @@ export function ToolCallSummary({
               openFile?.(filePath);
             }}
           >
-            <FileTypeIcon name={fileName} isDir={action === "List"} />
+            <FileTypeIcon name={fileName} isDir={action === "List"} size="1cap" />
             <span className="min-w-0 truncate">{target}</span>
           </button>
         ) : (
           <span
-            className={`flex min-w-0 items-center gap-1 rounded px-1 ${
+            className={`flex min-w-0 items-center gap-1 rounded px-1 py-px leading-[1.2] ${
               chip
                 ? `max-w-full bg-content/6 ${targetTone}`
                 : `flex-1 ${targetTone}`
             }`}
             title={target}
           >
-            <FileTypeIcon name={fileName} isDir={action === "List"} />
+            <FileTypeIcon name={fileName} isDir={action === "List"} size="1cap" />
             <span className="min-w-0 truncate">{target}</span>
           </span>
         )

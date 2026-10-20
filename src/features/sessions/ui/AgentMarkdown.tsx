@@ -384,7 +384,7 @@ function MarkdownCode({
       <code
         {...props}
         dir="ltr"
-        className={`inline-flex items-baseline gap-1 rounded-md bg-content/8 px-1.5 py-px leading-[1.4] max-w-full [overflow-wrap:anywhere] align-baseline font-mono text-[0.8em] text-content ${
+        className={`inline-flex items-baseline gap-1 rounded-md bg-content/8 px-1.5 py-px leading-[1.2] max-w-full [overflow-wrap:anywhere] align-baseline font-mono text-[0.8em] text-content ${
           open ? "cursor-pointer hover:text-sky-300 hover:underline" : ""
         } ${className ?? ""}`}
         role={open ? "link" : undefined}
@@ -408,7 +408,7 @@ function MarkdownCode({
       >
         {fileName ? (
           <span aria-hidden="true" className="inline-flex shrink-0 self-center">
-            <FileTypeIcon name={fileName} isDir={false} size={13} />
+            <FileTypeIcon name={fileName} isDir={false} size="1cap" />
           </span>
         ) : null}
         {children}
