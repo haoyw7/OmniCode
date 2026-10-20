@@ -1,10 +1,10 @@
 /** Wire allowlist. Caches, bearer credentials, native paths and command logs are never preferences. */
 export type PreferenceKind = "flag" | "number" | "string" | "object" | "array";
 const groups: Record<PreferenceKind, readonly string[]> = {
-  flag: ["composerEffortVisible", "tabAnimationsEnabled", "notesEnabled", "quickComposerEnabled", "liveAgentsEnabled", "formatOnSave", "autosave", "claudeHooks", "transcriptAnchor", "showExcludedFiles", "separateSchemeAppearance", "showRemainingUsage", "maskEmails", "projectRailOrderVersion"],
+  flag: ["composerEffortVisible", "tabAnimationsEnabled", "notesEnabled", "quickComposerEnabled", "liveAgentsEnabled", "formatOnSave", "autosave", "claudeHooks", "transcriptAnchor", "showExcludedFiles", "separateSchemeAppearance", "showRemainingUsage", "maskEmails", "projectRailOrderVersion", "useLastSelection"],
   number: ["themeHue", "themeSaturation", "themeDarkLightness", "sidebarOpacity", "popoverOpacity", "panelOpacity", "chatBackgroundOpacity", "chatBackgroundEmptyOpacity", "chatBackgroundSessionOpacity", "uiFontSize", "contentFontSize", "codeFontSize"],
   string: ["followUpBehavior", "modelControls", "fileTabMode", "quickComposerShortcut", "diffViewer", "accentColor", "colorScheme", "codeTheme.light", "codeTheme.dark", "transcriptLayout", "chatBackgroundScope", "chatBackgroundArea", "newThreadBackgroundEffect", "changesView", "reducedMotion", "uiLanguage", "chatBackgroundAsset"],
-  object: ["editorPreferences", "keybindingOverrides", "typographyProfile", "appearanceProfile.light", "appearanceProfile.dark", "lastModel", "lastModelSettings", "defaultModels", "projectProviderSettings.v1", "providerAccountSelections.v1", "sessionFolders", "sessionSidebarOrder.v1", "projectGroupAssignments", "projectNotifications.v1", "agentDefaults", "projectBackgroundAssets", "mobileGlass"],
+  object: ["editorPreferences", "keybindingOverrides", "typographyProfile", "appearanceProfile.light", "appearanceProfile.dark", "lastModel", "lastModelSettings", "defaultModels", "lastSelectedModels", "lastSelectedModelChoice", "projectProviderSettings.v1", "providerAccountSelections.v1", "sessionFolders", "sessionSidebarOrder.v1", "projectGroupAssignments", "projectNotifications.v1", "agentDefaults", "projectBackgroundAssets", "mobileGlass"],
   array: ["sidebarPinnedOrder.v1", "recentModels", "sidebarTabOrder", "favoriteModels", "hiddenPickerProviders", "recentProjects", "projectRailOrder", "projectRailPinned", "archivedProjects", "projectGroups"],
 };
 /**

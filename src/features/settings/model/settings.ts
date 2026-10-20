@@ -486,11 +486,18 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
       "codex pi import history synchronization sync resume native 导入 同步 会话 历史",
   },
   {
+    id: "new-session-defaults",
+    section: "providers",
+    label: "New conversations",
+    keywords:
+      "default provider model scope project global 默认 服务商 模型 项目",
+  },
+  {
     id: "agent-clis",
     section: "providers",
     label: "Agent CLIs",
     keywords:
-      "codex opencode cursor grok pi omp fx hermes antigravity binary path",
+      "codex opencode cursor grok pi omp fx hermes antigravity binary path install update remove show in picker",
   },
   {
     id: "provider-accounts",

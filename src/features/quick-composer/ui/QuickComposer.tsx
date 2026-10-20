@@ -43,6 +43,7 @@ import {
   loadLastModelSettings,
   saveLastModelSettings,
   saveRecentModelChoice,
+  saveLastSelectedModel,
 } from "../../sessions/model/models";
 import {
   DEFAULT_RUNTIME_MODE,
@@ -816,6 +817,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
               values={settings}
               availableHarnesses={availableHarnesses}
               onChange={(selected) => {
+                saveLastSelectedModel(selected.harness, selected.id);
                 setChoice({ harness: selected.harness, model: selected.id });
                 setModelSettings((current) =>
                   mergeModelSettings(selected, current),

@@ -18,6 +18,7 @@ import {
   preferredModelSettings,
   resolveModel,
   saveLastModelSettings,
+  saveLastSelectedModel,
   saveRecentModelChoice,
 } from "../../features/sessions/model/models";
 import {
@@ -52,6 +53,7 @@ export function useSessionComposerActions({
       if (!current) return;
       if (isPreparingHandoff(current)) return;
       const resolved = resolveModel(harness, model);
+      saveLastSelectedModel(resolved.harness, resolved.id);
       saveRecentModelChoice(resolved.harness, resolved.id);
       const configuration = sessionComposerConfiguration(current);
       saveLastModelSettings(configuration.modelSettings, "fill");

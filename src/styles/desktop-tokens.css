@@ -141,6 +141,7 @@ html[data-skin] {
   --desktop-button-padding: 16px;
   --desktop-button-small-padding: 12px;
   --desktop-field-height: 32px;
+  --desktop-field-pad-y: 5px;
   --desktop-field-large-height: 40px;
   --desktop-focus-shadow: 0 0 0 2px var(--desktop-focus-gap), 0 0 0 3.5px var(--desktop-focus-info);
   --desktop-primary: var(--color-ink);

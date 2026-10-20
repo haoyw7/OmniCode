@@ -16,6 +16,7 @@ import type {
 import {
   defaultSessionChoice,
   firstEnabledHarness,
+  loadUseLastSelection,
   preferredModelId,
   preferredModelSettings,
   resolveModel,
@@ -685,6 +686,7 @@ function projectSessionChoice(
   seed: Pick<Session, "harness" | "model"> | undefined,
   cwd: string,
 ): { harness: HarnessId; model?: string } {
+  if (loadUseLastSelection()) return defaultSessionChoice(cwd);
   const project = loadProjectProviderSettings(cwd);
   const seedHarness = seed?.harness ?? "claude";
   const harness = firstEnabledHarness(

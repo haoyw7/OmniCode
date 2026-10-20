@@ -5,17 +5,24 @@ import {
 } from "../../../integrations/harness/core/availability";
 import { inspectHarnessBinary } from "../../../integrations/harness/core/child";
 import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
-import { installLocalHarness } from "../../../platform/tauri/harnessInstall";
+import {
+  installLocalHarness,
+  uninstallLocalHarness,
+} from "../../../platform/tauri/harnessInstall";
 import { IS_WIN } from "../../../platform/tauri/platform";
 import { translate } from "../../../shared/i18n/language";
 import type { HarnessId } from "../../sessions/model/session";
 import { announceHarnessesRefreshed } from "./harnessUpdates";
+import { runtimeProviderBinaryPath } from "./providerBinaryPaths";
 
 type InstallState =
   | { status: "idle" }
   | { status: "installing" }
   | { status: "installed" }
-  | { status: "failed"; error: string };
+  | { status: "uninstalling" }
+  /** `remaining` is true when another copy of the CLI is still detected. */
+  | { status: "uninstalled"; remaining: boolean }
+  | { status: "failed"; action: "install" | "uninstall"; error: string };
 
 const idle: InstallState = { status: "idle" };
 let states: Partial<Record<HarnessId, InstallState>> = {};
@@ -50,7 +57,9 @@ export function useHarnessInstall(harness: HarnessId) {
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   return {
     state: snapshot[harness] ?? idle,
-    busy: Object.values(snapshot).some((state) => state.status === "installing"),
+    busy: Object.values(snapshot).some(
+      (state) => state.status === "installing" || state.status === "uninstalling",
+    ),
   };
 }
 
@@ -78,8 +87,33 @@ export function runHarnessInstall(harness: HarnessId): Promise<void> {
       void announceHarnessesRefreshed([harness]).catch(() => undefined);
       setState(harness, { status: "installed" });
     } catch (cause) {
-      const message = cause instanceof Error ? cause.message : String(cause);
-      setState(harness, { status: "failed", error: translate(message) });
+      fail(harness, "install", cause);
+    }
+  })().finally(() => { pending = undefined; });
+  return pending;
+}
+
+function fail(harness: HarnessId, action: "install" | "uninstall", cause: unknown): void {
+  const message = cause instanceof Error ? cause.message : String(cause);
+  setState(harness, { status: "failed", action, error: translate(message) });
+}
+
+/** Remove the CLI OmniCode runs; shares the install queue so they never overlap. */
+export function runHarnessUninstall(harness: HarnessId): Promise<void> {
+  if (pending) return pending;
+  setState(harness, { status: "uninstalling" });
+  pending = (async () => {
+    try {
+      await uninstallLocalHarness(harness, runtimeProviderBinaryPath(harness));
+      await probeHarnessAvailability();
+      await probeHarnessAvailability({ force: true });
+      // Another copy on the search path keeps the provider usable.
+      const remaining = isHarnessAvailable(harness);
+      if (remaining) await refreshHarnessCatalogs([harness], { force: true });
+      void announceHarnessesRefreshed([harness]).catch(() => undefined);
+      setState(harness, { status: "uninstalled", remaining });
+    } catch (cause) {
+      fail(harness, "uninstall", cause);
     }
   })().finally(() => { pending = undefined; });
   return pending;

@@ -5,6 +5,7 @@ import type {
   RemoteProvider,
 } from "../features/connections/model/protocol";
 import { RUNTIME_MODES, type RuntimeMode } from "../features/sessions/model/session";
+import { LAST_SELECTED_MODEL, saveLastSelectedModel, saveUseLastSelection } from "../features/sessions/model/models";
 import {
   accountChoices,
   configurationForAgent,
@@ -46,6 +47,47 @@ const catalog: HostModelCatalog = {
   errors: {},
 };
 afterEach(() => { activatePreferenceStore(undefined); localStorage.clear(); });
+
+it("uses the shared Last selection mode for drafts and keeps project overrides", async () => {
+  const store = new SharedPreferenceStore("host", localStorage, async () => { throw new Error("offline"); });
+  activatePreferenceStore(store);
+  saveMobileAgentDefaults("host", { harness: "claude", agents: { claude: { model: "claude:opus" } } });
+  saveLastSelectedModel("codex", "codex:fast");
+  saveUseLastSelection(true);
+  expect(defaultConfiguration(catalog, loadMobileProjectDefaults("host", "project"))?.harness).toBe("codex");
+  expect(loadMobileAgentDefaults("host").harness).toBe("claude");
+  expect(loadMobileProjectDefaults("another-host", "project")).toEqual({});
+  store.setItem("omnicode.projectProviderSettings.v1", JSON.stringify({
+    "@project:host:project": { defaultHarness: "claude", defaultModel: "claude:opus" },
+  }));
+  expect(defaultConfiguration(catalog, loadMobileProjectDefaults("host", "project"))?.harness).toBe("claude");
+  await store.sync();
+  activatePreferenceStore(new SharedPreferenceStore("host", localStorage, async () => { throw new Error("offline"); }));
+  expect(defaultConfiguration(catalog, loadMobileProjectDefaults("host", "other-project"))?.harness).toBe("codex");
+  saveUseLastSelection(false);
+  expect(defaultConfiguration(catalog, loadMobileProjectDefaults("host", "other-project"))?.harness).toBe("claude");
+});
+
+it("resolves last-selected models against the mobile catalog and preserves the preference", async () => {
+  const store = new SharedPreferenceStore("host", localStorage, async () => { throw new Error("offline"); });
+  activatePreferenceStore(store);
+  saveMobileAgentDefaults("host", { harness: "codex", agents: { codex: { model: LAST_SELECTED_MODEL } } });
+  const expanded = { ...catalog, models: { ...catalog.models, codex: [
+    ...catalog.models.codex!, { harness: "codex" as const, id: "codex:chosen", name: "Chosen" },
+  ] } };
+  expect(defaultConfiguration(expanded, loadMobileAgentDefaults("host"))?.model).toBe("codex:fast");
+  saveLastSelectedModel("codex", "codex:chosen");
+  expect(defaultConfiguration(expanded, loadMobileAgentDefaults("host"))?.model).toBe("codex:chosen");
+  expect(defaultConfiguration(catalog, loadMobileAgentDefaults("host"))?.model).toBe("codex:fast");
+  expect(loadMobileAgentDefaults("host").agents?.codex?.model).toBe(LAST_SELECTED_MODEL);
+  store.setItem("omnicode.projectProviderSettings.v1", JSON.stringify({
+    "@project:host:project": { defaultHarness: "codex", defaultModel: "codex:fast", models: { codex: LAST_SELECTED_MODEL } },
+  }));
+  expect(defaultConfiguration(expanded, loadMobileProjectDefaults("host", "project"))?.model).toBe("codex:chosen");
+  await store.sync();
+  activatePreferenceStore(new SharedPreferenceStore("host", localStorage, async () => { throw new Error("offline"); }));
+  expect(defaultConfiguration(expanded, loadMobileAgentDefaults("host"))?.model).toBe("codex:chosen");
+});
 
 it("uses verified Host preferences for desktop/mobile defaults and preserves another Host's cache", async () => {
   const request = async <T,>(): Promise<T> => { throw new Error("offline"); };

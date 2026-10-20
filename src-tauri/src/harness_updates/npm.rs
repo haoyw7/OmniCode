@@ -5,13 +5,36 @@ use serde_json::Value;
 
 /// Snapshot only this package and its launchers, never npm's shared metadata or
 /// unrelated packages. Keep dependencies (including optional native binaries).
-pub(super) struct Installation {
+pub(crate) struct Installation {
     root: PathBuf,
     launchers: Vec<PathBuf>,
 }
 
 impl Installation {
-    pub(super) fn find(command: &Path, package: &str) -> Result<Option<Self>, String> {
+    pub(crate) fn root(&self) -> &Path {
+        &self.root
+    }
+
+    /// The prefix and installed package name for `npm uninstall --global`,
+    /// derived from the global layout `find` already verified.
+    pub(crate) fn uninstall_target(&self) -> Option<(PathBuf, String)> {
+        let name = self.root.file_name()?.to_string_lossy().into_owned();
+        let parent = self.root.parent()?;
+        let scope = parent.file_name()?.to_string_lossy().into_owned();
+        let (package, modules) = if scope.starts_with('@') {
+            (format!("{scope}/{name}"), parent.parent()?)
+        } else {
+            (name, parent)
+        };
+        if modules.file_name()? != "node_modules" {
+            return None;
+        }
+        let base = modules.parent()?;
+        let prefix = if cfg!(windows) { base } else { base.parent()? };
+        Some((prefix.to_path_buf(), package))
+    }
+
+    pub(crate) fn find(command: &Path, package: &str) -> Result<Option<Self>, String> {
         let real = super::canonical(command);
         let mut beside_shim: Vec<_> = command
             .parent()

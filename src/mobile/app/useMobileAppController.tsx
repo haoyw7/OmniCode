@@ -21,6 +21,7 @@ import {
   type OutgoingMessage,
 } from "../../features/connections/model/outgoing";
 import { consumePlanCommand } from "../../features/sessions/model/plan";
+import { saveLastSelectedModel } from "../../features/sessions/model/models";
 import {
   IMPLEMENT_PLAN_PROMPT,
   skipPlanDecision,
@@ -964,7 +965,7 @@ export function useMobileAppController() {
     setCatalog(cachedCatalog);
     setCatalogLoading(!cachedCatalog);
     setConfiguration((cachedCatalog && firstConfiguration(cachedCatalog, defaults)) ?? {
-      harness: "codex", model: "", modelSettings: {},
+      harness: defaults.harness ?? "codex", model: "", modelSettings: {},
       runtimeMode: defaults.runtimeMode ?? DEFAULT_RUNTIME_MODE,
     });
     setSessionId(undefined);
@@ -1982,6 +1983,10 @@ export function useMobileAppController() {
       void dispatch({ type: "cancel", commandId: crypto.randomUUID(), sessionId, runId: snapshot.runId });
   });
   const onComposerConfiguration = useStableCallback((next: MobileConfiguration) => {
+    const current = snapshot?.configuration ?? configuration;
+    if (next.harness !== current.harness || next.model !== current.model) {
+      saveLastSelectedModel(next.harness, next.model);
+    }
     if (!sessionId) {
       if (next.model) draftConfigurationChanged.current = true;
       setConfiguration(next);

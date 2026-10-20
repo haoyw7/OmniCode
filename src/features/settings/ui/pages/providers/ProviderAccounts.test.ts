@@ -1,18 +1,19 @@
 // @vitest-environment happy-dom
-import { act, createElement } from "react";
+import { act, createElement, Fragment } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
-import { ProviderAccountsSettings } from "./pages/providers/ProviderAccountsSettings";
-import { configureSharedHost } from "../../connections/model/remoteProjects";
-import { refreshUiLanguage, UI_LANGUAGE_KEY } from "../../../shared/i18n/language";
-import type { DeepseekAccount } from "../../../integrations/harness/providers/deepseek/deepseekAccount";
-import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
+import { ProviderAccounts } from "./ProviderAccounts";
+import { useProviderAccounts } from "./useProviderAccounts";
+import { configureSharedHost } from "../../../../connections/model/remoteProjects";
+import { refreshUiLanguage, UI_LANGUAGE_KEY } from "../../../../../shared/i18n/language";
+import type { DeepseekAccount } from "../../../../../integrations/harness/providers/deepseek/deepseekAccount";
+import { SurfaceVisibilityContext } from "../../../../../shared/ui/SurfaceVisibility";
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), convertFileSrc: (path: string) => path, isTauri: () => false }));
 vi.mock("@tauri-apps/api/window", () => ({ getCurrentWindow: () => ({ label: "main" }) }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ ask: vi.fn(async () => true) }));
-vi.mock("../../../integrations/harness/core/auth", () => ({ loginHarness: vi.fn(async () => {}) }));
-vi.mock("../../providers/model/accountUsage", async original => ({ ...await original<typeof import("../../providers/model/accountUsage")>(), useProviderAccountUsage: () => ({ usage: {}, now: Date.now(), refreshing: false, refresh: () => {} }),
+vi.mock("../../../../../integrations/harness/core/auth", () => ({ loginHarness: vi.fn(async () => {}) }));
+vi.mock("../../../../providers/model/accountUsage", async original => ({ ...await original<typeof import("../../../../providers/model/accountUsage")>(), useProviderAccountUsage: () => ({ usage: {}, now: Date.now(), refreshing: false, refresh: () => {} }),
   accountStatus: () => ({ tone: "neutral", label: "Unknown", rank: 0 }), accountHeadroom: () => undefined }));
 let root: Root;
 let container: HTMLDivElement;
@@ -50,6 +51,13 @@ beforeEach(() => {
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
 });
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
+/** Settings shares one account controller between the Codex and DeepSeek details. */
+function ProviderAccountsSettings() {
+  const controller = useProviderAccounts();
+  return createElement(Fragment, null,
+    createElement(ProviderAccounts, { provider: "codex", controller }),
+    createElement(ProviderAccounts, { provider: "deepseek", controller }));
+}
 it("renders Host identity and renames an account without resetting its private Home", async () => {
   await act(async () => root.render(createElement(ProviderAccountsSettings)));
   expect(container.textContent).toContain("Host work");
@@ -69,8 +77,8 @@ it("renders Host identity and renames an account without resetting its private H
   expect(vi.mocked(invoke).mock.calls.every(([command]) => command === "remote_request")).toBe(true);
 });
 
-const deepseekSection = () => container.querySelector<HTMLElement>('section[aria-label="DeepSeek Harness"]')!;
-const refresh = () => container.querySelector<HTMLButtonElement>('[aria-label="Refresh usage limits"]')!;
+const deepseekSection = () => container.querySelector<HTMLElement>('[aria-label="DeepSeek Harness"]')!;
+const refresh = () => container.querySelectorAll<HTMLButtonElement>('[aria-label="Refresh usage limits"]')[1]!;
 
 it("shows the DSH account identity and separate wallet balances without changing existing account actions", async () => {
   deepseek = { status: "credential-stored", profileStatus: "ready", profile: { name: "DSH user", contact: "dsh@example.test" },

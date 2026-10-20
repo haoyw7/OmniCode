@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { newSession, type HarnessId } from "./session";
+import { newDefaultSession, newSession, newSessionForProject, retargetSessionToProject, type HarnessId } from "./session";
 import {
   MODELS,
+  LAST_SELECTED_MODEL,
   coerceModelPickerTab,
   defaultModelId,
   defaultSessionChoice,
@@ -29,8 +30,10 @@ import {
   saveDefaultModel,
   saveLastModelChoice,
   saveLastModelSettings,
+  saveLastSelectedModel,
   savePickerProviderVisible,
   saveRecentModelChoice,
+  saveUseLastSelection,
   setHarnessModels,
   showProviderInModelPicker,
   stepModelPickerTab,
@@ -51,6 +54,7 @@ it("keeps live thinking choices local to their session/model", () => {
   expect(withSessionModelSettings(catalog)).toBe(catalog);
 });
 import {
+  setProjectDefaultModel,
   setProjectDefaultProvider,
   setProjectProviderHidden,
 } from "./projectProviders";
@@ -273,6 +277,71 @@ describe("provider defaults", () => {
       harness: "claude",
       model: "claude:opus-5",
     });
+  });
+
+  it("follows the last provider and model only when Last selection is enabled", () => {
+    saveLastModelChoice("claude", "claude:opus-5");
+    saveUseLastSelection(true);
+    expect(defaultSessionChoice()).toEqual({ harness: "claude", model: "claude:opus-5" });
+    saveLastSelectedModel("cursor", "cursor:grok-4.6");
+    saveRecentModelChoice("claude", "claude:opus-5");
+    expect(defaultSessionChoice()).toEqual({ harness: "cursor", model: "cursor:grok-4.6" });
+    const seed = newSession("claude", "/repo/b", "claude:opus-5");
+    expect(newSessionForProject(seed, "/repo/a")).toMatchObject({ harness: "cursor", model: "cursor:grok-4.6" });
+    expect(retargetSessionToProject(seed, "/repo/a")).toMatchObject({ harness: "cursor", model: "cursor:grok-4.6" });
+    saveLastSelectedModel("claude", "claude:haiku-4.5");
+    saveLastSelectedModel("cursor", "cursor:grok-4.6");
+    expect(defaultSessionChoice().harness).toBe("cursor");
+    setProjectDefaultProvider("/repo/a", "claude", "claude:haiku-4.5");
+    expect(newDefaultSession("/repo/a")).toMatchObject({ harness: "claude", model: "claude:haiku-4.5" });
+    expect(defaultSessionChoice("/repo/b").harness).toBe("cursor");
+    saveUseLastSelection(false);
+    expect(defaultSessionChoice()).toEqual({ harness: "claude", model: "claude:opus-5" });
+  });
+
+  it("follows explicit model picks without submissions or other providers replacing them", () => {
+    saveLastModelChoice("claude", LAST_SELECTED_MODEL);
+    expect(defaultSessionChoice().model).toBe(defaultModelId("claude"));
+
+    saveLastSelectedModel("claude", "claude:haiku-4.5");
+    saveRecentModelChoice("claude", "claude:opus-5");
+    saveLastSelectedModel("cursor", "cursor:grok-4.6");
+    expect(defaultSessionChoice()).toEqual({ harness: "claude", model: "claude:haiku-4.5" });
+    expect(newDefaultSession().model).toBe("claude:haiku-4.5");
+    expect(loadDefaultModels().claude).toBe(LAST_SELECTED_MODEL);
+
+    saveLastSelectedModel("claude", "claude:opus-5");
+    expect(newDefaultSession().model).toBe("claude:opus-5");
+    saveDefaultModel("claude", "claude:haiku-4.5");
+    expect(newDefaultSession().model).toBe("claude:haiku-4.5");
+  });
+
+  it("resolves project last-selected defaults for new and retargeted drafts", () => {
+    saveLastModelChoice("claude", "claude:opus-5");
+    saveLastSelectedModel("claude", "claude:haiku-4.5");
+    setProjectDefaultProvider("/repo/a", "claude", LAST_SELECTED_MODEL);
+    const seed = newSession("claude", "/repo/b", "claude:opus-5");
+    expect(newDefaultSession("/repo/a").model).toBe("claude:haiku-4.5");
+    expect(newSessionForProject(seed, "/repo/a").model).toBe("claude:haiku-4.5");
+    expect(retargetSessionToProject(seed, "/repo/a").model).toBe("claude:haiku-4.5");
+    expect(defaultSessionChoice("/repo/b").model).toBe("claude:opus-5");
+
+    setProjectDefaultModel("/repo/a", "claude", "claude:opus-5");
+    saveDefaultModel("claude", LAST_SELECTED_MODEL);
+    expect(defaultSessionChoice("/repo/a").model).toBe("claude:opus-5");
+    expect(defaultSessionChoice("/repo/b").model).toBe("claude:haiku-4.5");
+  });
+
+  it("never uses a malformed selection record or the preference itself as a model", () => {
+    saveLastModelChoice("codex", LAST_SELECTED_MODEL);
+    for (const raw of ["invalid", "[]", '{"codex":42}', JSON.stringify({ codex: LAST_SELECTED_MODEL })]) {
+      localStorage.setItem("omnicode.lastSelectedModels", raw);
+      expect(defaultSessionChoice().model).toBe(defaultModelId("codex"));
+      expect(resolveModel("codex", LAST_SELECTED_MODEL).id).not.toBe(LAST_SELECTED_MODEL);
+    }
+    saveLastSelectedModel("codex", "codex:custom-model");
+    expect(defaultSessionChoice().model).toBe("codex:custom-model");
+    expect(resolveModel("codex", LAST_SELECTED_MODEL).id).toBe("codex:custom-model");
   });
 
   it("keeps catalog defaults when nothing is saved", () => {

@@ -1,19 +1,20 @@
-import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
 import { usePreferenceState } from "../../../model/usePreferenceState";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
-import { Globe, Loader, RefreshCw } from "../../../../../shared/ui/icons";
+import { Loader, RefreshCw } from "../../../../../shared/ui/icons";
 import {
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
-  type ReactNode,
 } from "react";
 import { Button } from "../../../../../shared/ui/forms/Button";
+import { useInlineBreakpoints } from "../../../../../shared/hooks/useInlineBreakpoints";
 import {
   announceHarnessesRefreshed,
+  hasHarnessUpdate,
   readHarnessVersions,
   type HarnessVersionInfo,
 } from "../../../../providers/model/harnessUpdates";
@@ -25,18 +26,19 @@ import {
 } from "../../../../../integrations/harness/core/availability";
 import { refreshHarnessCatalogs } from "../../../../../integrations/harness/core/registry";
 import {
-  defaultModelId,
-  firstEnabledHarness,
   getModelSnapshot,
   loadDefaultModels,
   loadHiddenPickerProviders,
   loadLastModelChoice,
+  loadLastSelectedModelChoice,
+  loadUseLastSelection,
   saveDefaultModel,
   saveLastModelChoice,
   savePickerProviderVisible,
+  saveUseLastSelection,
   subscribeModels,
 } from "../../../../sessions/model/models";
-import { pathKey, projectKey, projectName } from "../../../../../shared/lib/paths";
+import { pathKey } from "../../../../../shared/lib/paths";
 import { looksLikeProject, type RecentProject } from "../../../../projects/model/recents";
 import { HARNESSES, type HarnessId } from "../../../../sessions/model/session";
 import {
@@ -54,24 +56,25 @@ import {
   useShowRemainingUsage,
 } from "../../../model/displayPrefs";
 import {
-  loadTabGroupColors,
-  loadTabGroupCustomColors,
-  loadTabGroupMascots,
-  resolveTabGroupColor,
-  resolveTabGroupLogo,
-  resolveTabGroupMascot,
-} from "../../../../workspace/model/tabGroups";
-import { useTabGroupLogos } from "../../../../projects/hooks/useTabGroupLogos";
-import { ProjectLogoIcon } from "../../../../projects/ui/ProjectLogoIcon";
-import { ProjectMascot } from "../../../../projects/ui/ProjectMascot";
-import { loadClaudeHooks, saveClaudeHooks } from "../../../model/settings";
-import { ProviderAccountsSettings } from "./ProviderAccountsSettings";
-import { Group, Row, Toggle } from "../../settingsLayout";
-import { ProviderRow } from "./ProviderRow";
+  effectiveDefaultHarness,
+  providerScopeState,
+  type ProviderDefaultsScope,
+} from "../../../model/providerDefaults";
+import { Group, RevealedSetting, Row, Toggle } from "../../settingsLayout";
+import {
+  GLOBAL_PROVIDER_SCOPE,
+  globalScopeOption,
+  LAST_SELECTION_SCOPE,
+  lastSelectionScopeOption,
+  NewSessionDefaults,
+  projectScopeOption,
+} from "./NewSessionDefaults";
+import { ProviderDetail } from "./ProviderDetail";
+import { ProviderList, type ProviderListEntry } from "./ProviderList";
+import { hasProviderAccounts, useProviderAccounts } from "./useProviderAccounts";
 
-
-
-const GLOBAL_PROVIDER_SCOPE = "global";
+/** Below this width the provider list folds into a menu above the detail. */
+const COMPACT_BREAKPOINTS = [640] as const;
 
 export function ProvidersPage({
   cwd,
@@ -95,23 +98,18 @@ export function ProvidersPage({
   void providersRevision;
   const [choice, setChoice] = usePreferenceState(loadLastModelChoice);
   const [defaultModels, setDefaultModels] = usePreferenceState(loadDefaultModels);
-  const [claudeHooks, setClaudeHooks] = usePreferenceState(loadClaudeHooks);
   const [scope, setScope] = useState<string>(GLOBAL_PROVIDER_SCOPE);
+  const [useLastSelection, setUseLastSelection] = usePreferenceState(loadUseLastSelection);
+  const [lastSelected] = usePreferenceState(loadLastSelectedModelChoice);
   const [hiddenGlobally, setHiddenGlobally] = usePreferenceState(
     loadHiddenPickerProviders,
   );
+  const accounts = useProviderAccounts();
 
   const scopeOptions = useMemo(() => {
-    const options: { value: string; label: string; icon?: ReactNode }[] = [
-      {
-        value: GLOBAL_PROVIDER_SCOPE,
-        label: uiT("Global"),
-        icon: (
-          <Globe
-            className="size-3.5 shrink-0 text-content/60"
-          />
-        ),
-      },
+    const options = [
+      globalScopeOption(uiT("Global")),
+      lastSelectionScopeOption(uiT("Last selection")),
     ];
     const seen = new Set<string>();
     for (const path of [cwd, ...(recents ?? []).map((entry) => entry.path)]) {
@@ -119,25 +117,42 @@ export function ProvidersPage({
       const key = pathKey(path);
       if (seen.has(key)) continue;
       seen.add(key);
-      options.push({
-        value: path,
-        label: projectName(path),
-        icon: <ProjectScopeIcon path={path} />,
-      });
+      options.push(projectScopeOption(path));
     }
     return options;
   }, [cwd, recents, uiT]);
 
+  useEffect(() => {
+    if (!scopeOptions.some((option) => option.value === scope)) {
+      setScope(GLOBAL_PROVIDER_SCOPE);
+    }
+  }, [scope, scopeOptions]);
+
   const project = scope === GLOBAL_PROVIDER_SCOPE ? null : scope;
-  const projectSettings = project ? loadProjectProviderSettings(project) : {};
-  // A project without overrides inherits the global default provider, the same
-  // way `defaultSessionChoice` resolves it for new conversations.
-  const effectiveDefaultHarness = project
-    ? firstEnabledHarness(
-        project,
-        projectSettings.defaultHarness ?? choice?.harness ?? "cursor",
-      )
-    : (choice?.harness ?? null);
+  const followLastSelection = !project && useLastSelection;
+  const selectedChoice = lastSelected ?? choice;
+  const onScope = (next: string) => {
+    if (next === GLOBAL_PROVIDER_SCOPE || next === LAST_SELECTION_SCOPE) {
+      const follow = next === LAST_SELECTION_SCOPE;
+      saveUseLastSelection(follow);
+      setUseLastSelection(follow);
+      setScope(GLOBAL_PROVIDER_SCOPE);
+    } else {
+      setScope(next);
+    }
+  };
+  const defaults: ProviderDefaultsScope = {
+    project,
+    projectSettings: project ? loadProjectProviderSettings(project) : {},
+    defaultModels: useLastSelection && lastSelected
+      ? { ...defaultModels, [lastSelected.harness]: lastSelected.model }
+      : defaultModels,
+    choice: useLastSelection ? selectedChoice : choice,
+    hiddenGlobally,
+  };
+  const defaultHarness = effectiveDefaultHarness(defaults);
+  const stateFor = (harness: HarnessId) =>
+    providerScopeState(harness, defaults, defaultHarness);
 
   const [versions, setVersions] = useState<
     Partial<Record<HarnessId, HarnessVersionInfo>>
@@ -193,22 +208,12 @@ export function ProvidersPage({
     }
   };
 
-  useEffect(() => {
-    if (!scopeOptions.some((option) => option.value === scope)) {
-      setScope(GLOBAL_PROVIDER_SCOPE);
-    }
-  }, [scope, scopeOptions]);
-
-  const onClaudeHooks = (next: boolean) => {
-    saveClaudeHooks(next);
-    setClaudeHooks(next);
-  };
-
   const onModelChange = (harness: HarnessId, model: string) => {
     if (project) {
       setProjectDefaultModel(project, harness, model);
       return;
     }
+    if (useLastSelection) onScope(GLOBAL_PROVIDER_SCOPE);
     saveDefaultModel(harness, model);
     setDefaultModels((prev) => ({ ...prev, [harness]: model }));
     if (choice?.harness === harness) {
@@ -218,10 +223,13 @@ export function ProvidersPage({
   };
 
   const onDefault = (harness: HarnessId, model: string) => {
+    // Installed providers can be selected before their model catalog is ready.
+    if (isHarnessAvailable(harness)) void refreshHarnessCatalogs([harness]);
     if (project) {
       setProjectDefaultProvider(project, harness, model);
       return;
     }
+    if (useLastSelection) onScope(GLOBAL_PROVIDER_SCOPE);
     saveLastModelChoice(harness, model);
     setDefaultModels((prev) => ({ ...prev, [harness]: model }));
     setChoice({ harness, model });
@@ -240,107 +248,95 @@ export function ProvidersPage({
     );
   };
 
+  const entries: ProviderListEntry[] = HARNESSES.map((harness) => {
+    const available = isHarnessAvailable(harness);
+    const version = versions[harness];
+    return {
+      harness,
+      available,
+      isDefault: defaultHarness === harness,
+      updatable: available && hasHarnessUpdate(version) && !version?.bundledBy,
+    };
+  });
+
+  const [selected, setSelected] = useState<HarnessId>(
+    () =>
+      defaultHarness ??
+      HARNESSES.find((harness) => isHarnessAvailable(harness)) ??
+      HARNESSES[0],
+  );
+  // Search lands on a section that only one provider's detail shows; switch to
+  // it during render so the target exists when Settings scrolls to it.
+  const revealed = useContext(RevealedSetting);
+  const revealedProvider: HarnessId | null =
+    revealed === "claude-hooks"
+      ? "claude"
+      : revealed === "provider-accounts" && !hasProviderAccounts(selected)
+        ? "claude"
+        : null;
+  if (revealedProvider && revealedProvider !== selected) {
+    setSelected(revealedProvider);
+  }
+
+  const masterDetail = useInlineBreakpoints(COMPACT_BREAKPOINTS);
+
   return (
     <>
-      <ProviderAccountsSettings />
-
-      <UsageDisplaySettings />
+      <NewSessionDefaults
+        scope={followLastSelection ? LAST_SELECTION_SCOPE : scope}
+        scopeOptions={scopeOptions}
+        project={project}
+        defaultHarness={followLastSelection ? selectedChoice?.harness ?? defaultHarness : defaultHarness}
+        selectedModel={(harness) => followLastSelection && selectedChoice?.harness === harness
+          ? selectedChoice.model : stateFor(harness).selectedModel}
+        onScope={onScope}
+        onDefault={onDefault}
+        onModelChange={onModelChange}
+      />
 
       <Group
         id="agent-clis"
         title={uiT("Agent CLIs")}
+        description={uiT(
+          "A CLI is installed once it is found on your PATH. CLI paths and accounts apply to every project.",
+        )}
         action={
-          <div className="flex items-center gap-2">
-            <Button variant="secondary"
-              aria-label={uiT("Refresh agent CLIs")}
-              aria-busy={refreshing}
-              disabled={refreshing}
-              onClick={() => void onRefresh()}
-            >
-              {refreshing ? (
-                <Loader className="size-3.5 animate-spin" aria-hidden />
-              ) : (
-                <RefreshCw className="size-3.5" aria-hidden />
-              )}
-              {refreshing ? uiT("Refreshing") : uiT("Refresh")}
-            </Button>
-            <SearchableSelect searchable={false} align="end" width={280} maxHeight={320} commitOnTab checkPosition="end" className="max-w-52"
-              label={uiT("Provider defaults scope")}
-              value={scope}
-              options={scopeOptions}
-              onChange={setScope}
-            />
-          </div>
-        }
-        description={
-          project
-            ? uiT(
-                "These defaults apply to {value0} only. A provider with Show in picker off is also kept out of new conversations started in this project. CLI paths remain global for OmniCode.",
-                { value0: String(projectName(project)) },
-              )
-            : uiT(
-                "A provider is listed as installed once its CLI is found on your PATH. Uninstalled CLIs stay listed but are left out of the model picker, as are installed ones with Show in picker off. The model beside a provider is what its new conversations start with; Use by default picks the provider itself. CLI paths are global for OmniCode and apply to every project.",
-              )
+          <Button variant="secondary"
+            aria-label={uiT("Refresh agent CLIs")}
+            aria-busy={refreshing}
+            disabled={refreshing}
+            onClick={() => void onRefresh()}
+          >
+            {refreshing ? (
+              <Loader className="size-3.5 animate-spin" aria-hidden />
+            ) : (
+              <RefreshCw className="size-3.5" aria-hidden />
+            )}
+            {refreshing ? uiT("Refreshing") : uiT("Refresh")}
+          </Button>
         }
       >
-        {HARNESSES.map((harness) => {
-          const inPicker = project
-            ? !(projectSettings.hidden ?? []).includes(harness) &&
-              !hiddenGlobally.includes(harness)
-            : !hiddenGlobally.includes(harness);
-          // A globally hidden provider stays out of every project's picker, so
-          // the project toggle is shown locked rather than appearing to work.
-          const pickerLocked =
-            project != null && hiddenGlobally.includes(harness);
-          const selectedModel = project
-            ? (projectSettings.models?.[harness] ??
-              (projectSettings.defaultHarness === harness
-                ? projectSettings.defaultModel
-                : undefined) ??
-              defaultModels[harness] ??
-              (choice?.harness === harness
-                ? choice.model
-                : defaultModelId(harness)))
-            : (defaultModels[harness] ??
-              (choice?.harness === harness
-                ? choice.model
-                : defaultModelId(harness)));
-          const isDefault = project
-            ? effectiveDefaultHarness === harness
-            : choice?.harness === harness;
-          return (
-            <ProviderRow
-              key={harness}
-              harness={harness}
-              selectedModel={selectedModel}
-              isDefault={isDefault}
-              inPicker={inPicker}
-              pickerLocked={pickerLocked}
-              version={versions[harness]}
-              onUpdated={() => void loadVersions([harness])}
-              onDefault={onDefault}
-              onModelChange={onModelChange}
-              onPickerVisible={(visible) => onPickerVisible(harness, visible)}
-            />
-          );
-        })}
+        <div ref={masterDetail} data-ui="provider-master-detail">
+          <ProviderList
+            entries={entries}
+            selected={selected}
+            onSelect={setSelected}
+          />
+          <ProviderDetail
+            harness={selected}
+            project={project}
+            state={stateFor(selected)}
+            version={versions[selected]}
+            accounts={accounts}
+            onUpdated={() => void loadVersions([selected])}
+            onDefault={onDefault}
+            onModelChange={onModelChange}
+            onPickerVisible={onPickerVisible}
+          />
+        </div>
       </Group>
 
-      <Group title={uiT("Advanced")}>
-        <Row
-          id="claude-hooks"
-          label={uiT("Claude Code hooks")}
-          description={uiT(
-            "Run the hooks configured in your settings.json files — PreToolUse command rewrites, blocks, notifications, and the rest — just as the Claude Code CLI would. Turn this off if a hook is misbehaving and you need the session back. Takes effect on the next turn.",
-          )}
-        >
-          <Toggle
-            label={uiT("Claude Code hooks")}
-            on={claudeHooks}
-            onChange={onClaudeHooks}
-          />
-        </Row>
-      </Group>
+      <UsageDisplaySettings />
     </>
   );
 }
@@ -378,33 +374,5 @@ function UsageDisplaySettings() {
         />
       </Row>
     </Group>
-  );
-}
-
-/** The icon the activity bar shows: custom logo, else the project mascot. */
-function ProjectScopeIcon({ path }: { path: string }) {
-  const logos = useTabGroupLogos();
-  const [colors] = usePreferenceState(loadTabGroupColors);
-  const [customColors] = usePreferenceState(loadTabGroupCustomColors);
-  const [mascots] = usePreferenceState(loadTabGroupMascots);
-  const key = projectKey(path);
-  const name = projectName(path);
-  const logoPath = resolveTabGroupLogo(key, logos);
-  if (logoPath) {
-    return (
-      <ProjectLogoIcon
-        path={logoPath}
-        className="size-4 rounded-sm"
-        imageClassName="size-4"
-      />
-    );
-  }
-  return (
-    <ProjectMascot
-      project={name}
-      color={resolveTabGroupColor(key, colors, customColors, name)}
-      name={resolveTabGroupMascot(key, mascots)}
-      className="size-3.5"
-    />
   );
 }

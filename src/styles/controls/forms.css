@@ -151,7 +151,7 @@ html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"],
   height: auto;
   border-radius: var(--desktop-radius-field);
   border-width: 1px;
-  padding: 5px 12px;
+  padding: var(--desktop-field-pad-y) 12px;
   font-size: var(--text-desktop-ui);
   line-height: var(--text-body-sm--line-height);
   transition: border-color var(--desktop-feedback) var(--desktop-popup-ease), background-color var(--desktop-feedback) var(--desktop-popup-ease);
@@ -166,7 +166,7 @@ html[data-skin] [data-ui="input"].desktop-field-trailing-icon { padding-inline-e
 html[data-skin] [data-desktop-select-trigger]:not([data-desktop-select-trigger="panel"]):not([data-desktop-select-trigger="row"]):not([data-desktop-select-trigger="pill"]):not([data-desktop-select-trigger="icon"]) {
   min-height: var(--desktop-field-height);
   height: auto;
-  padding: 5px 12px;
+  padding: var(--desktop-field-pad-y) 12px;
   border-radius: 8px;
   border-width: 1px;
   font-size: var(--text-desktop-ui);

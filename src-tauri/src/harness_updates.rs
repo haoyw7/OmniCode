@@ -11,7 +11,7 @@ use crate::harness::{
     is_resolved_harness_binary, resolve_harness_binary,
 };
 
-mod npm;
+pub(crate) mod npm;
 
 const REGISTRY_URL: &str = "https://registry.npmjs.org";
 const USER_AGENT: &str = "OmniCode";
@@ -46,14 +46,14 @@ fn update_args(provider: &str) -> Option<&'static [&'static str]> {
 /// its Codex into `~/.local/bin`) and only update with that app.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum InstallSource {
+pub(crate) enum InstallSource {
     Npm,
     Homebrew,
     Bundled,
     Other,
 }
 
-fn install_source(real: &Path) -> (InstallSource, Option<String>) {
+pub(crate) fn install_source(real: &Path) -> (InstallSource, Option<String>) {
     if let Some(owner) = desktop_cli_owner(real) {
         return (InstallSource::Bundled, Some(owner.to_string()));
     }

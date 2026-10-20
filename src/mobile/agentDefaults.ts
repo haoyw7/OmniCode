@@ -5,6 +5,7 @@ import {
   type RemoteProvider,
 } from "../features/connections/model/protocol";
 import { findRemoteModel } from "../features/connections/model/remoteModels";
+import { LAST_SELECTED_MODEL, lastSelectedModelId, loadLastSelectedModelChoice, loadUseLastSelection } from "../features/sessions/model/models";
 import {
   DEFAULT_RUNTIME_MODE,
   RUNTIME_MODES,
@@ -190,9 +191,17 @@ export function saveMobileAgentDefaults(
 
 /** Project-specific desktop choices override global defaults for a new mobile draft. */
 export function loadMobileProjectDefaults(host: MobileDefaultsHost | undefined, projectId: string): MobileAgentDefaults {
-  const defaults = loadMobileAgentDefaults(host);
+  let defaults = loadMobileAgentDefaults(host);
   const hostId = host && sharedHostId(host);
   if (!hostId || activePreferenceStore()?.hostId !== hostId) return defaults;
+  const selected = loadUseLastSelection() ? loadLastSelectedModelChoice() : null;
+  if (selected && REMOTE_PROVIDERS.some((provider) => provider === selected.harness)) {
+    const harness = selected.harness as RemoteProvider;
+    defaults = { ...defaults, harness, agents: {
+      ...defaults.agents,
+      [harness]: { ...defaults.agents?.[harness], model: selected.model },
+    } };
+  }
   const identity = `@project:${encodeURIComponent(hostId)}:${encodeURIComponent(projectId)}`;
   try {
     const project = JSON.parse(preferenceStorage.getItem("omnicode.projectProviderSettings.v1") ?? "{}")[identity];
@@ -200,8 +209,8 @@ export function loadMobileProjectDefaults(host: MobileDefaultsHost | undefined, 
     const agents = { ...defaults.agents };
     const harness = REMOTE_PROVIDERS.find(provider => provider === project?.defaultHarness) ?? defaults.harness;
     for (const provider of REMOTE_PROVIDERS) {
-      const model = provider === project?.defaultHarness && typeof project?.defaultModel === "string"
-        ? project.defaultModel : project?.models?.[provider];
+      const model = project?.models?.[provider] ??
+        (provider === project?.defaultHarness ? project?.defaultModel : undefined);
       const accountId = accounts?.[provider];
       agents[provider] = { ...agents[provider], ...(typeof model === "string" ? { model } : {}),
         ...(typeof accountId === "string" ? { accountId } : {}) };
@@ -231,8 +240,9 @@ export function configurationForAgent(
   const models = catalog.models[harness];
   if (!models?.length) return undefined;
   const saved = defaults.agents?.[harness];
+  const model = saved?.model === LAST_SELECTED_MODEL ? lastSelectedModelId(harness) : saved?.model;
   return configurationForModel(
-    findRemoteModel(models, saved?.model ?? "") ?? models[0],
+    findRemoteModel(models, model ?? "") ?? models[0],
     saved?.modelSettings,
     defaults.runtimeMode ?? DEFAULT_RUNTIME_MODE,
   );

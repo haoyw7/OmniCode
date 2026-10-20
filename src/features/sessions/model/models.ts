@@ -235,9 +235,15 @@ const HIDDEN_PICKER_PROVIDERS_KEY = "omnicode.hiddenPickerProviders";
 const LAST_MODEL_KEY = "omnicode.lastModel";
 const LAST_MODEL_SETTINGS_KEY = "omnicode.lastModelSettings";
 const DEFAULT_MODELS_KEY = "omnicode.defaultModels";
+const LAST_SELECTED_MODELS_KEY = "omnicode.lastSelectedModels";
+const LAST_SELECTED_CHOICE_KEY = "omnicode.lastSelectedModelChoice";
+const USE_LAST_SELECTION_KEY = "omnicode.useLastSelection";
 const RECENT_MODELS_KEY = "omnicode.recentModels";
 const RECENT_MODEL_LIMIT = 6;
 const LIVE_CATALOGS_KEY = "omnicode.liveModelCatalogs";
+
+/** A default-model preference, never a provider model ID. */
+export const LAST_SELECTED_MODEL = "omnicode:last-selected-model";
 
 export type ModelPickerTab = "favorites" | HarnessId;
 
@@ -471,6 +477,7 @@ export function fallbackModelName(harness: HarnessId, id: string): string {
 }
 
 export function resolveModel(harness: HarnessId, id?: string): AgentModel {
+  if (id === LAST_SELECTED_MODEL) id = resolveDefaultModelId(harness, id);
   const available = modelsFor(harness);
   if (id) {
     const exact = findModel(id);
@@ -900,10 +907,69 @@ export function saveDefaultModel(harness: HarnessId, model: string) {
 /** User-picked model for a provider, else the catalog default. */
 export function preferredModelId(harness: HarnessId): string {
   const saved = loadDefaultModels()[harness];
-  if (saved) return saved;
+  if (saved) return resolveDefaultModelId(harness, saved);
   const last = loadLastModelChoice();
-  if (last?.harness === harness) return last.model;
+  if (last?.harness === harness) return resolveDefaultModelId(harness, last.model);
   return defaultModelId(harness);
+}
+
+function loadLastSelectedModels(): Record<string, string> {
+  try {
+    return parseStringRecord(JSON.parse(preferenceStorage.getItem(LAST_SELECTED_MODELS_KEY) ?? "{}"));
+  } catch {
+    return {};
+  }
+}
+
+export function lastSelectedModelId(harness: HarnessId): string | undefined {
+  const model = loadLastSelectedModels()[harness];
+  return model && model !== LAST_SELECTED_MODEL ? model : undefined;
+}
+
+export function loadUseLastSelection(): boolean {
+  return preferenceStorage.getItem(USE_LAST_SELECTION_KEY) === "1";
+}
+
+export function saveUseLastSelection(value: boolean): void {
+  preferenceStorage.setItem(USE_LAST_SELECTION_KEY, value ? "1" : "0");
+}
+
+export function loadLastSelectedModelChoice(): LastModelChoice | null {
+  try {
+    const value = JSON.parse(preferenceStorage.getItem(LAST_SELECTED_CHOICE_KEY) ?? "null");
+    return value && isHarnessId(value.harness) && typeof value.model === "string" && value.model
+      ? { harness: value.harness, model: value.model }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Record explicit composer picks separately from recently submitted models. */
+export function saveLastSelectedModel(harness: HarnessId, model: string): void {
+  if (!model || model === LAST_SELECTED_MODEL) return;
+  const previous = loadLastSelectedModels();
+  const last = loadLastSelectedModelChoice();
+  try {
+    if (last?.harness !== harness || last.model !== model) {
+      preferenceStorage.setItem(LAST_SELECTED_CHOICE_KEY, JSON.stringify({ harness, model }));
+    }
+    if (previous[harness] !== model) {
+      preferenceStorage.setItem(
+        LAST_SELECTED_MODELS_KEY,
+        JSON.stringify({ ...previous, [harness]: model }),
+      );
+    }
+  } catch {
+    // private mode / quota
+  }
+}
+
+/** Resolve the preference before a session or provider receives a model ID. */
+export function resolveDefaultModelId(harness: HarnessId, model: string): string {
+  return model === LAST_SELECTED_MODEL
+    ? lastSelectedModelId(harness) ?? defaultModelId(harness)
+    : model;
 }
 
 /**
@@ -930,7 +996,8 @@ export function firstEnabledHarness(
 /** Provider + model new conversations should start with. */
 export function defaultSessionChoice(cwd?: string): LastModelChoice {
   const project = loadProjectProviderSettings(cwd);
-  const last = loadLastModelChoice();
+  const selected = loadUseLastSelection() ? loadLastSelectedModelChoice() : null;
+  const last = selected ?? loadLastModelChoice();
   const harness = firstEnabledHarness(
     cwd,
     project.defaultHarness ?? last?.harness ?? "cursor",
@@ -938,8 +1005,9 @@ export function defaultSessionChoice(cwd?: string): LastModelChoice {
   const model =
     project.models?.[harness] ??
     (project.defaultHarness === harness ? project.defaultModel : undefined) ??
+    (selected?.harness === harness ? selected.model : undefined) ??
     preferredModelId(harness);
-  return { harness, model };
+  return { harness, model: resolveDefaultModelId(harness, model) };
 }
 
 export function loadLastModelChoice(): LastModelChoice | null {

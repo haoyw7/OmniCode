@@ -11,7 +11,12 @@ import * as scrollWithinModule from "../../../shared/lib/scrollWithin";
 import { loginHarness } from "../../../integrations/harness/core/auth";
 import * as harnessRegistry from "../../../integrations/harness/core/registry";
 import {
+  defaultSessionChoice,
+  loadDefaultModels,
+  loadUseLastSelection,
   resetHarnessModelOverlays,
+  saveLastModelChoice,
+  saveLastSelectedModel,
   setHarnessModels,
 } from "../../sessions/model/models";
 import { AppViewDialog } from "../../workspace/ui/AppViewDialog";
@@ -33,7 +38,7 @@ import {
   clearCachedRateLimits,
   setCachedRateLimits,
 } from "../../providers/model/rateLimitsCache";
-import { HARNESSES, HARNESS_TITLE } from "../../sessions/model/session";
+import { HARNESSES, HARNESS_TITLE, type HarnessId } from "../../sessions/model/session";
 import { saveMaskEmails, saveShowRemainingUsage } from "../model/displayPrefs";
 
 const windowMock = vi.hoisted(() => ({
@@ -112,6 +117,17 @@ async function render(
     ),
   );
   await act(async () => container.querySelectorAll('[data-settings-page][aria-hidden="true"]').forEach(completeMotionAnimation));
+}
+
+/** Shows one provider's detail from the Providers list. */
+async function selectProvider(harness: HarnessId) {
+  await act(async () =>
+    container
+      .querySelector<HTMLButtonElement>(
+        `[data-ui="provider-list"] [data-provider="${harness}"]`,
+      )!
+      .click(),
+  );
 }
 
 /** Opens an account row's ⋯ menu and returns the named item. */
@@ -237,6 +253,7 @@ describe("settings pages", () => {
         });
       try {
         await render("providers");
+        await selectProvider(harness);
         refresh.mockClear();
         const trigger = container.querySelector<HTMLButtonElement>(
           `[aria-label^="${HARNESS_TITLE[harness]} model:"]`,
@@ -374,27 +391,30 @@ describe("settings pages", () => {
     const emails = container.querySelectorAll<HTMLButtonElement>(
       '[aria-label="Reveal email"]',
     );
-    expect(emails).toHaveLength(2);
-    expect(
-      [...emails].every((email) =>
-        email.querySelector("span")?.className.includes("blur-[5px]"),
-      ),
-    ).toBe(true);
+    expect(emails).toHaveLength(1);
+    expect(emails[0].querySelector("span")?.className).toContain("blur-[5px]");
     expect(container.textContent).toContain("Pro");
     await act(async () => emails[0].click());
     expect(emails[0].getAttribute("aria-label")).toBe("Hide email");
     expect(emails[0].querySelector("span")?.className).not.toContain("blur");
-    expect(emails[1].getAttribute("aria-label")).toBe("Reveal email");
     await act(async () => emails[0].click());
     expect(emails[0].getAttribute("aria-label")).toBe("Reveal email");
 
     await act(async () => emails[0].click());
+    // Another provider's accounts stay masked.
+    await selectProvider("codex");
+    expect(container.querySelector('[aria-label="Hide email"]')).toBeNull();
+    expect(container.textContent).toContain("codex@example.com");
+    await selectProvider("claude");
+    await act(async () =>
+      container.querySelector<HTMLButtonElement>('[aria-label="Reveal email"]')!.click(),
+    );
     await render("general");
     await render("providers");
     expect(container.querySelector('[aria-label="Hide email"]')).toBeNull();
     expect(
       container.querySelectorAll('[aria-label="Reveal email"]'),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
   });
 
   it("shows used usage and plain emails until the options are turned on", async () => {
@@ -459,9 +479,10 @@ describe("settings pages", () => {
     });
     await render("providers");
     const identity = (provider: string, id: string) => container.querySelector(`[data-provider-account-identity="${provider}:${id}"]`)!;
+    expect(identity("claude", "operator").textContent).toContain("Claude operator");
+    await selectProvider("codex");
     expect(identity("codex", "work").textContent).toContain("work@example.com");
     expect(identity("codex", "personal").textContent).toContain("personal@example.com");
-    expect(identity("claude", "operator").textContent).toContain("Claude operator");
     expect(identity("codex", "default").textContent).toContain("host@example.com");
     expect(container.textContent).not.toContain("/homes/codex-work");
     const refresh = () => act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Refresh usage limits"]')!.click());
@@ -477,6 +498,7 @@ describe("settings pages", () => {
   it.each(["codex", "claude"] as const)("edits the built-in %s Home on Host without exposing its private path", async provider => {
     mockAccountHost({ identity: (_provider, _id, dataHome) => ({ email: `${dataHome === "/custom/home" ? "changed" : "initial"}@example.com`, plan: "Pro" }) });
     await render("providers");
+    await selectProvider(provider);
     const identity = () => container.querySelector(`[data-provider-account-identity="${provider}:default"]`)!;
     expect(identity().textContent).toContain("initial@example.com");
     expect(container.textContent).toContain("Data Home is managed by Host");
@@ -642,6 +664,7 @@ describe("settings pages", () => {
     );
     expect(providerAccounts("claude")[0]?.label).toBe("Primary");
     await act(async () => container.querySelectorAll('[data-fold-state="closing"]').forEach(completeMotionAnimation));
+    await selectProvider("codex");
 
     await act(async () =>
       container
@@ -675,11 +698,14 @@ describe("settings pages", () => {
   it.each(["codex", "claude"] as const)("adds a visible %s profile with an existing Home without signing in", async provider => {
     mockAccountHost({ accounts: { codex: [{ id: "default", label: "Default account" }, { id: "disk", label: "Disk account", dataHome: "/data/existing" }], claude: [{ id: "default", label: "Default account" }] } });
     await render("providers");
+    await selectProvider("codex");
     expect(container.textContent).toContain("Disk account");
     expect(container.textContent).not.toContain("/data/existing");
     expect(container.textContent).toContain("Data Home is managed by Host");
+    await selectProvider(provider);
     const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")].filter(button => button.textContent === "Add account");
-    await act(async () => buttons[provider === "claude" ? 0 : 1].click());
+    expect(buttons).toHaveLength(1);
+    await act(async () => buttons[0].click());
     const name = container.querySelector<HTMLInputElement>(`[aria-label="New ${HARNESS_TITLE[provider]} account"]`)!;
     const home = container.querySelector<HTMLInputElement>(`[aria-label="${HARNESS_TITLE[provider]} Data Home"]`)!;
     await act(async () => {
@@ -727,13 +753,9 @@ describe("settings pages", () => {
       return undefined;
     });
     await render("providers");
-
-    const details = container.querySelector<HTMLButtonElement>(
-      '[aria-label="Show Codex CLI details"]',
-    )!;
-    await act(async () => details.click());
+    await selectProvider("codex");
     await act(async () =>
-      document
+      container
         .querySelector<HTMLButtonElement>(
           '[aria-label="Open Codex CLI location"]',
         )!
@@ -744,26 +766,16 @@ describe("settings pages", () => {
     });
 
     const save = async (provider: "Codex" | "OpenCode", path: string) => {
-      const id = `${provider.toLowerCase()}-binary-path`;
-      const edit = () => [...document.querySelectorAll<HTMLButtonElement>(`[aria-label="Edit ${provider} CLI path"]`)]
-        .find(button => !button.closest('[aria-hidden="true"]'));
-      if (!document.querySelector(`#${id}`)) {
-        if (
-          !edit()
-        ) {
-          await act(async () =>
-            container
-              .querySelector<HTMLButtonElement>(
-                `[aria-label^="Show ${provider} CLI details"]`,
-              )!
-              .click(),
-          );
-        }
-        await act(async () =>
-          edit()!.click(),
-        );
+      await selectProvider(provider.toLowerCase() as HarnessId);
+      const edit = container.querySelector<HTMLButtonElement>(
+        `[aria-label="Edit ${provider} CLI path"]`,
+      )!;
+      if (edit.getAttribute("aria-expanded") !== "true") {
+        await act(async () => edit.click());
       }
-      const input = document.querySelector<HTMLInputElement>(`#${id}`)!;
+      const input = container.querySelector<HTMLInputElement>(
+        `#${provider.toLowerCase()}-binary-path`,
+      )!;
       await act(async () => {
         Object.getOwnPropertyDescriptor(
           HTMLInputElement.prototype,
@@ -784,21 +796,15 @@ describe("settings pages", () => {
       codex: "/opt/codex/bin/codex",
       opencode: "/opt/opencode/bin/opencode",
     });
-    await act(async () => details.click());
-    expect(document.body.textContent).toContain("/opt/codex/bin/codex");
-    expect(document.body.textContent).toContain("codex-cli 0.156.1");
-    expect(document.body.textContent).toContain("Restart required");
-    await act(async () => details.click());
-    const openCodeDetails = container.querySelector<HTMLButtonElement>(
-      '[aria-label^="Show OpenCode CLI details"]',
-    )!;
-    await act(async () => openCodeDetails.click());
-    expect(document.body.textContent).toContain("/opt/opencode/bin/opencode");
-    expect(document.body.textContent).toContain("opencode 1.18.32");
-    await act(async () => openCodeDetails.click());
+    expect(container.textContent).toContain("/opt/opencode/bin/opencode");
+    expect(container.textContent).toContain("opencode 1.18.32");
+    await selectProvider("codex");
+    expect(container.textContent).toContain("/opt/codex/bin/codex");
+    expect(container.textContent).toContain("codex-cli 0.156.1");
+    expect(container.textContent).toContain("Restart required");
 
     await save("Codex", "/bad/codex");
-    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "Codex failed to start",
     );
     expect(container.textContent).not.toContain("/opt/codex/bin/codex");
@@ -808,17 +814,17 @@ describe("settings pages", () => {
       ).codex,
     ).toBe("/opt/codex/bin/codex");
     await act(async () =>
-      Array.from(document.querySelectorAll<HTMLButtonElement>("button"))
+      Array.from(container.querySelectorAll<HTMLButtonElement>("#codex-binary-editor button"))
         .find((button) => button.textContent === "Cancel")!
         .click(),
     );
     expect(
-      document.querySelector('[aria-label="Retry Codex configured path"]'),
+      container.querySelector('[aria-label="Retry Codex configured path"]'),
     ).not.toBeNull();
 
     failAutoCodex = true;
     await save("Codex", "");
-    expect(document.querySelector('[role="alert"]')?.textContent).toContain(
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain(
       "Codex auto-detection failed",
     );
     expect(
@@ -834,9 +840,8 @@ describe("settings pages", () => {
         localStorage.getItem("omnicode.providerBinaryPaths.v1") ?? "{}",
       ).codex,
     ).toBeUndefined();
-    await act(async () => details.click());
-    expect(document.body.textContent).toContain("/auto/codex");
-    expect(document.body.textContent).toContain("Auto-detected");
+    expect(container.textContent).toContain("/auto/codex");
+    expect(container.textContent).toContain("Auto-detected");
   });
 
   it("offers manual auto-detect retry when a CLI is missing", async () => {
@@ -847,14 +852,16 @@ describe("settings pages", () => {
       return undefined;
     });
     await render("providers");
-    await act(async () =>
-      container
-        .querySelector<HTMLButtonElement>(
-          '[aria-label="Show Codex CLI details"]',
-        )!
-        .click(),
-    );
-    const retry = document.querySelector<HTMLButtonElement>(
+    await selectProvider("codex");
+    // A CLI that was never installed is not an error.
+    expect(
+      [...container.querySelectorAll('[role="alert"]')].some((alert) =>
+        alert.textContent?.includes("Codex CLI not found"),
+      ),
+    ).toBe(false);
+    expect(container.textContent).toContain("Not found on this computer");
+    vi.mocked(invoke).mockClear();
+    const retry = container.querySelector<HTMLButtonElement>(
       '[aria-label="Retry Codex auto-detect"]',
     )!;
     expect(retry).not.toBeNull();
@@ -1128,62 +1135,123 @@ describe("settings pages", () => {
     },
   );
 
-  it("downloads missing CLIs, preserves busy state across navigation and offers retry", async () => {
+  it("installs missing CLIs from an inline step, preserves busy state across navigation and offers retry", async () => {
     const original = vi.mocked(invoke).getMockImplementation()!;
     let fail!: (error: Error) => void;
     vi.mocked(invoke).mockImplementation((command, args) => {
       if (command === "harness_install") {
         return new Promise((_, reject) => { fail = reject; });
       }
+      if (command === "harness_cli_plan") {
+        return Promise.resolve({
+          installCommand: "npm install -g @openai/codex", path: null,
+          removes: [], uninstallCommand: null, uninstallBlocker: null,
+        });
+      }
       return original(command, args);
     });
     await render("providers");
+    await selectProvider("codex");
     const download = () => container.querySelector<HTMLButtonElement>('[aria-label="Download and install Codex"]')!;
-    expect(download().textContent).toBe("");
+    const action = () => [...container.querySelectorAll<HTMLButtonElement>("#codex-cli-panel button")].at(-1)!;
+    expect(download().textContent).toBe("Install");
     expect(download().title).toBe("Download and install this CLI on this computer");
     expect(container.querySelector('[aria-label="Download and install Claude Code"]')).toBeNull();
+    expect(download().getAttribute("aria-expanded")).toBe("false");
     await act(async () => download().click());
-    expect(download().disabled).toBe(true);
-    expect(download().getAttribute("aria-busy")).toBe("true");
+    expect(download().getAttribute("aria-expanded")).toBe("true");
+    expect(container.querySelector("#codex-cli-panel")?.textContent).toContain("npm install -g @openai/codex");
+    expect(action().textContent).toBe("Install");
+    await act(async () => action().click());
+    expect(action().disabled).toBe(true);
+    expect(action().getAttribute("aria-busy")).toBe("true");
     expect(container.textContent).toContain("Downloading and installing CLI");
     await render("general");
     await render("providers");
-    expect(download().disabled).toBe(true);
+    // The list keeps showing the work while another provider is open.
+    expect(container.querySelector('[data-provider="codex"] [aria-label="Working…"]')).not.toBeNull();
+    await selectProvider("codex");
+    expect(download().getAttribute("aria-busy")).toBe("true");
+    expect(container.textContent).toContain("Downloading and installing CLI");
     await act(async () => fail(new Error("Download interrupted")));
-    expect(download().disabled).toBe(false);
-    expect(download().title).toBe("Retry download");
-    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Download interrupted");
-    await act(async () => download().click());
+    expect(download().getAttribute("aria-expanded")).toBe("true");
+    expect(container.querySelector('#codex-cli-panel [role="alert"]')?.textContent).toContain("Download interrupted");
+    expect(action().textContent).toBe("Retry");
+    expect(action().disabled).toBe(false);
+    await act(async () => action().click());
     expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "harness_install")).toHaveLength(2);
     await act(async () => fail(new Error("Still offline")));
   });
 
-  it("shows path details for every Agent CLI", async () => {
+  it("removes an installed CLI only after reviewing what will be deleted", async () => {
+    const original = vi.mocked(invoke).getMockImplementation()!;
+    let blocker: string | null = null;
+    vi.mocked(invoke).mockImplementation((command, args) => {
+      if (command === "harness_cli_plan") {
+        return Promise.resolve({
+          installCommand: null, path: "/home/me/.local/bin/claude",
+          removes: blocker ? [] : ["/home/me/.local/bin/claude", "/home/me/.local/share/claude"],
+          uninstallCommand: null, uninstallBlocker: blocker,
+        });
+      }
+      if (command === "harness_uninstall") return Promise.resolve();
+      return original(command, args);
+    });
     await render("providers");
+    const remove = () => container.querySelector<HTMLButtonElement>('[aria-label="Remove Claude Code CLI"]')!;
+    const panel = () => container.querySelector("#claude-cli-panel")!;
+    expect(container.querySelector('[aria-label="Remove Codex CLI"]')).toBeNull();
+    await act(async () => remove().click());
+    expect(panel().textContent).toContain("/home/me/.local/share/claude");
+    expect(vi.mocked(invoke).mock.calls.some(([command]) => command === "harness_uninstall")).toBe(false);
+    const confirm = [...panel().querySelectorAll<HTMLButtonElement>("button")].find((button) => button.textContent === "Remove CLI")!;
+    await act(async () => confirm.click());
+    expect(vi.mocked(invoke)).toHaveBeenCalledWith("harness_uninstall", { provider: "claude", binaryPath: null });
+
+    blocker = "This CLI was installed with Homebrew. Remove it with brew uninstall.";
+    await act(async () => remove().click());
+    expect(remove().getAttribute("aria-expanded")).toBe("false");
+    await act(async () => remove().click());
+    expect(panel().textContent).toContain("Homebrew");
+    expect([...panel().querySelectorAll("button")].map((button) => button.textContent)).not.toContain("Remove CLI");
+  });
+
+  it("lists every Agent CLI and shows its path only in its own detail", async () => {
+    await render("providers");
+    // Only the open provider's CLI is checked, not every CLI at once.
     expect(
-      vi
-        .mocked(invoke)
-        .mock.calls.some(([command]) => command === "harness_exec"),
-    ).toBe(false);
+      vi.mocked(invoke).mock.calls.filter(([command]) => command === "harness_exec")
+        .length,
+    ).toBeLessThanOrEqual(1);
     for (const harness of HARNESSES) {
+      await selectProvider(harness);
+      expect(
+        container
+          .querySelector(`[data-provider="${harness}"]`)
+          ?.getAttribute("aria-current"),
+      ).toBe("true");
       expect(
         container.querySelector(
-          `[aria-label="Show ${HARNESS_TITLE[harness]} CLI details"]`,
+          `[aria-label="Edit ${HARNESS_TITLE[harness]} CLI path"]`,
         ),
       ).not.toBeNull();
     }
   });
 
-  it("returns focus to the CLI trigger when the details popover closes", async () => {
+  it("returns focus to Edit path when the path editor closes", async () => {
     await render("providers");
+    await selectProvider("codex");
     const trigger = container.querySelector<HTMLButtonElement>(
-      '[aria-label="Show Codex CLI details"]',
+      '[aria-label="Edit Codex CLI path"]',
     )!;
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     await act(async () => trigger.click());
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
+    const input = container.querySelector<HTMLInputElement>("#codex-binary-path")!;
     await act(async () => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      input.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
     });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(document.activeElement).toBe(trigger);
@@ -1198,23 +1266,18 @@ describe("settings pages", () => {
       return undefined;
     });
     await render("providers");
+    await selectProvider("codex");
     await act(async () =>
       container
-        .querySelector<HTMLButtonElement>(
-          '[aria-label="Show Codex CLI details"]',
-        )!
-        .click(),
-    );
-    await act(async () =>
-      document
         .querySelector<HTMLButtonElement>(
           '[aria-label="Open Codex CLI location"]',
         )!
         .click(),
     );
-    expect(document.body.textContent).toContain(
+    expect(container.textContent).toContain(
       "Could not open the CLI location: File manager unavailable",
     );
+    expect(container.textContent).not.toContain("Needs attention");
   });
 
   it("only tags rows that search can find", async () => {
@@ -1515,6 +1578,36 @@ describe("providers scope inheritance", () => {
     await act(async () => option!.click());
   }
 
+  it("places Last selection second in the scope menu and persists it without changing fixed defaults", async () => {
+    saveLastModelChoice("claude", "claude:opus-5");
+    saveLastSelectedModel("cursor", "cursor:grok-4.6");
+    await render("providers");
+    const trigger = container.querySelector<HTMLButtonElement>('[aria-label^="Provider defaults scope"]')!;
+    await act(async () => trigger.click());
+    const options = [...document.querySelectorAll<HTMLButtonElement>('[role="option"]')]
+      .filter((node) => !node.closest("[inert]"));
+    expect(options.map((node) => node.textContent?.trim())).toEqual(["Global", "Last selection", "repo"]);
+    await act(async () => options[1].click());
+    expect(loadUseLastSelection()).toBe(true);
+    expect(container.querySelector('[aria-label="Provider defaults scope: Last selection"]')).not.toBeNull();
+    expect(container.querySelector<HTMLButtonElement>('[aria-label="Default provider: Cursor"]')?.disabled).toBe(true);
+    expect(defaultSessionChoice()).toEqual({ harness: "cursor", model: "cursor:grok-4.6" });
+    expect(loadDefaultModels().claude).toBe("claude:opus-5");
+
+    await selectScope("repo");
+    expect(loadUseLastSelection()).toBe(true);
+    expect(container.querySelector<HTMLButtonElement>('[aria-label="Default provider: Cursor"]')?.disabled).toBe(false);
+    expect(container.querySelector('[data-provider="cursor"]')?.textContent).toContain("Default");
+    act(() => root.unmount());
+    root = createRoot(container);
+    await render("providers");
+    expect(container.querySelector('[aria-label="Provider defaults scope: Last selection"]')).not.toBeNull();
+    await selectScope("Global");
+    expect(loadUseLastSelection()).toBe(false);
+    expect(defaultSessionChoice()).toEqual({ harness: "claude", model: "claude:opus-5" });
+    expect(container.querySelector<HTMLButtonElement>('[aria-label="Default provider: Claude Code"]')?.disabled).toBe(false);
+  });
+
   it("inherits the global default provider and picker visibility in project scope", async () => {
     localStorage.setItem(
       "omnicode.lastModel",
@@ -1529,13 +1622,12 @@ describe("providers scope inheritance", () => {
     await selectScope("repo");
 
     // A project with no overrides shows the inherited global default provider.
-    const claudeRow = container
-      .querySelector('[aria-label^="Claude Code model"]')!
-      .closest(".settings-row")!;
-    const claudeDefault = Array.from(
-      claudeRow.querySelectorAll<HTMLButtonElement>("button"),
-    ).find((node) => node.textContent?.trim() === "Default");
-    expect(claudeDefault).toBeTruthy();
+    expect(
+      container.querySelector('[aria-label="Default provider: Claude Code"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('[data-provider="claude"]')?.textContent,
+    ).toContain("Default");
 
     // Picker visibility also inherits the global setting.
     expect(
@@ -1545,6 +1637,7 @@ describe("providers scope inheritance", () => {
         )!
         .getAttribute("aria-checked"),
     ).toBe("true");
+    await selectProvider("cursor");
     const cursorToggle = container.querySelector<HTMLButtonElement>(
       '[aria-label="Show Cursor in the model picker"]',
     )!;
@@ -1563,11 +1656,12 @@ it("saves a shared account through Host, prevents removing it and supports retry
   mockAccountHost({ setDefault: () => { if (failSave) throw new Error("Unable to save fixture default"); } });
   saveProviderAccount({ provider: "codex", id: "work", label: "9300" });
   await render("providers");
+  await selectProvider("codex");
   const choose = () => accountMenuItem("9300", "Use as shared default");
   const first = (await choose())!;
   expect(first.disabled).toBe(false);
   await act(async () => first.click());
-  expect(container.querySelector('[role="alert"]')?.textContent).toContain("Unable to save fixture default");
+  expect(container.querySelector('[data-ui="provider-accounts"] [role="alert"]')?.textContent).toContain("Unable to save fixture default");
   failSave = false;
   const retry = (await choose())!;
   expect(retry).not.toBeUndefined();
@@ -1594,19 +1688,18 @@ it.each([
   "toggles the $provider $action editor without discarding its draft",
   async ({ provider, action }) => {
     await render("providers");
+    await selectProvider(provider);
     const trigger =
       action === "add"
         ? [
             ...container.querySelectorAll<HTMLButtonElement>(
               'button[type="button"]',
             ),
-          ].filter((button) => button.textContent === "Add account")[
-            provider === "claude" ? 0 : 1
-          ]
+          ].find((button) => button.textContent === "Add account")!
         : action === "edit"
-          ? container.querySelectorAll<HTMLButtonElement>(
+          ? container.querySelector<HTMLButtonElement>(
               '[aria-label="Rename Default account"]',
-            )[provider === "claude" ? 0 : 1]
+            )!
           : [...container.querySelectorAll<HTMLButtonElement>("button")].find(
               (button) => button.textContent === "Import current Codex login",
             )!;
@@ -1681,9 +1774,10 @@ it.each([
 
 it("switches between adding and importing a Codex account without closing the new editor", async () => {
   await render("providers");
+  await selectProvider("codex");
   const add = [
     ...container.querySelectorAll<HTMLButtonElement>('button[type="button"]'),
-  ].filter((button) => button.textContent === "Add account")[1];
+  ].find((button) => button.textContent === "Add account")!;
   const importing = [
     ...container.querySelectorAll<HTMLButtonElement>("button"),
   ].find((button) => button.textContent === "Import current Codex login")!;
@@ -1705,6 +1799,7 @@ it("imports the current Codex login into a named profile and animates the editor
   const copied = vi.fn();
   mockAccountHost({ imported: copied });
   await render("providers");
+  await selectProvider("codex");
   await act(async () => [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent === "Import current Codex login")!.click());
   const input = container.querySelector<HTMLInputElement>('[aria-label="New Codex account"]')!;
   await act(async () => {

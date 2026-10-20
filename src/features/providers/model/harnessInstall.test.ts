@@ -1,10 +1,12 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
 const mock = vi.hoisted(() => ({
-  install: vi.fn(), inspect: vi.fn(), probe: vi.fn(), available: vi.fn(),
+  install: vi.fn(), uninstall: vi.fn(), inspect: vi.fn(), probe: vi.fn(), available: vi.fn(),
   refresh: vi.fn(), announce: vi.fn(),
 }));
-vi.mock("../../../platform/tauri/harnessInstall", () => ({ installLocalHarness: mock.install }));
+vi.mock("../../../platform/tauri/harnessInstall", () => ({
+  installLocalHarness: mock.install, uninstallLocalHarness: mock.uninstall,
+}));
 vi.mock("../../../platform/tauri/platform", () => ({ IS_WIN: true }));
 vi.mock("../../../integrations/harness/core/child", () => ({ inspectHarnessBinary: mock.inspect }));
 vi.mock("../../../integrations/harness/core/availability", () => ({
@@ -17,6 +19,7 @@ beforeEach(() => {
   vi.resetModules();
   vi.resetAllMocks();
   mock.install.mockResolvedValue(undefined);
+  mock.uninstall.mockResolvedValue(undefined);
   mock.inspect.mockResolvedValue({ path: "/bin/cursor-agent", version: "1.2.3" });
   mock.probe.mockResolvedValue(undefined);
   mock.available.mockReturnValue(true);
@@ -79,4 +82,25 @@ it("rejects unsupported installers without blocking later installations", async 
   expect(mock.install).not.toHaveBeenCalled();
   await runHarnessInstall("pi");
   expect(mock.install).toHaveBeenCalledWith("pi");
+});
+
+it("removes the CLI OmniCode runs, then refreshes availability and other windows", async () => {
+  mock.available.mockReturnValue(false);
+  const { runHarnessUninstall, runHarnessInstall } = await import("./harnessInstall");
+  const removal = runHarnessUninstall("claude");
+  expect(runHarnessInstall("codex")).toBe(removal);
+  await removal;
+  expect(mock.uninstall).toHaveBeenCalledWith("claude", null);
+  expect(mock.install).not.toHaveBeenCalled();
+  expect(mock.probe).toHaveBeenLastCalledWith({ force: true });
+  expect(mock.refresh).not.toHaveBeenCalled();
+  expect(mock.announce).toHaveBeenCalledWith(["claude"]);
+});
+
+it("reports a failed removal without announcing it", async () => {
+  mock.uninstall.mockRejectedValueOnce(new Error("permission denied"));
+  const { runHarnessUninstall } = await import("./harnessInstall");
+  await runHarnessUninstall("codex");
+  expect(mock.probe).not.toHaveBeenCalled();
+  expect(mock.announce).not.toHaveBeenCalled();
 });

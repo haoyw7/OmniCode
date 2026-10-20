@@ -9,6 +9,7 @@ import type {
   HostSession,
 } from "../features/connections/model/protocol";
 import { HARNESS_TITLE } from "../features/sessions/model/session";
+import { lastSelectedModelId } from "../features/sessions/model/models";
 import { setUiLanguage } from "../shared/i18n/language";
 import { MobileApp } from "./MobileApp";
 // Load the real settings module during collection, before timing interactions.
@@ -373,6 +374,7 @@ describe("mobile Agent defaults settings and new conversations", () => {
     await input("Keep this draft");
     await click("Model and reasoning");
     await choose("Model", "First");
+    expect(lastSelectedModelId("codex")).toBe("codex:first");
     await dismiss();
     await click("Permissions: Full access");
     await click("Auto", dialog());
@@ -380,6 +382,7 @@ describe("mobile Agent defaults settings and new conversations", () => {
     await defaultsPanel();
     await choose("Agent", HARNESS_TITLE.claude);
     await dismiss();
+    expect(lastSelectedModelId("codex")).toBe("codex:first");
     await click("Default permissions");
     await click("Supervised", dialog());
     await click("Codex account");
