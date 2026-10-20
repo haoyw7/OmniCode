@@ -53,3 +53,16 @@ node website/serve.mjs
 发布新版本时同步更新首屏版本链接；应用界面改版时按上文重新生成 `app-window/`。智能体列表对应 `src/features/sessions/model/session.ts` 中的 `HARNESS_TITLE`，新增智能体时同时补充图标。下载链接指向 GitHub Releases，可用安装包以实际附件为准。
 
 静态托管时上传 `index.html`、`styles.css`、`site.js`、`assets/` 和 `app-window/` 即可（`tools/` 只用于重新生成），支持子目录部署。`serve.mjs` 仅供回环地址本地预览。未添加发布流水线。
+
+## VPS 部署
+
+官网部署在本机 SSH 配置的 `vps` 主机，通过 [https://omnicode.ddlzyyy.top/](https://omnicode.ddlzyyy.top/) 访问。Cloudflare Tunnel 将这个主机名转发到 `http://127.0.0.1:80`，Nginx 仅监听本机回环地址，并已设置开机启动；官网不再提供公网 IP 直连入口，VPS 的 443 端口继续由原有服务使用。
+
+- 站点配置：`/etc/nginx/sites-available/omnicode`，由 `sites-enabled/omnicode` 启用。
+- 网站根目录：`/var/www/omnicode/current`，软链指向 `releases/<UTC 时间>/` 中的发布文件。
+- 文件 SHA-256 清单：`/var/www/omnicode/manifests/`；首次部署前的 Nginx 配置备份：`/var/backups/omnicode/`。
+- 访问与错误日志：`/var/log/nginx/omnicode.access.log` 和 `/var/log/nginx/omnicode.error.log`。
+- Tunnel：复用 `claude-vps`（`cloudflared-claude.service`），仅追加官网路由，保留 `cp.ddlzyyy.top` 和 `api.ddlzyyy.top` 的原有路由。DNS 为 Cloudflare 自动创建的代理 CNAME，指向 `4b9cef6e-f30b-4209-bcf0-cc6367ed99f1.cfargotunnel.com`。
+- Tunnel 接入前的 Nginx 配置、路由和服务状态备份，以及接入后的验证记录，保存在 `/var/backups/omnicode/tunnel-<UTC 时间>/`。SSH 和其他服务的公开入口保持原样，Tunnel 的保护范围是官网。
+
+后续更新仍需手动发布：先校验静态资源引用与 JavaScript 语法，再上传上述静态文件至新的发布目录，核对文件校验值后原子切换 `current` 软链。修改 Nginx 配置时，先运行 `nginx -t`，通过后执行 `systemctl reload nginx`，等待新配置就绪并验证公网资源。无需构建桌面应用，也未配置自动发布钩子。
