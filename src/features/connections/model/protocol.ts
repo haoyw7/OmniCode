@@ -89,6 +89,8 @@ export type HostModelCatalog = {
 /** Named login profiles the paired desktop shares; `default` is the CLI's own. */
 export type HostAccountIdentity = { email?: string; name?: string; plan?: string; organization?: string };
 export type HostProviderAccount = {
+  edition?: "cn" | "global";
+  readOnly?: boolean;
   id: string;
   label: string;
   identity?: HostAccountIdentity;

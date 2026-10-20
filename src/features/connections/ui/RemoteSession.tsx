@@ -1,7 +1,7 @@
 import { RemoteSnapshotReporter } from "../model/remoteSnapshotReporter";
 import { executionWarningText } from "../../../integrations/harness/core/executionWarnings";
 import { sessionComposerConfiguration } from "../../sessions/model/composerConfiguration";
-import { requestedProviderAccountId, supportsProviderAccounts } from "../../providers/model/providerAccounts";
+import { requestedProviderAccountId, supportsProviderAccounts, workBuddyAccountIdForModel } from "../../providers/model/providerAccounts";
 import { MessageQueue } from "../../sessions/ui/MessageQueue";
 import { captureQueueReturnPosition, lastQueueUserMessageId } from "../../sessions/model/messageQueue";
 import { CONTINUE_PROMPT } from "../../sessions/model/inFlight";
@@ -1234,7 +1234,7 @@ function ConnectedRemoteSession({
           modelSettings: draft.settings,
           runtimeMode: draft.mode,
           ...(project.local && supportsProviderAccounts(draft.harness)
-            ? { providerAccountId: (shell.harness === draft.harness ? shell.providerAccountId : undefined) ?? requestedProviderAccountId(draft.harness, project.cwd) }
+            ? { providerAccountId: draft.harness === "workbuddy" ? workBuddyAccountIdForModel(draft.model, requestedProviderAccountId(draft.harness, project.cwd)) : (shell.harness === draft.harness ? shell.providerAccountId : undefined) ?? requestedProviderAccountId(draft.harness, project.cwd) }
             : {}),
         },
         turn,

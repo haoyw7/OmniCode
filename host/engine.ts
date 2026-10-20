@@ -1345,6 +1345,7 @@ export class HostEngine {
           join(dirname(this.store.attachmentDir), "desktop-owner.json"),
           command.harness,
           command.providerAccountId,
+          command.model,
         );
         const cwd = resolveHostWorktree(project.cwd, command.executionCwd);
         const worktree = cwd !== project.cwd ? hostWorktreeAt(project.cwd, cwd) : undefined;
@@ -2424,15 +2425,11 @@ export class HostEngine {
       if (live.imageIds!.has(imageKey)) return;
       live.imageIds!.add(imageKey);
       try {
-        if (
-          event.mimeType &&
-          event.mimeType.trim().toLowerCase() !== "image/png"
-        )
-          throw new Error("Unsupported generated image type");
         savedImage = saveGeneratedImageAttachment(
           this.store,
           event.data,
           event.name,
+          event.mimeType?.trim().toLowerCase(),
         );
         event = {
           type: "image.generated",

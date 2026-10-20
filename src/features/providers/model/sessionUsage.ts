@@ -30,6 +30,6 @@ export function usageSessionFor(session: Session): UsageSession {
 /** Usage providers keep their account controls available even before signing in. */
 export function hasSessionUsage(session: UsageSession): boolean {
   return session.harness === "claude" || session.harness === "codex" ||
-    session.harness === "opencode" || session.harness === "pi" ||
+    session.harness === "opencode" || session.harness === "pi" || session.harness === "workbuddy" ||
     !!(session.authRequired && supportsHarnessLogin(session.harness));
 }

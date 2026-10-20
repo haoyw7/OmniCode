@@ -1381,7 +1381,7 @@ export function useMobileAppController() {
     try {
       const hostId = client.connection?.endpoint;
       const providerAccountId = !sessionId
-        ? defaultProviderAccount(configuration.harness, draftDefaults.current)
+        ? defaultProviderAccount(configuration.harness, draftDefaults.current, configuration.model)
         : undefined;
       if (providerAccountId) {
         const accounts = await client.providerAccounts();

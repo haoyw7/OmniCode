@@ -643,6 +643,7 @@ export type GeneratedImageAsset = {
 export function saveGeneratedImage(input: {
   data: string;
   name: string;
+  mimeType?: string;
 }): Promise<GeneratedImageAsset> {
   return invoke<GeneratedImageAsset>("save_generated_image", input);
 }

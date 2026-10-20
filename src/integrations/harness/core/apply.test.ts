@@ -16,6 +16,14 @@ import {
 
 let now = 0;
 
+it("persists the provider-bound account and preserves it when older providers omit the optional field", () => {
+  const bound = applyHarnessEvent(newSession("workbuddy", "/repo"), {
+    type: "session.providerBound", providerSessionId: "native", providerAccountId: "wb-cn-one",
+  });
+  expect(sanitizeSessionForPersist(bound)).toMatchObject({ providerSessionId: "native", providerAccountId: "wb-cn-one" });
+  expect(applyHarnessEvent(bound, { type: "session.providerBound", providerSessionId: "native-next" }).providerAccountId).toBe("wb-cn-one");
+});
+
 it.each(["pi", "omp"] as const)("preserves queued %s message IDs when dispatching and steering", (harness) => {
   const first = appendUser(newSession(harness, "/repo"), "Queued turn", [], { id: "queued-first" });
   expect(first.blocks[0]).toMatchObject({ id: "queued-first", role: "user" });

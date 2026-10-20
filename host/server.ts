@@ -64,6 +64,7 @@ import { discoverHermesModels } from "../src/integrations/harness/providers/herm
 import { discoverDeepseekModels } from "../src/integrations/harness/providers/deepseek/deepseekCatalog";
 import { resolveDeepseekBinary } from "../src/integrations/harness/core/child";
 import { discoverAntigravityModels } from "../src/integrations/harness/providers/antigravity/antigravityCatalog";
+import { discoverWorkBuddyModels } from "../src/integrations/harness/providers/workbuddy/workbuddyAdapter";
 import { setHarnessModels, type AgentModel } from "../src/features/sessions/model/models";
 import {
   resolveAntigravityBinary,
@@ -76,12 +77,14 @@ import {
   resolveOmpBinary,
   resolveOpenCodeBinary,
   resolvePiBinary,
+  resolveWorkBuddyBinary,
 } from "../src/integrations/harness/core/child";
 
 // Providers also add models server-side, without a CLI update.
 const CATALOG_MAX_AGE_MS = 5 * 60_000;
 const resolveBinary: Record<RemoteProvider, () => Promise<{ path: string }>> = {
   deepseek: () => resolveDeepseekBinary(),
+  workbuddy: () => resolveWorkBuddyBinary(),
   codex: () => resolveCodexBinary(),
   claude: () => resolveClaudeBinary(),
   cursor: () => resolveCursorBinary(),
@@ -99,6 +102,7 @@ const resolveBinary: Record<RemoteProvider, () => Promise<{ path: string }>> = {
 const MAX_BODY = 32 * 1024 * 1024;
 const discoverModels: Record<RemoteProvider, (cwd: string) => Promise<AgentModel[]>> = {
   deepseek: discoverDeepseekModels,
+  workbuddy: discoverWorkBuddyModels,
   codex: discoverCodexModels,
   claude: discoverClaudeModels,
   cursor: discoverCursorModels,

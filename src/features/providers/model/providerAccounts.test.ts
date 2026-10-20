@@ -14,6 +14,7 @@ import {
   rememberSharedProviderDefaults,
   requestedProviderAccountId,
   restoreProviderAccounts,
+  workBuddyAccountIdForModel,
 } from "./providerAccounts";
 
 beforeEach(() => {
@@ -21,6 +22,23 @@ beforeEach(() => {
 });
 
 describe("provider accounts", () => {
+  it("keeps external WorkBuddy logins read-only and chooses only the model's region", () => {
+    expect(providerAccounts("workbuddy")).toEqual([]);
+    restoreProviderAccounts({ workbuddy: [
+      { id: "wb-cn-one", label: "WorkBuddy China", edition: "cn", readOnly: true },
+      { id: "wb-global-one", label: "WorkBuddy International", edition: "global", readOnly: true },
+    ] });
+    expect(workBuddyAccountIdForModel("workbuddy:global:fast-model", "wb-cn-one")).toBe("wb-global-one");
+    expect(workBuddyAccountIdForModel("workbuddy:cn:auto", "wb-global-one")).toBe("wb-cn-one");
+    expect(() => saveProviderAccount({ id: "wb-cn-two", provider: "workbuddy", label: "local" })).toThrow();
+    expect(renameProviderAccount("workbuddy", "wb-cn-one", "renamed")).toBeNull();
+    expect(removeProviderAccount("workbuddy", "wb-cn-one")).toBe(false);
+    restoreProviderAccounts({ workbuddy: [{ id: "wb-global-one", label: "WorkBuddy International", edition: "global" }] });
+    expect(workBuddyAccountIdForModel("workbuddy:cn:auto")).toBeUndefined();
+    localStorage.setItem("omnicode.providerAccounts.v1", JSON.stringify({ workbuddy: { invalid: true } }));
+    expect(providerAccounts("workbuddy")).toEqual([]);
+  });
+
   it("always exposes the provider-owned default account", () => {
     expect(providerAccounts("claude")).toEqual([
       {

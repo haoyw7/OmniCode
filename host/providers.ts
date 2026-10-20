@@ -13,6 +13,7 @@ import * as fx from "../src/integrations/harness/providers/fx/fx";
 import * as hermes from "../src/integrations/harness/providers/hermes/hermes";
 import * as deepseek from "../src/integrations/harness/providers/deepseek/deepseek";
 import * as antigravity from "../src/integrations/harness/providers/antigravity/antigravity";
+import { workbuddyAdapter } from "../src/integrations/harness/providers/workbuddy/workbuddyAdapter";
 import type {
   SendTurnInput,
   CompactContextInput,
@@ -73,6 +74,12 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     bind: deepseek.bindDeepseekSession, approve: deepseek.respondDeepseekApproval,
     answer: deepseek.respondDeepseekQuestion,
     keepQuestionOpen: deepseek.keepDeepseekQuestionOpen,
+  },
+  workbuddy: {
+    botCapabilities: providerBotCapabilities("workbuddy"),
+    send: workbuddyAdapter.sendTurn, cancel: workbuddyAdapter.cancelTurn,
+    stop: workbuddyAdapter.forgetSession, bind: workbuddyAdapter.bindSession,
+    approve: workbuddyAdapter.respondApproval, answer: workbuddyAdapter.respondQuestion!,
   },
   codex: {
     botCapabilities: providerBotCapabilities("codex"),

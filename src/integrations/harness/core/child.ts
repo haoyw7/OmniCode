@@ -317,7 +317,7 @@ export async function spawnChild(
   command: string,
   args: string[],
   cwd: string,
-  account?: { provider: "claude" | "codex"; id: string },
+  account?: { provider: "claude" | "codex" | "workbuddy"; id: string },
   binaryProvider?: ConfigurableBinaryProvider,
 ): Promise<void> {
   livePid.delete(sessionId);
@@ -401,6 +401,7 @@ async function resolveHarnessBinary(
     hermes: "harness_resolve_hermes",
     antigravity: "harness_resolve_antigravity",
     deepseek: "harness_resolve_deepseek",
+    workbuddy: "harness_resolve_workbuddy",
   };
   return invoke(command[provider]);
 }
@@ -427,6 +428,18 @@ export function resolveClaudeBinary(
   binaryPath?: string | null,
 ): Promise<{ path: string }> {
   return resolveHarnessBinary("claude", binaryPath);
+}
+
+export function resolveWorkBuddyBinary(binaryPath?: string | null): Promise<{ path: string }> {
+  return resolveHarnessBinary("workbuddy", binaryPath);
+}
+
+export function readWorkBuddyAccounts(): Promise<import("./catalog").WorkBuddyAccount[]> {
+  return invoke("harness_workbuddy_accounts", { binaryPath: runtimeProviderBinaryPath("workbuddy") });
+}
+
+export function readWorkBuddyCatalog(): Promise<import("./catalog").WorkBuddyCatalog> {
+  return invoke("harness_workbuddy_catalog", { binaryPath: runtimeProviderBinaryPath("workbuddy") });
 }
 
 export function resolvePiBinary(

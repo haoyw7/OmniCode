@@ -5667,16 +5667,20 @@ pub async fn save_generated_image(
     app: AppHandle,
     data: String,
     name: String,
+    mime_type: Option<String>,
 ) -> Result<GeneratedImageAsset, String> {
-    tauri::async_runtime::spawn_blocking(move || save_generated_image_sync(&app, &data, &name))
-        .await
-        .map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || {
+        save_generated_image_sync(&app, &data, &name, mime_type.as_deref())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 fn save_generated_image_sync(
     app: &AppHandle,
     data: &str,
     name: &str,
+    mime_type: Option<&str>,
 ) -> Result<GeneratedImageAsset, String> {
     if data.len() as u64 > MAX_GENERATED_IMAGE_DATA_BYTES {
         return Err(format!(
@@ -5696,9 +5700,7 @@ fn save_generated_image_sync(
             MAX_GENERATED_IMAGE_BYTES / 1024 / 1024
         ));
     }
-    if !is_png(&bytes) {
-        return Err("Generated image data is not a PNG image.".into());
-    }
+    let (mime, extension) = generated_image_format(&bytes, mime_type.unwrap_or("image/png"))?;
     let dir = app
         .path()
         .app_data_dir()
@@ -5706,7 +5708,7 @@ fn save_generated_image_sync(
         .join(GENERATED_IMAGE_DIR);
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let safe_name = safe_attachment_name(name);
-    let destination = dir.join(format!("{}-{}.png", Uuid::new_v4(), safe_name));
+    let destination = dir.join(format!("{}-{}.{}", Uuid::new_v4(), safe_name, extension));
     let mut file = std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -5718,9 +5720,78 @@ fn save_generated_image_sync(
     }
     Ok(GeneratedImageAsset {
         path: destination.to_string_lossy().into_owned(),
-        mime_type: "image/png".into(),
+        mime_type: mime.into(),
         size: bytes.len() as u64,
     })
+}
+
+fn generated_image_format(
+    bytes: &[u8],
+    mime: &str,
+) -> Result<(&'static str, &'static str), String> {
+    match mime.trim().to_ascii_lowercase().as_str() {
+        "image/png" if is_png(bytes) => Ok(("image/png", "png")),
+        "image/jpeg" if valid_generated_jpeg(bytes) => Ok(("image/jpeg", "jpg")),
+        "image/webp"
+            if bytes.len() >= 26
+                && &bytes[..4] == b"RIFF"
+                && &bytes[8..12] == b"WEBP"
+                && u32::from_le_bytes(bytes[4..8].try_into().unwrap()) as usize + 8
+                    == bytes.len()
+                && matches!(&bytes[12..16], b"VP8 " | b"VP8L" | b"VP8X")
+                && u32::from_le_bytes(bytes[16..20].try_into().unwrap()) as usize
+                    <= bytes.len() - 20 =>
+        {
+            Ok(("image/webp", "webp"))
+        }
+        _ => Err("Invalid or unsupported generated image type".into()),
+    }
+}
+
+fn valid_generated_jpeg(bytes: &[u8]) -> bool {
+    if bytes.len() < 12 || !bytes.starts_with(&[255, 216, 255]) || !bytes.ends_with(&[255, 217]) {
+        return false;
+    }
+    let mut offset = 2;
+    let mut dimensions = false;
+    while offset + 4 < bytes.len() {
+        if bytes[offset] != 255 {
+            return false;
+        }
+        offset += 1;
+        while offset < bytes.len() && bytes[offset] == 255 {
+            offset += 1;
+        }
+        if offset + 2 >= bytes.len() {
+            return false;
+        }
+        let marker = bytes[offset];
+        offset += 1;
+        if marker == 218 {
+            break;
+        }
+        if marker == 1 || (208..=215).contains(&marker) {
+            continue;
+        }
+        let length = u16::from_be_bytes([bytes[offset], bytes[offset + 1]]) as usize;
+        if length < 2 || offset + length > bytes.len() {
+            return false;
+        }
+        if matches!(
+            marker,
+            192 | 193 | 194 | 195 | 197 | 198 | 199 | 201 | 202 | 203 | 205 | 206 | 207
+        ) {
+            if length < 8
+                || bytes[offset + 3..offset + 5] == [0, 0]
+                || bytes[offset + 5..offset + 7] == [0, 0]
+            {
+                return false;
+            }
+            dimensions = true;
+        }
+        offset += length;
+    }
+    dimensions
 }
 
 #[tauri::command]
@@ -6320,11 +6391,35 @@ mod tests {
     }
 
     #[test]
-    fn generated_image_validation_accepts_png_only() {
+    fn generated_image_png_signature_validation() {
         assert!(is_png(&[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
         assert!(!is_png(&[0xff, 0xd8, 0xff, 0x00]));
         assert!(!is_png(b"<html>"));
         assert!(!is_png(&[]));
+    }
+
+    #[test]
+    fn generated_image_formats_preserve_native_mime_and_reject_mismatch() {
+        use base64::Engine;
+        for (encoded, mime, extension) in [
+            (
+                include_str!("../../tests/fixtures/generated-red.jpg.b64"),
+                "image/jpeg",
+                "jpg",
+            ),
+            (
+                include_str!("../../tests/fixtures/generated-pixel.webp.b64"),
+                "image/webp",
+                "webp",
+            ),
+        ] {
+            let bytes = base64::engine::general_purpose::STANDARD
+                .decode(encoded.trim())
+                .unwrap();
+            assert_eq!(generated_image_format(&bytes, mime), Ok((mime, extension)));
+            assert!(generated_image_format(&bytes, "image/png").is_err());
+            assert!(generated_image_format(&bytes[..20], mime).is_err());
+        }
     }
 
     #[test]

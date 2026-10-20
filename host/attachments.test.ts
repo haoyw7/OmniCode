@@ -47,6 +47,16 @@ it("saves bounded generated PNGs as ordinary private attachments", () => {
   expect(() => saveGeneratedImageAttachment(store, "broken", "bad.png")).toThrow();
 });
 
+it.each([["image/jpeg", "generated-red.jpg.b64"], ["image/webp", "generated-pixel.webp.b64"]])("persists generated %s bytes without changing their format", (mime, fixture) => {
+  const directory = mkdtempSync(join(tmpdir(), "generated-native-attachment-"));
+  const store = new HostStore(join(directory, "host.db"));
+  cleanups.push(() => { store.close(); rmSync(directory, { recursive: true, force: true }); });
+  const data = readFileSync(new URL(`../tests/fixtures/${fixture}`, import.meta.url), "utf8").trim();
+  const file = saveGeneratedImageAttachment(store, data, "native-image", mime);
+  expect(file.mimeType).toBe(mime);
+  expect(readFileSync(file.path!).toString("base64")).toBe(data);
+});
+
 it("accepts ordered chunks and an identical retry while rejecting changes", () => {
   const directory = mkdtempSync(join(tmpdir(), "remote-upload-test-"));
   const store = new HostStore(join(directory, "host.db"));

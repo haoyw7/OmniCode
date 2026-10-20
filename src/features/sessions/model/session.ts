@@ -58,7 +58,8 @@ export type HarnessId =
   | "omp"
   | "fx"
   | "hermes"
-  | "antigravity";
+  | "antigravity"
+  | "workbuddy";
 
 export const HARNESSES: HarnessId[] = [
   "claude",
@@ -72,6 +73,7 @@ export const HARNESSES: HarnessId[] = [
   "hermes",
   "antigravity",
   "deepseek",
+  "workbuddy",
 ];
 
 export type BlockRole =
@@ -608,6 +610,7 @@ export type PendingHarnessSwitch = {
 
 export const HARNESS_LABEL: Record<HarnessId, string> = {
   deepseek: "deepseek",
+  workbuddy: "workbuddy",
   claude: "claude",
   codex: "codex",
   cursor: "cursor",
@@ -622,6 +625,7 @@ export const HARNESS_LABEL: Record<HarnessId, string> = {
 
 export const HARNESS_TITLE: Record<HarnessId, string> = {
   deepseek: "DeepSeek Harness",
+  workbuddy: "WorkBuddy",
   claude: "Claude Code",
   codex: "Codex",
   cursor: "Cursor",

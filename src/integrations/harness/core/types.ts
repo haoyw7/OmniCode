@@ -22,7 +22,7 @@ export type HarnessEvent =
   | { type: "session.started" }
   | { type: "session.ended"; code?: number | null }
   | { type: "session.error"; message: string }
-  | { type: "session.providerBound"; providerSessionId: string }
+  | { type: "session.providerBound"; providerSessionId: string; providerAccountId?: string }
   | { type: "turn.started"; providerTurnId: string }
   | {
       type: "session.configChanged";

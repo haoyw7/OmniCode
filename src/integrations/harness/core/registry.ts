@@ -8,6 +8,7 @@ import type {
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import type { PrContent } from "../../../features/source-control/model/gitText";
 import { beginCatalogLoad, hasFreshCatalog, setHarnessModels, type AgentModel } from "../../../features/sessions/model/models";
+import type { HarnessCatalogModel } from "./catalog";
 import type { UserQuestionReply } from "../../../features/sessions/model/userQuestion";
 import { translate } from "../../../shared/i18n/language";
 import { generateTextBranchName } from "./branchName";
@@ -85,7 +86,7 @@ export type HarnessAdapter = {
   /** Seed provider task state from a restored session's persisted panels. */
   restoreTaskLists?(threadId: string, lists: TaskListMeta[]): void;
   /** Refresh the model catalog overlay when supported. */
-  refreshCatalog?(): Promise<void>;
+  refreshCatalog?(): Promise<void | HarnessCatalogModel[]>;
   /** Optional LLM commit message from staged changes. */
   generateCommitMessage?(cwd: string, signal?: AbortSignal): Promise<string>;
   /** Optional LLM pull request title/body from branch diff context. */
@@ -422,6 +423,7 @@ export async function refreshHarnessCatalogs(
         const done = beginCatalogLoad(adapter.id);
         await adapter
           .refreshCatalog()
+          .then((models) => { if (models) setHarnessModels(adapter.id, models.map(model => ({ ...model, harness: adapter.id }))); })
           .catch((error: unknown) => {
             console.debug(`[omnicode] ${adapter.id} catalog`, error);
           })

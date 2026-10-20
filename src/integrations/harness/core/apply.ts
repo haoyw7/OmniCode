@@ -208,6 +208,7 @@ export function applyHarnessEvent(
       });
     case "session.providerBound":
       return { ...session, providerSessionId: event.providerSessionId,
+        ...(event.providerAccountId ? { providerAccountId: event.providerAccountId } : {}),
         ...(session.nativeSession && (session.nativeSession.providerSessionId !== event.providerSessionId || session.nativeSession.provider !== session.harness)
           ? { nativeSession: undefined } : {}),
       };

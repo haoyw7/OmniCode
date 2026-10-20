@@ -15,10 +15,10 @@ await build({
   plugins: [excludeEvaluationEsbuild(), {
     name: "raw-resources",
     setup(builder) {
-      builder.onLoad({ filter: /\.mjs\?raw$/ }, async args => ({
+      builder.onLoad({ filter: /\.[cm]js\?raw$/ }, async args => ({
         contents: await readFile(args.path.slice(0, -4), "utf8"), loader: "text",
       }));
-      builder.onResolve({ filter: /\.mjs\?raw$/ }, args => ({ path: resolve(args.resolveDir, args.path) }));
+      builder.onResolve({ filter: /\.[cm]js\?raw$/ }, args => ({ path: resolve(args.resolveDir, args.path) }));
     },
   }],
   sourcemap: true,

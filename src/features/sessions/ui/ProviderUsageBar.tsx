@@ -36,6 +36,7 @@ import {
 } from "../../providers/model/providerAccounts";
 import { useProviderUsage, useUsageClock } from "../../providers/model/useProviderUsage";
 import type { UsageSession } from "../../providers/model/sessionUsage";
+import { WorkBuddyAccountPicker } from "./WorkBuddyAccountPicker";
 
 function usageProvidersFor(session?: UsageSession): RateLimitProvider[] {
   return session?.harness === "claude" ||
@@ -239,6 +240,7 @@ export function ProviderUsageBar({
 
   const showOpencodeChip = wantOpencode && opencode.status !== "unavailable";
   const showUsage = wantClaude || wantCodex || showOpencodeChip;
+  if (session?.harness === "workbuddy") return present(<WorkBuddyAccountPicker session={session} onChange={id => selectAccount("workbuddy", id)} />);
 
   if (session?.harness === "pi")
     return (
