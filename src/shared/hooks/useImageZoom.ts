@@ -25,7 +25,7 @@ const TAP_DISTANCE = 8;
 const DOUBLE_TAP_MS = 300;
 
 /** Zoom only the image, leaving the surrounding dialog and system bars fixed. */
-export function useImageZoom(src: string, visible: boolean) {
+export function useImageZoom(src: string, visible: boolean, onSwipe?: (direction: -1 | 1) => void) {
   const stageRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const current = useRef(FIT);
@@ -38,6 +38,7 @@ export function useImageZoom(src: string, visible: boolean) {
   const lastPointerType = useRef("");
   const tapStart = useRef<{ point: Point; time: number } | null>(null);
   const lastTap = useRef<{ point: Point; time: number } | null>(null);
+  const swipeStart = useRef<Point | null>(null);
   const animation = useRef<AnimationPlaybackControls | null>(null);
 
   // Measure at mount, resize and gesture start, never while fingers move.
@@ -153,6 +154,7 @@ export function useImageZoom(src: string, visible: boolean) {
     pointers.current.clear();
     gesture.current = null;
     tapStart.current = lastTap.current = null;
+    swipeStart.current = null;
     ignoreClick.current = startedOnImage.current = false;
     lastPointerType.current = "";
     current.current = FIT;
@@ -202,6 +204,7 @@ export function useImageZoom(src: string, visible: boolean) {
       const ids = [...pointers.current.keys()];
       pointers.current.clear();
       gesture.current = null;
+      swipeStart.current = null;
       for (const id of ids)
         if (capture.current?.hasPointerCapture?.(id))
           capture.current.releasePointerCapture(id);
@@ -226,12 +229,15 @@ export function useImageZoom(src: string, visible: boolean) {
       ignoreClick.current = false;
       startedOnImage.current = event.target === imageRef.current;
       tapStart.current = { point, time: event.timeStamp };
+      swipeStart.current = onSwipe && event.pointerType === "touch" && current.current.scale === 1
+        ? point : null;
     }
     lastPointerType.current = event.pointerType;
     pointers.current.set(event.pointerId, point);
     if (pointers.current.size > 1) {
       ignoreClick.current = true;
       tapStart.current = lastTap.current = null;
+      swipeStart.current = null;
     }
     gesture.current = snapshot();
     capture.current = event.currentTarget;
@@ -281,6 +287,13 @@ export function useImageZoom(src: string, visible: boolean) {
     if (!pointers.current.has(event.pointerId)) return;
     const point = { x: event.clientX, y: event.clientY };
     const start = tapStart.current;
+    const swipe = swipeStart.current;
+    const dx = swipe ? point.x - swipe.x : 0;
+    const dy = swipe ? point.y - swipe.y : 0;
+    const swiped = event.type === "pointerup" && swipe !== null &&
+      Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy) * 1.5;
+    swipeStart.current = null;
+    if (swiped) ignoreClick.current = true;
     if (
       event.type === "pointerup" &&
       event.pointerType === "touch" &&
@@ -310,6 +323,7 @@ export function useImageZoom(src: string, visible: boolean) {
     if (event.currentTarget.hasPointerCapture?.(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId);
     schedule();
+    if (swiped) onSwipe?.(dx < 0 ? 1 : -1);
   };
   const onDoubleClick = (event: MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();

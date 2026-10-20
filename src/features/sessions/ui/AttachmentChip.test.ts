@@ -1,6 +1,6 @@
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
 // @vitest-environment happy-dom
-import { act, createElement } from "react";
+import { act, createElement, Fragment } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Attachment, GeneratedImageMeta } from "../model/session";
@@ -11,6 +11,7 @@ vi.mock("../../../platform/tauri/fs", () => ({
   readBinaryFile: vi.fn(),
 }));
 import { AttachmentChip } from "./AttachmentChip";
+import { UserMessageBlock } from "./transcript/UserMessageBlock";
 
 const attachment: Attachment = {
   id: "image-1",
@@ -46,6 +47,37 @@ function render(onRemove?: () => void) {
 }
 
 describe("AttachmentChip image preview", () => {
+  it("opens the selected message image and navigates only its previewable images in order", () => {
+    const second = { ...attachment, id: "image-2", name: "second.png", previewUrl: "blob:second" };
+    const third = { ...attachment, id: "image-3", name: "third.png", previewUrl: "blob:third" };
+    const file: Attachment = { id: "file", name: "notes.txt", kind: "file", mimeType: "text/plain", size: 1 };
+    const unavailable = { ...attachment, id: "missing", previewUrl: undefined };
+    act(() => root.render(createElement(Fragment, null,
+      createElement(UserMessageBlock, {
+        block: { id: "message-1", role: "user", text: "", attachments: [attachment, file, second, unavailable, third] },
+        layout: "chat", visible: true, stickyIndex: 0,
+      }),
+      createElement(UserMessageBlock, {
+        block: { id: "message-2", role: "user", text: "", attachments: [
+          { ...attachment, id: "unrelated", name: "unrelated.png", previewUrl: "blob:unrelated" },
+        ] },
+        layout: "chat", visible: true, stickyIndex: 0,
+      }),
+    )));
+    act(() => container.querySelector<HTMLButtonElement>('[aria-label="Open second.png full screen"]')!.click());
+    const dialog = document.querySelector<HTMLElement>(".image-lightbox")!;
+    const current = () => dialog.querySelector("img")?.getAttribute("src");
+    expect(current()).toBe("blob:second");
+    expect(dialog.querySelector('[role="status"]')?.textContent).toBe("2 / 3");
+    act(() => dialog.querySelector<HTMLButtonElement>('[aria-label="Next image"]')!.click());
+    expect(current()).toBe("blob:third");
+    expect(dialog.querySelector<HTMLButtonElement>('[aria-label="Next image"]')!.disabled).toBe(true);
+    act(() => dialog.querySelector<HTMLButtonElement>('[aria-label="Previous image"]')!.click());
+    act(() => dialog.querySelector<HTMLButtonElement>('[aria-label="Previous image"]')!.click());
+    expect(current()).toBe(attachment.previewUrl);
+    expect(dialog.querySelector<HTMLButtonElement>('[aria-label="Previous image"]')!.disabled).toBe(true);
+  });
+
   it("opens the image full screen and closes it with Escape", () => {
     render();
     const trigger = container.querySelector<HTMLButtonElement>(
@@ -62,6 +94,7 @@ describe("AttachmentChip image preview", () => {
     expect(dialog?.querySelector("img")?.getAttribute("src")).toBe(
       attachment.previewUrl,
     );
+    expect(dialog?.querySelector('[aria-label="Next image"]')).toBeNull();
     expect(document.activeElement?.getAttribute("aria-label")).toBe(
       "Close image preview",
     );

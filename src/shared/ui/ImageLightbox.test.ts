@@ -197,6 +197,92 @@ describe("image zoom gestures", () => {
     frame();
   }
 
+  function gallery() {
+    act(() => root.render(createElement(ImageLightbox, {
+      src: "blob:photo", alt: "photo", onClose: close,
+      images: [
+        { src: "blob:photo", alt: "photo" },
+        { src: "blob:second", alt: "second" },
+        { src: "blob:third", alt: "third" },
+      ],
+    })));
+  }
+
+  it("swipes both ways within the gallery without closing on the captured click", () => {
+    gallery();
+    pointer("pointerdown", 300, 150, 1, stage);
+    pointer("pointermove", 100);
+    pointer("pointerup", 100, 150, 1, dialog);
+    expect(image.getAttribute("src")).toBe("blob:second");
+    expect(dialog.querySelector('[role="status"]')?.textContent).toBe("2 / 3");
+    act(() => dialog.click());
+    expect(close).not.toHaveBeenCalled();
+    pointer("pointerdown", 100);
+    pointer("pointermove", 300);
+    pointer("pointerup", 300);
+    expect(image.getAttribute("src")).toBe("blob:photo");
+    pointer("pointerdown", 100);
+    pointer("pointermove", 300);
+    pointer("pointerup", 300);
+    expect(image.getAttribute("src")).toBe("blob:photo");
+  });
+
+  it("ignores short or vertical swipes and mouse drags", () => {
+    gallery();
+    for (const [x, y, type] of [[270, 150, "touch"], [250, 280, "touch"], [100, 150, "mouse"]] as const) {
+      pointer("pointerdown", 300, 150, 1, image, type);
+      pointer("pointermove", x, y, 1, image, type);
+      pointer("pointerup", x, y, 1, dialog, type);
+      expect(image.getAttribute("src")).toBe("blob:photo");
+    }
+  });
+
+  it.each(["pointercancel", "lostpointercapture"])("does not navigate on %s and accepts the next swipe", (end) => {
+    gallery();
+    pointer("pointerdown", 300);
+    pointer("pointermove", 100);
+    pointer(end, 100, 150, 1, dialog);
+    expect(image.getAttribute("src")).toBe("blob:photo");
+    pointer("pointerdown", 300);
+    pointer("pointermove", 100);
+    pointer("pointerup", 100);
+    expect(image.getAttribute("src")).toBe("blob:second");
+  });
+
+  it("keeps pinches and zoomed pans on the current image, then resets zoom on navigation", () => {
+    gallery();
+    pinch();
+    pointer("pointerup", 400, 150, 2);
+    pointer("pointermove", -100);
+    pointer("pointerup", -100);
+    pointer("pointerdown", 300);
+    pointer("pointermove", 100);
+    pointer("pointerup", 100);
+    frame();
+    expect(image.getAttribute("src")).toBe("blob:photo");
+    expect(view().scale).toBe(2);
+    act(() => dialog.querySelector<HTMLButtonElement>('[aria-label="Next image"]')!.click());
+    expect(image.getAttribute("src")).toBe("blob:second");
+    expect(view()).toEqual({ scale: 1, x: 0, y: 0 });
+    act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight" })));
+    expect(image.getAttribute("src")).toBe("blob:third");
+    expect(dialog.querySelector<HTMLButtonElement>('[aria-label="Next image"]')!.disabled).toBe(true);
+    act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight" })));
+    expect(image.getAttribute("src")).toBe("blob:third");
+    act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft" })));
+    expect(image.getAttribute("src")).toBe("blob:second");
+  });
+
+  it("does not treat a two-finger gesture at fit scale as a swipe", () => {
+    gallery();
+    pointer("pointerdown", 300);
+    pointer("pointerdown", 200, 150, 2);
+    pointer("pointerup", 200, 150, 2);
+    pointer("pointermove", 100);
+    pointer("pointerup", 100);
+    expect(image.getAttribute("src")).toBe("blob:photo");
+  });
+
   it("keeps the image point under the pinch center and coalesces moves without reading layout", () => {
     pointer("pointerdown", 100);
     pointer("pointerdown", 200, 150, 2);

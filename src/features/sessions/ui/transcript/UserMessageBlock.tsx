@@ -169,6 +169,7 @@ export function UserMessageBlock({
               <AttachmentChip
                 key={file.id}
                 attachment={file}
+                previewAttachments={mediaAttachments}
                 tile
                 onOpen={
                   onOpenFile && file.path && !isAttachmentFolder(file)
@@ -311,20 +312,20 @@ export function UserMessageBlock({
         sentAt != null ||
         onEdit) ? (
           <div className="user-message-actions flex items-center gap-1 px-3 pt-1">
+            {sentAt != null ? (
+              <time
+                dateTime={new Date(sentAt).toISOString()}
+                title={timestampTitle(sentAt, language)}
+                className="mr-1 font-sans text-xs text-content/40"
+              >
+                {formatClockTime(sentAt)}
+              </time>
+            ) : null}
             {onEdit ? (
               <EditLastTurnButton onEdit={onEdit} editing={editing} />
             ) : null}
             {text && onSaveNote ? (
               <SaveNoteButton text={text} onSave={onSaveNote} />
-            ) : null}
-            {sentAt != null ? (
-              <time
-                dateTime={new Date(sentAt).toISOString()}
-                title={timestampTitle(sentAt, language)}
-                className="ml-1 font-sans text-xs text-content/40"
-              >
-                {formatClockTime(sentAt)}
-              </time>
             ) : null}
             {text || block.attachments?.length ? (
               <CopyTurnButton

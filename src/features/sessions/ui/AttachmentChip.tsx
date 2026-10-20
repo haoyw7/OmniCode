@@ -15,15 +15,22 @@ type Props = {
   tile?: boolean;
   /** Opens a sent file in its own tab. */
   onOpen?: () => void;
+  /** Other attachments in the same message, in display order. */
+  previewAttachments?: readonly Attachment[];
 };
 
-export function AttachmentChip({ attachment, onRemove, tile = false, onOpen }: Props) {
+export function AttachmentChip({ attachment, onRemove, tile = false, onOpen, previewAttachments }: Props) {
   const { t: uiT } = useTranslation();
   const [previewOpen, setPreviewOpen] = useState(false);
   // A cached thumbnail spares the chip from decoding the full photo.
   const thumbnail = attachment.kind === "image" ? attachmentThumbnail(attachment.id) : undefined;
   const preview = thumbnail ?? attachmentPreviewSrc(attachment);
   const image = attachment.kind === "image" && preview;
+  const gallery = previewOpen ? (previewAttachments ?? [attachment]).flatMap((file) => {
+    if (file.kind !== "image") return [];
+    const src = attachmentPreviewSrc(file) ?? attachmentThumbnail(file.id);
+    return src ? [{ id: file.id, src, alt: file.name }] : [];
+  }) : [];
   const fileTile = tile && !image;
   const openLabel = uiT("Open {value0}", { value0: String(attachment.name) });
   const extension = /\.([^./\\]+)$/.exec(attachment.name)?.[1];
@@ -125,6 +132,8 @@ export function AttachmentChip({ attachment, onRemove, tile = false, onOpen }: P
         <ImageLightbox
           src={thumbnail ? (attachmentPreviewSrc(attachment) ?? thumbnail) : preview}
           alt={attachment.name}
+          images={gallery}
+          initialIndex={Math.max(0, gallery.findIndex((file) => file.id === attachment.id))}
           onClose={() => setPreviewOpen(false)}
         />
       ) : null}</PresenceBoundary>
