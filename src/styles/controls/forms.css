@@ -252,7 +252,7 @@ html[data-skin] [data-ui="checkbox"][data-size="lg"] { --desktop-checkbox-size: 
 html[data-skin] [data-ui="button"][data-variant="danger"]:is(:disabled, [aria-disabled="true"]) { opacity: .6; }
 
 
-html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]) {
+html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-desktop-select-trigger="field"], [data-slot="select-trigger"][data-variant="input"]) {
   background-color: var(--desktop-control-surface);
   color: var(--desktop-control-ink);
   border-color: var(--desktop-control-border);

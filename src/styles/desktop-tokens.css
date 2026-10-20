@@ -169,7 +169,7 @@ html[data-skin] {
   --row-h-compact: 24px;
   --glass-filter: none;
   --shadow-sheet: 0 0 0 0.5px var(--color-composer-ring), 0 2px 8px rgb(0 0 0 / 20%);
-  --desktop-control-surface: var(--color-card);
+  --desktop-control-surface: var(--desktop-panel-card);
   --desktop-control-ink: var(--color-ink);
   --desktop-control-placeholder: var(--color-ink-tertiary);
   --desktop-control-border: var(--color-composer-ring);

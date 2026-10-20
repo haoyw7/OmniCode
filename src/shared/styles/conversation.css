@@ -749,7 +749,7 @@ input,
   border-radius: 12px;
   background: color-mix(
     in srgb,
-    var(--color-card) calc(var(--panel-opacity) * 100%),
+    var(--markdown-code-background, var(--color-card)) calc(var(--panel-opacity) * 100%),
     transparent
   );
 }
@@ -816,7 +816,7 @@ input,
   appearance: none;
   position: absolute;
   z-index: 2;
-  top: 8px;
+  top: 3px;
   right: 10px;
   display: grid;
   width: 24px;
@@ -872,7 +872,7 @@ input,
 .agent-markdown .markdown-code-icon {
   position: absolute;
   z-index: 1;
-  top: 12px;
+  top: 7px;
   left: 16px;
   display: flex;
   align-items: center;
@@ -882,7 +882,7 @@ input,
 .agent-markdown .markdown-code-path {
   position: absolute;
   z-index: 1;
-  top: 10px;
+  top: 5px;
   left: 40px;
   right: 16px;
   overflow: hidden;
@@ -926,7 +926,7 @@ input,
 .agent-markdown .markdown-code-label {
   position: absolute;
   z-index: 1;
-  top: 10px;
+  top: 5px;
   left: 40px;
   right: 16px;
   overflow: hidden;
@@ -960,6 +960,15 @@ input,
   .markdown-code-shell:has(.markdown-code-label:empty)
   [data-streamdown="code-block-body"] {
   padding-top: 14px;
+}
+
+/* With no header, actions follow the first code line's center (1.65em high). */
+.agent-markdown
+  .markdown-code-shell:has(.markdown-code-label:empty)
+  > :is(.markdown-code-copy, .markdown-code-wrap) {
+  top: calc(14px + 0.825em);
+  font-size: var(--text-ui-caption);
+  translate: 0 -50%;
 }
 
 /* ZCode headings: semibold, sized on the ui scale, 24px above / 16px below. */
@@ -1041,7 +1050,7 @@ input,
 
 .agent-markdown [data-streamdown="code-block-header"] {
   height: auto;
-  min-height: 40px;
+  min-height: 30px;
   padding: 0 16px;
   color: var(--color-foreground-subtle);
 }
@@ -1068,7 +1077,7 @@ input,
 }
 
 .agent-markdown [data-streamdown="code-block-body"] {
-  padding: 0 16px 16px;
+  padding: 4px 16px 14px;
   border: 0;
   border-radius: 0;
   background: transparent;

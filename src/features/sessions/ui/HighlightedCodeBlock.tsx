@@ -154,9 +154,13 @@ export function HighlightedCodeBlock({
   const result =
     highlighted?.language === language ? highlighted.result : undefined;
   return (
-    <CodeBlockContainer language={language} isIncomplete={isIncomplete}>
+    <CodeBlockContainer
+      language={language}
+      isIncomplete={isIncomplete}
+      style={{ "--markdown-code-background": palette.background } as CSSProperties}
+    >
       <CodeBlockHeader language={language} />
-      <div data-streamdown="code-block-body" data-language={language} style={{ backgroundColor: palette.background, color: palette.foreground }}>
+      <div data-streamdown="code-block-body" data-language={language} style={{ color: palette.foreground }}>
         {result ? (
           <HighlightedBody
             result={result}
