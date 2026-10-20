@@ -660,9 +660,9 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
             aria-expanded={covered}
             onClick={onHost}
           >
-            <Computer size={24} />
-            <span>{hostName}</span>
             <MobileHostStatus status={hostStatus} dotOnly />
+            <Computer size={24} />
+            <span className="mobile-drawer-device-name">{hostName}</span>
             <ChevronDown size={16} className="mobile-drawer-device-chevron" />
           </button>
           {onAssistant && (

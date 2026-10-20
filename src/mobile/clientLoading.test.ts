@@ -220,9 +220,9 @@ describe("mobile loading critical path", () => {
 
   it("keeps frequently read sessions and evicts the least recently read snapshot", async () => {
     const { client } = await setup((_method, params) => ({ kind: "snapshot", value: snapshot(1, params.sessionId) }));
-    for (let index = 0; index < 8; index++) await client.session(`session-${index}`);
+    for (let index = 0; index < 12; index++) await client.session(`session-${index}`);
     expect(client.cachedSession("session-0")).toBeDefined();
-    await client.session("session-8");
+    await client.session("session-12");
     expect(client.cachedSession("session-0")).toBeDefined();
     expect(client.cachedSession("session-1")).toBeUndefined();
   });

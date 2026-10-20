@@ -3,7 +3,7 @@ import type { Block } from "../features/sessions/model/session";
 
 /** Retain the transcript and attachment metadata for fast navigation, while
  * releasing downloaded image bytes from older cached conversations. */
-export function withoutSessionPreviewData(snapshot: HostSession): HostSession {
+export function withoutSessionPreviewData(snapshot: HostSession, persistent = false): HostSession {
   const visit = (rows: Block[]): Block[] => {
     let changed = false;
     const next = rows.map((original) => {
@@ -13,8 +13,12 @@ export function withoutSessionPreviewData(snapshot: HostSession): HostSession {
         if (transcript !== block.agentRun.transcript)
           block = { ...block, agentRun: { ...block.agentRun, transcript } };
       }
-      if (block.attachments?.some((file) => file.kind === "image" && file.data !== undefined)) {
+      if (block.attachments?.some((file) => persistent ? file.data !== undefined || file.previewUrl !== undefined : file.kind === "image" && file.data !== undefined)) {
         block = { ...block, attachments: block.attachments.map((file) => {
+          if (persistent) {
+            const { data: _data, previewUrl: _preview, ...metadata } = file;
+            return metadata;
+          }
           if (file.kind !== "image" || file.data === undefined) return file;
           const { data: _data, ...metadata } = file;
           return metadata;

@@ -4,6 +4,12 @@ import { translate } from "../shared/i18n/language";
 const UNREACHABLE =
   /failed to connect|timed? ?out|timeout|ECONNREFUSED|ECONNRESET|ENETUNREACH|EHOSTUNREACH|connection refused|no route to host|network is unreachable|unable to resolve host|failed to fetch|network ?error|network request failed/i;
 
+/** Compact header copy; the original diagnostic remains available in the title. */
+export function connectionErrorSummary(detail: string): string {
+  if (/timed? ?out|timeout/i.test(detail)) return translate("Connection timed out");
+  return UNREACHABLE.test(detail) ? translate("Network error") : detail;
+}
+
 function hostOf(url: string): string | undefined {
   try {
     return new URL(url.trim()).hostname;

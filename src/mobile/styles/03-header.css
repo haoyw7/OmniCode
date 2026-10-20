@@ -232,6 +232,21 @@
   gap: 4px;
   min-width: 0;
 }
+.mobile-reload-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--color-m-ink-secondary);
+}
+.mobile-reload-status > svg {
+  flex-shrink: 0;
+}
+.mobile-reload-status > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .mobile-app .mobile-header-context-item > span {
   min-width: 0;
   max-width: 160px;
@@ -263,9 +278,6 @@
 }
 .mobile-host-status[data-state="connected"] .mobile-host-status-dot {
   background: var(--color-m-success);
-}
-.mobile-host-status[data-state="reconnecting"] .mobile-host-status-dot {
-  background: var(--color-m-warning);
 }
 .mobile-host-status[data-state="reconnecting"] .mobile-host-status-label {
   color: var(--color-m-warning);

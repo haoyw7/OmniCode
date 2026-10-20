@@ -229,7 +229,8 @@
   width: var(--mobile-drawer-icon);
   height: var(--mobile-drawer-icon);
 }
-.mobile-drawer-item > span:first-of-type {
+.mobile-drawer-item:not(.mobile-drawer-device) > span:first-of-type,
+.mobile-drawer-device-name {
   flex: 1;
   min-width: 0;
   overflow: hidden;

@@ -1,5 +1,6 @@
 import { useTranslation } from "../shared/i18n/useTranslation";
 import type { HostConnectionStatus } from "./client";
+import { MobileSpinner } from "./MobileSpinner";
 
 /** Untranslated status label; pass it through `t`. */
 export function hostStatusLabel(status: HostConnectionStatus): string {
@@ -29,7 +30,9 @@ export function MobileHostStatus({ status, dotOnly = false }: { status: HostConn
       aria-label={t(label)}
       title={status.detail || t(label)}
     >
-      <span className="mobile-host-status-dot" aria-hidden="true" />
+      {status.state === "reconnecting" || status.state === "failed"
+        ? <MobileSpinner className="mobile-spin" size={12} aria-hidden="true" />
+        : <span className="mobile-host-status-dot" aria-hidden="true" />}
       {!dotOnly && status.state !== "connected" && (
         <span className="mobile-host-status-label">{t(label)}</span>
       )}

@@ -8,6 +8,7 @@ import { MobileApp } from "./MobileApp";
 // otherwise time out inside act and leave later tests sharing unfinished work.
 import "./MobileBots";
 import type { Connection, MobileClient } from "./client";
+import { mobileOfflineCache } from "./offlineCache";
 import { setUiLanguage } from "../shared/i18n/language";
 import { fullBotPolicy as fullAssistantPolicy, type BotMessage as AssistantMessage, type BotConfiguration as AssistantView } from "../features/bots/model/botView";
 
@@ -301,6 +302,30 @@ it("opens the selected device's error state on an offline launch and can switch 
   expect(list().textContent).toContain("Device B conversation");
 });
 
+it("shows persistent history before verification settles and keeps the opened cached conversation on failure", async () => {
+  const cachedSession = respond(a.endpoint, { method: "sessions.get" });
+  vi.spyOn(mobileOfflineCache, "readHost").mockImplementation(async host => host === a.environmentId ? [
+    { kind: "projects", id: "", value: [project] },
+    { kind: "summaries", id: "", value: [[project.id, [summary(a.name)]]] },
+    { kind: "session", id: "shared-session", value: cachedSession },
+  ] : []);
+  const verification = deferred<unknown>();
+  fixture.request.mockImplementation((endpoint, input) => {
+    if (endpoint !== a.endpoint) return respond(endpoint, input);
+    if (input.method === "environment.describe") return verification.promise.then(() => { throw new Error("Failed to fetch"); });
+    throw new Error("Failed to fetch");
+  });
+  await mount();
+  expect(list().textContent).toContain("Device A conversation");
+  expect(fixture.client!.getConnectionStatus().state).toBe("reconnecting");
+  await act(async () => active('[data-session-id="shared-session"]')!.click());
+  expect(active(".mobile-header")!.textContent).toContain("Device A conversation");
+  expect(active(".mobile-transcript") ?? active(".mobile-chat")).toBeDefined();
+  await act(async () => verification.resolve(undefined));
+  expect(fixture.client!.getConnectionStatus().state).toBe("failed");
+  expect(active(".mobile-header")!.textContent).toContain("Device A conversation");
+  expect(fixture.client!.cachedSession("shared-session")).toBeDefined();
+});
 it("restores saved device order when the active device comes back online", async () => {
   fixture.request.mockImplementation((endpoint, input) => {
     if (endpoint === a.endpoint) throw new Error("Device A offline");

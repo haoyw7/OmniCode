@@ -45,11 +45,14 @@ import {
   withRemoteAttachmentPreviews,
 } from "../features/connections/model/remoteAttachmentPreviews";
 import { withoutSessionPreviewData } from "./sessionPreviewCache";
+import { mobileOfflineCache, OFFLINE_SESSION_LIMIT, type MobileOfflineCache, type OfflineCacheWrite } from "./offlineCache";
+import { isOfflineModels, isOfflineProjects, isOfflineSession } from "./offlineCacheData";
 import type { MobileStorage } from "./storage";
 import { translate } from "../shared/i18n/language";
 import type { NativeSessionAccess } from "../integrations/harness/core/nativeSessions";
 import {
   readSessionCache,
+  cachedSessionSummary,
   removeSessionCache,
   saveSessionCache,
   SESSION_CACHE_PROJECT_LIMIT,
@@ -245,7 +248,7 @@ export class MobileClient {
     });
   }
   private snapshots = new Map<string, HostSession>();
-  // Eight conversations retain text; only the current and most recently read
+  // The LRU retains OFFLINE_SESSION_LIMIT transcripts; only the current and most recently read
   // conversation retain downloaded images. Late hydration never changes recency.
   private previewSessions = new Set<string>();
   private sessionLoads = new Map<string, Promise<HostSession>>();
@@ -266,7 +269,82 @@ export class MobileClient {
     removeListeners: () => void;
   };
   private cacheEpoch = 0;
+  private offlineWrites = new Map<string, OfflineCacheWrite>();
+  private offlineWriteHost?: string;
+  private offlineTimer?: ReturnType<typeof setTimeout>;
+  private stopOfflineListeners?: () => void;
+  private cacheReadable() {
+    return !!this.connection && !this.connection.disabled &&
+      this.connectionStatus.reason !== "identity" && this.connectionStatus.reason !== "authentication";
+  }
+  private queueOffline(entry: OfflineCacheWrite) {
+    if (!this.cacheReadable() || (this.offline === mobileOfflineCache && typeof indexedDB === "undefined")) return;
+    const host = this.connection!.environmentId;
+    if (this.offlineWriteHost && this.offlineWriteHost !== host) void this.flushOfflineCache();
+    this.offlineWriteHost = host;
+    const key = JSON.stringify([entry.kind, entry.id]);
+    // A touch must not replace a pending content update.
+    const previous = this.offlineWrites.get(key);
+    this.offlineWrites.delete(key);
+    this.offlineWrites.set(key, entry.value === undefined && previous ? previous : entry);
+    if (this.offlineTimer !== undefined) return;
+    this.offlineTimer = setTimeout(() => void this.flushOfflineCache(), 1000);
+    const hidden = () => { if (document.visibilityState === "hidden") void this.flushOfflineCache(); };
+    const pagehide = () => { void this.flushOfflineCache(); };
+    if (typeof document !== "undefined") document.addEventListener("visibilitychange", hidden);
+    if (typeof window !== "undefined") window.addEventListener("pagehide", pagehide);
+    this.stopOfflineListeners = () => {
+      if (typeof document !== "undefined") document.removeEventListener("visibilitychange", hidden);
+      if (typeof window !== "undefined") window.removeEventListener("pagehide", pagehide);
+    };
+  }
+  /** Also used at lifecycle boundaries; changing Hosts never reassigns pending writes. */
+  async flushOfflineCache() {
+    clearTimeout(this.offlineTimer);
+    this.offlineTimer = undefined;
+    this.stopOfflineListeners?.();
+    this.stopOfflineListeners = undefined;
+    const host = this.offlineWriteHost;
+    const entries = [...this.offlineWrites.values()].map(entry => entry.kind === "session" && entry.value
+      ? { ...entry, value: withoutSessionPreviewData(entry.value as HostSession, true) } : entry);
+    this.offlineWrites.clear();
+    this.offlineWriteHost = undefined;
+    if (host && entries.length) await this.offline.write(host, entries).catch(() => {});
+  }
+  private async restoreOfflineCache() {
+    const host = this.connection?.environmentId;
+    const epoch = this.cacheEpoch;
+    if (!host || !this.cacheReadable()) return;
+    const entries = await this.offline.readHost(host).catch(() => []);
+    if (epoch !== this.cacheEpoch || host !== this.connection?.environmentId || !this.cacheReadable()) return;
+    for (const entry of entries) {
+      const value = entry.value;
+      if (entry.kind === "session" && isOfflineSession(value, entry.id)) {
+        if (!this.snapshots.has(entry.id)) this.snapshots.set(entry.id, value);
+        if (this.snapshots.size > OFFLINE_SESSION_LIMIT) this.snapshots.delete(this.snapshots.keys().next().value!);
+      } else if (entry.kind === "models" && isOfflineModels(value)) {
+        // A persisted catalog is a preview, never proof that a provider is still available.
+        if (!this.catalogs.has(entry.id)) this.catalogs.set(entry.id, { value: { ...value }, expires: 0 });
+        if (this.catalogs.size > 8) this.catalogs.delete(this.catalogs.keys().next().value!);
+      } else if (entry.kind === "projects" && isOfflineProjects(value)) {
+        this.projectList ??= value;
+      } else if (entry.kind === "summaries" && Array.isArray(value)) {
+        this.summariesEnvironmentId = host;
+        for (const item of value.slice(-SESSION_CACHE_PROJECT_LIMIT)) {
+          if (!Array.isArray(item) || typeof item[0] !== "string" || !Array.isArray(item[1])) continue;
+          if (!this.summaries.has(item[0]))
+            this.summaries.set(item[0], item[1].map((row: unknown) => cachedSessionSummary(row, item[0]))
+              .filter((row): row is HostSessionSummary => row !== undefined));
+        }
+      }
+    }
+    if (entries.length) this.setConnectionStatus({ ...this.connectionStatus }, true);
+  }
+  cachedProjects(): HostProject[] | undefined {
+    return this.cacheReadable() ? this.projectList : undefined;
+  }
   private clearCaches() {
+    void this.flushOfflineCache();
     this.capabilities = [];
     this.cancelSummaryWrite();
     this.cacheEpoch += 1;
@@ -284,11 +362,16 @@ export class MobileClient {
     this.summaryTurns.clear();
   }
   private rememberSession(value: HostSession): HostSession {
+    const previousSnapshot = this.snapshots.get(value.session.id);
     if (!this.previewSessions.has(value.session.id)) value = withoutSessionPreviewData(value);
     this.snapshots.delete(value.session.id);
     this.snapshots.set(value.session.id, value);
-    if (this.snapshots.size > 8)
+    if (this.snapshots.size > OFFLINE_SESSION_LIMIT)
       this.snapshots.delete(this.snapshots.keys().next().value!);
+    if (!previousSnapshot || previousSnapshot.revision !== value.revision || previousSnapshot.updatedAt !== value.updatedAt) {
+      this.queueOffline({ kind: "session", id: value.session.id, value });
+      if (this.projectList) this.queueOffline({ kind: "projects", id: "", value: this.projectList });
+    }
     const sessions = this.cachedSessions(value.projectId) ?? [];
     const previous = sessions.find((item) => item.id === value.session.id);
     if (!previous || previous.revision < value.revision ||
@@ -314,8 +397,13 @@ export class MobileClient {
     return value;
   }
   cachedSession(sessionId: string): HostSession | undefined {
+    if (!this.cacheReadable()) return undefined;
     const value = this.snapshots.get(sessionId);
     if (value) {
+      if ([...this.snapshots.keys()].at(-1) !== sessionId) {
+        this.queueOffline({ kind: "session", id: sessionId });
+        if (this.projectList) this.queueOffline({ kind: "projects", id: "" });
+      }
       this.retainSessionPreviews(sessionId);
       this.snapshots.delete(sessionId);
       this.snapshots.set(sessionId, value);
@@ -339,6 +427,7 @@ export class MobileClient {
   constructor(
     private readonly storage: MobileStorage,
     private readonly transport: RpcTransport = nativeTransport,
+    private readonly offline: MobileOfflineCache = mobileOfflineCache,
   ) {}
 
   /** Every Host paired on this device, the active one included. */
@@ -391,6 +480,8 @@ export class MobileClient {
     this.connection = connection;
     this.clearCaches();
     this.setConnectionStatus({ state: "reconnecting" }, true);
+    await this.restoreOfflineCache();
+    if (attempt !== this.switchAttempt) return;
     await this.verify();
   }
 
@@ -431,6 +522,7 @@ export class MobileClient {
       return false;
     }
     this.setConnectionStatus({ state: "reconnecting" });
+    await this.restoreOfflineCache();
     await this.verify();
     return true;
   }
@@ -490,6 +582,7 @@ export class MobileClient {
       this.clearCaches();
       this.capabilities = Array.isArray(descriptor.capabilities) ? descriptor.capabilities : [];
       this.setConnectionStatus({ state: "connected" }, true);
+      await this.restoreOfflineCache();
     } catch (error) {
       if (!this.connection) this.connectionFailed(error);
       throw error;
@@ -512,6 +605,7 @@ export class MobileClient {
       if (host.environmentId !== connection.environmentId) {
         changedIdentity = true;
         this.clearCaches();
+        await this.offline.removeHost(connection.environmentId).catch(() => {});
         removeSessionCache();
         const error = new Error(
           "Host identity changed. Connect to this machine again explicitly.",
@@ -535,6 +629,7 @@ export class MobileClient {
   }
   async reconnect(): Promise<void> {
     if (!this.connection) throw new Error("Connect to a Host first.");
+    this.verificationEpoch += 1;
     this.clearCaches();
     if (this.connection.disabled) {
       const connection = this.connection;
@@ -544,6 +639,7 @@ export class MobileClient {
       this.connection = enabled;
     }
     this.setConnectionStatus({ state: "reconnecting" });
+    await this.restoreOfflineCache();
     await this.verify();
   }
   async suspend(): Promise<void> {
@@ -560,13 +656,17 @@ export class MobileClient {
   /** Forgets a paired connection other than the active one; the active one uses `disconnect`. */
   async forget(endpoint: string): Promise<void> {
     if (this.connection?.endpoint === endpoint) return this.disconnect();
-    const remaining = (await this.savedConnections())
-      .filter((item) => item.endpoint !== endpoint);
+    const saved = await this.savedConnections();
+    const forgotten = saved.find(item => item.endpoint === endpoint);
+    const remaining = saved.filter((item) => item.endpoint !== endpoint);
     await this.storage.set("connections", JSON.stringify(remaining));
+    if (forgotten && !remaining.some(item => item.environmentId === forgotten.environmentId))
+      await this.offline.removeHost(forgotten.environmentId).catch(() => {});
   }
   async disconnect(): Promise<void> {
     this.pendingValue = undefined;
     const endpoint = this.connection?.endpoint;
+    const host = this.connection?.environmentId;
     const remaining = (await this.savedConnections())
       .filter((item) => item.endpoint !== endpoint);
     await this.storage.set("connections", JSON.stringify(remaining));
@@ -574,6 +674,8 @@ export class MobileClient {
     this.connection = undefined;
     this.setConnectionStatus({ state: "disconnected" });
     this.clearCaches();
+    if (host && !remaining.some(item => item.environmentId === host))
+      await this.offline.removeHost(host).catch(() => {});
     removeSessionCache();
   }
   private async requestWith<T>(
@@ -675,6 +777,7 @@ export class MobileClient {
     if (turn !== this.projectTurn) return this.projectList ?? this.projects();
     if (this.projectList && sameCachedValue(this.projectList, projects)) return this.projectList;
     this.projectList = projects;
+    this.queueOffline({ kind: "projects", id: "", value: projects });
     return projects;
   }
   browseDirectories(path?: string) {
@@ -775,6 +878,9 @@ export class MobileClient {
     if (this.summaries.size > SESSION_CACHE_PROJECT_LIMIT)
       this.summaries.delete(this.summaries.keys().next().value!);
     this.scheduleSummaryWrite();
+    this.queueOffline({ kind: "summaries", id: "", value: [...this.summaries].map(([id, rows]) =>
+      // A saved transcript must remain reachable even in a project with hundreds of rows.
+      [id, [...rows.filter(row => this.snapshots.has(row.id)), ...rows.filter(row => !this.snapshots.has(row.id))].slice(0, 100)]) });
     return shared;
   }
   sessions(projectId: string): Promise<HostSessionSummary[]> {
@@ -836,19 +942,25 @@ export class MobileClient {
   /** Returns the last catalog even after it expires so a new conversation can
    * render its Agent and model lists immediately while `models` refreshes. */
   cachedModels(projectId?: string): HostModelCatalog | undefined {
+    if (!this.cacheReadable()) return undefined;
     const key = JSON.stringify(projectId ?? null);
     const cached = this.catalogs.get(key);
     if (!cached) return undefined;
+    if ([...this.catalogs.keys()].at(-1) !== key) this.queueOffline({ kind: "models", id: key });
     this.catalogs.delete(key);
     this.catalogs.set(key, cached);
     return cached.value;
   }
-  models(projectId?: string, refresh = false) {
+  models(projectId?: string, refresh = false, onUpdate?: (catalog: HostModelCatalog) => void) {
     const key = JSON.stringify(projectId ?? null);
-    const cached = this.catalogs.get(key);
+    const cached = this.cacheReadable() ? this.catalogs.get(key) : undefined;
+    if (cached) onUpdate?.(this.cachedModels(projectId)!);
     if (!refresh && cached && Date.now() < cached.expires) return Promise.resolve(this.cachedModels(projectId)!);
     const existing = this.modelLoads.get(key);
-    if (existing) return existing;
+    if (existing) {
+      if (onUpdate) void existing.then(onUpdate, () => {});
+      return existing;
+    }
     const epoch = this.cacheEpoch;
     const pending = this.rpc<HostModelCatalog>("models.list", projectId === undefined ? {} : { projectId }).then((value) => {
       if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
@@ -857,6 +969,8 @@ export class MobileClient {
       const ttl = Object.keys(value.errors).length ? 15_000 : 5 * 60_000;
       this.catalogs.delete(key);
       this.catalogs.set(key, { value, expires: Date.now() + ttl });
+      this.queueOffline({ kind: "models", id: key, value });
+      onUpdate?.(value);
       if (this.catalogs.size > 8)
         this.catalogs.delete(this.catalogs.keys().next().value!);
       return value;

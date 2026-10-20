@@ -659,7 +659,9 @@ describe("mobile conversation loading UI", () => {
     expect(transcript()?.disabled).toBe(true);
     expect(composer().disabled).toBe(true);
     expect(host.activity.mock.calls.at(-1)![0].visibleSession).toBeUndefined();
+    expect(node.querySelector("header .mobile-reload-status")?.textContent).toBe("Reloading…");
     await act(async () => refresh.resolve(snapshot("one", 2)));
+    expect(node.querySelector("header .mobile-reload-status")).toBeNull();
     expect(transcript()?.textContent).toBe("one revision 2");
     expect(transcript()?.disabled).toBe(false);
     expect(composer().disabled).toBe(false);
@@ -683,13 +685,20 @@ describe("mobile conversation loading UI", () => {
 
   it("preserves cached text but keeps commands disabled after a failed refresh", async () => {
     host.cache.set("one", snapshot());
-    host.session.mockRejectedValue(new Error("Offline"));
+    host.session.mockRejectedValue(new Error("Failed to fetch"));
     await mount();
     await open("one");
     expect(transcript()?.textContent).toBe("one revision 1");
     expect(composer().disabled).toBe(true);
     expect(transcript()?.disabled).toBe(true);
     expect(host.activity.mock.calls.at(-1)![0].visibleSession).toBeUndefined();
+    expect(node.querySelector("header .mobile-reload-status")?.textContent).toBe("Network error");
+    expect(node.querySelector(".mobile-notices")?.textContent).not.toContain("Failed to fetch");
+    host.session.mockResolvedValue(snapshot("one", 2));
+    await advanceMotionTimers(4500);
+    expect(node.querySelector("header .mobile-reload-status")).toBeNull();
+    expect(transcript()?.textContent).toBe("one revision 2");
+    expect(composer().disabled).toBe(false);
   });
 
   it("ignores an older navigation response after another cached conversation opens", async () => {

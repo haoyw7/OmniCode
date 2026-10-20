@@ -377,6 +377,7 @@ export function useMobileAppController() {
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState("");
+  const [sessionLoadError, setSessionLoadError] = useState("");
   const [hostError, setHostError] = useState("");
   const [sharedStateError, setSharedStateError] = useState("");
   const [pollError, setPollError] = useState("");
@@ -511,6 +512,7 @@ export function useMobileAppController() {
   const sessionActionsTrigger = useRef<HTMLButtonElement>(null);
   const sessionStatusTrigger = useRef<HTMLButtonElement>(null);
   const projectGeneration = useRef(0);
+  const offlineNavigation = useRef<number | undefined>(undefined);
 
   // A selected device owns the whole page, including the failure/loading state.
   // Run before paint: the client changes identity before verification can finish.
@@ -525,6 +527,7 @@ export function useMobileAppController() {
         parked: parkedDrafts.current });
     }
     navigation.current += 1;
+    offlineNavigation.current = undefined;
     projectGeneration.current += 1;
     loadTiming.current = undefined;
     setProjects([]);
@@ -566,6 +569,16 @@ export function useMobileAppController() {
     setConnected(!!connectionKey && !client.connection?.disabled);
     setView(connectionKey ? "home" : "settings");
   }, [connectionKey]);
+
+  useEffect(() => {
+    if (projects.length || view === "chat" || (hostStatus.state !== "reconnecting" && hostStatus.state !== "failed")) return;
+    const cached = client.cachedProjects?.();
+    if (!cached?.length) return;
+    offlineNavigation.current = navigation.current;
+    setProjects(cached);
+    setProject(cached[0]);
+    setView("home");
+  }, [hostStatus, projects.length, view, connectionKey]);
 
   useEffect(() => {
     if (!searchOpen || view !== "home") setSearchQuery("");
@@ -617,7 +630,12 @@ export function useMobileAppController() {
               await prepareSharedState().catch(() => undefined);
             if (!current()) return;
             setConnected(true);
-            setView("home");
+            const cached = client.cachedProjects?.();
+            if (cached?.length) {
+              setProjects(cached);
+              setProject(current => current ?? cached[0]);
+            }
+            if (offlineNavigation.current === undefined || offlineNavigation.current === navigation.current) setView("home");
             setProjectListState("failed");
           }
         }
@@ -687,6 +705,7 @@ export function useMobileAppController() {
             );
             setSessionConfirmed(true);
             setLoading(false);
+            setSessionLoadError("");
           }
           running = result.status === "running";
         }
@@ -888,18 +907,20 @@ export function useMobileAppController() {
       setLoading(false);
       const items = await client.projects();
       if (!current()) return;
-      projectGeneration.current += 1;
-      setProject(undefined);
-      setSessionId(undefined);
-      setSnapshot(undefined);
-      setSessionConfirmed(false);
-      setCatalog(undefined);
-      setCatalogLoading(false);
-      setAttachments([]);
-      acceptedQueueAttachments.current = [];
-      acceptedQueueReturnPosition.current = undefined;
-      parkedDrafts.current = [];
-      setPlanMode(false);
+      if (offlineNavigation.current === undefined || offlineNavigation.current === navigation.current) {
+        projectGeneration.current += 1;
+        setProject(undefined);
+        setSessionId(undefined);
+        setSnapshot(undefined);
+        setSessionConfirmed(false);
+        setCatalog(undefined);
+        setCatalogLoading(false);
+        setAttachments([]);
+        acceptedQueueAttachments.current = [];
+        acceptedQueueReturnPosition.current = undefined;
+        parkedDrafts.current = [];
+        setPlanMode(false);
+      }
       setToken("");
       setUrl(client.connection!.endpoint);
       setProjects(items);
@@ -915,6 +936,11 @@ export function useMobileAppController() {
     } catch (problem) {
       if (current()) {
         fail(problem);
+        const cached = client.cachedProjects?.();
+        if (cached?.length) {
+          setProjects(cached);
+          setProject(current => current ?? cached[0]);
+        }
         setProjectListState((state) => state === "ready" ? state : "failed");
       }
     } finally {
@@ -983,6 +1009,12 @@ export function useMobileAppController() {
   // Only boot and an explicit Host switch restore the shared location.
   const restoreLocation = async (items: HostProject[], restored?: WorkspaceLocation) => {
     const environmentId = client.connection?.environmentId;
+    if (offlineNavigation.current !== undefined && offlineNavigation.current !== navigation.current) {
+      offlineNavigation.current = undefined;
+      workspaceHost.current = environmentId;
+      return;
+    }
+    offlineNavigation.current = undefined;
     const last = restored ?? readLastLocation(environmentId);
     const target =
       items.find((item) => item.id === last?.projectId) ?? items[0];
@@ -1014,7 +1046,7 @@ export function useMobileAppController() {
     // list ahead of the snapshot. Painting it would flash long-past messages
     // before the sync replaces them, so wait for the sync instead.
     const listed = known && client.cachedSessions?.(known.projectId)?.find((item) => item.id === id);
-    const cached = known && (!listed || listed.revision <= known.revision) && (!restoredProjectId ||
+    const cached = known && (hostStatus.state !== "connected" || !listed || listed.revision <= known.revision) && (!restoredProjectId ||
       (known.projectId === restoredProjectId && !known.archived)) ? known : undefined;
     loadTiming.current = id ? { turn, id, start, cached: !!cached } : undefined;
     setSessionId(id);
@@ -1044,6 +1076,7 @@ export function useMobileAppController() {
     setSessionEntrySource(entrySource);
     setLoading(!!id);
     setError("");
+    setSessionLoadError("");
     if (!id) return;
     try {
       const result = resolved ?? await client.session(id);
@@ -1060,7 +1093,7 @@ export function useMobileAppController() {
         setConfiguration(configurationForSession(result));
       }
     } catch (problem) {
-      if (navigation.current === turn) setError(message(problem));
+      if (navigation.current === turn) setSessionLoadError(message(problem));
     } finally {
       if (navigation.current === turn) setLoading(false);
     }
@@ -2026,6 +2059,7 @@ export function useMobileAppController() {
     draft,
     drawerOpen,
     error,
+    sessionLoadError,
     floatingHeader,
     followUpBehavior,
     foreground,

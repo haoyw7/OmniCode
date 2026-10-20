@@ -4306,5 +4306,7 @@
   "Balance: {amount} {currency}": "余额：{amount} {currency}",
   "Bonus balance: {amount} {currency}": "赠送余额：{amount} {currency}",
   "DeepSeek account information is unavailable in this DSH configuration.": "当前 DSH 配置不提供 DeepSeek 账号信息。",
-  "Sign in or manage this account in DeepSeek Harness on Host, then refresh here.": "请在 Host 上的 DeepSeek Harness 中登录或管理此账号，然后在此刷新。"
+  "Sign in or manage this account in DeepSeek Harness on Host, then refresh here.": "请在 Host 上的 DeepSeek Harness 中登录或管理此账号，然后在此刷新。",
+  "Reloading…": "重新加载中…",
+  "Network error": "网络错误"
 }

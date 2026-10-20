@@ -67,12 +67,12 @@ function Device({ connection, active, status, open, disabled, probe, onSwitch }:
     <button type="button" className="mobile-sheet-row mobile-device-option"
       aria-label={t("Switch to {host}", { host: name })} aria-pressed={active}
       disabled={disabled} onClick={() => onSwitch(connection.endpoint)}>
+      <MobileHostStatus status={active ? status : observed} dotOnly />
       <Computer size={20} />
       <span className="mobile-device-option-name">
         {name}
         <small>{connection.endpoint.replace(/^https?:\/\//, "")}</small>
       </span>
-      <MobileHostStatus status={active ? status : observed} dotOnly />
       {active && <Check size={20} />}
     </button>
   );

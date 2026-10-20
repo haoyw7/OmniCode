@@ -28,8 +28,7 @@ import { MobileHome } from "../MobileHome";
 import { MobileHomeMenu } from "../MobileHomeMenu";
 import { MobileHeaderSearch } from "../MobileHeaderSearch";
 import { mobileSettingsParent } from "../mobileSettingsRoutes";
-import { mobileWorkspacePending } from "../hostWorkspace";
-import { SharedStateStatus } from "../../features/settings/ui/SharedStateStatus";
+import { MobileErrorNotice, MobileReloadStatus, useMobileSyncError } from "../MobileConnectionFeedback";
 import { MobileHostStatus } from "../MobileHostStatus";
 import { MobileDeviceChips } from "../MobileDeviceChips";
 import { MobileHostUnavailable } from "../MobileHostUnavailable";
@@ -123,6 +122,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     draft,
     drawerOpen,
     error,
+    sessionLoadError,
     floatingHeader,
     followUpBehavior,
     foreground,
@@ -297,10 +297,12 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     view,
     worktreeCreation,
   } = vm;
-  const noticeError = !addingConnection && !homeUnavailable
-    ? error || hostError || sharedStateError || pollError ||
-      (hostStatus.state === "failed" ? hostStatus.detail || t("Connection failed") : "")
+  const syncError = useMobileSyncError();
+  const noticeError = !addingConnection && !homeUnavailable && hostStatus.state === "connected"
+    ? error || sharedStateError || syncError || (view !== "chat" ? hostError || pollError : "")
     : "";
+  const sessionConnectionError = sessionLoadError || pollError;
+  const showSessionConnection = !!sessionId && (loading || !!sessionConnectionError || hostStatus.state !== "connected");
   // A journal entry also exists during a healthy send. Only offer recovery
   // after the active request settles; its sending bubble already shows progress.
   const showPendingNotice = !!pending && connected && !busy;
@@ -374,9 +376,9 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
                 <strong>{title}</strong>
               </span>
               <span className="mobile-header-host">
+                <MobileHostStatus status={hostStatus} dotOnly />
                 <Computer size={14} aria-hidden="true" />
                 <span className="mobile-project-header-host-name">{connectionName}</span>
-                <MobileHostStatus status={hostStatus} dotOnly />
               </span>
             </span>
           </div>
@@ -400,6 +402,9 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           <strong>{view === "settings" && settingsPage === "root" ? "OmniCode" : title}</strong>
           {view === "chat" ? (
             <div className="mobile-header-context">
+              {showSessionConnection ? (
+                <MobileReloadStatus status={hostStatus} loading={loading} error={sessionConnectionError} />
+              ) : <>
               {project?.name && (
                 <span className="mobile-header-context-item">
                   <Folder size={14} aria-hidden="true" />
@@ -409,6 +414,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               {client.connection && (
                 <MobileHostStatus status={hostStatus} dotOnly />
               )}
+              </>}
             </div>
           ) : null}
         </div>}
@@ -465,20 +471,8 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
       </header>
 
       <div className="mobile-notices" inert={drawerOpen || pageOverlayOpen || hostPickerOpen}>
-      {noticeError && !showPendingNotice && (
-          <div className="mobile-error" role="alert">
-            <span>{noticeError}</span>
-            {client.connection && (
-              <IconButton
-                label={t("Reconnect")}
-                disabled={busy || hostStatus.state === "reconnecting"}
-                onClick={() => void reconnect()}
-              >
-                <RefreshCw size={24} />
-              </IconButton>
-            )}
-          </div>
-        )}
+      <MobileErrorNotice key={connectionKey} message={showPendingNotice ? "" : noticeError}
+        onRetry={client.connection ? () => void reconnect() : undefined} retrying={busy} />
       {showPendingNotice && (
         <div className="mobile-pending" role="status">
           <span>
@@ -490,9 +484,6 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           </Button>
         </div>
       )}
-      {/* Floats with the other notices: every navigation saves the location,
-          so an in-flow banner shifted the whole page while that write settled. */}
-      {!noticeError && !showPendingNotice && <SharedStateStatus pending={mobileWorkspacePending} pendingDelayMs={1500} />}
       </div>
       </>}
 

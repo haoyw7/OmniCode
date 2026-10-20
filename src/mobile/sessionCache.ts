@@ -12,7 +12,7 @@ export const SESSION_CACHE_PROJECT_LIMIT = 64;
 export const SESSION_CACHE_SESSION_LIMIT = 100;
 export const SESSION_CACHE_SIZE_LIMIT = 256 * 1024;
 
-function summary(value: unknown, projectId: string): HostSessionSummary | undefined {
+export function cachedSessionSummary(value: unknown, projectId: string): HostSessionSummary | undefined {
   if (!value || typeof value !== "object") return undefined;
   const item = value as Partial<HostSessionSummary>;
   if (
@@ -49,7 +49,7 @@ export function readSessionCache(environmentId: string): Map<string, HostSession
     for (const entry of value.projects.slice(0, SESSION_CACHE_PROJECT_LIMIT)) {
       if (!entry || typeof entry.projectId !== "string" || !Array.isArray(entry.sessions) ||
         entry.sessions.length > SESSION_CACHE_SESSION_LIMIT) continue;
-      const sessions = entry.sessions.map((item: unknown) => summary(item, entry.projectId));
+      const sessions = entry.sessions.map((item: unknown) => cachedSessionSummary(item, entry.projectId));
       if (sessions.every((item: HostSessionSummary | undefined) => item !== undefined))
         histories.set(entry.projectId, sessions);
     }
@@ -76,7 +76,7 @@ export function saveSessionCache(environmentId: string, histories: ReadonlyMap<s
       for (const candidate of candidates) {
         if (seen.has(candidate.id)) continue;
         seen.add(candidate.id);
-        const item = summary(candidate, projectId);
+        const item = cachedSessionSummary(candidate, projectId);
         if (!item) continue;
         const itemSize = JSON.stringify(item).length + 1;
         if (size + entrySize + itemSize > SESSION_CACHE_SIZE_LIMIT) break;

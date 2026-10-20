@@ -11,10 +11,20 @@ export function useProbedHostStatus(
   useEffect(() => {
     if (!enabled) return;
     let live = true;
+    let timer: ReturnType<typeof setTimeout>;
     setObserved({ state: connection.disabled ? "disconnected" : "reconnecting" });
-    void probe(connection).then((value) => { if (live) setObserved(value); })
-      .catch(() => { if (live) setObserved({ state: "failed" }); });
-    return () => { live = false; };
+    const check = async () => {
+      try {
+        const value = await probe(connection);
+        if (live) setObserved(value);
+      } catch {
+        if (live) setObserved({ state: "failed" });
+      } finally {
+        if (live && !connection.disabled) timer = setTimeout(check, 5000);
+      }
+    };
+    void check();
+    return () => { live = false; clearTimeout(timer); };
   }, [enabled, connection, probe]);
   return observed;
 }
