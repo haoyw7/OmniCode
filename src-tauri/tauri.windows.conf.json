@@ -28,7 +28,6 @@
         "installMode": "currentUser",
         "template": "installer/installer.nsi",
         "installerHooks": "installer/omnicode-ui.nsh",
-        "headerImage": "installer/omnicode-header.bmp",
         "installerIcon": "icons/icon.ico",
         "uninstallerIcon": "icons/icon.ico",
         "languages": ["English", "SimpChinese"]

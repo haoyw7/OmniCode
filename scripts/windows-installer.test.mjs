@@ -58,13 +58,11 @@ test("Windows config resolves self-contained installer resources", async () => {
   const config = JSON.parse(await readFile(new URL("tauri.windows.conf.json", root), "utf8"));
   const nsis = config.bundle.windows.nsis;
   assert.equal(nsis.installMode, "currentUser");
-  for (const key of ["template", "installerHooks", "headerImage", "installerIcon", "uninstallerIcon"])
+  for (const key of ["template", "installerHooks", "installerIcon", "uninstallerIcon"])
     assert.ok((await readFile(new URL(nsis[key], root))).length, `${key} exists`);
-  const bitmap = await readFile(new URL(nsis.headerImage, root));
-  assert.equal(bitmap.toString("ascii", 0, 2), "BM");
-  assert.equal(bitmap.readInt32LE(18), 150);
-  assert.equal(bitmap.readInt32LE(22), 57);
-  assert.equal(bitmap.readUInt16LE(28), 24);
+  // A fixed-size header bitmap is stretched and blurred by Windows scaling;
+  // pages draw the application icon at its native pixel size instead.
+  assert.equal(nsis.headerImage, undefined);
   const ui = await readFile(new URL(nsis.installerHooks, root), "utf8");
   const en = [...ui.matchAll(/LangString (\w+) \$\{LANG_ENGLISH\}/g)].map(m => m[1]).sort();
   const zh = [...ui.matchAll(/LangString (\w+) \$\{LANG_SIMPCHINESE\}/g)].map(m => m[1]).sort();

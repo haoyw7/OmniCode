@@ -19,7 +19,6 @@ macOS 移除旧 Assets.car 图标覆盖，使用新 ICNS；开发包也清除旧
 再生成
 python scripts/generate-omnicode-artwork.py
 node scripts/generate-omnicode-icons.mjs
-node scripts/generate-installer-header.mjs
 
 第一条仅用 Python 标准库；原生图标生成需要现有 @playwright/test 的 Chromium 和 Python Pillow。
 以上只生成素材，不构建或发布应用，也未添加自动运行钩子。
