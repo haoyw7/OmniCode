@@ -297,6 +297,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     view,
     worktreeCreation,
   } = vm;
+  const projectlessChat = !!project && isChatFolder(project.cwd);
   const syncError = useMobileSyncError();
   const noticeError = !addingConnection && !homeUnavailable && hostStatus.state === "connected"
     ? error || sharedStateError || syncError || (view !== "chat" ? hostError || pollError : "")
@@ -405,7 +406,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               {showSessionConnection ? (
                 <MobileReloadStatus status={hostStatus} loading={loading} error={sessionConnectionError} />
               ) : <>
-              {project?.name && (
+              {!projectlessChat && project?.name && (
                 <span className="mobile-header-context-item">
                   <Folder size={14} aria-hidden="true" />
                   <span>{project.name}</span>
@@ -729,15 +730,15 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           ) : (
             <MobileEmpty
               icon={<Chatting size={40} />}
-              title={
+              title={t(
                 sessionId
                   ? "Conversation unavailable"
-                  : "What shall we work on?"
-              }
+                  : projectlessChat ? "How can I help?" : "What shall we work on?"
+              )}
             >
               {sessionId
                 ? t("Check your connection and retry.")
-                : t("Start a conversation in {project}.", {
+                : !projectlessChat && t("Start a conversation in {project}.", {
                     project: project?.name || t("your project"),
                   })}
             </MobileEmpty>

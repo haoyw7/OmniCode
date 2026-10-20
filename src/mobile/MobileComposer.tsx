@@ -6,13 +6,15 @@ import { Keyboard } from "@capacitor/keyboard";
 import {
   ArrowUp,
   AiIdea,
+  Camera,
   Check,
   ChevronsUpDown,
-  FilePlus,
+  File,
   Folder,
   FolderTree,
-  ImagePlus,
+  Images,
   Plus,
+  Shapes,
   Square,
   X,
 } from "../shared/ui/icons";
@@ -63,6 +65,7 @@ export type MobileComposerPanel =
   | "permissions"
   | "model"
   | "projects"
+  | "skills"
   | "plan"
   | "workspace"
   | null;
@@ -159,6 +162,7 @@ function useMobileComposerController(props: Props) {
   const form = useRef<HTMLFormElement>(null);
   const dock = useRef<HTMLDivElement>(null);
   usePreserveInputFocusOnTouch(form, area, true);
+  const camera = useRef<HTMLInputElement>(null);
   const photos = useRef<HTMLInputElement>(null);
   const files = useRef<HTMLInputElement>(null);
   const pickerFocus = useRef<{
@@ -175,14 +179,14 @@ function useMobileComposerController(props: Props) {
   const skillsKey = props.skillsContextKey ?? `${props.project?.id ?? ""}\0${props.configuration.harness}`;
   const nativeGuess = props.configuration.harness === "pi" || props.configuration.harness === "omp";
   const inlineOpen = !!slash && props.panel === null && !props.disabled;
-  const skillsState = useMobileSkills(skillsKey, props.loadSkills, inlineOpen || props.panel === "actions", nativeGuess);
+  const skillsState = useMobileSkills(skillsKey, props.loadSkills, inlineOpen || props.panel === "actions" || props.panel === "skills", nativeGuess);
   const native = skillsState.catalog?.native ?? nativeGuess;
   const commands = useMemo(() => [PLAN_COMMAND,
     ...(props.canCompact && (skillsState.catalog?.canCompact ?? true) ? [COMPACT_COMMAND] : []),
     ...(skillsState.catalog?.skills ?? []).filter(skill => !["operator", "mono", "omnicode"].includes(skill.name) &&
       (skill.kind === "native" || !["plan", "compact", "orchestrator", "draft", "btw", "mcp", "add-to-folder"].includes(skill.name))),
   ], [props.canCompact, skillsState.catalog]);
-  const options = rankSkills(commands, props.panel === "actions" ? "" : slash?.query ?? "");
+  const options = rankSkills(commands, inlineOpen ? slash?.query ?? "" : "");
   useEffect(() => { setSlash(null); setSkillActive(0); pickerFocus.current = undefined; }, [skillsKey]);
   useEffect(() => { setSkillActive(0); }, [slash?.query]);
   useEffect(() => {
@@ -408,7 +412,7 @@ function useMobileComposerController(props: Props) {
   useEffect(() => {
     // React's cancel handler is specific to dialogs; file pickers emit their
     // own native cancel event, including when the same file is reselected.
-    const inputs = [photos.current, files.current];
+    const inputs = [camera.current, photos.current, files.current];
     for (const input of inputs) input?.addEventListener("cancel", restorePickerFocus);
     return () => {
       for (const input of inputs) input?.removeEventListener("cancel", restorePickerFocus);
@@ -423,6 +427,7 @@ function useMobileComposerController(props: Props) {
   };
   return {
     area,
+    camera,
     close,
     dismissSkills,
     dismissedSlash,
@@ -459,6 +464,7 @@ type MobileComposerViewModel = ReturnType<typeof useMobileComposerController>;
 function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
   const {
     area,
+    camera,
     close,
     dismissSkills,
     dismissedSlash,
@@ -721,6 +727,16 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             </AnimatedCollapse>
           </motion.div>
           <input
+            ref={camera}
+            type="file"
+            hidden
+            accept="image/*"
+            capture="environment"
+            aria-label={t("Take photo")}
+            disabled={props.disabled || props.readingAttachments}
+            onChange={(event) => selectFiles(event.currentTarget)}
+          />
+          <input
             ref={photos}
             type="file"
             hidden
@@ -847,7 +863,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         placement="anchor"
         anchor={panelAnchor}
         preserveFocus={area}
-        width={SHEET_WIDTH.list}
+        width={SHEET_WIDTH.menu}
         side="top"
         onClose={close}
       >
@@ -856,10 +872,19 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           type="button"
           className="mobile-sheet-row"
           disabled={props.disabled || props.readingAttachments}
+          onClick={() => openFilePicker(camera.current)}
+        >
+          <Camera size={20} />
+          <span>{t("Camera")}</span>
+        </button>
+        <button
+          type="button"
+          className="mobile-sheet-row"
+          disabled={props.disabled || props.readingAttachments}
           onClick={() => openFilePicker(photos.current)}
         >
-          <ImagePlus size={20} />
-          <span>{t("Upload photos")}</span>
+          <Images size={20} />
+          <span>{t("Gallery")}</span>
         </button>
         <button
           type="button"
@@ -867,9 +892,18 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           disabled={props.disabled || props.readingAttachments}
           onClick={() => openFilePicker(files.current)}
         >
-          <FilePlus size={20} />
-          <span>{t("Upload files")}</span>
+          <File size={20} />
+          <span>{t("Files")}</span>
         </button>
+        <div className="mobile-menu-divider" role="separator" />
+        {props.loadSkills && (
+          <button type="button" className="mobile-sheet-row" aria-haspopup="dialog"
+            disabled={props.disabled}
+            onClick={() => { setSkillActive(0); props.onPanelChange("skills"); }}>
+            <Shapes size={20} />
+            <span>{t("Skills")}</span>
+          </button>
+        )}
         <button
           type="button"
           className="mobile-sheet-row"
@@ -893,15 +927,23 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             <span>{t("Choose project")}</span>
           </button>
         )}
-        {props.loadSkills && <>
-          <div className="mobile-menu-divider" role="separator" />
-          <div className="mobile-skill-picker">
-            <MobileSkillList skills={options.filter(skill => skill !== PLAN_COMMAND)} loading={skillsState.loading} failed={!!skillsState.failed} error={skillsState.error}
-              active={skillActive} id={skillListId} onPick={pickSkill} onActive={setSkillActive} onRetry={() => void skillsState.reload(true)} />
-          </div>
-        </>}
         </>}
       </MobileSheet>
+      {props.loadSkills && (
+        <MobileSheet
+          open={props.panel === "skills"}
+          title="Skills"
+          header={{ title: t("Skills") }}
+          preserveFocus={area}
+          onClose={close}
+        >
+          {() => (
+            <MobileSkillList grouped skills={options.filter(skill => skill !== PLAN_COMMAND)} loading={skillsState.loading}
+              failed={!!skillsState.failed} error={skillsState.error} active={skillActive} id={skillListId}
+              onPick={pickSkill} onActive={setSkillActive} onRetry={() => void skillsState.reload(true)} />
+          )}
+        </MobileSheet>
+      )}
       <MobileSheet
         open={props.panel === "projects" && !props.lockedAgent}
         title="Choose project"

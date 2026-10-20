@@ -152,7 +152,11 @@ function tapKeepingFocus(target: HTMLElement) {
   });
 }
 describe("mobile composer popup focus", () => {
-  it.each(["Upload photos", "Upload files"])("restores typing and the selection after %s without disabling the field during reading", (label) => {
+  it.each([
+    ["Take photo", "Camera"],
+    ["Upload photos", "Gallery"],
+    ["Upload files", "Files"],
+  ])("restores typing and the selection after %s without disabling the field during reading", (label, rowLabel) => {
     const { node, button, rerender, onFiles } = render();
     const area = node.querySelector("textarea")!;
     const input = node.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`)!;
@@ -160,7 +164,7 @@ describe("mobile composer popup focus", () => {
     act(() => { area.focus(); area.setSelectionRange(3, 7, "backward"); });
     tapKeepingFocus(button("Add to message"));
     const row = [...node.querySelectorAll<HTMLButtonElement>(".mobile-sheet-row")]
-      .find(element => element.textContent === label)!;
+      .find(element => element.textContent === rowLabel)!;
     tapKeepingFocus(row);
     expect(picker).toHaveBeenCalledOnce();
     act(() => area.blur());
@@ -193,7 +197,7 @@ describe("mobile composer popup focus", () => {
       act(() => { area.focus(); area.setSelectionRange(2, 4); });
       tapKeepingFocus(button("Add to message"));
       tapKeepingFocus([...node.querySelectorAll<HTMLButtonElement>(".mobile-sheet-row")]
-        .find(element => element.textContent === "Upload photos")!);
+        .find(element => element.textContent === "Gallery")!);
       // The native picker hides the keyboard without clearing DOM focus.
       keyboard(0, 0);
       act(() => input.dispatchEvent(new Event("cancel", { bubbles: true })));
@@ -216,7 +220,7 @@ describe("mobile composer popup focus", () => {
     vi.spyOn(input, "click").mockImplementation(() => {});
     click("Add to message");
     act(() => [...node.querySelectorAll<HTMLButtonElement>(".mobile-sheet-row")]
-      .find(element => element.textContent === "Upload files")!.click());
+      .find(element => element.textContent === "Files")!.click());
     act(() => input.dispatchEvent(new Event("cancel", { bubbles: true })));
     expect(document.activeElement).not.toBe(area);
     expect(Keyboard.show).not.toHaveBeenCalled();

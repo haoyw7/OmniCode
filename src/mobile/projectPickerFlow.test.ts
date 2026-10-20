@@ -120,6 +120,29 @@ async function pick() {
 }
 
 describe("mobile project folder picker entry points", () => {
+  it.each([
+    { cwd: "/projects/my-app", projectless: false },
+    { cwd: "/home/me/Documents/omnicode/2026-10-20/chat-100058-3mbrqq", projectless: true },
+    { cwd: "C:\\Users\\me\\Documents\\omnicode\\2026-10-20\\chat-100058-3mbrqq", projectless: true },
+  ])("shows workspace context only for project conversations: $cwd", async ({ cwd, projectless }) => {
+    registered.push({ id: "conversation-project", name: "Folder name", cwd });
+    vi.spyOn(host, "hasCapability").mockImplementation((...args: unknown[]) =>
+      args[0] === "git.worktreeCreate");
+    await render();
+    await click("New conversation");
+    await advanceMotionTimers(600);
+
+    const page = node.querySelector('.mobile-chat:not([inert])')!;
+    expect(page).not.toBeNull();
+    expect(node.querySelector(".mobile-header-context")?.textContent?.includes("Folder name"))
+      .toBe(!projectless);
+    expect(page.querySelector(".mobile-composer-workspace") !== null).toBe(!projectless);
+    expect(page.querySelector(".mobile-empty")?.textContent?.includes("Folder name"))
+      .toBe(!projectless);
+    expect(page.querySelector(".mobile-empty h2")?.textContent)
+      .toBe(projectless ? "How can I help?" : "What shall we work on?");
+  });
+
   it("opens the first browsed project from the empty-project screen", async () => {
     await render();
     await click("Open project");

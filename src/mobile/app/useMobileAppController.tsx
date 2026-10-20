@@ -128,6 +128,7 @@ import { useMobileHeaderMotion, type MobileRoute } from "../MobilePageTransition
 import { migrateConnectionSettings } from "../connectionScope";
 import { loadProjectChatBackgroundSettings, projectChatBackgroundRevision, projectChatBackgroundImageRevision, subscribeProjectChatBackground } from "../../features/projects/model/projectChatBackground";
 import { useProjectBackgroundEffect } from "../../features/projects/ui/useProjectBackgroundEffect";
+import { isChatFolder } from "../../features/projects/model/chatFolderPath";
 import { dismissImageLightbox } from "../../shared/ui/ImageLightbox";
 
 export const client = new MobileClient(mobileStorage);
@@ -2010,12 +2011,12 @@ export function useMobileAppController() {
     queue.canReorder, queue.onReorder, queue.onDelete,
     queue.onSteer, queue.onResume, onQueueOverlayChange, restoreQueuedMessage, queueDisabled]);
   const canCreateWorktree = client.hasCapability("git.worktreeCreate");
-  const composerWorkspace = useMemo(() => canCreateWorktree && project ? {
+  const composerWorkspace = useMemo(() => canCreateWorktree && project && !isChatFolder(project.cwd) ? {
     value: workspace, onChange: setWorkspace,
     loadBranches: () => client.branches(project.id),
     loadWorktrees: () => client.worktrees(project.id),
     creating: worktreeCreation?.status === "creating",
-  } : undefined, [canCreateWorktree, project?.id, workspace, worktreeCreation?.status]);
+  } : undefined, [canCreateWorktree, project?.id, project?.cwd, workspace, worktreeCreation?.status]);
   const projectsUnavailable = projectListState === "failed" || hostStatus.state === "failed" || hostStatus.state === "disconnected";
   const projectsPending = projectListState === "loading" && !projectsUnavailable;
   // An unreachable device keeps Home's device row with a centered retry state.

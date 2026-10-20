@@ -92,6 +92,9 @@ body,
   width: var(--m-icon-lg);
   height: var(--m-icon-lg);
 }
+.image-lightbox-navigation {
+  bottom: calc(16px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+}
 /* One font step for sheets, dialogs and shared popovers, including body portals.
    Fixed sizes opt in below; inherited text grows once at the surface root. */
 :is(.mobile-sheet, .mobile-modal, .mobile-notices, .fixed[role="alert"],

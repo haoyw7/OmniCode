@@ -247,18 +247,6 @@
   padding: 8px;
   z-index: 3;
 }
-.mobile-skill-picker {
-  display: flex;
-  flex-shrink: 0;
-  min-height: 0;
-  /* Reserve the list area before loading so the actions above never move. */
-  height: min(40dvh, 360px);
-  flex-direction: column;
-  gap: 8px;
-  padding: 4px 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
 .mobile-skill-heading {
   display: flex;
   flex-shrink: 0;
@@ -274,10 +262,6 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-}
-.mobile-skill-picker .mobile-skill-options {
-  flex-shrink: 0;
-  overflow-y: visible;
 }
 .mobile-skill-options .mobile-sheet-row {
   align-items: flex-start;
@@ -297,14 +281,45 @@
   height: var(--m-icon-sm);
   margin-top: 2px;
 }
-/* Match the action rows above while keeping the smaller skill glyph centered. */
-.mobile-skill-picker .mobile-sheet-row {
-  gap: 16px;
-  padding-inline: 14px;
+/* The skills sheet sorts rows into source sections of joined cards; the
+   sheet content scrolls, and touch selection never highlights a row. */
+.mobile-skill-options[data-grouped] {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: visible;
 }
-.mobile-skill-picker .mobile-sheet-row > svg {
+.mobile-skill-group h3 {
+  margin: 0 16px 8px;
+  font-size: calc(var(--mobile-font-sm) + var(--mobile-popup-font-step, 0px));
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-skill-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+  border-radius: var(--mobile-card-radius);
+}
+.mobile-skill-options[data-grouped] .mobile-sheet-row {
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding: 10px 16px;
+  border-radius: 4px;
+  background: var(--mobile-card);
+  font-size: calc(var(--mobile-font-lg) + var(--mobile-popup-font-step, 0px));
+}
+.mobile-skill-options[data-grouped] .mobile-sheet-row > svg {
   flex-basis: var(--m-icon-md);
   width: var(--m-icon-md);
+  height: var(--m-icon-md);
+  margin-top: 0;
+}
+.mobile-skill-options[data-grouped] .mobile-sheet-row-text small {
+  color: var(--color-m-ink-secondary);
+  font-size: calc(var(--mobile-font-md) + var(--mobile-popup-font-step, 0px));
 }
 .mobile-skill-options .mobile-sheet-row-text {
   min-width: 0;

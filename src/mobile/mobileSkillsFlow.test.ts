@@ -165,10 +165,12 @@ describe("mobile skill and app-command send flow", () => {
       undefined,
     );
   });
-  it("opens skills directly in the add menu and inserts the chosen skill into the draft", async () => {
+  it("opens skills from the add menu and inserts the chosen skill into the draft", async () => {
     await render();
     await input("Inspect ");
     await act(async () => node.querySelector<HTMLButtonElement>('button[aria-label="Add to message"]')!.click());
+    await act(async () => [...node.querySelectorAll<HTMLButtonElement>(".mobile-sheet-row")]
+      .find(row => row.textContent === "Skills")!.click());
     const item = [...node.querySelectorAll<HTMLButtonElement>('[role="option"]')]
       .find(row => row.querySelector("strong")?.textContent === "/review")!;
     await act(async () => item.click());

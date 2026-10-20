@@ -144,16 +144,18 @@ function deferred<T>() {
 }
 
 describe("mobile skills and slash completion", () => {
-  it("loads only on demand, lists skills in the plus menu and inserts without sending", async () => {
+  it("loads only on demand, lists skills in a sheet from the plus menu and inserts without sending", async () => {
     await render();
     expect(load).not.toHaveBeenCalled();
     await input("Before after", 7);
     await click("Add to message");
-    expect(node.querySelector(".mobile-composer-skills")).toBeNull();
-    expect(node.querySelector(".mobile-composer-project")).toBeNull();
-    expect(option("review")).toBeDefined();
     expect(load).toHaveBeenCalledWith(true);
-    expect(node.querySelector('.mobile-skill-picker input, .mobile-skill-picker h2')).toBeNull();
+    expect(option("review")).toBeUndefined();
+    await click("Skills");
+    expect(node.querySelector('.mobile-sheet-backdrop[data-placement="bottom"] [role="dialog"]')?.getAttribute("aria-label")).toBe("Skills");
+    expect(option("review")).toBeDefined();
+    expect(node.querySelector('.mobile-skill-options[data-grouped] input')).toBeNull();
+    expect([...node.querySelectorAll('.mobile-skill-group h3')].map(heading => heading.textContent)).toContain("Personal");
     expect(option("lint")).toBeDefined();
     await choose("review");
     expect(area().value).toBe("Before /review after");
@@ -243,10 +245,11 @@ describe("mobile skills and slash completion", () => {
     expect(area().value).toBe("/rev");
   });
 
-  it("reopens the add menu with cached skills and still toggles plan mode", async () => {
+  it("reopens the skills sheet with cached skills and still toggles plan mode", async () => {
     const onPlanModeChange = vi.fn();
     await render({ onPlanModeChange });
     await click("Add to message");
+    await click("Skills");
     expect(option("review")).toBeDefined();
     const closeMenu = async () => act(async () => {
       node.querySelector('[role="dialog"]')!.dispatchEvent(
@@ -257,9 +260,12 @@ describe("mobile skills and slash completion", () => {
     // An unresolved second response would have shown loading on every reopen.
     load.mockReturnValue(deferred<HostSkillCatalog>().promise);
     await click("Add to message");
+    await click("Skills");
     expect(load).toHaveBeenCalledOnce();
     expect(option("review")).toBeDefined();
-    expect(node.querySelector('.mobile-skill-picker [role="status"]')).toBeNull();
+    expect(node.querySelector('.mobile-skill-options[data-grouped]')?.parentElement?.querySelector('[role="status"]')).toBeNull();
+    await closeMenu();
+    await click("Add to message");
     await act(async () => node.querySelector<HTMLButtonElement>('[role="switch"]')!.click());
     expect(onPlanModeChange).toHaveBeenCalledWith(true);
     expect(area().value).toBe("");

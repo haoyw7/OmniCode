@@ -18,6 +18,7 @@ import {
   BellOff as BellOffIcon,
   Bot as BotIcon,
   CalendarDays as CalendarDaysIcon,
+  Camera as CameraIcon,
   CameraOff as CameraOffIcon,
   CaseSensitive as CaseSensitiveIcon,
   ChartNoAxesCombined as ChartNoAxesCombinedIcon,
@@ -66,6 +67,7 @@ import {
   Globe as GlobeIcon,
   GripVertical as GripVerticalIcon,
   Home as HomeIcon,
+  Image as ImageIcon,
   ImagePlus as ImagePlusIcon,
   Inbox as InboxIcon,
   Keyboard as KeyboardIcon,
@@ -113,6 +115,7 @@ import {
   ScanQrCode as ScanQrCodeIcon,
   Search as SearchIcon,
   Settings as SettingsIcon,
+  Shapes as ShapesIcon,
   Share as ShareIcon,
   Shield as ShieldIcon,
   SlidersHorizontal as SlidersHorizontalIcon,
@@ -322,12 +325,14 @@ export const GitPullRequestDraft = wrap(
 export const GripVertical = wrap(GripVerticalIcon, "GripVertical");
 export const Globe = wrap(GlobeIcon, "Globe");
 export const Internet = wrap(EarthIcon, "Internet");
+export const Images = wrap(ImageIcon, "Images");
 export const ImagePlus = wrap(ImagePlusIcon, "ImagePlus");
 export const Inbox = wrap(InboxIcon, "Inbox");
 export const BellOff = wrap(BellOffIcon, "BellOff");
 export const Keyboard = wrap(KeyboardIcon, "Keyboard");
 export const PairingCode = wrap(RectangleEllipsisIcon, "PairingCode");
 export const ScanQrCode = wrap(ScanQrCodeIcon, "ScanQrCode");
+export const Camera = wrap(CameraIcon, "Camera");
 export const CameraOff = wrap(CameraOffIcon, "CameraOff");
 export const ListBullet = wrap(ListIcon, "ListBullet");
 export const ListEnd = wrap(ListEndIcon, "ListEnd");
@@ -364,6 +369,7 @@ export const Replace = wrap(ReplaceIcon, "Replace");
 export const RotateCcw = wrap(RotateCcwIcon, "RotateCcw");
 export const Search = wrap(SearchIcon, "Search");
 export const Settings = wrap(SettingsIcon, "Settings");
+export const Shapes = wrap(ShapesIcon, "Shapes");
 export const Share = wrap(ShareIcon, "Share");
 export const Shield = wrap(ShieldIcon, "Shield");
 export const SlidersHorizontal = wrap(
