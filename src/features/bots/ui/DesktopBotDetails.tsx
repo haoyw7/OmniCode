@@ -8,7 +8,7 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
 import { Tabs, TabsList, TabsTrigger } from "../../../shared/ui/primitives/Tabs";
-import { ChevronLeft, ChevronRight } from "../../../shared/ui/icons";
+import { ChartLine, ChevronLeft, ChevronRight, Clock, MessageSquare, Share } from "../../../shared/ui/icons";
 import "./desktop-bot-details.css";
 
 /** Keep each visited editor mounted, including during reverse slide transitions. */
@@ -34,10 +34,10 @@ export function DesktopBotDetails({ identity, memory, runtime, activity, automat
   const scope = useId();
   const heading = useRef<HTMLHeadingElement>(null), previous = useRef(selected);
   const pages = [
-    ...(activity ? [{ key: "activity", label: "Activity", content: activity }] : []),
-    ...(automation ? [{ key: "automation", label: "Automation", content: automation }] : []),
-    ...(delegations ? [{ key: "delegations", label: "Delegations", content: delegations }] : []),
-    ...(management ? [{ key: "threads", label: "Thread settings", content: management }] : []),
+    ...(activity ? [{ key: "activity", label: "Activity", icon: ChartLine, content: activity }] : []),
+    ...(automation ? [{ key: "automation", label: "Automation", icon: Clock, content: automation }] : []),
+    ...(delegations ? [{ key: "delegations", label: "Delegations", icon: Share, content: delegations }] : []),
+    ...(management ? [{ key: "threads", label: "Thread settings", icon: MessageSquare, content: management }] : []),
   ];
   const subpage = pages.find(page => page.key === selected);
   const selectedTab = subpage ? "settings" : selected;
@@ -72,7 +72,7 @@ export function DesktopBotDetails({ identity, memory, runtime, activity, automat
       {runtime && <DetailPage active={selected === "runtime"} id={`${scope}-runtime`} labelledBy={`${scope}-runtime-tab`}>{runtime}</DetailPage>}
       <DetailPage active={selected === "settings"} id={`${scope}-settings`} labelledBy={`${scope}-settings-tab`}>
         <nav aria-label={t("Bot details")} className="desktop-bot-settings-links desktop-bot-row-group">
-          {pages.map(page => <Button variant="ghost" type="button" className="desktop-bot-row-group-link" key={page.key} onClick={() => setSelected(page.key)}>{t(page.label)}<ChevronRight size={16} /></Button>)}
+          {pages.map(({ key, label, icon: Icon }) => <Button variant="ghost" type="button" className="desktop-bot-row-group-link" key={key} onClick={() => setSelected(key)}><span className="desktop-bot-row-group-link-label"><Icon size={16} aria-hidden="true" /><span>{t(label)}</span></span><ChevronRight size={16} /></Button>)}
         </nav>
       </DetailPage>
       {pages.map(page => <DetailPage key={page.key} active={selected === page.key} id={`${scope}-${page.key}`} labelledBy={`${scope}-settings-tab`}>

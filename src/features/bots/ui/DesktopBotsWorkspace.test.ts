@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { startMotionClock, stopMotionClock, finishMotion as settleMotion } from "../../../../tests/helpers/sharedMotionClock";
 import { DesktopBotsWorkspace } from "./DesktopBotsWorkspace";
+import { BotModelPickerContext, type BotModelPickerProps } from "./BotChatChrome";
 import { readBotSelection, selectBotThread } from "../model/botSelection";
 import { fullBotPolicy, type BotMessage } from "../model/botView";
 import { botCacheKey, type BotView, type BotThread, type BotsSnapshot } from "../model/bots";
@@ -103,8 +104,14 @@ beforeEach(() => {
 });
 afterEach(() => { act(() => root.unmount()); node.remove(); stopMotionClock(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 async function flush() { await act(async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); await settleMotion(); }); }
+/** Desktop composition supplies the model menu; a native select keeps these tests independent of it. */
+function StubModelPicker({ harness, model, onChange }: BotModelPickerProps) {
+  return createElement("select", { "aria-label": "Stub model", value: model, onChange: (event: { target: HTMLSelectElement }) => onChange(harness ?? "codex", event.target.value) },
+    ...[...new Set([model ?? "", "thread-model"])].map(value => createElement("option", { key: value, value }, value)));
+}
 async function render() {
-  act(() => root.render(createElement(DesktopBotsWorkspace, { hostKey: "host", hostName: "Host", rpc: rpc as never, onOpen: () => {}, desktopBots: true })));
+  act(() => root.render(createElement(BotModelPickerContext.Provider, { value: StubModelPicker },
+    createElement(DesktopBotsWorkspace, { hostKey: "host", hostName: "Host", rpc: rpc as never, onOpen: () => {}, desktopBots: true }))));
   await flush();
 }
 const active = () => node.querySelector<HTMLElement>('.desktop-bots-thread-surface:not([aria-hidden])')!;
@@ -261,7 +268,6 @@ async function details() {
   act(() => active().querySelector<HTMLButtonElement>('button[aria-label="Bot details"]')!.click()); await flush();
   act(() => [...active().querySelectorAll<HTMLButtonElement>('[role="tab"]')].find(button => button.textContent === "Settings")!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))); await flush();
   act(() => [...active().querySelectorAll<HTMLButtonElement>('.desktop-bot-settings-links button')].find(button => button.textContent === "Thread settings")!.click()); await flush();
-  act(() => active().querySelector<HTMLButtonElement>(".desktop-bots-management-toggle")!.click()); await flush();
 }
 function managementButton(text: string) {
   return [...active().querySelectorAll<HTMLButtonElement>(".desktop-bots-thread-settings button")].find((button) => button.textContent === text)!;
@@ -314,9 +320,9 @@ it("restores an archived Bot and keeps its independent draft and user avatar", a
 it("saves a Thread title and model override, then resets the override to follow its Bot", async () => {
   await render(); await select("A-2"); await details();
   const title = active().querySelector<HTMLInputElement>('[aria-label="Thread title"]')!;
-  const follow = active().querySelector<HTMLInputElement>('.desktop-bots-model-follow input')!;
+  const follow = active().querySelector<HTMLButtonElement>('[role="switch"][aria-label="Follow bot model"]')!;
   act(() => { setValue(title, "Planning title"); follow.click(); }); await flush();
-  const model = active().querySelector<HTMLSelectElement>('[aria-label="Thread model override"]')!;
+  const model = active().querySelector<HTMLSelectElement>('.desktop-bots-thread-settings [aria-label="Stub model"]')!;
   act(() => { model.value = "thread-model"; model.dispatchEvent(new Event("change", { bubbles: true })); });
   act(() => managementButton("Save thread").click()); await flush();
   const saved = rpc.mock.calls.find(([method]) => method === "botThreads.configure")?.[1];
@@ -325,7 +331,7 @@ it("saves a Thread title and model override, then resets the override to follow 
   expect(snapshot.bots[0].model).toBe("default-model");
   act(() => follow.click());
   // Content remains mounted during closing and AnimatedCollapse owns inertness.
-  expect(active().querySelector('[aria-label="Thread model override"]')).not.toBeNull();
+  expect(active().querySelector('.desktop-bots-thread-settings [aria-label="Stub model"]')).not.toBeNull();
   act(() => managementButton("Save thread").click()); await flush();
   expect(rpc.mock.calls.filter(([method]) => method === "botThreads.configure").at(-1)?.[1]).toMatchObject({ expectedRevision: 2, patch: { modelOverride: null } });
   expect(snapshot.threads.find((thread) => thread.id === "A-2")?.modelOverride).toBeUndefined();

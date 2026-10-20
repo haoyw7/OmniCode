@@ -213,9 +213,13 @@ function InspectorFooter({ inspector, shown, children }: { inspector: boolean; s
   return inspector ? <AnimatedCollapse expanded={shown} className="assistant-settings-footer-fold">{children}</AnimatedCollapse> : <>{children}</>;
 }
 
-/** The desktop inspector renders its settings as one grouped list of rows. */
-function SettingsRows({ grouped, children }: { grouped: boolean; children: ReactNode }) {
-  return grouped ? <div className="desktop-bot-row-group">{children}</div> : <>{children}</>;
+/** The desktop inspector renders each settings section as a titled group of rows. */
+function SettingsRows({ grouped, title, children }: { grouped: boolean; title?: string; children: ReactNode }) {
+  if (!grouped) return <>{children}</>;
+  return <section className="desktop-bot-section">
+    {title && <h3 className="desktop-bot-section-title">{title}</h3>}
+    <div className="desktop-bot-row-group">{children}</div>
+  </section>;
 }
 
 function CollapsibleSection({
@@ -1226,8 +1230,8 @@ export function BotSettings({
           void onSave(toPatch(draft));
         }}
       >
-        <div className="assistant-settings-body"><SettingsRows grouped={inspector}>
-          {section !== "automation" && <>{!inspector && identitySection}
+        <div className="assistant-settings-body">
+          {section !== "automation" && <SettingsRows grouped={inspector} title={t("Model and permissions")}>{!inspector && identitySection}
           <Section title={t("Model")} card={inspector} kind="model">
             {inspector && ModelPicker ? <ModelPicker
               catalog={catalog} catalogState={catalogState} harness={draft.harness} model={draft.model}
@@ -1323,9 +1327,10 @@ export function BotSettings({
               <small className="assistant-field-error">{harnessError}</small>
             ) : null}
           </Section>
-          {permissionsSection}</>}
-          {section !== "settings" && wakeupsSection}
-          {section !== "automation" && memory && (
+          {permissionsSection}</SettingsRows>}
+          {section !== "settings" && <SettingsRows grouped={inspector}>{wakeupsSection}</SettingsRows>}
+          {section !== "automation" && (memory || (im && !mobile)) && <SettingsRows grouped={inspector}>
+          {memory && (
             <CollapsibleSection
               title={t("Memory")}
               summary={t("{count} remembered facts", {
@@ -1346,7 +1351,9 @@ export function BotSettings({
               )}
             </CollapsibleSection>
           )}
-          {section !== "settings" && habits && (
+          {im && !mobile && <BotImSettings {...im} disabled={busy} />}
+          </SettingsRows>}
+          {section !== "settings" && habits && <SettingsRows grouped={inspector}>
             <CollapsibleSection
               title={t("Habits")}
               summary={t("{count} habits", { count: habits.items.length })}
@@ -1362,9 +1369,8 @@ export function BotSettings({
                 />
               )}
             </CollapsibleSection>
-          )}
-          {section !== "automation" && im && !mobile && <BotImSettings {...im} disabled={busy} />}
-        </SettingsRows></div>
+          </SettingsRows>}
+        </div>
         <Actions>
           <InspectorFooter inspector={inspector} shown={!value || dirty}>
           <footer className="assistant-settings-footer">

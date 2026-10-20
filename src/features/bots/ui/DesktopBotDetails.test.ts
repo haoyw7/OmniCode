@@ -28,7 +28,7 @@ afterEach(() => { act(() => root.unmount()); node.remove(); vi.useRealTimers(); 
 it("keeps a runtime draft and command identity after an unknown response, and sends null to clear the directory", async () => {
   const rpc = vi.fn().mockRejectedValueOnce(new Error("Connection lost")).mockResolvedValueOnce({ revision: 6 });
   act(() => root.render(createElement(DesktopBotRuntimeSettings, { bot: bot(), rpc: rpc as never, onSaved: vi.fn() })));
-  act(() => { input(field("Working directory"), ""); input(field("Concurrent runs"), "4"); });
+  act(() => { node.querySelector<HTMLButtonElement>('[aria-label="Clear working directory"]')!.click(); input(field("Concurrent runs"), "4"); });
   act(() => button("Save runtime settings").click()); await flush();
   expect(field("Concurrent runs").value).toBe("4"); expect(node.textContent).toContain("Connection lost");
   act(() => button("Save runtime settings").click()); await flush();
@@ -37,6 +37,23 @@ it("keeps a runtime draft and command identity after an unknown response, and se
   expect(rpc.mock.calls[1][1]).toMatchObject({ botId: "bot-a", expectedRevision: 5, patch: { workingDirectory: null, maxConcurrentRuns: 4 } });
   expect(rpc.mock.calls[0][1].commandId).toBe(rpc.mock.calls[1][1].commandId);
   expect(button("Save runtime settings")).toBeUndefined();
+});
+
+it("picks the working directory by browsing folders on the Bot's Host", async () => {
+  const rpc = vi.fn(async (method: string, params?: Record<string, any>) => {
+    if (method === "projects.browse") return params?.path === "/project/app"
+      ? { path: "/project/app", parent: "/project", entries: [] }
+      : { path: "/project", parent: "/", entries: [{ name: "app", path: "/project/app" }] };
+    if (method === "bots.configure") return { revision: 6 };
+    throw new Error(method);
+  });
+  act(() => root.render(createElement(DesktopBotRuntimeSettings, { bot: bot(), rpc: rpc as never, onSaved: vi.fn() })));
+  act(() => node.querySelector<HTMLButtonElement>('[aria-label="Choose working directory"]')!.click()); await flush();
+  expect(rpc).toHaveBeenCalledWith("projects.browse", { path: "/project" });
+  act(() => [...node.querySelectorAll<HTMLButtonElement>("button")].find(item => item.textContent === "app")!.click()); await flush();
+  act(() => button("Use this folder").click()); await flush();
+  act(() => button("Save runtime settings").click()); await flush();
+  expect(rpc.mock.calls.find(call => call[0] === "bots.configure")?.[1]).toMatchObject({ patch: { workingDirectory: "/project/app" } });
 });
 
 it("preserves a conflicting runtime draft until the user explicitly reloads", async () => {
@@ -114,8 +131,8 @@ it("limits callable choices to other active Bots on this Host and saves the expl
   render(true); await flush();
   const list = node.querySelector<HTMLElement>('[aria-label="Callable bots"]')!;
   expect(list.textContent).not.toContain("Test Bot");
-  const options = [...list.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')];
-  expect(options).toHaveLength(1); expect(options[0].checked).toBe(false);
+  const options = [...list.querySelectorAll<HTMLButtonElement>('[role="switch"]')];
+  expect(options).toHaveLength(1); expect(options[0].getAttribute("aria-checked")).toBe("false");
   act(() => options[0].click()); act(() => button("Save runtime settings").click()); await flush();
   expect(rpc.mock.calls.find(call => call[0] === "bots.configure")?.[1]).toMatchObject({ botId: "bot-a", expectedRevision: 5, patch: { callableBotIds: ["bot-b"] } });
 });
@@ -131,46 +148,47 @@ it("omits delegation configuration and discovery when the Host lacks the capabil
 });
 
 
-const avatarOption = (label: string) => node.querySelector<HTMLInputElement>(`input[type="radio"][aria-label="${label}"]`)!;
+const avatarOption = (label: string) => document.querySelector<HTMLInputElement>(`input[type="radio"][aria-label="${label}"]`)!;
+const dialogButton = (text: string) => [...document.querySelectorAll<HTMLButtonElement>(".desktop-bot-avatar-dialog button")].find(item => item.textContent === text)!;
+const preview = () => document.querySelector(".desktop-bot-avatar-dialog-preview svg");
 
-it("previews Omi choices, cancels drafts and saves the selected shape, expression, fill and color", async () => {
+it("previews Omi choices in a dialog, cancels drafts and saves the selected shape, expression, fill and color", async () => {
   const save = vi.fn().mockResolvedValue(undefined);
   act(() => root.render(createElement(BotIdentitySettings, { bot: bot(), busy: false, avatarSupported: true, onSave: save })));
   const trigger = node.querySelector<HTMLButtonElement>('[aria-label="Edit avatar"]')!;
   act(() => trigger.click()); await flush();
+  expect(document.querySelector('[role="dialog"]')).not.toBeNull();
   expect(document.activeElement?.getAttribute("type")).toBe("radio");
-  expect(node.querySelectorAll('input:not([type="radio"])')).toHaveLength(1);
   act(() => avatarOption("Triangle").click());
-  expect(trigger.querySelector('svg')?.getAttribute('data-shape')).toBe('triangle');
+  expect(preview()?.getAttribute("data-shape")).toBe("triangle");
+  expect(trigger.querySelector("svg")?.getAttribute("data-shape")).not.toBe("triangle");
   act(() => avatarOption("Triangle").dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }))); await flush();
   expect(document.activeElement).toBe(trigger);
-  expect(node.querySelector('[role="group"]')).toBeNull();
+  expect(trigger.getAttribute("aria-expanded")).toBe("false");
   expect(save).not.toHaveBeenCalled();
   act(() => trigger.click()); await flush();
   act(() => { avatarOption("Square").click(); });
   act(() => { avatarOption("Joyful").click(); });
   act(() => { avatarOption("Filled").click(); });
   act(() => { avatarOption("Blue").click(); });
-  expect(trigger.querySelector('svg')?.getAttribute('data-shape')).toBe('square');
-  expect(trigger.querySelector('svg')?.getAttribute('data-expression')).toBe('joyful');
-  expect(trigger.querySelector('svg')?.getAttribute('data-variant')).toBe('filled');
-  expect(trigger.querySelector('svg')?.getAttribute('style')).toContain('--color-omi-blue');
-  act(() => button("Apply").click()); await flush();
-  expect(save).not.toHaveBeenCalled();
-  act(() => button("Save").click()); await flush();
+  expect(preview()?.getAttribute("data-shape")).toBe("square");
+  expect(preview()?.getAttribute("data-expression")).toBe("joyful");
+  expect(preview()?.getAttribute("data-variant")).toBe("filled");
+  expect(preview()?.getAttribute("style")).toContain("--color-omi-blue");
+  act(() => dialogButton("Save").click()); await flush();
   expect(save).toHaveBeenCalledWith({ name: "Test Bot", avatar: "omi:3311" });
+  expect(trigger.querySelector("svg")?.getAttribute("data-shape")).toBe("square");
   act(() => root.render(createElement(BotIdentitySettings, { key: "saved", bot: { ...bot(), avatar: "omi:3311" }, busy: false, avatarSupported: true, onSave: save })));
   act(() => node.querySelector<HTMLButtonElement>('[aria-label="Edit avatar"]')!.click()); await flush();
   for (const label of ["Square", "Joyful", "Filled", "Blue"]) expect(avatarOption(label).checked).toBe(true);
 });
 
 it("can reset a saved appearance and keeps unsupported Hosts read-only", async () => {
-  const save = vi.fn();
+  const save = vi.fn().mockResolvedValue(undefined);
   act(() => root.render(createElement(BotIdentitySettings, { bot: { ...bot(), avatar: "omi:3311" }, busy: false, avatarSupported: true, onSave: save })));
   act(() => node.querySelector<HTMLButtonElement>('[aria-label="Edit avatar"]')!.click()); await flush();
-  act(() => button("Reset").click());
-  act(() => button("Apply").click()); await flush();
-  act(() => button("Save").click()); await flush();
+  act(() => dialogButton("Reset").click());
+  act(() => dialogButton("Save").click()); await flush();
   expect(save).toHaveBeenCalledWith({ name: "Test Bot", avatar: "" });
   act(() => root.render(createElement(BotIdentitySettings, { bot: bot(), busy: false, avatarSupported: false, onSave: save })));
   expect(node.querySelector('[aria-label="Edit avatar"]')).toBeNull();
@@ -181,19 +199,19 @@ it("preserves the generation prompt across avatar tabs without submitting or pre
   const save = vi.fn();
   act(() => root.render(createElement(BotIdentitySettings, { bot: bot(), busy: false, avatarSupported: true, onSave: save })));
   act(() => node.querySelector<HTMLButtonElement>('[aria-label="Edit avatar"]')!.click()); await flush();
-  const tabs = [...node.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
   act(() => tabs[1].click());
-  const prompt = node.querySelector<HTMLTextAreaElement>('textarea')!;
+  const prompt = document.querySelector<HTMLTextAreaElement>('.desktop-bot-avatar-dialog textarea')!;
   act(() => {
     Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(prompt, "A friendly orange cat");
     prompt.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  expect(node.querySelector<HTMLButtonElement>('.desktop-bot-avatar-generate')!.disabled).toBe(true);
+  expect(document.querySelector<HTMLButtonElement>('.desktop-bot-avatar-generate')!.disabled).toBe(true);
   act(() => tabs[1].dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true, cancelable: true })));
   expect(tabs[2].getAttribute("aria-selected")).toBe("true");
   expect(document.activeElement).toBe(tabs[2]);
   act(() => tabs[1].click());
   expect(prompt.value).toBe("A friendly orange cat");
-  expect(node.querySelector('[role="tabpanel"]:not([hidden])')?.textContent).toContain("Avatar image generation is not available yet.");
+  expect(document.querySelector('.desktop-bot-avatar-dialog [role="tabpanel"]:not([hidden])')?.textContent).toContain("Avatar image generation is not available yet.");
   expect(save).not.toHaveBeenCalled();
 });

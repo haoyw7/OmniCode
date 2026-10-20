@@ -5,11 +5,16 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { BotConfiguration, BotPatch } from "../model/botView";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { Modal } from "../../../shared/ui/Modal";
+import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { Pencil } from "../../../shared/ui/icons";
 import { BotAvatar } from "./BotAvatar";
 import { BotAvatarPicker } from "./BotAvatarPicker";
 import { botAvatarAppearance, decodeBotAvatar, encodeBotAvatar } from "./botAvatarAppearance";
+import { HARNESS_TITLE } from "../../sessions/model/session";
+
+const avatarTabs = [{ id: "bot", label: "Bot" }, { id: "generate", label: "Generate" }, { id: "upload", label: "Upload" }];
 
 export function BotIdentitySettings({ bot, busy, onSave, avatarSupported = false }: {
   bot: BotConfiguration; busy: boolean; onSave: (patch: BotPatch) => Promise<void>; avatarSupported?: boolean;
@@ -17,69 +22,89 @@ export function BotIdentitySettings({ bot, busy, onSave, avatarSupported = false
   const { t } = useTranslation();
   const [name, setName] = useState(bot.name), [avatar, setAvatar] = useState(bot.avatar ?? "");
   const visible = useSurfaceVisibility();
-  const [editingAvatar, setEditingAvatar] = useState(false), [avatarDraft, setAvatarDraft] = useState(avatar);
-  const editor = useRef<HTMLDivElement>(null), trigger = useRef<HTMLButtonElement>(null);
-  const editorId = useId();
-  const [avatarTab, setAvatarTab] = useState("bot"), [avatarPrompt, setAvatarPrompt] = useState("");
-  const promptField = useRef<HTMLTextAreaElement>(null);
-  const avatarTabs = [{ id: "bot", label: "Bot" }, { id: "generate", label: "Generate" }, { id: "upload", label: "Upload" }];
-  const closeEditor = (restoreFocus = true) => { setEditingAvatar(false); if (restoreFocus) trigger.current?.focus(); };
+  const [editingAvatar, setEditingAvatar] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
   useEffect(() => { if (!visible) setEditingAvatar(false); }, [visible]);
-  useEffect(() => {
-    if (!editingAvatar) return;
-    const outside = (event: PointerEvent) => { if (!editor.current?.contains(event.target as Node)) setEditingAvatar(false); };
-    document.addEventListener("pointerdown", outside);
-    return () => document.removeEventListener("pointerdown", outside);
-  }, [editingAvatar]);
-  const applyAvatar = () => { if (!busy && [...avatarDraft].length <= 8) { setAvatar(avatarDraft); closeEditor(); } };
-  const changed = name.trim() !== bot.name || (avatarSupported && avatar !== (bot.avatar ?? ""));
+  const closeEditor = () => { setEditingAvatar(false); trigger.current?.focus(); };
+  const saveAvatar = async (next: string) => {
+    await onSave({ name: name.trim() || bot.name, avatar: next });
+    setAvatar(next); closeEditor();
+  };
+  const changed = name.trim() !== bot.name;
   return <form className="desktop-bot-identity" onSubmit={event => {
     event.preventDefault();
-    if (changed && name.trim() && [...avatar].length <= 8 && !busy) void onSave({ name: name.trim(), ...(avatarSupported ? { avatar } : {}) });
+    if (changed && name.trim() && !busy) void onSave({ name: name.trim(), ...(avatarSupported ? { avatar } : {}) });
   }}>
-    {avatarSupported ? <div ref={editor} className="desktop-bot-avatar-editor" onKeyDown={event => {
-      if (editingAvatar && event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeEditor(); }
-    }}>
-      <button ref={trigger} type="button" className="desktop-bot-avatar-trigger" aria-label={t("Edit avatar")} aria-expanded={editingAvatar} aria-controls={editorId} disabled={busy}
-        onClick={() => { setAvatarDraft(avatar); setEditingAvatar(value => !value); }}>
-        <BotAvatar bot={{ id: bot.id, avatar: editingAvatar ? avatarDraft : avatar }} size={96} />
-        <span className="desktop-bot-avatar-edit-overlay" aria-hidden="true"><Pencil size={20} /></span>
+    {avatarSupported ? <>
+      <button ref={trigger} type="button" className="desktop-bot-avatar-trigger" aria-label={t("Edit avatar")} aria-haspopup="dialog" aria-expanded={editingAvatar} disabled={busy}
+        onClick={() => setEditingAvatar(true)}>
+        <BotAvatar bot={{ id: bot.id, avatar }} size={40} />
+        <span className="desktop-bot-avatar-edit-overlay" aria-hidden="true"><Pencil size={14} /></span>
         <span className="desktop-bot-avatar-edit-hint" aria-hidden="true">{t("Edit avatar")}</span>
       </button>
-      <AnimatedCollapse expanded={editingAvatar && visible} className="desktop-bot-avatar-popover" onEntered={() => (avatarTab === "generate" ? promptField.current : editor.current?.querySelector<HTMLInputElement>('input[type="radio"]:checked'))?.focus()}>
-        <div id={editorId} role="group" aria-label={t("Edit avatar")} className="desktop-bot-avatar-fields">
-          <div className="desktop-bot-avatar-tabs" role="tablist" aria-label={t("Edit avatar")} onKeyDown={event => {
-            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-            event.preventDefault();
-            const index = avatarTabs.findIndex(tab => tab.id === avatarTab);
-            const next = event.key === "Home" ? 0 : event.key === "End" ? avatarTabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : avatarTabs.length - 1)) % avatarTabs.length;
-            setAvatarTab(avatarTabs[next].id);
-            event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
-          }}>
-            {avatarTabs.map(tab => <button key={tab.id} id={`${editorId}-${tab.id}-tab`} type="button" role="tab" aria-selected={avatarTab === tab.id} aria-controls={`${editorId}-${tab.id}-panel`} tabIndex={avatarTab === tab.id ? 0 : -1} onClick={() => setAvatarTab(tab.id)}>{t(tab.label)}</button>)}
-          </div>
-          <div id={`${editorId}-bot-panel`} role="tabpanel" aria-labelledby={`${editorId}-bot-tab`} hidden={avatarTab !== "bot"} className="desktop-bot-avatar-tab-panel">
-          <BotAvatarPicker value={decodeBotAvatar(avatarDraft) ?? botAvatarAppearance(bot.id)} disabled={busy} onChange={value => setAvatarDraft(encodeBotAvatar(value))} />
-          <div className="desktop-bot-avatar-actions">
-            <Button variant="secondary" type="button" disabled={busy} onClick={() => setAvatarDraft("")}>{t("Reset")}</Button>
-            <Button variant="secondary" type="button" onClick={() => closeEditor()}>{t("Cancel")}</Button>
-            <Button variant="secondary" type="button" disabled={busy || [...avatarDraft].length > 8} onClick={applyAvatar}>{t("Apply")}</Button>
-          </div>
-          </div>
-          <div id={`${editorId}-generate-panel`} role="tabpanel" aria-labelledby={`${editorId}-generate-tab`} hidden={avatarTab !== "generate"} className="desktop-bot-avatar-tab-panel">
-            <Textarea ref={promptField} value={avatarPrompt} onChange={event => setAvatarPrompt(event.target.value)} placeholder={t("Describe your avatar…")} aria-label={t("Describe your avatar…")} disabled={busy} />
-            <Button variant="secondary" type="button" className="desktop-bot-avatar-generate" disabled aria-describedby={`${editorId}-generation-unavailable`}>{t("Generate")}</Button>
-            <small id={`${editorId}-generation-unavailable`}>{t("Avatar image generation is not available yet.")}</small>
-          </div>
-          <div id={`${editorId}-upload-panel`} role="tabpanel" aria-labelledby={`${editorId}-upload-tab`} hidden={avatarTab !== "upload"} className="desktop-bot-avatar-tab-panel" tabIndex={0}>
-            <small>{t("Avatar image uploads are not available yet.")}</small>
-          </div>
-        </div>
-      </AnimatedCollapse>
-    </div> : <BotAvatar bot={{ id: bot.id, avatar }} size={96} />}
-    <label className="desktop-bot-identity-name"><span className="sr-only">{t("Name")}</span><Input value={name} maxLength={100} required disabled={busy} onChange={event => setName(event.target.value)} /></label>
+      <PresenceBoundary>{editingAvatar && visible ? <AvatarDialog bot={bot} name={name.trim() || bot.name} avatar={avatar} busy={busy} onCancel={closeEditor} onSave={saveAvatar} /> : null}</PresenceBoundary>
+    </> : <BotAvatar bot={{ id: bot.id, avatar }} size={40} />}
+    <div className="desktop-bot-identity-text">
+      <label className="desktop-bot-identity-name"><span className="sr-only">{t("Name")}</span><Input value={name} maxLength={100} required disabled={busy} onChange={event => setName(event.target.value)} /></label>
+      <span className="desktop-bot-identity-model" title={bot.model}><span>{[HARNESS_TITLE[bot.harness], bot.model].filter(Boolean).join(" · ")}</span></span>
+    </div>
     <AnimatedCollapse expanded={changed} className="desktop-bot-identity-save">
-      <Button variant="primary" type="submit" disabled={busy || !changed || !name.trim() || [...avatar].length > 8}>{t("Save")}</Button>
+      <Button variant="primary" size="sm" type="submit" disabled={busy || !changed || !name.trim()}>{t("Save")}</Button>
     </AnimatedCollapse>
   </form>;
+}
+
+/** Centered avatar editor: choices on the left, a live preview and the save action on the right. */
+function AvatarDialog({ bot, name, avatar, busy, onCancel, onSave }: {
+  bot: BotConfiguration; name: string; avatar: string; busy: boolean; onCancel: () => void; onSave: (avatar: string) => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const id = useId();
+  const [draft, setDraft] = useState(avatar), [tab, setTab] = useState("bot"), [prompt, setPrompt] = useState("");
+  const [saving, setSaving] = useState(false);
+  const choices = useRef<HTMLDivElement>(null);
+  // Start on the current choice so arrow keys move within the selected group.
+  useEffect(() => { choices.current?.querySelector<HTMLInputElement>('input[type="radio"]:checked')?.focus(); }, []);
+  const disabled = busy || saving;
+  const save = async () => {
+    if (disabled || [...draft].length > 8) return;
+    setSaving(true);
+    try { await onSave(draft); } finally { setSaving(false); }
+  };
+  return <Modal title={t("Edit avatar")} minimalHeader fitViewport size="lg" className="desktop-bot-avatar-dialog" onClose={onCancel}>
+    <div className="desktop-bot-avatar-dialog-body">
+      <div ref={choices} role="group" aria-label={t("Edit avatar")} className="desktop-bot-avatar-dialog-choices">
+        <h2 aria-hidden="true">{t("Edit avatar")}</h2>
+        <div className="desktop-bot-avatar-tabs" role="tablist" aria-label={t("Edit avatar")} onKeyDown={event => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+          event.preventDefault();
+          const index = avatarTabs.findIndex(item => item.id === tab);
+          const next = event.key === "Home" ? 0 : event.key === "End" ? avatarTabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : avatarTabs.length - 1)) % avatarTabs.length;
+          setTab(avatarTabs[next].id);
+          event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+        }}>
+          {avatarTabs.map(item => <button key={item.id} id={`${id}-${item.id}-tab`} type="button" role="tab" aria-selected={tab === item.id} aria-controls={`${id}-${item.id}-panel`} tabIndex={tab === item.id ? 0 : -1} onClick={() => setTab(item.id)}>{t(item.label)}</button>)}
+        </div>
+        <div id={`${id}-bot-panel`} role="tabpanel" aria-labelledby={`${id}-bot-tab`} hidden={tab !== "bot"} className="desktop-bot-avatar-tab-panel">
+          <BotAvatarPicker value={decodeBotAvatar(draft) ?? botAvatarAppearance(bot.id)} disabled={disabled} onChange={value => setDraft(encodeBotAvatar(value))} />
+        </div>
+        <div id={`${id}-generate-panel`} role="tabpanel" aria-labelledby={`${id}-generate-tab`} hidden={tab !== "generate"} className="desktop-bot-avatar-tab-panel">
+          <Textarea value={prompt} onChange={event => setPrompt(event.target.value)} placeholder={t("Describe your avatar…")} aria-label={t("Describe your avatar…")} disabled={disabled} />
+          <Button variant="secondary" type="button" className="desktop-bot-avatar-generate" disabled aria-describedby={`${id}-generation-unavailable`}>{t("Generate")}</Button>
+          <small id={`${id}-generation-unavailable`}>{t("Avatar image generation is not available yet.")}</small>
+        </div>
+        <div id={`${id}-upload-panel`} role="tabpanel" aria-labelledby={`${id}-upload-tab`} hidden={tab !== "upload"} className="desktop-bot-avatar-tab-panel" tabIndex={0}>
+          <small>{t("Avatar image uploads are not available yet.")}</small>
+        </div>
+      </div>
+      <aside className="desktop-bot-avatar-dialog-preview">
+        <p className="desktop-bot-avatar-dialog-name">{name}</p>
+        <BotAvatar bot={{ id: bot.id, avatar: draft }} size={160} />
+        <div className="desktop-bot-avatar-dialog-actions">
+          <Button variant="ghost" type="button" disabled={disabled || !draft} onClick={() => setDraft("")}>{t("Reset")}</Button>
+          <Button variant="primary" type="button" disabled={disabled || draft === avatar || [...draft].length > 8} onClick={() => void save()}>{t(saving ? "Saving…" : "Save")}</Button>
+        </div>
+      </aside>
+    </div>
+  </Modal>;
 }

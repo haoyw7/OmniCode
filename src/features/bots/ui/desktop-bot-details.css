@@ -8,12 +8,14 @@
 /* Inspector rows: one card, hairline dividers, a shared-height row with title, summary and chevron. */
 .assistant-chat.desktop-bots-workspace .desktop-bot-row-group { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border-radius: var(--bots-card-radius); background: var(--color-card); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section { min-width: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-row-group > :is(.assistant-settings-section, [data-ui="button"]) + :is(.assistant-settings-section, [data-ui="button"]) { border-top: var(--desktop-border) solid color-mix(in srgb, var(--color-stroke) 50%, transparent); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row-group > :is(.assistant-settings-section, [data-ui="button"], .desktop-bot-row, .desktop-bot-row-block) + :is(.assistant-settings-section, [data-ui="button"], .desktop-bot-row, .desktop-bot-row-block) { border-top: var(--desktop-border) solid color-mix(in srgb, var(--color-stroke) 50%, transparent); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > .assistant-settings-disclosure, .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > .desktop-bot-settings-entry[data-ui="button"][data-treatment], .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .desktop-bot-row-group-link[data-ui="button"][data-treatment] { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; height: auto; min-height: var(--desktop-control-xl); padding: 0 var(--desktop-control-pad-lg); border: 0; border-radius: 0; background: transparent; color: var(--color-foreground); font-size: var(--text-ui-caption); font-weight: var(--font-weight-medium); white-space: normal; text-align: start; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > .assistant-settings-disclosure:hover:not(:disabled), .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > .desktop-bot-settings-entry:hover:not(:disabled), .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .desktop-bot-row-group-link:hover:not(:disabled) { background: var(--color-surface-hover); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > .assistant-settings-disclosure:focus-visible, .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > .desktop-bot-settings-entry:focus-visible, .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .desktop-bot-row-group-link:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > .assistant-settings-disclosure > svg, .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > .desktop-bot-settings-entry > svg, .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .desktop-bot-row-group-link > svg { flex-shrink: 0; width: 16px; height: 16px; margin-left: 0; color: var(--color-foreground-subtle); opacity: 1; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > :is(.assistant-settings-disclosure, .desktop-bot-settings-entry) :is(.assistant-settings-summary, .desktop-bot-settings-entry-summary) { margin-left: auto; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); font-weight: var(--font-weight-normal); opacity: 1; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row-group-link-label { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row-group-link-label > svg { flex-shrink: 0; color: var(--color-foreground-subtle); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > .zen-fold-item > * { padding: 0 var(--desktop-control-pad-lg) var(--desktop-control-pad-lg); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-row-group > .assistant-settings-section > .zen-fold-item > *::before { height: 4px; }
 .assistant-chat.desktop-bots-workspace .assistant-settings[data-presentation="inspector"] { min-height: 100%; }
@@ -45,35 +47,66 @@
 .desktop-bot-dialog-status { flex: 1; min-width: 0; overflow: hidden; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); text-overflow: ellipsis; white-space: nowrap; }
 .assistant-chat.desktop-bots-workspace .assistant-settings[data-presentation="inspector"] .assistant-settings-footer-fold { position: sticky; bottom: 0; z-index: 1; flex-shrink: 0; margin-top: auto; }
 .assistant-chat.desktop-bots-workspace .assistant-settings[data-presentation="inspector"] .assistant-settings-footer { padding: 12px var(--desktop-bot-editor-inset, 24px); background: var(--color-background-base); border-color: var(--color-stroke); }
-.assistant-chat.desktop-bots-workspace :is(.desktop-bot-activity, .desktop-bot-automation) { min-width: 0; padding: 16px var(--desktop-bot-editor-inset, 24px); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-runtime { display: flex; flex-direction: column; min-width: 0; min-height: 100%; }
-.assistant-chat.desktop-bots-workspace :is(.desktop-bot-runtime, .desktop-bot-activity) h3 { margin: 0; font-size: var(--text-ui-caption); font-weight: var(--font-weight-semibold); }
-.assistant-chat.desktop-bots-workspace :is(.desktop-bot-runtime, .desktop-bot-activity) p { margin: 0; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); line-height: 1.5; overflow-wrap: anywhere; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-activity p { margin-block: 8px; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-runtime > .desktop-bot-runtime-hint { padding: 0 calc(var(--desktop-bot-editor-inset, 24px) + 4px) 12px; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-runtime > fieldset { display: grid; gap: 16px; min-width: 0; margin: 0; padding: 0 var(--desktop-bot-editor-inset, 24px) 24px; border: 0; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-card { display: grid; gap: 12px; min-width: 0; padding: var(--desktop-control-pad-lg); border-radius: var(--bots-card-radius); background: var(--color-card); }
-.assistant-chat.desktop-bots-workspace .desktop-bot-runtime label:not(.desktop-bot-check) { display: grid; gap: 6px; font-size: var(--text-ui-sm); }
-.assistant-chat.desktop-bots-workspace .desktop-bot-tool-options { display: grid; gap: 10px; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-check { display: flex; align-items: flex-start; gap: 8px; font-size: var(--text-ui-sm); line-height: 1.5; overflow-wrap: anywhere; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-check input { flex: 0 0 auto; margin-top: 3px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-runtime h3 { margin: 0; font-size: var(--text-ui-caption); font-weight: var(--font-weight-semibold); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-runtime p { margin: 0; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); line-height: 1.5; overflow-wrap: anywhere; }
+/* Inspector pages: section titles over row groups; each row puts its title on the left and its control on the right. */
+.assistant-chat.desktop-bots-workspace fieldset.desktop-bot-page-body { margin: 0; border: 0; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-page-body { display: grid; align-content: start; gap: 20px; min-width: 0; padding: 0 var(--desktop-bot-editor-inset, 24px) 24px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-section { display: grid; gap: 8px; min-width: 0; }
+.assistant-chat.desktop-bots-workspace h3.desktop-bot-section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; padding: 0 4px; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); font-weight: var(--font-weight-medium); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-section-title > span { font-weight: var(--font-weight-normal); font-variant-numeric: tabular-nums; }
+.assistant-chat.desktop-bots-workspace p.desktop-bot-section-note { margin: 0; padding: 0 4px; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); line-height: 1.5; overflow-wrap: anywhere; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: var(--desktop-control-xl); margin: 0; padding: 4px var(--desktop-control-pad-lg); color: var(--color-foreground); font-size: var(--text-ui-caption); font-weight: var(--font-weight-medium); line-height: 1.4; }
+.assistant-chat.desktop-bots-workspace p.desktop-bot-row:not([role="alert"]) { color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); font-weight: var(--font-weight-normal); }
+.assistant-chat.desktop-bots-workspace button.desktop-bot-row { width: 100%; border: 0; border-radius: 0; background: transparent; font: inherit; font-size: var(--text-ui-caption); font-weight: var(--font-weight-medium); text-align: start; cursor: pointer; }
+.assistant-chat.desktop-bots-workspace button.desktop-bot-row:hover:not(:disabled) { background: var(--color-surface-hover); }
+.assistant-chat.desktop-bots-workspace button.desktop-bot-row:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+.assistant-chat.desktop-bots-workspace button.desktop-bot-row:disabled { cursor: default; opacity: .5; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row[data-tone="danger"] { color: var(--color-destructive); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row > svg { flex-shrink: 0; color: var(--color-foreground-subtle); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row[data-tone="danger"] > svg { color: currentColor; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row-title { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row-title > small { display: block; margin-top: 1px; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); font-weight: var(--font-weight-normal); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row-meta { flex-shrink: 0; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); font-weight: var(--font-weight-normal); font-variant-numeric: tabular-nums; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-page { display: flex; flex-direction: column; min-width: 0; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row-input { flex: 0 1 60%; min-width: 0; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row-detail { display: grid; gap: 8px; min-width: 0; padding: 0 var(--desktop-control-pad-lg) 12px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-row > [data-ui="switch"] { flex-shrink: 0; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-directory { display: inline-flex; align-items: center; gap: 6px; flex: 0 1 auto; min-width: 0; max-width: 60%; height: var(--desktop-control-md); padding: 0 10px; border: 0; border-radius: 999px; background: var(--color-raised); color: var(--color-foreground); font: inherit; font-weight: var(--font-weight-normal); cursor: pointer; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-directory:hover:not(:disabled) { background: var(--color-raised-hover); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-directory:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-directory > svg { flex-shrink: 0; color: var(--color-foreground-subtle); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-directory > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-directory > span[data-empty] { color: var(--color-foreground-subtle); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-browser { padding: 0 var(--desktop-control-pad-lg) 8px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-number { flex: none; width: 64px; text-align: center; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-tool-options { display: grid; gap: 4px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-tool-options .desktop-bot-row { min-height: var(--desktop-control-md); padding-inline: 0; font-weight: var(--font-weight-normal); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-action-list { display: grid; max-height: 270px; overflow-y: auto; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-runtime > .desktop-bot-runtime-error { padding: 0 var(--desktop-bot-editor-inset, 24px) 12px; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-footer { position: sticky; bottom: 0; z-index: 1; flex-shrink: 0; margin-top: auto; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-footer footer { padding: 12px var(--desktop-bot-editor-inset, 24px); border-top: var(--desktop-border) solid var(--color-stroke); background: var(--color-background-base); }
-.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-footer small { margin-right: auto; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); }
-.assistant-chat.desktop-bots-workspace .desktop-bot-action-list { display: grid; gap: 6px; margin-top: 12px; max-height: 270px; overflow-y: auto; }
-.assistant-chat.desktop-bots-workspace :is(.desktop-bot-runtime-footer footer, .desktop-bot-activity > header) { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-runtime-footer footer { justify-content: flex-end; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-page-footer { position: sticky; bottom: 0; z-index: 1; flex-shrink: 0; margin-top: auto; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-page-footer footer { padding: 12px var(--desktop-bot-editor-inset, 24px); border-top: var(--desktop-border) solid var(--color-stroke); background: var(--color-background-base); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-page-footer small { margin-right: auto; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-page-footer footer { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-page-footer footer { justify-content: flex-end; }
 .assistant-chat.desktop-bots-workspace :is(.desktop-bot-runtime, .desktop-bot-activity, .desktop-bot-automation) [role="alert"] { color: var(--color-destructive); }
-.assistant-chat.desktop-bots-workspace .desktop-bot-activity > ol { list-style: none; margin: 12px 0; padding: 0; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-activity > ol > li { border-top: 1px solid var(--color-stroke); padding: 10px 0; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-activity .desktop-bot-run-heading { display: flex; flex-wrap: wrap; justify-content: space-between; width: 100%; gap: 5px; padding: 3px 0; border: 0; background: transparent; text-align: left; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-run-heading > span { display: flex; gap: 6px; align-items: center; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-run-heading time { color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); }
-.assistant-chat.desktop-bots-workspace .desktop-bot-activity dl { font-size: var(--text-ui-sm); line-height: 1.5; overflow-wrap: anywhere; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-activity dt { margin-top: 8px; color: var(--color-foreground-subtle); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-automation { padding: 12px 0 0; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-automation > .desktop-bot-automation-error { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; padding: 0 calc(var(--desktop-bot-editor-inset, 24px) + 4px) 12px; font-size: var(--text-ui-sm); }
+/* Activity: one expandable row per run. */
+.assistant-chat.desktop-bots-workspace .desktop-bot-activity { padding-top: 4px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-activity > header { display: flex; justify-content: flex-end; margin-bottom: -12px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-activity > ol { margin: 0; padding: 0; list-style: none; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-activity > [data-ui="button"] { justify-self: center; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-run-heading > svg:last-child { transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-run-heading[aria-expanded="true"] > svg:last-child { transform: rotate(180deg); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-activity li[data-status="failed"] .desktop-bot-row-title { color: var(--color-destructive); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-activity li[data-status="waiting_approval"] .desktop-bot-row-title { color: var(--color-warning, var(--color-foreground)); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-activity p.desktop-bot-row-detail { margin: 0; color: var(--color-destructive); font-size: var(--text-ui-sm); overflow-wrap: anywhere; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-activity dl { margin: 0; font-size: var(--text-ui-sm); line-height: 1.5; overflow-wrap: anywhere; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-activity dt { margin-top: 4px; color: var(--color-foreground-subtle); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-activity dd { margin: 0; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-activity dd ul { padding-left: 16px; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-automation { padding: 0; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-automation > header { padding: 12px var(--desktop-bot-editor-inset, 24px); }
-.assistant-chat.desktop-bots-workspace .desktop-bot-automation > [role="alert"] { padding: 0 var(--desktop-bot-editor-inset, 24px); }
+.assistant-chat.desktop-bots-workspace .desktop-bot-activity dd ul { margin: 0; padding-left: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  .assistant-chat.desktop-bots-workspace .desktop-bot-run-heading > svg:last-child { transition: none; }
+}

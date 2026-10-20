@@ -130,10 +130,12 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
     {files?.topicsTruncated && <p role="status">{t("The topic index is limited to {count} files.", { count: files.topicLimit })}</p>}
     {error && <p className="desktop-bots-memory-error" role="alert">{t(error)}</p>}
     {draft ? <>
-      {draft.base.budget && <div className="desktop-bots-memory-budget" data-truncated={draft.base.budget.truncated} role="status">
-        <strong>{t(draft.base.budget.truncated ? "Memory is truncated in prompts" : "Memory fits the prompt budget")}</strong>
-        <span>{t("{lines} / {maxLines} lines · {bytes} / {maxBytes} bytes loaded", { lines: draft.base.budget.loadedLines, maxLines: draft.base.budget.maxLines, bytes: draft.base.budget.loadedBytes, maxBytes: draft.base.budget.maxBytes })}</span>
-        <span>{t("Full file: {lines} lines · {bytes} bytes", { lines: draft.base.budget.lines, bytes: draft.base.budget.bytes })}</span>
+      {draft.base.budget && <div className="desktop-bot-row-group">
+        <p className="desktop-bot-row desktop-bots-memory-budget" data-truncated={draft.base.budget.truncated} role="status">
+          <span className="desktop-bot-row-title">{t(draft.base.budget.truncated ? "Memory is truncated in prompts" : "Memory fits the prompt budget")}
+            <small>{t("{lines} / {maxLines} lines · {bytes} / {maxBytes} bytes loaded", { lines: draft.base.budget.loadedLines, maxLines: draft.base.budget.maxLines, bytes: draft.base.budget.loadedBytes, maxBytes: draft.base.budget.maxBytes })}</small>
+            <small>{t("Full file: {lines} lines · {bytes} bytes", { lines: draft.base.budget.lines, bytes: draft.base.budget.bytes })}</small></span>
+        </p>
       </div>}
       <label className="desktop-bots-memory-editor-label"><span><span data-file-label>{path}</span>{dirty ? ` • ${t("Unsaved changes")}` : ""}</span>
         <textarea data-ui="textarea" aria-label={t("File contents")} value={draft.text} disabled={draft.busy} spellCheck={false}
@@ -153,8 +155,8 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
         </div>
       </AnimatedCollapse>
       <div className="desktop-bots-memory-actions">
+        <span className="desktop-bot-row-meta">{t("Revision {revision}", { revision: draft.base.revision })}</span>
         <Button size="sm" variant={dirty ? "primary" : "secondary"} type="button" disabled={!dirty || draft.busy || draft.conflict} onClick={() => void mutate()}>{t(draft.busy ? "Saving…" : "Save file")}</Button>
-        <span>{t("Revision {revision}", { revision: draft.base.revision })}</span>
       </div>
       <div className="desktop-bot-row-group"><section className="assistant-settings-section" data-open={historyOpen}>
         <button type="button" className="assistant-settings-disclosure" aria-expanded={historyOpen} onClick={() => setHistoryOpen((value) => !value)}>
@@ -163,9 +165,9 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
         <AnimatedCollapse expanded={historyOpen}><div className="desktop-bots-memory-history">
             {historyError && <p role="alert">{t(historyError)} <Button size="sm" variant="secondary" type="button" onClick={() => void loadHistory()}>{t("Retry")}</Button></p>}
             {history?.length === 0 && <p>{t("No file changes yet")}</p>}
-            {history?.map((change) => <div key={change.id}>
-              <span><time dateTime={new Date(change.at).toISOString()}>{new Date(change.at).toLocaleString()}</time><small>{t("Revision {revision}", { revision: change.revision })} · {t(({ user: "User", assistant: "Assistant", external: "External edit", migration: "Migration", undo: "Undo" })[change.source])}</small></span>
-              <Button size="sm" variant="secondary" type="button" disabled={dirty || draft.busy || draft.conflict} onClick={() => void mutate(change.id)}>{t("Undo")}</Button>
+            {history?.map((change) => <div key={change.id} className="desktop-bot-row">
+              <span className="desktop-bot-row-title"><time dateTime={new Date(change.at).toISOString()}>{new Date(change.at).toLocaleString()}</time><small>{t("Revision {revision}", { revision: change.revision })} · {t(({ user: "User", assistant: "Assistant", external: "External edit", migration: "Migration", undo: "Undo" })[change.source])}</small></span>
+              <Button size="sm" variant="ghost" type="button" disabled={dirty || draft.busy || draft.conflict} onClick={() => void mutate(change.id)}>{t("Undo")}</Button>
             </div>)}
         </div></AnimatedCollapse>
       </section></div>

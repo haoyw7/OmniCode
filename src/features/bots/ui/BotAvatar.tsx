@@ -3,7 +3,7 @@ import { botAvatarAppearance, decodeBotAvatar } from "./botAvatarAppearance";
 
 type Identity = { id: string; avatar?: string };
 
-export function BotAvatar({ bot, size = 40 }: { bot: Identity; size?: 22 | 24 | 28 | 36 | 40 | 72 | 96 }) {
+export function BotAvatar({ bot, size = 40 }: { bot: Identity; size?: 22 | 24 | 28 | 36 | 40 | 72 | 96 | 160 }) {
   const selected = decodeBotAvatar(bot.avatar);
   const appearance = selected ?? botAvatarAppearance(bot.id);
   return <span className="desktop-bot-avatar" aria-hidden="true" style={{ width: size, height: size, fontSize: size * .46 }}>

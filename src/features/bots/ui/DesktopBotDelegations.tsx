@@ -1,4 +1,5 @@
 import { Button } from "../../../shared/ui/forms/Button";
+import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotDelegation, BotDelegations, BotScope, BotsSnapshot } from "../model/bots";
@@ -6,7 +7,7 @@ import { botErrorMessage } from "../model/botErrors";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { Bot, ChevronRight } from "../../../shared/ui/icons";
+import { Bot, ChevronRight, RefreshCw } from "../../../shared/ui/icons";
 import "./desktop-bot-delegations.css";
 
 type Names = Readonly<Record<string, string>>;
@@ -79,12 +80,12 @@ function Delegations({ scope, rpc, botNames, onOpenThread }: ScopedProps) {
     } catch (cause) { if (alive.current && request === sequence.current) setError(botErrorMessage(cause)); }
     finally { inFlight.current = false; if (alive.current) setLoading(false); }
   };
-  return <section className="desktop-bot-delegations" aria-label={t("Delegations")}>
-    <header><h3>{t("Delegations")}</h3><Button variant="secondary" type="button" onClick={() => void refresh()}>{t("Refresh")}</Button></header>
-    {error && <p role="alert">{t(error)}</p>}
-    {!rows.length && <p role="status">{t(page ? "No delegations yet" : "Loading delegations…")}</p>}
-    {rows.map(value => <Delegation key={value.id} value={value} scope={scope} rpc={rpc} names={names} onRefresh={refresh} onOpenThread={onOpenThread} />)}
-    {page?.hasMore && <Button variant="secondary" type="button" disabled={loading} onClick={() => void more()}>{t(loading ? "Loading…" : "Load older delegations")}</Button>}
+  return <section className="desktop-bot-delegations desktop-bot-page-body" aria-label={t("Delegations")}>
+    <header><IconButton size="sm" label={t("Refresh")} onClick={() => void refresh()}><RefreshCw size={16} /></IconButton></header>
+    {error && <p className="desktop-bot-section-note" role="alert">{t(error)}</p>}
+    {!rows.length && <p className="desktop-bot-section-note" role="status">{t(page ? "No delegations yet" : "Loading delegations…")}</p>}
+    {rows.length > 0 && <div className="desktop-bot-row-group">{rows.map(value => <Delegation key={value.id} value={value} scope={scope} rpc={rpc} names={names} onRefresh={refresh} onOpenThread={onOpenThread} />)}</div>}
+    {page?.hasMore && <Button size="sm" variant="ghost" type="button" disabled={loading} onClick={() => void more()}>{t(loading ? "Loading…" : "Load older delegations")}</Button>}
   </section>;
 }
 
@@ -111,7 +112,7 @@ function Card({ scope, rpc, delegationId, revision, botNames, onOpenThread }: Sc
     return () => { sequence.current++; };
   }, [visible, revision, refresh]);
   return <div className="desktop-bot-delegation-message">
-    {error && <p role="alert">{t(error)} <Button variant="secondary" type="button" onClick={() => void refresh()}>{t("Retry")}</Button></p>}
+    {error && <p role="alert">{t(error)} <Button size="sm" variant="secondary" type="button" onClick={() => void refresh()}>{t("Retry")}</Button></p>}
     {value ? <Delegation value={value} scope={scope} rpc={rpc} names={names} onRefresh={refresh} onOpenThread={onOpenThread} /> : !error && <p role="status">{t("Loading delegations…")}</p>}
   </div>;
 }
@@ -146,8 +147,8 @@ function Delegation({ value, scope, rpc, names, onRefresh, onOpenThread }: {
       <p><span>{t("Delegation deadline")}: </span><time dateTime={new Date(value.deadlineAt).toISOString()}>{new Date(value.deadlineAt).toLocaleString()}</time></p>
     </div></AnimatedCollapse>
     <footer>
-      {onOpenThread && other.threadId && <Button variant="secondary" type="button" disabled={!visible} onClick={() => onOpenThread({ botId: other.botId, threadId: other.threadId! })}>{t(matches(value.source, scope) ? "Open target thread" : "Open source thread")}</Button>}
-      {value.status === "running" && <Button variant="secondary" type="button" disabled={busy || !visible} onClick={() => void cancel()}>{t("Cancel delegation")}</Button>}
+      {onOpenThread && other.threadId && <Button size="sm" variant="secondary" type="button" disabled={!visible} onClick={() => onOpenThread({ botId: other.botId, threadId: other.threadId! })}>{t(matches(value.source, scope) ? "Open target thread" : "Open source thread")}</Button>}
+      {value.status === "running" && <Button size="sm" variant="ghost" type="button" disabled={busy || !visible} onClick={() => void cancel()}>{t("Cancel delegation")}</Button>}
     </footer>
     {error && <p role="alert">{t(error)}</p>}
   </article>;

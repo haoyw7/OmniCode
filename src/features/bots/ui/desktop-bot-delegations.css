@@ -1,9 +1,12 @@
-.assistant-chat.desktop-bots-workspace .desktop-bot-delegations { padding: 16px; border-top: 1px solid var(--color-stroke); min-width: 0; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-delegations > header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-delegations h3 { font-size: var(--text-ui-base); font-weight: 600; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-delegations { padding-top: 4px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-delegations > header { display: flex; justify-content: flex-end; margin-bottom: -12px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-delegations > [data-ui="button"] { justify-self: center; }
+/* In the inspector list, delegations are rows of one group rather than separate cards. */
+.assistant-chat.desktop-bots-workspace .desktop-bot-delegations .desktop-bot-delegation-card { margin: 0; padding: 10px var(--desktop-control-pad-lg); border: 0; border-radius: 0; background: transparent; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-delegations .desktop-bot-delegation-card + .desktop-bot-delegation-card { border-top: var(--desktop-border) solid color-mix(in srgb, var(--color-stroke) 50%, transparent); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-delegation-message { align-self: stretch; max-width: 100%; margin: 8px 0; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-delegation-card { border: 1px solid var(--color-stroke); border-radius: 10px; background: var(--color-surface); padding: 10px; margin-bottom: 8px; min-width: 0; font-size: var(--text-ui-sm); }
-.assistant-chat.desktop-bots-workspace .desktop-bot-delegation-card .desktop-bot-delegation-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; border: 0; padding: 0; width: 100%; background: transparent; text-align: start; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-delegation-card .desktop-bot-delegation-heading { cursor: pointer;  display: flex; align-items: center; flex-wrap: wrap; gap: 6px; border: 0; padding: 0; width: 100%; background: transparent; text-align: start; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-delegation-heading strong { flex: 1; min-width: 70px; overflow-wrap: anywhere; font-weight: var(--font-weight-semibold); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-delegation-heading > span { color: var(--color-foreground-subtle); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-delegation-heading > svg { flex-shrink: 0; }
@@ -14,10 +17,7 @@
 .assistant-chat.desktop-bots-workspace .desktop-bot-delegation-text { white-space: pre-wrap; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-delegation-preview { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--color-foreground-subtle); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-delegation-card footer { display: flex; gap: 6px; flex-wrap: wrap; }
-.assistant-chat.desktop-bots-workspace :is(.desktop-bot-delegations, .desktop-bot-delegation-message) button:not([data-ui]) { padding: 5px 8px; border: 1px solid var(--color-stroke); border-radius: 6px; font-size: var(--text-ui-sm); cursor: pointer; }
-.assistant-chat.desktop-bots-workspace :is(.desktop-bot-delegations, .desktop-bot-delegation-message) button:disabled { opacity: .5; cursor: default; }
 .assistant-chat.desktop-bots-workspace :is(.desktop-bot-delegations, .desktop-bot-delegation-message) [role="alert"] { color: var(--color-destructive); overflow-wrap: anywhere; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-callable-list { display: grid; gap: 8px; }
 @media (prefers-reduced-motion: reduce) {
   .assistant-chat.desktop-bots-workspace .desktop-bot-delegation-heading > svg:last-child { transition: none; }
 }

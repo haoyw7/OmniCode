@@ -1,4 +1,6 @@
 import { Button } from "../../../shared/ui/forms/Button";
+import { IconButton } from "../../../shared/ui/forms/IconButton";
+import { ChevronDown, RefreshCw } from "../../../shared/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotRun, BotRuns, BotScope } from "../model/bots";
@@ -63,25 +65,26 @@ function Activity({ scope, rpc }: { scope: BotScope; rpc: BotRpc }) {
     } catch (cause) { if (alive.current && sequence === request.current) setError(botErrorMessage(cause)); }
     finally { inFlight.current = false; if (alive.current) setLoading(false); }
   };
-  return <section className="desktop-bot-activity" aria-label={t("Bot activity")}>
-    <header><h3>{t("Activity")}</h3><Button variant="secondary" type="button" onClick={() => void refresh()}>{t("Refresh")}</Button></header>
-    {error && <p role="alert">{t(error)}</p>}
-    {!runs.length && <p role="status">{t(page ? "No runs yet." : "Loading activity…")}</p>}
-    <ol>{runs.map(run => <Run key={run.id} run={run} />)}</ol>
-    {page?.hasMore && <Button variant="secondary" type="button" disabled={loading} onClick={() => void more()}>{t(loading ? "Loading…" : "Load older runs")}</Button>}
+  return <section className="desktop-bot-activity desktop-bot-page-body" aria-label={t("Bot activity")}>
+    <header><IconButton size="sm" label={t("Refresh")} onClick={() => void refresh()}><RefreshCw size={16} /></IconButton></header>
+    {error && <p className="desktop-bot-section-note" role="alert">{t(error)}</p>}
+    {!runs.length && <p className="desktop-bot-section-note" role="status">{t(page ? "No runs yet." : "Loading activity…")}</p>}
+    {runs.length > 0 && <ol className="desktop-bot-row-group">{runs.map(run => <Run key={run.id} run={run} />)}</ol>}
+    {page?.hasMore && <Button size="sm" variant="ghost" type="button" disabled={loading} onClick={() => void more()}>{t(loading ? "Loading…" : "Load older runs")}</Button>}
   </section>;
 }
 function Run({ run }: { run: BotRun }) {
   const { t } = useTranslation(), [expanded, setExpanded] = useState(false);
   const date = new Date(run.startedAt ?? run.createdAt);
-  return <li data-status={run.status}>
-    <button type="button" className="desktop-bot-run-heading" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>
-      <span>{run.config && <HarnessIcon harness={run.config.harness} />}<strong>{t(statuses[run.status])}</strong></span>
-      <time dateTime={date.toISOString()}>{date.toLocaleString()}</time>
+  return <li className="desktop-bot-row-block" data-status={run.status}>
+    <button type="button" className="desktop-bot-row desktop-bot-run-heading" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>
+      {run.config && <HarnessIcon harness={run.config.harness} className="size-4 shrink-0" />}
+      <span className="desktop-bot-row-title">{t(statuses[run.status])}{run.config && <small>{run.config.model}</small>}</span>
+      <time className="desktop-bot-row-meta" dateTime={date.toISOString()}>{date.toLocaleString()}</time>
+      <ChevronDown size={14} aria-hidden="true" />
     </button>
-    {run.config && <p className="desktop-bot-run-model">{run.config.model}</p>}
-    {run.error && <p role="alert">{t(run.error)}</p>}
-    <AnimatedCollapse expanded={expanded}><dl>
+    {run.error && <p className="desktop-bot-row-detail" role="alert">{t(run.error)}</p>}
+    <AnimatedCollapse expanded={expanded}><dl className="desktop-bot-row-detail">
       {run.endedAt && <><dt>{t("Finished")}</dt><dd>{new Date(run.endedAt).toLocaleString()}</dd></>}
       {run.config?.workingDirectory && <><dt>{t("Working directory")}</dt><dd>{run.config.workingDirectory}</dd></>}
       {run.capabilities && <><dt>{t("System instructions")}</dt><dd>{t(run.capabilities.systemInstructions === "native" ? "Native system channel" : "Context block fallback")}</dd>

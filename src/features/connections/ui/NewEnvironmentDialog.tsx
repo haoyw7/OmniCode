@@ -8,7 +8,7 @@ import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../shared/ui/primitives/Tabs";
-import { ChevronRight, Folder, Plus, X } from "../../../shared/ui/icons";
+import { Folder, Plus, X } from "../../../shared/ui/icons";
 import { cn } from "../../../shared/lib/cn";
 import { pickFolders } from "../../../platform/tauri/fs";
 import { listWslDistributions, pickWslFolder } from "../../../platform/tauri/wsl";
@@ -17,6 +17,7 @@ import { ensureSharedProject, rememberRemoteProject } from "../model/remoteProje
 import { environmentProjectPath, saveHostEnvironment } from "../model/hostEnvironments";
 import type { HostEnvironmentDefinition, HostEnvironments } from "../model/hostState";
 import type { HostDirectory, HostProject } from "../model/protocol";
+import { HostFolderBrowser } from "../../../shared/ui/HostFolderBrowser";
 
 const LOCAL = "local";
 const ADD_SSH = "add-ssh";
@@ -232,7 +233,8 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
           </div>
           {host ? (
             <AnimatedCollapse expanded={browsing}>
-              <RemoteFolderBrowser machineId={host.id} disabled={busy}
+              <HostFolderBrowser key={host.id} disabled={busy} pickLabel={t("Add folder")}
+                browse={(path) => remoteRequest<HostDirectory>(host.id, "projects.browse", { path })}
                 onCancel={() => setBrowsing(false)}
                 onPick={(path) => { addPaths([path]); setBrowsing(false); }} />
             </AnimatedCollapse>
@@ -301,83 +303,5 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
         </Button>
       </ModalFooter>
     </form>
-  );
-}
-
-/** Browses folders through a connected machine's Host and returns one path. */
-function RemoteFolderBrowser({ machineId, disabled, onCancel, onPick }: {
-  machineId: string;
-  disabled: boolean;
-  onCancel: () => void;
-  onPick: (path: string) => void;
-}) {
-  const { t } = useTranslation();
-  const [path, setPath] = useState("");
-  const [directory, setDirectory] = useState<HostDirectory>();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const version = useRef(0);
-
-  const browse = async (next?: string) => {
-    const current = ++version.current;
-    setLoading(true);
-    setError("");
-    try {
-      const value = await remoteRequest<HostDirectory>(machineId, "projects.browse", { path: next });
-      if (current !== version.current) return;
-      setDirectory(value);
-      setPath(value.path);
-    } catch (reason) {
-      if (current === version.current) setError(String(reason).replace(/^Error: /, ""));
-    } finally {
-      if (current === version.current) setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    setDirectory(undefined);
-    setPath("");
-    void browse();
-    return () => { version.current++; };
-  }, [machineId]);
-
-  const rows = [
-    ...(directory?.parent ? [{ name: "..", path: directory.parent }] : []),
-    ...(directory?.entries ?? []),
-  ];
-  return (
-    <div className="mb-1.5 flex flex-col gap-2 rounded-lg border border-border p-2 font-normal">
-      <Input aria-label={t("Folder path on the machine")} className="font-mono" value={path} disabled={disabled}
-        placeholder="/home/me/code/my-app" autoComplete="off" spellCheck={false}
-        onChange={(event) => setPath(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter") return;
-          event.preventDefault();
-          void browse(path.trim() || undefined);
-        }} />
-      <div aria-label={t("Folders")} className="max-h-48 min-h-16 overflow-y-auto overscroll-contain">
-        {rows.map((entry) => (
-          <button key={entry.path} type="button" disabled={disabled} onClick={() => void browse(entry.path)}
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-ui-base text-foreground transition-colors hover:bg-surface-hover">
-            <Folder className="size-3.5 shrink-0 text-foreground-subtle" />
-            <span className="min-w-0 flex-1 truncate">{entry.name}</span>
-            <ChevronRight className="size-3.5 shrink-0 text-foreground-subtle" />
-          </button>
-        ))}
-        {directory && !directory.entries.length ? (
-          <p className="px-2 py-1 text-ui-sm text-foreground-subtle">{t("No subfolders")}</p>
-        ) : null}
-        {!directory && loading ? (
-          <p className="px-2 py-1 text-ui-sm text-foreground-subtle">{t("Loading folders…")}</p>
-        ) : null}
-      </div>
-      {error ? <p role="alert" className="whitespace-pre-wrap break-words text-ui-sm text-red-400">{error}</p> : null}
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" size="sm" onClick={onCancel}>{t("Cancel")}</Button>
-        <Button type="button" size="sm" disabled={disabled || !path.trim()} onClick={() => onPick(path.trim())}>
-          {t("Add folder")}
-        </Button>
-      </div>
-    </div>
   );
 }

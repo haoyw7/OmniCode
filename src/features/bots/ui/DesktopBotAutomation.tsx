@@ -62,8 +62,8 @@ function Automation({ bot, rpc, onSaved }: Props) {
     (await rpc<HostSessionSummary[]>("sessions.list", { projectId })).map(row => ({ id: row.id, title: row.title || row.id, harness: row.harness, projectId, activityAt: row.activityAt ?? row.lastUserMessageAt ?? row.createdAt }))
   ))).flat(), [rpc]);
   return <section className="desktop-bot-automation" aria-label={t("Bot automation")}>
-    <header><Button variant="secondary" type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</Button></header>
-    {error && <p role="alert">{t(error)}</p>}
+    {/* Reloading discards the draft, so it is offered only after a save fails. */}
+    {error && <p className="desktop-bot-automation-error" role="alert">{t(error)} <Button size="sm" variant="secondary" type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</Button></p>}
     <BotSettings key={`${bot.id}:${version}`} panel="automation" value={base} catalog={catalog} catalogState={catalogState} onRetryCatalog={() => void load()} projects={projects} loadSessions={loadSessions} busy={busy}
       onSave={save} reminders={bot.reminders} onCancelReminder={reminderId => control({ action: "cancelReminder", reminderId })}
       habits={{ items: bot.habits ?? [], timeZone: bot.timezone ?? "UTC", control: input => control(input) }} />

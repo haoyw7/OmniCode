@@ -1,6 +1,8 @@
 import { Input } from "../../../shared/ui/forms/Input";
 import { Button } from "../../../shared/ui/forms/Button";
-import { useEffect, useRef, useState } from "react";
+import { IconButton } from "../../../shared/ui/forms/IconButton";
+import { Switch } from "../../../shared/ui/forms/Switch";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotView, BotsSnapshot } from "../model/bots";
 import { BOT_ACTIONS } from "../model/botActions";
@@ -8,7 +10,10 @@ import { botErrorMessage } from "../model/botErrors";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import { ChevronDown } from "../../../shared/ui/icons";
+import { ChevronDown, Folder, X } from "../../../shared/ui/icons";
+import { basename } from "../../../platform/tauri/fs";
+import { HostFolderBrowser, type HostFolderListing } from "../../../shared/ui/HostFolderBrowser";
+import { BotAvatar } from "./BotAvatar";
 import "./desktop-bot-details.css";
 
 type Fields = { workingDirectory: string; slots: string; custom: boolean; actions: string[]; computer: boolean; callableBotIds: string[] };
@@ -31,6 +36,7 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
   const [error, setError] = useState<string>();
   const [conflict, setConflict] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
   useEffect(() => {
     if (!visible || !delegationSupported) return;
     let stopped = false;
@@ -72,41 +78,66 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
     } catch (cause) { setError(botErrorMessage(cause)); }
     finally { setBusy(false); }
   };
+  const switchRow = (label: string, checked: boolean, onChange: (checked: boolean) => void, key?: string, leading?: ReactNode) =>
+    <label className="desktop-bot-row" key={key}>{leading}<span className="desktop-bot-row-title">{label}</span><Switch size="sm" checked={checked} onCheckedChange={onChange} aria-label={label} /></label>;
+  const actions = [...new Set([...BOT_ACTIONS, ...draft.actions])];
+  const callableIds = [...new Set([...callableBots.map(item => item.id), ...draft.callableBotIds])].filter(id => id !== bot.id);
   return <form className="desktop-bot-runtime" aria-label={t("Bot runtime settings")} onSubmit={event => { event.preventDefault(); void save(); }}>
-    <p className="desktop-bot-runtime-hint">{t("Changes apply to the next turn. Manage permissions in Bot settings.")}</p>
-    <fieldset disabled={busy}>
-      <div className="desktop-bot-runtime-card">
-        <label>{t("Working directory")}<Input value={draft.workingDirectory} onChange={event => update({ workingDirectory: event.target.value })} placeholder={t("Use a separate directory for each thread")} /></label>
-        <label>{t("Concurrent runs")}<Input type="number" min={1} max={10} step={1} value={draft.slots} aria-invalid={!validSlots || undefined} onChange={event => update({ slots: event.target.value })} /></label>
-        {!validSlots && <small role="alert">{t("Choose between 1 and 10 concurrent runs.")}</small>}
-        <label className="desktop-bot-check"><input data-ui="checkbox" type="checkbox" checked={draft.computer} onChange={event => update({ computer: event.target.checked })} />{t("Reserve the Host computer during this Bot's runs")}</label>
-      </div>
-      {delegationSupported && <section className="desktop-bot-callable-list desktop-bot-runtime-card" aria-label={t("Callable bots")}>
-        <h3>{t("Callable bots")}</h3>
-        <p>{t("Only selected Bots on this Host can be called. Bots cannot call themselves or delegate again.")}</p>
-        {botsLoading && <small role="status">{t("Loading…")}</small>}
-        {botsError && <p role="alert">{t(botsError)} <Button size="sm" variant="secondary" type="button" onClick={() => setBotsAttempt(value => value + 1)}>{t("Retry")}</Button></p>}
-        {[...new Set([...callableBots.map(item => item.id), ...draft.callableBotIds])].filter(id => id !== bot.id).map(id => {
-          const target = callableBots.find(item => item.id === id);
-          return <label className="desktop-bot-check" key={id}><input data-ui="checkbox" type="checkbox" checked={draft.callableBotIds.includes(id)} onChange={event => update({ callableBotIds: event.target.checked ? [...draft.callableBotIds, id] : draft.callableBotIds.filter(item => item !== id) })} /><span>{target?.name ?? t("Unavailable Bot")}</span></label>;
-        })}
-        {!botsLoading && !botsError && !callableBots.length && !draft.callableBotIds.length && <small>{t("No other bots on this Host")}</small>}
-        {!draft.callableBotIds.length && <small>{t("No bots are allowed to be called")}</small>}
+    <fieldset className="desktop-bot-page-body" disabled={busy}>
+      <section className="desktop-bot-section">
+        <h3 className="desktop-bot-section-title">{t("Run environment")}</h3>
+        <div className="desktop-bot-row-group">
+          <div className="desktop-bot-row-block">
+            <div className="desktop-bot-row">
+              <span className="desktop-bot-row-title">{t("Working directory")}</span>
+              <button type="button" className="desktop-bot-runtime-directory" aria-label={t("Choose working directory")} aria-expanded={browsing} title={draft.workingDirectory || undefined} onClick={() => setBrowsing(value => !value)}>
+                <Folder size={14} aria-hidden="true" />
+                <span data-empty={!draft.workingDirectory || undefined}>{draft.workingDirectory ? basename(draft.workingDirectory) : t("Use a separate directory for each thread")}</span>
+                <ChevronDown size={14} aria-hidden="true" />
+              </button>
+              {draft.workingDirectory && <IconButton size="sm" label={t("Clear working directory")} onClick={() => update({ workingDirectory: "" })}><X /></IconButton>}
+            </div>
+            <AnimatedCollapse expanded={browsing}><div className="desktop-bot-runtime-browser">
+              <HostFolderBrowser browse={path => rpc<HostFolderListing>("projects.browse", { path })} initialPath={draft.workingDirectory || undefined} disabled={busy}
+                pickLabel={t("Use this folder")} onCancel={() => setBrowsing(false)}
+                onPick={path => { update({ workingDirectory: path }); setBrowsing(false); }} />
+            </div></AnimatedCollapse>
+          </div>
+          <label className="desktop-bot-row"><span className="desktop-bot-row-title">{t("Concurrent runs")}</span><Input className="desktop-bot-runtime-number" type="number" min={1} max={10} step={1} value={draft.slots} aria-invalid={!validSlots || undefined} onChange={event => update({ slots: event.target.value })} /></label>
+          {switchRow(t("Reserve the Host computer during this Bot's runs"), draft.computer, computer => update({ computer }))}
+        </div>
+        {!validSlots && <small className="desktop-bot-section-note" role="alert">{t("Choose between 1 and 10 concurrent runs.")}</small>}
+      </section>
+      {delegationSupported && <section className="desktop-bot-section">
+        <h3 className="desktop-bot-section-title">{t("Callable bots")}{draft.callableBotIds.length > 0 && <span>{draft.callableBotIds.length}</span>}</h3>
+        <p className="desktop-bot-section-note">{t("Only selected Bots on this Host can be called. Bots cannot call themselves or delegate again.")}</p>
+        <div className="desktop-bot-row-group" role="group" aria-label={t("Callable bots")}>
+          {callableIds.map(id => {
+            const target = callableBots.find(item => item.id === id);
+            return switchRow(target?.name ?? t("Unavailable Bot"), draft.callableBotIds.includes(id), checked => update({ callableBotIds: checked ? [...draft.callableBotIds, id] : draft.callableBotIds.filter(item => item !== id) }), id, <BotAvatar bot={{ id, avatar: target?.avatar }} size={24} />);
+          })}
+          {botsLoading && !callableIds.length && <p className="desktop-bot-row" role="status">{t("Loading…")}</p>}
+          {botsError && <p className="desktop-bot-row" role="alert"><span className="desktop-bot-row-title">{t(botsError)}</span><Button size="sm" variant="secondary" type="button" onClick={() => setBotsAttempt(value => value + 1)}>{t("Retry")}</Button></p>}
+          {!botsLoading && !botsError && !callableIds.length && <p className="desktop-bot-row">{t("No other bots on this Host")}</p>}
+        </div>
       </section>}
       <div className="desktop-bot-row-group"><section className="assistant-settings-section" data-open={toolsOpen}>
         <button type="button" className="assistant-settings-disclosure" aria-expanded={toolsOpen} onClick={() => setToolsOpen(value => !value)}>
-          <span className="assistant-settings-disclosure-title">{t("Host tools")}</span><ChevronDown size={16} aria-hidden="true" />
+          <span className="assistant-settings-disclosure-title">{t("Host tools")}</span>
+          <span className="assistant-settings-summary">{draft.custom ? `${draft.actions.length}/${actions.length}` : t("All")}</span>
+          <ChevronDown size={16} aria-hidden="true" />
         </button>
         <AnimatedCollapse expanded={toolsOpen}><div className="desktop-bot-tool-options">
           <p>{t("These choices restrict Host control actions. Provider tools and user MCP servers keep their own permissions.")}</p>
-          <label className="desktop-bot-check"><input data-ui="checkbox" type="checkbox" checked={!draft.custom} onChange={event => update({ custom: !event.target.checked })} />{t("All permitted Host actions")}</label>
-          <AnimatedCollapse expanded={draft.custom}><div className="desktop-bot-action-list">{[...new Set([...BOT_ACTIONS, ...draft.actions])].map(action => <label className="desktop-bot-check" key={action}><input data-ui="checkbox" type="checkbox" checked={draft.actions.includes(action)} onChange={event => update({ actions: event.target.checked ? [...draft.actions, action] : draft.actions.filter(item => item !== action) })} /><span>{action}</span></label>)}</div></AnimatedCollapse>
+          {switchRow(t("All permitted Host actions"), !draft.custom, all => update({ custom: !all }))}
+          <AnimatedCollapse expanded={draft.custom}><div className="desktop-bot-action-list">{actions.map(action => switchRow(action, draft.actions.includes(action), checked => update({ actions: checked ? [...draft.actions, action] : draft.actions.filter(item => item !== action) }), action))}</div></AnimatedCollapse>
         </div></AnimatedCollapse>
       </section></div>
+      <p className="desktop-bot-section-note">{t("Changes apply to the next turn. Manage permissions in Bot settings.")}</p>
     </fieldset>
     {error && <p className="desktop-bot-runtime-error" role="alert">{t(error)}</p>}
     {/* Like the Bot settings save bar, actions only appear when there is a draft or conflict. */}
-    <AnimatedCollapse expanded={dirty || conflict} className="desktop-bot-runtime-footer">
+    <AnimatedCollapse expanded={dirty || conflict} className="desktop-bot-page-footer">
       <footer>{dirty && <small role="status">{t("Unsaved changes")}</small>}
         <Button size="sm" variant="secondary" type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</Button>
         <Button size="sm" variant="primary" type="submit" disabled={!dirty || busy || conflict || !validSlots}>{t("Save runtime settings")}</Button>
