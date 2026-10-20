@@ -50,6 +50,7 @@ import {
 import { ExplorerMenu, type ExplorerMenuItem } from "../../../../connections/files/ui/ExplorerMenu";
 import { useSurfaceVisibility } from "../../../../../shared/ui/SurfaceVisibility";
 import { Group } from "../../settingsLayout";
+import { useDeepseekAccount, type DeepseekAccountState } from "../../../../providers/model/deepseekAccount";
 
 
 
@@ -172,6 +173,8 @@ function ProviderAccountMenu({
 export function ProviderAccountsSettings() {
   const { t: uiT } = useTranslation();
   const [version, setVersion] = useState(0);
+  const [deepseekRefresh, setDeepseekRefresh] = useState(0);
+  const deepseek = useDeepseekAccount(deepseekRefresh);
   const [editor, setEditor] = useState<AccountEditor | null>(null);
   const [editorExpanded, setEditorExpanded] = useState(true);
   const [working, setWorking] = useState<string | null>(null);
@@ -372,10 +375,11 @@ export function ProviderAccountsSettings() {
       id="provider-accounts"
       title={uiT("Accounts")}
       description={uiT(
-        "Each row is a saved CLI profile. Edit its Home or sign in directly, including the built-in profile. The badged row is the default for new conversations on desktop and phone.",
+        "Manage CLI profiles and view provider accounts. The badged profile is the default for new conversations on desktop and phone.",
       )}
-      action={<AccountUsageRefresh usage={{ ...usage, refresh: () => {
+      action={<AccountUsageRefresh usage={{ ...usage, refreshing: usage.refreshing || deepseek.loading, refresh: () => {
         setVersion((value) => value + 1);
+        setDeepseekRefresh((value) => value + 1);
         usage.refresh();
       } }} />}
     >
@@ -585,6 +589,7 @@ export function ProviderAccountsSettings() {
           </div>
         );
       })}
+      <DeepseekAccountSettings {...deepseek} />
       {error ? (
         <p
           className="border-t border-content/5 px-4 py-2.5 text-[11px] leading-4 text-red-400"
@@ -715,5 +720,55 @@ function ProviderAccountEditor({
         </span>
       </label>}
     </form>
+  );
+}
+
+function DeepseekAccountSettings({ account, loading, error }: DeepseekAccountState) {
+  const { t } = useTranslation();
+  const stored = account?.status === "credential-stored";
+  const profile = account?.profile;
+  const status = loading ? "Reading account identity…"
+    : stored ? profile ? "Signed in" : "Saved sign-in"
+      : account?.status === "signed-out" ? "Not signed in" : "Account information unavailable";
+  return (
+    <section className="border-b border-content/5 last:border-b-0" aria-label={HARNESS_TITLE.deepseek}>
+      <div className="flex items-center gap-2.5 px-4 py-3.5">
+        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-content/[0.05] ring-1 ring-inset ring-content/[0.06]">
+          <HarnessIcon harness="deepseek" className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <div className="text-[13px] font-medium text-content">{HARNESS_TITLE.deepseek}</div>
+          <div className="mt-0.5 text-[11px] text-content/40">{t("Account managed by DeepSeek Harness")}</div>
+        </div>
+      </div>
+      <div className="bg-content/[0.015] pl-[2.375rem]">
+        <div className="border-t border-content/5 px-4 py-3" aria-busy={loading}>
+          <div className="text-[12px] font-medium text-content/90">{profile?.name || t("DeepSeek account")}</div>
+          {profile?.contact ? <ProviderAccountSubtitle
+            identity={profile.contact.includes("@") ? { email: profile.contact } : { name: profile.contact }}
+            className="mt-1 text-[11px] text-content/75"
+          /> : null}
+          <div className="mt-1" role="status">
+            <AccountStatusLabel status={{ tone: loading ? "checking" : profile ? "ready" : "unknown", label: t(status), detail: null }} wrap className="text-[10px]" />
+          </div>
+          {error ? <p role="status" className="mt-1 text-[11px] text-content/50">{t(error)}</p> : null}
+          {stored && account.profileStatus === "failed" ? <p className="mt-1 text-[11px] text-content/50">{t("Unable to read the DeepSeek profile.")}</p> : null}
+          {stored && account.balanceStatus === "failed" ? <p className="mt-1 text-[11px] text-content/50">{t("DeepSeek balance unavailable.")}</p> : null}
+          {stored && account.balanceStatus === "ready" ? (
+            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[11px] text-content/65">
+              {account.wallets?.map((wallet, index) => <span key={`wallet:${wallet.currency}:${index}`}>
+                {t("Balance: {amount} {currency}", { amount: wallet.balance, currency: wallet.currency })}
+              </span>)}
+              {account.bonusWallets?.map((wallet, index) => <span key={`bonus:${wallet.currency}:${index}`}>
+                {t("Bonus balance: {amount} {currency}", { amount: wallet.balance, currency: wallet.currency })}
+              </span>)}
+            </div>
+          ) : null}
+          <p className="mt-1 text-[10px] text-content/40">{t(account?.status === "unsupported"
+            ? "DeepSeek account information is unavailable in this DSH configuration."
+            : "Sign in or manage this account in DeepSeek Harness on Host, then refresh here.")}</p>
+        </div>
+      </div>
+    </section>
   );
 }

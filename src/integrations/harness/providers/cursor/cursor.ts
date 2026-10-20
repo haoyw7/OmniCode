@@ -11,7 +11,7 @@ import { AcpSubagents } from "../../core/acpSubagents";
 import type { RuntimeMode } from "../../../../features/sessions/model/session";
 import { promptBlocks } from "../../../../features/sessions/model/attachments";
 import { isTaskListToolName, taskListFromToolInput } from "../../../../features/sessions/model/taskList";
-import { AcpClient, type AcpHandlers } from "../../core/acp";
+import { AcpClient, assertAcpPromptCompleted, type AcpHandlers } from "../../core/acp";
 import {
   killChild,
   resolveCursorBinary,
@@ -466,7 +466,7 @@ async function prompt(live: Live, input: SendTurnInput): Promise<void> {
     live.backgroundAgentTools.clear();
     live.taskListTools.clear();
     live.promptActive = true;
-    await live.acp.request("session/prompt", {
+    const result = await live.acp.request("session/prompt", {
       sessionId: live.acpSessionId,
       prompt: blocks,
     });
@@ -475,6 +475,7 @@ async function prompt(live: Live, input: SendTurnInput): Promise<void> {
       live.backgroundAgentTools.clear();
       return;
     }
+    assertAcpPromptCompleted(result);
     settleCursorBackgroundAgents(live, "completed");
     await refreshCursorSubagents(live);
     if (live.cancelled || live.muteUpdates) return;

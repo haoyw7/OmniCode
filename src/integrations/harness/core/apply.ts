@@ -199,13 +199,18 @@ export function applyHarnessEvent(
       return { ...session, backgroundTasks: event.tasks };
     case "plan":
       return upsertPlan(session, event);
-    case "session.error":
-      return appendBlock(failStreaming(session), {
+    case "session.error": {
+      const failed = failStreaming(session);
+      const last = failed.blocks.at(-1);
+      // Providers can report the same failure both immediately and at turn completion.
+      if (last?.notice === "error" && last.text === event.message) return failed;
+      return appendBlock(failed, {
         id: crypto.randomUUID(),
         role: "system",
         text: event.message,
         notice: "error",
       });
+    }
     case "session.providerBound":
       return { ...session, providerSessionId: event.providerSessionId,
         ...(event.providerAccountId ? { providerAccountId: event.providerAccountId } : {}),
@@ -242,8 +247,8 @@ export function applyHarnessEvent(
       };
     case "status":
       return event.key
-        ? upsertKeyedStatus(session, event.key, event.text)
-        : appendStatus(session, event.text);
+        ? upsertKeyedStatus(session, event.key, event.text, event.notice)
+        : appendStatus(session, event.text, event.notice);
     case "usage.limited":
       return {
         ...session,
@@ -776,17 +781,23 @@ function stampTurnDuration(blocks: Block[], endedAt: number): Block[] {
 }
 
 /** Status pings repeat; keep one row per run instead of stacking identical lines. */
-function appendStatus(session: Session, text: string): Session {
+function appendStatus(
+  session: Session,
+  text: string,
+  notice?: Extract<HarnessEvent, { type: "status" }>["notice"],
+): Session {
   const trimmed = text.trim();
   if (!trimmed) return session;
   const last = [...session.blocks]
     .reverse()
     .find((block) => block.role !== "reasoning");
-  if (last?.role === "system" && last.text === trimmed) return session;
+  if (last?.role === "system" && last.text === trimmed && last.notice === notice)
+    return session;
   return appendBlock(session, {
     id: crypto.randomUUID(),
     role: "system",
     text: trimmed,
+    ...(notice ? { notice } : {}),
   });
 }
 
@@ -794,6 +805,7 @@ function upsertKeyedStatus(
   session: Session,
   key: string,
   text: string,
+  notice?: Extract<HarnessEvent, { type: "status" }>["notice"],
 ): Session {
   const trimmed = text.trim();
   const turnStart = lastMatchingBlock(
@@ -811,11 +823,13 @@ function upsertKeyedStatus(
       role: "system",
       text: trimmed,
       statusKey: key,
+      ...(notice ? { notice } : {}),
     });
   }
-  if (session.blocks[index].text === trimmed) return session;
+  if (session.blocks[index].text === trimmed && session.blocks[index].notice === notice)
+    return session;
   const blocks = session.blocks.slice();
-  if (trimmed) blocks[index] = { ...blocks[index], text: trimmed };
+  if (trimmed) blocks[index] = { ...blocks[index], text: trimmed, notice };
   else blocks.splice(index, 1);
   return { ...session, blocks };
 }

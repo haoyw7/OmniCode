@@ -2262,6 +2262,8 @@ export class HostEngine {
           }
         } catch (reason) {
           error = reason instanceof HostResourceBusyError ? `${reason.code}: ${reason.message}` : reason instanceof Error ? reason.message : String(reason);
+          if (!active.cancelled && !this.closing)
+            this.event(session.id, runId!, { type: "session.error", message: error });
         }
         active.finishing = true;
         this.executionPhase(session.id, runId!, "settling");
@@ -2501,7 +2503,8 @@ export class HostEngine {
           : block,
       ),
     };
-    if (message)
+    const last = session.blocks.at(-1);
+    if (message && !(last?.notice === "error" && last.text === message))
       session.blocks.push({
         id: randomUUID(),
         role: "system",

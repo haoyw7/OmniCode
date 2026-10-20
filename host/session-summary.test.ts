@@ -41,6 +41,7 @@ describe("session summary notification previews", () => {
       { id: "tool", role: "tool", text: "Raw command output" },
       { id: "internal-reply", role: "assistant", text: "Hidden output", internal: true },
       { id: "draft", role: "user", text: "Unsent request", draft: true },
+      { id: "retry", role: "system", text: "Reconnecting... 5/5", notice: "warning" },
     );
     expect(summary(value).notificationPreview).toEqual({
       reply: "Fixed the login. Tests pass.",

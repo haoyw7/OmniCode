@@ -143,6 +143,20 @@ afterEach(async () => {
 });
 
 describe("cursor background subagents", () => {
+  it.each([
+    ["max_tokens", "output token limit"],
+    ["max_turn_requests", "request limit"],
+    ["refusal", "refused to continue"],
+  ])("surfaces the incomplete ACP stop reason %s", async (stopReason, message) => {
+    const { events, promptId, turn } = await startTurn("cursor-live");
+    const rejected = expect(turn).rejects.toThrow(message);
+    reply(promptId, { stopReason });
+    await rejected;
+    expect(events).toContainEqual({
+      type: "session.error", message: expect.stringContaining(message),
+    });
+  });
+
   it("estimates tokens from ACP text without treating context usage as output", async () => {
     const { events, promptId, turn } = await startTurn("cursor-live");
     let now = 1_000;

@@ -3,10 +3,10 @@ import { configureSharedHost } from "../../connections/model/remoteProjects";
 // @vitest-environment happy-dom
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { ask } from "@tauri-apps/plugin-dialog";
-import { SettingsView } from "./SettingsView";
+import { SettingsView, preloadSettingsSection } from "./SettingsView";
 import * as scrollWithinModule from "../../../shared/lib/scrollWithin";
 import { loginHarness } from "../../../integrations/harness/core/auth";
 import * as harnessRegistry from "../../../integrations/harness/core/registry";
@@ -72,6 +72,10 @@ vi.mock("../../../integrations/harness/core/availability", () => ({
 let container: HTMLDivElement;
 let root: Root;
 let onSelectSection: ReturnType<typeof vi.fn>;
+
+beforeAll(async () => {
+  await Promise.all(SETTINGS_SECTIONS.map(({ id }) => preloadSettingsSection(id)));
+});
 
 function mockLocalStorage() {
   const data = new Map<string, string>();
@@ -1070,6 +1074,21 @@ describe("settings pages", () => {
     await act(async () => restore.click());
     expect(localStorage.getItem("omnicode.desktopSkin")).toBe("auto");
     expect(document.documentElement.dataset.skin).toBe("midnight");
+  });
+
+  it("restores appearance defaults after reversing navigation before the old page exits", async () => {
+    localStorage.setItem("omnicode.desktopSkin", "dusk");
+    await render("appearance");
+    const navigate = (label: string) => [...container.querySelectorAll<HTMLButtonElement>("nav button")]
+      .find((button) => button.textContent === label)!.click();
+    await act(async () => navigate("General"));
+    await act(async () => navigate("Appearance"));
+    await act(async () => container.querySelectorAll('[data-settings-page][aria-hidden="true"]')
+      .forEach(completeMotionAnimation));
+    const restore = [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Restore defaults")!;
+    await act(async () => restore.click());
+    expect(localStorage.getItem("omnicode.desktopSkin")).toBe("auto");
   });
 
   it("reports embedded navigation changes to its owner", async () => {

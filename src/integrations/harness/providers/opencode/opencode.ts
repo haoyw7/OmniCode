@@ -845,7 +845,9 @@ async function handleEvent(
       const statusType = stringField(status, "type");
       if (statusType === "retry") {
         const message = stringField(status, "message");
-        if (message) live.onEvent({ type: "status", text: message });
+        if (message) live.onEvent({
+          type: "status", key: "opencode-retry", text: message, notice: "warning",
+        });
         break;
       }
       if (statusType === "idle" && live.activeTurn) {

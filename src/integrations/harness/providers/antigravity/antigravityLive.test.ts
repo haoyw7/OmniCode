@@ -5,9 +5,11 @@ import { modelsFor, resetHarnessModelOverlays } from "../../../../features/sessi
 const mock = vi.hoisted(() => {
   const listeners = new Map<string, (line: string) => void>();
   const exits = new Map<string, (code: number | null) => void>();
+  const diagnostics = new Map<string, (line: string) => void>();
   return {
     listeners,
     exits,
+    diagnostics,
     sent: [] as { thread: string; id?: number; method?: string; params?: Record<string, unknown>; result?: unknown }[],
     spawn: vi.fn(async () => undefined),
     // killChild unwatches in the real bridge; mirror that so a killed
@@ -15,6 +17,7 @@ const mock = vi.hoisted(() => {
     kill: vi.fn(async (id: string) => {
       listeners.delete(id);
       exits.delete(id);
+      diagnostics.delete(id);
     }),
     fail: new Set<string>(),
     silent: new Set<string>(),
@@ -39,10 +42,12 @@ vi.mock("../../core/child", () => ({
   unwatchChild: (id: string) => {
     mock.listeners.delete(id);
     mock.exits.delete(id);
+    mock.diagnostics.delete(id);
   },
-  watchChild: (id: string, line: (line: string) => void, exit?: (code: number | null) => void) => {
+  watchChild: (id: string, line: (line: string) => void, exit?: (code: number | null) => void, stderr?: (line: string) => void) => {
     mock.listeners.set(id, line);
     if (exit) mock.exits.set(id, exit);
+    if (stderr) mock.diagnostics.set(id, stderr);
   },
   writeChild: async (thread: string, line: string) => {
     const message = JSON.parse(line);
@@ -144,6 +149,66 @@ describe.each(providers)("$id offline ACP transport", (provider) => {
   afterEach(async () => {
     await provider.forget("thread");
     resetHarnessModelOverlays();
+  });
+
+  it("surfaces native retries only during the active prompt and continues after recovery", async () => {
+    const turn = provider.send(input);
+    await waitPrompt();
+    const diagnostic = mock.diagnostics.get(liveKey())!;
+    const line = "planner_generator.go:348] Encountered retryable api error. retrying in 4s. Error (): connection reset";
+    diagnostic(line);
+    expect(events).toContainEqual({ type: "status", key: "antigravity-retry",
+      notice: "warning", text: "Retrying in 4s…\nconnection reset" });
+    expect(events.some(event => event.type === "session.error")).toBe(false);
+    childListener()(JSON.stringify({ jsonrpc: "2.0", method: "session/update", params: {
+      sessionId: "provider-session", update: { sessionUpdate: "agent_message_chunk",
+        content: { type: "text", text: "Recovered" } },
+    } }));
+    finishPrompt();
+    await turn;
+    expect(events).toContainEqual({ type: "message.delta", text: "Recovered" });
+    const count = events.length;
+    diagnostic(line);
+    expect(events).toHaveLength(count);
+  });
+
+  it.each([false, true])("treats a failed prompt followed by ACP end_turn as a failure and resumes (late diagnostic: %s)", async (lateDiagnostic) => {
+    const turn = provider.send(input);
+    const rejected = expect(turn).rejects.toThrow("Proxy cannot forward request");
+    await waitPrompt();
+    const diagnostic = mock.diagnostics.get(liveKey())!;
+    const detail = "local_connection.py:551] harness stderr: Agent run failed: Error 400, Message: Proxy cannot forward request, Status: INVALID_ARGUMENT, Details: []";
+    if (!lateDiagnostic) diagnostic(detail);
+    diagnostic("server.py:5564] Antigravity SDK error processing prompt for session provider-session");
+    childListener()(JSON.stringify({ jsonrpc: "2.0", method: "session/update", params: {
+      sessionId: "provider-session", update: { sessionUpdate: "agent_message_chunk",
+        content: { type: "text", text: "Proxy cannot forward request" } },
+    } }));
+    if (lateDiagnostic) diagnostic(detail);
+    finishPrompt();
+    await rejected;
+    expect(events.filter(event => event.type === "session.error")).toEqual([
+      { type: "session.error", message: "Proxy cannot forward request" },
+    ]);
+    expect(events.some(event => event.type === "message.delta" || event.type === "message.completed")).toBe(false);
+    const recovered: HarnessEvent[] = [];
+    mock.autoPrompt = true;
+    await provider.send({ ...input, text: "Continue", onEvent: event => recovered.push(event) });
+    expect(mock.sent.some(message => message.method === "session/resume")).toBe(true);
+    expect(recovered).toContainEqual({ type: "message.completed" });
+    expect(recovered.some(event => event.type === "session.error")).toBe(false);
+  });
+
+  it("does not fail the root prompt for another session's diagnostic", async () => {
+    const turn = provider.send(input);
+    await waitPrompt();
+    const diagnostic = mock.diagnostics.get(liveKey())!;
+    diagnostic("server.py:5564] Antigravity SDK error processing prompt for session other-session");
+    diagnostic("local_connection.py:551] harness stderr: Agent run failed: child failed");
+    finishPrompt();
+    await turn;
+    expect(events).toContainEqual({ type: "message.completed" });
+    expect(events.some(event => event.type === "session.error")).toBe(false);
   });
 
   it("samples ACP text and excludes tool execution time", async () => {

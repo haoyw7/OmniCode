@@ -4,6 +4,7 @@ import {
   type JsonRpcId,
   type JsonRpcMessage,
 } from "./jsonRpc";
+import { translate } from "../../../shared/i18n/language";
 
 export type { JsonRpcMessage };
 
@@ -69,4 +70,17 @@ export class AcpClient {
   ): Promise<void> {
     return this.rpc.respondError(id as JsonRpcId, error);
   }
+}
+
+/** ACP v1 can report an incomplete turn in a successful RPC response. */
+export function assertAcpPromptCompleted(result: unknown): void {
+  if (!result || typeof result !== "object") return;
+  const reason = (result as { stopReason?: unknown }).stopReason;
+  // Cancellation, missing reasons and unknown extensions retain their own semantics.
+  if (reason === "max_tokens")
+    throw new Error(translate("The agent reached the output token limit before completing the turn."));
+  if (reason === "max_turn_requests")
+    throw new Error(translate("The agent reached the request limit before completing the turn."));
+  if (reason === "refusal")
+    throw new Error(translate("The agent refused to continue this turn."));
 }

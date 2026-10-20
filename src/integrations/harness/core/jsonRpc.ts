@@ -200,7 +200,7 @@ export class JsonRpcClient {
       if (msg.error) {
         pending.reject(
           new Error(
-            msg.error.message || `${this.label} error ${msg.error.code ?? ""}`,
+            rpcErrorMessage(msg.error, this.label),
           ),
         );
         return;
@@ -218,4 +218,20 @@ export class JsonRpcClient {
       this.handlers.onNotification?.(msg.method, msg.params);
     }
   }
+}
+
+/** Preserve human-readable error data without dumping unrelated provider metadata. */
+function rpcErrorMessage(error: NonNullable<JsonRpcMessage["error"]>, label: string): string {
+  const message = error.message || `${label} error ${error.code ?? ""}`;
+  const data = error.data;
+  const details = typeof data === "string" ? [data]
+    : data && typeof data === "object" && !Array.isArray(data)
+      ? [
+          (data as Record<string, unknown>).message,
+          (data as Record<string, unknown>).details,
+        ]
+      : [];
+  return details.reduce<string>((text, detail) =>
+    typeof detail === "string" && detail.trim() && !text.includes(detail)
+      ? `${text}\n${detail}` : text, message);
 }

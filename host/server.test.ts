@@ -26,6 +26,11 @@ import { importDesktopSessions } from "./desktop-import";
 
 const modelProbe = vi.hoisted(() => vi.fn());
 const piModelProbe = vi.hoisted(() => vi.fn());
+const deepseekAccountProbe = vi.hoisted(() => vi.fn());
+vi.mock("../src/integrations/harness/providers/deepseek/deepseekCatalog", () => ({
+  discoverDeepseekModels: vi.fn(),
+  discoverDeepseekAccount: deepseekAccountProbe,
+}));
 vi.mock("../src/integrations/harness/providers/codex/codexCatalog", () => ({
   discoverCodexModels: modelProbe,
 }));
@@ -227,6 +232,20 @@ it("restricts Host account management to admin devices while sharing safe accoun
   expect(JSON.stringify(saved.value.result)).not.toContain(s.directory);
   s.store.revokeToken(s.second.token);
   expect((await s.call("providerAccounts.read", {}, s.second.token)).status).toBe(401);
+});
+
+it("shares DeepSeek account details with paired devices and validates requests before starting DSH", async () => {
+  const s = await setup();
+  const client = { version: "0.1.0", locale: "zh-CN", timezoneOffsetSeconds: -25_200 };
+  deepseekAccountProbe.mockReset().mockResolvedValue({ status: "signed-out" });
+  expect((await s.call("environment.describe")).value.result.capabilities).toContain("providerAccounts.deepseek.v1");
+  expect((await s.call("providerAccounts.deepseek", { client }, "wrong-token")).status).toBe(401);
+  expect((await s.call("providerAccounts.deepseek", { client: { ...client, timezoneOffsetSeconds: "bad" } })).status).toBe(400);
+  expect(deepseekAccountProbe).not.toHaveBeenCalled();
+  const result = await s.call("providerAccounts.deepseek", { client }, s.second.token);
+  expect(result.status).toBe(200);
+  expect(result.value.result).toEqual({ status: "signed-out" });
+  expect(deepseekAccountProbe).toHaveBeenCalledWith(client);
 });
 
 it("keeps environment variables readable and writable only by this computer's desktop", async () => {

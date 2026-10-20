@@ -131,6 +131,13 @@ describe("liveStatus", () => {
     expect(liveStatus({ ...input, turn: [user, reply], now: 15_000 })).toMatchObject({
       label: { key: "Responding…" }, showClock: true,
     });
+    const warning: Block = {
+      id: "warning", role: "system", notice: "warning", text: "Reconnecting... 5/5",
+    };
+    // Prose resumes in the same block, before the retained retry warning.
+    expect(liveStatus({ ...input, turn: [user, reply, warning], now: 15_000 })).toMatchObject({
+      label: { key: "Responding…" }, showClock: true,
+    });
   });
 
   it("falls back to the response clock when a tool has no recorded start", () => {

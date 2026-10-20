@@ -214,6 +214,13 @@ describe.skipIf(!binary)("DeepSeek real runtime bridge", () => {
     if (root) await rm(root, { recursive: true, force: true });
   }, 45_000);
 
+  it("reads a signed-out account without exposing credentials or loading a model catalog", async () => {
+    const initialized = await request("initialize", { protocolVersion: 1, includeCatalog: false });
+    expect(initialized.catalog).toBeUndefined();
+    expect(await request("account/read", { client: { version: "0.1.0", locale: "en", timezoneOffsetSeconds: 0 } }))
+      .toEqual({ status: "signed-out" });
+  });
+
   it("streams before completion and accepts subsequent turns", async () => {
     const offset = notifications.length;
     const receipt = await prompt("fixture:plain");

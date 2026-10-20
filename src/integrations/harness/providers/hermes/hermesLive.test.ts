@@ -82,6 +82,24 @@ describe("Hermes live ACP sequence", () => {
     textFiles.clear();
   });
 
+  it("surfaces an ACP request limit before starting any background continuation", async () => {
+    const events: HarnessEvent[] = [];
+    const turn = sendHermesTurn({
+      sessionId: "hermes-limited", cwd: "/repo", model: "hermes:nous:hermes-4",
+      runtimeMode: "supervised", text: "Hello", onEvent: event => events.push(event),
+    });
+    const rejected = expect(turn).rejects.toThrow("request limit");
+    await initialize();
+    await newSession();
+    await waitFor(() => parse().some(m => m.method === "session/set_mode"), "mode");
+    reply(parse().find(m => m.method === "session/set_mode").id, {});
+    await waitFor(() => parse().some(m => m.method === "session/prompt"), "prompt");
+    reply(parse().find(m => m.method === "session/prompt").id, { stopReason: "max_turn_requests" });
+    await rejected;
+    expect(events).toContainEqual({ type: "session.error", message: expect.stringContaining("request limit") });
+    await stopHermesSession("hermes-limited");
+  });
+
   it.each([
     "This chat is open in another Hermes window/terminal. Use it there, or start a new chat here.",
     "Hermes could not read the active-session registry",

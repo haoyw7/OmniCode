@@ -138,6 +138,52 @@ async function started(turnInput = input()) {
 }
 
 describe("Pi-family edit recovery", () => {
+  it.each(["pi", "omp"] as const)("shows %s retry causes and extension failures without failing a continuing turn", async (flavor) => {
+    const sessionId = `${flavor}-warnings`;
+    let settled = false;
+    const turn = (flavor === "pi" ? sendPiTurn : sendOmpTurn)({
+      ...input(sessionId, "hello"), model: `${flavor}:default`,
+    }).finally(() => { settled = true; });
+    await vi.waitFor(() => expect(transport.requests.some(r =>
+      r.sessionId === sessionId && r.command.type === "prompt")).toBe(true));
+    for (const attempt of [1, 2]) frame(sessionId, {
+      type: "auto_retry_start", attempt, maxAttempts: 3, errorMessage: "tls handshake eof",
+    });
+    frame(sessionId, { type: "extension_error", error: "Extension connection failed" });
+    frame(sessionId, { type: "extension_ui_request", id: "notify", method: "notify", notifyType: "error", message: "Extension service unavailable" });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    expect(events.some(e => e.type === "session.error")).toBe(false);
+    const session = events.reduce(applyHarnessEvent, newSession(flavor, "/repo"));
+    expect(session.blocks.filter(block => block.notice === "warning")).toMatchObject([
+      { text: "Retrying (2/3)…\ntls handshake eof", statusKey: `${flavor}-retry` },
+      { text: "Extension connection failed" },
+      { text: "Extension service unavailable" },
+    ]);
+    frame(sessionId, { type: "auto_retry_end", success: true });
+    frame(sessionId, { type: flavor === "pi" ? "agent_settled" : "agent_end" });
+    await turn;
+    expect(events.some(e => e.type === "session.error")).toBe(false);
+  });
+
+  it.each(["pi", "omp"] as const)("retains %s retry exhaustion details until the turn settles", async (flavor) => {
+    const sessionId = `${flavor}-retry-failed`;
+    const turn = (flavor === "pi" ? sendPiTurn : sendOmpTurn)({
+      ...input(sessionId, "hello"), model: `${flavor}:default`,
+    });
+    await vi.waitFor(() => expect(transport.requests.some(r =>
+      r.sessionId === sessionId && r.command.type === "prompt")).toBe(true));
+    frame(sessionId, { type: "message_end", message: { role: "assistant", stopReason: "error", errorMessage: "Connection failed" } });
+    frame(sessionId, { type: "agent_end", willRetry: true });
+    expect(events).toContainEqual({
+      type: "status", key: `${flavor}-retry`, text: "Retrying…\nConnection failed", notice: "warning",
+    });
+    frame(sessionId, { type: "auto_retry_end", success: false, finalError: "Retry limit exceeded: tls handshake eof" });
+    frame(sessionId, { type: flavor === "pi" ? "agent_settled" : "agent_end" });
+    await turn;
+    expect(events).toContainEqual({ type: "session.error", message: "Retry limit exceeded: tls handshake eof" });
+  });
+
   it("measures OMP text and tool-argument output spans without waits", async () => {
     const { turn } = await started();
     let now = 1_000;

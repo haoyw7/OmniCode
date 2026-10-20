@@ -11,6 +11,34 @@ import {
   extractToolPreview,
 } from "../../core/preview";
 import { acpAgentInfo } from "../../core/acpSubagents";
+import { translate } from "../../../../shared/i18n/language";
+
+/** ACP 1.4.1 reports native transport retries only through this diagnostic. */
+export function antigravityRetryFromStderr(line: string): HarnessEvent | null {
+  const match = /\bplanner_generator\.go:\d+\]\s+Encountered retryable api error\. retrying in (?:(\d+)h)?(?:(\d+)m)?(\d+(?:\.\d+)?)s\. Error \([^)]*\): (.+)$/.exec(line);
+  if (!match) return null;
+  const seconds = Number(match[1] ?? 0) * 3600 + Number(match[2] ?? 0) * 60 + Number(match[3]);
+  if (!Number.isFinite(seconds)) return null;
+  return {
+    type: "status",
+    key: "antigravity-retry",
+    notice: "warning",
+    text: `${translate("Retrying in {seconds}s…", { seconds: Math.round(seconds * 10) / 10 })}\n${match[4]}`,
+  };
+}
+
+/** This native terminal error is otherwise sent as ordinary text + end_turn. */
+export function antigravityFailureFromStderr(line: string): string | null {
+  const match = /\blocal_connection\.py:\d+\] harness stderr: Agent run failed: (.+)$/.exec(line);
+  if (!match) return null;
+  // Keep the provider's public HTTP message, without Go's repeated cause chain.
+  return /Error \d+, Message: (.+?), Status: [A-Z_]+, Details:/.exec(match[1])?.[1]
+    ?? match[1];
+}
+
+export function antigravityFailedSessionFromStderr(line: string): string | null {
+  return /\bserver\.py:\d+\] Antigravity SDK error processing prompt for session (\S+)\s*$/.exec(line)?.[1] ?? null;
+}
 
 export type AntigravityModeId = "default" | "auto_edit" | "yolo";
 

@@ -364,6 +364,24 @@ export class DeepseekEventMapper {
       this.sequences.set(source, data.seq);
     }
     const payload = asRecord(data.data);
+    if (data.type === "llm/retry") {
+      const attempt = payload.retry;
+      const max = payload.maxRetries;
+      const label = typeof attempt === "number" && typeof max === "number"
+        ? translate("Retrying ({attempt}/{max})…", { attempt, max })
+        : translate("Retrying…");
+      const failure = asRecord(payload.failure);
+      const detail = [failure.message, failure.code]
+        .filter((value): value is string => typeof value === "string" && !!value.trim())
+        .join(" · ");
+      events.push({
+        type: "status",
+        key: child ? `deepseek-retry:${source}` : "deepseek-retry",
+        notice: "warning",
+        text: [child ? `${translate("Subagent")} · ${label}` : label, detail]
+          .filter(Boolean).join("\n"),
+      });
+    }
     if (data.type === "turn/start" && !child) {
       this.usage = {};
       events.push({

@@ -61,7 +61,8 @@ import { discoverOpenCodeModels } from "../src/integrations/harness/providers/op
 import { discoverPiModels, discoverOmpModels } from "../src/integrations/harness/providers/pi/piCatalog";
 import { discoverFxModels } from "../src/integrations/harness/providers/fx/fxCatalog";
 import { discoverHermesModels } from "../src/integrations/harness/providers/hermes/hermesCatalog";
-import { discoverDeepseekModels } from "../src/integrations/harness/providers/deepseek/deepseekCatalog";
+import { discoverDeepseekAccount, discoverDeepseekModels } from "../src/integrations/harness/providers/deepseek/deepseekCatalog";
+import type { DeepseekAccountClient } from "../src/integrations/harness/providers/deepseek/deepseekAccount";
 import { resolveDeepseekBinary } from "../src/integrations/harness/core/child";
 import { discoverAntigravityModels } from "../src/integrations/harness/providers/antigravity/antigravityCatalog";
 import { discoverWorkBuddyModels } from "../src/integrations/harness/providers/workbuddy/workbuddyAdapter";
@@ -195,6 +196,7 @@ export function createHostServer(
       "providerAccounts.defaults",
       "providerAccounts.manage.v1",
       "providerAccounts.usage.v1",
+      "providerAccounts.deepseek.v1",
       "skills.list",
       "notes.v1",
       "approvals",
@@ -513,6 +515,15 @@ export function createHostServer(
           case "providerAccounts.usage":
             result = await providerUsage.read(params);
             break;
+          case "providerAccounts.deepseek": {
+            const client = params.client as DeepseekAccountClient | undefined;
+            if (!client || typeof client.version !== "string" || client.version.length > 80 ||
+                typeof client.locale !== "string" || client.locale.length > 40 ||
+                !Number.isInteger(client.timezoneOffsetSeconds) || Math.abs(client.timezoneOffsetSeconds) > 86_400)
+              throw new Error("Invalid DeepSeek account client");
+            result = await discoverDeepseekAccount(client);
+            break;
+          }
           case "titleModel.status":
             result = engine.titleModel.status();
             break;

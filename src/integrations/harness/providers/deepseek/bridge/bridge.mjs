@@ -695,10 +695,35 @@ export function apply(ctx) {
           planning: !!ctx.get("planMode"),
           images: true,
         },
-        catalog: await catalog(),
+        ...(params.includeCatalog === false ? {} : { catalog: await catalog() }),
       };
     }
     if (!initialized) throw new Error("Initialize the OmniCode bridge first");
+    if (method === "account/read") {
+      const account = ctx.get("deepseekAccount");
+      if (!account) return { status: "unsupported" };
+      const state = await account.getState();
+      if (state.status !== "credential-stored") return { status: "signed-out" };
+      const client = params.client;
+      const [profile, balance] = await Promise.all([
+        account.getProfile(client).catch(() => ({ status: "failed" })),
+        account.getBalance(client).catch(() => ({ status: "failed" })),
+      ]);
+      // A sign-out or replacement grant invalidates in-flight account queries.
+      if (!profile || !balance) return { status: (await account.getState()).status };
+      const wallets = (entries) => entries.map(({ currency, balance }) => ({ currency, balance }));
+      return {
+        status: state.status,
+        profileStatus: profile.status,
+        ...(profile.status === "ready" ? {
+          profile: { name: profile.value.name, contact: profile.value.contact },
+        } : {}),
+        balanceStatus: balance.status,
+        ...(balance.status === "ready" ? {
+          wallets: wallets(balance.value), bonusWallets: wallets(balance.bonusWallets),
+        } : {}),
+      };
+    }
     if (method === "session/new") return serial(() => open(params, false));
     if (method === "session/resume") return serial(() => open(params, true));
     if (method === "session/close") {

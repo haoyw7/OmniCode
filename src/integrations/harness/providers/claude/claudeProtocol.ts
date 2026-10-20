@@ -1,4 +1,5 @@
 import { botAgentsMcpName } from "../../core/botContext";
+import { translate } from "../../../../shared/i18n/language";
 import type { ContextBreakdown, ContextCategory, ContextToolUsage } from "../../core/contextUsage";
 import type {
   Attachment,
@@ -469,6 +470,18 @@ export function statusTextFromSystem(
 ): string | undefined {
   if (stringField(rec, "type") !== "system") return undefined;
   const subtype = stringField(rec, "subtype") ?? "";
+  if (subtype === "api_retry") {
+    const attempt = typeof rec.attempt === "number" ? rec.attempt : 0;
+    const max = typeof rec.max_retries === "number" ? rec.max_retries : 0;
+    const label = attempt > 0 && max > 0
+      ? translate("Retrying ({attempt}/{max})…", { attempt, max })
+      : translate("Retrying…");
+    const details = [
+      stringField(rec, "error"),
+      typeof rec.error_status === "number" ? `HTTP ${rec.error_status}` : undefined,
+    ].filter(Boolean);
+    return [label, ...details].join("\n");
+  }
   const compact = subtype.startsWith("compact");
   if (subtype !== "status" && !compact) return undefined;
   // Prose lives in `message`; `status` carries the bare lifecycle token.
@@ -485,22 +498,23 @@ export function turnStatusFromResult(rec: Record<string, unknown>): {
   error?: string;
 } {
   const subtype = stringField(rec, "subtype") ?? "";
-  if (subtype === "success") return { status: "completed" };
+  if (subtype === "success" && rec.is_error !== true) return { status: "completed" };
   const errors = Array.isArray(rec.errors)
     ? rec.errors.filter((item): item is string => typeof item === "string")
     : [];
-  const joined = errors.join(" ").toLowerCase();
+  const cancellation = errors.length === 1 ? errors[0].trim().toLowerCase() : "";
   const terminal = stringField(rec, "terminal_reason") ?? "";
   if (
     terminal === "aborted_tools" ||
     terminal === "aborted_streaming" ||
-    joined.includes("interrupt")
+    /^(?:interrupt(?:ed)?|(?:request |turn )?interrupted by (?:the )?user)[.!]?$/.test(cancellation)
   ) {
     return { status: "interrupted" };
   }
-  if (joined.includes("cancel")) return { status: "cancelled" };
-  const error = errors.find((item) => !item.startsWith("[ede_diagnostic]"));
-  return { status: "failed", error: error ?? "Claude turn failed." };
+  if (/^(?:(?:request |turn )?cancelled|(?:request |turn )?canceled)(?: by (?:the )?user)?[.!]?$/.test(cancellation))
+    return { status: "cancelled" };
+  const error = errors.filter((item) => item.trim() && !item.startsWith("[ede_diagnostic]")).join("\n");
+  return { status: "failed", error: error || stringField(rec, "result") || "Claude turn failed." };
 }
 
 /**

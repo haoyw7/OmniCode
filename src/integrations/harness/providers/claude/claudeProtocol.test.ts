@@ -358,6 +358,29 @@ describe("usage limits", () => {
 });
 
 describe("turnStatusFromResult", () => {
+  it.each(["Connection interrupted while reading response", "Upstream request canceled after timeout"])(
+    "does not mistake a network error for user cancellation: %s", (error) => {
+      expect(turnStatusFromResult({ type: "result", subtype: "error_during_execution", errors: [error] }))
+        .toEqual({ status: "failed", error });
+    },
+  );
+
+  it("reports error results even with a success subtype and preserves all public details", () => {
+    expect(turnStatusFromResult({
+      type: "result", subtype: "success", is_error: true, result: "API connection failed",
+    })).toEqual({ status: "failed", error: "API connection failed" });
+    expect(turnStatusFromResult({
+      type: "result", subtype: "error_during_execution",
+      errors: ["Request failed", "[ede_diagnostic] internal", "tls handshake eof"],
+    })).toEqual({ status: "failed", error: "Request failed\ntls handshake eof" });
+  });
+
+  it.each(["cancelled", "Request canceled by user", "interrupted by user"])(
+    "keeps explicit user cancellation quiet: %s", (error) => {
+      expect(turnStatusFromResult({ type: "result", subtype: "error_during_execution", errors: [error] }).status)
+        .toBe(error.startsWith("interrupted") ? "interrupted" : "cancelled");
+    },
+  );
   it("treats aborted terminals as interrupted", () => {
     expect(
       turnStatusFromResult({
@@ -740,6 +763,14 @@ describe("helpers", () => {
   });
 
   it("keeps status messages that carry real prose", () => {
+    expect(statusTextFromSystem({
+      type: "system", subtype: "api_retry", attempt: 2, max_retries: 5,
+      error: "server_error", error_status: 503,
+    })).toBe("Retrying (2/5)…\nserver_error\nHTTP 503");
+    expect(statusTextFromSystem({
+      type: "system", subtype: "api_retry", attempt: 1, max_retries: 5,
+      error: "unknown", error_status: null,
+    })).toBe("Retrying (1/5)…\nunknown");
     expect(
       statusTextFromSystem({
         type: "system",

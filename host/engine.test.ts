@@ -74,6 +74,25 @@ function setup(harness: "codex" | "claude" | "pi" | "omp" | "deepseek" = "codex"
 }
 
 describe("headless session ownership", () => {
+  it.each([false, true])("persists thrown provider failures as one visible error (event already sent: %s)", async (emitted) => {
+    const { engine, store, provider, id } = setup("deepseek");
+    await engine.ready;
+    provider.send = vi.fn(async (input) => {
+      if (emitted) input.onEvent({ type: "session.error", message: "Connection reset" });
+      throw new Error("Connection reset");
+    });
+    engine.command({ type: "send", commandId: "network-failure", sessionId: id, text: "Work" });
+    await vi.waitFor(() => {
+      expect(provider.send).toHaveBeenCalledOnce();
+      expect(store.session(id).status).toBe("idle");
+    }, { timeout: 5000 });
+    expect(store.session(id).session.blocks.filter(block => block.text === "Connection reset"))
+      .toEqual([expect.objectContaining({ role: "system", notice: "error" })]);
+    provider.send = vi.fn(async (input) => input.onEvent({ type: "message.delta", text: "Recovered" }));
+    engine.command({ type: "send", commandId: "network-recovered", sessionId: id, text: "Continue" });
+    await vi.waitFor(() => expect(store.session(id).session.blocks.some(block => block.text === "Recovered")).toBe(true));
+  });
+
   it.each(["", "high"])("forwards DeepSeek reasoning_effort through session configuration and sending (%s)", async (effort) => {
     const { engine, project, turns } = setup("deepseek");
     await engine.ready;

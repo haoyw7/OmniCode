@@ -502,6 +502,41 @@ describe("usage limits", () => {
 });
 
 describe("status blocks", () => {
+  it.each(["message.delta", "reasoning.delta"] as const)(
+    "updates visible warnings without interrupting %s or failing running tools",
+    (type) => {
+      let session = appendUser(newSession("codex", "/tmp"), "go");
+      session = applyHarnessEvent(session, {
+        type: "tool.started", callId: "call", title: "Inspect", kind: "execute",
+      });
+      session = applyHarnessEvent(session, { type, text: "Partial " });
+      const warning = {
+        type: "status" as const, key: "retry", text: "Reconnecting... 1/5", notice: "warning" as const,
+      };
+      session = applyHarnessEvent(session, warning);
+      expect(applyHarnessEvent(session, warning)).toBe(session);
+      session = applyHarnessEvent(session, { ...warning, text: "Reconnecting... 5/5" });
+      session = applyHarnessEvent(session, { type, text: "response" });
+      expect(session.busy).toBe(true);
+      expect(session.blocks.filter((block) => block.notice === "warning")).toHaveLength(1);
+      expect(session.blocks.at(-1)).toMatchObject({
+        text: "Reconnecting... 5/5", notice: "warning", statusKey: "retry",
+      });
+      expect(session.blocks[2]).toMatchObject({ text: "Partial response", streaming: true });
+      expect(session.blocks[1].tool?.status).not.toBe("failed");
+    },
+  );
+
+  it("promotes the same keyed status text to a visible warning", () => {
+    let session = appendUser(newSession("codex", "/tmp"), "go");
+    const status = { type: "status" as const, key: "retry", text: "Connection interrupted" };
+    session = applyHarnessEvent(session, status);
+    session = applyHarnessEvent(session, { ...status, notice: "warning" });
+    expect(session.blocks.at(-1)?.notice).toBe("warning");
+    session = applyHarnessEvent(session, status);
+    expect(session.blocks.at(-1)?.notice).toBeUndefined();
+  });
+
   it("keeps one row when the same status repeats", () => {
     let session = appendUser(newSession("claude", "/tmp"), "go");
     session = applyHarnessEvent(session, {

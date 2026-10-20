@@ -10,6 +10,32 @@ const providers = [
 ] as const;
 
 describe.each(providers)("$id ACP protocol", ({ id, protocol, mode, blocks, modes, plan }) => {
+  it("recognizes the native retry diagnostic without treating arbitrary errors as retries", () => {
+    expect(protocol.antigravityRetryFromStderr(
+      "I1020 local_connection.py:551] harness stderr: ERROR: logging before google.Init: I1020 planner_generator.go:348] Encountered retryable api error. retrying in 6.349210875s. Error (): stream disconnected",
+    )).toEqual({ type: "status", key: "antigravity-retry", notice: "warning",
+      text: "Retrying in 6.3s…\nstream disconnected" });
+    expect(protocol.antigravityRetryFromStderr("received model response error: EOF")).toBeNull();
+    expect(protocol.antigravityRetryFromStderr("Tool output: retrying in 4s")).toBeNull();
+    expect(protocol.antigravityRetryFromStderr(
+      "planner_generator.go:348] Encountered retryable api error. retrying in 1m39.763052758s. Error (): EOF",
+    )).toMatchObject({ text: "Retrying in 99.8s…\nEOF" });
+  });
+
+  it("recognizes terminal native failures and retains their public error message", () => {
+    expect(protocol.antigravityFailureFromStderr(
+      "I1020 local_connection.py:551] harness stderr: Agent run failed: executor run failed: Error 400, Message: Proxy cannot forward request, Status: INVALID_ARGUMENT, Details: []: Error 400, Message: Proxy cannot forward request, Status: INVALID_ARGUMENT, Details: []",
+    )).toBe("Proxy cannot forward request");
+    expect(protocol.antigravityFailureFromStderr(
+      "local_connection.py:551] harness stderr: Agent run failed: connection closed",
+    )).toBe("connection closed");
+    expect(protocol.antigravityFailureFromStderr("received model response error: EOF")).toBeNull();
+    expect(protocol.antigravityFailureFromStderr("Tool output: Agent run failed: error")).toBeNull();
+    expect(protocol.antigravityFailedSessionFromStderr(
+      "E1020 server.py:5564] Antigravity SDK error processing prompt for session session-id",
+    )).toBe("session-id");
+  });
+
   it("maps every runtime mode and overrides full access for planning", () => {
     expect(RUNTIME_MODES.map((runtimeMode) => mode(runtimeMode))).toEqual(modes);
     for (const runtimeMode of RUNTIME_MODES) expect(mode(runtimeMode, true)).toBe(plan);

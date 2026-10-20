@@ -15,8 +15,13 @@ import {
   asRecord,
 } from "./deepseekProtocol";
 import { translate } from "../../../../shared/i18n/language";
+import { parseDeepseekAccount, type DeepseekAccountClient } from "./deepseekAccount";
 
-export async function discoverDeepseekModels(workingDirectory?: string) {
+async function queryDeepseek<T>(
+  read: (rpc: JsonRpcClient, initialized: ReturnType<typeof asRecord>) => Promise<T>,
+  workingDirectory?: string,
+  includeCatalog = true,
+) {
   const cwd = workingDirectory ?? (await homeDir());
   const launch = await prepareDeepseekBridge(cwd);
   const id = `omnicode-deepseek-catalog-${crypto.randomUUID()}`;
@@ -31,7 +36,7 @@ export async function discoverDeepseekModels(workingDirectory?: string) {
     const initialized = asRecord(
       await rpc.request(
         "initialize",
-        { protocolVersion: DEEPSEEK_BRIDGE_PROTOCOL },
+        { protocolVersion: DEEPSEEK_BRIDGE_PROTOCOL, includeCatalog },
         60_000,
       ),
     );
@@ -40,13 +45,23 @@ export async function discoverDeepseekModels(workingDirectory?: string) {
       initialized.runtimeVersion !== DEEPSEEK_RUNTIME_VERSION
     )
       throw new Error(translate("Unsupported DeepSeek Harness bridge version"));
-    return deepseekModels(initialized.catalog);
+    return await read(rpc, initialized);
   } finally {
     await rpc.request("shutdown", {}, 5_000).catch(() => {});
     rpc.close();
     unwatchChild(id);
     await killChild(id).catch(() => {});
   }
+}
+
+export function discoverDeepseekModels(workingDirectory?: string) {
+  return queryDeepseek(async (_rpc, initialized) => deepseekModels(initialized.catalog), workingDirectory);
+}
+
+export function discoverDeepseekAccount(client: DeepseekAccountClient) {
+  return queryDeepseek(async rpc => parseDeepseekAccount(
+    await rpc.request("account/read", { client }, 30_000),
+  ), undefined, false);
 }
 
 let refreshing: Promise<void> | undefined;

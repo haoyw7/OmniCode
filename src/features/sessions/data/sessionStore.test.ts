@@ -680,6 +680,13 @@ describe("sanitizeSessionForPersist", () => {
         text: "hi",
         notice: "error" as Block["notice"],
       },
+      {
+        id: "w1",
+        role: "system",
+        text: "Reconnecting... 5/5\ntls handshake eof",
+        notice: "warning",
+        statusKey: "codex-retry",
+      },
     ];
 
     const persisted = sanitizeSessionForPersist(session).blocks;
@@ -687,6 +694,11 @@ describe("sanitizeSessionForPersist", () => {
     expect(persisted[1]?.notice).toBe("interrupt");
     expect(persisted[2]?.notice).toBeUndefined();
     expect(persisted[3]?.notice).toBeUndefined();
+    expect(persisted[4]).toMatchObject({
+      text: "Reconnecting... 5/5\ntls handshake eof",
+      notice: "warning",
+      statusKey: "codex-retry",
+    });
   });
 
   it("keeps a second-opinion card on the user turn", () => {

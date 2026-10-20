@@ -115,6 +115,27 @@ async function startTurn(events: HarnessEvent[]) {
   return { done };
 }
 
+it("keeps retry warnings visible without ending the OpenCode turn", async () => {
+  const events: HarnessEvent[] = [];
+  const { done } = await startTurn(events);
+  const settled = vi.fn();
+  void done.then(settled);
+  for (const message of ["Connection failed", "tls handshake eof"]) onSseEvent!({
+    type: "session.status",
+    properties: { sessionID: "session_1", status: { type: "retry", message } },
+  });
+  await vi.waitFor(() => expect(events).toContainEqual({
+    type: "status", key: "opencode-retry", text: "tls handshake eof", notice: "warning",
+  }));
+  expect(settled).not.toHaveBeenCalled();
+  expect(events.some(event => event.type === "session.error")).toBe(false);
+  const session = events.reduce(applyHarnessEvent, newSession("opencode", "/repo"));
+  expect(session.blocks.filter(block => block.notice === "warning")).toHaveLength(1);
+  onSseEvent!({ type: "session.error", properties: { sessionID: "session_1", error: { data: { message: "Retry limit exceeded" } } } });
+  await done;
+  expect(events).toContainEqual({ type: "session.error", message: "Retry limit exceeded" });
+});
+
 function sessionCreated(id: string, parentID?: string) {
   onSseEvent?.({
     type: "session.created",

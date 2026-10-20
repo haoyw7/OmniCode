@@ -6,6 +6,7 @@ import {
   resetGenerationMetrics,
 } from "../../core/generationMetrics";
 import { botContextKey } from "../../core/botContext";
+import { translate } from "../../../../shared/i18n/language";
 import { nativeModelId } from "../../../../features/sessions/model/models";
 import { taskListFromToolInput } from "../../../../features/sessions/model/taskList";
 import { normalizeProjectPath } from "../../../../features/projects/model/recents";
@@ -953,10 +954,21 @@ function handleFrame(
   if (type === "compaction_start") live.compacting = true;
   if (type === "compaction_end") live.compacting = false;
   if (type === "auto_retry_start") live.retrying = true;
-  if (type === "auto_retry_end") live.retrying = false;
+  if (type === "auto_retry_end") {
+    live.retrying = false;
+    if (rec.success === true) live.turnError = null;
+    else if (rec.success === false)
+      live.turnError = stringField(rec, "finalError") ?? live.turnError;
+  }
 
   const status = statusFromPiEvent(rec);
-  if (status) live.onEvent({ type: "status", text: status });
+  if (status) live.onEvent({
+    type: "status",
+    text: status,
+    ...(type === "auto_retry_start" ? { key: `${flavor.id}-retry` } : {}),
+    ...(type === "summarization_retry_scheduled" ? { key: `${flavor.id}-summary-retry` } : {}),
+    ...(type !== "compaction_start" ? { notice: "warning" as const } : {}),
+  });
 
   const turnError = turnErrorFromEvent(rec);
   if (turnError !== null) live.turnError = turnError;
@@ -1076,13 +1088,22 @@ function handleFrame(
   }
 
   if (isAgentSettled(rec)) {
+    if (rec.aborted === true) live.turnError = null;
     flushTurnError(flavor, live);
     void settleTurn(live, flavor, sessionId);
     return;
   }
   const willRetry = agentEndWillRetry(rec);
-  // The retry carries the real answer, so the attempt it replaces stays quiet.
-  if (willRetry === true) live.turnError = null;
+  // An attempt failure stays visible without marking a continuing turn failed.
+  if (willRetry === true) {
+    if (live.turnError && !live.retrying) live.onEvent({
+      type: "status",
+      key: `${flavor.id}-retry`,
+      text: `${translate("Retrying…")}\n${live.turnError}`,
+      notice: "warning",
+    });
+    live.turnError = null;
+  }
   // Pi's agent_end is only a low-level attempt; queued/automatic work can
   // follow. Pi 1.0.1 reports actual idle through agent_settled.
   if (flavor.id === "omp" && willRetry === false && !live.compacting && !live.retrying) {
@@ -1139,7 +1160,11 @@ async function handleExtensionUi(
     const text = request.title ? extensionUiTitle(request) : "";
     if (request.method === "setStatus" && request.statusKey)
       live.onEvent({ type: "status", key: request.statusKey, text });
-    else if (text.trim()) live.onEvent({ type: "status", text });
+    else if (text.trim()) live.onEvent({
+      type: "status", text,
+      ...(request.method === "notify" && (request.notifyType === "warning" || request.notifyType === "error")
+        ? { notice: "warning" as const } : {}),
+    });
     return;
   }
 

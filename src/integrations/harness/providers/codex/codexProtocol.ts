@@ -364,8 +364,6 @@ export function toCodexApprovalDecision(
 
 export type MappedCodexNotification = {
   events: HarnessEvent[];
-  /** Provider diagnostics for debug logs, excluded from the transcript. */
-  diagnostic?: string;
   /** When set, the active turn finished. */
   turnCompleted?: {
     status: "completed" | "failed" | "interrupted" | "cancelled";
@@ -496,14 +494,15 @@ export function mapCodexNotification(
   if (method === "error") {
     const errorObj = asRecord(rec.error);
     const message =
-      stringField(errorObj, "message") ??
+      codexErrorMessage(errorObj) ??
       stringField(rec, "message") ??
       "Codex error";
     const willRetry = rec.willRetry === true;
     if (willRetry) {
-      // Codex owns retrying the request; a status event would persist a row
-      // for every attempt and interrupt any streaming transcript block.
-      return { events: [], diagnostic: message };
+      // Keep the latest attempt visible without failing the turn or sealing prose.
+      return {
+        events: [{ type: "status", key: "codex-retry", text: message, notice: "warning" }],
+      };
     }
     return {
       events: [{ type: "session.error", message }],
@@ -522,17 +521,14 @@ export function mapCodexNotification(
       stringField(rec, "message") ??
       stringField(rec, "details");
     if (!message) return { events: [] };
-    // Runtime warnings have no structured code. Match only Codex's known
-    // transport fallback notice; configuration and other warnings stay visible.
-    if (
-      method === "warning" &&
-      /^Falling back from WebSockets to HTTPS transport(?:[.:]|$)/.test(
-        message.trimStart(),
-      )
-    ) {
-      return { events: [], diagnostic: message };
-    }
-    return { events: [{ type: "status", text: message }] };
+    const details = stringField(rec, "details");
+    return {
+      events: [{
+        type: "status",
+        text: withCodexDetails(message, details),
+        notice: "warning",
+      }],
+    };
   }
 
   return { events: [] };
@@ -601,7 +597,7 @@ function mapTurnTerminal(
     stringField(turn, "status") ??
     (method === "turn/aborted" ? "interrupted" : "completed");
   const errorObj = asRecord(turn?.error);
-  const error = stringField(errorObj, "message");
+  const error = codexErrorMessage(errorObj);
   const status =
     statusRaw === "failed"
       ? "failed"
@@ -631,6 +627,16 @@ function mapTurnTerminal(
 
 function isUsageLimitError(error: Record<string, unknown> | null): boolean {
   return error?.codexErrorInfo === "usageLimitExceeded";
+}
+
+function codexErrorMessage(error: Record<string, unknown> | null): string | undefined {
+  const message = stringField(error, "message");
+  const details = stringField(error, "additionalDetails");
+  return message ? withCodexDetails(message, details) : details;
+}
+
+function withCodexDetails(message: string, details?: string): string {
+  return details && !message.includes(details) ? `${message}\n${details}` : message;
 }
 
 function mapItemLifecycle(

@@ -24,6 +24,9 @@ import {
   antigravityModeId,
   antigravityPromptBlocks,
   antigravitySpawnCwd,
+  antigravityRetryFromStderr,
+  antigravityFailureFromStderr,
+  antigravityFailedSessionFromStderr,
   permissionOptionId,
   permissionRequestFromAcp,
   readConfigOptions,
@@ -37,6 +40,7 @@ import type {
   SendTurnInput,
   SteerTurnInput,
 } from "../../core/types";
+import { translate } from "../../../../shared/i18n/language";
 
 type SessionSetupResult = {
   sessionId?: string;
@@ -64,6 +68,10 @@ type Live = {
   onEvent: (event: HarnessEvent) => void;
   approvals: Map<number, (decision: ApprovalDecision) => void>;
   promptInFlight: boolean;
+  /** Native terminal failures can still arrive as a successful ACP end_turn. */
+  promptFailure?: string;
+  promptFailed?: boolean;
+  promptFailureText?: string;
   /** True while the owning turn may have state-changing requests in flight —
    *  a cancel here makes the transport indeterminate even mid-config. */
   turnActive: boolean;
@@ -77,7 +85,9 @@ type Resume = {
 };
 
 // Bound startup and control requests; a prompt may legitimately run much longer.
-const INIT_TIMEOUT_MS = 12_000;
+// The official self-extracting Windows server can spend over a minute loading
+// before reading stdin. Cancellation still aborts pending setup immediately.
+const INIT_TIMEOUT_MS = 120_000;
 const SESSION_TIMEOUT_MS = 45_000;
 const CONTROL_TIMEOUT_MS = 15_000;
 const PROMPT_TIMEOUT_MS = 30 * 60_000;
@@ -467,6 +477,17 @@ async function startLive(input: SendTurnInput, life: number): Promise<Live> {
       if (live || !retired()) emit({ type: "session.ended", code });
     },
     (line) => {
+      const live = liveRef.current;
+      if (live?.promptInFlight && !live.cancelled && !live.muteUpdates) {
+        live.promptFailure ??= antigravityFailureFromStderr(line) ?? undefined;
+        if (antigravityFailedSessionFromStderr(line) === live.acpSessionId)
+          live.promptFailed = true;
+        const retry = antigravityRetryFromStderr(line);
+        if (retry) {
+          noteActivity(live);
+          emit(retry);
+        }
+      }
       console.debug("[omnicode] antigravity stderr", line);
     },
   );
@@ -704,6 +725,9 @@ async function prompt(live: Live, input: SendTurnInput): Promise<void> {
     const blocks = antigravityPromptBlocks(input.text, input.attachments);
     if (blocks.length === 0) return;
     live.promptInFlight = true;
+    live.promptFailure = undefined;
+    live.promptFailed = false;
+    live.promptFailureText = "";
     noteActivity(live);
     const result = await live.acp.request(
       "session/prompt",
@@ -715,6 +739,8 @@ async function prompt(live: Live, input: SendTurnInput): Promise<void> {
     );
     const stopReason = asRecord(result)?.stopReason;
     if (live.cancelled || stopReason === "cancelled") return;
+    if (live.promptFailed) throw new Error(live.promptFailureText?.trim()
+      || live.promptFailure || translate("Antigravity could not complete this turn."));
     // A fulfilled request is not necessarily a normal end: refusals,
     // truncations, and provider-specific reasons all surface as errors.
     if (stopReason != null && stopReason !== "end_turn") {
@@ -763,6 +789,12 @@ function handleNotification(live: Live, method: string, params: unknown) {
   }
   if (live.muteUpdates) return;
   for (const event of live.subagents.route(params, eventsFromAcpUpdate(params))) {
+    // ACP repeats this provider error as assistant prose. The prompt's failure
+    // path emits one error notice instead of presenting it as a successful reply.
+    if (event.type === "message.delta" && live.promptFailed) {
+      live.promptFailureText = (live.promptFailureText ?? "") + event.text;
+      continue;
+    }
     emitAcpGenerationEvent(live.onEvent, event, params, receivedAt, live.acpSessionId);
   }
 }

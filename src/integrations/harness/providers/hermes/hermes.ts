@@ -8,7 +8,7 @@ import type { NativeTitleInput } from "../../core/titleCoordinator";
 import { nativeModelId } from "../../../../features/sessions/model/models";
 import { providerSessionAccessIssue } from "../sessionAccessErrors";
 import type { RuntimeMode } from "../../../../features/sessions/model/session";
-import { AcpClient, type AcpHandlers } from "../../core/acp";
+import { AcpClient, assertAcpPromptCompleted, type AcpHandlers } from "../../core/acp";
 import { AcpSubagents } from "../../core/acpSubagents";
 import {
   killChild,
@@ -393,12 +393,13 @@ async function prompt(live: Live, input: SendTurnInput): Promise<void> {
     let blocks = hermesPromptBlocks(input.text, input.attachments);
     if (blocks.length === 0) return;
     for (;;) {
-      await live.acp.request(
+      const result = await live.acp.request(
         "session/prompt",
         { sessionId: live.acpSessionId, prompt: blocks },
         PROMPT_TIMEOUT_MS,
       );
       if (live.cancelled) return;
+      assertAcpPromptCompleted(result);
       // Close this assistant bubble without ending OmniCode's busy turn. A
       // background handoff opens a fresh assistant bubble after it arrives.
       live.onEvent({ type: "message.completed" });

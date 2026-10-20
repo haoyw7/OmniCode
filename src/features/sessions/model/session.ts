@@ -436,10 +436,10 @@ export type Block = {
   /** Mid-turn interjection chrome; system blocks only. Body lives in text. */
   interjection?: InterjectionMeta;
   /**
-   * A system row the reader must not miss — an error or an interruption —
+   * A system row the reader must not miss — a warning, error or interruption —
    * rather than turn chrome like a status ping. Never folds into the trail.
    */
-  notice?: "error" | "interrupt";
+  notice?: "error" | "interrupt" | "warning";
   statusKey?: string;
 };
 

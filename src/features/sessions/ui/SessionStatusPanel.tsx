@@ -505,9 +505,9 @@ function EnvironmentRows({ cwd, branch }: { cwd: string; branch?: string }) {
   const parent = prettyParent(path);
   return (
     <>
-      <Row title={machineName}>
+      <Row title={machineName} wrap>
         <RowIcon>{remote ? <Internet /> : <Laptop />}</RowIcon>
-        <span className="min-w-0 flex-1 truncate">
+        <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
           {!remote ? <>
             {uiT("This machine")}
             {localComputerName ? <span className="text-content/45"> · {localComputerName}</span> : null}
@@ -525,9 +525,9 @@ function EnvironmentRows({ cwd, branch }: { cwd: string; branch?: string }) {
         </span>
       </Row>
       {branch ? (
-        <Row title={branch}>
+        <Row title={branch} wrap>
           <RowIcon><GitBranch /></RowIcon>
-          <span className="min-w-0 flex-1 truncate">{branch}</span>
+          <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{branch}</span>
         </Row>
       ) : null}
     </>

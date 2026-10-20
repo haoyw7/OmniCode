@@ -53,6 +53,26 @@ describe("fx live turn sequence", () => {
     sent.length = 0;
   });
 
+  it("surfaces an ACP output limit instead of reporting normal completion", async () => {
+    const events: HarnessEvent[] = [];
+    const turn = sendFxTurn({
+      sessionId: "fx-limited", cwd: "/repo", model: "fx:zai/glm-5.2",
+      runtimeMode: "supervised", text: "Hello", onEvent: event => events.push(event),
+    });
+    const rejected = expect(turn).rejects.toThrow("output token limit");
+    await waitFor(() => parse().some(m => m.method === "initialize"), "initialize");
+    reply(parse().find(m => m.method === "initialize").id, {});
+    await waitFor(() => parse().some(m => m.method === "session/new"), "new");
+    reply(parse().find(m => m.method === "session/new").id, { sessionId: "S1", configOptions: [{ id: "model", category: "model", currentValue: "zai/glm-5.2" }] });
+    await waitFor(() => parse().some(m => m.method === "session/set_mode"), "mode");
+    reply(parse().find(m => m.method === "session/set_mode").id, {});
+    await waitFor(() => parse().some(m => m.method === "session/prompt"), "prompt");
+    reply(parse().find(m => m.method === "session/prompt").id, { stopReason: "max_tokens" });
+    await rejected;
+    expect(events).toContainEqual({ type: "session.error", message: expect.stringContaining("output token limit") });
+    await stopFxSession("fx-limited");
+  });
+
   it.each(["session/resume", "session/load"])("preserves a locked fx binding when %s rejects", async (method) => {
     const sessionId = `fx-locked-${method}`;
     bindFxSession(sessionId, "original-fx", "/repo");

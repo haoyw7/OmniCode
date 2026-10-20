@@ -8,6 +8,28 @@ import {
 } from "./deepseekProtocol";
 
 describe("DeepSeek bridge projection", () => {
+  it("shows native retry failures without ending the turn and deduplicates durable replay", () => {
+    const mapper = new DeepseekEventMapper();
+    const envelope = { kind: "durable", data: { seq: 1, type: "llm/retry", data: {
+      retry: 1, maxRetries: 2, failure: { code: "TRANSPORT", message: "Connection reset" },
+    } } };
+    expect(mapper.events(envelope, "root")).toEqual([{
+      type: "status", key: "deepseek-retry", notice: "warning",
+      text: "Retrying (1/2)…\nConnection reset · TRANSPORT",
+    }]);
+    expect(mapper.events(envelope, "root")).toEqual([]);
+    expect(mapper.events({ kind: "durable", data: { seq: 2, type: "llm/retry-started", data: {} } }, "root"))
+      .toEqual([]);
+    expect(mapper.events({ kind: "durable", data: { seq: 3, type: "assistant/message",
+      data: { turn: 1, step: 1, message: { content: [{ type: "text", text: "Recovered" }] } } } }, "root"))
+      .toEqual([{ type: "message.delta", text: "Recovered" }]);
+    expect(mapper.events({ ...envelope, sourceSessionId: "child", data: { ...envelope.data,
+      data: { retry: 8, failure: { message: "Still offline" } } } }, "root")).toEqual([{
+      type: "status", key: "deepseek-retry:child", notice: "warning",
+      text: "Subagent · Retrying…\nStill offline",
+    }]);
+  });
+
   it("reconciles a committed tail and aggregates real request usage once per turn", () => {
     const mapper = new DeepseekEventMapper();
     const stream = (data: object) =>

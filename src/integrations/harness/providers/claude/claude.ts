@@ -837,7 +837,11 @@ function handleLine(sessionId: string, live: Live, line: string): void {
         live.compactionConfirmed = true;
         live.onEvent({ type: "context", breakdown: null });
       }
-      live.onEvent({ type: "status", text });
+      const retry = rec.subtype === "api_retry" || /^Retrying\b|^Reconnecting\b/i.test(text);
+      live.onEvent({
+        type: "status", text,
+        ...(retry ? { key: "claude-retry", notice: "warning" as const } : {}),
+      });
     }
   }
 }

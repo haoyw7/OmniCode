@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { listAutomations } from "../../features/automations/model/automations";
 import { loadNotes } from "../../features/notes";
+import { loadSettingsSection } from "../../features/settings/model/settings";
 import { lazySurface } from "../../shared/ui/lazySurface";
 import { preloadNavigationWhenIdle } from "../model/preloadNavigation";
 
@@ -15,6 +16,7 @@ export const SearchView = lazySurface(
 export const SettingsView = lazySurface(
   async () => {
     const module = await import("../../features/settings/ui/SettingsView");
+    await module.preloadSettingsSection(loadSettingsSection());
     return { default: module.SettingsView };
   },
   { suspense: false },
@@ -54,6 +56,7 @@ export function usePreloadWorkspaceSurfaces(notesEnabled: boolean) {
   useEffect(
     () =>
       preloadNavigationWhenIdle([
+        SettingsView.preload,
         InboxView.preload,
         LinkedWorkItemPanel.preload,
         AutomationsView.preload,

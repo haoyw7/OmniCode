@@ -58,7 +58,7 @@ import {
   type RuntimeMode,
   type TurnIntent,
 } from "../../../../features/sessions/model/session";
-import { applyHarnessEvent } from "../../core/apply";
+import { appendUser, applyHarnessEvent } from "../../core/apply";
 
 function parse() {
   return sent.map((line) => JSON.parse(line) as Record<string, unknown>);
@@ -652,17 +652,17 @@ describe("codex live turn sequence", () => {
     ).toEqual([text, text]);
   });
 
-  it("keeps retries and HTTP fallback out of a successful turn's transcript", async () => {
-    const debug = vi.spyOn(console, "debug").mockImplementation(() => {});
+  it("shows retries and HTTP fallback without ending the turn or splitting streamed prose", async () => {
     const { events, turn } = await startTurn("codex-live");
     const settled = vi.fn();
     void turn.then(settled);
-    const beforeRetries = [...events];
+    notify("item/agentMessage/delta", { itemId: "answer", delta: "The " });
+    const additionalDetails = "stream disconnected before completion: tls handshake eof";
     for (let attempt = 1; attempt <= 5; attempt++) {
       notify("error", {
         threadId: "thr_1",
         turnId: "turn_1",
-        error: { message: `Reconnecting... ${attempt}/5` },
+        error: { message: `Reconnecting... ${attempt}/5`, additionalDetails },
         willRetry: true,
       });
     }
@@ -671,13 +671,19 @@ describe("codex live turn sequence", () => {
     notify("warning", { threadId: "thr_1", message: fallback });
     await Promise.resolve();
     expect(settled).not.toHaveBeenCalled();
-    expect(withoutTurnIdentity(events)).toEqual(
-      withoutTurnIdentity(beforeRetries),
+    const duringRetry = events.reduce(
+      applyHarnessEvent,
+      appendUser(newSession("codex", "/repo"), "Continue"),
     );
-    expect(debug).toHaveBeenCalledTimes(6);
-    expect(debug).toHaveBeenCalledWith(expect.any(String), fallback);
+    expect(duringRetry.busy).toBe(true);
+    expect(duringRetry.blocks.filter((block) => block.statusKey === "codex-retry")).toMatchObject([{
+      notice: "warning",
+      text: `Reconnecting... 5/5\n${additionalDetails}`,
+    }]);
+    expect(duringRetry.blocks.find((block) => block.role === "assistant")?.streaming).toBe(true);
+    expect(events.some((event) => event.type === "session.error")).toBe(false);
 
-    notify("item/agentMessage/delta", { delta: "The answer" });
+    notify("item/agentMessage/delta", { itemId: "answer", delta: "answer" });
     notify("turn/completed", { turn: { id: "turn_1", status: "completed" } });
     await turn;
     expect(settled).toHaveBeenCalledOnce();
@@ -687,6 +693,8 @@ describe("codex live turn sequence", () => {
     );
     expect(session.blocks).toMatchObject([
       { role: "assistant", text: "The answer", streaming: false },
+      { role: "system", notice: "warning", text: `Reconnecting... 5/5\n${additionalDetails}` },
+      { role: "system", notice: "warning", text: fallback },
     ]);
   });
 
@@ -722,7 +730,6 @@ describe("codex live turn sequence", () => {
   });
 
   it("still surfaces a terminal failure after transport retries", async () => {
-    vi.spyOn(console, "debug").mockImplementation(() => {});
     const { events, turn } = await startTurn("codex-live");
     notify("error", {
       error: { message: "Reconnecting... 5/5" },
@@ -740,12 +747,12 @@ describe("codex live turn sequence", () => {
       applyHarnessEvent,
       newSession("codex", "/repo", "codex:gpt-5.4", "supervised"),
     );
-    expect(session.blocks).toContainEqual(
-      expect.objectContaining({ role: "system", text: message }),
-    );
-    expect(
-      session.blocks.some((block) => block.text.includes("Reconnecting")),
-    ).toBe(false);
+    expect(session.blocks.filter((block) => block.notice === "error")).toMatchObject([
+      { role: "system", text: message },
+    ]);
+    expect(session.blocks).toContainEqual(expect.objectContaining({
+      notice: "warning", text: "Reconnecting... 5/5",
+    }));
   });
 
   it.each([false, true])(

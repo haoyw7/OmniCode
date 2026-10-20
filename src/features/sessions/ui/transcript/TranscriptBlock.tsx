@@ -7,6 +7,7 @@ import { SessionAccessNotice } from "../SessionAccessNotice";
 import { QuestionHistoryCard } from "../QuestionHistoryCard";
 import type { QuestionAnswer } from "../../model/userQuestion";
 import { memo, useContext } from "react";
+import { CircleAlert, TriangleAlert } from "lucide-react";
 import { GeneratedImage } from "../GeneratedImage";
 import { PlanPreview } from "../PlanPreview";
 import { localizeOrchestrationMessage } from "../../../orchestration/ui/orchestrationMessages";
@@ -213,6 +214,25 @@ export const TranscriptBlock = memo(function TranscriptBlock({
             issue={issue}
             message={block.text}
           />
+        </div>
+      );
+    }
+    if (block.notice === "warning" || block.notice === "error") {
+      const isError = block.notice === "error";
+      const Icon = isError ? CircleAlert : TriangleAlert;
+      return (
+        <div
+          data-transcript-notice={block.notice}
+          role={isError ? "alert" : "status"}
+          className={`${embedded ? "" : "px-4 @md:px-6"} py-2`}
+        >
+          <div className={`flex items-center gap-2 font-medium ${isError ? "text-danger" : "text-warning"}`}>
+            <Icon className="size-4 shrink-0" aria-hidden="true" />
+            <span>{uiT(isError ? "Error" : "Warning")}</span>
+          </div>
+          <pre className="mt-1 min-w-0 whitespace-pre-wrap break-words text-content/70">
+            {localizeOrchestrationMessage(localizeChildExitError(block.text, uiT), uiT)}
+          </pre>
         </div>
       );
     }

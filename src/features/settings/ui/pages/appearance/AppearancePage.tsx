@@ -1,6 +1,7 @@
 import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
+import { useImperativeHandle, type Ref } from "react";
 import { ImagePlus, Loader } from "../../../../../shared/ui/icons";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { GradientBlurBackground } from "../../GradientBlurBackground";
@@ -31,7 +32,7 @@ import {
 } from "../../../model/appearance";
 import { UI_SCALE_PERCENTS } from "../../../model/uiScale";
 import { IS_LINUX } from "../../../../../platform/tauri/platform";
-import { type AppearanceSettings } from "./useAppearanceSettings";
+import { useAppearanceSettings, type AppearanceSettings } from "./useAppearanceSettings";
 import { Group, LiveSlider, Row, Segmented, Toggle } from "../../settingsLayout";
 import { AccentRow } from "./AccentRow";
 import { TypographyCards } from "./TypographyCards";
@@ -39,7 +40,11 @@ import { DesktopSkinPicker } from "./DesktopSkinPicker";
 
 
 
-export function AppearancePage({ appearance }: { appearance: AppearanceSettings }) {
+export type AppearancePageHandle = { restoreDefaults: () => void };
+
+export function AppearancePage({ ref }: { ref?: Ref<AppearancePageHandle> }) {
+  const appearance = useAppearanceSettings();
+  useImperativeHandle(ref, () => ({ restoreDefaults: appearance.restoreDefaults }), [appearance.restoreDefaults]);
   const { t: uiT } = useTranslation();
   const percent = Math.round(appearance.opacity * 100);
   const popoverPercent = Math.round(appearance.popoverOpacity * 100);

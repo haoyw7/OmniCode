@@ -164,7 +164,8 @@ function lastMeaningfulBlock(turn: Block[]): Block | undefined {
   for (let index = turn.length - 1; index > 0; index -= 1) {
     const block = turn[index];
     if (block.role === "user") return undefined;
-    if (block.role === "system" && !block.notice && !block.question) continue;
+    if (block.role === "system" && (!block.notice || block.notice === "warning") && !block.question)
+      continue;
     if (block.role === "reasoning" && !block.text.trim() && !block.streaming) continue;
     return block;
   }

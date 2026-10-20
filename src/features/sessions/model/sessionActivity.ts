@@ -73,7 +73,8 @@ export function sessionNotificationPreview(
   const reply = blocks.find(
     (block) =>
       !block.internal &&
-      (block.role === "assistant" || block.role === "plan" || !!block.notice) &&
+      (block.role === "assistant" || block.role === "plan" ||
+        block.notice === "error" || block.notice === "interrupt") &&
       !!block.text.trim(),
   );
   const approval = blocks.find(

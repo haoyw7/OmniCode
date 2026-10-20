@@ -10,6 +10,7 @@ import { extractToolPreview, titleFromToolInput } from "../../core/preview";
 import { streamTextDelta } from "../../core/streamText";
 import { decodeGeneratedPng } from "../../core/generatedImage";
 import type { HarnessEvent } from "../../core/types";
+import { translate } from "../../../../shared/i18n/language";
 
 /** Images Pi RPC accepts on `prompt` / `steer`. */
 export const SUPPORTED_PI_IMAGE_MIME_TYPES = new Set([
@@ -68,6 +69,7 @@ export type PiExtensionUiRequest = (
         "notify" | "setStatus" | "setWidget" | "setTitle" | "set_editor_text";
       title?: string;
       statusKey?: string;
+      notifyType?: "info" | "warning" | "error";
     }) & { timeout?: number };
 
 export type PiRpcResponse = {
@@ -325,6 +327,9 @@ export function parseExtensionUiRequest(
         stringField(rec, "title") ??
         stringField(rec, "text"),
       ...(statusKey ? { statusKey } : {}),
+      ...(method === "notify" &&
+        (rec.notifyType === "info" || rec.notifyType === "warning" || rec.notifyType === "error")
+        ? { notifyType: rec.notifyType } : {}),
     };
   }
   return null;
@@ -629,14 +634,19 @@ export function agentEndWillRetry(
 export function statusFromPiEvent(rec: Record<string, unknown>): string | null {
   const type = stringField(rec, "type");
   if (type === "compaction_start") return "Compacting context…";
-  if (type === "auto_retry_start") {
+  if (type === "auto_retry_start" || type === "summarization_retry_scheduled") {
     const attempt = numberField(rec, "attempt");
     const max = numberField(rec, "maxAttempts");
-    if (attempt && max) return `Retrying (${attempt}/${max})…`;
-    return "Retrying…";
+    const label = attempt && max
+      ? translate("Retrying ({attempt}/{max})…", { attempt, max })
+      : translate("Retrying…");
+    const error = stringField(rec, "errorMessage");
+    return error ? `${label}\n${error}` : label;
   }
+  if (type === "compaction_end" && rec.aborted !== true)
+    return stringField(rec, "errorMessage") ?? null;
   if (type === "extension_error") {
-    return stringField(rec, "error") ?? "Pi extension error";
+    return stringField(rec, "error") ?? translate("Extension error");
   }
   return null;
 }

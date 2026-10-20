@@ -5,11 +5,11 @@ import { useMotionPreference } from "../../../shared/motion/useMotionPreference"
 import { SurfaceAppearance } from "../../../shared/ui/SurfaceAppearance";
 import { windowDragRegion } from "../../../app/shell/startWindowDrag";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { ConnectionsPage } from "../../connections/ui/ConnectionsPage";
 import {
   RotateCcw,
 } from "../../../shared/ui/icons";
 import {
+  startTransition,
   useCallback,
   useEffect,
   useId,
@@ -19,12 +19,8 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { Popover } from "../../../shared/ui/Popover";
-import { NativeSessionsPanel } from "./NativeSessionsPanel";
-import { McpSettings } from "./McpSettings";
 import { SettingsNav } from "../../../app/shell/SettingsRail";
 import { SettingsSearchInput } from "../../workflows/kit/settings/SettingsSearchInput";
-import {
-} from "../../workflows/kit/settings/SettingsPageParts";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import {
   type RecentProject,
@@ -37,23 +33,52 @@ import {
   type SettingsSearchResult,
   type SettingsSectionId,
 } from "../model/settings";
-import { SkillsPage } from "../../skills/ui/SkillsPage";
-import { WorktreesPage } from "../../source-control/ui/WorktreesPage";
 import {
   removeWorktree,
   type RemoveWorktree,
 } from "../../source-control/model/worktrees";
 import type { Session } from "../../sessions/model/session";
 import { scrollWithin } from "../../../shared/lib/scrollWithin";
-import { useAppearanceSettings } from "./pages/appearance/useAppearanceSettings";
+import { lazySurface } from "../../../shared/ui/lazySurface";
+import type { AppearancePageHandle } from "./pages/appearance/AppearancePage";
 import { PageHeader, RevealedSetting, settingDomId, SettingsPage } from "./settingsLayout";
-import { GeneralPage } from "./pages/GeneralPage";
-import { AppearancePage } from "./pages/appearance/AppearancePage";
-import { ChatPage } from "./pages/ChatPage";
-import { KeybindingsPage } from "./pages/KeybindingsPage";
-import { ProvidersPage } from "./pages/providers/ProvidersPage";
-import { InboxPage } from "./pages/InboxPage";
-import { ArchivePage } from "./pages/ArchivePage";
+
+// Use the workspace's boundary so navigation retains the current page while
+// the destination loads. Importing the settings shell never loads every page.
+const pageOptions = { suspense: false };
+const settingsPages = {
+  general: lazySurface(async () => ({ default: (await import("./pages/GeneralPage")).GeneralPage }), pageOptions),
+  connections: lazySurface(async () => ({ default: (await import("../../connections/ui/ConnectionsPage")).ConnectionsPage }), pageOptions),
+  appearance: lazySurface(async () => ({ default: (await import("./pages/appearance/AppearancePage")).AppearancePage }), pageOptions),
+  chat: lazySurface(async () => ({ default: (await import("./pages/ChatPage")).ChatPage }), pageOptions),
+  keybindings: lazySurface(async () => ({ default: (await import("./pages/KeybindingsPage")).KeybindingsPage }), pageOptions),
+  import: lazySurface(async () => ({ default: (await import("./NativeSessionsPanel")).NativeSessionsPanel }), pageOptions),
+  mcp: lazySurface(async () => ({ default: (await import("./McpSettings")).McpSettings }), pageOptions),
+  providers: lazySurface(async () => ({ default: (await import("./pages/providers/ProvidersPage")).ProvidersPage }), pageOptions),
+  skills: lazySurface(async () => ({ default: (await import("../../skills/ui/SkillsPage")).SkillsPage }), pageOptions),
+  worktrees: lazySurface(async () => ({ default: (await import("../../source-control/ui/WorktreesPage")).WorktreesPage }), pageOptions),
+  inbox: lazySurface(async () => ({ default: (await import("./pages/InboxPage")).InboxPage }), pageOptions),
+  archive: lazySurface(async () => ({ default: (await import("./pages/ArchivePage")).ArchivePage }), pageOptions),
+} satisfies Record<SettingsSectionId, { preload: () => Promise<unknown> }>;
+
+export function preloadSettingsSection(section: SettingsSectionId) {
+  return settingsPages[section].preload();
+}
+
+const {
+  general: GeneralPage,
+  connections: ConnectionsPage,
+  appearance: AppearancePage,
+  chat: ChatPage,
+  keybindings: KeybindingsPage,
+  import: NativeSessionsPanel,
+  mcp: McpSettings,
+  providers: ProvidersPage,
+  skills: SkillsPage,
+  worktrees: WorktreesPage,
+  inbox: InboxPage,
+  archive: ArchivePage,
+} = settingsPages;
 
 /**
  * The `data-setting-id` Settings should reveal when it opens: one of the ids in
@@ -122,19 +147,33 @@ export function SettingsView({
   if (pageVisit.current.section !== section) pageVisit.current = { section, generation: pageVisit.current.generation + 1 };
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-  const appearance = useAppearanceSettings();
+  const appearance = useRef<AppearancePageHandle>(null);
+  const setAppearanceHandle = useCallback((handle: AppearancePageHandle | null) => {
+    if (!handle) return;
+    appearance.current = handle;
+    return () => {
+      // An exiting page must not clear the replacement page's toolbar action.
+      if (appearance.current === handle) appearance.current = null;
+    };
+  }, []);
 
-  useEffect(() => setSection(requestedSection), [requestedSection]);
+  useEffect(() => {
+    startTransition(() => setSection(requestedSection));
+  }, [requestedSection]);
 
   const selectSection = useCallback(
     (next: SettingsSectionId) => {
-      setSection(next);
-      onSelectSection?.(next);
+      startTransition(() => {
+        setSection(next);
+        onSelectSection?.(next);
+      });
     },
     [onSelectSection],
   );
 
-  useEffect(() => setRevealed(anchor), [anchor, notificationSettingsRequest]);
+  useEffect(() => {
+    startTransition(() => setRevealed(anchor));
+  }, [anchor, notificationSettingsRequest]);
 
   // Section is a dependency so a search result on another page scrolls once
   // that page has mounted the row.
@@ -158,8 +197,10 @@ export function SettingsView({
 
   const onReveal = useCallback(
     (next: SettingsSectionId, settingId: string | null) => {
-      if (next !== section) selectSection(next);
-      setRevealed(settingId);
+      startTransition(() => {
+        if (next !== section) selectSection(next);
+        setRevealed(settingId);
+      });
     },
     [selectSection, section],
   );
@@ -202,7 +243,7 @@ export function SettingsView({
           {section === "appearance" ? (
             <button
               type="button"
-              onClick={appearance.restoreDefaults}
+              onClick={() => appearance.current?.restoreDefaults()}
               className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[12px] text-content/50 hover:bg-content/6 hover:text-content"
             >
               <RotateCcw className="size-3.5" />
@@ -250,7 +291,7 @@ export function SettingsView({
                     <ConnectionsPage revealed={revealed} />
                   ) : null}
                   {section === "appearance" ? (
-                    <AppearancePage appearance={appearance} />
+                    <AppearancePage ref={setAppearanceHandle} />
                   ) : null}
                   {section === "chat" ? <ChatPage /> : null}
                   {section === "keybindings" ? <KeybindingsPage /> : null}

@@ -962,8 +962,11 @@ function sanitizeBlock(
   if (block.role === "system") {
     const interjection = sanitizeInterjection(block.interjection);
     if (interjection) next.interjection = interjection;
-    if (block.notice === "error" || block.notice === "interrupt") {
+    if (block.notice === "error" || block.notice === "interrupt" || block.notice === "warning") {
       next.notice = block.notice;
+    }
+    if (typeof block.statusKey === "string" && block.statusKey.trim()) {
+      next.statusKey = block.statusKey;
     }
   }
   return next;

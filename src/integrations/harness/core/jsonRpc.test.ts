@@ -44,6 +44,20 @@ describe("JsonRpcClient", () => {
     await expect(client.request("initialize")).rejects.toThrow("pipe closed");
   });
 
+  it.each([
+    ["tls handshake eof", "Request failed\ntls handshake eof"],
+    [{ message: "Connection interrupted", details: "tls handshake eof", token: "not-for-display" }, "Request failed\nConnection interrupted\ntls handshake eof"],
+    [{ message: "Request failed", details: "Request failed" }, "Request failed"],
+    [null, "Request failed"],
+  ])("preserves readable RPC error details: %j", async (data, expected) => {
+    let client!: JsonRpcClient;
+    transport.onWrite = async (_id, line) => {
+      client.pushLine(JSON.stringify({ id: JSON.parse(line).id, error: { code: -32603, message: "Request failed", data } }));
+    };
+    client = new JsonRpcClient("error-details", {});
+    await expect(client.request("session/prompt")).rejects.toThrow(expected as string);
+  });
+
   it("bounds a blocked write instead of outliving the request deadline", async () => {
     vi.useFakeTimers();
     try {

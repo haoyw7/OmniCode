@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { act, createElement, startTransition, Suspense, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { flushSync } from "react-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { lazySurface } from "./lazySurface";
 
@@ -146,4 +147,35 @@ it("retries a failed warmup when the page is opened", async () => {
   await act(async () => root.render(createElement(Surface)));
   expect(load).toHaveBeenCalledTimes(2);
   expect(container.textContent).toBe("Inbox content");
+});
+
+it("renders a preloaded surface immediately without mounting a loading fallback", async () => {
+  const inbox = deferredSurface("Inbox content");
+  const fallback = vi.fn(() => createElement("span", null, "Loading"));
+  const pending = inbox.Surface.preload();
+  inbox.finish();
+  await pending;
+  act(() => {
+    flushSync(() => root.render(createElement(Suspense, {
+      fallback: createElement(fallback),
+    }, createElement(inbox.Surface))));
+    expect(container.textContent).toBe("Inbox content");
+  });
+  expect(fallback).not.toHaveBeenCalled();
+});
+
+it("preserves child state across rerenders after an initially suspended load", async () => {
+  function Counter({ label }: { label: string }) {
+    const [count, setCount] = useState(0);
+    return createElement("button", { onClick: () => setCount(count + 1) }, `${label}: ${count}`);
+  }
+  let resolve!: (module: { default: typeof Counter }) => void;
+  const pending = new Promise<{ default: typeof Counter }>((ready) => { resolve = ready; });
+  const Surface = lazySurface(() => pending);
+  await act(async () => root.render(createElement(Surface, { label: "Initial" })));
+  await act(async () => resolve({ default: Counter }));
+  await act(async () => container.querySelector("button")!.click());
+  expect(container.textContent).toBe("Initial: 1");
+  await act(async () => root.render(createElement(Surface, { label: "Updated" })));
+  expect(container.textContent).toBe("Updated: 1");
 });

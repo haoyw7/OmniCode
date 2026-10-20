@@ -742,11 +742,37 @@ describe("mapCodexNotification", () => {
   it.each([
     { error: { message: "Reconnecting... 1/5" }, willRetry: true },
     { message: "Temporary service interruption", willRetry: true },
-  ])("keeps retry notifications diagnostic-only: %j", (params) => {
+  ])("surfaces retries as non-terminal keyed warnings: %j", (params) => {
     expect(mapCodexNotification("error", params)).toEqual({
-      events: [],
-      diagnostic: params.error?.message ?? params.message,
+      events: [{
+        type: "status",
+        key: "codex-retry",
+        text: params.error?.message ?? params.message,
+        notice: "warning",
+      }],
     });
+  });
+
+  it.each([true, false])("preserves the connection error details with willRetry=%s", (willRetry) => {
+    const message = "Reconnecting... 5/5";
+    const additionalDetails = "stream disconnected before completion: tls handshake eof";
+    const mapped = mapCodexNotification("error", {
+      error: { message, additionalDetails },
+      willRetry,
+    });
+    const text = `${message}\n${additionalDetails}`;
+    expect(mapped.events).toEqual([
+      willRetry
+        ? { type: "status", key: "codex-retry", text, notice: "warning" }
+        : { type: "session.error", message: text },
+    ]);
+    expect(mapped.turnCompleted).toBeUndefined();
+  });
+
+  it("does not repeat error details already included in the provider message", () => {
+    expect(mapCodexNotification("error", {
+      error: { message: "Connection failed: tls handshake eof", additionalDetails: "tls handshake eof" },
+    }).events).toEqual([{ type: "session.error", message: "Connection failed: tls handshake eof" }]);
   });
 
   it.each([false, undefined, "true"])(
@@ -770,11 +796,10 @@ describe("mapCodexNotification", () => {
     "Falling back from WebSockets to HTTPS transport. unexpected status 404 Not Found",
     "Falling back from WebSockets to HTTPS transport: connection closed",
   ])(
-    "keeps the known runtime fallback warning diagnostic-only: %s",
+    "surfaces transport fallback warnings: %s",
     (message) => {
       expect(mapCodexNotification("warning", { message })).toEqual({
-        events: [],
-        diagnostic: message,
+        events: [{ type: "status", text: message, notice: "warning" }],
       });
     },
   );
@@ -786,7 +811,7 @@ describe("mapCodexNotification", () => {
     "An unrelated runtime warning",
   ])("preserves other runtime warnings: %s", (message) => {
     expect(mapCodexNotification("warning", { message })).toEqual({
-      events: [{ type: "status", text: message }],
+      events: [{ type: "status", text: message, notice: "warning" }],
     });
   });
 
@@ -796,9 +821,20 @@ describe("mapCodexNotification", () => {
       const message = "Falling back from WebSockets to HTTPS transport.";
       expect(
         mapCodexNotification("configWarning", { [field]: message }),
-      ).toEqual({ events: [{ type: "status", text: message }] });
+      ).toEqual({ events: [{ type: "status", text: message, notice: "warning" }] });
     },
   );
+
+  it("preserves configuration warning details alongside the summary", () => {
+    expect(mapCodexNotification("configWarning", {
+      summary: "Invalid configuration",
+      details: "Unknown option in config.toml",
+    }).events).toEqual([{
+      type: "status",
+      text: "Invalid configuration\nUnknown option in config.toml",
+      notice: "warning",
+    }]);
+  });
 
   it("maps failed turns to session.error", () => {
     const mapped = mapCodexNotification("turn/completed", {
@@ -812,6 +848,24 @@ describe("mapCodexNotification", () => {
     expect(mapped.events).toContainEqual({
       type: "session.error",
       message: "quota exceeded",
+    });
+  });
+
+  it("preserves details when the failure arrives only in turn/completed", () => {
+    const mapped = mapCodexNotification("turn/completed", {
+      turn: {
+        id: "turn_1",
+        status: "failed",
+        error: { message: "Request failed", additionalDetails: "tls handshake eof" },
+      },
+    });
+    expect(mapped.events).toContainEqual({
+      type: "session.error",
+      message: "Request failed\ntls handshake eof",
+    });
+    expect(mapped.turnCompleted).toEqual({
+      status: "failed",
+      error: "Request failed\ntls handshake eof",
     });
   });
 

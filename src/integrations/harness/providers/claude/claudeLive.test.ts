@@ -119,6 +119,29 @@ async function startTurn(
   return { events, turn };
 }
 
+it("shows repeated API retries without settling the turn, then surfaces a network failure", async () => {
+  const { events, turn } = await startTurn("claude-live");
+  const settled = vi.fn();
+  void turn.then(settled);
+  for (const attempt of [1, 2]) emit({
+    type: "system", subtype: "api_retry", session_id: "sess_1",
+    attempt, max_retries: 5, error: "server_error", error_status: 503,
+  });
+  await Promise.resolve();
+  expect(settled).not.toHaveBeenCalled();
+  const session = events.reduce(applyHarnessEvent, newSession("claude", "/repo"));
+  expect(session.blocks.filter(block => block.notice === "warning")).toMatchObject([{
+    statusKey: "claude-retry", text: "Retrying (2/5)…\nserver_error\nHTTP 503",
+  }]);
+  expect(events.some(event => event.type === "session.error")).toBe(false);
+  emit({
+    type: "result", subtype: "error_during_execution", is_error: true,
+    errors: ["Connection interrupted", "tls handshake eof"],
+  });
+  await turn;
+  expect(events).toContainEqual({ type: "session.error", message: "Connection interrupted\ntls handshake eof" });
+});
+
 /** What Claude streams when a finished task wakes it for another turn. */
 function emitFollowUpTurn(text: string) {
   emit({ type: "system", subtype: "init", session_id: "sess_1" });

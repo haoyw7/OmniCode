@@ -88,6 +88,21 @@ describe("grok live turn sequence", () => {
     sent.length = 0;
   });
 
+  it("surfaces an ACP refusal instead of reporting normal completion", async () => {
+    const events: HarnessEvent[] = [];
+    const turn = sendGrokTurn({
+      sessionId: "grok-refusal", cwd: "/repo", model: "grok:grok-4.6",
+      runtimeMode: "supervised", text: "Hello", onEvent: event => events.push(event),
+    });
+    const rejected = expect(turn).rejects.toThrow("refused to continue");
+    await handshake();
+    await waitFor(() => parse().some(m => m.method === "session/prompt"), "prompt");
+    reply(parse().find(m => m.method === "session/prompt").id, { stopReason: "refusal" });
+    await rejected;
+    expect(events).toContainEqual({ type: "session.error", message: expect.stringContaining("refused to continue") });
+    await stopGrokSession("grok-refusal");
+  });
+
   it("estimates TPS from streamed output without request or completion waits", async () => {
     const events: HarnessEvent[] = [];
     const turn = sendGrokTurn({ sessionId: "rate-test", cwd: "/repo", model: "grok:grok-4.6", runtimeMode: "supervised", text: "Hello", onEvent: e => events.push(e) });

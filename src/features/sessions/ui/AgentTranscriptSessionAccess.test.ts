@@ -50,6 +50,27 @@ function render(harness: HarnessId, message: string, notice?: Block["notice"]) {
   return blocks;
 }
 
+it.each([true, false])("keeps retry warnings and terminal errors visible outside folded work, busy=%s", (busy) => {
+  setUiLanguage("zh-CN");
+  const detail = "Reconnecting... 5/5\nstream disconnected before completion: tls handshake eof";
+  const blocks: Block[] = [
+    { id: "user", role: "user", text: "Continue" },
+    { id: "tool", role: "tool", text: "Read", tool: { kind: "read", status: "completed" } },
+    { id: "retry", role: "system", notice: "warning", statusKey: "codex-retry", text: detail },
+    { id: "error", role: "system", notice: "error", text: "Response stream disconnected" },
+  ];
+  act(() => root.render(createElement(AgentTranscript, { harness: "codex", blocks, busy })));
+  const warning = container.querySelector('[data-transcript-notice="warning"]');
+  expect(warning?.getAttribute("role")).toBe("status");
+  expect(warning?.textContent).toContain("警告");
+  expect(warning?.querySelector("pre")?.textContent).toBe(detail);
+  expect(warning?.closest('[inert], [aria-hidden="true"], [data-open="false"]')).toBeNull();
+  const error = container.querySelector('[data-transcript-notice="error"]');
+  expect(error?.getAttribute("role")).toBe("alert");
+  expect(error?.textContent).toContain("错误");
+  expect(error?.closest('[inert], [aria-hidden="true"], [data-open="false"]')).toBeNull();
+});
+
 it.each<[HarnessId, string]>([
   ["codex", "thread fixture already has an active writer"],
   [
