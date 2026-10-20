@@ -89,6 +89,8 @@ html[data-skin] {
   --desktop-icon-sm: 28px;
   --desktop-icon-md: var(--desktop-control-md);
   --desktop-icon-lg: var(--desktop-control-xl);
+  --desktop-provider-cli-action-size: 24px;
+  --desktop-provider-cli-icon-size: 14px;
   --desktop-radius-field: 8px;
   --desktop-radius-card: 10px;
   --desktop-radius-dialog: 16px;

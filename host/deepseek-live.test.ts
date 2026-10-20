@@ -81,12 +81,17 @@ describe.skipIf(!binary)("DeepSeek real runtime bridge", () => {
     const fixture = join(profile, "fixture.mjs");
     await writeFile(
       fixture,
-      await readFile(
+      // Keep a provider activation pending after the bridge claims stdio. The first
+      // initialize must wait for Loader rather than publishing a partial catalog.
+      (await readFile(
         new URL(
           "../src/integrations/harness/providers/deepseek/bridge/fixture.test.mjs",
           import.meta.url,
         ),
         "utf8",
+      )).replace(
+        "export function apply(ctx) {",
+        "export async function apply(ctx) {\nawait new Promise((resolve) => globalThis.setTimeout(resolve, 1500));",
       ),
     );
     const patchPath = join(profile, "fixture.patch.yml");

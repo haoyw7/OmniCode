@@ -469,7 +469,10 @@ fn rename_branch(root: &Path, path: &Path, branch: &str) -> Result<Worktree, Str
         return Err("The main working copy cannot be renamed here".into());
     }
     let current = tree.branch.as_deref().ok_or("The worktree is detached")?;
-    if !current.starts_with("mc/") && !current.starts_with("omnicode/") {
+    if !current.starts_with("oc/")
+        && !current.starts_with("mc/")
+        && !current.starts_with("omnicode/")
+    {
         return Err("Only automatically created worktree branches can be renamed".into());
     }
     if current == branch {
@@ -812,7 +815,7 @@ pub fn git_orchestration_worktree_remove(
     let conn = store.lock_conn()?;
     let removed = remove_with_sessions(&conn, &root, &path, true, true)?;
     if let Some(branch) = branch {
-        if branch.starts_with("mc/orch-") {
+        if branch.starts_with("oc/orch-") || branch.starts_with("mc/orch-") {
             if let Err(error) = git(Path::new(&removed.project_cwd), &["branch", "-D", &branch]) {
                 eprintln!("Orchestration worktree removed; temporary branch cleanup will need a retry: {error}");
             }
@@ -827,7 +830,7 @@ pub async fn git_orchestration_branch_remove(cwd: String, branch: String) -> Res
         let root = expand_home(&cwd);
         let _write = crate::local_host::claim_checkout_write(&root)?;
         let branch = branch.trim();
-        if !branch.starts_with("mc/orch-") {
+        if !branch.starts_with("oc/orch-") && !branch.starts_with("mc/orch-") {
             return Err("Only orchestration temporary branches can be removed here".into());
         }
         git(&root, &["check-ref-format", "--branch", branch])?;
@@ -979,7 +982,7 @@ mod tests {
         std::fs::write(root.join("untracked.txt"), "lead new\n").unwrap();
         std::fs::remove_file(root.join("deleted.txt")).unwrap();
 
-        let tree = create_seeded(&root, "mc/orch-testworker").unwrap();
+        let tree = create_seeded(&root, "oc/orch-testworker").unwrap();
         let worker = Path::new(&tree.path);
         assert_eq!(
             std::fs::read_to_string(worker.join("tracked.txt")).unwrap(),
@@ -991,12 +994,12 @@ mod tests {
         );
         assert!(!worker.join("deleted.txt").exists());
         assert_eq!(
-            create_seeded(&root, "mc/orch-testworker").unwrap().path,
+            create_seeded(&root, "oc/orch-testworker").unwrap().path,
             tree.path
         );
 
         std::fs::write(root.join("tracked.txt"), "later lead edit\n").unwrap();
-        assert!(create_seeded(&root, "mc/orch-testworker").is_err());
+        assert!(create_seeded(&root, "oc/orch-testworker").is_err());
         assert_eq!(
             std::fs::read_to_string(worker.join("tracked.txt")).unwrap(),
             "lead dirty\n"
@@ -1023,18 +1026,21 @@ mod tests {
     fn renames_only_temporary_worktree_branches() {
         let repo = repo();
         let root = repo.0.join("repo");
-        let tree = create(&root, "mc/12345678", "main", false).unwrap();
-        let renamed = rename_branch(&root, Path::new(&tree.path), "mc/faster-worktrees").unwrap();
-        assert_eq!(renamed.branch.as_deref(), Some("mc/faster-worktrees"));
+        let tree = create(&root, "oc/12345678", "main", false).unwrap();
+        let renamed = rename_branch(&root, Path::new(&tree.path), "oc/faster-worktrees").unwrap();
+        assert_eq!(renamed.branch.as_deref(), Some("oc/faster-worktrees"));
         assert!(git(
             &root,
-            &["rev-parse", "--verify", "refs/heads/mc/faster-worktrees"]
+            &["rev-parse", "--verify", "refs/heads/oc/faster-worktrees"]
         )
         .is_ok());
-        assert!(rename_branch(&root, &root, "mc/nope").is_err());
+        assert!(rename_branch(&root, &root, "oc/nope").is_err());
+
+        let legacy = create(&root, "mc/12345678", "main", false).unwrap();
+        assert!(rename_branch(&root, Path::new(&legacy.path), "oc/legacy-worktree").is_ok());
 
         let regular = create(&root, "feature/manual", "main", false).unwrap();
-        assert!(rename_branch(&root, Path::new(&regular.path), "mc/should-not-change").is_err());
+        assert!(rename_branch(&root, Path::new(&regular.path), "oc/should-not-change").is_err());
     }
 
     #[test]

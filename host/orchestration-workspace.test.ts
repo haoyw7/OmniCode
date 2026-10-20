@@ -499,12 +499,29 @@ it("serializes duplicate preparation and safely repairs a partially seeded check
   ).toBe("dirty seed\n");
 });
 
+it("resumes and cleans up an existing worker with the legacy prefix", async () => {
+  const f = fixture();
+  const worker = await f.prepare();
+  const manifest = JSON.parse(readFileSync(f.manifest, "utf8"));
+  const legacyBranch = manifest.branch.replace(/^oc\//, "mc/");
+  f.git("branch", "-m", manifest.branch, legacyBranch);
+  manifest.branch = legacyBranch;
+  writeFileSync(f.manifest, JSON.stringify(manifest));
+  const resumed = await f.workspace.createWorker(f.run, f.task);
+  expect(resumed.workspace.checkoutCwd).toBe(worker);
+  expect(resumed.workspace.branch).toBe(legacyBranch);
+  f.workspace.releasePreparation(f.task.sessionId);
+  expect(await f.workspace.captureWorker(f.run, f.task)).toEqual({ files: [] });
+  expect(await f.workspace.cleanupWorker(f.run, f.task, true)).toBe(true);
+  expect(f.git("branch", "--list", legacyBranch)).toBe("");
+});
+
 it("refuses to adopt an existing temporary branch", async () => {
   const f = fixture();
-  f.git("branch", "mc/orch-task12345678");
+  f.git("branch", "oc/orch-task12345678");
   await expect(f.prepare()).rejects.toThrow("already exists");
-  expect(f.git("branch", "--list", "mc/orch-task12345678")).toContain(
-    "mc/orch-task12345678",
+  expect(f.git("branch", "--list", "oc/orch-task12345678")).toContain(
+    "oc/orch-task12345678",
   );
 });
 

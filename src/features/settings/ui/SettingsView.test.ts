@@ -1120,7 +1120,8 @@ describe("settings pages", () => {
     });
     await render("providers");
     const download = () => container.querySelector<HTMLButtonElement>('[aria-label="Download and install Codex"]')!;
-    expect(download().textContent).toContain("One-click download");
+    expect(download().textContent).toBe("");
+    expect(download().title).toBe("Download and install this CLI on this computer");
     expect(container.querySelector('[aria-label="Download and install Claude Code"]')).toBeNull();
     await act(async () => download().click());
     expect(download().disabled).toBe(true);
@@ -1131,7 +1132,7 @@ describe("settings pages", () => {
     expect(download().disabled).toBe(true);
     await act(async () => fail(new Error("Download interrupted")));
     expect(download().disabled).toBe(false);
-    expect(download().textContent).toContain("Retry download");
+    expect(download().title).toBe("Retry download");
     expect(container.querySelector('[role="alert"]')?.textContent).toContain("Download interrupted");
     await act(async () => download().click());
     expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "harness_install")).toHaveLength(2);

@@ -790,7 +790,7 @@ export class BotThreadRuntime {
       if (
         Object.entries(settings).some(
           ([key, value]) =>
-            !/^[a-zA-Z][a-zA-Z0-9]{0,63}$/.test(key) ||
+            !/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/.test(key) ||
             typeof value !== "string" ||
             value.length > 128,
         )

@@ -292,7 +292,7 @@ export async function renameHostWorktreeBranch(
   branch: string,
   stillOwned: () => boolean = () => true,
 ): Promise<HostWorktree> {
-  if (!/^mc\/[a-z0-9]{8}$/.test(expectedBranch))
+  if (!/^(?:oc|mc)\/[a-z0-9]{8}$/.test(expectedBranch))
     throw new Error("This is not an automatically created worktree branch");
   if (
     !branch ||

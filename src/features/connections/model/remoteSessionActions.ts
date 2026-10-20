@@ -16,6 +16,36 @@ type RemoteActions = {
 
 const actions = new Map<string, RemoteActions>();
 
+type InitialSubmission = {
+  id: string;
+  text: string;
+  attachments: Attachment[];
+  options?: ComposerTurnOptions;
+  startedAt: number;
+};
+const initialSubmissions = new Map<string, InitialSubmission>();
+
+/** Carries the first message across the projectless composer → Host pane mount. */
+export function stageRemoteSessionSubmission(
+  shellId: string,
+  text: string,
+  attachments: Attachment[],
+  options?: ComposerTurnOptions,
+): boolean {
+  if (initialSubmissions.has(shellId)) return false;
+  initialSubmissions.set(shellId, {
+    id: crypto.randomUUID(), text, attachments, options, startedAt: Date.now(),
+  });
+  return true;
+}
+
+export const pendingRemoteSessionSubmission = (shellId: string) =>
+  initialSubmissions.get(shellId);
+
+export function clearRemoteSessionSubmission(shellId: string) {
+  initialSubmissions.delete(shellId);
+}
+
 export function registerRemoteSessionActions(shellId: string, value: RemoteActions) {
   actions.set(shellId, value);
   return () => {

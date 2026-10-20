@@ -2,7 +2,7 @@ import { insertQueuedMessage, moveQueuedMessage } from "../../sessions/model/mes
 import { selectComposerConfiguration } from "../../sessions/model/composerConfiguration";
 import { rememberSharedProviderDefaults, saveProviderAccount, selectProviderAccount } from "../../providers/model/providerAccounts";
 // @vitest-environment happy-dom
-import { act, createElement, type ReactNode } from "react";
+import { act, createElement, useRef, useState, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
@@ -14,6 +14,10 @@ import type { Block, Session } from "../../sessions/model/session";
 import type { QuestionAnswer } from "../../sessions/model/userQuestion";
 import type { AgentModel } from "../../sessions/model/models";
 import { rememberRemoteProject, configureSharedHost } from "../model/remoteProjects";
+import { clearRemoteSessionSubmission, pendingRemoteSessionSubmission, stageRemoteSessionSubmission } from "../model/remoteSessionActions";
+import { useSessionSubmission } from "../../../app/controller/useSessionSubmission";
+import type { Submit } from "../../../app/controller/workspaceTypes";
+import { createEditedResendCoordinator } from "../../sessions/model/editLastTurn";
 import { preloadRemoteSession, RemoteSession } from "./RemoteSession";
 import { rememberRemoteSession, remoteSessionFor } from "../model/connections";
 import "../model/remoteCommands";
@@ -43,6 +47,7 @@ vi.mock("../../sessions/ui/AgentTranscript", () => ({
   AgentTranscript: ({
     blocks,
     busy,
+    animateFrom,
     onSendDraft,
     onRemoveDraft,
     onOpenFile,
@@ -53,6 +58,7 @@ vi.mock("../../sessions/ui/AgentTranscript", () => ({
   }: {
     blocks: Block[];
     busy: boolean;
+    animateFrom?: string;
     onSendDraft?: (block: Block) => void;
     onRemoveDraft?: (block: Block) => void;
     onOpenFile?: (path: string) => void;
@@ -63,7 +69,7 @@ vi.mock("../../sessions/ui/AgentTranscript", () => ({
   }) =>
     createElement(
       "ol",
-      { "aria-label": "Transcript", "data-busy": busy },
+      { "aria-label": "Transcript", "data-busy": busy, "data-animate-from": animateFrom },
       turnAccessory?.(blocks.findLast((block) => block.role === "user"), true),
       createElement("button", { "aria-label": "Open transcript file", onClick: () => onOpenFile?.("src/app.ts") }),
       createElement("button", { "aria-label": "Open transcript diff", onClick: () => onOpenDiff?.("src/app.ts") }),
@@ -342,6 +348,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
   localStorage.clear();
   configureSharedHost(undefined, []);
+  clearRemoteSessionSubmission("shell");
 });
 
 /** A minimal host engine: persists commands the way the real one does. */
@@ -580,6 +587,138 @@ async function send(text: string) {
   await act(async () => byLabel("Send")!.click());
   await settle();
 }
+
+it("delivers a projectless chat's first message after its Host pane mounts", async () => {
+  const cwd = "/home/me/Documents/omnicode/2026-10-19/chat-120000-abcdef";
+  configureSharedHost("env", [], machine.id);
+  let openProject!: () => void;
+  const opening = new Promise<void>(resolve => { openProject = resolve; });
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  vi.mocked(invoke).mockImplementation(async (command, input) => {
+    if (command === "create_path") return cwd;
+    if (command === "remote_request" && (input as { method: string }).method === "projects.open") {
+      await opening;
+      return { id: "new-chat-project", name: "chat", cwd };
+    }
+    return original(command, input);
+  });
+  function Harness() {
+    const [sessions, setSessions] = useState([{ ...shell(), cwd: "~" }]);
+    const [, setProjectCwd] = useState("~");
+    const sessionsRef = useRef(sessions);
+    sessionsRef.current = sessions;
+    const { onSubmit } = useSessionSubmission({
+      sessionData: { isRemoving: () => false },
+      sessionsRef,
+      editedResends: useRef(createEditedResendCoordinator()).current,
+      flushHarnessEvents: () => {},
+      enqueueHarnessEvent: vi.fn(),
+      navigation: { isSwitching: () => false, pinSessionToCurrentWorkspace: () => {} },
+      removingWorktreePaths: useRef(new Set<string>()),
+      setSessions,
+      setProjectCwd,
+      submitAfterProjectSyncRef: useRef<Submit>(() => false),
+      dismissNoticesForContinuedSession: () => {},
+      projectLocationSyncs: useRef(new Map()),
+      applyProjectLocationChange: async () => {},
+      turnGen: useRef(new Map()),
+      titleCoordinator: useRef(null),
+      activeSessionIdRef: useRef("shell"),
+    });
+    return createElement(SessionPane, {
+      session: sessions[0], visible: true, focused: true, inSplit: false,
+      composerFocused: false, recents: [], onFocus: () => {}, onClose: () => {},
+      onSubmit,
+    } as unknown as SessionPaneProps);
+  }
+  await act(async () => root.render(createElement(Harness)));
+  const initialPane = container.querySelector("[data-session-drop]");
+  const initialComposer = container.querySelector("textarea");
+  await send("Keep my first message");
+  expect(commands).toEqual([]);
+  expect(container.querySelector("[data-session-drop]")).toBe(initialPane);
+  expect(container.querySelector("textarea")).toBe(initialComposer);
+  expect(container.textContent).not.toContain("The machine for this project isn’t connected");
+  await send("Keep this next message as a draft");
+  expect(container.querySelector("textarea")?.value).toBe("Keep this next message as a draft");
+  expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "create_path")).toHaveLength(1);
+  await act(async () => openProject());
+  await settle();
+  expect(commands.filter(command => command.type === "create")).toHaveLength(1);
+  expect(commands.filter(command => command.type === "send")).toEqual([
+    expect.objectContaining({ text: "Keep my first message" }),
+  ]);
+  expect(container.textContent).toContain("Keep my first message");
+  expect(container.textContent).toContain("Done");
+  expect(container.querySelector("textarea")?.value).toBe("Keep this next message as a draft");
+  expect(pendingRemoteSessionSubmission("shell")).toBeUndefined();
+  const firstCommand = commands.find(command => command.type === "send")!;
+  expect(container.querySelector('[aria-label="Transcript"]')?.getAttribute("data-animate-from")).toBe(firstCommand.commandId);
+  await render({ ...shell(), cwd });
+  expect(container.querySelector('[aria-label="Transcript"]')?.getAttribute("data-animate-from")).toBeNull();
+});
+
+it("keeps the staged first message visible until Host metadata is ready, then sends its files and intent once", async () => {
+  projectKey = rememberRemoteProject("env", {
+    id: "staged-project", name: "staged chat", cwd: "/home/me/staged-chat",
+  }).key;
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  let describe!: () => void;
+  let listModels!: () => void;
+  const describing = new Promise<void>(resolve => { describe = resolve; });
+  const listing = new Promise<void>(resolve => { listModels = resolve; });
+  vi.mocked(invoke).mockImplementation(async (command, input) => {
+    if (command === "remote_request") {
+      const method = (input as { method: string }).method;
+      if (method === "environment.describe") await describing;
+      if (method === "models.list") await listing;
+    }
+    return original(command, input);
+  });
+  const file = { id: "file", name: "notes.txt", mimeType: "text/plain", kind: "file" as const, size: 3, data: "YWJj" };
+  expect(stageRemoteSessionSubmission("shell", "Plan the first message", [file], { intent: "plan" })).toBe(true);
+  const initial = pendingRemoteSessionSubmission("shell")!;
+  await render();
+  expect(container.textContent).toContain("Plan the first message");
+  const initialMessage = container.querySelector(`[data-block-id="${initial.id}"]`);
+  expect(initialMessage).not.toBeNull();
+  expect(container.querySelector('[aria-label="Transcript"]')?.getAttribute("data-animate-from")).toBe(initial.id);
+  expect(commands).toEqual([]);
+  await act(async () => describe());
+  await settle();
+  expect(commands).toEqual([]);
+  expect(container.textContent).toContain("Plan the first message");
+  await act(async () => listModels());
+  await settle();
+  expect(commands.filter(command => command.type === "send")).toEqual([
+    expect.objectContaining({ commandId: initial.id, text: "Plan the first message", intent: "plan", attachments: [expect.objectContaining({ name: "notes.txt" })] }),
+  ]);
+  expect(container.querySelector(`[data-block-id="${initial.id}"]`)).toBe(initialMessage);
+  expect(commands.find(command => command.type === "create")).toMatchObject({ harness: "codex", model: gpt.id });
+  await render();
+  expect(commands.filter(command => command.type === "send")).toHaveLength(1);
+});
+
+it("retains the first message when model loading fails and sends it after retry", async () => {
+  projectKey = rememberRemoteProject("env", {
+    id: "retry-first-project", name: "retry chat", cwd: "/home/me/retry-first-chat",
+  }).key;
+  catalog = new Error("Model catalog is offline");
+  stageRemoteSessionSubmission("shell", "Keep this through initialization failure", []);
+  await render();
+  expect(commands).toEqual([]);
+  expect(container.textContent).toContain("Keep this through initialization failure");
+  expect(container.textContent).toContain("Model catalog is offline");
+  catalog = { models: { codex: [gpt] }, errors: {} };
+  await act(async () => {
+    [...container.querySelectorAll("button")].find(button => button.textContent === "Retry")!.click();
+  });
+  await settle();
+  expect(commands.filter(command => command.type === "send")).toEqual([
+    expect.objectContaining({ text: "Keep this through initialization failure" }),
+  ]);
+  expect(container.textContent).toContain("Done");
+});
 
 function proposalSession(): HostSession {
   return {

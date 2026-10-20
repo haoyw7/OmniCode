@@ -135,7 +135,7 @@ function modelSettings(value: unknown): Record<string, string> {
     entries.length > 20 ||
     entries.some(
       ([key, setting]) =>
-        !/^[a-zA-Z][a-zA-Z0-9]{0,63}$/.test(key) ||
+        !/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/.test(key) ||
         typeof setting !== "string" ||
         setting.length > 128 ||
         setting.includes("\0"),
@@ -177,7 +177,7 @@ export function parseCommand(input: unknown): HostCommand {
       v.autoWorktreeBranch !== undefined &&
       (v.executionCwd === undefined ||
         typeof v.autoWorktreeBranch !== "string" ||
-        !/^mc\/[a-z0-9]{8}$/.test(v.autoWorktreeBranch))
+        !/^(?:oc|mc)\/[a-z0-9]{8}$/.test(v.autoWorktreeBranch))
     )
       throw new Error("Invalid automatically created worktree branch");
     if (
@@ -2271,7 +2271,7 @@ export class HostEngine {
         // A native session's CLI must not stay alive after the turn: the desktop
         // and the user's own CLI would see it as an owner.
         const nativeTurn = !!this.store.sessionIfExists(session.id)?.session.nativeSession;
-        if (error || active.failed || active.cancelled || this.closing || active.persistenceFailed || !!managedRun || !!botContext || !provider.readSessionTitle || nativeTurn) {
+        if (error || active.failed || active.cancelled || this.closing || active.persistenceFailed || !!managedRun || !!botContext || (!provider.readSessionTitle && !provider.keepAlive) || nativeTurn) {
           await provider.stop(session.id);
           this.checkoutReleases.get(session.id)?.(); this.checkoutReleases.delete(session.id);
         }
@@ -2286,7 +2286,7 @@ export class HostEngine {
             stops.add(session.harness as RemoteProvider);
             this.providerStops.set(session.id, stops);
             void this.cleanPreviousProviders(session.id).catch(() => undefined);
-          }, 5 * 60_000);
+          }, provider.idleTimeoutMs ?? 5 * 60_000);
           timer.unref?.();
           this.parked.set(session.id, { harness: session.harness, timer });
         }

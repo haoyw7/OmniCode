@@ -40,6 +40,10 @@ import { respondQuestion as respondPiQuestion } from "../src/integrations/harnes
 export interface HostProvider {
   botCapabilities?: HarnessBotCapabilities;
   commands?: NativeCommandProvider;
+  /** Retain a reusable process between ordinary turns even without a title reader. */
+  keepAlive?: boolean;
+  /** Override the default five-minute idle process lifetime. */
+  idleTimeoutMs?: number;
   readSessionTitle?(input: NativeTitleInput): Promise<string | null>;
   send(input: SendTurnInput): Promise<void>;
   compact?(input: CompactContextInput): Promise<void>;
@@ -62,6 +66,8 @@ export interface HostProvider {
 export const hostProviders: Record<RemoteProvider, HostProvider> = {
   deepseek: {
     botCapabilities: providerBotCapabilities("deepseek"),
+    keepAlive: true,
+    idleTimeoutMs: 30 * 60_000,
     send: deepseek.sendDeepseekTurn, steer: deepseek.steerDeepseekTurn,
     cancel: deepseek.cancelDeepseekTurn, stop: deepseek.forgetDeepseekSession,
     bind: deepseek.bindDeepseekSession, approve: deepseek.respondDeepseekApproval,

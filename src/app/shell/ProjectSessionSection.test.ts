@@ -3139,5 +3139,12 @@ describe("chat project row", () => {
     expect(projects.textContent).toContain("项目");
     expect(container.textContent).not.toContain("最近项目");
     expect(container.textContent).not.toContain("最近会话");
+    props.desktopMode = "chat";
+    act(() => render());
+    for (const row of chatRow().querySelectorAll("[data-session-card]")) {
+      expect(row.hasAttribute("data-session-layout")).toBe(false);
+      expect(row.querySelector("[data-session-project]")).toBeNull();
+      expect(row.querySelector("[data-session-avatar]")).not.toBeNull();
+    }
   });
 });

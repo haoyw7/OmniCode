@@ -11,9 +11,9 @@ export async function generateWorktreeBranch(
     try {
       const value = await generate();
       const fragment = sanitizeBranchFragment(value ?? "")
-        .replace(/^(?:mc|omnicode)\//, "")
+        .replace(/^(?:oc|mc|omnicode)\//, "")
         .replace(/\//g, "-");
-      if (fragment) return `mc/${fragment}`;
+      if (fragment) return `oc/${fragment}`;
     } catch {
       // A configured model can be unavailable while the agent still works.
     }

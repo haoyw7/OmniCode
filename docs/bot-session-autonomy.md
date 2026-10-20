@@ -208,7 +208,7 @@ Host 的 `assistant.timeline`，最后做路由规则与强制指令。
 普通任务复用 `HostEngine.generateWorktreeName` → `generateWorktreeBranch` /
 `availableWorktreeBranch` → `createHostWorktree`，与 `git.worktreeName` / `git.worktreeCreate`
 及普通 `createTaskWorktree` 的流程一致：先用已配置标题模型、再尝试所选 provider 生成名称，
-使用既有 `mc/…` 命名清理和冲突后缀；名称生成失败不另造随机命名策略。
+使用既有 `oc/…` 命名清理和冲突后缀；名称生成失败不另造随机命名策略。
 
 派生基点是所选源工作副本的 HEAD。源目录默认为项目当前工作副本，指定 `executionCwd` 时必须
 是该项目已有注册 worktree。实际目录由现有 `hostWorktrees().defaultRoot` 和

@@ -23,7 +23,7 @@ it("creates parallel coding tasks through the existing naming and worktree entry
   const targets = await Promise.all(["isolate-a", "isolate-b"].map(request => executeBotAction(engine.assistant, request, "sessions.create",
     { projectId: project.id, harness: "codex", model: "test" }, () => true))) as { sessionId: string }[];
   expect(generate).toHaveBeenCalledTimes(2);
-  expect(targets.map(target => store.session(target.sessionId).session.branch)).toEqual(["mc/fix-task", "mc/fix-task-2"]);
+  expect(targets.map(target => store.session(target.sessionId).session.branch)).toEqual(["oc/fix-task", "oc/fix-task-2"]);
   for (let i = 0; i < targets.length; i++) await executeBotAction(engine.assistant, `isolated-send-${i}`, "sessions.send", { projectId: project.id, sessionId: targets[i].sessionId, text: "Work" }, () => true);
   expect(targets.map(target => store.session(target.sessionId).status)).toEqual(["running", "running"]);
   expect(engine.assistant.store.action("isolate-a")?.worktree).toMatchObject({ targetBranch: "feature/source", state: "working" });
@@ -1311,6 +1311,18 @@ it("shows the current action as activity and clears it when the turn ends", asyn
   await engine.assistant.tick();
   expect(engine.assistant.store.get()!.activity).toBeUndefined();
 });
+it("preserves native snake_case model settings in Bot configuration", async () => {
+  const { engine } = await setup();
+  for (const effort of ["", "high"]) {
+    await engine.assistant.rpc("assistant.configure", {
+      commandId: `native-model-settings-${effort || "default"}`,
+      expectedRevision: engine.assistant.store.get()!.revision,
+      patch: { modelSettings: { reasoning_effort: effort } },
+    });
+    expect(engine.assistant.store.get()!.modelSettings).toEqual({ reasoning_effort: effort });
+  }
+});
+
 it("validates personality settings and reads older records with defaults", async () => {
   const { engine } = await setup();
   await expect(

@@ -43,6 +43,7 @@ import {
   checkWorktreeRemoval,
   listWorktrees,
   namedWorktreeBranch,
+  orchestrationWorktreeBranchName,
   temporaryWorktreeBranchName,
   type Worktree,
   type Worktrees,
@@ -143,14 +144,16 @@ const result = (branch = "feature"): Worktrees => ({
 it("builds temporary and generated worktree branch names", () => {
   expect(
     temporaryWorktreeBranchName("12345678-90ab-cdef-1234-567890abcdef"),
-  ).toBe("mc/12345678");
+  ).toBe("oc/12345678");
+  expect(orchestrationWorktreeBranchName("12345678-90ab-cdef")).toBe("oc/orch-1234567890ab");
   expect(namedWorktreeBranch("feature/faster-worktrees")).toBe(
-    "mc/feature/faster-worktrees",
+    "oc/feature/faster-worktrees",
   );
   expect(namedWorktreeBranch("omnicode/already-prefixed")).toBe(
-    "mc/already-prefixed",
+    "oc/already-prefixed",
   );
-  expect(namedWorktreeBranch("mc/already-short")).toBe("mc/already-short");
+  expect(namedWorktreeBranch("oc/already-short")).toBe("oc/already-short");
+  expect(namedWorktreeBranch("mc/legacy-prefix")).toBe("oc/legacy-prefix");
   expect(namedWorktreeBranch("  ")).toBeNull();
 });
 

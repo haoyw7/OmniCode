@@ -437,6 +437,21 @@ describe("live catalog overlays", () => {
     expect(hasLiveCatalog("omp")).toBe(false);
   });
 
+  it("offers only discovered DeepSeek models and replaces the legacy default selection", () => {
+    expect(modelsFor("deepseek")).toEqual([]);
+    expect(defaultModelId("deepseek")).toBe("");
+    const model: AgentModel = {
+      id: 'deepseek:["deepseek-account","deepseek-flash"]',
+      harness: "deepseek",
+      name: "DeepSeek-V4.1-Flash",
+      nativeId: '["deepseek-account","deepseek-flash"]',
+    };
+    setHarnessModels("deepseek", [model]);
+    expect(modelsFor("deepseek")).toEqual([model]);
+    expect(defaultModelId("deepseek")).toBe(model.id);
+    expect(resolveModel("deepseek", "deepseek:default")).toEqual(model);
+  });
+
   it("restores the previous run's catalog as live but not fresh", () => {
     mockLocalStorage();
     const opusLive: AgentModel = {

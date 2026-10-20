@@ -1378,10 +1378,11 @@ html:not(.theme-light) .markdown-code-token {
 }
 
 /*
- * A command's log hangs off a thin rail under its row icon rather than in a
- * card: the full command first, dimmed behind a prompt, then what it printed.
+ * Thinking and command logs hang off a thin rail under their row icons.
+ * Commands show the full input first, dimmed behind a prompt, then their output.
  */
-.zen-shell-log {
+.zen-shell-log,
+.zen-thinking-log {
   min-width: 0;
   margin: 2px 0 6px 6px;
   border-left: 2px solid var(--color-stroke);
@@ -1390,6 +1391,10 @@ html:not(.theme-light) .markdown-code-token {
   font-family: var(--font-mono);
   font-size: var(--text-ui-sm);
   line-height: 1.55;
+}
+
+.zen-thinking-log {
+  overscroll-behavior: contain;
 }
 
 .zen-shell-log[data-failed] {

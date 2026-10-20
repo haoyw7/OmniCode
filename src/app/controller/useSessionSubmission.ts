@@ -1,10 +1,16 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Dispatch, RefObject, SetStateAction } from "react";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { flushSync } from "react-dom";
 import { nudgeWatchedFiles } from "../../features/connections/files/model/fileWatch";
-import { sessionUsesHost } from "../../features/connections/model/remoteProjects";
-import { remoteSessionActions } from "../../features/connections/model/remoteSessionActions";
+import {
+  ensureSharedProject,
+  sessionUsesHost,
+} from "../../features/connections/model/remoteProjects";
+import {
+  remoteSessionActions,
+  stageRemoteSessionSubmission,
+} from "../../features/connections/model/remoteSessionActions";
 import { inboxAskPrompt } from "../../features/inbox/model/inboxAsk";
 import { composeNoteMessage } from "../../features/notes";
 import { syncDockBadge } from "../../features/notifications/model/dockBadge";
@@ -203,6 +209,7 @@ export function useSessionSubmission({
   titleCoordinator,
   activeSessionIdRef,
 }: Options) {
+  const preparingChats = useRef(new Set<string>());
   const submitSession = useCallback(
     (
       sessionId: string,
@@ -280,6 +287,8 @@ export function useSessionSubmission({
         !options?.managed &&
         isBlankSession(storedCurrent)
       ) {
+        if (preparingChats.current.has(sessionId)) return false;
+        preparingChats.current.add(sessionId);
         return (async () => {
           let path: string;
           try {
@@ -295,22 +304,37 @@ export function useSessionSubmission({
             flushHarnessEvents();
             return false;
           }
+          if (sessionUsesHost({ ...storedCurrent, cwd: path })) {
+            // Keep the chat on screen while the new Host project is registered.
+            // On failure the Host pane owns the connection error and recovery.
+            await ensureSharedProject(path).catch(() => undefined);
+          }
           rememberChatFolder(path);
           const nextSessions = sessionsRef.current.map((session) =>
             session.id === sessionId && session.cwd === "~"
               ? { ...session, cwd: path }
               : session,
           );
+          const target = nextSessions.find((session) => session.id === sessionId);
+          if (!target) return false;
+          // Changing cwd mounts a Host pane asynchronously. Hand it the message
+          // before publishing the new session instead of calling an absent sender.
+          const hostSubmission = sessionUsesHost(target);
+          if (
+            hostSubmission &&
+            !stageRemoteSessionSubmission(sessionId, text, attachments, options)
+          ) return false;
           sessionsRef.current = nextSessions;
           setSessions(nextSessions);
           setProjectCwd((current) => (current === "~" ? path : current));
+          if (hostSubmission) return true;
           return await submitAfterProjectSyncRef.current(
             sessionId,
             text,
             attachments,
             options,
           );
-        })();
+        })().finally(() => preparingChats.current.delete(sessionId));
       }
       const draftBlock = options?.draftBlockId
         ? storedCurrent.blocks.find(

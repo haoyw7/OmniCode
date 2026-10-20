@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import type { SendTurnInput } from "../src/integrations/harness/core/types";
-import type { HostProvider } from "./providers";
+import { hostProviders, type HostProvider } from "./providers";
 import { HostEngine, parseCommand } from "./engine";
 import { HostStore } from "./store";
 import { HostClientState } from "./client-state";
@@ -74,6 +74,40 @@ function setup(harness: "codex" | "claude" | "pi" | "omp" | "deepseek" = "codex"
 }
 
 describe("headless session ownership", () => {
+  it.each(["", "high"])("forwards DeepSeek reasoning_effort through session configuration and sending (%s)", async (effort) => {
+    const { engine, project, turns } = setup("deepseek");
+    await engine.ready;
+    const model = 'deepseek:["deepseek-account","deepseek-flash"]';
+    const modelSettings = { reasoning_effort: effort };
+    const created = engine.command({
+      type: "create", commandId: "deepseek-create", projectId: project.id,
+      harness: "deepseek", model, modelSettings, runtimeMode: "supervised",
+    });
+    engine.command({
+      type: "configure", commandId: "deepseek-configure", sessionId: created.sessionId,
+      harness: "deepseek", model, modelSettings, runtimeMode: "supervised",
+    });
+    engine.command({ type: "send", commandId: "deepseek-send", sessionId: created.sessionId, text: "Hello" });
+    await vi.waitFor(() => expect(turns).toHaveLength(1));
+    expect(turns[0].input).toMatchObject({ model, modelSettings });
+    turns[0].finish();
+  });
+
+  it("keeps model-setting name, type and size restrictions", () => {
+    for (const modelSettings of [
+      { "reasoning effort": "high" },
+      { reasoning_effort: 1 },
+      { reasoning_effort: "high\0" },
+      { reasoning_effort: "x".repeat(129) },
+      { ["r".repeat(65)]: "high" },
+    ]) {
+      expect(() => parseCommand({
+        type: "configure", commandId: "invalid-settings", sessionId: "session",
+        model: "deepseek:test", modelSettings, runtimeMode: "supervised",
+      })).toThrow("Invalid model settings");
+    }
+  });
+
   it("keeps a DeepSeek question open across devices and forwards its saved native late reply", async () => {
     const { engine, store, turns, provider, id } = setup("deepseek");
     provider.keepQuestionOpen = vi.fn();
@@ -309,6 +343,54 @@ describe("headless session ownership", () => {
     expect(provider.bind).toHaveBeenCalledWith(id, "imported-native", current.session.cwd, "saved-account");
     expect(turns[0].input.providerAccountId).toBe("saved-account");
     turns[0].finish();
+  });
+
+  it("reuses DeepSeek between turns without a title reader and releases it after 30 idle minutes", async () => {
+    vi.useFakeTimers();
+    const { engine, store, provider, turns, id } = setup("deepseek");
+    await engine.ready;
+    engine.nativeSessions.setAutoSync(false);
+    provider.keepAlive = hostProviders.deepseek.keepAlive;
+    provider.idleTimeoutMs = hostProviders.deepseek.idleTimeoutMs;
+    expect(provider.readSessionTitle).toBeUndefined();
+    engine.command({ type: "send", commandId: "deepseek-cold", sessionId: id, text: "First turn" });
+    await vi.waitFor(() => expect(turns).toHaveLength(1));
+    turns[0].input.onEvent({ type: "session.providerBound", providerSessionId: "dsh-thread" });
+    turns[0].finish();
+    await vi.waitFor(() => expect(store.session(id).status).toBe("idle"));
+    expect(provider.stop).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(29 * 60_000);
+    engine.command({ type: "send", commandId: "deepseek-warm", sessionId: id, text: "Continue" });
+    await vi.waitFor(() => expect(turns).toHaveLength(2));
+    expect(provider.stop).not.toHaveBeenCalled();
+    turns[1].finish();
+    await vi.waitFor(() => expect(store.session(id).status).toBe("idle"));
+    // A follow-up resets the idle deadline instead of retaining the first timer.
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(provider.stop).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(29 * 60_000);
+    expect(provider.stop).toHaveBeenCalledExactlyOnceWith(id);
+    engine.command({ type: "send", commandId: "deepseek-resume", sessionId: id, text: "Resume after idle" });
+    await vi.waitFor(() => expect(turns).toHaveLength(3));
+    expect(provider.bind).toHaveBeenLastCalledWith(id, "dsh-thread", store.session(id).session.cwd);
+    turns[2].finish();
+  });
+
+  it.each(["failed", "cancelled"] as const)("releases a kept-alive DeepSeek process when a turn is %s", async (outcome) => {
+    const { engine, store, provider, turns, id } = setup("deepseek");
+    await engine.ready;
+    provider.keepAlive = hostProviders.deepseek.keepAlive;
+    engine.command({ type: "send", commandId: "deepseek-stop", sessionId: id, text: "Work" });
+    await vi.waitFor(() => expect(turns).toHaveLength(1));
+    if (outcome === "failed") {
+      turns[0].input.onEvent({ type: "session.error", message: "Fixture failure" });
+      turns[0].finish();
+    } else {
+      engine.command({ type: "cancel", commandId: "deepseek-cancel", sessionId: id, runId: store.session(id).runId });
+    }
+    await vi.waitFor(() => expect(store.session(id).status).toBe("idle"));
+    expect(provider.stop).toHaveBeenCalledWith(id);
   });
 
   it.each([

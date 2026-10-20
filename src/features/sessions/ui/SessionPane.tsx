@@ -258,6 +258,8 @@ export type SessionPaneProps = {
 const TRANSCRIPT_BREAKPOINTS = [28] as const;
 
 type Props = SessionPaneProps & {
+  /** A newly submitted prompt carried across the initial Host pane mount. */
+  initialPromptId?: string;
   /** Queue presentation supplied by the owning runtime. */
   messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
   hostManaged?: boolean;
@@ -360,6 +362,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onPaneDragStart,
   transcriptPool,
   transcriptHistory,
+  initialPromptId,
 }: Props) {
   const { t: uiT } = useTranslation();
   const openSubagent = useOpenSubagent(session);
@@ -382,8 +385,10 @@ const LocalSessionPane = memo(function LocalSessionPane({
   // The transcript mounts only after the first send. Mark that local submit
   // so its prompt can enter without replaying a restored running session.
   const firstSend = useRef<string | null>(null);
-  const animateFrom = visible && firstSend.current === session.id
-    ? session.blocks.find(block => block.role === "user" && !block.draft)?.id
+  const animateFrom = visible
+    ? initialPromptId ?? (firstSend.current === session.id
+        ? session.blocks.find(block => block.role === "user" && !block.draft)?.id
+        : undefined)
     : undefined;
   useEffect(() => {
     if (!isEmpty || !visible || firstSend.current !== session.id)

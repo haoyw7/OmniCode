@@ -28,6 +28,7 @@ export const HARNESS_ICONS: Record<HarnessId, string> = {
 
 /** White marks that must follow `currentColor` so they stay visible in light mode. */
 export const MONOCHROME_HARNESSES = new Set<HarnessId>([
+  "deepseek",
   "cursor",
   "grok",
   "opencode",
@@ -81,20 +82,21 @@ export function HarnessIcon({
       </MonoIcon>
     );
   }
-  if (harness === "hermes") {
+  if (harness === "hermes" || harness === "deepseek") {
+    const icon = HARNESS_ICONS[harness];
     return (
       <span
         aria-hidden
-        className={`inline-flex items-center justify-center ${className}`}
+        className={`grid place-items-center ${className}`}
       >
         <span
-          className="block size-[72%] bg-current"
+          className={`block bg-current ${harness === "hermes" ? "size-[72%]" : "size-full"}`}
           style={{
-            maskImage: `url(${hermes})`,
+            maskImage: `url("${icon}")`,
             maskPosition: "center",
             maskRepeat: "no-repeat",
             maskSize: "contain",
-            WebkitMaskImage: `url(${hermes})`,
+            WebkitMaskImage: `url("${icon}")`,
             WebkitMaskPosition: "center",
             WebkitMaskRepeat: "no-repeat",
             WebkitMaskSize: "contain",

@@ -211,8 +211,6 @@ html.has-user-accent .mobile-app .mobile-desktop-transcript .user-message-bubble
 }
 .mobile-app .mobile-desktop-transcript .agent-reasoning {
   color: var(--color-m-ink-secondary);
-  border-left: 2px solid var(--color-stroke);
-  padding-left: 10px;
   font-size: 15px;
   line-height: 1.4;
 }

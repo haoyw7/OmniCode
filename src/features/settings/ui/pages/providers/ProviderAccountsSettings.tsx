@@ -390,7 +390,7 @@ export function ProviderAccountsSettings() {
           >
             <div className="flex items-center gap-4 px-4 py-3.5">
               <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-content/[0.05] ring-1 ring-inset ring-content/[0.06]">
+                <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-content/[0.05]">
                   <HarnessIcon harness={provider} className="size-4" />
                 </span>
                 <div className="min-w-0">

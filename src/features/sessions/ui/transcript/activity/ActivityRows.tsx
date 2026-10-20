@@ -210,9 +210,7 @@ export function ActivityThinkingRow({
         {() => (
           <div
             ref={setScroller}
-            className={`zen-detail-panel ${
-              streaming ? "max-h-60 overflow-auto" : ""
-            }`}
+            className="zen-thinking-log max-h-60 overflow-auto"
           >
             <AgentMarkdown
               className="agent-reasoning"

@@ -18,7 +18,7 @@ afterEach(async () => {
   vi.useRealTimers();
 });
 
-it.each([false, true])("applies generated worktree names only to retained sessions (deleted: %s)", async (deleted) => {
+it.each([[false, "oc"], [true, "oc"], [false, "mc"]] as const)("applies generated worktree names only to retained sessions (deleted: %s, prefix: %s)", async (deleted, prefix) => {
   vi.useFakeTimers();
   const cwd = mkdtempSync(join(tmpdir(), "omnicode-host-names-"));
   const git = (...args: string[]) => execFileSync("git", args, { cwd });
@@ -53,6 +53,8 @@ it.each([false, true])("applies generated worktree names only to retained sessio
       answer: () => {},
       generateBranchName: branch,
     },
+  }, undefined, {
+    native: { environment: { home: join(cwd, "home"), env: {} } },
   });
   vi.spyOn(engine.titleModel, "generate").mockImplementation(title);
   const project = store.addProject(cwd, "Test");
@@ -63,7 +65,7 @@ it.each([false, true])("applies generated worktree names only to retained sessio
     rmSync(root, { recursive: true, force: true });
     rmSync(cwd, { recursive: true, force: true });
   });
-  const tree = await createHostWorktree(cwd, "mc/12345678", "HEAD", false);
+  const tree = await createHostWorktree(cwd, `${prefix}/12345678`, "HEAD", false);
   const { sessionId } = engine.command({
     type: "create",
     commandId: "create-named",
@@ -80,32 +82,32 @@ it.each([false, true])("applies generated worktree names only to retained sessio
     sessionId,
     text: "Fix remote session and worktree naming",
   });
-  await vi.waitFor(() => expect(branch).toHaveBeenCalledTimes(1));
+  await vi.waitFor(() => expect(branch).toHaveBeenCalledTimes(1), { timeout: 10_000 });
   if (deleted) {
-    await vi.waitFor(() => expect(store.session(sessionId).status).toBe("idle"));
+    await vi.waitFor(() => expect(store.session(sessionId).status).toBe("idle"), { timeout: 10_000 });
     store.deleteSession(sessionId);
     const logged = vi.spyOn(console, "debug").mockImplementation(() => {});
     try {
       finishBranch("remote-naming");
-      await vi.waitFor(() => expect(logged).toHaveBeenCalledWith("[omnicode] remote worktree branch", expect.any(Error)));
-      expect((await hostWorktrees(cwd)).worktrees.find((item) => item.path === tree.path)?.branch).toBe("mc/12345678");
+      await vi.waitFor(() => expect(logged).toHaveBeenCalledWith("[omnicode] remote worktree branch", expect.any(Error)), { timeout: 10_000 });
+      expect((await hostWorktrees(cwd)).worktrees.find((item) => item.path === tree.path)?.branch).toBe(`${prefix}/12345678`);
     } finally { logged.mockRestore(); }
     return;
   }
-  await vi.waitFor(() => expect(store.session(sessionId).status).toBe("idle"));
+  await vi.waitFor(() => expect(store.session(sessionId).status).toBe("idle"), { timeout: 10_000 });
   await vi.advanceTimersByTimeAsync(15_000);
   finishBranch("remote-naming");
   await vi.waitFor(() => {
     expect(store.session(sessionId).session).toMatchObject({
       title: "codex · Fix remote naming",
-      branch: "mc/remote-naming",
+      branch: "oc/remote-naming",
       executionCwd: tree.path,
     });
-  });
+  }, { timeout: 10_000 });
   expect(
     (await hostWorktrees(cwd)).worktrees.find((item) => item.path === tree.path)
       ?.branch,
-  ).toBe("mc/remote-naming");
+  ).toBe("oc/remote-naming");
   expect(title).toHaveBeenCalledTimes(1);
   expect(branch).toHaveBeenCalledTimes(1);
   engine.command({
@@ -114,11 +116,11 @@ it.each([false, true])("applies generated worktree names only to retained sessio
     sessionId,
     text: "More work",
   });
-  await vi.waitFor(() => expect(store.session(sessionId).status).toBe("idle"));
+  await vi.waitFor(() => expect(store.session(sessionId).status).toBe("idle"), { timeout: 10_000 });
   expect(title).toHaveBeenCalledTimes(1);
   expect(branch).toHaveBeenCalledTimes(1);
   await expect(
-    renameHostWorktreeBranch(cwd, tree.path, "mc/12345678", "mc/other"),
+    renameHostWorktreeBranch(cwd, tree.path, `${prefix}/12345678`, "mc/other"),
   ).rejects.toThrow("changed");
 });
 

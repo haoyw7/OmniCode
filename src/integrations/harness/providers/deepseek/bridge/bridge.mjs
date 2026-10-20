@@ -682,6 +682,9 @@ export function apply(ctx) {
     if (method === "initialize") {
       if (params.protocolVersion !== PROTOCOL_VERSION)
         throw new Error("Unsupported OmniCode bridge protocol version");
+      // Owning stdio does not mean sibling provider/credential plugins are ready.
+      // Wait outside apply() so our own fiber can finish loading too.
+      await ctx.root.loader.await();
       initialized = true;
       return {
         protocolVersion: PROTOCOL_VERSION,

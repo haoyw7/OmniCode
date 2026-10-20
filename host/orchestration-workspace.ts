@@ -66,8 +66,8 @@ const hash = (bytes: Uint8Array) =>
   createHash("sha256").update(bytes).digest("hex");
 const same = (a: FileState | undefined, b: FileState | undefined) =>
   a?.kind === b?.kind && a?.hash === b?.hash && a?.mode === b?.mode;
-const branchFor = (task: OrchestrationTask) =>
-  `mc/orch-${task.id
+const branchFor = (task: OrchestrationTask, prefix = "oc") =>
+  `${prefix}/orch-${task.id
     .replace(/[^a-zA-Z0-9]/g, "")
     .slice(0, 12)
     .toLowerCase()}`;
@@ -503,7 +503,7 @@ export class HostOrchestrationWorkspace {
         value.taskId !== task.id ||
         checkoutPath(value.leadCwd) !==
           checkoutPath(orchestrationCheckoutCwd(run)) ||
-        value.branch !== branchFor(task) ||
+        (value.branch !== branchFor(task) && value.branch !== branchFor(task, "mc")) ||
         (task.workspace &&
           checkoutPath(task.workspace.checkoutCwd) !==
             checkoutPath(value.workerCwd)))
@@ -592,8 +592,8 @@ export class HostOrchestrationWorkspace {
       if (task.workspacePolicy === "shared")
         throw new Error("New Host workers require an isolated checkout");
       const leadCwd = await machineFs.realpath(orchestrationCheckoutCwd(run));
-      const branch = branchFor(task);
       let manifest = this.assignment(run, task);
+      const branch = manifest?.branch ?? branchFor(task);
       const listed = await hostWorktrees(leadCwd);
       if (!manifest) {
         if (

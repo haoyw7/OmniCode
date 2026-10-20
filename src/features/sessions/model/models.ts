@@ -211,11 +211,10 @@ export const MODELS: AgentModel[] = [
     name: "Gemini 3.8 Flash (High)",
     nativeId: "gemini-3.8-flash-high",
   },
-  { id: "deepseek:default", harness: "deepseek", name: "DeepSeek Harness" },
 ];
 
 export const DEFAULT_MODEL_ID: Record<HarnessId, string> = {
-  deepseek: "deepseek:default",
+  deepseek: "",
   claude: "claude:sonnet-5",
   codex: "",
   cursor: "cursor:composer-2.5",

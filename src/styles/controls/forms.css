@@ -95,6 +95,11 @@ html[data-skin] [data-ui="icon-button"] svg { width: 20px; height: 20px; }
 html[data-skin] [data-ui="icon-button"][data-size="sm"] svg { width: 20px; height: 20px; }
 html[data-skin] [data-ui="icon-button"][data-size="xs"] svg { width: 12px; height: 12px; }
 html[data-skin] [data-ui="icon-button"][data-size="lg"] svg { width: 24px; height: 24px; }
+html[data-skin] [data-ui="button"][data-provider-cli-action] { --icon-size: var(--desktop-provider-cli-action-size); }
+html[data-skin] [data-ui="button"][data-provider-cli-action] svg {
+  width: var(--desktop-provider-cli-icon-size);
+  height: var(--desktop-provider-cli-icon-size);
+}
 html[data-skin] :is([data-ui="button"], [data-ui="icon-button"]):focus-visible {
   outline: none;
   box-shadow: var(--desktop-focus-shadow);

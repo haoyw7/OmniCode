@@ -51,7 +51,7 @@ it("waits for a model name and creates the branch and directory once", async () 
   await task;
   expect(createWorktree).toHaveBeenCalledExactlyOnceWith(
     "/repo",
-    "mc/fix-login",
+    "oc/fix-login",
     "main",
     false,
     progress,
@@ -65,7 +65,7 @@ it("uses the selected agent and avoids a model name that already exists", async 
   vi.mocked(gitBranches).mockResolvedValue({
     current: "main",
     detached: false,
-    branches: [{ name: "mc/fix-login", current: false, remote: null }],
+    branches: [{ name: "oc/fix-login", current: false, remote: null }],
   });
   await createTaskWorktree(
     "/repo",
@@ -82,7 +82,7 @@ it("uses the selected agent and avoids a model name that already exists", async 
   );
   expect(createWorktree).toHaveBeenCalledWith(
     "/repo",
-    "mc/fix-login-2",
+    "oc/fix-login-2",
     "HEAD",
     false,
     undefined,

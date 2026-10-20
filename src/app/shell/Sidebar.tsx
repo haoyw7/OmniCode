@@ -854,10 +854,8 @@ function SidebarComponent(props: SidebarProps) {
         key={key}
         cwd={path}
         shortcutId={shortcutId}
-        projectLabel={props.desktopMode
-          ? path === "~" || isChatFolder(path)
-            ? t("Chats")
-            : resolveTabGroupLabel(projectKey(path), labels, basename(path))
+        projectLabel={props.desktopMode && path !== "~" && !isChatFolder(path)
+          ? resolveTabGroupLabel(projectKey(path), labels, basename(path))
           : undefined}
         flatPins={props.recents !== undefined}
         sessions={historyByProject.get(key) ?? []}

@@ -60,7 +60,11 @@ import {
 import { notifyGitChanged } from "../../../platform/tauri/fs";
 import type { Worktree } from "../../source-control/model/worktrees";
 import { useProjectBranchesState } from "../../source-control/hooks/useProjectBranches";
-import { registerRemoteSessionActions } from "../model/remoteSessionActions";
+import {
+  clearRemoteSessionSubmission,
+  pendingRemoteSessionSubmission,
+  registerRemoteSessionActions,
+} from "../model/remoteSessionActions";
 import { notifyReviewChanged, registerHostCheckpointRoute } from "../../sessions/model/checkpoint";
 import {
   clearPendingRemoteCommand,
@@ -107,6 +111,7 @@ import {
 } from "../model/protocol";
 
 export type RemoteSessionOverrides = Partial<SessionPaneProps> & {
+  initialPromptId?: string;
   messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
   hostManaged: boolean;
   remoteSession: boolean;
@@ -426,6 +431,10 @@ function ConnectedRemoteSession({
   const [starting, setStarting] = useState<
     OptimisticTurn & { failed?: boolean }
   >();
+  const [initialSubmission, setInitialSubmission] = useState(() =>
+    pendingRemoteSessionSubmission(shell.id),
+  );
+  const initialPromptId = useRef(initialSubmission?.id).current;
   const [pending, setPending] = useState(() =>
     pendingRemoteCommand(
       project.key,
@@ -1292,6 +1301,7 @@ function ConnectedRemoteSession({
     options?: ComposerTurnOptions,
     asDraft = false,
     planBlockId?: string,
+    initialTurn?: { id: string; startedAt: number },
   ): boolean => {
     if (
       !online ||
@@ -1315,6 +1325,10 @@ function ConnectedRemoteSession({
       options?.draftBlockId,
       planBlockId,
     );
+    if (initialTurn) {
+      turn.commandId = initialTurn.id;
+      turn.startedAt = initialTurn.startedAt;
+    }
     turn.refreshTitle = options?.refreshTitle;
     turn.retryProposalBlockId = options?.retryProposalBlockId;
     turn.questionAnswer = options?.questionAnswer;
@@ -1352,6 +1366,23 @@ function ConnectedRemoteSession({
       });
     return true;
   };
+
+  useEffect(() => {
+    if (
+      !initialSubmission || !online || !catalog ||
+      !providers.includes(configuration.harness)
+    ) return;
+    const model = findRemoteModel(catalog.models[configuration.harness] ?? [], configuration.model);
+    // Let the Host model defaults settle before handing the turn to its sender.
+    if (!model || !sameModelSettings(
+      carryModelSettings(model.settings ?? [], configuration.settings),
+      configuration.settings,
+    )) return;
+    if (submit(initialSubmission.text, initialSubmission.attachments, initialSubmission.options, false, undefined, initialSubmission)) {
+      clearRemoteSessionSubmission(shell.id);
+      setInitialSubmission(undefined);
+    }
+  });
 
   const modelSource = useMemo<ModelSource>(() => {
     const models = (harness: HarnessId) =>
@@ -1449,7 +1480,16 @@ function ConnectedRemoteSession({
           startedAt: starting.startedAt + (hostSession ? snapshot?.clockOffsetMs ?? 0 : 0),
           turnModel: starting.turnModel,
         }
-      : undefined;
+      : initialSubmission
+        ? {
+            id: initialSubmission.id,
+            role: "user",
+            text: initialSubmission.text,
+            attachments: initialSubmission.attachments,
+            startedAt: initialSubmission.startedAt,
+            sending: true,
+          }
+        : undefined;
   const session: Session = {
     ...(viewSession ?? {
       title: shell.title,
@@ -1474,7 +1514,7 @@ function ConnectedRemoteSession({
       harness: configuration.harness, model: configuration.model,
       modelSettings: configuration.settings, runtimeMode: configuration.mode,
     } : undefined,
-    busy,
+    busy: busy || !!initialSubmission,
     blocks: (unconfirmed ? [...blocks, unconfirmed] : blocks).map(block => {
       const edit = proposalEdits.get(block.id);
       return edit && block.orchestration?.status === "ready" && snapshot?.orchestration?.proposalId !== block.id
@@ -1829,6 +1869,7 @@ function ConnectedRemoteSession({
   // forwarders keep the pane and every transcript block memoized.
   const overrides = useStableHandlers<RemoteSessionOverrides>({
     session,
+    initialPromptId,
     transcriptHistory: transcriptHistory?.session.id === hostSession?.id
       ? transcriptHistory?.session.blocks
       : undefined,

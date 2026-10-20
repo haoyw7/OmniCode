@@ -291,15 +291,15 @@ it("names both the branch and worktree directory before creation through RPC", a
   vi.spyOn(s.engine.titleModel, "generateBranch").mockResolvedValue("fix-login");
   const nameParams = { projectId: s.project.id, harness: "codex", message: "修复登录" };
   const named = await s.call("git.worktreeName", nameParams);
-  expect(named.value.result).toBe("mc/fix-login");
+  expect(named.value.result).toBe("oc/fix-login");
   const generated = await s.call("git.worktreeCreate", {
     projectId: s.project.id, branch: named.value.result, base: "main", existing: false,
   });
   expect(generated.value.result).toMatchObject({
-    branch: "mc/fix-login", path: expect.stringMatching(/[/\\]wt-mc-fix-login$/),
-    log: expect.arrayContaining(["Preparing worktree (new branch 'mc/fix-login')"]),
+    branch: "oc/fix-login", path: expect.stringMatching(/[/\\]wt-oc-fix-login$/),
+    log: expect.arrayContaining(["Preparing worktree (new branch 'oc/fix-login')"]),
   });
-  expect((await s.call("git.worktreeName", nameParams)).value.result).toBe("mc/fix-login-2");
+  expect((await s.call("git.worktreeName", nameParams)).value.result).toBe("oc/fix-login-2");
   expect((await s.call("git.worktreeName", { ...nameParams, message: 42 })).status).toBe(400);
   expect((await s.call("git.worktreeName", { ...nameParams, harness: "unknown" })).status).toBe(400);
   const created = await s.call("commands.dispatch", {
@@ -307,13 +307,37 @@ it("names both the branch and worktree directory before creation through RPC", a
     executionCwd: generated.value.result.path, harness: "codex", model: "codex:test", runtimeMode: "supervised",
   });
   expect(s.store.session(created.value.result.sessionId)).toMatchObject({
-    session: { branch: "mc/fix-login", executionCwd: generated.value.result.path },
+    session: { branch: "oc/fix-login", executionCwd: generated.value.result.path },
   });
   expect(s.store.session(created.value.result.sessionId).autoWorktreeBranch).toBeUndefined();
   expect(s.send).not.toHaveBeenCalled();
 });
 
 describe("remote host API", () => {
+  it("accepts DeepSeek reasoning_effort over the HTTP create, configure and send flow", async () => {
+    const s = await setup(["deepseek"]);
+    s.engine.providers.deepseek = s.engine.providers.codex;
+    const model = 'deepseek:["deepseek-account","deepseek-flash"]';
+    const created = await s.call("commands.dispatch", {
+      type: "create", commandId: "deepseek-create", projectId: s.project.id,
+      harness: "deepseek", model, modelSettings: { reasoning_effort: "" }, runtimeMode: "supervised",
+    });
+    expect(created.status).toBe(200);
+    const sessionId = created.value.result.sessionId;
+    const configured = await s.call("commands.dispatch", {
+      type: "configure", commandId: "deepseek-configure", sessionId,
+      harness: "deepseek", model, modelSettings: { reasoning_effort: "high" }, runtimeMode: "supervised",
+    });
+    expect(configured.status).toBe(200);
+    const sent = await s.call("commands.dispatch", {
+      type: "send", commandId: "deepseek-send", sessionId, text: "Hello",
+    });
+    expect(sent.status).toBe(200);
+    await vi.waitFor(() => expect(s.send).toHaveBeenCalledOnce());
+    expect(s.turn()).toMatchObject({ model, modelSettings: { reasoning_effort: "high" } });
+    s.finish();
+  });
+
   it("initializes a Host-owned catalog for mobile list readers before any management call", async () => {
     const s = await setup();
     vi.stubEnv("CODEX_HOME", s.directory);

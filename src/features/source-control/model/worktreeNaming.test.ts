@@ -5,6 +5,10 @@ import {
   WORKTREE_NAME_ERROR,
 } from "./worktreeNaming";
 
+it.each(["oc", "mc", "omnicode"])("normalizes the %s prefix without duplicating it", async (prefix) => {
+  expect(await generateWorktreeBranch([async () => `${prefix}/fix-login`])).toBe("oc/fix-login");
+});
+
 it("uses the configured model's semantic name before trying a provider", async () => {
   const provider = vi.fn(async () => "ignored");
   expect(
@@ -12,7 +16,7 @@ it("uses the configured model's semantic name before trying a provider", async (
       async () => "omnicode/Fix Login Redirect",
       provider,
     ]),
-  ).toBe("mc/fix-login-redirect");
+  ).toBe("oc/fix-login-redirect");
   expect(provider).not.toHaveBeenCalled();
 });
 
@@ -25,7 +29,7 @@ it("falls back to the provider after model failure or an unusable name", async (
       async () => "修复登录",
       async () => "fix/login",
     ]),
-  ).toBe("mc/fix-login");
+  ).toBe("oc/fix-login");
   await expect(generateWorktreeBranch([async () => null])).rejects.toThrow(
     WORKTREE_NAME_ERROR,
   );
@@ -34,9 +38,9 @@ it("falls back to the provider after model failure or an unusable name", async (
 it("keeps descriptive names unique against branches and worktree directory names", () => {
   expect(
     availableWorktreeBranch(
-      "mc/fix-login",
-      ["mc/fix-login", "mc/fix-login-2/nested"],
-      ["C:\\trees\\wt-mc-fix-login-3", "/trees/mc-fix-login-4"],
+      "oc/fix-login",
+      ["oc/fix-login", "oc/fix-login-2/nested"],
+      ["C:\\trees\\wt-oc-fix-login-3", "/trees/oc-fix-login-4"],
     ),
-  ).toBe("mc/fix-login-5");
+  ).toBe("oc/fix-login-5");
 });

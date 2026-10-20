@@ -175,7 +175,8 @@ function ProviderBinaryControl({
 
   return (
     <span ref={root} className="inline-flex align-middle">
-      <button
+      <Button variant="ghost" size="icon-sm"
+        data-provider-cli-action
         ref={trigger}
         type="button"
         aria-label={
@@ -199,14 +200,9 @@ function ProviderBinaryControl({
           setOpen((value) => !value);
           setEditing(false);
         }}
-        className={`grid size-6 place-items-center rounded hover:bg-content/6 focus-visible:outline-2 focus-visible:outline-accent ${
-          restartRequired
-            ? "text-amber-300"
-            : "text-content/35 hover:text-content"
-        }`}
       >
-        <FolderOpen className="size-3.5" />
-      </button>
+        <FolderOpen className={`size-3.5 ${restartRequired ? "text-amber-300" : "text-content/35 group-hover/button:text-content"}`} />
+      </Button>
       <Popover
         open={open}
         id={`${provider}-binary-popover`}
@@ -525,6 +521,26 @@ export function ProviderRow({
         <span className="flex items-center gap-2">
           <HarnessIcon harness={harness} className="size-4 shrink-0" />
           {HARNESS_TITLE[harness]}
+          {!available || installation.status === "installing" ? (
+            <Button variant="ghost" size="icon-sm"
+              data-provider-cli-action
+              aria-label={uiT("Download and install {value0}", {
+                value0: HARNESS_TITLE[harness],
+              })}
+              title={installUnavailableReason
+                ? uiT(installUnavailableReason)
+                : installation.status === "installing"
+                  ? uiT("Installing…")
+                  : installation.status === "failed"
+                    ? uiT("Retry download")
+                    : uiT("Download and install this CLI on this computer")}
+              aria-busy={installation.status === "installing"}
+              disabled={installingAny || Boolean(installUnavailableReason)}
+              onClick={() => void runHarnessInstall(harness).then(onUpdated)}
+            >
+              <ArrowDownCircle className="size-3.5 text-content/35 group-hover/button:text-content" aria-hidden />
+            </Button>
+          ) : null}
           <ProviderBinaryControl key={binaryRevision} provider={harness} />
           {isDefault ? (
             <span className="rounded-full bg-content/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-content/60">
@@ -556,26 +572,6 @@ export function ProviderRow({
         )
       }
     >
-      {!available || installation.status === "installing" ? (
-        <Button variant="secondary"
-          aria-label={uiT("Download and install {value0}", {
-            value0: HARNESS_TITLE[harness],
-          })}
-          title={installUnavailableReason
-            ? uiT(installUnavailableReason)
-            : uiT("Download and install this CLI on this computer")}
-          aria-busy={installation.status === "installing"}
-          disabled={installingAny || Boolean(installUnavailableReason)}
-          onClick={() => void runHarnessInstall(harness).then(onUpdated)}
-        >
-          <ArrowDownCircle className="size-3.5 text-accent" aria-hidden />
-          {installation.status === "installing"
-            ? uiT("Installing…")
-            : installation.status === "failed"
-              ? uiT("Retry download")
-              : uiT("One-click download")}
-        </Button>
-      ) : null}
       {newerCopy && !switched ? (
         <Button variant="secondary"
           aria-label={uiT("Use {value0} {value1} at {value2}", {
