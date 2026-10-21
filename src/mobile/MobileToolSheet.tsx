@@ -16,7 +16,7 @@ import {
 import type { Block } from "../features/sessions/model/session";
 import { displayPath, resolveWorkspacePath } from "../shared/lib/paths";
 import { useTranslation } from "../shared/i18n/useTranslation";
-import { Check, ChevronRight, Copy, File as FileIcon, LoaderCircle, WrapText } from "../shared/ui/icons";
+import { Check, ChevronRight, Copy, File as FileIcon, WrapText } from "../shared/ui/icons";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
 import { TranscriptContentMotion, useMessageArrivals } from "../features/sessions/ui/TranscriptContentMotion";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
@@ -24,6 +24,7 @@ import { MobileSheet, MobileSheetHeader } from "./MobileSheet";
 import { MobileDiffCounts } from "./MobileDiffCounts";
 import { MobileToolDiff } from "./MobileGitDiff";
 import "./styles/git-review.css";
+import { Spinner } from "../shared/ui/primitives/Spinner";
 
 const MotionChevronRight = motion.create(ChevronRight);
 
@@ -216,7 +217,7 @@ export function MobileToolSheet({
                   onClick={() => setDiffExpanded((value) => !value)}
                 >
                   {diffExpanded && !diffReady ? (
-                    <LoaderCircle size={16} aria-hidden="true" className="mobile-git-file-chevron motion-safe:animate-spin" />
+                    <Spinner className="size-4 mobile-git-file-chevron" aria-hidden="true" />
                   ) : (
                     <MotionChevronRight size={16} aria-hidden="true" className="mobile-git-file-chevron" animate={{ rotate: diffExpanded ? motionGeometry.disclosureAngle : 0 }} transition={panelTransition} />
                   )}

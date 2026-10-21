@@ -1,10 +1,11 @@
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { reducedMotionQuery } from "../../../shared/lib/reducedMotion";
-import { Internet, Loader } from "../../../shared/ui/icons";
+import { Internet } from "../../../shared/ui/icons";
 import { ConnectionStatusIcon, type ConnectionState } from "./ConnectionStatusDot";
 import { SshTargetInput } from "./SshTargetInput";
 import { isSharedHostMachine } from "../model/remoteProjects";
@@ -288,7 +289,7 @@ export function ConnectionsSettings() {
       <div className="desktop-card divide-y divide-border overflow-hidden rounded-xl border border-border panel-card">
         {!loaded ? (
           <div className="flex items-center gap-2 px-4 py-4 text-ui-base text-foreground-subtle">
-            <Loader className="size-4 animate-spin" />
+            <Spinner className="size-4" />
             {uiT("Checking connection…")}
           </div>
         ) : machines.length === 0 ? (
@@ -582,7 +583,7 @@ export function ConnectionsSettings() {
           ref={progress}
         >
           <div className="flex items-center gap-2 text-ui-base text-foreground">
-            <Loader className="size-4 animate-spin" />
+            <Spinner className="size-4" />
             {job?.message ?? uiT("Starting connection…")}
           </div>
           {job?.prompt && (
@@ -669,7 +670,7 @@ export function ConnectionsSettings() {
             if (busy) return;
             setBusy(true);
             setError("");
-            void withStatusToast(() => connectMachine(name, url, token), {
+            void withToast(() => connectMachine(name, url, token), {
               loading: uiT("Connecting to the machine…"),
               success: (machine) => uiT("Connected to {service}", { service: machine.name }),
               error: false,

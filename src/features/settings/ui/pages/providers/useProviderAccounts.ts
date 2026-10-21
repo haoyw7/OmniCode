@@ -1,7 +1,7 @@
 import { ask } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
-import { withStatusToast } from "../../../../../shared/ui/StatusToast";
+import { withToast } from "../../../../../shared/ui/primitives/Sonner";
 import { loginHarness } from "../../../../../integrations/harness/core/auth";
 import { HARNESS_TITLE, type HarnessId } from "../../../../sessions/model/session";
 import {
@@ -126,7 +126,7 @@ export function useProviderAccounts() {
     setWorking(`default:${provider}`);
     setError(null);
     try {
-      await withStatusToast(() => setSharedProviderDefault(provider, accountId), {
+      await withToast(() => setSharedProviderDefault(provider, accountId), {
         loading: uiT("Setting default account…"),
         success: uiT("Default account updated"),
         error: false,
@@ -189,7 +189,7 @@ export function useProviderAccounts() {
         ? { loading: uiT("Importing account…"), success: uiT("Account imported") }
         : { loading: uiT("Adding account…"), success: uiT("Account added") };
     try {
-      await withStatusToast(async () => {
+      await withToast(async () => {
         if (editor.accountId) {
           await updateProviderAccountProfile({
             id: editor.accountId, provider: editor.provider,
@@ -220,7 +220,7 @@ export function useProviderAccounts() {
     setWorking(`login:${account.provider}:${account.id}`);
     setError(null);
     try {
-      await withStatusToast(() => loginHarness(account.provider, account.id), {
+      await withToast(() => loginHarness(account.provider, account.id), {
         loading: uiT("Signing in…"),
         success: uiT("Signed in to {account}", { account: account.label }),
         error: false,
@@ -250,7 +250,7 @@ export function useProviderAccounts() {
     setWorking(key);
     setError(null);
     try {
-      await withStatusToast(
+      await withToast(
         () => removeProviderAccountCredentials(account.provider, account.id),
         { loading: uiT("Removing account…"), success: uiT("Account removed"), error: false },
       );

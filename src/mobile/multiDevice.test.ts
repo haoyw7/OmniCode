@@ -196,7 +196,7 @@ it("clears the previous device while verification is pending, then replaces list
   expect(fixture.client!.connection?.environmentId).toBe("b");
   expect(node.querySelectorAll('[data-session-id="shared-session"]')).toHaveLength(0);
   expect(list().textContent).toContain("Connecting…");
-  expect(document.querySelector('.status-toast[data-tone="loading"]')).toBeNull();
+  expect(document.querySelector('[data-sonner-toast][data-type="loading"]')).toBeNull();
   expect(list().querySelector(".mobile-list-skeleton")).toBeNull();
   expect(list().textContent).not.toContain("No conversations yet");
   await act(async () => verifying.resolve(respond(b.endpoint, { method: "environment.describe" })));
@@ -246,7 +246,7 @@ it("reloads projects on manual reconnect after the selected device's project req
     ? verifying.promise : respond(endpoint, input));
   await act(async () => button("Retry").click());
   expect(button("Retry").disabled).toBe(true);
-  expect(document.querySelector('.status-toast[data-tone="loading"]')).toBeNull();
+  expect(document.querySelector('[data-sonner-toast][data-type="loading"]')).toBeNull();
   await act(async () => verifying.resolve(respond(b.endpoint, { method: "environment.describe" })));
   expect(list().textContent).toContain("Device B conversation");
 });

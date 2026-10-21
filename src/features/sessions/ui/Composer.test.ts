@@ -9,12 +9,12 @@ vi.mock("../../../platform/tauri/wsl", () => ({
   listWslDistributions: vi.fn().mockResolvedValue(["Ubuntu", "Debian"]),
   pickWslFolder: vi.fn(),
 }));
-vi.mock("../../../shared/ui/StatusToast", async (importOriginal) => ({
-  ...await importOriginal<typeof import("../../../shared/ui/StatusToast")>(),
-  showStatusToast: vi.fn(),
-}));
+vi.mock("sonner", async (importOriginal) => {
+  const original = await importOriginal<typeof import("sonner")>();
+  return { ...original, toast: Object.assign(vi.fn(), original.toast, { error: vi.fn() }) };
+});
 import { pickWslFolder } from "../../../platform/tauri/wsl";
-import { showStatusToast } from "../../../shared/ui/StatusToast";
+import { toast } from "sonner";
 vi.mock("@tauri-apps/api/core", async (importOriginal) => {
   const original =
     await importOriginal<typeof import("@tauri-apps/api/core")>();
@@ -229,7 +229,7 @@ describe("Composer question focus", () => {
   it("selects WSL without opening folders, then chooses a WSL project separately while retaining the draft", async () => {
     clearComposerDraft("environment-draft");
     vi.mocked(pickWslFolder).mockReset().mockResolvedValue(null);
-    vi.mocked(showStatusToast).mockClear();
+    vi.mocked(toast.error).mockClear();
     const onCwdChange = vi.fn();
     const onSubmit = vi.fn();
     const props = {
@@ -253,7 +253,7 @@ describe("Composer question focus", () => {
     await act(async () => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(input.value).toBe("Keep my draft");
-    expect(showStatusToast).toHaveBeenCalledWith("Choose a project folder in the selected environment before sending.", "error");
+    expect(toast.error).toHaveBeenCalledWith("Choose a project folder in the selected environment before sending.");
     const project = container.querySelector<HTMLButtonElement>('.composer-project-picker button[aria-haspopup="menu"]')!;
     expect(project.textContent).toContain("Choose project");
     await act(async () => project.click());

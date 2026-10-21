@@ -10,7 +10,7 @@ import {
 import { delegateSession } from "./delegateSession";
 import { botErrorMessage } from "./botErrors";
 import { translate } from "../../../shared/i18n/language";
-import { showStatusToast } from "../../../shared/ui/StatusToast";
+import { toast } from "sonner";
 
 /** Both desktop menus resolve the owning Host, never the assistant's selected tab. */
 export async function delegateDesktopSession(
@@ -29,7 +29,7 @@ export async function delegateDesktopSession(
     if (!machineId)
       throw new Error("Cannot reach the Host. Check the connection and retry.");
   } catch (error) {
-    showStatusToast(translate(botErrorMessage(error)), "error");
+    toast.error(translate(botErrorMessage(error)));
     return;
   }
   await delegateSession(

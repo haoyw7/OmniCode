@@ -5,22 +5,14 @@ import {
   type CiRepairRequest,
 } from "../model/ciRepair";
 import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
-import {
-  Check,
-  ChevronRight,
-  LoaderCircle,
-  MessageSquare,
-  Plus,
-  Search,
-  Sparkles,
-  X,
-} from "../../../shared/ui/icons";
+import { Check, ChevronRight, MessageSquare, Plus, Search, Sparkles, X } from "../../../shared/ui/icons";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   fetchGithubCheckDetails,
   githubActionsJobId,
   type GithubPrCheck,
 } from "../model/githubPrChecks";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 export type CheckRepair = {
   onOpenSession?: (sessionId: string) => void | Promise<void>;
@@ -301,9 +293,7 @@ export function CheckRepairForm({
           className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-selection px-2.5 text-[12px] font-medium text-content hover:bg-selection-hover disabled:opacity-50 focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50"
         >
           {busy ? (
-            <LoaderCircle
-              className="size-3.5 animate-spin"
-            />
+            <Spinner className="size-3.5" />
           ) : null}
           {busy ? uiT("Preparing...") : uiT("Start fix")}
           {!busy ? (

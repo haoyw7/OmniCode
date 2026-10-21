@@ -1,6 +1,6 @@
 import { useMaskEmails } from "../model/displayPrefs";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { useCallback, useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Button } from "../../../shared/ui/forms/Button";
@@ -71,7 +71,7 @@ export function JiraSettings() {
     setError(null);
     try {
       setStatus(
-        await withStatusToast(() => saveJiraConfig({ site, email, token }), {
+        await withToast(() => saveJiraConfig({ site, email, token }), {
           loading: uiT("Connecting to {service}…", { service: "Jira" }),
           success: uiT("Connected to {service}", { service: "Jira" }),
           error: false,
@@ -94,7 +94,7 @@ export function JiraSettings() {
     setError(null);
     try {
       setStatus(
-        await withStatusToast(() => disconnectJira(), {
+        await withToast(() => disconnectJira(), {
           loading: uiT("Disconnecting from {service}…", { service: "Jira" }),
           success: uiT("Disconnected from {service}", { service: "Jira" }),
           error: false,

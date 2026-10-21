@@ -16,6 +16,7 @@ import type { ArtifactItem } from "./apply.js";
 import type { PresetLabels } from "./parts.js";
 import type { ChartSpec } from "./spec.js";
 import { cn } from "../../../../../../shared/lib/cn";
+import { Skeleton } from "../../../../../../shared/ui/primitives/Skeleton";
 import { ScopedErrorBoundary } from "../../../ErrorBoundary.js";
 
 const ArtifactChartView = lazy(
@@ -25,12 +26,8 @@ const ArtifactChartView = lazy(
 /** 加载中的占位：只占位不说话——一句「加载中」在 200ms 的懒加载里只会闪一下。 */
 function ChartSkeleton({ compact }: { compact: boolean }) {
   return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        "w-full animate-pulse rounded-lg bg-surface motion-reduce:animate-none",
-        compact ? "h-14" : "h-56",
-      )}
+    <Skeleton
+      className={cn("w-full rounded-lg bg-surface", compact ? "h-14" : "h-56")}
       data-testid="artifact-chart-skeleton"
     />
   );

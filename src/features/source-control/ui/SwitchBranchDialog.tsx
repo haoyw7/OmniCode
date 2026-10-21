@@ -1,11 +1,12 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
-import { Loader, WandSparkles, X } from "../../../shared/ui/icons";
+import { WandSparkles, X } from "../../../shared/ui/icons";
 import { useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { generateCommitMessage } from "../../../integrations/harness";
 import { LAYER } from "../../../shared/lib/layers";
 import { MOD } from "../../../platform/tauri/platform";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type Busy = "stash" | "commit" | null;
 
@@ -189,9 +190,7 @@ export function SwitchBranchDialog({
           >
             {generating ? (
               <>
-                <Loader
-                  className="size-3.5 animate-spin group-hover:hidden group-focus-visible:hidden"
-                />
+                <Spinner className="size-3.5 group-hover:hidden group-focus-visible:hidden" />
                 <X
                   className="hidden size-3.5 group-hover:block group-focus-visible:block"
                 />
@@ -224,7 +223,7 @@ export function SwitchBranchDialog({
             className="inline-flex items-center gap-1.5 rounded-md bg-content/10 px-3 py-1.5 text-[12px] font-medium text-content hover:bg-content/15 disabled:opacity-40"
           >
             {busy === "commit" ? (
-              <Loader className="size-3.5 animate-spin" />
+              <Spinner className="size-3.5" />
             ) : null}
             {uiT("Commit & switch")}
           </button>
@@ -235,7 +234,7 @@ export function SwitchBranchDialog({
             className="inline-flex items-center gap-1.5 rounded-md bg-content px-3 py-1.5 text-[12px] font-medium text-background-base hover:bg-content/80 disabled:opacity-40"
           >
             {busy === "stash" ? (
-              <Loader className="size-3.5 animate-spin" />
+              <Spinner className="size-3.5" />
             ) : null}
             {uiT("Stash & switch")}
           </button>

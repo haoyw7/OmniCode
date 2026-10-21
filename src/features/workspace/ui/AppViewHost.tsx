@@ -9,6 +9,8 @@ import {
 import type { AppViewKind } from "../model/layout";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
+import { Empty, EmptyDescription } from "../../../shared/ui/primitives/Empty";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 /** App owns the view dependencies; workspace panes only know its kind. */
 export type AppViewRenderer = (kind: AppViewKind, active: boolean) => ReactNode;
@@ -44,12 +46,10 @@ export function AppViewHost({ kind, visible, focused }: Props) {
 function AppViewLoading() {
   const { t } = useTranslation();
   return (
-    <div
-      role="status"
-      className="flex min-h-0 flex-1 items-center justify-center text-[13px] text-content/45"
-    >
-      {t("Loading…")}
-    </div>
+    <Empty role="status" className="min-h-0 flex-row gap-2 text-[13px] text-content/45">
+      <Spinner aria-hidden="true" role={undefined} aria-label={undefined} />
+      <EmptyDescription className="text-inherit">{t("Loading…")}</EmptyDescription>
+    </Empty>
   );
 }
 

@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronRight } from "../../../shared/ui/icons";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import type { BotMemory } from "../model/botView";
 import type { BotRpc } from "../model/botRpc";
 import type { BotMemoryDetailProps } from "./BotChatChrome";
@@ -82,7 +82,7 @@ export function BotMemoryEditor({
     try {
       const [loading, success] = notices[input.action];
       // Failures stay inline next to the fact they concern.
-      await withStatusToast(
+      await withToast(
         () =>
           rpc("assistant.control", {
             commandId: crypto.randomUUID(),

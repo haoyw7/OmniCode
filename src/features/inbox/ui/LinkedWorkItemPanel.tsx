@@ -9,7 +9,7 @@ import { useMotionPreference } from "../../../shared/motion/useMotionPreference"
 import { useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { CircleX, ExternalLink, LoaderCircle, PanelLeft } from "../../../shared/ui/icons";
+import { CircleX, ExternalLink, PanelLeft } from "../../../shared/ui/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
@@ -27,6 +27,7 @@ import { type LinkedWorkItem } from "../../sessions/model/session";
 import { type CiRepairProps, InboxDetail } from "./InboxDetail";
 import { inboxProjectOptions } from "./InboxProjectPicker";
 import { ACTION_OUTLINE } from "./inboxActions";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 
 const LINKED_PANEL_MIN_WIDTH = 360;
@@ -232,9 +233,7 @@ export function LinkedWorkItemPanel({
               </div>
             ) : (
               <div className="flex h-full items-center justify-center text-content/40">
-                <LoaderCircle
-                  className="size-4 animate-spin"
-                />
+                <Spinner className="size-4" />
               </div>
             )}
           </motion.div>

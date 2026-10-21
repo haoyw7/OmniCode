@@ -3,7 +3,7 @@ import { panelTransition, immediateTransition } from "../../../shared/motion/tok
 import { Switch } from "../../../shared/ui/forms/Switch";
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import {
   useEffect,
   useId,
@@ -292,7 +292,7 @@ export function SkillsPage({
   const onCreate = (name: string, scope: "project" | "user"): void => {
     setBusy(true);
     setCreateError(null);
-    void withStatusToast(() => createBlankSkill({ cwd, name, scope }), {
+    void withToast(() => createBlankSkill({ cwd, name, scope }), {
       loading: uiT("Creating skill…"),
       success: uiT("Created skill {name}", { name }),
       error: false,

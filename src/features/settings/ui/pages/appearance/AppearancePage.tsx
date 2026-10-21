@@ -2,7 +2,7 @@ import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { useImperativeHandle, type Ref } from "react";
-import { ImagePlus, Loader } from "../../../../../shared/ui/icons";
+import { ImagePlus } from "../../../../../shared/ui/icons";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { GradientBlurBackground } from "../../GradientBlurBackground";
 import { useColorScheme } from "../../../../../shared/hooks/useColorScheme";
@@ -37,6 +37,7 @@ import { Group, LiveSlider, Row, Segmented, Toggle } from "../../settingsLayout"
 import { AccentRow } from "./AccentRow";
 import { TypographyCards } from "./TypographyCards";
 import { DesktopSkinPicker } from "./DesktopSkinPicker";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 
 
@@ -338,7 +339,7 @@ function ChatBackgroundCard({
               className="flex h-36 w-full flex-col items-center justify-center gap-2 text-content/40 hover:bg-content/3 hover:text-content/70 disabled:cursor-default disabled:opacity-40"
             >
               {busy ? (
-                <Loader className="size-5 animate-spin" aria-hidden />
+                <Spinner className="size-5" aria-hidden />
               ) : (
                 <ImagePlus className="size-5" aria-hidden />
               )}
@@ -353,7 +354,7 @@ function ChatBackgroundCard({
               disabled={busy}
             >
               {busy ? (
-                <Loader className="size-3.5 animate-spin" aria-hidden />
+                <Spinner className="size-3.5" aria-hidden />
               ) : null}
               {uiT("Change")}
             </Button>

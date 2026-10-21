@@ -2,13 +2,13 @@ import type { BotRpc } from "./botRpc";
 import type { SessionReference } from "./botView";
 import { botErrorMessage } from "./botErrors";
 import { translate } from "../../../shared/i18n/language";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 
 export function delegateSession(
   rpc: BotRpc,
   ref: SessionReference,
 ): Promise<unknown> {
-  return withStatusToast(
+  return withToast(
     () =>
       rpc("assistant.control", {
         action: "delegateSession",

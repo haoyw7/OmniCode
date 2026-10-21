@@ -3,12 +3,12 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useMemo, useState } from "react";
 import {
   ChevronRight,
-  LoaderCircle,
-} from "../../../shared/ui/icons";
+  } from "../../../shared/ui/icons";
 import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
 import { formatInteger } from "../../../shared/lib/numbers";
 import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
 import type { GithubPrDiff } from "../model/githubTasks";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 const EXCERPT_LINES = 4;
 const EXCERPT_CHARS = 360;
@@ -158,9 +158,7 @@ export function InboxPrChangesGlance({
           </>
         ) : null}
         {loading ? (
-          <LoaderCircle
-            className="size-3 animate-spin text-content/35"
-          />
+          <Spinner className="size-3 text-content/35" />
         ) : null}
         {files.length > 0 ? (
           <button

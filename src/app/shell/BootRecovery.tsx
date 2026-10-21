@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { Omi } from "../../shared/ui/branding/Omi";
-import { dismissToast, toast } from "../../shared/ui/primitives/Toast";
+import { toast } from "sonner";
 import { WindowDragBar } from "./WindowChrome";
 
 /** Keep the startup surface until a verified Host can open the workspace. */
@@ -12,15 +12,14 @@ export function BootRecovery({ error, onRetry }: {
   const { t } = useTranslation();
   useEffect(() => {
     const detail = error instanceof Error ? error.message : String(error);
-    const id = toast(`${t("Could not connect to shared conversations.")}\n${detail}`, {
+    const id = toast.warning(t("Could not connect to shared conversations."), {
+      id: "desktop-host-startup",
+      description: detail,
       position: "top-right",
-      variant: "warning",
-      durationMs: 0,
-      actionLabel: t("Retry"),
-      onAction: onRetry,
-      dedupeKey: "desktop-host-startup",
+      duration: Infinity,
+      action: { label: t("Retry"), onClick: onRetry },
     });
-    return () => dismissToast(id);
+    return () => { toast.dismiss(id); };
   }, [error, onRetry, t]);
 
   return (

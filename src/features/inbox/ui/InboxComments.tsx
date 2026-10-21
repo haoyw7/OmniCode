@@ -11,7 +11,6 @@ import {
 import {
   CheckCircle,
   CircleX,
-  LoaderCircle,
   MessageSquare,
   X,
 } from "../../../shared/ui/icons";
@@ -23,6 +22,7 @@ import {
 } from "../model/githubTasks";
 import { MOD } from "../../../platform/tauri/platform";
 import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 export type InboxReplyTarget = {
   id: string;
@@ -186,9 +186,7 @@ export function InboxComments({
           </span>
         ) : null}
         {loading ? (
-          <LoaderCircle
-            className="size-3 animate-spin text-content/35"
-          />
+          <Spinner className="size-3 text-content/35" />
         ) : null}
       </div>
       {error ? <p className="text-[12px] text-content/45">{error}</p> : null}
@@ -349,7 +347,7 @@ function CommentsPending() {
   const { t: uiT } = useTranslation();
   return (
     <div className="flex items-center gap-2 border-t border-stroke pt-5 text-[12px] text-content/45">
-      <LoaderCircle className="size-3.5 animate-spin" />
+      <Spinner className="size-3.5" />
       {uiT("Loading comments")}
     </div>
   );

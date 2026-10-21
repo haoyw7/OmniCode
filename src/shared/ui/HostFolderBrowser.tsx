@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "../i18n/useTranslation";
 import { Button } from "./forms/Button";
 import { Input } from "./forms/Input";
+import { Empty, EmptyDescription } from "./primitives/Empty";
+import { Skeleton } from "./primitives/Skeleton";
 import { ChevronRight, Folder } from "./icons";
 
 /** One directory listing returned by a Host folder browse (`projects.browse`). */
@@ -73,10 +75,19 @@ export function HostFolderBrowser({ browse: request, initialPath, disabled, pick
           </button>
         ))}
         {directory && !directory.entries.length ? (
-          <p className="px-2 py-1 text-ui-sm text-foreground-subtle">{t("No subfolders")}</p>
+          <Empty className="p-2">
+            <EmptyDescription>{t("No subfolders")}</EmptyDescription>
+          </Empty>
         ) : null}
         {!directory && loading ? (
-          <p className="px-2 py-1 text-ui-sm text-foreground-subtle">{t("Loading folders…")}</p>
+          <div
+            role="status"
+            aria-label={t("Loading folders…")}
+            className="space-y-2 p-2"
+          >
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-5 w-1/2" />
+          </div>
         ) : null}
       </div>
       {error ? <p role="alert" className="whitespace-pre-wrap break-words text-ui-sm text-red-400">{error}</p> : null}

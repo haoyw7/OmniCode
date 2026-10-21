@@ -41,7 +41,8 @@ import { SurfaceAppearance } from "../../../shared/ui/SurfaceAppearance";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../../../shared/ui/forms/InputGroup";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import { sessionDisplayTitle } from "../../sessions/model/session";
-import { Archive, Bot, ChevronRight, Loader2, Pin, Plus, Search, MessageSquare, X } from "../../../shared/ui/icons";
+import { Archive, Bot, ChevronRight, Pin, Plus, Search, MessageSquare, X } from "../../../shared/ui/icons";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type Props = ComponentProps<typeof BotChat>;
 const EMPTY_THREADS: BotThread[] = [];
@@ -67,7 +68,7 @@ export function DesktopBotsWorkspace(props: Props) {
     <p>{t(failure)}</p><button type="button" onClick={() => setAttempt((value) => value + 1)}>{t("Retry")}</button>
   </div>;
   if (!descriptor) return <div className="assistant-availability assistant-loading" role="status">
-    <Loader2 size={20} className="animate-spin motion-reduce:animate-none" /><span>{t("Connecting…")}</span>
+    <Spinner className="size-5" /><span>{t("Connecting…")}</span>
   </div>;
   return <BotNavigationProvider>{!descriptor.capabilities?.includes("bots.v1") ? <BotChat {...props} rpc={rpc} /> : <MultiBotWorkspace {...props} rpc={rpc} memorySupported={descriptor.capabilities.includes("botMemory.v1")} runtimeSupported={descriptor.capabilities.includes("bots.runtime.v1")} managementSupported={descriptor.capabilities.includes("bots.management.v1")} delegationSupported={descriptor.capabilities.includes("bots.delegation.v1")} teamsSupported={descriptor.capabilities.includes("bots.teams.v1")} roomsSupported={descriptor.capabilities.includes("bots.rooms.v1")} />}</BotNavigationProvider>;
 }

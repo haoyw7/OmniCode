@@ -1,10 +1,11 @@
 import { Fragment, type ReactNode } from "react";
-import { CircleCheck as CircleCheckIcon, CircleX as CircleXIcon, LoaderCircle as LoaderCircleIcon } from "../../../../../shared/ui/icons";
+import { CircleCheck as CircleCheckIcon, CircleX as CircleXIcon } from "../../../../../shared/ui/icons";
 import { cn } from "../../../../../shared/lib/cn";
 import type { StepRunStatus } from "../workflow-graph/types.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import type { RollGroup } from "./roster-model.js";
 import type { TimelinePill } from "./timeline-model.js";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 /**
  * 门后的名单：侧板名册站里没被钉住
@@ -30,7 +31,7 @@ function GroupIcon({ status }: { status: StepRunStatus }) {
   if (status === "done") return <CircleCheckIcon aria-hidden className="size-2.5" />;
   if (status === "running") {
     return (
-      <LoaderCircleIcon aria-hidden className="size-2.5 animate-spin motion-reduce:animate-none" />
+      <Spinner className="size-2.5" aria-hidden />
     );
   }
   if (status === "failed") return <CircleXIcon aria-hidden className="size-2.5" />;

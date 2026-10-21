@@ -3,12 +3,13 @@ import { motionGeometry } from "../../../shared/motion/tokens";
 import { useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import { Check, ChevronRight, FolderTree, Loader } from "../../../shared/ui/icons";
+import { Check, ChevronRight, FolderTree } from "../../../shared/ui/icons";
 import type {
   WorktreeCreation,
   WorktreeLogLine,
 } from "../../source-control/model/worktreeCreation";
 import { WORKTREE_NAME_ERROR } from "../../source-control/model/worktreeNaming";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 /**
  * The worktree creation record under the message that started it. The log stays
@@ -52,7 +53,7 @@ export function WorktreeCreationCard({ creation }: { creation: WorktreeCreation 
         <FolderTree className="size-3.5 shrink-0" />
         <span className="min-w-0 truncate">{title}</span>
         {creation.status === "creating" ? (
-          <Loader className="size-3.5 shrink-0 animate-spin" />
+          <Spinner className="size-3.5 shrink-0" />
         ) : finished ? (
           <Check className="size-3.5 shrink-0" />
         ) : null}

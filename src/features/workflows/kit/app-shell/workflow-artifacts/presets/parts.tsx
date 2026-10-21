@@ -8,6 +8,7 @@
 
 import type { ReactNode } from "react";
 import { cn } from "../../../../../../shared/lib/cn";
+import { Empty } from "../../../../../../shared/ui/primitives/Empty";
 
 /** 调用方必须提供的三句译文（其余文案全部来自 spec 里作者自己写的 label / title）。 */
 export type PresetLabels = {
@@ -29,15 +30,15 @@ export const REVEAL_ANIMATION_CLASS =
 /** 一条数据都没有时的占位。压到最低存在感：看板本身在运行期就是会先空着的。 */
 export function PresetEmpty({ label, compact }: { label: string; compact?: boolean }) {
   return (
-    <div
+    <Empty
       className={cn(
-        "flex items-center justify-center rounded-lg border border-dashed border-border text-foreground-subtlest",
+        "flex-none gap-0 rounded-lg border border-border text-foreground-subtlest",
         compact ? "px-2 py-3 text-ui-xs" : "px-4 py-8 text-ui-sm",
       )}
       data-testid="artifact-preset-empty"
     >
       {label}
-    </div>
+    </Empty>
   );
 }
 

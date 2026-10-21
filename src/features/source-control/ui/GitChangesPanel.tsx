@@ -16,26 +16,7 @@ import {
 } from "../../../shared/ui/SurfaceVisibility";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  CloudUpload,
-  ExternalLink,
-  FileDiff,
-  FolderTree,
-  GitBranch,
-  GitPullRequest,
-  ListBullet,
-  Loader,
-  Minus,
-  MoreHorizontal,
-  Plus,
-  RefreshCw,
-  Undo2,
-  WandSparkles,
-  X,
-} from "../../../shared/ui/icons";
+import { Check, ChevronDown, ChevronRight, CloudUpload, ExternalLink, FileDiff, FolderTree, GitBranch, GitPullRequest, ListBullet, Minus, MoreHorizontal, Plus, RefreshCw, Undo2, WandSparkles, X } from "../../../shared/ui/icons";
 import {
   memo,
   useCallback,
@@ -101,6 +82,7 @@ import { applyProjectDiffStats } from "../hooks/useProjectDiffStats";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { isRemoteProjectPath } from "../../projects/model/recents";
 import { pathKey } from "../../../shared/lib/paths";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 /** Fallback only: the OS watcher reports git metadata and listed folders, so
  * polling just catches edits in folders nobody has expanded. */
@@ -281,7 +263,7 @@ export const GitChangesPanel = memo(function GitChangesPanel({
               onClick={() => setBranchMenuOpen((open) => !open)}
             >
               {busy === "pull" ? (
-                <Loader className="animate-spin" />
+                <Spinner />
               ) : (
                 <MoreHorizontal strokeWidth={2} />
               )}
@@ -310,7 +292,7 @@ export const GitChangesPanel = memo(function GitChangesPanel({
                   >
                     <MenuHover />
                     {busy === "pull" ? (
-                      <Loader className="size-3.5 animate-spin" />
+                      <Spinner className="size-3.5" />
                     ) : (
                       <RefreshCw className="size-3.5" />
                     )}
@@ -808,9 +790,7 @@ function ChangedFiles({
             >
               {busy === "generate" ? (
                 <>
-                  <Loader
-                    className="size-3.5 animate-spin group-hover:hidden group-focus-visible:hidden"
-                  />
+                  <Spinner className="size-3.5 group-hover:hidden group-focus-visible:hidden" />
                   <X
                     className="hidden size-3.5 group-hover:block group-focus-visible:block"
                   />
@@ -1149,9 +1129,7 @@ function GitSyncActions({
           className="min-w-0 flex-1"
         >
           {syncing ? (
-            <Loader
-              className="size-3.5 shrink-0 animate-spin"
-            />
+            <Spinner className="size-3.5 shrink-0" />
           ) : (
             <CloudUpload className="size-3.5 shrink-0" />
           )}
@@ -1189,9 +1167,7 @@ function GitSyncActions({
           className="w-full min-w-0"
         >
           {busy === "pr" ? (
-            <Loader
-              className="size-3.5 shrink-0 animate-spin"
-            />
+            <Spinner className="size-3.5 shrink-0" />
           ) : (
             <GitPullRequest className="size-3.5 shrink-0" />
           )}

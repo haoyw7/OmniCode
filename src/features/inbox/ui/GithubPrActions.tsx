@@ -1,18 +1,12 @@
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  ChevronDown,
-  GitMerge,
-  GitPullRequest,
-  GitPullRequestClosed,
-  GitPullRequestDraft,
-  LoaderCircle,
-} from "../../../shared/ui/icons";
+import { ChevronDown, GitMerge, GitPullRequest, GitPullRequestClosed, GitPullRequestDraft } from "../../../shared/ui/icons";
 import { useRef, useState } from "react";
 import { Popover } from "../../../shared/ui/Popover";
 import { githubPrAction, type GithubPrAction, type InboxItem } from "../model/githubTasks";
 import { ACTION_OUTLINE } from "./inboxActions";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 
 
@@ -373,9 +367,7 @@ export function GithubPrActions({
               } ${PR_ACTION_PRESS}`}
             >
               {busy ? (
-                <LoaderCircle
-                  className="size-3.5 animate-spin"
-                />
+                <Spinner className="size-3.5" />
               ) : null}
               {busy ? confirmCopy.progress : confirmCopy.confirm}
             </button>

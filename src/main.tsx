@@ -37,6 +37,7 @@ import { initializeSharedHost } from "./features/connections/model/sharedHost";
 import { WindowResizeHandles } from "./app/shell/WindowResizeHandles";
 import { WindowResizeObserver } from "./app/shell/WindowResizeObserver";
 import { BootRecovery } from "./app/shell/BootRecovery";
+import { Toaster } from "./shared/ui/primitives/Sonner";
 import { configureDefaultIconArtwork } from "./shared/ui/icons";
 import { desktopIconArtwork } from "./app/desktopIconArtwork";
 
@@ -95,12 +96,13 @@ function BootGate({ children }: { children: React.ReactNode }) {
     dismissBootSplash();
   }, []);
   return (
-    <MotionConfig reducedMotion="user" transition={defaultTransition}>
-      {children}
-      <div style={{ position: "fixed", bottom: 8, right: 8, zIndex: 10000, maxWidth: "70vw" }}><SharedStateStatus /></div>
-      <WindowResizeHandles />
-      <WindowResizeObserver />
-    </MotionConfig>
+      <MotionConfig reducedMotion="user" transition={defaultTransition}>
+        {children}
+        <div style={{ position: "fixed", bottom: 8, right: 8, zIndex: 10000, maxWidth: "70vw" }}><SharedStateStatus /></div>
+        <WindowResizeHandles />
+        <WindowResizeObserver />
+        <Toaster />
+      </MotionConfig>
   );
 }
 

@@ -3,7 +3,7 @@ import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useIsPresent } from "motion/react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Check, GitBranch, Plus, Search } from "../../../shared/ui/icons";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import {
   useEffect,
   useMemo,
@@ -188,7 +188,7 @@ export function BranchPicker({
 
   // Failures, including checkout blocked by local changes, stay in the picker or dialog.
   const applySwitch = (pending: PendingSwitch) =>
-    withStatusToast(
+    withToast(
       () =>
         pending.kind === "create"
           ? gitCreateBranch(cwd, pending.name)

@@ -4,7 +4,7 @@ import { Switch } from "../../../shared/ui/forms/Switch";
 import { AppPageHeader } from "../../workspace/ui/AppPageHeader";
 import { translate as translateUi } from "../../../shared/i18n/language";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import {
   useCallback,
   useEffect,
@@ -18,28 +18,7 @@ import {
 } from "react";
 import { AccessPicker } from "../../sessions/ui/AccessPicker";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import {
-  AlertCircle,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  Clock,
-  File,
-  Gauge,
-  GitPullRequest,
-  Inbox,
-  LoaderCircle,
-  Lock,
-  MoreHorizontal,
-  Play,
-  Plus,
-  Search,
-  StickyNote,
-  Terminal,
-  Trash2,
-  X,
-  Zap,
-} from "../../../shared/ui/icons";
+import { AlertCircle, CheckCircle, ChevronDown, ChevronRight, Clock, File, Gauge, GitPullRequest, Inbox, Lock, MoreHorizontal, Play, Plus, Search, StickyNote, Terminal, Trash2, X, Zap } from "../../../shared/ui/icons";
 import { InboxProviderMark } from "../../inbox/ui/InboxProviderMark";
 import { ModelControlPills, ModelPicker } from "../../sessions/ui/ModelPicker";
 import { Popover } from "../../../shared/ui/Popover";
@@ -124,6 +103,7 @@ import {
   resolveTabGroupLogo,
   resolveTabGroupMascot,
 } from "../../workspace/model/tabGroups";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type Props = {
   active?: boolean;
@@ -307,7 +287,7 @@ function AutomationsContent({
     if (saving) return;
     setSaving(true);
     try {
-      const saved = await withStatusToast(() => saveAutomation(nextDraft), {
+      const saved = await withToast(() => saveAutomation(nextDraft), {
         loading: uiT("Saving automation…"),
         success: uiT("Automation saved"),
         error: false,
@@ -394,7 +374,7 @@ function AutomationsContent({
         >
           {loading ? (
             <div className="grid place-items-center py-12 text-content/35">
-              <LoaderCircle className="size-4 animate-spin" />
+              <Spinner className="size-4" />
             </div>
           ) : visible.length > 0 ? (
             <ul className="space-y-0.5">
@@ -441,7 +421,7 @@ function AutomationsContent({
         ) : null}
         {loading && !editorDraft ? (
           <div className="grid min-h-0 flex-1 place-items-center text-content/35">
-            <LoaderCircle className="size-4 animate-spin" />
+            <Spinner className="size-4" />
           </div>
         ) : editorDraft ? (
           <AutomationEditor
@@ -756,7 +736,7 @@ function RunStatusPill({ status }: { status: AutomationRun["status"] }) {
       className={`inline-flex h-5 max-w-full items-center gap-1 rounded-full px-2 text-[11px] font-medium ${runStatusTone(status)}`}
     >
       {running ? (
-        <LoaderCircle className="size-2.5 shrink-0 animate-spin" />
+        <Spinner className="size-2.5 shrink-0" />
       ) : null}
       {runStatusLabel(status)}
     </span>
@@ -988,7 +968,7 @@ function AutomationEditor({
                     className={ACTION_OUTLINE}
                   >
                     {running ? (
-                      <LoaderCircle className="size-3.5 animate-spin" />
+                      <Spinner className="size-3.5" />
                     ) : (
                       <Play className="size-3.5" />
                     )}
@@ -1001,7 +981,7 @@ function AutomationEditor({
                   className={ACTION_FILLED}
                 >
                   {saving ? (
-                    <LoaderCircle className="size-3.5 animate-spin" />
+                    <Spinner className="size-3.5" />
                   ) : null}
                   {draft.id ? uiT("Save") : uiT("Create")}
                 </button>

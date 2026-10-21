@@ -1,4 +1,5 @@
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
+import { toast } from "sonner";
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -477,7 +478,7 @@ it("keeps the edited settings revision until an explicit reload after a competin
     "settings changed",
   );
   const toasts = () =>
-    document.querySelector("[data-status-toast-host]")?.textContent ?? "";
+    toast.getHistory().map((item) => ("title" in item ? String(item.title) : "")).join(" ");
   expect(toasts()).not.toContain("Assistant settings saved");
   expect(
     rpc.mock.calls.find(([method]) => method === "assistant.configure")?.[1]

@@ -22,6 +22,7 @@ import {
   type IconComponent,
 } from "../../../shared/ui/icons";
 import { Popover } from "../../../shared/ui/Popover";
+import { Skeleton } from "../../../shared/ui/primitives/Skeleton";
 import {
   formatRelativeTime,
   githubWorkItem,
@@ -481,9 +482,9 @@ function GithubWorkItemCardSkeleton() {
       aria-label={uiT("Loading GitHub details")}
       className="mt-2.5 space-y-2"
     >
-      <div className="h-3 w-4/5 rounded bg-content/10 motion-safe:animate-pulse" />
-      <div className="h-2 w-full rounded bg-content/[0.07] motion-safe:animate-pulse" />
-      <div className="h-2 w-2/3 rounded bg-content/[0.07] motion-safe:animate-pulse" />
+      <Skeleton className="h-3 w-4/5 rounded bg-content/10" />
+      <Skeleton className="h-2 w-full rounded bg-content/[0.07]" />
+      <Skeleton className="h-2 w-2/3 rounded bg-content/[0.07]" />
     </div>
   );
 }

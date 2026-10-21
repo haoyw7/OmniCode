@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from "react";
-import { Ban, CircleCheck, Loader2, TriangleAlert } from "../../../../../shared/ui/icons";
+import { Ban, CircleCheck, TriangleAlert } from "../../../../../shared/ui/icons";
 import {
   TID_WORKFLOW_CARD,
   TID_WORKFLOW_CARD_MENU,
@@ -27,6 +27,7 @@ import {
 } from "../AutomationDesignPrimitives.js";
 import { formatRelativeToNow } from "../automationFormat.js";
 import { savedWorkflowRunBadgeKind } from "./savedWorkflowRunHistory.js";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 const MAX_ARG_CHIPS = 3;
 
@@ -62,7 +63,7 @@ function SavedWorkflowLastRunBadge({
       break;
     case "running":
       // running 用活动色 warning（与实例详情页状态头同源）。
-      icon = <Loader2 className="size-4 animate-spin" strokeWidth={1.33} aria-hidden="true" />;
+      icon = <Spinner className="size-4" strokeWidth={1.33} aria-hidden="true" />;
       className = "rounded-lg bg-warning/10 text-warning";
       break;
     case "stopped":

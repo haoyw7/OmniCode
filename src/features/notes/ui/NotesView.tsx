@@ -1,14 +1,6 @@
 import { AppPageHeader } from "../../workspace/ui/AppPageHeader";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  LoaderCircle,
-  Plus,
-  Search,
-  RefreshCw,
-  File,
-  Trash2,
-  X,
-} from "../../../shared/ui/icons";
+import { Plus, Search, RefreshCw, File, Trash2, X } from "../../../shared/ui/icons";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import {
   Fragment,
@@ -71,6 +63,7 @@ import {
   AgentMarkdown,
   MarkdownSourceHighlight,
 } from "../../sessions/ui/AgentMarkdown";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 const MIN_WIDTH = 240;
 const MAX_WIDTH = 420;
@@ -307,9 +300,7 @@ export function NotesView({
           className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content disabled:opacity-40"
         >
           {creating ? (
-            <LoaderCircle
-              className="size-3.5 animate-spin"
-            />
+            <Spinner className="size-3.5" />
           ) : (
             <Plus className="size-3.5" />
           )}
@@ -323,7 +314,7 @@ export function NotesView({
           <p className="px-3 py-2 text-[12px] text-content/50">{error}</p>
         ) : loading && notes.length === 0 ? (
           <div className="flex justify-center py-10 text-content/40">
-            <LoaderCircle className="size-4 animate-spin" />
+            <Spinner className="size-4" />
           </div>
         ) : visible.length === 0 && visibleTopics.length === 0 && !topics.loading ? (
           <p className="px-3 py-2 text-[12px] text-content/50">

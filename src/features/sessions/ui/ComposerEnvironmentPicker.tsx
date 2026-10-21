@@ -13,7 +13,7 @@ import {
   environmentProjectPath,
   useHostEnvironments,
 } from "../../connections/model/hostEnvironments";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { parseWslPath } from "../../../shared/lib/wslPaths";
 import { listWslDistributions } from "../../../platform/tauri/wsl";
 import type { MenuSubmenuHandlers } from "../../../shared/ui/primitives/MenuSubmenu";
@@ -114,7 +114,7 @@ export function ComposerEnvironmentPicker({
           const path = environmentProjectPath(environment, environment.folders[0]);
           // WSL folders open through the shared Host before the composer adopts them.
           if (!environment.machine) onCwdChange(path);
-          else void withStatusToast(() => ensureSharedProject(path), {
+          else void withToast(() => ensureSharedProject(path), {
             loading: t("Opening {value0}…", { value0: environment.name }),
             success: () => { onCwdChange(path); return ""; },
           }).catch(() => undefined);

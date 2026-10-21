@@ -1,11 +1,12 @@
 import { panelTransition, immediateTransition } from "../../../../../shared/motion/tokens";
 import { reducedMotionQuery } from "../../../../../shared/lib/reducedMotion";
 import { motion as motionElement } from "motion/react";
-import { CircleCheck as CircleCheckIcon, CircleX as CircleXIcon, LoaderCircle as LoaderCircleIcon } from "../../../../../shared/ui/icons";
+import { CircleCheck as CircleCheckIcon, CircleX as CircleXIcon } from "../../../../../shared/ui/icons";
 import { cn } from "../../../../../shared/lib/cn";
 import type { StepRunStatus } from "../workflow-graph/types.js";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import type { RosterCounts } from "./roster-model.js";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 /**
  * 阶段名册的两件小零件：计数行与量条。
@@ -54,10 +55,7 @@ export function RosterTally({ className, counts }: { counts: RosterCounts; class
           {status === "done" ? (
             <CircleCheckIcon aria-hidden className="size-2.5" />
           ) : status === "running" ? (
-            <LoaderCircleIcon
-              aria-hidden
-              className="size-2.5 animate-spin motion-reduce:animate-none"
-            />
+            <Spinner className="size-2.5" aria-hidden />
           ) : status === "failed" ? (
             <CircleXIcon aria-hidden className="size-2.5" />
           ) : (

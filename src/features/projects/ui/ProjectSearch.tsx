@@ -1,11 +1,5 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  CaseSensitive,
-  ChevronLeft,
-  LoaderCircle,
-  Regex,
-  WholeWord,
-} from "../../../shared/ui/icons";
+import { CaseSensitive, ChevronLeft, Regex, WholeWord } from "../../../shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -23,6 +17,7 @@ import {
   type ProjectSearchResult,
 } from "../../search/model/search";
 import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type Props = {
   cwd: string;
@@ -246,7 +241,7 @@ export function ProjectSearch({
       <div className="flex min-h-8 shrink-0 items-center gap-2 px-3 py-1.5 text-[11px] text-content/45">
         {loading ? (
           <>
-            <LoaderCircle className="size-3 animate-spin" />
+            <Spinner className="size-3" />
             <span>{uiT("Searching…")}</span>
           </>
         ) : error ? (

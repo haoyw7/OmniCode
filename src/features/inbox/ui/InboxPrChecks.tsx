@@ -43,6 +43,7 @@ import {
   type GithubPrCheckState,
   type GithubCheckDetails,
 } from "../model/githubPrChecks";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 const TAB =
   "surface-tab relative flex h-7.5 items-center gap-1.5 px-2 text-[12px] leading-none select-none";
@@ -418,9 +419,7 @@ function PrCheckRow({
               role="status"
               className="flex items-center gap-2 px-2 py-1 text-content/50"
             >
-              <LoaderCircle
-                className="size-4 shrink-0 animate-spin"
-              />
+              <Spinner className="size-4 shrink-0" />
               {uiT("Loading steps…")}
             </p>
           ) : null}
@@ -567,7 +566,7 @@ export function InboxPrChecks({
   if (loading) {
     return (
       <div className="flex justify-center py-10 text-content/40">
-        <LoaderCircle className="size-4 animate-spin" />
+        <Spinner className="size-4" />
       </div>
     );
   }
@@ -674,9 +673,7 @@ export function InboxPrChecks({
             className={REFRESH_BUTTON}
           >
             {refreshing ? (
-              <LoaderCircle
-                className="size-3.5 animate-spin"
-              />
+              <Spinner className="size-3.5" />
             ) : (
               <RefreshCw className="size-3.5" />
             )}

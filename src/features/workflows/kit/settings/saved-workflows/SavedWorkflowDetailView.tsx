@@ -13,7 +13,7 @@ import type { IOmniCodeAgentService, OmniCodeAgentSavedWorkflowTarget } from "..
 import { CodeBlock } from "../../components/ai-elements/code-block.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { Spinner } from "../../../../../shared/ui/primitives/Spinner.js";
-import { toast } from "../../../../../shared/ui/primitives/Toast.js";
+import { toast } from "sonner";
 import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import { logger } from "../../logger.js";

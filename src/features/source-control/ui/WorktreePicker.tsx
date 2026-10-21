@@ -10,15 +10,8 @@ import { BranchPicker } from "./BranchPicker";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog";
 import { GitPickerTrigger } from "./GitPickerTrigger";
 import { Popover } from "../../../shared/ui/Popover";
-import {
-  Check,
-  FolderTree,
-  GitBranch,
-  Loader,
-  Plus,
-  Search,
-  Settings,
-} from "../../../shared/ui/icons";
+import { Check, FolderTree, GitBranch, Plus, Search, Settings } from "../../../shared/ui/icons";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 export function WorktreePicker({
   cwd,
@@ -234,7 +227,7 @@ export function WorktreePicker({
           >
             {!data && !loadError && (
               <div className="flex items-center gap-2 p-2 text-[12px] text-content/50">
-                <Loader className="size-3.5 animate-spin" />
+                <Spinner className="size-3.5" />
                 {uiT("Loading working copies…")}
               </div>
             )}

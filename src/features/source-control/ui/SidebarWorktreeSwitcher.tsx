@@ -12,8 +12,8 @@ import {
   ChevronsUpDown,
   FolderTree,
   GitBranch,
-  Loader,
-} from "../../../shared/ui/icons";
+  } from "../../../shared/ui/icons";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 /** Picking a worktree narrows the sidebar and new sessions to that working copy. */
 export function SidebarWorktreeSwitcher({
@@ -171,10 +171,7 @@ export function SidebarWorktreeSwitcher({
           </>
         )}
         {pending ? (
-          <Loader
-            aria-label={uiT("Switching working copy")}
-            className="size-3.5 shrink-0 animate-spin text-content/45"
-          />
+          <Spinner className="size-3.5 shrink-0 text-content/45" aria-label={uiT("Switching working copy")} />
         ) : iconOnly ? null : compact ? (
           <ChevronDown className="size-3 shrink-0 text-content/45" />
         ) : (
@@ -204,7 +201,7 @@ export function SidebarWorktreeSwitcher({
         )}
         {!data && !error && (canListWorktrees || !settled) ? (
           <div className="flex items-center gap-2 p-2 text-[12px] text-content/50">
-            <Loader className="size-3.5 animate-spin" />
+            <Spinner className="size-3.5" />
             {uiT("Loading working copies…")}
           </div>
         ) : null}

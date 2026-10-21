@@ -26,6 +26,7 @@ import { refreshUiLanguage, translate } from "../../shared/i18n/language";
 import { initializeSharedHost } from "../connections/model/sharedHost";
 import { initializeHostPreferences } from "../settings/model/hostPreferences";
 import { subscribeSharedPreferences } from "../settings/model/sharedPreferences";
+import { Toaster } from "../../shared/ui/primitives/Sonner";
 import { initProviderAccountPublishing } from "../providers/model/providerAccountCredentials";
 import { initSounds } from "../settings/model/sounds";
 import { configureDefaultIconArtwork } from "../../shared/ui/icons";
@@ -81,9 +82,10 @@ async function boot() {
     applyAppearance();
     root.render(
       <React.StrictMode>
-        <MotionConfig reducedMotion="user" transition={defaultTransition}>
-        <QuickWindow />
-      </MotionConfig>
+          <MotionConfig reducedMotion="user" transition={defaultTransition}>
+            <QuickWindow />
+            <Toaster />
+          </MotionConfig>
       </React.StrictMode>,
     );
   } catch (error) {

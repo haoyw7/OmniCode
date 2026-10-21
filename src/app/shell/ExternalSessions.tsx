@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../shared/ui/AnimatedCollapse";
 import { ChevronDown, ChevronRight } from "../../shared/ui/icons";
-import { withStatusToast } from "../../shared/ui/StatusToast";
+import { withToast } from "../../shared/ui/primitives/Sonner";
 import { pathKey } from "../../shared/lib/paths";
 import {
   externalNativeSessions,
@@ -72,7 +72,7 @@ export function ExternalSessions({
     setPending(key);
     setError(undefined);
     try {
-      const id = await withStatusToast(() => importNativeSession(file), {
+      const id = await withToast(() => importNativeSession(file), {
         loading: t("Importing conversation…"),
         success: (id) => !!id && t("Conversation imported"),
         error: false,

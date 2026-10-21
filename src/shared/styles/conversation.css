@@ -1936,7 +1936,7 @@ html.translucent-panels
   :is(
     .panel-menu,
     .composer-popover,
-    .status-toast,
+    [data-sonner-toast],
     .cm-tooltip,
     .cm-panels,
     .readonly-text-view .cm-gutters

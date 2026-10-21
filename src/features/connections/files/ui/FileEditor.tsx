@@ -1,3 +1,4 @@
+import { Skeleton } from "../../../../shared/ui/primitives/Skeleton";
 import { IconButton } from "../../../../shared/ui/forms/IconButton";
 import { editorPreferenceExtensions } from "../editor/editorPreferences";
 import { subscribeEditorPreferences } from "../model/editorPreferences";
@@ -436,9 +437,14 @@ export function FileEditor({
 
   if (loadState.status === "loading") {
     return (
-      <div className="grid h-full place-items-center text-[12px] text-content/45">
-        {uiT("Opening ")}
-        {basename(path)}…
+      <div
+        role="status"
+        aria-label={`${uiT("Opening ")}${basename(path)}…`}
+        className="space-y-3 p-4"
+      >
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-2/3" />
       </div>
     );
   }

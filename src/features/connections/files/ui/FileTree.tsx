@@ -2,14 +2,7 @@ import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
 import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { translate as translateUi } from "../../../../shared/i18n/language";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
-import {
-  ChevronRight,
-  FilePlus,
-  FolderPlus,
-  FoldVertical,
-  LoaderCircle,
-  Search,
-} from "../../../../shared/ui/icons";
+import { ChevronRight, FilePlus, FolderPlus, FoldVertical, Search } from "../../../../shared/ui/icons";
 import {
   createContext,
   memo,
@@ -75,6 +68,7 @@ import {
 import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
 import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
+import { Spinner } from "../../../../shared/ui/primitives/Spinner";
 
 const GIT_STATUS_COLOR: Record<string, string> = {
   modified: "text-amber-400",
@@ -1078,7 +1072,7 @@ export const FileTree = memo(function FileTree({
       >
         <span className="grid size-4 shrink-0 place-items-center text-content/50">
           {rootLoading ? (
-            <LoaderCircle className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />
+            <Spinner className="size-3.5" aria-hidden="true" />
           ) : (
             <DisclosureChevron expanded={rootOpen} className="size-3.5" />
           )}
@@ -1175,7 +1169,7 @@ export const FileTree = memo(function FileTree({
           <div className="relative" role="tree" aria-busy={rootLoading || undefined} aria-label={uiT("{value0} files", { value0: String(name) })}>
             {compact && !navigationOnly && rootLoading ? (
               <span role="status" className="absolute left-2 top-1 text-content/50">
-                <LoaderCircle className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />
+                <Spinner className="size-3.5" aria-hidden="true" />
                 <span className="sr-only">{uiT("Loading folders…")}</span>
               </span>
             ) : null}
@@ -1402,7 +1396,7 @@ function TreeNode({ entry, depth }: { entry: FsEntry; depth: number }) {
         >
           <span className="grid size-4 shrink-0 place-items-center text-content/50">
             {loading ? (
-              <LoaderCircle className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />
+              <Spinner className="size-3.5" aria-hidden="true" />
             ) : entry.isDir ? (
               <DisclosureChevron expanded={open}
                 className="size-3.5"

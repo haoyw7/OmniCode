@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LAYER } from "../../../shared/lib/layers";
 import { Button } from "../../../shared/ui/forms/Button";
+import { Empty, EmptyDescription } from "../../../shared/ui/primitives/Empty";
+import { Skeleton } from "../../../shared/ui/primitives/Skeleton";
+
 import { ModalFooter } from "../../../shared/ui/Modal";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { ChevronRight, Folder } from "../../../shared/ui/icons";
@@ -212,14 +215,19 @@ export function AddRemoteProjectDialog({
                   />
                 ))}
                 {directory && !directory.entries.length ? (
-                  <p className="px-2 py-1.5 text-[12px] text-content/45">
-                    {uiT("No subfolders")}
-                  </p>
+                  <Empty className="p-2">
+                    <EmptyDescription>{uiT("No subfolders")}</EmptyDescription>
+                  </Empty>
                 ) : null}
                 {!directory && loading ? (
-                  <p className="px-2 py-1.5 text-[12px] text-content/45">
-                    {uiT("Loading folders…")}
-                  </p>
+                  <div
+                    role="status"
+                    aria-label={uiT("Loading folders…")}
+                    className="space-y-2 p-2"
+                  >
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-5 w-1/2" />
+                  </div>
                 ) : null}
               </div>
             </div>

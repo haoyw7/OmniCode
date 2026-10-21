@@ -1,7 +1,7 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { ask } from "@tauri-apps/plugin-dialog";
 import {
@@ -194,7 +194,7 @@ function AddServerModal({
       }
       setBusy(true);
       setError("");
-      await withStatusToast(
+      await withToast(
         () =>
           invoke("mcp_add", {
             cwd,

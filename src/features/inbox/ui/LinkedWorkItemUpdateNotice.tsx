@@ -22,11 +22,11 @@ import {
   GitMerge,
   GitPullRequest,
   GitPullRequestClosed,
-  Loader,
   MessageSquare,
   Trash2,
   X,
 } from "../../../shared/ui/icons";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type Props = {
   sessionId: string;
@@ -260,7 +260,7 @@ export function LinkedWorkItemUpdateNotice({
                 className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden rounded-md bg-content/10 px-2 py-1 text-[11px] font-medium hover:bg-content/15 disabled:opacity-40"
               >
                 {cleanupAction === "archive" ? (
-                  <Loader className="size-3 shrink-0 animate-spin" />
+                  <Spinner className="size-3 shrink-0" />
                 ) : (
                   <Archive className="size-3 shrink-0" />
                 )}
@@ -276,7 +276,7 @@ export function LinkedWorkItemUpdateNotice({
                 className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden rounded-md px-2 py-1 text-[11px] text-red-300/90 hover:bg-red-500/15 disabled:opacity-40"
               >
                 {cleanupAction === "delete" ? (
-                  <Loader className="size-3 shrink-0 animate-spin" />
+                  <Spinner className="size-3 shrink-0" />
                 ) : (
                   <Trash2 className="size-3 shrink-0" />
                 )}

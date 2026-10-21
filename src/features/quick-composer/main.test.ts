@@ -1,5 +1,15 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from "vitest";
+import { isValidElement, type ReactNode } from "react";
+
+function renderedComponents(node: ReactNode): string[] {
+  if (Array.isArray(node)) return node.flatMap(renderedComponents);
+  if (!isValidElement<{ children?: ReactNode }>(node)) return [];
+  return [
+    ...(typeof node.type === "function" ? [node.type.name] : []),
+    ...renderedComponents(node.props.children),
+  ];
+}
 const mocks = vi.hoisted(() => ({
   render: vi.fn(), sharedHost: vi.fn(), preferences: vi.fn(), accounts: vi.fn(),
   setTheme: vi.fn().mockResolvedValue(undefined),
@@ -38,7 +48,7 @@ it("waits for verified Host preferences and accounts before enabling quick launc
   ready();
   await vi.waitFor(() => expect(mocks.render).toHaveBeenCalledOnce());
   expect(mocks.accounts).toHaveBeenCalledOnce();
-  expect(mocks.render.mock.calls[0][0].props.children.props.children.type.name).toBe("Composer");
+  expect(renderedComponents(mocks.render.mock.calls[0][0])).toContain("QuickWindow");
 });
 it("shows a retry when Host bootstrap fails without enabling controls using legacy defaults", async () => {
   mocks.sharedHost.mockRejectedValue(new Error("Host upgrade required"));

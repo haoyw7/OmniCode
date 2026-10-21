@@ -1,6 +1,6 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Switch } from "../../../shared/ui/forms/Switch";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import {
   useState,
   type ComponentType,
@@ -11,15 +11,8 @@ import { prettyCwd } from "../../../shared/lib/paths";
 import { type Worktree } from "../model/worktrees";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
-import {
-  CircleAlert,
-  CloudUpload,
-  FileDiff,
-  Folder,
-  GitBranch,
-  Loader,
-  MessageSquare,
-} from "../../../shared/ui/icons";
+import { CircleAlert, CloudUpload, FileDiff, Folder, GitBranch, MessageSquare } from "../../../shared/ui/icons";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 const TONE = {
   danger: "text-red-400",
@@ -76,7 +69,7 @@ export function DeleteWorktreeDialog({
     try {
       // Confirmation covers the complete destructive action, including any
       // local changes that appeared after the last status refresh.
-      await withStatusToast(() => onRemove(cwd, tree.path, true, deleteSessions), {
+      await withToast(() => onRemove(cwd, tree.path, true, deleteSessions), {
         loading: uiT("Deleting worktree…"),
         success: uiT("Worktree deleted"),
         error: false,
@@ -200,7 +193,7 @@ export function DeleteWorktreeDialog({
             {uiT("Cancel")}
           </Button>
           <Button variant="danger" type="submit" disabled={busy}>
-            {busy && <Loader className="size-3.5 animate-spin" />}
+            {busy && <Spinner className="size-3.5" />}
             {sessionCount && deleteSessions
               ? uiT("Delete worktree and session{value0}", {
                   value0: String(sessionCount === 1 ? "" : "s"),

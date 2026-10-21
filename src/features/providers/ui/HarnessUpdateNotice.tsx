@@ -16,7 +16,7 @@ import {
 } from "../../../integrations/harness/providers/opencode/opencodeProtocol";
 import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
 import { LAYER } from "../../../shared/lib/layers";
-import { Check, Loader, X } from "../../../shared/ui/icons";
+import { Check, X } from "../../../shared/ui/icons";
 import { isPickerProviderVisible } from "../../sessions/model/models";
 import {
   HARNESS_TITLE,
@@ -35,6 +35,7 @@ import {
 } from "../model/harnessUpdates";
 import { useHarnessRefreshSync } from "../model/harnessRefreshSync";
 import { harnessUpdateError } from "../model/harnessUpdateErrors";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 /**
  * Shared by every mount in this window: a StrictMode remount must reuse the
@@ -273,7 +274,7 @@ function HarnessUpdateRow({
             >
               {state.status === "updating" ? (
                 <>
-                  <Loader className="size-3 animate-spin" />
+                  <Spinner className="size-3" />
                   {uiT("Updating")}
                 </>
               ) : state.status === "failed" ? (

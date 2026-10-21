@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
+import { toast } from "sonner";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
@@ -152,8 +153,8 @@ it("imports every not-yet-imported conversation, continues past failures and rep
   await act(async () => all.click());
   expect(mocks.import).toHaveBeenCalledTimes(1);
   expect(mocks.import).toHaveBeenCalledWith(mocks.state.files[1]);
-  const result = document.querySelector("[data-status-toast-host] [role=alert]");
-  expect(result?.textContent).toContain("Imported 0 conversations; 1 could not be imported.");
+  const result = toast.getHistory().findLast((item) => "type" in item && item.type === "error");
+  expect(result && "title" in result ? String(result.title) : "").toContain("Imported 0 conversations; 1 could not be imported.");
   // Bulk import never opens sessions one by one.
   expect(open).not.toHaveBeenCalled();
   mocks.state.bound = new Set();

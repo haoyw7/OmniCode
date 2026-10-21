@@ -1,8 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Loader } from "../../../shared/ui/icons";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type Props = {
   busy: boolean;
@@ -75,7 +75,7 @@ export function CreateBranchDialog({ busy, error, onCreate, onCancel }: Props) {
           </Button>
           <Button variant="primary" type="submit" disabled={!trimmed || busy}>
             {busy ? (
-              <Loader className="size-3.5 animate-spin" />
+              <Spinner className="size-3.5" />
             ) : null}
             {uiT("Create branch")}
           </Button>

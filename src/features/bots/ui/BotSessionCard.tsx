@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { BotMessage, SessionReference } from "../model/botView";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { ArrowUpRight, ChevronRight, ListChecks, LoaderCircle } from "../../../shared/ui/icons";
+import { ArrowUpRight, ChevronRight, ListChecks } from "../../../shared/ui/icons";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import { HARNESS_TITLE, sessionDisplayTitle } from "../../sessions/model/session";
 import { Button } from "../../../shared/ui/forms/Button";
@@ -9,6 +9,7 @@ import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { botErrorMessage } from "../model/botErrors";
 import type { HostModelCatalog } from "../../connections/model/protocol";
 import { findRemoteModel } from "../../connections/model/remoteModels";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 export function BotSessionCard({
   message,
   catalog,
@@ -65,7 +66,7 @@ export function BotSessionCard({
             <HarnessIcon harness={message.harness} className="size-[15px]" />
           </span>
           <span className="assistant-task-title">{title}</span>
-          {opening ? <LoaderCircle size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowUpRight size={16} aria-hidden="true" />}
+          {opening ? <Spinner className="size-4" aria-hidden="true" /> : <ArrowUpRight size={16} aria-hidden="true" />}
         </Button>
         <span role="status">{t(labels[message.status])}</span>
         {accessible && onTimeline && <IconButton label={t("View progress")} shape="round" disabled={opening} onClick={() => void open(true)}><ListChecks size={16} aria-hidden="true" /></IconButton>}
@@ -99,10 +100,7 @@ export function BotSessionCard({
           aria-label={message.status === "running" ? t(labels.running) : undefined}
         >
           {message.status === "running" ? (
-            <LoaderCircle
-              className="size-3.5 shrink-0 animate-spin motion-reduce:animate-none"
-              aria-hidden="true"
-            />
+            <Spinner className="size-3.5 shrink-0" aria-hidden="true" />
           ) : t(labels[message.status])}
         </span>
       </div>
@@ -117,11 +115,7 @@ export function BotSessionCard({
       >
         {!mobile && t(opening ? "Opening…" : "Open session")}
         {opening ? (
-          <LoaderCircle
-            size={mobile ? 18 : 14}
-            className="shrink-0 animate-spin motion-reduce:animate-none"
-            aria-hidden="true"
-          />
+          <Spinner className={mobile ? "size-[18px] shrink-0" : "size-3.5 shrink-0"} aria-hidden="true" />
         ) : <ChevronRight size={mobile ? 18 : 14} aria-hidden="true" />}
       </button>
     </article>

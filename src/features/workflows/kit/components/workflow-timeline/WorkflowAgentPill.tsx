@@ -1,11 +1,12 @@
 import { motion as motionElement } from "motion/react";
 import { workflowEntry } from "./workflow-motion.js";
 import type { CSSProperties, ReactNode } from "react";
-import { ArrowUpRight as ArrowUpRightIcon, CircleCheck as CircleCheckIcon, CircleHelp as CircleHelpIcon, CircleX as CircleXIcon, LoaderCircle as LoaderCircleIcon, Terminal as TerminalIcon } from "../../../../../shared/ui/icons";
+import { ArrowUpRight as ArrowUpRightIcon, CircleCheck as CircleCheckIcon, CircleHelp as CircleHelpIcon, CircleX as CircleXIcon, Terminal as TerminalIcon } from "../../../../../shared/ui/icons";
 import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
 import type { LaneClass, StepRunStatus } from "../workflow-graph/types.js";
 import { WorkflowAgentFace, agentColor } from "./WorkflowAgentFace.js";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 export { agentColor } from "./WorkflowAgentFace.js";
 
@@ -75,10 +76,7 @@ export function PillStatusMark({ status }: { status: StepRunStatus | undefined }
       title={label}
     >
       {status === "running" ? (
-        <LoaderCircleIcon
-          aria-hidden
-          className="size-3.5 animate-spin motion-reduce:animate-none"
-        />
+        <Spinner className="size-3.5" aria-hidden />
       ) : status === "done" ? (
         <CircleCheckIcon aria-hidden className="size-3.5" />
       ) : (

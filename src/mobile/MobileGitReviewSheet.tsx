@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { GitChangedFile, GitFileDiff } from "../platform/tauri/fs";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { pathKey, resolveWorkspacePath } from "../shared/lib/paths";
-import { ChevronRight, LoaderCircle, WrapText } from "../shared/ui/icons";
+import { ChevronRight, WrapText } from "../shared/ui/icons";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import type { MobileGitSource } from "./mobileGit";
@@ -15,6 +15,7 @@ import { MobileSheet } from "./MobileSheet";
 import { MobileGitDiff } from "./MobileGitDiff";
 import "./styles/git-review.css";
 import { MobileDiffCounts } from "./MobileDiffCounts";
+import { Spinner } from "../shared/ui/primitives/Spinner";
 
 /** Keep or undo the edits one conversation made. */
 const MotionChevronRight = motion.create(ChevronRight);
@@ -262,7 +263,7 @@ function MobileGitFileRow({
         onClick={() => setExpanded((value) => !value)}
       >
         {expanded && enabled && !ready ? (
-          <LoaderCircle size={16} aria-hidden="true" className="mobile-git-file-chevron motion-safe:animate-spin" />
+          <Spinner className="size-4 mobile-git-file-chevron" aria-hidden="true" />
         ) : (
           <MotionChevronRight size={16} aria-hidden="true" className="mobile-git-file-chevron" animate={{ rotate: expanded ? motionGeometry.disclosureAngle : 0 }} transition={panelTransition} />
         )}

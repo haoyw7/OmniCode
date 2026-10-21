@@ -19,7 +19,6 @@ import {
   ChevronRight,
   Copy,
   FolderOpen,
-  LoaderCircle,
   Minus,
   Plus,
   Undo2,
@@ -33,6 +32,7 @@ import type {
   ReviewSource,
 } from "../model/reviewDiff";
 import { ReviewDiffViewer } from "./ReviewDiffViewer";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 /**
  * Memoized with pane-level callbacks that receive the file, so toggling one card
@@ -143,7 +143,7 @@ export const GitReviewChangeCard = memo(function GitReviewChangeCard({
           className={`review-file-toggle flex h-8 w-full min-w-0 items-center gap-0.5 px-2 text-left transition-colors focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${focused ? "ring-1 ring-inset ring-accent/30" : ""}`}
         >
           {loading || preparing ? (
-            <LoaderCircle className="review-file-chevron size-4 shrink-0 motion-safe:animate-spin" aria-hidden="true" />
+            <Spinner className="review-file-chevron size-4 shrink-0" aria-hidden="true" />
           ) : (
             <RotatingIcon icon={ChevronRight} angle={expanded ? motionGeometry.disclosureAngle : 0} className="review-file-chevron size-4 shrink-0" />
           )}

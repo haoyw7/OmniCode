@@ -336,7 +336,7 @@ html[data-skin] :is([data-slot="card"], .settings-card) { border-radius: var(--d
 html[data-skin] .settings-row { border-color: var(--color-hairline); }
 html[data-skin] [data-slot="tabs-trigger"] { font-size: var(--text-desktop-ui); line-height: 20px; transition: color var(--desktop-feedback) var(--desktop-popup-ease), background-color var(--desktop-feedback) var(--desktop-popup-ease); }
 html[data-skin] [data-slot="tooltip-content"] { border-radius: 6px; font-size: 13px; line-height: 20px; }
-html[data-skin] .status-toast { border-radius: var(--desktop-radius-card); font-size: var(--text-desktop-body); line-height: 20px; }
+html[data-skin] [data-sonner-toast] { border-radius: var(--desktop-radius-card); font-size: var(--text-desktop-body); line-height: 20px; }
 
 html[data-skin] :is([data-slot="select-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="popover-content"])[data-side="bottom"] { --desktop-popup-y: -2px; }
 html[data-skin] :is([data-slot="select-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="popover-content"])[data-side="top"] { --desktop-popup-y: 2px; }

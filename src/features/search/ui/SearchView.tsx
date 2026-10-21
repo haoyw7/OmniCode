@@ -1,10 +1,5 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  Folder,
-  LoaderCircle,
-  MessageSquare,
-  Search,
-} from "../../../shared/ui/icons";
+import { Folder, MessageSquare, Search } from "../../../shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -56,6 +51,7 @@ import {
   searchSessions,
   type SessionSummary,
 } from "../../sessions/data/sessionStore";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 const SCOPES: { id: SearchScope; label: string }[] = [
   { id: "all", label: "All" },
@@ -400,9 +396,7 @@ export function SearchView({
             className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none select-text placeholder:text-content/40"
           />
           {loading ? (
-            <LoaderCircle
-              className="size-3.5 shrink-0 animate-spin text-content/35"
-            />
+            <Spinner className="size-3.5 shrink-0 text-content/35" />
           ) : null}
         </label>
       </div>

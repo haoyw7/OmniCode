@@ -2,7 +2,7 @@ import { usePreferenceState } from "../../model/usePreferenceState";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Check } from "../../../../shared/ui/icons";
-import { withStatusToast } from "../../../../shared/ui/StatusToast";
+import { withToast } from "../../../../shared/ui/primitives/Sonner";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "../../../../shared/ui/forms/Button";
 import { clearInboxCache, githubStatus, type GithubStatus } from "../../../inbox/model/githubTasks";
@@ -126,7 +126,7 @@ export function GitlabSettings() {
     setBusy(true);
     setError(null);
     try {
-      const status = await withStatusToast(() => saveGitlabConfig(url, token), {
+      const status = await withToast(() => saveGitlabConfig(url, token), {
         loading: uiT("Connecting to {service}…", { service: "GitLab" }),
         success: (result) => result.connected && uiT("Connected to {service}", { service: "GitLab" }),
         error: false,
@@ -148,7 +148,7 @@ export function GitlabSettings() {
     setBusy(true);
     setError(null);
     try {
-      const status = await withStatusToast(() => disconnectGitlab(url), {
+      const status = await withToast(() => disconnectGitlab(url), {
         loading: uiT("Disconnecting from {service}…", { service: "GitLab" }),
         success: uiT("Disconnected from {service}", { service: "GitLab" }),
         error: false,
@@ -260,7 +260,7 @@ export function AzureDevOpsSettings() {
     setBusy(true);
     setError(null);
     try {
-      const status = await withStatusToast(() => saveAzureDevOpsConfig(url, token), {
+      const status = await withToast(() => saveAzureDevOpsConfig(url, token), {
         loading: uiT("Connecting to {service}…", { service: "Azure DevOps" }),
         success: (result) => result.connected && uiT("Connected to {service}", { service: "Azure DevOps" }),
         error: false,
@@ -282,7 +282,7 @@ export function AzureDevOpsSettings() {
     setBusy(true);
     setError(null);
     try {
-      const status = await withStatusToast(() => disconnectAzureDevOps(url), {
+      const status = await withToast(() => disconnectAzureDevOps(url), {
         loading: uiT("Disconnecting from {service}…", { service: "Azure DevOps" }),
         success: uiT("Disconnected from {service}", { service: "Azure DevOps" }),
         error: false,
@@ -410,7 +410,7 @@ export function LinearSettings() {
     setBusy(true);
     setError(null);
     try {
-      await withStatusToast(() => saveLinearToken(token), {
+      await withToast(() => saveLinearToken(token), {
         loading: uiT("Connecting to {service}…", { service: "Linear" }),
         success: uiT("Connected to {service}", { service: "Linear" }),
         error: false,
@@ -433,7 +433,7 @@ export function LinearSettings() {
     setBusy(true);
     setError(null);
     try {
-      await withStatusToast(() => disconnectLinear(), {
+      await withToast(() => disconnectLinear(), {
         loading: uiT("Disconnecting from {service}…", { service: "Linear" }),
         success: uiT("Disconnected from {service}", { service: "Linear" }),
         error: false,

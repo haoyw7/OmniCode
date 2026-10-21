@@ -13,7 +13,6 @@ import {
   ChevronDown,
   ChevronRight,
   Gauge,
-  Loader,
   Search,
   Star,
   Zap,
@@ -66,6 +65,7 @@ import type { PopoverAlign } from "../../../shared/lib/popover";
 import { MOD } from "../../../platform/tauri/platform";
 import { keybindingPressed } from "../../settings/model/settings";
 import "./ModelPicker.css";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type Props = {
   harness: HarnessId;
@@ -783,10 +783,7 @@ export function ModelPicker({
           </span>
         ) : null}
         {triggerLoading ? (
-          <Loader
-            className="size-3 shrink-0 text-content/50 motion-safe:animate-spin"
-            aria-label={uiT("Loading models…")}
-          />
+          <Spinner className="size-3 shrink-0 text-content/50" aria-label={uiT("Loading models…")} />
         ) : (
           <ChevronDown
             className={`size-3 shrink-0 text-content/50 ${open ? "rotate-180" : ""}`}
@@ -1539,10 +1536,7 @@ function ModelBrowser({
           onKeyDown={onSearchKey}
         />
         {tabLoading ? (
-          <Loader
-            className="size-3.5 shrink-0 motion-safe:animate-spin"
-            aria-label={uiT("Loading models…")}
-          />
+          <Spinner className="size-3.5 shrink-0" aria-label={uiT("Loading models…")} />
         ) : null}
       </label>
 
@@ -1602,7 +1596,7 @@ function ModelBrowser({
                 : tabLoading && !query.trim()
                   ? (
                       <span className="flex items-center gap-2">
-                        <Loader className="size-3.5 shrink-0 motion-safe:animate-spin" />
+                        <Spinner className="size-3.5 shrink-0" />
                         {uiT("Loading models…")}
                       </span>
                     )

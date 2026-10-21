@@ -1,7 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { showStatusToast, withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
+import { toast } from "sonner";
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { Loader } from "../../../shared/ui/icons";
+
 import { Modal } from "../../../shared/ui/Modal";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import {
@@ -30,6 +31,7 @@ import {
 } from "../model/projectChatBackground";
 import { useProjectBackgroundEffect } from "./useProjectBackgroundEffect";
 import { GradientBlurBackground } from "../../settings/ui/GradientBlurBackground";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type Props = {
   project: string;
@@ -82,7 +84,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
       // The file picker is the progress UI here; confirm only the result.
       const nextPath = await pickAndSaveProjectChatBackground(project);
       if (!nextPath) return;
-      showStatusToast(uiT("Background updated"));
+      toast.success(uiT("Background updated"));
       save(nextPath, opacity, effect, true);
       setPath(nextPath);
     } catch (cause) {
@@ -96,7 +98,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
     setBusy(true);
     setError(null);
     try {
-      await withStatusToast(() => clearProjectChatBackground(project), {
+      await withToast(() => clearProjectChatBackground(project), {
         loading: uiT("Removing background…"),
         success: uiT("Background removed"),
         error: false,
@@ -177,7 +179,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
             className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-content/10 px-2.5 py-1.5 text-[12px] text-content/70 hover:bg-content/6 hover:text-content disabled:opacity-40"
           >
             {busy ? (
-              <Loader className="size-3.5 animate-spin" aria-hidden />
+              <Spinner className="size-3.5" aria-hidden />
             ) : null}
             {path ? uiT("Change image") : uiT("Choose image")}
           </button>

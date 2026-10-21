@@ -1,5 +1,5 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useProjectBranchesState } from "../hooks/useProjectBranches";
 import { LAYER } from "../../../shared/lib/layers";
@@ -8,7 +8,7 @@ import { prettyCwd } from "../../../shared/lib/paths";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
-import { Loader } from "../../../shared/ui/icons";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 export function CreateWorktreeDialog({
   cwd,
@@ -67,7 +67,7 @@ export function CreateWorktreeDialog({
     setBusy(true);
     setError(undefined);
     try {
-      await withStatusToast(
+      await withToast(
         async () => onCreated(await createWorktree(baseCwd, name.trim(), base, existing)),
         {
           loading: uiT("Creating worktree…"),
@@ -184,7 +184,7 @@ export function CreateWorktreeDialog({
             {uiT("Cancel")}
           </Button>
           <Button variant="primary" type="submit" disabled={busy || !name.trim()}>
-            {busy && <Loader className="size-3.5 animate-spin" />}
+            {busy && <Spinner className="size-3.5" />}
             {uiT("Create worktree")}
           </Button>
         </ModalFooter>

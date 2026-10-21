@@ -30,17 +30,7 @@ import { duration, immediateTransition } from "../../../shared/motion/tokens";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
 import { isEqualOrInside } from "../../../shared/lib/paths";
-import {
-  AlertCircle,
-  Check,
-  FileDiff,
-  FolderTree,
-  ListBullet,
-  Loader,
-  MoreVertical,
-  Search,
-  X,
-} from "../../../shared/ui/icons";
+import { AlertCircle, Check, FileDiff, FolderTree, ListBullet, MoreVertical, Search, X } from "../../../shared/ui/icons";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import {
   DropdownMenu,
@@ -73,6 +63,7 @@ import { GitReviewChangeCard, ReviewFileIcon, ReviewIconButton } from "./GitRevi
 import { ReviewDiffsWorkerPool } from "./ReviewDiffsWorkerPool";
 import { ReviewSourceSelect } from "./ReviewSourceSelect";
 import "./GitReviewPane.css";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 export type GitReviewPaneProps = {
   cwd: string;
@@ -631,7 +622,7 @@ export function GitReviewPane({
                         <span className="text-content/45">{error}</span>
                       </Empty>
                     ) : files == null ? (
-                      <Empty icon={<Loader className="size-4 animate-spin" />}>
+                      <Empty icon={<Spinner className="size-4" />}>
                         {t("Loading…")}
                       </Empty>
                     ) : !rows.length ? (

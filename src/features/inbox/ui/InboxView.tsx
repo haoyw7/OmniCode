@@ -1,15 +1,7 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { AppPageHeader } from "../../workspace/ui/AppPageHeader";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  CheckCheck,
-  Inbox,
-  ListFilter,
-  LoaderCircle,
-  Plus,
-  RefreshCw,
-  Search,
-} from "../../../shared/ui/icons";
+import { CheckCheck, Inbox, ListFilter, Plus, RefreshCw, Search } from "../../../shared/ui/icons";
 import {
   useCallback,
   useEffect,
@@ -119,6 +111,7 @@ import { inboxAskKey } from "../model/inboxAsk";
 import { type CiRepairProps, InboxDetail } from "./InboxDetail";
 import { type InboxProjectOption, inboxProjectOptions } from "./InboxProjectPicker";
 import { InboxCard } from "./InboxCard";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 const MIN_WIDTH = 240;
 const MAX_WIDTH = 420;
@@ -793,9 +786,7 @@ export function InboxView({
             className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content"
           >
             {loading || revalidating ? (
-              <LoaderCircle
-                className="size-3.5 animate-spin"
-              />
+              <Spinner className="size-3.5" />
             ) : (
               <RefreshCw className="size-3.5" />
             )}
@@ -819,7 +810,7 @@ export function InboxView({
           <p className="px-3 py-2 text-[12px] text-content/50">{sourceError}</p>
         ) : loading && items.length === 0 ? (
           <div className="flex justify-center py-10 text-content/40">
-            <LoaderCircle className="size-4 animate-spin" />
+            <Spinner className="size-4" />
           </div>
         ) : visibleItems.length === 0 ? (
           <p className="px-3 py-2 text-[12px] text-content/50">

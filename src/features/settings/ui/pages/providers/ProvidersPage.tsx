@@ -1,6 +1,6 @@
 import { usePreferenceState } from "../../../model/usePreferenceState";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
-import { Loader, RefreshCw } from "../../../../../shared/ui/icons";
+import { RefreshCw } from "../../../../../shared/ui/icons";
 import {
   useCallback,
   useContext,
@@ -72,6 +72,7 @@ import {
 import { ProviderDetail } from "./ProviderDetail";
 import { ProviderList, type ProviderListEntry } from "./ProviderList";
 import { hasProviderAccounts, useProviderAccounts } from "./useProviderAccounts";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 /** Below this width the provider list folds into a menu above the detail. */
 const COMPACT_BREAKPOINTS = [640] as const;
@@ -308,7 +309,7 @@ export function ProvidersPage({
             onClick={() => void onRefresh()}
           >
             {refreshing ? (
-              <Loader className="size-3.5 animate-spin" aria-hidden />
+              <Spinner className="size-3.5" aria-hidden />
             ) : (
               <RefreshCw className="size-3.5" aria-hidden />
             )}

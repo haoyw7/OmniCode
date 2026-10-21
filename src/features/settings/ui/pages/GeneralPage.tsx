@@ -2,7 +2,7 @@ import { usePreferenceState } from "../../model/usePreferenceState";
 import { formatBuildVersion } from "../../../../shared/lib/buildVersion";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { setUiLanguage, type UiLanguage } from "../../../../shared/i18n/language";
-import { ArrowDownCircle, Loader, RefreshCw } from "../../../../shared/ui/icons";
+import { ArrowDownCircle, RefreshCw } from "../../../../shared/ui/icons";
 import { useEffect, useState } from "react";
 import { Button } from "../../../../shared/ui/forms/Button";
 import { IS_LINUX, IS_MAC, IS_WIN } from "../../../../platform/tauri/platform";
@@ -41,6 +41,7 @@ import {
   type UpdaterSnapshot,
 } from "../../../../app/model/updater";
 import { Group, Row, Segmented, Toggle } from "../settingsLayout";
+import { Spinner } from "../../../../shared/ui/primitives/Spinner";
 
 
 
@@ -386,7 +387,7 @@ function UpdateRow({
         </Button>
         <Button variant="secondary" onClick={() => void onClick()} disabled={busy}>
           {busy ? (
-            <Loader className="size-3.5 animate-spin" aria-hidden />
+            <Spinner className="size-3.5" aria-hidden />
           ) : hasUpdate ? (
             <ArrowDownCircle className="size-3.5 text-accent" aria-hidden />
           ) : (

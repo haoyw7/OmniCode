@@ -1,7 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { Check, ListEnd, Loader, Minus } from "../../../shared/ui/icons";
+import { Check, ListEnd, Minus } from "../../../shared/ui/icons";
 import type { TaskListItem, TaskListItemStatus } from "../model/session";
 import { taskListProgressLabel } from "../model/taskList";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type Props = {
   items: TaskListItem[];
@@ -80,7 +81,7 @@ export function TaskState({ status }: { status: TaskListItemStatus }) {
         aria-label={uiT("In progress")}
         className="mt-px grid size-4 shrink-0 place-items-center text-sky-300"
       >
-        <Loader className="size-4 motion-safe:animate-spin" strokeWidth={2} />
+        <Spinner className="size-4" strokeWidth={2} />
       </span>
     );
   }

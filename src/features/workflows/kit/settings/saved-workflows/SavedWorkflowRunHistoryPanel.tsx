@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Ban, ChevronRight, CircleCheck, Loader2, TriangleAlert } from "../../../../../shared/ui/icons";
+import { Ban, ChevronRight, CircleCheck, TriangleAlert } from "../../../../../shared/ui/icons";
 import { TID_WORKFLOW_RUN_ROW, testId, type OmniCodeSavedWorkflowRun } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { cn } from "../../../../../shared/lib/cn";
@@ -12,6 +12,7 @@ import {
   savedWorkflowRunBadgeKind,
   savedWorkflowRunDurationMs,
 } from "./savedWorkflowRunHistory.js";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 /** 详情页某一行运行记录对应的项目（全局工作流跨 cwd 时用；cwd 命中已打开项目才能「查看实例」）。 */
 export interface SavedWorkflowRunProject {
@@ -95,7 +96,7 @@ export function SavedWorkflowRunHistory({
               break;
             case "running":
               icon = (
-                <Loader2 className="size-4 animate-spin" strokeWidth={1.33} aria-hidden="true" />
+                <Spinner className="size-4" strokeWidth={1.33} aria-hidden="true" />
               );
               statusClass = "text-warning";
               break;

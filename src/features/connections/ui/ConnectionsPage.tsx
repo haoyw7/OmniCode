@@ -1,8 +1,8 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, Computer, Copy, Loader, RefreshCw, Smartphone } from "../../../shared/ui/icons";
+import { Check, Computer, Copy, RefreshCw, Smartphone } from "../../../shared/ui/icons";
 import type { HostDeviceInfo } from "../model/protocol";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
@@ -13,6 +13,7 @@ import { PairingHostField } from "./PairingHostField";
 import { sharedHostMachineId } from "../model/remoteProjects";
 import { ConnectionsSettings } from "./ConnectionsSettings";
 import { ConnectionStatusIcon, type ConnectionState } from "./ConnectionStatusDot";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type ConnectionsTab = "control" | "ssh";
 
@@ -189,7 +190,7 @@ function ControlThisComputer() {
           </p>
         ) : !devices ? (
           <div className="flex items-center gap-2 px-4 py-4 text-ui-base text-foreground-subtle">
-            <Loader className="size-4 animate-spin" />
+            <Spinner className="size-4" />
             {t("Loading devices…")}
           </div>
         ) : devices.length === 0 ? (
@@ -393,7 +394,7 @@ function AddDeviceDialog({
             if (busy || !name.trim()) return;
             setBusy(true);
             setError("");
-            void withStatusToast(
+            void withToast(
               () =>
                 remoteRequest<{ id: string; token: string }>(machineId, "devices.issue", {
                   name: name.trim(),

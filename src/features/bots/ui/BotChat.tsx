@@ -61,7 +61,7 @@ import {
 import { Shimmer } from "../../../shared/ui/Shimmer";
 import { JumpToBottomButton, useJumpToBottomVisibility } from "../../../shared/ui/messaging/JumpToBottomButton";
 import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { usePauseOffscreenAnimation } from "../../../shared/hooks/usePauseOffscreenAnimation";
 import { reducedMotionQuery } from "../../../shared/lib/reducedMotion";
 import { slidePromptIn } from "../../sessions/ui/promptLaunch";
@@ -744,7 +744,7 @@ export function BotChat({
       const signature = JSON.stringify([cacheKey, settingsBase?.revision ?? 0, patch]);
       if (botsLayout && settingsCommand.current?.signature !== signature)
         settingsCommand.current = { signature, id: crypto.randomUUID() };
-      await withStatusToast(
+      await withToast(
         () =>
           rpc("assistant.configure", {
             commandId: botsLayout ? settingsCommand.current!.id : crypto.randomUUID(),

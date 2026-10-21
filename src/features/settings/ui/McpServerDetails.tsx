@@ -2,13 +2,7 @@ import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import {
-  FileText,
-  LoaderCircle,
-  MessageSquare,
-  RefreshCw,
-  Wrench,
-} from "../../../shared/ui/icons";
+import { FileText, MessageSquare, RefreshCw, Wrench } from "../../../shared/ui/icons";
 import type { McpConnection } from "../model/mcp";
 import {
   inspectMcpServer,
@@ -18,6 +12,7 @@ import {
   type McpResource,
   type McpTool,
 } from "../model/mcpInspect";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type Tab = "tools" | "resources" | "prompts";
 
@@ -80,7 +75,7 @@ export function McpServerDetails({
   if (state.kind === "loading") {
     return (
       <div className="flex items-center gap-2 px-4 pb-4 pl-14 text-xs text-content/55">
-        <LoaderCircle className="size-3.5 animate-spin" />
+        <Spinner className="size-3.5" />
         {uiT("Connecting to server…")}
       </div>
     );

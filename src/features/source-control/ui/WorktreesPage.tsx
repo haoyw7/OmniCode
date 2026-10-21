@@ -8,7 +8,6 @@ import {
   FolderOpen,
   FolderTree,
   GitBranch,
-  Loader,
   Plus,
   RefreshCw,
   Trash2,
@@ -27,6 +26,7 @@ import {
   type RemoveWorktree,
   type Worktree,
 } from "../model/worktrees";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 // Git localizes this message, so match both English and Chinese output.
 function isNotGitRepositoryError(error: unknown) {
@@ -156,7 +156,7 @@ export function WorktreesPage({
         </p>
       ) : !data ? (
         <p className="flex items-center gap-2 text-[12px] text-content/50">
-          <Loader className="size-4 animate-spin" />
+          <Spinner className="size-4" />
           {uiT("Loading worktrees…")}
         </p>
       ) : !worktrees.length ? (

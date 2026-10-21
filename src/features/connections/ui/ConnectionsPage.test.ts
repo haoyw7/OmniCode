@@ -7,8 +7,8 @@ import { configureSharedHost } from "../model/remoteProjects";
 import { ConnectionsPage } from "./ConnectionsPage";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
-vi.mock("../../../shared/ui/StatusToast", () => ({
-  withStatusToast: (task: () => Promise<unknown>) => task(),
+vi.mock("../../../shared/ui/primitives/Sonner", () => ({
+  withToast: (task: () => Promise<unknown>) => task(),
 }));
 
 let container: HTMLDivElement;

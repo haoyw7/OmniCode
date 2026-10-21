@@ -22,7 +22,6 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   ArrowLeft,
   ArrowUp,
-  LoaderCircle,
   Pause,
   Play,
   Plus,
@@ -34,6 +33,7 @@ import {
 import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
 import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 export function DesktopBotsMessageMenu({
   open,
@@ -376,7 +376,7 @@ export function DesktopBotsComposer({
             disabled={sendDisabled}
           >
             {sending ? (
-              <LoaderCircle size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              <Spinner className="size-[18px]" aria-hidden="true" />
             ) : (
               <ArrowUp size={18} aria-hidden="true" />
             )}

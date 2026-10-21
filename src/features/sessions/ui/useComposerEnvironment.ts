@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getComposerEnvironment, setComposerEnvironment } from "../model/draftCache";
 import { parseWslPath, wslPath } from "../../../shared/lib/wslPaths";
 import { pickWslFolder } from "../../../platform/tauri/wsl";
-import { showStatusToast } from "../../../shared/ui/StatusToast";
+import { toast } from "sonner";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 
 /** An environment choice is a draft preference until a folder is chosen separately. */
@@ -36,7 +36,7 @@ export function useComposerEnvironment(sessionId: string | undefined, cwd: strin
       const path = await pickWslFolder(distribution, t("Open a WSL project"));
       if (path && started === version.current) onCwdChange(wslPath(distribution, path));
     } catch (reason) {
-      if (started === version.current) showStatusToast(t(String(reason).replace(/^Error: /, "")), "error");
+      if (started === version.current) toast.error(t(String(reason).replace(/^Error: /, "")));
     } finally {
       picking.current = false;
     }

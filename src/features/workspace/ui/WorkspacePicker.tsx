@@ -17,17 +17,7 @@ import { resolveWorktreeBase } from "../../source-control/model/worktreeBase";
 import { MOD, SHIFT } from "../../../platform/tauri/platform";
 import { prettyCwd } from "../../../shared/lib/paths";
 import type { WorkspaceMode } from "../../sessions/model/session";
-import {
-  Check,
-  ChevronRight,
-  Folder,
-  FolderPlus,
-  FolderTree,
-  GitBranch,
-  Loader,
-  Search,
-  Settings,
-} from "../../../shared/ui/icons";
+import { Check, ChevronRight, Folder, FolderPlus, FolderTree, GitBranch, Search, Settings } from "../../../shared/ui/icons";
 import { GitPickerTrigger } from "../../source-control/ui/GitPickerTrigger";
 import { BranchMenuScrollArea, branchMenuLayout } from "../../source-control/ui/branchMenu";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
@@ -39,6 +29,7 @@ import {
   keybindingShortcutLabel,
   keybindingShortcutTokens,
 } from "../../settings/model/settings";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 export const WORKSPACE_MODE_SHORTCUT = `${MOD}${SHIFT}G`;
 const WORKSPACE_SURFACES =
@@ -503,7 +494,7 @@ function WorkspaceModePicker({
         >
           {!data && !loadError ? (
             <p className="flex items-center gap-2 px-2 py-3 text-[12px] text-content/50">
-              <Loader className="size-3.5 animate-spin" />
+              <Spinner className="size-3.5" />
               {uiT("Loading worktrees…")}
             </p>
           ) : null}
@@ -522,7 +513,7 @@ function WorkspaceModePicker({
               >
                 <MenuHover />
                 {busyPath === tree.path ? (
-                  <Loader className="size-4 shrink-0 animate-spin text-content/55" />
+                  <Spinner className="size-4 shrink-0 text-content/55" />
                 ) : (
                   <FolderTree className="size-4 shrink-0 text-content/55" />
                 )}

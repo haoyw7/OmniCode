@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { Button } from "../../../../../shared/ui/forms/Button";
-import { ArrowDownCircle, Loader, Trash2 } from "../../../../../shared/ui/icons";
+import { ArrowDownCircle, Trash2 } from "../../../../../shared/ui/icons";
 import { HarnessIcon } from "../../../../sessions/ui/HarnessIcon";
 import {
   hasHarnessUpdate,
@@ -26,6 +26,7 @@ import {
 import { HARNESS_TITLE, type HarnessId } from "../../../../sessions/model/session";
 import { ProviderCliPanel, type ProviderCliPanelKind } from "./ProviderCliPanel";
 import { binaryInspectionError } from "./providerBinaryValidation";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 /** A provider's name, CLI state and the actions that change its CLI. */
 export function ProviderDetailHeader({
@@ -213,7 +214,7 @@ export function ProviderDetailHeader({
               onClick={() => void onUseCopy(newerCopy)}
             >
               {switching ? (
-                <Loader className="size-3.5 animate-spin" aria-hidden />
+                <Spinner className="size-3.5" aria-hidden />
               ) : (
                 <ArrowDownCircle className="size-3.5 text-accent" aria-hidden />
               )}
@@ -227,7 +228,7 @@ export function ProviderDetailHeader({
               onClick={() => void onUpdate()}
             >
               {update.status === "updating" ? (
-                <Loader className="size-3.5 animate-spin" aria-hidden />
+                <Spinner className="size-3.5" aria-hidden />
               ) : (
                 <ArrowDownCircle className="size-3.5 text-accent" aria-hidden />
               )}
@@ -252,7 +253,7 @@ export function ProviderDetailHeader({
               onClick={() => togglePanel("install")}
             >
               {installation.status === "installing" ? (
-                <Loader className="size-3.5 animate-spin" aria-hidden />
+                <Spinner className="size-3.5" aria-hidden />
               ) : (
                 <ArrowDownCircle className="size-3.5" aria-hidden />
               )}

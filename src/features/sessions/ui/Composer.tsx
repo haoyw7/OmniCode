@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { MenuPanel } from "../../../shared/ui/primitives/MenuPanel";
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
 import { MessageInput } from "../../../shared/ui/messaging/MessageInput";
@@ -9,7 +10,7 @@ import { captureQueueReturnPosition } from "../model/messageQueue";
 import { ComposerEnvironmentPicker } from "./ComposerEnvironmentPicker";
 import { useComposerEnvironment } from "./useComposerEnvironment";
 import { parseWslPath } from "../../../shared/lib/wslPaths";
-import { showStatusToast } from "../../../shared/ui/StatusToast";
+
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import type { SessionModelSettings } from "../model/models";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -1377,11 +1378,11 @@ export function Composer({
     const value = ref.current?.value ?? submittedValue;
     if (disabled || worktreeRemoved) return;
     if (!fileDropStateRef.current.attachmentsSupported && attachmentsRef.current.length > 0) {
-      showStatusToast(uiT("Choose a provider that supports attachments, or remove the attached files."), "error");
+      toast.error(uiT("Choose a provider that supports attachments, or remove the attached files."));
       return;
     }
     if (needsEnvironmentProject) {
-      showStatusToast(uiT("Choose a project folder in the selected environment before sending."), "error");
+      toast.error(uiT("Choose a project folder in the selected environment before sending."));
       return;
     }
     if (isMcpCommand(value)) {

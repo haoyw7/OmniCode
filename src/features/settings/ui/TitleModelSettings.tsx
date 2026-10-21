@@ -13,7 +13,7 @@ import {
 } from "../../sessions/model/titleModel";
 import type { GeneratedSessionTitle } from "../../sessions/model/sessionTitle";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { withStatusToast } from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { Button } from "../../../shared/ui/forms/Button";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
@@ -153,7 +153,7 @@ function TitleModelForm({ machineId }: { machineId: string }) {
             : {}),
       };
       setSettings(
-        await withStatusToast(
+        await withToast(
           () => remoteRequest<TitleModelStatus>(machineId, "titleModel.save", update),
           { loading: t("Saving…"), success: t("Saved"), error: false },
         ),

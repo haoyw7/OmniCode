@@ -3,15 +3,7 @@ import { useGithubPrChecks } from "../hooks/useGithubPrChecks";
 import { summarizePrChecks } from "../model/githubPrChecks";
 import type { CiRepairRequest } from "../model/ciRepair";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import {
-  Check,
-  Copy,
-  ExternalLink,
-  GitCompare,
-  MessageSquare,
-  LoaderCircle,
-  MessageMultiple,
-} from "../../../shared/ui/icons";
+import { Check, Copy, ExternalLink, GitCompare, MessageSquare, MessageMultiple } from "../../../shared/ui/icons";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { InboxProviderMark } from "./InboxProviderMark";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
@@ -87,6 +79,7 @@ import { type InboxProjectOption, InboxProjectPicker } from "./InboxProjectPicke
 import { InboxLabel, inboxStatusMark } from "./InboxCard";
 import { ACTION_FILLED, ACTION_GHOST, ACTION_OUTLINE, ACTION_PANEL_HEADER } from "./inboxActions";
 import { GithubPrActions } from "./GithubPrActions";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 
 
@@ -1125,9 +1118,7 @@ export function InboxDetail({
             {isPr && tab === "code" ? (
               diffLoading ? (
                 <div className="flex justify-center py-10 text-content/40">
-                  <LoaderCircle
-                    className="size-4 animate-spin"
-                  />
+                  <Spinner className="size-4" />
                 </div>
               ) : diffError ? (
                 <p className="text-[13px] text-content/50">{diffError}</p>
@@ -1170,9 +1161,7 @@ export function InboxDetail({
               />
             ) : loading || overviewSettling ? (
               <div className="flex justify-center py-10 text-content/40">
-                <LoaderCircle
-                  className="size-4 animate-spin"
-                />
+                <Spinner className="size-4" />
               </div>
             ) : error ? (
               <p className="text-[13px] text-content/50">{error}</p>

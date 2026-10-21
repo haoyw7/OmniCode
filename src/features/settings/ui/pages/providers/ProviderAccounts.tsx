@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
 import { PresenceBoundary } from "../../../../../shared/ui/PresenceBoundary";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
-import { Loader, MoreHorizontal, Pencil, Plus, Trash2 } from "../../../../../shared/ui/icons";
+import { MoreHorizontal, Pencil, Plus, Trash2 } from "../../../../../shared/ui/icons";
 import { MenuHover } from "../../../../../shared/ui/MenuHover";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { useSurfaceVisibility } from "../../../../../shared/ui/SurfaceVisibility";
@@ -32,6 +32,7 @@ import {
   type AccountEditor,
   type ProviderAccountsController,
 } from "./useProviderAccounts";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 const ACCOUNTS_SETTING_ID = "provider-accounts";
 
@@ -263,7 +264,7 @@ function AccountList({
                     onClick={() => void controller.signIn(account)}
                   >
                     {signingIn ? (
-                      <Loader className="size-3.5 animate-spin" aria-hidden />
+                      <Spinner className="size-3.5" aria-hidden />
                     ) : null}
                     {uiT(signingIn ? "Waiting for browser…" : "Sign in")}
                   </Button>
@@ -391,7 +392,7 @@ function ProviderAccountMenu({
       >
         <MenuHover />
         {busy ? (
-          <Loader className="size-3.5 animate-spin" />
+          <Spinner className="size-3.5" />
         ) : (
           <MoreHorizontal className="size-4" />
         )}
@@ -487,7 +488,7 @@ function ProviderAccountEditor({
           className="ml-1"
           disabled={working || !editor.label.trim()}
         >
-          {working ? <Loader className="size-3 animate-spin" /> : null}
+          {working ? <Spinner className="size-3" /> : null}
           {adding
             ? working
               ? uiT(editor.importCurrent ? "Importing…" : "Saving…")

@@ -4,7 +4,7 @@ import { useTranslation } from "../../shared/i18n/useTranslation";
 import { formatBuildVersion } from "../../shared/lib/buildVersion";
 import { Button } from "../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../shared/ui/Modal";
-import { CalendarDays, Loader } from "../../shared/ui/icons";
+import { CalendarDays } from "../../shared/ui/icons";
 import { AgentMarkdown } from "../../features/sessions/ui/AgentMarkdown";
 import {
   formatUpdateReleaseDate,
@@ -16,6 +16,7 @@ import {
   saveUpdatePreferences,
 } from "../model/updatePreferences";
 import type { UpdaterSnapshot } from "../model/updater";
+import { Spinner } from "../../shared/ui/primitives/Spinner";
 
 export function UpdateAvailableDialog({
   snapshot,
@@ -126,7 +127,7 @@ export function UpdateAvailableDialog({
           </Button>
           <Button variant="primary" onClick={() => void install()} disabled={busy}>
             {busy ? (
-              <Loader className="size-4 animate-spin" aria-hidden />
+              <Spinner className="size-4" aria-hidden />
             ) : null}
             {downloadLabel}
           </Button>

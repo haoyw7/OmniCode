@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import { LoaderCircle, RefreshCw } from "../../../shared/ui/icons";
+import { RefreshCw } from "../../../shared/ui/icons";
 import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
 import type { BotMemoryTopic } from "../model/botView";
 import type { BotTopicNote as TopicNote } from "../model/useBotTopicNotes";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 /** Mounted with the topic key: a late reply cannot replace a different topic. */
 export function BotTopicNote({
@@ -63,7 +64,7 @@ export function BotTopicNote({
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-4" data-mobile-page-scroll>
         {loading ? (
-          <LoaderCircle className="size-5 animate-spin" role="status" aria-label={t("Loading notes…")} />
+          <Spinner className="size-5" role="status" aria-label={t("Loading notes…")} />
         ) : error ? (
           <p role="alert" className="text-sm text-content/60">
             {error} <button type="button" disabled={!active} onClick={() => setReload((value) => value + 1)}>{t("Retry")}</button>

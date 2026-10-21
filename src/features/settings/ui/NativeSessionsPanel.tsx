@@ -11,12 +11,8 @@ import {
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { RefreshCw, Search } from "../../../shared/ui/icons";
-import {
-  dismissStatusToast,
-  showStatusToast,
-  updateStatusToast,
-  withStatusToast,
-} from "../../../shared/ui/StatusToast";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
+import { toast } from "sonner";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import {
   discoverNativeSessions,
@@ -124,7 +120,7 @@ export function NativeSessionsPanel({
     const key = nativeSourceKey(file);
     setPending(key);
     try {
-      const id = await withStatusToast(() => importNativeSession(file), {
+      const id = await withToast(() => importNativeSession(file), {
         loading: t("Importing conversation…"),
         success: (id) => !!id && t("Conversation imported"),
         error: false,
@@ -163,17 +159,16 @@ export function NativeSessionsPanel({
           failed,
         })
       : t("Imported {imported} conversations.", { imported: count });
-    showStatusToast(
+    toast[failed && !count ? "error" : "success"](
       run.cancelled ? `${result} ${t("Stopped before finishing.")}` : result,
-      failed && !count ? "error" : "success",
     );
   };
   const syncImported = async () => {
-    const id = showStatusToast(t("Syncing imported conversations…"), "loading");
+    const id = toast["loading"](t("Syncing imported conversations…"));
     await syncNativeSessions();
     // Failures stay in the panel's shared error line.
-    if (nativeSessionSnapshot().error) dismissStatusToast(id);
-    else updateStatusToast(id, t("Imported conversations synced"), "success");
+    if (nativeSessionSnapshot().error) toast.dismiss(id);
+    else toast.success(t("Imported conversations synced"), { id });
   };
   const toggle = (provider: NativeSessionProvider) => {
     setOpen((current) => (current === provider ? undefined : provider));

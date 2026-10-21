@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
+import { toast } from "sonner";
 import { finishMotion, startMotionClock, stopMotionClock } from "../../../../tests/helpers/sharedMotionClock";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -210,5 +211,5 @@ it("lists facts on one line and edits them in the platform panel", async () => {
   );
   expect(node.querySelector(".memory-detail")?.getAttribute("data-open")).toBe("false");
   expect(node.querySelector(".assistant-memory-row-text")?.textContent).toBe("Prefers bun");
-  expect(document.querySelector("[data-status-toast-host]")?.textContent).toContain("Memory updated");
+  expect(toast.getHistory().map((item) => ("title" in item ? item.title : ""))).toContain("Memory updated");
 });

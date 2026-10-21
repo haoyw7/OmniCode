@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { Button } from "../../../../../shared/ui/forms/Button";
-import { ArrowDownCircle, FolderOpen, Loader, Trash2 } from "../../../../../shared/ui/icons";
+import { ArrowDownCircle, FolderOpen, Trash2 } from "../../../../../shared/ui/icons";
 import {
   localHarnessCliPlan,
   type HarnessCliPlan,
@@ -15,6 +15,7 @@ import {
 } from "../../../../providers/model/harnessInstall";
 import { runtimeProviderBinaryPath } from "../../../../providers/model/providerBinaryPaths";
 import type { HarnessId } from "../../../../sessions/model/session";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 export type ProviderCliPanelKind = "install" | "uninstall";
 
@@ -103,7 +104,7 @@ export function ProviderCliPanel({
         ) : null}
         {running ? (
           <p role="status" className="mt-1.5 flex items-center gap-1.5 text-foreground">
-            <Loader className="size-3.5 animate-spin" aria-hidden />
+            <Spinner className="size-3.5" aria-hidden />
             {kind === "install"
               ? uiT("Downloading and installing CLI…")
               : uiT("Removing CLI…")}

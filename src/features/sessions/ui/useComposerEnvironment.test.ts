@@ -5,10 +5,10 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useComposerEnvironment } from "./useComposerEnvironment";
 import { clearComposerDraft } from "../model/draftCache";
-import { showStatusToast } from "../../../shared/ui/StatusToast";
+import { toast } from "sonner";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
-vi.mock("../../../shared/ui/StatusToast", () => ({ showStatusToast: vi.fn() }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 let root: Root;
 let container: HTMLDivElement;
 let environment: ReturnType<typeof useComposerEnvironment>;
@@ -22,7 +22,7 @@ beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   clearComposerDraft("draft"); clearComposerDraft("other");
   vi.mocked(open).mockReset().mockResolvedValue("\\\\wsl.localhost\\Debian\\home\\dev");
-  vi.mocked(showStatusToast).mockReset(); onCwdChange.mockReset();
+  vi.mocked(toast.error).mockReset(); onCwdChange.mockReset();
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
 });
 afterEach(async () => {
@@ -77,7 +77,7 @@ it("rejects folders outside the selected distribution", async () => {
   vi.mocked(open).mockResolvedValueOnce("C:/code/app");
   await act(async () => environment.pickFolder());
   expect(onCwdChange).not.toHaveBeenCalled();
-  expect(showStatusToast).toHaveBeenCalledWith("Choose a folder inside the selected WSL distribution.", "error");
+  expect(toast.error).toHaveBeenCalledWith("Choose a folder inside the selected WSL distribution.");
 });
 
 it.each(["unmount", "environment", "session"])("ignores a late folder result after changing %s", async (change) => {

@@ -1,12 +1,12 @@
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
-import { Loader } from "../../../../../shared/ui/icons";
 import { NavigationItem } from "../../../../../shared/ui/messaging/NavigationItem";
 import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
 import { HarnessIcon } from "../../../../sessions/ui/HarnessIcon";
 import { useHarnessInstall } from "../../../../providers/model/harnessInstall";
 import { HARNESS_TITLE, type HarnessId } from "../../../../sessions/model/session";
 import { PROVIDER_DETAIL_ID } from "./ProviderDetail";
+import { Spinner } from "../../../../../shared/ui/primitives/Spinner";
 
 export type ProviderListEntry = {
   harness: HarnessId;
@@ -107,7 +107,7 @@ function ProviderListBadges({ entry }: { entry: ProviderListEntry }) {
   return (
     <span className="flex shrink-0 items-center gap-1.5">
       {busy ? (
-        <Loader className="size-3.5 animate-spin text-content/50" aria-label={uiT("Working…")} />
+        <Spinner className="size-3.5 text-content/50" aria-label={uiT("Working…")} />
       ) : entry.updatable ? (
         <span
           data-ui="provider-update-dot"

@@ -6,7 +6,6 @@ import { MobileApp } from "./MobileApp";
 import { installKeyboardMotion } from "./keyboardMotion";
 import { applyGlassSettings, readGlassSettings } from "./glassSettings";
 import { refreshUiLanguage } from "../shared/i18n/language";
-import { disableStatusToasts } from "../shared/ui/StatusToast";
 import {
   applyAccentColor,
   loadAccentColor,
@@ -31,7 +30,6 @@ import "./styles/index.css";
 import "./motion.css";
 
 refreshUiLanguage();
-disableStatusToasts();
 installKeyboardMotion();
 applyGlassSettings(readGlassSettings());
 applyAccentColor(loadAccentColor());
@@ -61,5 +59,7 @@ createRoot(document.getElementById("root")!, {
       error instanceof Error && "cause" in error ? error.cause : error,
     );
   },
-}).render(<MotionConfig reducedMotion="user" transition={defaultTransition}><MobileApp /></MotionConfig>);
+}).render(
+    <MotionConfig reducedMotion="user" transition={defaultTransition}><MobileApp /></MotionConfig>
+);
 
