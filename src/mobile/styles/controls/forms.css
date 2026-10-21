@@ -92,6 +92,15 @@ html[data-mobile-skin] [data-ui="icon-button"] {
 }
 html[data-mobile-skin] [data-ui="icon-button"] svg { width: var(--m-icon-lg); height: var(--m-icon-lg); }
 html[data-mobile-skin] [data-ui="icon-button"]:is(:active, [aria-pressed="true"], [aria-expanded="true"], [data-active="true"]):not(:disabled, [aria-disabled="true"]) { background: var(--m-control-active); }
+html[data-mobile-skin] .mobile-drawer [data-ui="icon-button"][data-size="lg"][data-variant="secondary"] {
+  --m-control-icon: 48px;
+  position: relative;
+  background: var(--m-navigation-control);
+  box-shadow: var(--m-navigation-shadow);
+}
+html[data-mobile-skin] .mobile-drawer [data-ui="icon-button"][data-variant="secondary"]:is(:hover, :active):not(:disabled, [aria-disabled="true"]) {
+  background: var(--m-control-active);
+}
 html[data-mobile-skin] [data-ui="switch"] {
   --switch-travel: var(--m-switch-travel);
   position: relative;

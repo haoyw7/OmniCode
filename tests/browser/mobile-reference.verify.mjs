@@ -41,7 +41,7 @@ try{
   await page.getByRole('button',{name:'Menu',exact:true}).click();
   const drawer=page.locator('.mobile-drawer');await expect(drawer).toBeVisible();
   await expect.poll(async()=>Math.abs((await drawer.boundingBox()).x)).toBeLessThan(.5);
-  expect((await drawer.boundingBox()).width).toBeLessThanOrEqual(Math.min(340,width*.85)+1);
+  expect((await drawer.boundingBox()).width).toBeCloseTo(width, 0);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await capture(`drawer-${theme}-${width}`);
   await page.keyboard.press('Escape');await expect(drawer).toBeHidden();await expect(field).toHaveValue(saved);

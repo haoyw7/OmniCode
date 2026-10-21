@@ -15,6 +15,7 @@ import {
 import {
   Bot,
   ChevronDown,
+  ChevronLeft,
   Computer,
   File,
   Folder,
@@ -32,6 +33,7 @@ import type {
 import { sessionDisplayTitle } from "../features/sessions/model/session";
 import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
 import { AnimatedCollapse, useCollapseMotion } from "../shared/ui/AnimatedCollapse";
+import { IconButton } from "../shared/ui/forms/IconButton";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import type { HostConnectionStatus } from "./client";
@@ -650,7 +652,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
           if (event.key === "Escape") close();
         }}
       >
-        <div className="mobile-drawer-top">
+        <div className="mobile-drawer-header">
           <button
             ref={hostTrigger}
             type="button"
@@ -665,6 +667,18 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
             <span className="mobile-drawer-device-name">{hostName}</span>
             <ChevronDown size={16} className="mobile-drawer-device-chevron" />
           </button>
+          <IconButton
+            className="mobile-drawer-close"
+            label={t("Collapse navigation menu")}
+            size="lg"
+            shape="round"
+            variant="secondary"
+            onClick={close}
+          >
+            <ChevronLeft aria-hidden="true" />
+          </IconButton>
+        </div>
+        <div className="mobile-drawer-top">
           {onAssistant && (
             <button
               type="button"
@@ -686,15 +700,6 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
           <button type="button" className="mobile-drawer-item" onClick={onHome}>
             <Home size={24} />
             <span>{t("Sessions")}</span>
-          </button>
-          <button
-            type="button"
-            className="mobile-drawer-item mobile-drawer-new"
-            disabled={!project}
-            onClick={() => project && onNewSession(project)}
-          >
-            <MessageSquarePlus size={24} />
-            <span>{t("New conversation")}</span>
           </button>
           <div>
             <button
@@ -780,14 +785,29 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
             </>
           )}
         </div>
-        <button
-          type="button"
-          className="mobile-drawer-item mobile-drawer-settings"
-          onClick={onSettings}
-        >
-          <Settings size={24} />
-          <span>{t("Settings")}</span>
-        </button>
+        <div className="mobile-drawer-footer">
+          <IconButton
+            className="mobile-drawer-settings"
+            label={t("Settings")}
+            size="lg"
+            shape="round"
+            variant="secondary"
+            onClick={onSettings}
+          >
+            <Settings aria-hidden="true" />
+          </IconButton>
+          <IconButton
+            className="mobile-drawer-new"
+            label={t("New conversation")}
+            size="lg"
+            shape="round"
+            variant="secondary"
+            disabled={!project}
+            onClick={() => project && onNewSession(project)}
+          >
+            <MessageSquarePlus aria-hidden="true" />
+          </IconButton>
+        </div>
       </motion.nav>
     </motion.div>
     </SurfaceVisibilityContext.Provider>

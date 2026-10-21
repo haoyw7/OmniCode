@@ -171,11 +171,11 @@ it("moves the device selector above navigation, uses dots, and probes without ch
   expect(node.querySelector(".mobile-home-hosts")).toBeNull();
   await act(async () => button("Menu").click());
   const selector = button("Switch device");
-  expect(node.querySelector(".mobile-drawer-top")!.firstElementChild).toBe(selector);
+  expect(node.querySelector(".mobile-drawer-header")!.firstElementChild).toBe(selector);
   expect(selector.textContent).toBe("Device A");
   expect(selector.querySelector('[role="status"]')!.getAttribute("aria-label")).toBe("Connected");
   expect(selector.querySelector(".mobile-host-status-label")).toBeNull();
-  expect(node.querySelector(".mobile-drawer-settings")!.textContent).toBe("Settings");
+  expect(node.querySelector(".mobile-drawer-settings")!.getAttribute("aria-label")).toBe("Settings");
   await act(async () => selector.click());
   await act(async () => vi.dynamicImportSettled());
   expect(node.querySelector('.mobile-drawer-backdrop')!.getAttribute("data-open")).toBe("true");

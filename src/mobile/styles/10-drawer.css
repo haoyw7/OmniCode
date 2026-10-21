@@ -127,7 +127,7 @@
   position: absolute;
   inset-block: 0;
   inset-inline-start: 0;
-  width: min(320px, 85vw);
+  width: 100%;
   display: flex;
   flex-direction: column;
   padding: calc(var(--mobile-safe-top) + 12px) 10px
@@ -135,7 +135,7 @@
     calc(10px + var(--mobile-safe-left));
   border-block: 0;
   border-inline-start: 0;
-  border-radius: 0 var(--mobile-card-radius) var(--mobile-card-radius) 0;
+  border-radius: 0;
   /* The drawer is the panel tier: opaque, like a sidebar. */
   background-color: var(--color-m-panel);
   -webkit-backdrop-filter: none;
@@ -177,12 +177,25 @@
   --mobile-drawer-inset: 16px;
   --mobile-drawer-icon: var(--m-icon-lg);
   --mobile-drawer-gap: 10px;
-  width: min(340px, 85vw);
-  padding-inline: calc(8px + var(--mobile-safe-left)) 8px;
+  padding-inline: calc(8px + var(--mobile-safe-left))
+    calc(8px + var(--mobile-safe-right));
   border: 0;
   border-radius: 0;
   background: var(--m-navigation-panel);
   box-shadow: 8px 0 32px rgb(0 0 0 / 0.08);
+}
+.mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+  padding-inline-end: 8px;
+  margin-bottom: 6px;
+}
+.mobile-drawer-header > .mobile-drawer-device {
+  flex: 1;
+  min-width: 0;
+  width: auto;
 }
 .mobile-app .mobile-drawer-top {
   display: flex;
@@ -256,13 +269,6 @@
 .mobile-drawer-more:active,
 .mobile-drawer-item:not(.mobile-drawer-more-toggle):active {
   --mobile-press-color: var(--color-selection);
-}
-.mobile-app .mobile-drawer-new {
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-m-ink);
-}
-.mobile-drawer-new:disabled {
-  opacity: 0.4;
 }
 .mobile-drawer-sessions {
   flex: 1;
@@ -368,20 +374,15 @@ button.mobile-drawer-group-status {
   font-size: var(--mobile-font-md);
   color: var(--color-m-ink-tertiary);
 }
-.mobile-app .mobile-drawer-settings {
+.mobile-drawer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   flex-shrink: 0;
-  margin-top: 4px;
-  align-self: flex-start;
-  width: auto;
-  min-width: 140px;
-  min-height: 48px;
-  margin: 12px 8px 0;
-  border-radius: 24px;
-  background: var(--m-navigation-control);
-  box-shadow: var(--m-navigation-shadow);
+  gap: 8px;
+  padding: 12px 8px 0;
 }
 .mobile-drawer-device {
-  margin-bottom: 6px;
   font-weight: var(--font-weight-semibold);
 }
 .mobile-drawer-item > .mobile-drawer-device-chevron,
