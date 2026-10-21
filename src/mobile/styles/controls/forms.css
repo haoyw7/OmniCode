@@ -1,6 +1,7 @@
 /* Mobile appearance for the shared controls. Portals inherit the root skin. */
 
-html[data-mobile-skin] [data-ui="button"] {
+/* Content buttons own their row layout, spacing, and typography. */
+html[data-mobile-skin] [data-ui="button"]:not([data-size="content"]) {
   display: inline-flex;
   align-items: center;
   justify-content: center;

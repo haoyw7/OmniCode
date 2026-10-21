@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileSessionStatus } from "./MobileSessionStatus";
 import { setUiLanguage } from "../shared/i18n/language";
 import type { HostSession } from "../features/connections/model/protocol";
+import type { GitDiffIndex } from "../platform/tauri/fs";
+import type { MobileGitSource } from "./mobileGit";
 
 const clipboard = vi.hoisted(() => ({ copyText: vi.fn(async () => {}) }));
 vi.mock("./transcriptPlatform", () => ({
@@ -25,7 +27,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   setUiLanguage("en");
 });
-function render(session: Partial<HostSession["session"]> = {}) {
+function render(session: Partial<HostSession["session"]> = {}, gitSource?: MobileGitSource) {
   const snapshot: HostSession = {
     projectId: "project",
     revision: 1,
@@ -49,6 +51,7 @@ function render(session: Partial<HostSession["session"]> = {}) {
     root.render(
       createElement(MobileSessionStatus, {
         snapshot,
+        gitSource,
         hostName: "Workstation",
         hostStatus: { state: "connected" },
         anchor: { current: trigger },
@@ -65,6 +68,7 @@ describe("mobile session status", () => {
       providerSessionId: "thread-1",
       cwd: "/project",
       executionCwd: "/project/.worktrees/feature",
+      linkedWorktree: true,
       branch: "feature",
       context: { used: 140_000, window: 660_000 },
     });
@@ -73,6 +77,7 @@ describe("mobile session status", () => {
     expect(text).toContain("对话线程");
     expect(text).toContain("thread-1");
     expect(text).toContain("/project/.worktrees/feature");
+    expect(text).toContain("工作树");
     expect(text).toContain("feature");
     expect(text).toContain("已用 21%");
     expect(text).toContain("140k / 660k tokens");
@@ -88,5 +93,32 @@ describe("mobile session status", () => {
       node.querySelector<HTMLButtonElement>('button[aria-label="Copy"]')!.click();
     });
     expect(clipboard.copyText).toHaveBeenCalledWith("session");
+  });
+
+  it("does not infer a worktree from a different execution directory", () => {
+    render({ executionCwd: "/project/subdir", branch: "main" });
+    const fields = [...node.querySelectorAll(".mobile-status-field")].map(field => field.textContent);
+    expect(fields).toContain("Directory/project/subdir");
+    expect(fields).toContain("Branchmain");
+    expect(fields.some(field => field?.startsWith("Worktree"))).toBe(false);
+  });
+
+  it.each([
+    ["main", "abc1234567", "main"],
+    [null, "abc1234567", "Detached abc1234"],
+    [null, null, undefined],
+  ] as const)("reads the current Git branch (%s, %s)", async (branch, head, expected) => {
+    const gitSource = {
+      loadIndex: vi.fn(async () => ({ branch, head, files: [], additions: 0, deletions: 0 }) as GitDiffIndex),
+      loadDiff: vi.fn(),
+    };
+    await act(async () => render({ branch: "previous-branch" }, gitSource));
+    await vi.waitFor(async () => {
+      await act(async () => {});
+      const field = [...node.querySelectorAll(".mobile-status-field")].find(field =>
+        field.querySelector("strong")?.textContent === "Branch");
+      expect(field?.querySelector(".mobile-status-field-value")?.textContent).toBe(expected);
+    });
+    expect(node.textContent).not.toContain("Worktree");
   });
 });

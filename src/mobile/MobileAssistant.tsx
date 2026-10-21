@@ -518,6 +518,7 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
             }}
           />
           <textarea
+            data-ui="message-input-field"
             rows={1}
             aria-label={t("Message assistant")}
             placeholder={t(replyText !== undefined ? "Reply" : "Ask your assistant…")}

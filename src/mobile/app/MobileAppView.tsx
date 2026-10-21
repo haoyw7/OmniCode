@@ -925,6 +925,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
         <MobileSnapshotStatus
           store={snapshotStore}
           catalog={catalog}
+          gitSource={gitSource}
           hostName={connectionName}
           hostStatus={hostStatus}
           anchor={sessionStatusTrigger}

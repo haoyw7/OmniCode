@@ -14,6 +14,8 @@ import {
 } from "../features/sessions/model/contextBreakdown";
 import { MobileSheet } from "./MobileSheet";
 import { MobileHostStatus } from "./MobileHostStatus";
+import type { MobileGitSource } from "./mobileGit";
+import { useMobileGitIndex } from "./useMobileGitIndex";
 import { mobileTranscriptPlatform } from "./transcriptPlatform";
 import type { HostConnectionStatus } from "./client";
 import { mobileContextUsage } from "./contextUsage";
@@ -86,6 +88,7 @@ export function MobileSessionStatus({
   catalog,
   hostName,
   hostStatus,
+  gitSource,
   anchor,
   onClose,
 }: {
@@ -95,6 +98,7 @@ export function MobileSessionStatus({
   catalog?: HostModelCatalog;
   hostName: string;
   hostStatus: HostConnectionStatus;
+  gitSource?: MobileGitSource;
   anchor: RefObject<HTMLElement | null>;
   onClose: () => void;
 }) {
@@ -103,6 +107,10 @@ export function MobileSessionStatus({
   const [contextExpanded, setContextExpanded] = useState(false);
   const contextDetailsId = useId();
   const directory = session.executionCwd || session.cwd;
+  const git = useMobileGitIndex(gitSource, open && hostStatus.state === "connected", snapshot.status === "running");
+  const branch = git.index
+    ? git.index.branch || (git.index.head ? t("Detached {value0}", { value0: git.index.head.slice(0, 7) }) : undefined)
+    : session.branch;
   const context = mobileContextUsage(session, catalog);
   const percent = contextPercent(context);
   const contextRows = context ? contextBreakdownRows(context) : [];
@@ -201,9 +209,12 @@ export function MobileSessionStatus({
           value={session.providerSessionId || session.id}
           copyable
         />
-        <StatusField label="Directory" value={directory} copyable />
-        {session.branch && (
-          <StatusField label="Branch" value={session.branch} />
+        <StatusField label="Directory" value={session.linkedWorktree ? session.cwd : directory} copyable />
+        {session.linkedWorktree && (
+          <StatusField label="Worktree" value={directory} copyable />
+        )}
+        {branch && (
+          <StatusField label="Branch" value={branch} copyable />
         )}
         <div className="mobile-status-field mobile-status-agent">
           <div className="mobile-status-field-label">
