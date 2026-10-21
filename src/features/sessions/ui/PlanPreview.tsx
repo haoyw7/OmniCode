@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { Button } from "../../../shared/ui/forms/Button";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -218,7 +222,8 @@ export function PlanDecision({
   onCollapse?: () => void;
 }) {
   const { t: uiT } = useTranslation();
-  const [feedback, setFeedback] = useState("");
+  const form = useForm({ resolver: zodResolver(z.object({ feedback: z.string().trim().min(1, uiT("This field is required")) })), defaultValues: { feedback: "" } });
+  const feedback = useWatch({ control: form.control, name: "feedback" });
   const ready = !!feedback.trim() && !busy;
   return (
     <div
@@ -229,10 +234,7 @@ export function PlanDecision({
       <form
         className="flex min-h-0 flex-col rounded-lg border border-content/10 bg-content/3 px-3 py-2.5"
         data-question-card
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (ready && onRevise(feedback.trim()) !== false) setFeedback("");
-        }}
+        noValidate onSubmit={form.handleSubmit(({ feedback }) => { if (ready && onRevise(feedback) !== false) form.reset(); })}
       >
         <div className="flex shrink-0 items-center gap-1.5" data-question-header>
           <ListChecks
@@ -293,14 +295,15 @@ export function PlanDecision({
               </span>
             </button>
             <input data-ui="input"
-              value={feedback}
-              onChange={(event) => setFeedback(event.target.value)}
+              {...form.register("feedback")}
+              aria-invalid={!!form.formState.errors.feedback}
               placeholder={uiT("No, describe what to change")}
               aria-label={uiT("No, describe what to change")}
               className="w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none placeholder:text-content/35 focus:border-content/30"
             />
           </div>
         </div>
+        <FieldError errors={[form.formState.errors.feedback]} />
         {feedback.trim() ? (
           <div
             className="mt-2.5 flex shrink-0 items-center justify-end gap-2"

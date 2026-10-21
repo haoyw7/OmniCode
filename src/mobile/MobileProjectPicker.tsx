@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../shared/ui/primitives/Field";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../shared/lib/queryClient";
 import { withToast } from "../shared/ui/primitives/Sonner";
@@ -48,7 +52,9 @@ export function MobileProjectPicker({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const [path, setPath] = useState("");
+  const form = useForm({ resolver: zodResolver(z.object({ path: z.string().trim().min(1, t("Enter a folder path")) })), defaultValues: { path: "" } });
+  const path = useWatch({ control: form.control, name: "path" });
+  const setPath = (value: string) => form.setValue("path", value, { shouldValidate: form.formState.isSubmitted });
   const [filter, setFilter] = useState("");
   const [requested, setRequested] = useState<{ path?: string } | null>({});
   const [sessionActive, setSessionActive] = useState(isOpen);
@@ -59,7 +65,7 @@ export function MobileProjectPicker({
     queryFn: ({ signal }) => { signal.throwIfAborted(); return browseDirectories(requested?.path); },
   }, queryClient);
   const mutation = useMutation({ mutationFn: (path: string) => withToast(() => onOpen(path),
-    { loading: t("Opening…"), success: false, error: false }) }, queryClient);
+    { loading: t("Opening…"), success: false }) }, queryClient);
   const directory = requested ? read.data : undefined;
   const parent = directory?.parent ?? directoryParent(path);
   const loading = requested !== null && read.isFetching, opening = mutation.isPending;
@@ -81,13 +87,13 @@ export function MobileProjectPicker({
     if (folders.current) folders.current.scrollTop = 0;
   }, [directory?.path, filter]);
   const close = () => { if (!blocked && !inFlight.current) onClose(); };
-  const open = async () => {
+  const open = form.handleSubmit(async ({ path }) => {
     if (blocked || loading || !path.trim() || inFlight.current) return;
     inFlight.current = true;
     try { await mutation.mutateAsync(path.trim()); }
     catch { /* Keep the draft and expose the mutation failure. */ }
     finally { inFlight.current = false; }
-  };
+  });
   const query = filter.trim().toLocaleLowerCase();
   const entries = directory?.entries.filter((entry) =>
     entry.name.toLocaleLowerCase().includes(query),
@@ -144,15 +150,13 @@ export function MobileProjectPicker({
           </div>
           <form
             className="mobile-project-picker-path"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (!blocked && path.trim()) void browse(path.trim());
-            }}
+            noValidate onSubmit={form.handleSubmit(({ path }) => { if (!blocked && !loading) browse(path); })}
           >
             <input data-ui="input"
               aria-label={t("Folder path")}
               placeholder={t("Folder path")}
               value={path}
+              aria-invalid={!!form.formState.errors.path}
               onChange={(event) => {
                 // Typing wins over a directory response still in transit.
                 setRequested(null);
@@ -175,6 +179,7 @@ export function MobileProjectPicker({
             >
               <ChevronRight size={20} />
             </Button>
+            <FieldError errors={[form.formState.errors.path]} />
           </form>
           <input data-ui="input"
             type="search"

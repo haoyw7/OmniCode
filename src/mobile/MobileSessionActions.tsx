@@ -1,3 +1,8 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../shared/ui/primitives/Field";
 import { Button } from "../shared/ui/forms/Button";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../shared/lib/queryClient";
@@ -49,7 +54,12 @@ export function MobileSessionActions({
 }) {
   const { t } = useTranslation();
   const [page, setPage] = useState<"menu" | "rename" | "copy">("menu");
-  const [title, setTitle] = useState("");
+  const form = useForm({
+    resolver: zodResolver(z.object({ title: z.string().trim().min(1, t("Enter a name")).max(200, t("Use at most {count} characters", { count: 200 })) })),
+    defaultValues: { title: "" },
+  });
+  const title = useWatch({ control: form.control, name: "title" });
+  const setTitle = (title: string) => form.reset({ title });
   const mutation = useMutation({ mutationFn: (action: () => Promise<void>) => action() }, queryClient);
   const working = mutation.isPending;
   const [error, setError] = useState("");
@@ -73,6 +83,7 @@ export function MobileSessionActions({
       await mutation.mutateAsync(action);
       onClose();
     } catch (problem) {
+      toast.error(problem instanceof Error ? t(problem.message) : t("Unable to update this conversation."));
       setError(
         problem instanceof Error
           ? t(problem.message)
@@ -223,21 +234,18 @@ export function MobileSessionActions({
         ) : page === "rename" ? (
           <form
             className="mobile-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (title.trim())
-                void run(() => onUpdate({ title: title.trim() }));
-            }}
+            noValidate onSubmit={form.handleSubmit(({ title }) => run(() => onUpdate({ title })))}
           >
             <label>
               {t("Session title")}
               <input data-ui="input"
-                value={title}
+                {...form.register("title")}
+                aria-invalid={!!form.formState.errors.title}
                 maxLength={200}
                 disabled={blocked}
-                onChange={(event) => setTitle(event.target.value)}
               />
             </label>
+            <FieldError errors={[form.formState.errors.title]} />
             <div className="mobile-menu-form-buttons">
               <Button variant="secondary"
                 type="button"

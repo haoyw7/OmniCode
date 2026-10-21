@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { Input } from "../../../shared/ui/forms/Input";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -35,13 +39,19 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
   const botsError = botsRead.error ? botErrorMessage(botsRead.error) : undefined;
   const botsLoading = botsRead.isFetching;
   const [base, setBase] = useState(() => ({ revision: bot.revision, fields: fields(bot) }));
-  const [draft, setDraft] = useState(base.fields);
+  const schema = z.object({
+    workingDirectory: z.string(), slots: z.string().refine(value => Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 10, t("Choose between 1 and 10 concurrent runs.")),
+    custom: z.boolean(), actions: z.array(z.string()), computer: z.boolean(), callableBotIds: z.array(z.string()),
+  });
+  const form = useForm({ resolver: zodResolver(schema), defaultValues: base.fields, mode: "onChange" });
+  const draft = useWatch({ control: form.control }) as Fields;
+  const { reset: setDraft } = form;
   const [conflict, setConflict] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [browsing, setBrowsing] = useState(false);
   const command = useRef<{ signature: string; id: string } | undefined>(undefined);
   const savedRead = useQuery({ ...botRpcQuery<BotView>(rpc, "bots.get", { botId: bot.id }), enabled: false }, queryClient);
-  const saveMutation = useMutation({ mutationFn: () => withToast(async () => {
+  const saveMutation = useMutation({ mutationFn: (draft: Fields) => withToast(async () => {
     const patch = { workingDirectory: draft.workingDirectory.trim() || null, maxConcurrentRuns: Number(draft.slots),
       tools: { computer: draft.computer, ...(draft.custom ? { enabledActions: draft.actions } : {}) },
       ...(delegationSupported ? { callableBotIds: draft.callableBotIds.filter(id => id !== bot.id) } : {}) };
@@ -61,12 +71,14 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
       const next = fields(bot); setBase({ revision: bot.revision, fields: next }); setDraft(next);
     }
   }, [bot, base.revision, dirty, busy]);
-  const update = (patch: Partial<Fields>) => setDraft(value => ({ ...value, ...patch }));
-  const slots = Number(draft.slots), validSlots = Number.isInteger(slots) && slots >= 1 && slots <= 10;
-  const save = () => {
-    if (busy || !dirty || conflict || !validSlots) return;
-    saveMutation.mutate();
+  const update = (patch: Partial<Fields>) => {
+    for (const key of Object.keys(patch) as (keyof Fields)[]) form.setValue(key, patch[key]!, { shouldDirty: true, shouldValidate: true });
   };
+  const validSlots = schema.shape.slots.safeParse(draft.slots).success;
+  const save = form.handleSubmit(values => {
+    if (busy || !dirty || conflict) return;
+    saveMutation.mutate(values);
+  });
   const reload = async () => {
     if (busy) return;
     saveMutation.reset();
@@ -79,7 +91,7 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
     <label className="desktop-bot-row" key={key}>{leading}<span className="desktop-bot-row-title">{label}</span><Switch size="sm" checked={checked} onCheckedChange={onChange} aria-label={label} /></label>;
   const actions = [...new Set([...BOT_ACTIONS, ...draft.actions])];
   const callableIds = [...new Set([...callableBots.map(item => item.id), ...draft.callableBotIds])].filter(id => id !== bot.id);
-  return <form className="desktop-bot-runtime" aria-label={t("Bot runtime settings")} onSubmit={event => { event.preventDefault(); void save(); }}>
+  return <form className="desktop-bot-runtime" aria-label={t("Bot runtime settings")} noValidate onSubmit={save}>
     <fieldset className="desktop-bot-page-body" disabled={busy}>
       <section className="desktop-bot-section">
         <h3 className="desktop-bot-section-title">{t("Run environment")}</h3>
@@ -100,10 +112,10 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
                 onPick={path => { update({ workingDirectory: path }); setBrowsing(false); }} />
             </div></AnimatedCollapse>
           </div>
-          <label className="desktop-bot-row"><span className="desktop-bot-row-title">{t("Concurrent runs")}</span><Input className="desktop-bot-runtime-number" type="number" min={1} max={10} step={1} value={draft.slots} aria-invalid={!validSlots || undefined} onChange={event => update({ slots: event.target.value })} /></label>
+          <label className="desktop-bot-row"><span className="desktop-bot-row-title">{t("Concurrent runs")}</span><Input className="desktop-bot-runtime-number" type="number" min={1} max={10} step={1} value={draft.slots} aria-invalid={!!form.formState.errors.slots} onChange={event => update({ slots: event.target.value })} /></label>
           {switchRow(t("Reserve the Host computer during this Bot's runs"), draft.computer, computer => update({ computer }))}
         </div>
-        {!validSlots && <small className="desktop-bot-section-note" role="alert">{t("Choose between 1 and 10 concurrent runs.")}</small>}
+        <FieldError className="desktop-bot-section-note" errors={[form.formState.errors.slots]} />
       </section>
       {delegationSupported && <section className="desktop-bot-section">
         <h3 className="desktop-bot-section-title">{t("Callable bots")}{draft.callableBotIds.length > 0 && <span>{draft.callableBotIds.length}</span>}</h3>

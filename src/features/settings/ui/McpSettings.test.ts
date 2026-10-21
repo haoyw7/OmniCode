@@ -654,3 +654,17 @@ it("expands a configured server to list its tools", async () => {
   expect(container.textContent).toContain("Search the documentation.");
   expect(container.textContent).toContain("Docs · 1.0.0 · MCP 2025-06-18");
 });
+
+it.each(["[]", "{broken"])("rejects invalid MCP configuration %s before invoking the provider", async (value) => {
+  await act(async () => root.render(createElement(McpSettings, { cwd: "/repo" })));
+  await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Add MCP server"]')!.click());
+  const config = document.body.querySelector("textarea")!;
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(config, value);
+    config.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => document.body.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+  expect(invoke.mock.calls.some(([command]) => command === "mcp_add")).toBe(false);
+  expect(config.getAttribute("aria-invalid")).toBe("true");
+  expect(document.querySelector('[data-ui="field-error"]')?.textContent).toBe("Configuration must be a JSON object");
+});

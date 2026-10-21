@@ -4,6 +4,8 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
+import { toast } from "sonner";
+import { setUiLanguage } from "../../../shared/i18n/language";
 import { JiraSettings } from "./JiraSettings";
 import { loadHiddenJiraProjectIds } from "../../inbox/model/jira";
 import { saveMaskEmails } from "../model/displayPrefs";
@@ -14,6 +16,7 @@ vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 let container: HTMLDivElement;
 let root: Root;
 beforeEach(() => {
+  setUiLanguage("en");
   queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
@@ -41,6 +44,8 @@ afterEach(async () => {
   await act(async () => root.unmount());
   container.remove();
   localStorage.clear();
+  setUiLanguage("en");
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -122,4 +127,38 @@ it("shows authentication errors without claiming a successful connection", async
   );
   expect(container.querySelector("form")).not.toBeNull();
   expect(container.textContent).not.toContain("Projects");
+});
+
+it("validates and localizes an invalid email before sending credentials", async () => {
+  setUiLanguage("zh-CN");
+  await act(async () => root.render(createElement(JiraSettings)));
+  const fields = container.querySelectorAll("input");
+  await input(fields[0].getAttribute("aria-label")!, "acme");
+  await input(fields[1].getAttribute("aria-label")!, "not-an-email");
+  await input(fields[2].getAttribute("aria-label")!, "secret");
+  await submit();
+  expect(invoke).not.toHaveBeenCalledWith("jira_set_config", expect.anything());
+  expect(fields[1].getAttribute("aria-invalid")).toBe("true");
+  expect(container.querySelector('[data-ui="field-error"]')?.textContent).toBe("请输入有效的邮箱地址");
+});
+
+it("locks pending submissions and preserves credentials with a toast after failure", async () => {
+  const notice = vi.spyOn(toast, "error");
+  await act(async () => root.render(createElement(JiraSettings)));
+  await input("Jira site", " acme.atlassian.net ");
+  await input("Atlassian email", " ada@example.com ");
+  await input("Jira API token", " secret ");
+  let reject!: (reason: Error) => void;
+  vi.mocked(invoke).mockImplementationOnce(() => new Promise((_resolve, fail) => { reject = fail; }));
+  await submit();
+  expect(container.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(true);
+  await submit();
+  expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === "jira_set_config")).toHaveLength(1);
+  expect(invoke).toHaveBeenCalledWith("jira_set_config", {
+    site: "acme.atlassian.net", email: "ada@example.com", token: "secret",
+  });
+  await act(async () => reject(new Error("Connection refused")));
+  expect(notice).toHaveBeenCalledWith("Connection refused", expect.anything());
+  expect(container.querySelector<HTMLInputElement>('input[type="password"]')?.value).toBe(" secret ");
+  expect(container.querySelector<HTMLButtonElement>('button[type="submit"]')?.disabled).toBe(false);
 });

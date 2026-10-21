@@ -1,6 +1,11 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../../../shared/ui/primitives/Field";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../../../shared/lib/queryClient";
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { Button } from "../../../../../shared/ui/forms/Button";
@@ -31,9 +36,12 @@ export function ProviderBinaryPath({
   const { t: uiT } = useTranslation();
   const editButton = useRef<HTMLButtonElement>(null);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(
-    () => loadProviderBinaryPath(provider) ?? "",
-  );
+  const form = useForm({
+    resolver: zodResolver(z.object({ path: z.string().trim() })),
+    defaultValues: { path: loadProviderBinaryPath(provider) ?? "" },
+  });
+  const draft = useWatch({ control: form.control, name: "path" });
+  const setDraft = (path: string) => form.reset({ path });
   const [overridden, setOverridden] = useState(() =>
     Boolean(loadProviderBinaryPath(provider)),
   );
@@ -46,7 +54,11 @@ export function ProviderBinaryPath({
   const read = useQuery(options(requestedPath), queryClient);
   const inspection = discarded ? undefined : read.data, working = read.isFetching;
   const error = read.error ? String(read.error instanceof Error ? read.error.message : read.error) : inspection ? binaryInspectionError(provider, inspection) : null;
-  const [formError, setFormError] = useState<string | null>(null);
+  const setFormError = (message: string | null) => {
+    if (!message) { form.clearErrors("path"); return; }
+    form.setError("path", { type: "server", message: uiT(message) });
+    toast.error(uiT(message));
+  };
   const [revealError, setRevealError] = useState<string | null>(null);
   const inspect = async (binaryPath?: string | null): Promise<string | null> => {
     setRequestedPath(binaryPath ?? null); setDiscarded(false); setRevealError(null);
@@ -78,10 +90,8 @@ export function ProviderBinaryPath({
     closeEditor();
   };
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const submit = form.handleSubmit(async ({ path: value }) => {
     if (working) return;
-    const value = draft.trim();
     if (!value) {
       await useAuto();
       return;
@@ -99,7 +109,7 @@ export function ProviderBinaryPath({
     }
     setOverridden(true);
     closeEditor();
-  };
+  });
 
   const title = HARNESS_TITLE[provider];
   const restartRequired = providerBinaryPathChangePending(provider);
@@ -171,7 +181,7 @@ export function ProviderBinaryPath({
         {error ? (
           <Button
             variant="secondary"
-            disabled={working}
+            disabled={working || form.formState.isSubmitting}
             aria-label={uiT("Retry {value0} {value1}", {
               value0: String(title),
               value1: String(overridden ? "configured path" : "auto-detect"),
@@ -226,6 +236,7 @@ export function ProviderBinaryPath({
         <form
           id={`${provider}-binary-editor`}
           className="px-4 pb-3"
+          noValidate
           onSubmit={submit}
           onKeyDown={(event) => {
             if (event.key !== "Escape") return;
@@ -245,11 +256,11 @@ export function ProviderBinaryPath({
             data-ui="input"
             id={`${provider}-binary-path`}
             type="text"
-            value={draft}
+            {...form.register("path")}
+            aria-invalid={!!form.formState.errors.path}
             placeholder={inspection?.path ?? uiT("Auto-detected path")}
-            disabled={working}
+            disabled={working || form.formState.isSubmitting}
             autoFocus
-            onChange={(event) => setDraft(event.target.value)}
             className="mt-1.5 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2 font-mono text-[11px] text-content outline-none placeholder:font-sans placeholder:text-content/35 focus:border-input-border-hover disabled:opacity-50"
           />
           <p className="mt-1.5 text-[11px] text-content/40">
@@ -257,18 +268,11 @@ export function ProviderBinaryPath({
               "Enter the absolute path to the CLI executable. Changes apply after restarting OmniCode.",
             )}
           </p>
-          {formError ? (
-            <p
-              role="alert"
-              className="mt-1.5 whitespace-pre-wrap break-words text-[11px] text-red-400"
-            >
-              {uiT(formError)}
-            </p>
-          ) : null}
+          <FieldError errors={[form.formState.errors.path]} />
           <div className="mt-3 flex flex-wrap justify-end gap-2">
             <Button
               variant="secondary"
-              disabled={working}
+              disabled={working || form.formState.isSubmitting}
               onClick={() => {
                 setDraft(loadProviderBinaryPath(provider) ?? "");
                 closeEditor();
@@ -279,13 +283,13 @@ export function ProviderBinaryPath({
             {overridden ? (
               <Button
                 variant="secondary"
-                disabled={working}
+                disabled={working || form.formState.isSubmitting}
                 onClick={() => void useAuto()}
               >
                 {uiT("Use auto-detected path")}
               </Button>
             ) : null}
-            <Button variant="primary" type="submit" disabled={working}>
+            <Button variant="primary" type="submit" disabled={working || form.formState.isSubmitting}>
               {uiT("Save path")}
             </Button>
           </div>

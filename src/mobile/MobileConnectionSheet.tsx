@@ -1,3 +1,8 @@
+import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../shared/ui/primitives/Field";
 import { Button } from "../shared/ui/forms/Button";
 import { AnimatePresence, motion } from "motion/react";
 import { popTransition, immediateTransition, motionDistance } from "../shared/motion/tokens";
@@ -9,7 +14,7 @@ import {
   PairingCode,
   ScanQrCode,
 } from "../shared/ui/icons";
-import { useId, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type RefObject } from "react";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { MobileSheet } from "./MobileSheet";
 import { MobileSwap } from "./MobileSwap";
@@ -54,6 +59,14 @@ export function MobileConnectionSheet({
   anchor: RefObject<HTMLElement | null>;
 }) {
   const { t } = useTranslation();
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      url: z.string().trim().pipe(z.url({ protocol: /^https?$/, error: t("Enter a valid HTTP or HTTPS URL") })),
+      token: z.string().trim().min(1, t("Enter a device token")),
+    })),
+    values: { url, token },
+  });
+  useEffect(() => { if (error && open) toast.error(error); }, [error, open]);
   const reduced = useMotionPreference();
   const selectionId = useId();
   const [method, setMethod] = useState<Method>("scan");
@@ -165,22 +178,18 @@ export function MobileConnectionSheet({
           {method === "code" && (
             <form
               className="mobile-form mobile-connection-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (!disabled && url.trim() && token.trim()) onConnect();
-              }}
+              noValidate onSubmit={form.handleSubmit(() => { if (!disabled) onConnect(); })}
             >
               <label>
                 {t("Host URL")}
                 <input data-ui="input"
                   type="url"
                   placeholder="http://192.168.1.10:3774"
-                  value={url}
-                  onChange={(event) => onUrlChange(event.target.value)}
+                  {...form.register("url", { onChange: (event) => onUrlChange(event.target.value) })}
+                  aria-invalid={!!form.formState.errors.url}
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck={false}
-                  required
                   disabled={disabled}
                 />
               </label>
@@ -189,16 +198,16 @@ export function MobileConnectionSheet({
                 <input data-ui="input"
                   className="mobile-pairing-code"
                   placeholder="XD5J-2J3U"
-                  value={token}
-                  onChange={(event) => onTokenChange(event.target.value)}
+                  {...form.register("token", { onChange: (event) => onTokenChange(event.target.value) })}
+                  aria-invalid={!!form.formState.errors.token}
                   autoCapitalize="characters"
                   autoCorrect="off"
                   autoComplete="off"
                   spellCheck={false}
-                  required
                   disabled={disabled}
                 />
               </label>
+              <FieldError errors={[form.formState.errors.url, form.formState.errors.token]} />
               {error && (
                 <p className="mobile-form-error" role="alert">
                   {error}

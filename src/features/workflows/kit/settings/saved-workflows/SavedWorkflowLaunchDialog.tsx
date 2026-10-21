@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../../../shared/ui/primitives/Field";
 import { Info, Workflow } from "../../../../../shared/ui/icons";
 import {
   TID_WORKFLOW_LAUNCH_ARG,
@@ -39,9 +44,7 @@ import {
 } from "../automationWorkspaceOptions.js";
 import {
   buildSavedWorkflowArgFields,
-  collectSavedWorkflowArgs,
-  type SavedWorkflowArgField,
-  type SavedWorkflowArgFieldError,
+  savedWorkflowArgsSchema,
 } from "./savedWorkflowArgsForm.js";
 import type { SavedWorkflowLaunchError } from "./useSavedWorkflowLauncher.js";
 
@@ -91,14 +94,21 @@ export function SavedWorkflowLaunchDialog({
   error = null,
 }: SavedWorkflowLaunchDialogProps) {
   const { intl } = useWorkflowIntl();
-  const [fields, setFields] = useState<SavedWorkflowArgField[]>([]);
-  const [errors, setErrors] = useState<Record<string, SavedWorkflowArgFieldError>>({});
-  const [targetKey, setTargetKey] = useState<string | null>(null);
+  const form = useForm({
+    resolver: zodResolver(z.object({ fields: savedWorkflowArgsSchema, targetKey: z.string().nullable() })),
+    defaultValues: { fields: buildSavedWorkflowArgFields(entry?.args), targetKey: null as string | null },
+  });
+  const [fields, targetKey] = useWatch({ control: form.control, name: ["fields", "targetKey"] });
+  const { reset, getValues, setValue } = form;
+  const setTargetKey = (next: string | null | ((current: string | null) => string | null)) => setValue("targetKey", typeof next === "function" ? next(getValues("targetKey")) : next);
+  const errors = form.formState.errors.fields;
+  useEffect(() => {
+    if (error) toast.error(intl.formatMessage({ id: `workflows.hub.launch.error.${error.reason}` }), { description: error.message });
+  }, [error, intl]);
 
   useEffect(() => {
-    setFields(buildSavedWorkflowArgFields(entry?.args));
-    setErrors({});
-  }, [entry]);
+    reset({ fields: buildSavedWorkflowArgFields(entry?.args), targetKey: getValues("targetKey") });
+  }, [entry, reset, getValues]);
 
   // 候选变化时保留仍有效的选择，否则回落到默认项目、首个候选或 null（reconcile 同一套规则）。
   useEffect(() => {
@@ -130,27 +140,15 @@ export function SavedWorkflowLaunchDialog({
   });
 
   const updateField = (name: string, value: string) => {
-    setFields((current) =>
-      current.map((field) => (field.name === name ? { ...field, value } : field)),
-    );
-    setErrors((current) => {
-      if (!(name in current)) return current;
-      const next = { ...current };
-      delete next[name];
-      return next;
-    });
+    const index = fields.findIndex(field => field.name === name);
+    if (index < 0) return;
+    form.setValue(`fields.${index}.value`, value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
   };
 
-  const handleSubmit = () => {
-    if (!entry) return;
-    if (noLocalProject || pending) return;
-    const collected = collectSavedWorkflowArgs(fields);
-    if (!collected.ok) {
-      setErrors(collected.errors);
-      return;
-    }
-    onSubmit(entry, collected.args, selectedTarget);
-  };
+  const handleSubmit = form.handleSubmit(({ fields: args }) => {
+    if (!entry || noLocalProject || pending) return;
+    onSubmit(entry, args, selectedTarget);
+  });
 
   return (
     <Dialog open={entry !== null} onOpenChange={onOpenChange}>
@@ -169,10 +167,7 @@ export function SavedWorkflowLaunchDialog({
         </DialogHeader>
         <form
           className="flex flex-col gap-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleSubmit();
-          }}
+          noValidate onSubmit={handleSubmit}
         >
           {hasTargets ? (
             <div className="flex flex-col gap-1.5">
@@ -202,8 +197,8 @@ export function SavedWorkflowLaunchDialog({
               )}
             </div>
           ) : null}
-          {fields.map((field) => {
-            const fieldError = errors[field.name];
+          {fields.map((field, index) => {
+            const fieldError = errors?.[index]?.value?.message;
             const inputId = `workflow-arg-${field.name}`;
             const errorText = fieldError
               ? intl.formatMessage({ id: `workflows.hub.launch.error.${fieldError}` })
@@ -261,7 +256,7 @@ export function SavedWorkflowLaunchDialog({
                     onChange={(event) => updateField(field.name, event.target.value)}
                   />
                 )}
-                {errorText ? <p className="text-ui-sm text-destructive">{errorText}</p> : null}
+                <FieldError errors={[errorText ? { message: errorText } : undefined]} />
               </div>
             );
           })}

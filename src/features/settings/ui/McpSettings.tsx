@@ -1,4 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
@@ -12,7 +16,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type FormEvent,
   type ReactNode,
 } from "react";
 import { revealPath } from "../../../platform/tauri/fs";
@@ -178,33 +181,33 @@ function AddServerModal({
   onAdded: () => Promise<void>;
 }) {
   const { t: uiT } = useTranslation();
-  const [provider, setProvider] = useState<Provider>(initialProvider);
-  const [scope, setScope] = useState<Scope>(SCOPES[initialProvider][0]);
-  const [name, setName] = useState("");
-  const [config, setConfig] = useState("");
+  const schema = z.object({
+    provider: z.enum(PROVIDERS),
+    scope: z.enum(["local", "project", "user"]),
+    name: z.string().trim(),
+    config: z.string().refine((value) => {
+      try {
+        const parsed: unknown = JSON.parse(value);
+        return !!parsed && typeof parsed === "object" && !Array.isArray(parsed);
+      } catch { return false; }
+    }, uiT("Configuration must be a JSON object")),
+  }).refine(({ provider, name }) => provider === "opencode" || /^[A-Za-z0-9_-]*$/.test(name), {
+    path: ["name"], message: uiT("Use only letters, numbers, underscores, or hyphens"),
+  });
+  const form = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { provider: initialProvider, scope: SCOPES[initialProvider][0], name: "", config: "" },
+  });
+  const { provider, scope } = useWatch({ control: form.control });
   const addMutation = useMutation({
-    mutationFn: () => withToast(
-      () => invoke("mcp_add", { cwd, provider, scope, name: name.trim(), config }),
-      { loading: uiT("Adding MCP server…"), success: uiT("MCP server added"), error: false },
+    mutationFn: (values: z.infer<typeof schema>) => withToast(
+      () => invoke("mcp_add", { cwd, ...values }),
+      { loading: uiT("Adding MCP server…"), success: uiT("MCP server added") },
     ),
     onSuccess: async () => { await onAdded(); onClose(); },
   }, queryClient);
   const busy = addMutation.isPending;
-  const [error, setError] = useState("");
-
-  async function add(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    try {
-      const parsed: unknown = JSON.parse(config);
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        throw new Error("Configuration must be a JSON object");
-      }
-      setError("");
-      await addMutation.mutateAsync();
-    } catch (cause) {
-      setError(String(cause));
-    }
-  }
+  const error = addMutation.error ? String(addMutation.error) : "";
 
   return (
     <Modal
@@ -215,29 +218,29 @@ function AddServerModal({
       onClose={onClose}
       fitViewport
     >
-      <form onSubmit={(event) => void add(event)} className="space-y-4 p-4">
+      <form noValidate onSubmit={form.handleSubmit((values) => { if (!busy) addMutation.mutate(values); })} className="space-y-4 p-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <McpPicker
             label={uiT("Provider")}
-            value={provider}
+            value={provider!}
             options={PROVIDERS.map((option) => ({
               value: option,
               label: MCP_PROVIDER_LABELS[option],
               icon: <ProviderIcon provider={option} />,
             }))}
             onChange={(next) => {
-              setProvider(next);
-              setScope(SCOPES[next][0]);
+              form.setValue("provider", next);
+              form.setValue("scope", SCOPES[next][0]);
             }}
           />
           <McpPicker
             label={uiT("Scope")}
-            value={scope}
-            options={SCOPES[provider].map((option) => ({
+            value={scope!}
+            options={SCOPES[provider!].map((option) => ({
               value: option,
               label: option[0].toUpperCase() + option.slice(1),
             }))}
-            onChange={setScope}
+            onChange={(next) => form.setValue("scope", next)}
           />
         </div>
         <label className="block text-xs text-content/65">
@@ -246,19 +249,18 @@ function AddServerModal({
             {uiT("(optional for an mcpServers block)")}
           </span>
           <input data-ui="input"
-            value={name}
-            pattern={provider === "opencode" ? undefined : "[A-Za-z0-9_-]*"}
-            onChange={(event) => setName(event.target.value)}
+            {...form.register("name")}
+            aria-invalid={!!form.formState.errors.name}
             className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 text-sm text-content outline-none placeholder:text-content/35 focus:border-input-border-hover"
             placeholder="my-server"
           />
+          <FieldError errors={[form.formState.errors.name]} />
         </label>
         <label className="block text-xs text-content/65">
           {uiT("JSON configuration")}
           <textarea data-ui="textarea"
-            required
-            value={config}
-            onChange={(event) => setConfig(event.target.value)}
+            {...form.register("config")}
+            aria-invalid={!!form.formState.errors.config}
             rows={7}
             spellCheck={false}
             className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 font-mono text-xs text-content outline-none placeholder:text-content/35 focus:border-input-border-hover"
@@ -266,6 +268,7 @@ function AddServerModal({
               '{"mcpServers":{"my-server":{"command":"npx","args":["-y","example-mcp"]}}}'
             }
           />
+          <FieldError errors={[form.formState.errors.config]} />
         </label>
         <p className="text-xs text-content/45">
           {uiT(

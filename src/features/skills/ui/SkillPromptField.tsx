@@ -27,6 +27,7 @@ import { Popover } from "../../../shared/ui/Popover";
 import { useComposerSkills } from "../../sessions/ui/useComposerSkills";
 
 type Props = {
+  invalid?: boolean;
   value: string;
   harness: HarnessId;
   cwd: string;
@@ -34,7 +35,7 @@ type Props = {
 };
 
 /** Automation instructions field with the composer's slash-skill behavior. */
-export function SkillPromptField({ value, harness, cwd, onChange }: Props) {
+export function SkillPromptField({ value, harness, cwd, onChange, invalid }: Props) {
   const { t: uiT } = useTranslation();
   const fieldRef = useRef<HTMLTextAreaElement>(null);
   const slashAnchorRef = useRef<HTMLSpanElement>(null);
@@ -188,6 +189,7 @@ export function SkillPromptField({ value, harness, cwd, onChange }: Props) {
         rows={1}
         spellCheck={false}
         aria-label={uiT("Instructions")}
+        aria-invalid={invalid}
         aria-haspopup="listbox"
         aria-expanded={slash !== null}
         value={value}

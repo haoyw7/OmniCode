@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -103,18 +107,27 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
 }) {
   const { t } = useTranslation();
   const id = useId();
-  const [name, setName] = useState("");
-  const [runIn, setRunIn] = useState(LOCAL);
+  const schema = z.object({
+    name: z.string().trim().min(1, t("Enter a name")),
+    runIn: z.string(), hostId: z.string(),
+    folders: z.array(z.string()).min(1, t("Enter a folder path")).max(MAX_FOLDERS),
+    variablesText: z.string().superRefine((value, ctx) => {
+      const { error } = parseEnvironmentVariables(value);
+      if (error) ctx.addIssue({ code: "custom", message: t(error.reserved ? "Line {value0}: OMNICODE_ variables are reserved" : "Line {value0}: use NAME=value", { value0: String(error.line) }) });
+    }),
+  }).refine(value => kind === "local" || !!value.hostId, { path: ["hostId"], message: t("Choose a host first.") });
+  const form = useForm({ resolver: zodResolver(schema), defaultValues: { name: "", runIn: LOCAL, hostId: "", folders: [] as string[], variablesText: "" } });
+  const [name, runIn, hostId, folders, variablesText] = useWatch({ control: form.control, name: ["name", "runIn", "hostId", "folders", "variablesText"] });
+  const setRunIn = (value: string) => form.setValue("runIn", value);
+  const setHostId = (value: string) => form.setValue("hostId", value);
+  const setFolders = (next: string[] | ((current: string[]) => string[])) => form.setValue("folders", typeof next === "function" ? next(form.getValues("folders")) : next, { shouldValidate: form.formState.isSubmitted });
   const distributionsQuery = useQuery({ ...wslDistributionsQuery(), enabled: kind === "local" }, queryClient);
   const distributions = distributionsQuery.data ?? [];
   const { machines } = useRemoteMachines(kind === "ssh");
   const hosts = machines.filter((machine) => machine.ssh);
-  const [hostId, setHostId] = useState("");
   const host = hosts.find((machine) => machine.id === hostId);
   const [browsing, setBrowsing] = useState(false);
-  const [folders, setFolders] = useState<string[]>([]);
   const [variablesOpen, setVariablesOpen] = useState(false);
-  const [variablesText, setVariablesText] = useState("");
   const [pickerError, setPickerError] = useState("");
   const alive = useRef(true);
   useEffect(() => {
@@ -143,7 +156,7 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
   }, queryClient);
   const busy = createMutation.isPending;
   const error = pickerError || t(errorMessage(createMutation.error) ?? "");
-  const canCreate = !!name.trim() && folders.length > 0 && !parsed.error && !busy && (kind === "local" || !!host);
+  const canCreate = schema.safeParse({ name, runIn, hostId, folders, variablesText }).success && !busy && (kind === "local" || !!host);
   const addPaths = (picked: string[]) =>
     setFolders((current) => [...current, ...picked.filter((path) => !current.includes(path))].slice(0, MAX_FOLDERS));
   // Folder paths belong to the machine they were picked on.
@@ -170,28 +183,29 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
     }
   };
 
-  const create = () => {
+  const create = form.handleSubmit(({ name, folders, variablesText }) => {
     if (!canCreate) return;
     setPickerError("");
     createMutation.mutate({
       environment: {
-        id: crypto.randomUUID(), name: name.trim(), folders, variables: parsed.variables,
+        id: crypto.randomUUID(), name: name.trim(), folders, variables: parseEnvironmentVariables(variablesText).variables,
         ...(distribution ? { machine: { kind: "wsl" as const, distribution } } : {}),
       },
       host,
     }, { onSuccess: (key) => onOpen(key) });
-  };
+  });
 
   return (
     <form
       className="flex flex-col gap-4"
-      onSubmit={(event) => { event.preventDefault(); void create(); }}
+      noValidate onSubmit={create}
     >
       <div className="flex flex-col gap-4 px-4">
         <label className="flex flex-col gap-1.5 text-ui-base font-medium text-foreground">
           {t("Name")}
-          <Input className="font-normal" value={name} disabled={busy} autoFocus placeholder={t("My app")}
-            autoComplete="off" spellCheck={false} onChange={(event) => setName(event.target.value)} />
+          <Input className="font-normal" {...form.register("name")} aria-invalid={!!form.formState.errors.name} disabled={busy} autoFocus placeholder={t("My app")}
+            autoComplete="off" spellCheck={false} />
+          <FieldError errors={[form.formState.errors.name]} />
         </label>
         <div className="flex flex-col gap-1.5 text-ui-base font-medium text-foreground">
           <span>{kind === "ssh" ? t("Host") : t("Run in")}</span>
@@ -283,20 +297,16 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
             <div id={`${id}-variables`} className="flex flex-col gap-1.5 px-3 pb-3">
               <Textarea
                 aria-label={t("Environment variables")}
-                value={variablesText}
+                {...form.register("variablesText")}
+                aria-invalid={!!form.formState.errors.variablesText || !!parsed.error}
                 disabled={busy}
                 rows={5}
                 spellCheck={false}
                 placeholder={"API_URL=http://localhost:3000\nNODE_ENV=development"}
                 className="font-mono text-ui-sm"
-                onChange={(event) => setVariablesText(event.target.value)}
               />
-              <p className={cn("text-ui-sm", parsed.error ? "text-red-400" : "text-foreground-subtle")}>
-                {parsed.error
-                  ? t(parsed.error.reserved ? "Line {value0}: OMNICODE_ variables are reserved" : "Line {value0}: use NAME=value",
-                    { value0: String(parsed.error.line) })
-                  : t("One NAME=value per line. Applied to agents started in these folders.")}
-              </p>
+              <p className="text-ui-sm text-foreground-subtle">{t("One NAME=value per line. Applied to agents started in these folders.")}</p>
+              <FieldError errors={[form.formState.errors.variablesText ?? (parsed.error ? { message: t(parsed.error.reserved ? "Line {value0}: OMNICODE_ variables are reserved" : "Line {value0}: use NAME=value", { value0: String(parsed.error.line) }) } : undefined)]} />
             </div>
           </AnimatedCollapse>
         </div>

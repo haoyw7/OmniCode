@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { Input } from "../../../shared/ui/forms/Input";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -37,7 +41,18 @@ export function DesktopBotRooms({ rooms, bots, rpc, onSaved, onOpenRoom }: Props
 
 export function DesktopRoomEditor({ room, bots, rpc, onSaved }: { room?: BotRoom; bots: BotView[]; rpc: BotRpc; onSaved: (room: BotRoom) => Promise<unknown> }) {
   const { t } = useTranslation();
-  const [base, setBase] = useState(room), [name, setName] = useState(room?.name ?? ""), [members, setMembers] = useState(room?.memberIds ?? []), [timeout, setMemberTimeout] = useState(String((room?.memberTimeoutMs ?? 240000) / 1000));
+  const [base, setBase] = useState(room);
+  const schema = z.object({
+    name: z.string().trim().min(1, t("Enter a name")).max(100, t("Use at most {count} characters", { count: 100 })),
+    members: z.array(z.string()).min(1, t("Choose 1–10 members. Each speaks once in the listed order.")).max(10, t("Choose 1–10 members. Each speaks once in the listed order.")),
+    timeout: z.string().refine(value => Number(value) >= .001 && Number(value) <= 240, t("Enter a timeout between 0.001 and 240 seconds")),
+  });
+  const form = useForm({
+    resolver: zodResolver(schema), mode: "onChange",
+    defaultValues: { name: room?.name ?? "", members: room?.memberIds ?? [], timeout: String((room?.memberTimeoutMs ?? 240000) / 1000) },
+  });
+  const [name, members, timeout] = useWatch({ control: form.control, name: ["name", "members", "timeout"] });
+  const setMembers = (value: string[]) => form.setValue("members", value, { shouldDirty: true, shouldValidate: true });
   const savedRead = useQuery({ ...botRpcQuery<{ room: BotRoom }>(rpc, "botRooms.get", { roomId: base?.id }), enabled: false }, queryClient);
   const actionMutation = useMutation({ mutationFn: (action: () => Promise<void>) => withToast(action,
     { loading: t("Saving…"), success: false, error: cause => t(botErrorMessage(cause)) }) }, queryClient);
@@ -46,8 +61,8 @@ export function DesktopRoomEditor({ room, bots, rpc, onSaved }: { room?: BotRoom
   const error = cause ? botErrorMessage(cause) : undefined;
   const command = useRef<{ signature: string; id: string } | undefined>(undefined);
   const dirty = name !== (base?.name ?? "") || JSON.stringify(members) !== JSON.stringify(base?.memberIds ?? []) || Number(timeout) * 1000 !== (base?.memberTimeoutMs ?? 240000);
-  const valid = !!name.trim() && members.length >= 1 && members.length <= 10 && Number(timeout) >= .001 && Number(timeout) <= 240;
-  const adopt = (next?: BotRoom) => { setBase(next); setName(next?.name ?? ""); setMembers(next?.memberIds ?? []); setMemberTimeout(String((next?.memberTimeoutMs ?? 240000) / 1000)); };
+  const valid = schema.safeParse({ name, members, timeout }).success;
+  const adopt = (next?: BotRoom) => { setBase(next); form.reset({ name: next?.name ?? "", members: next?.memberIds ?? [], timeout: String((next?.memberTimeoutMs ?? 240000) / 1000) }); };
   useEffect(() => { if (!busy && !dirty && !command.current && room && (!base || room.revision > base.revision)) adopt(room); }, [room, busy, dirty]);
   const mutate = async (action: "save" | "archive" | "restore") => {
     if (busy || (action === "save" && !valid)) return;
@@ -66,14 +81,15 @@ export function DesktopRoomEditor({ room, bots, rpc, onSaved }: { room?: BotRoom
     actionMutation.reset();
     const next = await savedRead.refetch(); if (!next.isSuccess) return; adopt(next.data.room); command.current = undefined;
   };
-  return <form className="desktop-bot-group-editor" aria-label={t(base ? "Room settings" : "New room")} onSubmit={event => { event.preventDefault(); void mutate("save"); }}>
+  return <form className="desktop-bot-group-editor" aria-label={t(base ? "Room settings" : "New room")} noValidate onSubmit={form.handleSubmit(() => { if (!room?.archivedAt) void mutate("save"); })}>
     <h3>{t(base ? "Room settings" : "New room")}</h3>
     <fieldset disabled={busy || !!room?.archivedAt}>
-      <label>{t("Room name")}<Input aria-label={t("Room name")} value={name} maxLength={100} onChange={event => setName(event.target.value)} /></label>
+      <label>{t("Room name")}<Input aria-label={t("Room name")} {...form.register("name")} aria-invalid={!!form.formState.errors.name} maxLength={100} /></label>
       <DesktopBotMembers bots={bots} ids={members} ordered onChange={setMembers} />
       <small>{t("Choose 1–10 members. Each speaks once in the listed order.")}</small>
-      <label>{t("Member timeout (seconds)")}<Input type="number" min={.001} max={240} step="any" value={timeout} onChange={event => setMemberTimeout(event.target.value)} /></label>
+      <label>{t("Member timeout (seconds)")}<Input type="number" min={.001} max={240} step="any" {...form.register("timeout")} aria-invalid={!!form.formState.errors.timeout} /></label>
     </fieldset>
+    <FieldError errors={[form.formState.errors.name, form.formState.errors.members, form.formState.errors.timeout]} />
     {error && <p role="alert">{t(error)}</p>}
     <footer><Button variant="primary" type="submit" disabled={busy || !!room?.archivedAt || !valid || (!!base && !dirty)}>{t(base ? "Save room" : "Create room")}</Button>
       {base && <><Button variant="secondary" type="button" disabled={busy} onClick={() => void reload()}>{t("Reload saved configuration")}</Button><Button variant="secondary" type="button" disabled={busy} onClick={() => void mutate(room?.archivedAt ? "restore" : "archive")}>{t(room?.archivedAt ? "Restore room" : "Archive room")}</Button></>}

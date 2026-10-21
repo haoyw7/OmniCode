@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { Input } from "../../../shared/ui/forms/Input";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -31,8 +35,14 @@ export function DesktopBotThreadSettings({ bot, thread, defaultBotId, rpc, onSav
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
   const [base, setBase] = useState(thread);
-  const [title, setTitle] = useState(thread.title);
-  const [override, setOverride] = useState(thread.modelOverride);
+  const schema = z.object({
+    title: z.string().max(200, t("Use at most {count} characters", { count: 200 })).refine(value => value === base.title || !!value.trim(), t("Enter a name")),
+    override: z.custom<BotModelOverride>().optional().refine(value => !value || !!value.model, t("Choose a model")),
+  });
+  const form = useForm({ resolver: zodResolver(schema), defaultValues: { title: thread.title, override: thread.modelOverride } });
+  const [title, override] = useWatch({ control: form.control, name: ["title", "override"] });
+  const setTitle = (value: string) => form.setValue("title", value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
+  const setOverride = (value: BotModelOverride | undefined) => form.setValue("override", value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
   const catalogRead = useQuery({ ...botRpcQuery<HostModelCatalog>(rpc, "models.list"), enabled: visible && !!override }, queryClient);
   const catalog = catalogRead.data, catalogError = catalogRead.error ? botErrorMessage(catalogRead.error) : undefined;
   const command = useRef<{ signature: string; id: string } | undefined>(undefined);
@@ -45,7 +55,7 @@ export function DesktopBotThreadSettings({ bot, thread, defaultBotId, rpc, onSav
     setBase(thread); setTitle(thread.title); setOverride(thread.modelOverride);
   }, [thread, dirty, busy]);
   const loadModels = () => catalogRead.refetch();
-  const save = () => {
+  const save = form.handleSubmit(({ title, override }) => {
     if (busy || !dirty) return;
     const patch = { ...(title !== base.title ? { title: title.trim() } : {}), modelOverride: override ?? null };
     const text = JSON.stringify([base.revision, patch]);
@@ -56,7 +66,7 @@ export function DesktopBotThreadSettings({ bot, thread, defaultBotId, rpc, onSav
       await onSaved();
       setBase(saved); setTitle(saved.title); setOverride(saved.modelOverride); command.current = undefined;
     });
-  };
+  });
   const archive = (action: () => Promise<void>) => { if (!busy) actionMutation.mutate(action); };
   const selectModel = (harness: RemoteProvider, model: string) => {
     const next = findRemoteModel(catalog?.models[harness] ?? [], model);
@@ -72,12 +82,12 @@ export function DesktopBotThreadSettings({ bot, thread, defaultBotId, rpc, onSav
   const reset = () => { setBase(thread); setTitle(thread.title); setOverride(thread.modelOverride); actionMutation.reset(); command.current = undefined; };
   const modelError = catalogError ?? catalog?.errors[shownOverride.harness];
   return <section className="desktop-bots-thread-settings">
-    <form className="desktop-bot-page" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+    <form className="desktop-bot-page" noValidate onSubmit={save}>
       <div className="desktop-bot-page-body">
         <section className="desktop-bot-section">
           <h3 className="desktop-bot-section-title">{t("Thread")}</h3>
           <div className="desktop-bot-row-group">
-            <label className="desktop-bot-row"><span className="desktop-bot-row-title">{t("Thread title")}</span><Input className="desktop-bot-row-input" aria-label={t("Thread title")} maxLength={200} value={title} disabled={busy} onChange={(event) => setTitle(event.target.value)} /></label>
+            <label className="desktop-bot-row"><span className="desktop-bot-row-title">{t("Thread title")}</span><Input className="desktop-bot-row-input" aria-label={t("Thread title")} maxLength={200} aria-invalid={!!form.formState.errors.title} value={title} disabled={busy} onChange={(event) => setTitle(event.target.value)} /></label>
             <div className="desktop-bot-row-block">
               <label className="desktop-bot-row"><span className="desktop-bot-row-title">{t("Follow bot model")}<small>{HARNESS_TITLE[bot.harness]} · {bot.model}</small></span>
                 <Switch size="sm" aria-label={t("Follow bot model")} checked={!override} disabled={busy} onCheckedChange={(follow) => setOverride(follow ? undefined : { harness: bot.harness, model: bot.model, modelSettings: { ...bot.modelSettings } })} /></label>
@@ -100,6 +110,7 @@ export function DesktopBotThreadSettings({ bot, thread, defaultBotId, rpc, onSav
               </div></AnimatedCollapse>
             </div>
           </div>
+          <FieldError errors={[form.formState.errors.title, form.formState.errors.override]} />
           <p className="desktop-bot-section-note">{t("Changes apply on the next turn")}</p>
           {error && <p className="desktop-bot-section-note" role="alert">{t(error)}</p>}
         </section>

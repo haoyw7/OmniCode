@@ -1,10 +1,14 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   useEffect,
   useRef,
   useState,
-  type FormEvent,
   type KeyboardEvent,
   type ReactNode,
 } from "react";
@@ -249,9 +253,10 @@ export function InboxCommentForm({
   onSubmit: (body: string) => Promise<void>;
 }) {
   const { t: uiT } = useTranslation();
-  const [draft, setDraft] = useState("");
+  const form = useForm({ resolver: zodResolver(z.object({ body: z.string().trim().min(1, uiT("This field is required")) })), defaultValues: { body: "" } });
+  const draft = useWatch({ control: form.control, name: "body" });
   const field = useRef<HTMLTextAreaElement>(null);
-  const canPost = draft.trim().length > 0 && !posting;
+  const canPost = draft.trim().length > 0 && !posting && !form.formState.isSubmitting;
 
   useEffect(() => {
     if (!replyTo) return;
@@ -265,16 +270,15 @@ export function InboxCommentForm({
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, [draft]);
 
-  const submit = async () => {
-    const body = draft.trim();
-    if (!body || posting) return;
+  const submit = form.handleSubmit(async ({ body }) => {
+    if (posting) return;
     try {
       await onSubmit(body);
-      setDraft("");
-    } catch {
-      // Parent keeps the error next to the button.
+      form.reset();
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : String(cause));
     }
-  };
+  });
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key !== "Enter" || !(event.metaKey || event.ctrlKey)) return;
@@ -282,14 +286,9 @@ export function InboxCommentForm({
     void submit();
   };
 
-  const onFormSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    void submit();
-  };
-
   return (
     <form
-      onSubmit={onFormSubmit}
+      noValidate onSubmit={submit}
       className="flex flex-col gap-2 border-t border-stroke pt-5"
     >
       {replyTo ? (
@@ -311,16 +310,16 @@ export function InboxCommentForm({
       ) : null}
       <div className="rounded-md border border-content/10 bg-content/5 focus-within:border-content/20">
         <textarea
-          ref={field}
+          {...form.register("body")}
+          ref={(node) => { form.register("body").ref(node); field.current = node; }}
+          aria-invalid={!!form.formState.errors.body}
           rows={2}
-          value={draft}
           disabled={posting}
           placeholder={
             replyTo
               ? uiT("Write a reply ({value0}↩)", { value0: String(MOD) })
               : uiT("Leave a comment ({value0}↩)", { value0: String(MOD) })
           }
-          onChange={(event) => setDraft(event.target.value)}
           onKeyDown={onKeyDown}
           className="max-h-40 w-full resize-none overflow-y-auto bg-transparent px-3 py-2 text-[13px] leading-5 text-content outline-none placeholder:text-content/35 disabled:opacity-40"
         />
@@ -338,6 +337,7 @@ export function InboxCommentForm({
           </button>
         </div>
       </div>
+      <FieldError errors={[form.formState.errors.body]} />
       {error ? <p className="text-[12px] text-red-400/90">{error}</p> : null}
     </form>
   );

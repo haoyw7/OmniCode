@@ -1,10 +1,12 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Plus } from "../../../shared/ui/icons";
 import {
   useEffect,
   useRef,
-  useState,
-  type FormEvent,
   type ReactNode,
   type MouseEvent as ReactMouseEvent,
 } from "react";
@@ -221,27 +223,32 @@ export function CreateSkillForm({
   const { t: uiT } = useTranslation();
   const input = useRef<HTMLInputElement>(null);
   const project = isLocalProject(cwd);
-  const [name, setName] = useState(() => slugSkillName(query));
-  const [scope, setScope] = useState<"project" | "user">(
-    project ? "project" : "user",
-  );
+  const schema = z.object({
+    name: z.string().transform(slugSkillName).refine(isValidSkillName, uiT("Use lowercase letters, numbers, and hyphens.")),
+    scope: z.enum(["project", "user"]),
+  });
+  const form = useForm({
+    resolver: zodResolver(schema),
+    mode: "onChange",
+    defaultValues: { name: slugSkillName(query), scope: project ? "project" as const : "user" as const },
+  });
+  const [name, scope] = useWatch({ control: form.control, name: ["name", "scope"] });
 
   useEffect(() => {
     input.current?.focus();
     input.current?.select();
   }, []);
 
-  const slug = slugSkillName(name);
-  const valid = isValidSkillName(slug);
+  const valid = schema.safeParse({ name, scope }).success;
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!valid || busy) return;
-    onCreate(slug, project ? scope : "user");
-  };
+  const submit = form.handleSubmit(({ name, scope }) => {
+    if (busy) return;
+    onCreate(name, project ? scope : "user");
+  });
 
   return (
     <form
+      noValidate
       onSubmit={submit}
       onKeyDown={(e) => {
         if (e.key !== "Escape") return;
@@ -254,13 +261,13 @@ export function CreateSkillForm({
         {uiT("Writes a starter SKILL.md you can edit.")}
       </p>
       <input
-        ref={input}
-        value={name}
+        {...form.register("name")}
+        ref={(node) => { form.register("name").ref(node); input.current = node; }}
+        aria-invalid={!!form.formState.errors.name}
         spellCheck={false}
         placeholder="skill-name"
         aria-label={uiT("Skill name")}
         disabled={busy}
-        onChange={(e) => setName(e.target.value)}
         className={`mb-2 w-full rounded-md bg-content/10 px-2 py-1.5 text-[13px] text-content outline-none placeholder:text-content/40 ${monospace ? "font-mono" : "font-sans"}`}
       />
       <div className="mb-2 flex gap-1">
@@ -270,7 +277,7 @@ export function CreateSkillForm({
           monospace={monospace}
           selected={scope === "project"}
           disabled={!project || busy}
-          onClick={() => setScope("project")}
+          onClick={() => form.setValue("scope", "project")}
         />
         <ScopeButton
           label={uiT("Personal")}
@@ -278,16 +285,10 @@ export function CreateSkillForm({
           monospace={monospace}
           selected={scope === "user"}
           disabled={busy}
-          onClick={() => setScope("user")}
+          onClick={() => form.setValue("scope", "user")}
         />
       </div>
-      {error ? (
-        <p className="mb-2 text-[12px] text-content/70">{error}</p>
-      ) : !name.trim() || valid ? null : (
-        <p className="mb-2 text-[12px] text-content/50">
-          {uiT("Use lowercase letters, numbers, and hyphens.")}
-        </p>
-      )}
+      <FieldError errors={[form.formState.errors.name, error ? { message: error } : undefined]} />
       <div className="flex items-center justify-end gap-1">
         <button
           type="button"

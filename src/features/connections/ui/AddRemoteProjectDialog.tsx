@@ -106,7 +106,7 @@ function RemoteProjectForm({
         withToast(
           () =>
             remoteRequest<HostProject>(machine!.id, "projects.open", { cwd }),
-          { loading: uiT("Opening…"), success: false, error: false },
+          { loading: uiT("Opening…"), success: false },
         ),
     },
     queryClient,

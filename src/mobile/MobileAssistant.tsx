@@ -1,3 +1,8 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../shared/ui/primitives/Field";
 import { Button } from "../shared/ui/forms/Button";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { lightImpact, attentionHaptic } from "./haptics";
@@ -306,6 +311,11 @@ function useMobileAssistantComposerController({
   onRetry,
 }: AssistantComposerProps) {
   const { t } = useTranslation();
+  const composerForm = useForm({
+    resolver: zodResolver(z.object({ draft: z.string().refine(value => !!value.trim() || attachments.length > 0, t("This field is required")) })),
+    values: { draft },
+  });
+  const submit = composerForm.handleSubmit(() => { if (!sendDisabled) onSend(); });
   const dock = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
   const files = useRef<HTMLInputElement>(null);
@@ -369,7 +379,8 @@ function useMobileAssistantComposerController({
     onPaste,
     onRemoveAttachment,
     onRetry,
-    onSend,
+    composerForm,
+    submit,
     onStop,
     renderedAttachments,
     replyText,
@@ -406,7 +417,8 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
     onPaste,
     onRemoveAttachment,
     onRetry,
-    onSend,
+    composerForm,
+    submit,
     onStop,
     renderedAttachments,
     replyText,
@@ -462,10 +474,7 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
             e.dataTransfer.dropEffect = attachDisabled ? "none" : "copy";
           }
         }}
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!sendDisabled) onSend();
-        }}
+        noValidate onSubmit={submit}
         onPointerDownCapture={(e) => preserveInputFocus(e, input.current)}
         onMouseDownCapture={(e) => preserveInputFocus(e, input.current)}
       >
@@ -509,14 +518,14 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
             }}
           />
           <textarea
-            ref={input}
             rows={1}
             aria-label={t("Message assistant")}
             placeholder={t(replyText !== undefined ? "Reply" : "Ask your assistant…")}
-            value={draft}
+            {...composerForm.register("draft", { onChange: (event) => onDraftChange(event.target.value) })}
+            ref={(node) => { composerForm.register("draft").ref(node); input.current = node; }}
+            aria-invalid={!!composerForm.formState.errors.draft}
             disabled={inputDisabled}
             onPaste={onPaste}
-            onChange={(e) => onDraftChange(e.target.value)}
           />
           {stoppable ? (
             <button
@@ -543,6 +552,7 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
             )}
           </button>}
         </div>
+        <FieldError errors={[composerForm.formState.errors.draft]} />
       </form>
     </div>
   );
@@ -637,10 +647,19 @@ function MobileAssistantMemoryDetail({
   onForget,
 }: AssistantMemoryDetailProps) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState(text);
+  const memoryForm = useForm({
+    resolver: zodResolver(z.object({ text: z.string().refine(value => !!value.trim(), t("This field is required")).max(1000, t("Use at most {count} characters", { count: 1000 })) })),
+    defaultValues: { text },
+  });
+  const draft = useWatch({ control: memoryForm.control, name: "text" });
+  const { reset } = memoryForm;
+  const save = memoryForm.handleSubmit(async ({ text: value }) => {
+    if (busy || !open || value === text) return;
+    try { await onSave(value); } catch (cause) { toast.error(cause instanceof Error ? cause.message : String(cause)); }
+  });
   useLayoutEffect(() => {
-    if (open) setDraft(text);
-  }, [open, text]);
+    if (open) reset({ text });
+  }, [open, text, reset]);
   useAssistantBack(3, open, onClose);
   const changed = !!draft.trim() && draft !== text;
   return (
@@ -654,16 +673,17 @@ function MobileAssistantMemoryDetail({
       <div className="mobile-assistant-memory-detail">
         <textarea data-ui="textarea"
           aria-label={t("Edit fact")}
-          value={draft}
+          {...memoryForm.register("text")}
+          aria-invalid={!!memoryForm.formState.errors.text}
           maxLength={1000}
           disabled={busy || !open}
-          onChange={(event) => setDraft(event.target.value)}
         />
         {error && (
           <small className="assistant-field-error" role="alert">
             {error}
           </small>
         )}
+        <FieldError errors={[memoryForm.formState.errors.text]} />
         <div className="mobile-assistant-memory-actions">
           <Button variant="danger"
             type="button"
@@ -676,8 +696,8 @@ function MobileAssistantMemoryDetail({
           <Button variant="primary"
             type="button"
 
-            disabled={busy || !open || !changed}
-            onClick={() => onSave(draft)}
+            disabled={busy || memoryForm.formState.isSubmitting || !open || !changed}
+            onClick={() => void save()}
           >
             {t("Save")}
           </Button>

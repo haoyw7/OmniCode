@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
@@ -248,11 +252,15 @@ function AddDeviceDialog({
   onAdded: () => void;
 }) {
   const { t } = useTranslation();
-  const [name, setName] = useState("");
+  const form = useForm({
+    resolver: zodResolver(z.object({ name: z.string().trim().min(1, t("Enter a name")).max(80, t("Use at most {count} characters", { count: 80 })) })),
+    defaultValues: { name: "" },
+  });
+  const name = useWatch({ control: form.control, name: "name" });
   const issueMutation = useMutation({
     mutationFn: (name: string) => withToast(
       () => remoteRequest<{ id: string; token: string }>(machineId, "devices.issue", { name }),
-      { loading: t("Creating…"), success: false, error: false },
+      { loading: t("Creating…"), success: false },
     ),
     gcTime: 0,
   }, queryClient);
@@ -348,26 +356,25 @@ function AddDeviceDialog({
       ) : (
         <form
           className="flex flex-col gap-3 p-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (busy || !name.trim()) return;
-            issueMutation.mutate(name.trim(), { onSuccess: onAdded });
-          }}
+          noValidate
+          onSubmit={form.handleSubmit(({ name }) => {
+            if (!busy) issueMutation.mutate(name, { onSuccess: onAdded });
+          })}
         >
           <label className="flex flex-col gap-1.5 text-ui-caption text-foreground-subtle">
             {t("Device name")}
             <input data-ui="input"
               autoFocus
-              required
               maxLength={80}
               disabled={busy}
               className={input}
-              value={name}
-              onChange={(event) => setName(event.target.value)}
+              {...form.register("name")}
+              aria-invalid={!!form.formState.errors.name}
               placeholder={t("e.g. My phone")}
               autoComplete="off"
               spellCheck={false}
             />
+            <FieldError errors={[form.formState.errors.name]} />
           </label>
           {error ? (
             <p role="alert" className="break-words text-ui-caption text-red-400">

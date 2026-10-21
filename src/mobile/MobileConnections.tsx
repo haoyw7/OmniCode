@@ -1,3 +1,8 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../shared/ui/primitives/Field";
 import { Button } from "../shared/ui/forms/Button";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../shared/lib/queryClient";
@@ -207,7 +212,14 @@ export function MobileConnections({
   const appearance = useConnectionAppearance(details?.endpoint);
   const name = appearance.displayName || details?.name || "";
   const [point, setPoint] = useState<MobileSheetPoint>();
-  const [draft, setDraft] = useState<ConnectionAppearance>(appearance);
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      displayName: z.string().trim().min(1, t("Enter a name")).max(100, t("Use at most {count} characters", { count: 100 })),
+      icon: z.enum(CONNECTION_ICONS),
+    })),
+    defaultValues: appearance,
+  });
+  const draft = useWatch({ control: form.control }) as ConnectionAppearance;
   const [error, setError] = useState("");
   // Opening the page refreshes it: other rows probe on mount, and the current
   // device reconnects once if it is not connected.
@@ -229,7 +241,7 @@ export function MobileConnections({
     onPanelChange("connection-menu");
   };
   const edit = () => {
-    setDraft({ displayName: name, icon: appearance.icon });
+    form.reset({ displayName: name, icon: appearance.icon });
     setError("");
     onPanelChange("connection-edit");
   };
@@ -329,28 +341,25 @@ export function MobileConnections({
       >
         <form
           className="mobile-connection-editor"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (disabled || !changed || !draft.displayName.trim()) return;
+          noValidate onSubmit={form.handleSubmit((draft) => {
+            if (disabled || !changed) return;
             try {
               onSave(details!.endpoint, { ...draft, displayName: draft.displayName.trim() });
               close();
             } catch {
               setError(t("Could not save connection preferences. Try again."));
+              toast.error(t("Could not save connection preferences. Try again."));
             }
-          }}
+          })}
         >
           {header("Edit connection")}
           <label className="mobile-connection-name-field">
             <span>{t("Display name")}</span>
             <input data-ui="input"
-              value={draft.displayName}
+              {...form.register("displayName")}
+              aria-invalid={!!form.formState.errors.displayName}
               maxLength={100}
-              required
               disabled={disabled}
-              onChange={(event) =>
-                setDraft({ ...draft, displayName: event.target.value })
-              }
             />
           </label>
           <div
@@ -366,13 +375,14 @@ export function MobileConnections({
                   aria-label={t(iconNames[icon])}
                   aria-pressed={draft.icon === icon}
                   disabled={disabled}
-                  onClick={() => setDraft({ ...draft, icon })}
+                  onClick={() => form.setValue("icon", icon, { shouldDirty: true })}
                 >
                   <MobileSettingsGlyph name={icon} />
                 </button>
               );
             })}
           </div>
+          <FieldError errors={[form.formState.errors.displayName]} />
           <dl className="mobile-connection-info">
             <div>
               <dt>{t("Host name")}</dt>

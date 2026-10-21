@@ -1,3 +1,4 @@
+import { z } from "zod";
 // 已保存工作流的实参表单与元数据实参表。
 // 纯函数：把 frontmatter 的 args 声明铺成可编辑字段，再把字段收回成实参袋 / 声明；
 // 校验规则与 CLI 的 validateWorkflowArgs 同源（required、按类型解析、default 回填由服务端做）。
@@ -44,62 +45,43 @@ export function buildSavedWorkflowArgFields(
   }));
 }
 
-type SavedWorkflowArgParse =
-  | { ok: true; omitted: true }
-  | { ok: true; omitted: false; value: unknown }
-  | { ok: false; error: SavedWorkflowArgFieldError };
-
-/**
- * 单个字段 → 实参值。空文本对 string / number / json 意味着「不传」：有默认值的由服务端回填，
- * 无默认值又非必填的就是缺席；必填而空是唯一的 required 错误。boolean 永远有值。
- */
-function parseSavedWorkflowArgField(field: SavedWorkflowArgField): SavedWorkflowArgParse {
-  const raw = field.value;
-  if (field.type === "boolean") {
-    return { ok: true, omitted: false, value: raw === "true" };
-  }
-  if (raw.trim().length === 0) {
-    if (field.required && !field.hasDefault) return { ok: false, error: "required" };
-    return { ok: true, omitted: true };
-  }
-  switch (field.type) {
-    case "string":
-      return { ok: true, omitted: false, value: raw };
-    case "number": {
-      const parsed = Number(raw.trim());
-      // NaN / Infinity 过不了 JSON，也过不了 CLI 的 number 校验；在这里就拦下来。
-      if (!Number.isFinite(parsed)) return { ok: false, error: "invalid_number" };
-      return { ok: true, omitted: false, value: parsed };
+/** Shared parsing and validation for submitted workflow arguments. */
+export const savedWorkflowArgsSchema = z.array(z.custom<SavedWorkflowArgField>()).transform((fields, ctx) => {
+  const args: Record<string, unknown> = {};
+  for (const [index, field] of fields.entries()) {
+    const raw = field.value;
+    const issue = (message: SavedWorkflowArgFieldError) => ctx.addIssue({ code: "custom", path: [index, "value"], message });
+    if (field.type === "boolean") { args[field.name] = raw === "true"; continue; }
+    if (!raw.trim()) {
+      if (field.required && !field.hasDefault) issue("required");
+      continue;
     }
-    case "json": {
-      try {
-        return { ok: true, omitted: false, value: JSON.parse(raw) as unknown };
-      } catch {
-        return { ok: false, error: "invalid_json" };
-      }
+    if (field.type === "string") args[field.name] = raw;
+    else if (field.type === "number") {
+      const value = Number(raw.trim());
+      if (!Number.isFinite(value)) issue("invalid_number");
+      else args[field.name] = value;
+    } else {
+      try { args[field.name] = JSON.parse(raw) as unknown; }
+      catch { issue("invalid_json"); }
     }
   }
-}
+  return args;
+});
 
 type SavedWorkflowArgsCollect =
   | { ok: true; args: Record<string, unknown> }
   | { ok: false; errors: Record<string, SavedWorkflowArgFieldError> };
 
-/** 整张表单 → 实参袋；一次收齐全部错误（照 validateWorkflowArgs 的「不逐个报」）。 */
-export function collectSavedWorkflowArgs(
-  fields: readonly SavedWorkflowArgField[],
-): SavedWorkflowArgsCollect {
-  const args: Record<string, unknown> = {};
+export function collectSavedWorkflowArgs(fields: readonly SavedWorkflowArgField[]): SavedWorkflowArgsCollect {
+  const result = savedWorkflowArgsSchema.safeParse(fields);
+  if (result.success) return { ok: true, args: result.data };
   const errors: Record<string, SavedWorkflowArgFieldError> = {};
-  for (const field of fields) {
-    const parsed = parseSavedWorkflowArgField(field);
-    if (!parsed.ok) {
-      errors[field.name] = parsed.error;
-      continue;
-    }
-    if (!parsed.omitted) args[field.name] = parsed.value;
+  for (const issue of result.error.issues) {
+    const field = fields[Number(issue.path[0])];
+    if (field) errors[field.name] = issue.message as SavedWorkflowArgFieldError;
   }
-  return Object.keys(errors).length > 0 ? { ok: false, errors } : { ok: true, args };
+  return { ok: false, errors };
 }
 
 // ── 元数据编辑：实参声明表 ──

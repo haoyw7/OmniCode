@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useMutation, useMutationState, useQuery } from "@tanstack/react-query";
@@ -30,9 +34,17 @@ function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Pro
   const state = conversation.data?.state ?? { room, rounds: [] }, messages = conversation.data?.messages ?? [], page = conversation.data?.page;
   const refresh = () => invalidateAfterChange(options.queryKey);
   const [settingsOpen, setSettingsOpen] = useState(false), [roundsOpen, setRoundsOpen] = useState(true), [orderOpen, setOrderOpen] = useState(false);
-  const [customOrder, setCustomOrder] = useState(false), [members, setMembers] = useState(room.memberIds);
   const storageKey = draftKey(environmentId, room.id);
-  const [draft, setDraft] = useState(() => { try { return localStorage.getItem(storageKey) ?? ""; } catch { return ""; } });
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      draft: z.string().refine(value => !!value.trim(), t("This field is required")),
+      customOrder: z.boolean(), members: z.array(z.string()),
+    }).refine(value => !value.customOrder || value.members.length > 0, { path: ["members"], message: t("Choose 1–10 members. Each speaks once in the listed order.") })),
+    defaultValues: { draft: (() => { try { return localStorage.getItem(storageKey) ?? ""; } catch { return ""; } })(), customOrder: false, members: room.memberIds },
+  });
+  const [draft, customOrder, members] = useWatch({ control: form.control, name: ["draft", "customOrder", "members"] });
+  const setMembers = (value: string[]) => form.setValue("members", value);
+  const setCustomOrder = (value: boolean) => form.setValue("customOrder", value);
   const log = useRef<HTMLDivElement>(null), follow = useRef(true), prepend = useRef<{ height: number; top: number } | undefined>(undefined);
   const command = useRef<{ signature: string; id: string } | undefined>(undefined);
   const cancellations = useRef(new Map<string, string>());
@@ -49,7 +61,7 @@ function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Pro
     if (log.current) prepend.current = { height: log.current.scrollHeight, top: log.current.scrollTop };
   }).catch(() => undefined);
   const sendMutation = useMutation({ mutationFn: (params: { roomId: string; text: string; memberIds?: string[]; commandId: string }) => withToast(async () => {
-    await rpc("botRooms.send", params); command.current = undefined; setDraft(""); follow.current = true; await refresh();
+    await rpc("botRooms.send", params); command.current = undefined; form.resetField("draft", { defaultValue: "" }); follow.current = true; await refresh();
   }, { loading: t("Sending..."), success: false, error: cause => t(botErrorMessage(cause)) }) }, queryClient);
   const cancelMutation = useMutation({ mutationKey: [...options.queryKey, "cancel"], mutationFn: (roundId: string) => withToast(async () => {
     const commandId = cancellations.current.get(roundId) ?? crypto.randomUUID(); cancellations.current.set(roundId, commandId);
@@ -59,13 +71,13 @@ function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Pro
   const sending = sendMutation.isPending;
   const cause = sendMutation.error ?? cancelMutation.error;
   const error = cause ? botErrorMessage(cause) : undefined, pollError = conversation.error ? botErrorMessage(conversation.error) : undefined;
-  const send = () => {
+  const send = form.handleSubmit(({ draft, customOrder, members }) => {
     if (!visible || sending || !draft.trim() || state.room.archivedAt || (customOrder && !members.length)) return;
     const params = { roomId: room.id, text: draft, ...(customOrder ? { memberIds: members } : {}) };
     const signature = JSON.stringify(params);
     if (command.current?.signature !== signature) command.current = { signature, id: crypto.randomUUID() };
     sendMutation.mutate({ ...params, commandId: command.current.id });
-  };
+  });
   const cancel = async (round: BotRoomRound) => {
     if (!visible || cancelling.has(round.id) || round.roomId !== room.id) return;
     cancelMutation.mutate(round.id);
@@ -100,7 +112,7 @@ function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Pro
       {(error || pollError) && <p role="alert">{t(error ?? pollError!)} <Button variant="secondary" type="button" onClick={() => void refresh()}>{t("Refresh")}</Button></p>}
       <Button variant="ghost" type="button" aria-expanded={orderOpen} onClick={() => setOrderOpen(value => !value)}>{t("This round's speakers")}</Button>
       <AnimatedCollapse expanded={orderOpen} keepMounted><div className="desktop-bot-room-order"><label><input data-ui="checkbox" type="checkbox" checked={!customOrder} onChange={event => setCustomOrder(!event.target.checked)} />{t("Use room member order")}</label><AnimatedCollapse expanded={customOrder}><DesktopBotMembers bots={bots.filter(bot => state.room.memberIds.includes(bot.id))} ids={members} ordered onChange={setMembers} disabled={sending} /></AnimatedCollapse></div></AnimatedCollapse>
-      <form onSubmit={event => { event.preventDefault(); void send(); }}><textarea data-ui="textarea" aria-label={t("Message room")} placeholder={t("Message room")} value={draft} disabled={sending || !!state.room.archivedAt} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} /><Button variant="primary" size="icon" type="submit" aria-label={t("Send")} disabled={sending || !!state.room.archivedAt || !draft.trim() || (customOrder && !members.length)}><ArrowUp size={17} /></Button></form>
+      <form noValidate onSubmit={send}><textarea data-ui="textarea" aria-label={t("Message room")} placeholder={t("Message room")} {...form.register("draft")} aria-invalid={!!form.formState.errors.draft} disabled={sending || !!state.room.archivedAt} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} /><Button variant="primary" size="icon" type="submit" aria-label={t("Send")} disabled={sending || !!state.room.archivedAt || !draft.trim() || (customOrder && !members.length)}><ArrowUp size={17} /></Button><FieldError errors={[form.formState.errors.draft, form.formState.errors.members]} /></form>
     </div>
   </section>;
 }

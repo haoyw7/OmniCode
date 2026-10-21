@@ -1,12 +1,13 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Switch } from "../../../shared/ui/forms/Switch";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
 import {
-  useState,
   type ComponentType,
-  type FormEvent,
   type ReactNode,
 } from "react";
 import { prettyCwd } from "../../../shared/lib/paths";
@@ -69,10 +70,10 @@ export function DeleteWorktreeDialog({
   const { t: uiT } = useTranslation();
   const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
   const busy = mutation.isPending;
-  const [deleteSessions, setDeleteSessions] = useState(false);
+  const form = useForm({ resolver: zodResolver(z.object({ deleteSessions: z.boolean() })), defaultValues: { deleteSessions: false } });
+  const deleteSessions = useWatch({ control: form.control, name: "deleteSessions" });
   const error = mutation.error ? String(mutation.error) : undefined;
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  const submit = form.handleSubmit(({ deleteSessions }) => {
     if (busy) return;
     mutation.mutate(async () => {
       // Confirmation covers the complete destructive action, including any
@@ -80,11 +81,10 @@ export function DeleteWorktreeDialog({
       await withToast(() => onRemove(cwd, tree.path, true, deleteSessions), {
         loading: uiT("Deleting worktree…"),
         success: uiT("Worktree deleted"),
-        error: false,
       });
       onDeleted();
     });
-  };
+  });
   return (
     <Modal
       title={uiT("Delete worktree?")}
@@ -95,7 +95,7 @@ export function DeleteWorktreeDialog({
     >
       <form
         className="flex flex-col gap-3.5 p-4 text-[13px] leading-[1.5]"
-        onSubmit={(e) => void submit(e)}
+        onSubmit={submit}
       >
         <p className="text-content/75">
           {uiT(
@@ -183,7 +183,7 @@ export function DeleteWorktreeDialog({
               aria-labelledby="delete-worktree-sessions-label"
               checked={deleteSessions}
               disabled={busy}
-              onCheckedChange={setDeleteSessions}
+              onCheckedChange={(value) => form.setValue("deleteSessions", value)}
             />
           </div>
         )}

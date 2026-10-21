@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -16,11 +20,19 @@ export function BotRecipientPicker({ open, bots, roomsSupported, onChoose, onCre
   onCreate: () => void; onClose: () => void; onSend: (bots: BotView[], text: string) => Promise<void>;
 }) {
   const { t } = useTranslation(), visible = useSurfaceVisibility(), id = useId();
-  const [query, setQuery] = useState(""), [highlight, setHighlight] = useState(0), [members, setMembers] = useState<string[]>([]);
-  const [draft, setDraft] = useState(""), [dropdown, setDropdown] = useState(true);
+  const [query, setQuery] = useState(""), [highlight, setHighlight] = useState(0), [dropdown, setDropdown] = useState(true);
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      draft: z.string().refine(value => !!value.trim(), t("This field is required")),
+      members: z.array(z.string()).min(2, t("Add another Bot to start a room")).max(10),
+    })),
+    defaultValues: { draft: "", members: [] as string[] },
+  });
+  const [draft, members] = useWatch({ control: form.control, name: ["draft", "members"] });
+  const setMembers = (next: string[] | ((current: string[]) => string[])) => form.setValue("members", typeof next === "function" ? next(form.getValues("members")) : next);
   const mutation = useMutation({ mutationFn: ({ bots, text }: { bots: BotView[]; text: string }) => withToast(() => onSend(bots, text),
     { loading: t("Sending..."), success: false, error: cause => t(botErrorMessage(cause)) }),
-    onSuccess: () => { setDraft(""); setMembers([]); setQuery(""); },
+    onSuccess: () => { form.reset(); setQuery(""); },
   }, queryClient);
   const busy = mutation.isPending, error = mutation.error ? botErrorMessage(mutation.error) : undefined;
   const input = useRef<HTMLInputElement>(null);
@@ -37,10 +49,10 @@ export function BotRecipientPicker({ open, bots, roomsSupported, onChoose, onCre
     if (busy || !roomsSupported || selected.length >= 10) return;
     setMembers(current => [...current.filter(id => id !== bot.id), bot.id]); setQuery(""); setHighlight(0); input.current?.focus();
   };
-  const send = async () => {
+  const send = form.handleSubmit(({ draft }) => {
     if (busy || !active || selected.length < 2 || !roomsSupported || !draft.trim()) return;
     mutation.mutate({ bots: selected, text: draft });
-  };
+  });
   return <section className="desktop-bot-recipient" aria-label={t("New conversation")} inert={!active} aria-hidden={!active || undefined} onKeyDown={event => {
     if (event.key === "Escape" && !busy) { event.preventDefault(); event.stopPropagation(); setDropdown(false); onClose(); }
   }}>
@@ -72,11 +84,12 @@ export function BotRecipientPicker({ open, bots, roomsSupported, onChoose, onCre
     <div className="desktop-bot-recipient-space" onClick={() => setDropdown(false)} />
     {error && <p role="alert" className="desktop-bot-recipient-error">{t(error)}</p>}
     {roomsSupported && <AnimatedCollapse expanded={selected.length > 0} className="desktop-bot-recipient-compose">
-      <form onSubmit={event => { event.preventDefault(); void send(); }}>
+      <form noValidate onSubmit={send}>
         <label className="desktop-bot-recipient-hint">{t(selected.length < 2 ? "Add another Bot to start a room" : "Send a message to start a room")}</label>
-        <div><textarea data-ui="textarea" rows={1} value={draft} disabled={busy} aria-label={t("Room message")} placeholder={t("Message your Bots…")} onFocus={() => setDropdown(false)} onChange={event => setDraft(event.target.value)} onKeyDown={event => {
+        <div><textarea data-ui="textarea" rows={1} {...form.register("draft")} aria-invalid={!!form.formState.errors.draft} disabled={busy} aria-label={t("Room message")} placeholder={t("Message your Bots…")} onFocus={() => setDropdown(false)} onKeyDown={event => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); }
         }} /><IconButton shape="round" type="submit" className="assistant-send" label={t("Send")} disabled={busy || selected.length < 2 || !draft.trim()}><ArrowUp size={18} /></IconButton></div>
+        <FieldError errors={[form.formState.errors.draft, form.formState.errors.members]} />
       </form>
     </AnimatedCollapse>}
   </section>;

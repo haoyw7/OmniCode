@@ -1,5 +1,9 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useState, type FormEvent } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import type { LinkedWorkItem } from "../model/session";
@@ -17,18 +21,15 @@ export function LinkSessionWorkItemDialog({
   onClose: () => void;
 }) {
   const { t: uiT } = useTranslation();
-  const [url, setUrl] = useState(initial?.url ?? "");
-  const [error, setError] = useState("");
-
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    const item = parseGithubWorkItemUrl(url.trim());
-    if (!item) {
-      setError("Enter a valid GitHub issue or pull request URL.");
-      return;
-    }
-    onSave(item);
-  };
+  const form = useForm({
+    resolver: zodResolver(z.object({ url: z.string().trim().refine(value => !!parseGithubWorkItemUrl(value), uiT("Enter a valid GitHub issue or pull request URL.")) })),
+    defaultValues: { url: initial?.url ?? "" },
+  });
+  const error = form.formState.errors.url;
+  const submit = form.handleSubmit(async ({ url }) => {
+    try { await onSave(parseGithubWorkItemUrl(url)!); }
+    catch (cause) { toast.error(cause instanceof Error ? cause.message : String(cause)); }
+  });
 
   return (
     <Modal
@@ -37,7 +38,7 @@ export function LinkSessionWorkItemDialog({
       size="sm"
       onClose={onClose}
     >
-      <form onSubmit={submit} className="flex flex-col gap-4 p-4 text-[12px]">
+      <form noValidate onSubmit={submit} className="flex flex-col gap-4 p-4 text-[12px]">
         <label className="flex flex-col gap-1.5">
           <span className="font-medium text-content/80">
             {uiT("Issue or pull request URL")}
@@ -45,27 +46,17 @@ export function LinkSessionWorkItemDialog({
           <input data-ui="input"
             autoFocus
             type="url"
-            value={url}
+            {...form.register("url")}
             aria-label={uiT("GitHub issue or pull request URL")}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "linked-work-item-error" : undefined}
             placeholder="https://github.com/owner/repo/pull/123"
-            onChange={(event) => {
-              setUrl(event.target.value);
-              if (error) setError("");
-            }}
             className={`h-9 rounded-md border bg-content/5 px-2.5 text-[13px] text-content outline-none placeholder:text-content/30 focus:border-content/30 ${
               error ? "border-red-400/60" : "border-content/10"
             }`}
           />
           {error ? (
-            <span
-              id="linked-work-item-error"
-              role="alert"
-              className="text-[11px] text-red-400"
-            >
-              {error}
-            </span>
+<FieldError id="linked-work-item-error" errors={[error]} />
           ) : (
             <span className="text-[11px] text-content/45">
               {uiT(
@@ -83,7 +74,7 @@ export function LinkSessionWorkItemDialog({
           <Button variant="secondary" onClick={onClose}>
             {uiT("Cancel")}
           </Button>
-          <Button variant="primary" type="submit">
+          <Button variant="primary" type="submit" disabled={form.formState.isSubmitting}>
             {initial ? uiT("Update link") : uiT("Link")}
           </Button>
         </ModalFooter>

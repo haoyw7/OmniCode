@@ -1,3 +1,7 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { motion as motionElement } from "motion/react";
@@ -237,6 +241,11 @@ export function DesktopBotsComposer({
   onRetry,
 }: BotComposerProps & { compact?: boolean }) {
   const { t } = useTranslation();
+  const form = useForm({
+    resolver: zodResolver(z.object({ draft: z.string().refine(value => !!value.trim() || attachments.length > 0, t("This field is required")) })),
+    values: { draft },
+  });
+  const submit = form.handleSubmit(() => { if (!sendDisabled) onSend(); });
   const input = useRef<HTMLTextAreaElement>(null);
   const files = useRef<HTMLInputElement>(null);
   const stoppable = !!onStop && !sending && !draft.trim() && !attachments.length;
@@ -293,10 +302,7 @@ export function DesktopBotsComposer({
             e.dataTransfer.dropEffect = attachDisabled ? "none" : "copy";
           }
         }}
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!sendDisabled) onSend();
-        }}
+        noValidate onSubmit={submit}
       >
         {jumpToBottom}
         <AnimatedCollapse expanded={!!attachments.length}>
@@ -312,14 +318,14 @@ export function DesktopBotsComposer({
           />
         </AnimatedCollapse>
         <textarea data-ui="textarea"
-          ref={input}
           rows={1}
           aria-label={t("Message assistant")}
           placeholder={placeholder ?? t("Ask your assistant…")}
-          value={draft}
+          {...form.register("draft", { onChange: (event) => onDraftChange(event.target.value) })}
+          ref={(node) => { form.register("draft").ref(node); input.current = node; }}
+          aria-invalid={!!form.formState.errors.draft}
           disabled={inputDisabled}
           onPaste={onPaste}
-          onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={(e) => {
             if (
               e.key === "Enter" &&
@@ -327,7 +333,7 @@ export function DesktopBotsComposer({
               !e.nativeEvent.isComposing
             ) {
               e.preventDefault();
-              if (!sendDisabled) onSend();
+              if (!sendDisabled) void submit();
             }
           }}
         />
@@ -382,6 +388,7 @@ export function DesktopBotsComposer({
             )}
           </IconButton>}
         </div>
+        <FieldError errors={[form.formState.errors.draft]} />
       </form>
     </div>
   );

@@ -1,3 +1,8 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { useIsFetching, useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { botPanelKey, botMemoryListQuery, botMemoryDocumentQuery, botMemoryHistoryQuery } from "../model/botPanelQueries";
@@ -26,7 +31,11 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
   const [actionError, setError] = useState<string>();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [newTopic, setNewTopic] = useState(false);
-  const [topic, setTopic] = useState("");
+  const topicForm = useForm({
+    resolver: zodResolver(z.object({ topic: z.string().trim().min(1, t("This field is required")) })),
+    defaultValues: { topic: "" },
+  });
+  const topic = useWatch({ control: topicForm.control, name: "topic" });
   const path = state.path;
   const draft = state.drafts[path];
   const dirty = !!draft && draft.text !== draft.base.text;
@@ -85,16 +94,16 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
       }
     }
   };
-  const openTopic = async () => {
-    if (!topic.trim()) return;
+  const openTopic = topicForm.handleSubmit(async ({ topic }) => {
+    if (loading) return;
     const next = `memory/${topic.trim().replace(/\.md$/i, "")}.md`;
     setError(undefined);
     try {
       await read(next);
       drafts.update(botId, (value) => ({ ...value, path: next }));
-      setNewTopic(false); setTopic("");
-    } catch (cause) { setError(botErrorMessage(cause)); }
-  };
+      setNewTopic(false); topicForm.reset();
+    } catch (cause) { setError(botErrorMessage(cause)); toast.error(t(botErrorMessage(cause))); }
+  });
   const unsaved = (item: string) => !!state.drafts[item] && state.drafts[item].text !== state.drafts[item].base.text;
   const fileOption = (item: string, group?: string): SearchableSelectOption => ({
     value: item, label: item, group, trailing: unsaved(item) ? <small className="text-ui-xs text-content/50">{t("Unsaved changes")}</small> : undefined,
@@ -112,9 +121,10 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
       <IconButton label={t("Refresh")} disabled={loading || draft?.busy} onClick={() => void load()}><RefreshCw size={16} /></IconButton>
     </div>
     <AnimatedCollapse expanded={newTopic}>
-      <form className="desktop-bots-memory-new" onSubmit={(event) => { event.preventDefault(); void openTopic(); }}>
-        <label>{t("Topic name")}<Input value={topic} onChange={(event) => setTopic(event.target.value)} placeholder={t("Topic name")} /></label>
-        <Button size="sm" variant="primary" type="submit" disabled={loading || !topic.trim()}>{t("Open draft")}</Button>
+      <form className="desktop-bots-memory-new" noValidate onSubmit={openTopic}>
+        <label>{t("Topic name")}<Input {...topicForm.register("topic")} aria-invalid={!!topicForm.formState.errors.topic} placeholder={t("Topic name")} /></label>
+        <Button size="sm" variant="primary" type="submit" disabled={loading || topicForm.formState.isSubmitting || !topic.trim()}>{t("Open draft")}</Button>
+        <FieldError errors={[topicForm.formState.errors.topic]} />
       </form>
     </AnimatedCollapse>
     {files?.topicsTruncated && <p role="status">{t("The topic index is limited to {count} files.", { count: files.topicLimit })}</p>}

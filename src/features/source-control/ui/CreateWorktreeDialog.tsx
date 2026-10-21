@@ -1,8 +1,12 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useProjectBranchesState } from "../hooks/useProjectBranches";
 import { LAYER } from "../../../shared/lib/layers";
 import { createWorktree, type Worktree } from "../model/worktrees";
@@ -27,9 +31,15 @@ export function CreateWorktreeDialog({
 }) {
   const { t: uiT } = useTranslation();
   const { branches } = useProjectBranchesState(baseCwd, true);
-  const [name, setName] = useState("");
-  const [base, setBase] = useState("HEAD");
-  const [existing, setExisting] = useState(false);
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      name: z.string().trim().min(1, uiT("This field is required")),
+      base: z.string().min(1, uiT("This field is required")),
+      existing: z.boolean(),
+    })),
+    defaultValues: { name: "", base: "HEAD", existing: false },
+  });
+  const [name, base, existing] = useWatch({ control: form.control, name: ["name", "base", "existing"] });
   const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
   const busy = mutation.isPending;
   const error = mutation.error ? String(mutation.error) : undefined;
@@ -64,20 +74,18 @@ export function CreateWorktreeDialog({
     ],
     [branches, uiT],
   );
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (busy || !name.trim()) return;
+  const submit = form.handleSubmit(({ name, base, existing }) => {
+    if (busy) return;
     mutation.mutate(async () => {
       await withToast(
         async () => onCreated(await createWorktree(baseCwd, name.trim(), base, existing)),
         {
           loading: uiT("Creating worktree…"),
           success: uiT("Worktree created"),
-          error: false,
         },
       );
     });
-  };
+  });
   const field =
     "h-9 rounded-md border border-content/10 bg-content/5 px-2.5 text-[13px] outline-none focus:border-content/25 disabled:opacity-50";
   return (
@@ -90,7 +98,8 @@ export function CreateWorktreeDialog({
     >
       <form
         className="flex flex-col gap-4 p-4"
-        onSubmit={(e) => void submit(e)}
+        noValidate
+        onSubmit={submit}
       >
         <p className="text-[12px] text-content/55">
           {uiT("An independent working copy of ")}
@@ -109,8 +118,8 @@ export function CreateWorktreeDialog({
               { value: "existing", label: uiT("Use an existing local branch") },
             ]}
             onChange={(value) => {
-              setExisting(value === "existing");
-              setName("");
+              form.setValue("existing", value === "existing");
+              form.resetField("name");
             }}
             searchPlaceholder="Search options…"
             layer={LAYER.dialogPopover}
@@ -128,7 +137,7 @@ export function CreateWorktreeDialog({
               value={name}
               disabled={busy}
               options={localBranches}
-              onChange={setName}
+              onChange={(value) => form.setValue("name", value, { shouldValidate: true })}
               placeholder={uiT("Choose a branch…")}
               searchPlaceholder="Search local branches…"
               emptyLabel="No matching local branches"
@@ -137,7 +146,9 @@ export function CreateWorktreeDialog({
           ) : (
             <input data-ui="input"
               data-code-label
-              ref={input}
+              {...form.register("name")}
+              ref={(node) => { form.register("name").ref(node); input.current = node; }}
+              aria-invalid={!!form.formState.errors.name}
               aria-label={uiT("New branch name")}
               className={field}
               value={name}
@@ -145,9 +156,9 @@ export function CreateWorktreeDialog({
               placeholder="feature/my-task"
               autoComplete="off"
               spellCheck={false}
-              onChange={(e) => setName(e.target.value)}
             />
           )}
+          <FieldError errors={[form.formState.errors.name]} />
         </div>
         {!existing && (
           <div className="flex flex-col gap-1.5 text-[12px] text-content/70">
@@ -159,7 +170,7 @@ export function CreateWorktreeDialog({
               value={base}
               disabled={busy}
               options={baseOptions}
-              onChange={setBase}
+              onChange={(value) => form.setValue("base", value)}
               searchPlaceholder="Search branches and refs…"
               layer={LAYER.dialogPopover}
             />

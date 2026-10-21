@@ -131,7 +131,7 @@ export function SkillsPage({
   const createMutation = useMutation({
     mutationFn: ({ name, scope }: { name: string; scope: "project" | "user" }) => withToast(
       () => createBlankSkill({ cwd, name, scope }),
-      { loading: uiT("Creating skill…"), success: uiT("Created skill {name}", { name }), error: false },
+      { loading: uiT("Creating skill…"), success: uiT("Created skill {name}", { name }) },
     ),
     onSuccess: () => {
       window.dispatchEvent(new Event(SKILLS_CHANGE_EVENT));

@@ -1,3 +1,4 @@
+import { FieldError } from "../../../../../shared/ui/primitives/Field";
 import {
   TID_WORKFLOW_DETAIL_DESCRIPTION,
   TID_WORKFLOW_DETAIL_WHEN_TO_USE,
@@ -74,9 +75,7 @@ export function SavedWorkflowMetaForm({
           onChange={(event) => onDescriptionChange(event.target.value)}
         />
         {descriptionError ? (
-          <p className="text-ui-sm text-destructive">
-            {intl.formatMessage({ id: "workflows.hub.detail.meta.descriptionRequired" })}
-          </p>
+          <FieldError>{intl.formatMessage({ id: "workflows.hub.detail.meta.descriptionRequired" })}</FieldError>
         ) : null}
       </div>
       <div className="flex flex-col gap-1.5">

@@ -1,6 +1,10 @@
 import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import {
   loadNotificationPreferences,
   updateNotificationPreferences,
@@ -24,7 +28,7 @@ export function NotificationMuteDatePicker({
   onCancel,
 }: Props) {
   const { t: uiT } = useTranslation();
-  const [value, setValue] = useState(() => {
+  const initialValue = () => {
     const until =
       projectIds.length === 1
         ? loadNotificationPreferences()[projectIds[0]]?.mutedUntil
@@ -34,54 +38,45 @@ export function NotificationMuteDatePicker({
         ? until
         : Date.now() + 3_600_000;
     return toLocalDateTime(new Date(Math.ceil(initial / 60_000) * 60_000));
+  };
+  const form = useForm({
+    resolver: zodResolver(z.object({ value: z.string().superRefine((value, ctx) => {
+      const date = parseLocalDateTime(value);
+      if (!date) ctx.addIssue({ code: "custom", message: uiT("Choose a valid date and time.") });
+      else if (date.getTime() <= Date.now()) ctx.addIssue({ code: "custom", message: uiT("Choose a date and time in the future.") });
+    }) })),
+    defaultValues: { value: initialValue() },
   });
-  const [error, setError] = useState<string | null>(null);
+  const value = useWatch({ control: form.control, name: "value" });
   return (
     <form
       noValidate
       className="w-full"
-      onSubmit={(event) => {
-        event.preventDefault();
+      onSubmit={form.handleSubmit(({ value }) => {
         if (!projectIds.length) return;
-        const date = parseLocalDateTime(value);
-        if (!date) {
-          setError("Choose a valid date and time.");
-          return;
-        }
-        if (date.getTime() <= Date.now()) {
-          setError("Choose a date and time in the future.");
-          return;
-        }
         try {
-          updateNotificationPreferences(projectIds, {
-            mutedUntil: date.getTime(),
-          });
-          setError(null);
+          updateNotificationPreferences(projectIds, { mutedUntil: parseLocalDateTime(value)!.getTime() });
           onChanged?.();
         } catch {
-          setError(
-            "Could not save notification preferences. Please try again.",
-          );
+          const message = uiT("Could not save notification preferences. Please try again.");
+          form.setError("value", { type: "server", message });
+          toast.error(message);
         }
-      }}
+      })}
     >
       <p className="mb-3 px-1 text-[11px] text-content/45">
         {uiT("Mute all notifications until")}
       </p>
       <DateTimePicker
+        invalid={!!form.formState.errors.value}
         value={value}
         onChange={(next) => {
-          setValue(next);
-          setError(null);
+          form.setValue("value", next, { shouldValidate: true });
         }}
         minDate={toLocalDateTime(new Date(Date.now())).slice(0, 10)}
         autoFocus
       />
-      {error ? (
-        <p role="alert" className="mt-3 px-1 text-xs text-red-400">
-          {error}
-        </p>
-      ) : null}
+      <FieldError errors={[form.formState.errors.value]} />
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-stroke pt-2.5">
         <button
           type="button"
@@ -92,7 +87,7 @@ export function NotificationMuteDatePicker({
         </button>
         <Button variant="primary"
           type="submit"
-          disabled={!projectIds.length}
+          disabled={!projectIds.length || form.formState.isSubmitting}
           className="flex shrink-0 items-center rounded-md border border-transparent px-2.5 py-1 text-[12px] focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-default"
         >
           {uiT("Mute until then")}

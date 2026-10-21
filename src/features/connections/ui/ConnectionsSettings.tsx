@@ -179,7 +179,7 @@ export function ConnectionsSettings() {
             currentJob.current = id;
             setJobSession({ id, attempt: crypto.randomUUID(), upgrade });
           },
-          { loading: uiT("Connecting…"), success: false, error: false },
+          { loading: uiT("Connecting…"), success: false },
         ),
       onError: (reason) => {
         submitting.current = false;
@@ -197,7 +197,6 @@ export function ConnectionsSettings() {
             loading: uiT("Connecting to the machine…"),
             success: (machine) =>
               uiT("Connected to {service}", { service: machine.name }),
-            error: false,
           },
         ),
       onError: reportError,
@@ -327,7 +326,6 @@ export function ConnectionsSettings() {
         withToast(() => invoke("remote_ssh_answer", request), {
           loading: uiT("Sending answer…"),
           success: false,
-          error: false,
         }),
       onError: reportError,
     },

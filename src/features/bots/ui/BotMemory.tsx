@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
 import { errorMessage } from "../../../shared/lib/errorMessage";
@@ -46,7 +50,11 @@ export function BotMemoryEditor({
   const options = botResidentMemoryQuery(rpc);
   const query = useQuery(options, queryClient);
   const memory = query.data;
-  const [adding, setAdding] = useState("");
+  const form = useForm({
+    resolver: zodResolver(z.object({ fact: z.string().trim().min(1, t("This field is required")).max(1000, t("Use at most {count} characters", { count: 1000 })) })),
+    defaultValues: { fact: "" },
+  });
+  const adding = useWatch({ control: form.control, name: "fact" });
   // The opened fact is retained while its panel animates closed.
   const [detail, setDetail] = useState<{
     index: number;
@@ -72,7 +80,7 @@ export function BotMemoryEditor({
       const [loading, success] = notices[input.action];
       return withToast(() => rpc("assistant.control", {
         commandId: crypto.randomUUID(), expectedRevision: memory!.revision, ...input,
-      }), { loading: t(loading), success: t(success), error: false });
+      }), { loading: t(loading), success: t(success) });
     },
     onSettled: () => invalidateAfterChange(options.queryKey),
   }, queryClient);
@@ -91,10 +99,9 @@ export function BotMemoryEditor({
       .join(" · ") || undefined;
   const closeDetail = () =>
     setDetail((current) => current && { ...current, open: false });
-  const add = async () => {
-    if (!adding.trim()) return;
-    if (await control({ action: "addMemory", fact: adding })) setAdding("");
-  };
+  const add = form.handleSubmit(async ({ fact }) => {
+    if (!busy && await control({ action: "addMemory", fact })) form.reset();
+  });
   // The editor sits inside the settings form; Enter must not submit it.
   const onEnter =
     (submit: () => Promise<void>) => (event: KeyboardEvent<HTMLInputElement>) => {
@@ -145,10 +152,10 @@ export function BotMemoryEditor({
         <input data-ui="input"
           aria-label={t("Add a fact for the assistant to remember")}
           placeholder={t("Add a fact for the assistant to remember")}
-          value={adding}
+          {...form.register("fact")}
+          aria-invalid={!!form.formState.errors.fact}
           maxLength={1000}
           disabled={busy}
-          onChange={(e) => setAdding(e.target.value)}
           onKeyDown={onEnter(add)}
         />
         <button data-ui="button" data-variant="secondary"
@@ -159,6 +166,7 @@ export function BotMemoryEditor({
           {t("Add")}
         </button>
       </div>
+      <FieldError errors={[form.formState.errors.fact]} />
       {!!memory?.topics.length && (
         <small>
           {t("Topic notes: {topics}", { topics: memory.topics.join(", ") })}

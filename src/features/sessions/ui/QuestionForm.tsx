@@ -1,9 +1,13 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { Button } from "../../../shared/ui/forms/Button";
 import { translate as translateUi } from "../../../shared/i18n/language";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -49,8 +53,19 @@ export function QuestionForm({
 }: Props) {
   const { t: uiT } = useTranslation();
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string[]>>({});
-  const [custom, setCustom] = useState<Record<string, string>>({});
+  const questions = prompt.questions;
+  const total = questions.length;
+  const index = Math.min(step, Math.max(total - 1, 0));
+  const question = questions[index];
+  const last = index >= total - 1;
+  const schema = z.object({
+    answers: z.record(z.string(), z.array(z.string())),
+    custom: z.record(z.string(), z.string()),
+  }).refine(values => !!question && questionIsComplete(question, values.answers, values.custom), { path: ["root"], message: uiT("This field is required") });
+  const form = useForm({ resolver: zodResolver(schema), defaultValues: { answers: {} as Record<string, string[]>, custom: {} as Record<string, string> } });
+  const [answers, custom] = useWatch({ control: form.control, name: ["answers", "custom"] });
+  const setAnswers = (next: Record<string, string[]> | ((current: Record<string, string[]>) => Record<string, string[]>)) => form.setValue("answers", typeof next === "function" ? next(form.getValues("answers")) : next);
+  const setCustom = (next: Record<string, string> | ((current: Record<string, string>) => Record<string, string>)) => form.setValue("custom", typeof next === "function" ? next(form.getValues("custom")) : next);
   const now = useNow(1000, prompt.autoResolveAt != null);
   const body = useRef<HTMLDivElement>(null);
 
@@ -65,21 +80,11 @@ export function QuestionForm({
       question.input ? [[question.id, question.input.initialValue ?? ""]] : [])));
   }, [prompt.requestId]);
 
-  const questions = prompt.questions;
-  const total = questions.length;
-  const index = Math.min(step, Math.max(total - 1, 0));
-  const question = questions[index];
-  const last = index >= total - 1;
-  const ready = useMemo(
-    () => (question ? questionIsComplete(question, answers, custom) : false),
-    [answers, custom, question],
-  );
+  const ready = schema.safeParse({ answers, custom }).success;
 
   const finish = (nextAnswers = answers, nextCustom = custom) => {
-    onReply(
-      prompt.requestId,
-      buildQuestionReply(questions, nextAnswers, nextCustom),
-    );
+    try { onReply(prompt.requestId, buildQuestionReply(questions, nextAnswers, nextCustom)); }
+    catch (cause) { toast.error(cause instanceof Error ? cause.message : String(cause)); }
   };
 
   const skipCurrent = () => {
@@ -144,10 +149,7 @@ export function QuestionForm({
       <div className="pb-2" data-question-form data-question-variant="dock" {...captureInteraction}>
         <form
           className="question-dock flex min-h-0 flex-col border px-4 pb-3 pt-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            continueCurrent();
-          }}
+          noValidate onSubmit={form.handleSubmit(continueCurrent)}
         >
           <div className="flex shrink-0 items-center gap-2 text-content/55">
             <CircleHelp className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
@@ -209,6 +211,7 @@ export function QuestionForm({
           <DockQuestionFields
             key={question.id}
             bodyRef={body}
+            invalid={!!form.formState.errors.root}
             question={question}
             selected={answers[question.id] ?? []}
             custom={custom[question.id] ?? ""}
@@ -239,6 +242,7 @@ export function QuestionForm({
             }}
             onSkip={skipCurrent}
           />
+          <FieldError errors={[form.formState.errors.root]} />
         </form>
       </div>
     );
@@ -253,10 +257,7 @@ export function QuestionForm({
       <form
         className="flex min-h-0 flex-col rounded-lg border border-content/10 bg-content/3 px-3 py-2.5"
         data-question-card
-        onSubmit={(event) => {
-          event.preventDefault();
-          continueCurrent();
-        }}
+        noValidate onSubmit={form.handleSubmit(continueCurrent)}
       >
         <div className="flex shrink-0 items-center gap-1.5" data-question-header>
           <MessageSquare
@@ -330,6 +331,7 @@ export function QuestionForm({
           data-question-body
         >
           <QuestionFields
+            invalid={!!form.formState.errors.root}
             key={question.id}
             question={question}
             selected={answers[question.id] ?? []}
@@ -401,12 +403,14 @@ export function QuestionForm({
             {uiT("Continue")}
           </Button>
         </div>
+        <FieldError errors={[form.formState.errors.root]} />
       </form>
     </div>
   );
 }
 
 function QuestionFields({
+  invalid,
   question,
   selected,
   custom,
@@ -418,6 +422,7 @@ function QuestionFields({
   custom: string;
   onSelect: (optionId: string) => void;
   onCustom: (value: string) => void;
+  invalid?: boolean;
 }) {
   const { t: uiT } = useTranslation();
   const options = displayOptions(question);
@@ -448,6 +453,7 @@ function QuestionFields({
         question.input?.kind === "multiline" ? (
           <textarea data-ui="textarea"
             value={custom}
+            aria-invalid={invalid}
             onChange={(event) => onCustom(event.target.value)}
             placeholder={question.input.placeholder ?? uiT("Type your answer")}
             maxLength={question.input.maxLength}
@@ -458,6 +464,7 @@ function QuestionFields({
         ) : (
         <input data-ui="input"
           value={custom}
+          aria-invalid={invalid}
           onChange={(event) => onCustom(event.target.value)}
           placeholder={question.input?.placeholder ?? uiT("Type your answer")}
           maxLength={question.input?.maxLength}
@@ -523,6 +530,7 @@ function QuestionFields({
                 {isCustom && (active || customSelected) ? (
                   <input data-ui="input"
                     value={custom}
+                    aria-invalid={invalid}
                     onChange={(event) => onCustom(event.target.value)}
                     placeholder={uiT("Type your answer")}
                     className="mt-1 w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none placeholder:text-content/35 focus:border-content/30"
@@ -619,6 +627,7 @@ function useOptionNavigation(
 }
 
 function DockQuestionFields({
+  invalid,
   bodyRef,
   question,
   selected,
@@ -637,6 +646,7 @@ function DockQuestionFields({
   last: boolean;
   onSelect: (optionId: string) => void;
   onCustom: (value: string) => void;
+  invalid?: boolean;
   onSkip: () => void;
 }) {
   const { t: uiT } = useTranslation();
@@ -726,6 +736,7 @@ function DockQuestionFields({
             {question.input?.kind === "multiline" ? (
               <textarea
                 value={custom}
+                aria-invalid={invalid}
                 onChange={(event) => onCustom(event.target.value)}
                 placeholder={placeholder}
                 maxLength={question.input.maxLength}
@@ -736,6 +747,7 @@ function DockQuestionFields({
             ) : (
               <input
                 value={custom}
+                aria-invalid={invalid}
                 onChange={(event) => onCustom(event.target.value)}
                 placeholder={placeholder}
                 maxLength={question.input?.maxLength}

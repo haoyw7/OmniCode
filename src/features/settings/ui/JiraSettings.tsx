@@ -1,4 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { jiraIntegrationQuery } from "../model/inboxIntegrationQueries";
@@ -25,9 +29,13 @@ export function JiraSettings() {
   const { t: uiT } = useTranslation();
   const statusQuery = useQuery(jiraIntegrationQuery(), queryClient);
   const status = statusQuery.data;
-  const [site, setSite] = useState("");
-  const [email, setEmail] = useState("");
-  const [token, setToken] = useState("");
+  const schema = z.object({
+    site: z.string().trim().min(1, uiT("This field is required")),
+    email: z.string().trim().pipe(z.email({ pattern: z.regexes.html5Email, error: uiT("Enter a valid email address") })),
+    token: z.string().trim().min(1, uiT("This field is required")),
+  });
+  const form = useForm({ resolver: zodResolver(schema), defaultValues: { site: "", email: "", token: "" } });
+  const [site, email, token] = useWatch({ control: form.control, name: ["site", "email", "token"] });
   const projectQuery = useQuery({ ...jiraProjectsQuery(), enabled: !!status?.connected }, queryClient);
   const projects = status?.connected ? projectQuery.data ?? [] : [];
   const checking = statusQuery.isFetching;
@@ -38,28 +46,27 @@ export function JiraSettings() {
     return () => window.removeEventListener(JIRA_CHANGE_EVENT, onChange);
   }, []);
   const mutation = useMutation({
-    mutationFn: (action: "connect" | "disconnect") => withToast(
-      () => action === "connect" ? saveJiraConfig({ site, email, token }) : disconnectJira(), {
-        loading: uiT(action === "connect" ? "Connecting to {service}…" : "Disconnecting from {service}…", { service: "Jira" }),
-        success: uiT(action === "connect" ? "Connected to {service}" : "Disconnected from {service}", { service: "Jira" }),
-        error: false,
+    mutationFn: (values: z.infer<typeof schema> | null) => withToast(
+      () => values ? saveJiraConfig(values) : disconnectJira(), {
+        loading: uiT(values ? "Connecting to {service}…" : "Disconnecting from {service}…", { service: "Jira" }),
+        success: uiT(values ? "Connected to {service}" : "Disconnected from {service}", { service: "Jira" }),
       }),
-    onSuccess: async (next, action) => {
+    onSuccess: async (next, values) => {
       await queryClient.cancelQueries({ queryKey: jiraIntegrationQuery().queryKey });
       queryClient.setQueryData(jiraIntegrationQuery().queryKey, next);
-      setToken("");
+      form.resetField("token");
       clearInboxCache();
-      if (action === "connect") saveHiddenJiraProjectIds([]);
+      if (values) saveHiddenJiraProjectIds([]);
       else { queryClient.setQueryData(jiraProjectsQuery().queryKey, []); notifyJiraChange(); }
       await Promise.all([invalidateAfterChange(inboxKeys.connections), invalidateAfterChange(inboxKeys.lists)]);
     },
   }, queryClient);
   const busy = mutation.isPending;
   const error = errorMessage(mutation.error ?? statusQuery.error ?? (status?.connected ? projectQuery.error : null));
-  const connect = () => {
-    if (!busy && !checking && site.trim() && email.trim() && token.trim()) mutation.mutate("connect");
-  };
-  const disconnect = () => { if (!busy) mutation.mutate("disconnect"); };
+  const connect = form.handleSubmit((values) => {
+    if (!busy && !checking) mutation.mutate(values);
+  });
+  const disconnect = () => { if (!busy) mutation.mutate(null); };
 
   return (
     <div className="px-4 py-3.5">
@@ -81,10 +88,8 @@ export function JiraSettings() {
         </div>
       ) : (
         <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void connect();
-          }}
+          noValidate
+          onSubmit={connect}
           className="flex flex-col gap-3"
         >
           <p className="text-[12px] leading-relaxed text-content/45">
@@ -96,22 +101,19 @@ export function JiraSettings() {
             [
               {
                 label: uiT("Jira site"),
-                value: site,
-                set: setSite,
+                name: "site",
                 type: "text",
                 placeholder: "yourteam.atlassian.net",
               },
               {
                 label: uiT("Atlassian email"),
-                value: email,
-                set: setEmail,
+                name: "email",
                 type: "email",
                 placeholder: "you@example.com",
               },
               {
                 label: uiT("Jira API token"),
-                value: token,
-                set: setToken,
+                name: "token",
                 type: "password",
                 placeholder: "API token",
               },
@@ -125,15 +127,15 @@ export function JiraSettings() {
               <input data-ui="input"
                 aria-label={field.label}
                 type={field.type}
-                value={field.value}
-                onChange={(event) => field.set(event.target.value)}
+                {...form.register(field.name)}
+                aria-invalid={!!form.formState.errors[field.name]}
                 placeholder={field.placeholder}
                 disabled={busy}
-                required
                 autoComplete="off"
                 spellCheck={false}
                 className="h-8 w-full rounded-md border border-content/10 bg-transparent px-2 text-content outline-none focus:border-content/20"
               />
+              <FieldError errors={[form.formState.errors[field.name]]} />
             </label>
           ))}
           <div className="flex items-center gap-3">

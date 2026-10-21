@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { useState, type KeyboardEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -79,9 +83,21 @@ export function BotHabits({
   control: (input: HabitControl) => Promise<void>;
 }) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState<Draft>();
-  // The editor keeps its last contents while it folds away.
-  const [shown, setShown] = useState<Draft>(newDraft);
+  const [editing, setEditing] = useState(false);
+  const schema = z.object({
+    id: z.string().optional(),
+    name: z.string().trim().min(1, t("Enter a name")).max(80, t("Use at most {count} characters", { count: 80 })),
+    prompt: z.string().trim().min(1, t("This field is required")).max(4000, t("Use at most {count} characters", { count: 4000 })),
+    schedule: z.object({
+      scheduleKind: z.enum(["hourly", "daily", "weekdays", "weekly"]),
+      minute: z.number().int().min(0).max(59),
+      time: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, t("Choose a valid date and time.")),
+      dayOfWeek: z.number().int().min(0).max(6),
+    }),
+  });
+  const form = useForm({ resolver: zodResolver(schema), defaultValues: newDraft() });
+  const shown = useWatch({ control: form.control }) as Draft;
+  const draft = editing ? shown : undefined;
   const mutation = useMutation({ mutationFn: (input: HabitControl) => withToast(() => control(input),
     { loading: t("Saving…"), success: false }) }, queryClient);
   const pending = mutation.isPending;
@@ -96,13 +112,11 @@ export function BotHabits({
     }
   };
   const open = (next: Draft) => {
-    setShown(next);
-    setDraft(next);
+    form.reset(next);
+    setEditing(true);
   };
   const edit = (next: Partial<Draft>) => {
-    const value = { ...shown, ...next };
-    setShown(value);
-    setDraft(value);
+    for (const key of Object.keys(next) as (keyof Draft)[]) form.setValue(key, next[key]!, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
   };
   const editSchedule = (next: Partial<BotHabitSchedule>) =>
     edit({ schedule: { ...shown.schedule, ...next } });
@@ -137,8 +151,8 @@ export function BotHabits({
     event.preventDefault();
     void save();
   };
-  const save = async () => {
-    if (!draft || !draft.name.trim() || !draft.prompt.trim()) return;
+  const save = form.handleSubmit(async (draft) => {
+    if (!editing || busy) return;
     const habit = {
       name: draft.name.trim(),
       prompt: draft.prompt.trim(),
@@ -151,8 +165,8 @@ export function BotHabits({
           : { action: "createHabit", habit },
       )
     )
-      setDraft(undefined);
-  };
+      setEditing(false);
+  });
   return (
     <div className="assistant-habits">
       {!habits.length && (
@@ -224,7 +238,7 @@ export function BotHabits({
                   className="assistant-link-button"
                   disabled={busy}
                   onClick={() => {
-                    if (draft?.id === habit.id) setDraft(undefined);
+                    if (draft?.id === habit.id) setEditing(false);
                     void run({ action: "deleteHabit", habitId: habit.id });
                   }}
                 >
@@ -251,6 +265,7 @@ export function BotHabits({
             {t("Name")}
             <input data-ui="input"
               value={shown.name}
+              aria-invalid={!!form.formState.errors.name}
               maxLength={80}
               disabled={busy}
               onChange={(e) => edit({ name: e.target.value })}
@@ -261,6 +276,7 @@ export function BotHabits({
             {t("What to do")}
             <textarea data-ui="textarea"
               value={shown.prompt}
+              aria-invalid={!!form.formState.errors.prompt}
               maxLength={4000}
               disabled={busy}
               placeholder={t("What to check, and when it is worth telling you")}
@@ -327,6 +343,7 @@ export function BotHabits({
               <input data-ui="input"
                 type="time"
                 value={shown.schedule.time}
+                aria-invalid={!!form.formState.errors.schedule?.time}
                 onKeyDown={onEnter}
                 disabled={busy}
                 onChange={(e) =>
@@ -335,12 +352,13 @@ export function BotHabits({
               />
             </label>
           )}
+          <FieldError errors={[form.formState.errors.name, form.formState.errors.prompt, form.formState.errors.schedule?.time]} />
           <small>{t("Times are in {zone}.", { zone: timeZone })}</small>
           <div className="assistant-habit-editor-actions">
             <button data-ui="button" data-variant="secondary"
               type="button"
               disabled={pending}
-              onClick={() => setDraft(undefined)}
+              onClick={() => setEditing(false)}
             >
               {t("Cancel")}
             </button>

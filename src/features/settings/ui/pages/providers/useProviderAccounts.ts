@@ -1,8 +1,11 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../../../shared/lib/queryClient";
 import { sharedHostMachineId } from "../../../../connections/model/remoteProjects";
 import { ask } from "@tauri-apps/plugin-dialog";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { withToast } from "../../../../../shared/ui/primitives/Sonner";
 import { loginHarness } from "../../../../../integrations/harness/core/auth";
@@ -38,7 +41,6 @@ import {
 } from "../../../../providers/model/deepseekAccount";
 
 export type AccountEditor = {
-  homeEdited?: boolean;
   importCurrent?: boolean;
   provider: ProviderAccountProvider;
   accountId?: string;
@@ -75,6 +77,14 @@ export function useProviderAccounts() {
   const [deepseekRefresh, setDeepseekRefresh] = useState(0);
   const deepseek: DeepseekAccountState = useDeepseekAccount(deepseekRefresh);
   const [editor, setEditor] = useState<AccountEditor | null>(null);
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      label: z.string().trim().min(1, uiT("This field is required")).max(48, uiT("Use at most {count} characters", { count: 48 })),
+      dataHome: z.string().trim(),
+      homeEdited: z.boolean(),
+    })),
+    defaultValues: { label: "", dataHome: "", homeEdited: false },
+  });
   const [editorExpanded, setEditorExpanded] = useState(true);
   const mutation = useMutation({ mutationFn: ({ action }: { key: string; action: () => Promise<void> }) => action() }, queryClient);
   const working = mutation.isPending ? mutation.variables.key : null;
@@ -124,6 +134,7 @@ export function useProviderAccounts() {
       setEditorExpanded((expanded) => !expanded);
       return;
     }
+    form.reset({ label: next.label, dataHome: next.dataHome ?? "", homeEdited: false });
     setEditor(next);
     setEditorExpanded(true);
   };
@@ -143,17 +154,8 @@ export function useProviderAccounts() {
     });
   };
 
-  const editLabel = (label: string) =>
-    setEditor((current) => (current ? { ...current, label } : current));
-
-  const editDataHome = (dataHome: string) =>
-    setEditor((current) =>
-      current ? { ...current, dataHome, homeEdited: true } : current,
-    );
-
-  const submitEditor = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!editor || !editor.label.trim() || working) return;
+  const submitEditor = form.handleSubmit(async (values) => {
+    if (!editor || working) return;
     const key = editor.accountId
       ? `rename:${editor.provider}:${editor.accountId}`
       : `add:${editor.provider}`;
@@ -170,16 +172,16 @@ export function useProviderAccounts() {
         if (editor.accountId) {
           await updateProviderAccountProfile({
             id: editor.accountId, provider: editor.provider,
-            label: editor.label, ...(editor.homeEdited ? { dataHome: editor.dataHome ?? "" } : {}),
+            label: values.label, ...(values.homeEdited ? { dataHome: values.dataHome } : {}),
           });
           if (editor.provider !== "workbuddy") clearCachedRateLimits(editor.provider, editor.accountId);
           setVersion((value) => value + 1);
         } else if (editor.importCurrent) {
-          await importCurrentCodexAccount(editor.label);
+          await importCurrentCodexAccount(values.label);
         } else {
-          await addProviderAccountProfile(editor.provider, editor.label, editor.dataHome);
+          await addProviderAccountProfile(editor.provider, values.label, values.dataHome);
         }
-      }, { ...notice, error: false });
+      }, notice);
       setEditor(null);
       } });
     } catch (caught) {
@@ -189,7 +191,7 @@ export function useProviderAccounts() {
           : "Could not save this account",
       );
     }
-  };
+  });
 
   const signIn = async (account: ProviderAccount) => {
     if (working) return;
@@ -275,8 +277,7 @@ export function useProviderAccounts() {
     usage,
     retry: () => { void profilesRead.refetch(); void defaultsRead.refetch(); },
     cancelEditor: () => setEditor(null),
-    editLabel,
-    editDataHome,
+    form,
     changeSharedDefault,
     startAdd,
     startImport,

@@ -1,3 +1,7 @@
+import { useForm, useWatch, type FieldErrors } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -203,7 +207,18 @@ function AutomationsContent({
   const [query, setQuery] = useState("");
   const loading = listQuery.isPending;
   const [navigationError, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<AutomationDraft | null>(null);
+  const draftSchema = z.custom<AutomationDraft>().superRefine((draft, ctx) => {
+    for (const key of ["name", "prompt", "model"] as const) {
+      if (!draft[key].trim()) ctx.addIssue({ code: "custom", path: [key], message: uiT("This field is required") });
+    }
+    if (!looksLikeProject(draft.cwd)) ctx.addIssue({ code: "custom", path: ["cwd"], message: uiT("Choose a project") });
+  });
+  const form = useForm({
+    resolver: zodResolver(z.object({ draft: draftSchema.nullable() })),
+    defaultValues: { draft: null as AutomationDraft | null },
+  });
+  const draft = useWatch({ control: form.control, name: "draft" });
+  const setDraft = (next: AutomationDraft | null) => form.setValue("draft", next, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
   const [pickerOpen, setPickerOpen] = useState(true);
   const logos = useTabGroupLogos();
   const [groupLabels] = useState(loadTabGroupLabels);
@@ -306,9 +321,11 @@ function AutomationsContent({
     setDraft(draftFromTemplate(project, harness, model, template));
   };
 
-  const onSave = (event: FormEvent, nextDraft: AutomationDraft) => {
-    event.preventDefault();
-    if (!saving) saveMutation.mutate(nextDraft);
+  const onSave = (nextDraft: AutomationDraft) => {
+    form.setValue("draft", nextDraft);
+    return form.handleSubmit(({ draft: values }) => {
+      if (!saving && values) saveMutation.mutate(values);
+    })();
   };
   const onRun = (automation: Automation) => { if (!running) runMutation.mutate(automation); };
   const onDelete = (automation: Automation) => {
@@ -416,7 +433,9 @@ function AutomationsContent({
               setDraft(null);
               if (!editorDraft.id) setPickerOpen(true);
             }}
-            onSubmit={(event) => onSave(event, editorDraft)}
+            valid={draftSchema.safeParse(editorDraft).success}
+            errors={form.formState.errors.draft ?? undefined}
+            onSubmit={(event) => { event.preventDefault(); void onSave(editorDraft); }}
             onRun={
               selected && editorDraft.id
                 ? () => void onRun(selected)
@@ -779,6 +798,8 @@ function AutomationEditor({
   onChange,
   onClose,
   onSubmit,
+  errors,
+  valid,
   onRun,
   onDelete,
   onOpenSession,
@@ -792,6 +813,8 @@ function AutomationEditor({
   onChange: (draft: AutomationDraft) => void;
   onClose: () => void;
   onSubmit: (event: FormEvent) => void;
+  errors?: FieldErrors<AutomationDraft>;
+  valid: boolean;
   onRun?: () => void;
   onDelete?: () => void;
   onOpenSession: (sessionId: string) => void | Promise<void>;
@@ -826,11 +849,6 @@ function AutomationEditor({
     if (kind === "time") return true;
     return providerConnected[kind];
   };
-  const valid =
-    draft.name.trim().length > 0 &&
-    draft.prompt.trim().length > 0 &&
-    looksLikeProject(draft.cwd) &&
-    draft.model.length > 0;
   const update = <K extends keyof AutomationDraft>(
     key: K,
     value: AutomationDraft[K],
@@ -878,14 +896,16 @@ function AutomationEditor({
   const showingHistory = historyAvailable && tab === "history";
 
   return (
-    <form className="flex min-h-0 min-w-0 flex-1 flex-col" onSubmit={onSubmit}>
+    <form noValidate className="flex min-h-0 min-w-0 flex-1 flex-col" onSubmit={onSubmit}>
       <div className="relative w-full shrink-0 border-b border-stroke">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-2.5 px-8 pt-5">
           <header className="flex flex-col gap-2.5">
+            <FieldError errors={[errors?.name, errors?.cwd, errors?.model]} />
             <div className="flex items-start gap-6">
               <input
                 autoFocus
                 aria-label={uiT("Automation name")}
+                aria-invalid={!!errors?.name}
                 value={draft.name}
                 onChange={(event) => update("name", event.target.value)}
                 placeholder={uiT("Untitled")}
@@ -1240,6 +1260,7 @@ function AutomationEditor({
               <SectionTitle>{uiT("Instructions")}</SectionTitle>
               <div className="relative mt-3 rounded-md border border-content/10 bg-content/3 backdrop-blur-sm has-focus:border-content/20">
                 <PromptField
+                  invalid={!!errors?.prompt}
                   value={draft.prompt}
                   harness={draft.harness}
                   cwd={draft.cwd}
@@ -1283,6 +1304,7 @@ function AutomationEditor({
                   </div>
                 </div>
               </div>
+              <FieldError errors={[errors?.prompt]} />
               <p className="mt-2 px-1 text-[11px] text-content/35">
                 {uiT(
                   "Skills, @file references, and built-in commands work here.",
@@ -1405,11 +1427,13 @@ function AutomationEditor({
 }
 
 function PromptField({
+  invalid,
   value,
   harness,
   cwd,
   onChange,
 }: {
+  invalid?: boolean;
   value: string;
   harness: AutomationDraft["harness"];
   cwd: string;
@@ -1417,6 +1441,7 @@ function PromptField({
 }) {
   return (
     <SkillPromptField
+      invalid={invalid}
       value={value}
       harness={harness}
       cwd={cwd}

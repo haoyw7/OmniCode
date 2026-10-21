@@ -1,5 +1,10 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
@@ -13,7 +18,8 @@ type Props = {
 
 export function CreateBranchDialog({ busy, error, onCreate, onCancel }: Props) {
   const { t: uiT } = useTranslation();
-  const [name, setName] = useState("");
+  const form = useForm({ resolver: zodResolver(z.object({ name: z.string().trim().min(1, uiT("This field is required")) })), defaultValues: { name: "" } });
+  const name = useWatch({ control: form.control, name: "name" });
   const input = useRef<HTMLInputElement>(null);
   const trimmed = name.trim();
 
@@ -23,14 +29,12 @@ export function CreateBranchDialog({ busy, error, onCreate, onCancel }: Props) {
   }, []);
 
   useEffect(() => {
-    if (error) input.current?.focus();
+    if (error) { input.current?.focus(); toast.error(error); }
   }, [error]);
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!trimmed || busy) return;
-    onCreate(trimmed);
-  };
+  const submit = form.handleSubmit(({ name }) => {
+    if (!busy) onCreate(name);
+  });
 
   return (
     <Modal
@@ -41,16 +45,17 @@ export function CreateBranchDialog({ busy, error, onCreate, onCancel }: Props) {
         if (!busy) onCancel();
       }}
     >
-      <form className="flex flex-col gap-4 p-4" onSubmit={submit}>
+      <form noValidate className="flex flex-col gap-4 p-4" onSubmit={submit}>
         <label className="flex flex-col gap-1.5">
           <span className="text-[12px] font-medium text-content/70">
             {uiT("Branch name")}
           </span>
           <input data-ui="input"
             data-code-label
-            ref={input}
+            {...form.register("name")}
+            ref={(node) => { form.register("name").ref(node); input.current = node; }}
+            aria-invalid={!!form.formState.errors.name}
             type="text"
-            value={name}
             placeholder="feature/my-branch"
             aria-label={uiT("Branch name")}
             spellCheck={false}
@@ -58,9 +63,9 @@ export function CreateBranchDialog({ busy, error, onCreate, onCancel }: Props) {
             autoCorrect="off"
             autoCapitalize="off"
             disabled={busy}
-            onChange={(event) => setName(event.target.value)}
             className="h-9 rounded-md border border-content/10 bg-content/5 px-2.5 font-sans text-[13px] text-content outline-none placeholder:text-content/30 focus:border-content/25 disabled:opacity-50"
           />
+          <FieldError errors={[form.formState.errors.name]} />
         </label>
 
         {error ? (

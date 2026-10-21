@@ -1,3 +1,4 @@
+import { FieldError } from "../../../../../shared/ui/primitives/Field";
 import { Plus, X } from "../../../../../shared/ui/icons";
 import type { OmniCodeSavedWorkflowArgType } from "../../_shims/shared.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
@@ -65,6 +66,7 @@ export function SavedWorkflowArgsTable({
                   "h-7 font-mono",
                   error === "empty_name" || error === "duplicate_name" ? "border-destructive" : "",
                 )}
+                aria-invalid={error === "empty_name" || error === "duplicate_name"}
                 value={row.name}
                 onChange={(event) => onChange(row.key, { name: event.target.value })}
               />
@@ -117,6 +119,7 @@ export function SavedWorkflowArgsTable({
                     "h-7 font-mono",
                     error === "invalid_default" && "border-destructive",
                   )}
+                  aria-invalid={error === "invalid_default"}
                   value={row.defaultText}
                   onChange={(event) => onChange(row.key, { defaultText: event.target.value })}
                 />
@@ -138,9 +141,7 @@ export function SavedWorkflowArgsTable({
               </Button>
             </div>
             {error ? (
-              <p className="mt-1 text-ui-sm text-destructive">
-                {intl.formatMessage({ id: `workflows.hub.detail.args.error.${error}` })}
-              </p>
+              <FieldError className="mt-1">{intl.formatMessage({ id: `workflows.hub.detail.args.error.${error}` })}</FieldError>
             ) : null}
           </div>
         );

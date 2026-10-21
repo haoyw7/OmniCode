@@ -7,9 +7,10 @@ import { SurfaceAppearance } from "../../../shared/ui/SurfaceAppearance";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { ChevronRight } from "../../../shared/ui/icons";
 
+/** Presentation shell; the owning RHF form validates its permission fields on Apply. */
 export function BotSettingsDialog({ title, summary, preview, open, busy, invalid, size = "md", onOpen, onCancel, onApply, children }: {
   title: string; summary: string; preview?: string; open: boolean; busy?: boolean; invalid?: boolean;
-  size?: ModalSize; onOpen: () => void; onCancel: () => void; onApply: () => void; children: ReactNode;
+  size?: ModalSize; onOpen: () => void; onCancel: () => void; onApply: () => Promise<void>; children: ReactNode;
 }) {
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
@@ -35,7 +36,7 @@ export function BotSettingsDialog({ title, summary, preview, open, busy, invalid
         <form className="assistant-settings desktop-bot-dialog-settings" noValidate onSubmit={event => {
           event.preventDefault();
           event.stopPropagation();
-          if (!busy && !invalid) onApply();
+          if (!busy && !invalid) void onApply();
         }}>
           <div className="desktop-bot-dialog-fields">{children}</div>
           <ModalFooter className="desktop-bot-dialog-footer">

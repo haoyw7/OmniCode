@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../../shared/ui/primitives/Field";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, invalidateAfterChange } from "../../../../shared/lib/queryClient";
 import { errorMessage } from "../../../../shared/lib/errorMessage";
@@ -8,7 +12,7 @@ import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Check } from "../../../../shared/ui/icons";
 import { withToast } from "../../../../shared/ui/primitives/Sonner";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Button } from "../../../../shared/ui/forms/Button";
 import { clearInboxCache } from "../../../inbox/model/githubTasks";
 import { disconnectGitlab, saveGitlabConfig } from "../../../inbox/model/gitlab";
@@ -78,28 +82,38 @@ export function GithubSettings() {
 export function GitlabSettings() {
   const { t: uiT } = useTranslation();
   const statusQuery = useQuery(gitlabIntegrationQuery(), queryClient);
-  const [urlDraft, setUrl] = useState<string>();
-  const url = urlDraft ?? (statusQuery.data?.url || "https://gitlab.com");
-  const [token, setToken] = useState("");
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      url: z.string().trim().pipe(z.url({ protocol: /^https?$/, error: uiT("Enter a valid HTTP or HTTPS URL") })),
+      token: z.string().trim().min(1, uiT("This field is required")),
+    })),
+    defaultValues: { url: "https://gitlab.com", token: "" },
+  });
+  const [url, token] = useWatch({ control: form.control, name: ["url", "token"] });
+  const { reset, getFieldState, getValues } = form;
+  useEffect(() => {
+    if (statusQuery.data?.url && !getFieldState("url").isDirty) {
+      reset({ url: statusQuery.data.url, token: getValues("token") }, { keepDirtyValues: true });
+    }
+  }, [statusQuery.data?.url, reset, getFieldState, getValues]);
   const connected = !!statusQuery.data?.connected;
   const mutation = useMutation({
-    mutationFn: (action: "connect" | "disconnect") => withToast(
-      () => action === "connect" ? saveGitlabConfig(url, token) : disconnectGitlab(url), {
+    mutationFn: ({ action, values }: { action: "connect" | "disconnect"; values?: { url: string; token: string } }) => withToast(
+      () => action === "connect" ? saveGitlabConfig(values!.url, values!.token) : disconnectGitlab(url), {
         loading: uiT(action === "connect" ? "Connecting to {service}…" : "Disconnecting from {service}…", { service: "GitLab" }),
         success: result => action === "disconnect" ? uiT("Disconnected from {service}", { service: "GitLab" }) : result.connected && uiT("Connected to {service}", { service: "GitLab" }),
-        error: false,
       }),
     onSuccess: async next => {
       await queryClient.cancelQueries({ queryKey: gitlabIntegrationQuery().queryKey });
       queryClient.setQueryData(gitlabIntegrationQuery().queryKey, next);
-      setUrl(next.url || url); setToken(""); clearInboxCache();
+      form.reset({ url: next.url || url, token: "" }); clearInboxCache();
       await Promise.all([invalidateAfterChange(inboxKeys.connections), invalidateAfterChange(inboxKeys.lists)]);
     },
   }, queryClient);
   const busy = mutation.isPending;
   const error = errorMessage(mutation.error ?? statusQuery.error);
-  const onSave = () => { if (token.trim() && !busy) mutation.mutate("connect"); };
-  const onDisconnect = () => { if (!busy) mutation.mutate("disconnect"); };
+  const onSave = form.handleSubmit(values => { if (!busy) mutation.mutate({ action: "connect", values }); });
+  const onDisconnect = () => { if (!busy) mutation.mutate({ action: "disconnect" }); };
 
   return (
     <>
@@ -122,12 +136,12 @@ export function GitlabSettings() {
             </Button>
           </div>
         ) : (
-          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+          <form noValidate onSubmit={onSave} className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
               <input
                 type="url"
-                value={url}
-                onChange={(event) => setUrl(event.target.value)}
+                {...form.register("url")}
+                aria-invalid={!!form.formState.errors.url}
                 placeholder="https://gitlab.com"
                 aria-label={uiT("GitLab URL")}
                 autoComplete="url"
@@ -138,11 +152,8 @@ export function GitlabSettings() {
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
               <input
                 type="password"
-                value={token}
-                onChange={(event) => setToken(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void onSave();
-                }}
+                {...form.register("token")}
+                aria-invalid={!!form.formState.errors.token}
                 placeholder="glpat-…"
                 aria-label={uiT("GitLab access token")}
                 autoComplete="off"
@@ -151,12 +162,13 @@ export function GitlabSettings() {
               />
             </label>
             <Button variant="secondary"
-              onClick={() => void onSave()}
+              type="submit"
               disabled={busy || !token.trim()}
             >
               {busy ? uiT("Saving") : uiT("Connect")}
             </Button>
-          </div>
+            <FieldError errors={Object.values(form.formState.errors)} />
+          </form>
         )}
       </Row>
       {error ? (
@@ -171,28 +183,38 @@ export function GitlabSettings() {
 export function AzureDevOpsSettings() {
   const { t: uiT } = useTranslation();
   const statusQuery = useQuery(azureDevOpsIntegrationQuery(), queryClient);
-  const [urlDraft, setUrl] = useState<string>();
-  const url = urlDraft ?? (statusQuery.data?.url || "https://dev.azure.com/myorg");
-  const [token, setToken] = useState("");
+  const form = useForm({
+    resolver: zodResolver(z.object({
+      url: z.string().trim().pipe(z.url({ protocol: /^https?$/, error: uiT("Enter a valid HTTP or HTTPS URL") })),
+      token: z.string().trim().min(1, uiT("This field is required")),
+    })),
+    defaultValues: { url: "https://dev.azure.com/myorg", token: "" },
+  });
+  const [url, token] = useWatch({ control: form.control, name: ["url", "token"] });
+  const { reset, getFieldState, getValues } = form;
+  useEffect(() => {
+    if (statusQuery.data?.url && !getFieldState("url").isDirty) {
+      reset({ url: statusQuery.data.url, token: getValues("token") }, { keepDirtyValues: true });
+    }
+  }, [statusQuery.data?.url, reset, getFieldState, getValues]);
   const connected = !!statusQuery.data?.connected;
   const mutation = useMutation({
-    mutationFn: (action: "connect" | "disconnect") => withToast(
-      () => action === "connect" ? saveAzureDevOpsConfig(url, token) : disconnectAzureDevOps(url), {
+    mutationFn: ({ action, values }: { action: "connect" | "disconnect"; values?: { url: string; token: string } }) => withToast(
+      () => action === "connect" ? saveAzureDevOpsConfig(values!.url, values!.token) : disconnectAzureDevOps(url), {
         loading: uiT(action === "connect" ? "Connecting to {service}…" : "Disconnecting from {service}…", { service: "Azure DevOps" }),
         success: result => action === "disconnect" ? uiT("Disconnected from {service}", { service: "Azure DevOps" }) : result.connected && uiT("Connected to {service}", { service: "Azure DevOps" }),
-        error: false,
       }),
     onSuccess: async next => {
       await queryClient.cancelQueries({ queryKey: azureDevOpsIntegrationQuery().queryKey });
       queryClient.setQueryData(azureDevOpsIntegrationQuery().queryKey, next);
-      setUrl(next.url || url); setToken(""); clearInboxCache();
+      form.reset({ url: next.url || url, token: "" }); clearInboxCache();
       await Promise.all([invalidateAfterChange(inboxKeys.connections), invalidateAfterChange(inboxKeys.lists)]);
     },
   }, queryClient);
   const busy = mutation.isPending;
   const error = errorMessage(mutation.error ?? statusQuery.error);
-  const onSave = () => { if (token.trim() && !busy) mutation.mutate("connect"); };
-  const onDisconnect = () => { if (!busy) mutation.mutate("disconnect"); };
+  const onSave = form.handleSubmit(values => { if (!busy) mutation.mutate({ action: "connect", values }); });
+  const onDisconnect = () => { if (!busy) mutation.mutate({ action: "disconnect" }); };
 
   return (
     <>
@@ -215,12 +237,12 @@ export function AzureDevOpsSettings() {
             </Button>
           </div>
         ) : (
-          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+          <form noValidate onSubmit={onSave} className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
               <input
                 type="url"
-                value={url}
-                onChange={(event) => setUrl(event.target.value)}
+                {...form.register("url")}
+                aria-invalid={!!form.formState.errors.url}
                 placeholder="https://dev.azure.com/myorg"
                 aria-label={uiT("Azure DevOps organization URL")}
                 autoComplete="url"
@@ -231,11 +253,8 @@ export function AzureDevOpsSettings() {
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
               <input
                 type="password"
-                value={token}
-                onChange={(event) => setToken(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void onSave();
-                }}
+                {...form.register("token")}
+                aria-invalid={!!form.formState.errors.token}
                 placeholder="PAT…"
                 aria-label={uiT("Azure DevOps personal access token")}
                 autoComplete="off"
@@ -244,12 +263,13 @@ export function AzureDevOpsSettings() {
               />
             </label>
             <Button variant="secondary"
-              onClick={() => void onSave()}
+              type="submit"
               disabled={busy || !token.trim()}
             >
               {busy ? uiT("Saving") : uiT("Connect")}
             </Button>
-          </div>
+            <FieldError errors={Object.values(form.formState.errors)} />
+          </form>
         )}
       </Row>
       {error ? (
@@ -263,7 +283,11 @@ export function AzureDevOpsSettings() {
 
 export function LinearSettings() {
   const { t: uiT } = useTranslation();
-  const [token, setToken] = useState("");
+  const form = useForm({
+    resolver: zodResolver(z.object({ token: z.string().trim().min(1, uiT("This field is required")) })),
+    defaultValues: { token: "" },
+  });
+  const token = useWatch({ control: form.control, name: "token" });
   const statusQuery = useQuery(linearIntegrationQuery(), queryClient);
   const connected = !!statusQuery.data?.connected;
   const teamQuery = useQuery({ ...linearTeamsQuery(), enabled: connected }, queryClient);
@@ -275,24 +299,23 @@ export function LinearSettings() {
     return () => window.removeEventListener(LINEAR_CHANGE_EVENT, onChange);
   }, []);
   const mutation = useMutation({
-    mutationFn: (action: "connect" | "disconnect") => withToast(
-      () => action === "connect" ? saveLinearToken(token) : disconnectLinear(), {
+    mutationFn: ({ action, token }: { action: "connect" | "disconnect"; token?: string }) => withToast(
+      () => action === "connect" ? saveLinearToken(token!) : disconnectLinear(), {
         loading: uiT(action === "connect" ? "Connecting to {service}…" : "Disconnecting from {service}…", { service: "Linear" }),
         success: uiT(action === "connect" ? "Connected to {service}" : "Disconnected from {service}", { service: "Linear" }),
-        error: false,
       }),
-    onSuccess: async (_result, action) => {
+    onSuccess: async (_result, { action }) => {
       await queryClient.cancelQueries({ queryKey: linearIntegrationQuery().queryKey });
       queryClient.setQueryData(linearIntegrationQuery().queryKey, { connected: action === "connect" });
       if (action === "disconnect") queryClient.setQueryData(linearTeamsQuery().queryKey, []);
-      setToken(""); clearInboxCache(); notifyLinearChange();
+      form.resetField("token"); clearInboxCache(); notifyLinearChange();
       await Promise.all([invalidateAfterChange(inboxKeys.connections), invalidateAfterChange(inboxKeys.lists)]);
     },
   }, queryClient);
   const busy = mutation.isPending;
   const error = errorMessage(mutation.error ?? statusQuery.error ?? (connected ? teamQuery.error : null));
-  const onSave = () => { if (token.trim() && !busy) mutation.mutate("connect"); };
-  const onDisconnect = () => { if (!busy) mutation.mutate("disconnect"); };
+  const onSave = form.handleSubmit(({ token }) => { if (!busy) mutation.mutate({ action: "connect", token }); });
+  const onDisconnect = () => { if (!busy) mutation.mutate({ action: "disconnect" }); };
 
   const toggleTeam = (id: string) => {
     const next = new Set(hiddenTeamIds);
@@ -317,15 +340,12 @@ export function LinearSettings() {
             {uiT("Disconnect")}
           </Button>
         ) : (
-          <div className="flex max-w-full flex-wrap items-center gap-2">
+          <form noValidate onSubmit={onSave} className="flex max-w-full flex-wrap items-center gap-2">
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
               <input
                 type="password"
-                value={token}
-                onChange={(event) => setToken(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void onSave();
-                }}
+                {...form.register("token")}
+                aria-invalid={!!form.formState.errors.token}
                 placeholder="lin_api_…"
                 aria-label={uiT("Linear API key")}
                 autoComplete="off"
@@ -334,12 +354,13 @@ export function LinearSettings() {
               />
             </label>
             <Button variant="secondary"
-              onClick={() => void onSave()}
+              type="submit"
               disabled={busy || !token.trim()}
             >
               {busy ? uiT("Saving") : uiT("Connect")}
             </Button>
-          </div>
+            <FieldError errors={Object.values(form.formState.errors)} />
+          </form>
         )}
       </Row>
       {error ? (

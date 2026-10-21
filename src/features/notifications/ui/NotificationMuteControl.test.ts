@@ -125,7 +125,7 @@ describe("NotificationMuteControl", () => {
     expect(container.textContent).not.toContain("Muted until resumed");
   });
 
-  it("accepts a custom future time and rejects an expired one without saving", () => {
+  it("accepts a custom future time and rejects an expired one without saving", async () => {
     vi.mocked(Date.now).mockReturnValue(new Date(2030, 0, 15, 12).getTime());
     act(() =>
       root.render(
@@ -170,7 +170,7 @@ describe("NotificationMuteControl", () => {
         input!.dispatchEvent(new Event("input", { bubbles: true }));
       });
     type("08:00");
-    click("Mute until then");
+    await act(async () => click("Mute until then"));
     expect(document.querySelector('[role="alert"]')?.textContent).toContain(
       "future",
     );
@@ -184,13 +184,13 @@ describe("NotificationMuteControl", () => {
     const write = vi.spyOn(localStorage, "setItem").mockImplementation(() => {
       throw new Error("Storage full");
     });
-    click("Mute until then");
+    await act(async () => click("Mute until then"));
     expect(document.querySelector('[role="alert"]')?.textContent).toContain(
       "Could not save",
     );
     expect(input!.value).toBe("17:00");
     write.mockRestore();
-    click("Mute until then");
+    await act(async () => click("Mute until then"));
     expect(loadNotificationPreferences().private.mutedUntil).toBe(
       new Date(2030, 0, 16, 17).getTime(),
     );

@@ -1,3 +1,5 @@
+import { useWatch } from "react-hook-form";
+import { FieldError } from "../../../../../shared/ui/primitives/Field";
 import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
 import { PresenceBoundary } from "../../../../../shared/ui/PresenceBoundary";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
@@ -168,8 +170,7 @@ function AccountList({
   const sharedDefault = sharedProviderAccountId(provider);
   const editorProps = {
     working: Boolean(working),
-    onLabel: controller.editLabel,
-    onDataHome: controller.editDataHome,
+    form: controller.form,
     onCancel: controller.cancelEditor,
     onSubmit: controller.submitEditor,
   };
@@ -438,23 +439,23 @@ function ProviderAccountEditorDisclosure({
 function ProviderAccountEditor({
   editor,
   working,
-  onLabel,
-  onDataHome,
+  form,
   onCancel,
   onSubmit,
 }: {
   editor: AccountEditor;
   working: boolean;
-  onLabel: (label: string) => void;
-  onDataHome?: (home: string) => void;
+  form: ProviderAccountsController["form"];
   onCancel: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   const { t: uiT } = useTranslation();
   const adding = !editor.accountId;
+  const label = useWatch({ control: form.control, name: "label" });
   return (
     <form
       className="border-t border-content/5 px-4 py-2"
+      noValidate
       onSubmit={onSubmit}
     >
       <div
@@ -467,14 +468,14 @@ function ProviderAccountEditor({
             autoFocus
             type="text"
             maxLength={48}
-            value={editor.label}
+            {...form.register("label")}
+            aria-invalid={!!form.formState.errors.label}
             disabled={working}
             placeholder={uiT("Work or Personal")}
             aria-label={uiT("{value0} {value1} account", {
               value0: String(adding ? "New" : "Rename"),
               value1: String(HARNESS_TITLE[editor.provider]),
             })}
-            onChange={(event) => onLabel(event.target.value)}
             className="h-full w-full bg-transparent px-2.5 text-[12px] text-content outline-none placeholder:text-content/25 disabled:opacity-50"
           />
         </label>
@@ -486,7 +487,7 @@ function ProviderAccountEditor({
           size="sm"
           type="submit"
           className="ml-1"
-          disabled={working || !editor.label.trim()}
+          disabled={working || form.formState.isSubmitting || !label.trim()}
         >
           {working ? <Spinner className="size-3" /> : null}
           {adding
@@ -496,17 +497,18 @@ function ProviderAccountEditor({
             : uiT("Save")}
         </Button>
       </div>
+      <FieldError errors={[form.formState.errors.label]} />
       {!editor.importCurrent && <label className="mt-2 block">
         <span className="text-[11px] text-content/60">{uiT("Data Home (optional)")}</span>
         <input data-ui="input"
           type="text"
-          value={editor.dataHome ?? ""}
+          {...form.register("dataHome", { onChange: () => form.setValue("homeEdited", true) })}
+          aria-invalid={!!form.formState.errors.dataHome}
           disabled={working}
           aria-label={uiT("{provider} Data Home", { provider: HARNESS_TITLE[editor.provider] })}
           placeholder={editor.accountId === "default"
             ? (editor.provider === "codex" ? "~/.codex" : "~/.claude")
             : (editor.provider === "codex" ? "~/.codex-work" : "~/.claude-work")}
-          onChange={event => onDataHome?.(event.target.value)}
           className="mt-1 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 font-mono text-[12px] text-content outline-none focus:border-input-border-hover disabled:opacity-50"
         />
         <span className="mt-1 block text-[10px] text-content/40">
@@ -516,6 +518,7 @@ function ProviderAccountEditor({
           {" "}{uiT("Use an absolute path or ~/ on Host. New conversations use the updated Home.")}
         </span>
       </label>}
+      <FieldError errors={[form.formState.errors.dataHome]} />
     </form>
   );
 }

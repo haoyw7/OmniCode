@@ -1,5 +1,10 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
@@ -17,11 +22,20 @@ export function BotMemoryDialog({
   onForget,
 }: BotMemoryDetailProps) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState(text);
+  const form = useForm({
+    resolver: zodResolver(z.object({ text: z.string().refine(value => !!value.trim(), t("This field is required")).max(1000, t("Use at most {count} characters", { count: 1000 })) })),
+    defaultValues: { text },
+  });
+  const draft = useWatch({ control: form.control, name: "text" });
+  const { reset } = form;
   useLayoutEffect(() => {
-    if (open) setDraft(text);
-  }, [open, text]);
+    if (open) reset({ text });
+  }, [open, text, reset]);
   const changed = !!draft.trim() && draft !== text;
+  const save = form.handleSubmit(async ({ text }) => {
+    if (busy || !changed) return;
+    try { await onSave(text); } catch (cause) { toast.error(cause instanceof Error ? cause.message : String(cause)); }
+  });
   return (
     <PresenceBoundary>{open ? <Modal
       title={t("Memory")}
@@ -30,14 +44,14 @@ export function BotMemoryDialog({
       className="desktop-bot-memory-modal"
       onClose={onClose}
     >
-      <div className="assistant-settings assistant-memory-dialog">
+      <form noValidate onSubmit={event => { event.stopPropagation(); void save(event); }} className="assistant-settings assistant-memory-dialog">
         <textarea data-ui="textarea"
           aria-label={t("Edit fact")}
-          value={draft}
+          {...form.register("text")}
+          aria-invalid={!!form.formState.errors.text}
           maxLength={1000}
           disabled={busy}
           autoFocus
-          onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (
               event.key === "Enter" &&
@@ -46,10 +60,11 @@ export function BotMemoryDialog({
               changed
             ) {
               event.preventDefault();
-              onSave(draft);
+              void save();
             }
           }}
         />
+        <FieldError errors={[form.formState.errors.text]} />
         {error && (
           <small className="assistant-field-error" role="alert">
             {error}
@@ -62,11 +77,11 @@ export function BotMemoryDialog({
           <Button variant="secondary" disabled={busy} onClick={onClose}>
             {t("Cancel")}
           </Button>
-          <Button variant="primary" disabled={busy || !changed} onClick={() => onSave(draft)}>
+          <Button variant="primary" type="submit" disabled={busy || form.formState.isSubmitting || !changed}>
             {t("Save")}
           </Button>
         </ModalFooter>
-      </div>
+      </form>
     </Modal> : null}</PresenceBoundary>
   );
 }

@@ -79,7 +79,7 @@ it.each(["card", "dock"] as const)("keeps the complete native plan visible in th
   expect(container.textContent).toContain(plan);
 });
 
-it("shows an extension editor's multiline prefill and submits it verbatim", () => {
+it("shows an extension editor's multiline prefill and submits it verbatim", async () => {
   const onReply = vi.fn();
   const value = "  first\nsecond  ";
   act(() => root.render(createElement(QuestionForm, {
@@ -93,12 +93,12 @@ it("shows an extension editor's multiline prefill and submits it verbatim", () =
   expect(editor).not.toBeNull();
   expect(editor.value).toBe(value);
   expect(editor.placeholder).toBe("Enter text");
-  act(() => container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
+  await act(async () => container.querySelector<HTMLButtonElement>('button[type="submit"]')!.click());
   expect(onReply).toHaveBeenCalledWith(8, { kind: "answered", answers: {}, custom: { editor: value } });
 });
 
 describe("QuestionForm keyboard navigation", () => {
-  it("moves the highlighted option with arrow keys and selects it with Enter", () => {
+  it("moves the highlighted option with arrow keys and selects it with Enter", async () => {
     const onReply = vi.fn();
     const options = renderQuestion(onReply);
 
@@ -115,7 +115,7 @@ describe("QuestionForm keyboard navigation", () => {
     keyDown(options[1], "Enter");
     expect(options[1].getAttribute("aria-pressed")).toBe("true");
 
-    act(() =>
+    await act(async () =>
       container
         .querySelector<HTMLButtonElement>('button[type="submit"]')!
         .click(),
@@ -212,7 +212,7 @@ describe("QuestionForm steps", () => {
     return match;
   }
 
-  it("browses unanswered questions without submitting and preserves answers at both boundaries", () => {
+  it("browses unanswered questions without submitting and preserves answers at both boundaries", async () => {
     const onReply = vi.fn();
     const onInteraction = vi.fn();
     const prompt = { ...twoQuestions(), autoResolveAt: Date.now() + 60_000 };
@@ -252,14 +252,14 @@ describe("QuestionForm steps", () => {
     act(() => navigationButton("Next question").click());
     expect(onReply).not.toHaveBeenCalled();
 
-    act(() => button("Continue").click());
+    await act(async () => button("Continue").click());
     expect(onReply).toHaveBeenCalledExactlyOnceWith(9, {
       kind: "answered",
       answers: { colour: ["red"], size: ["large"] },
     });
   });
 
-  it("returns to the previous question with its answer and submits the change", () => {
+  it("returns to the previous question with its answer and submits the change", async () => {
     const onReply = vi.fn();
     act(() =>
       root.render(
@@ -269,7 +269,7 @@ describe("QuestionForm steps", () => {
     expect(container.textContent).not.toContain("Back");
 
     act(() => button("Red").click());
-    act(() => button("Continue").click());
+    await act(async () => button("Continue").click());
     expect(container.textContent).toContain("Pick a size");
 
     act(() => button("Back").click());
@@ -277,9 +277,9 @@ describe("QuestionForm steps", () => {
     expect(button("Red").getAttribute("aria-pressed")).toBe("true");
 
     act(() => button("Green").click());
-    act(() => button("Continue").click());
+    await act(async () => button("Continue").click());
     act(() => button("Large").click());
-    act(() => button("Continue").click());
+    await act(async () => button("Continue").click());
 
     expect(onReply).toHaveBeenCalledWith(9, {
       kind: "answered",
@@ -287,7 +287,7 @@ describe("QuestionForm steps", () => {
     });
   });
 
-  it("localizes navigation and preserves multiline native input while revisiting answers", () => {
+  it("localizes navigation and preserves multiline native input while revisiting answers", async () => {
     setUiLanguage("zh-CN");
     const onReply = vi.fn();
     const value = "  first\nsecond  ";
@@ -309,7 +309,7 @@ describe("QuestionForm steps", () => {
     act(() => root.render(createElement(QuestionForm, { prompt, onReply })));
     expect(container.querySelector("textarea")!.value).toBe(value);
 
-    act(() => button("继续").click());
+    await act(async () => button("继续").click());
     act(() => button("Large").click());
     act(() => button("返回").click());
     const editor = container.querySelector<HTMLTextAreaElement>("textarea")!;
@@ -327,7 +327,7 @@ describe("QuestionForm steps", () => {
     expect(container.querySelector("textarea")!.value).toBe(revised);
     act(() => navigationButton("下一题").click());
     expect(button("Large").getAttribute("aria-pressed")).toBe("true");
-    act(() => button("继续").click());
+    await act(async () => button("继续").click());
 
     expect(onReply).toHaveBeenCalledWith(9, {
       kind: "answered",
@@ -366,12 +366,12 @@ describe("QuestionForm dock layout", () => {
     expect(onCollapse).toHaveBeenCalled();
   });
 
-  it("sends a written reply instead of a picked choice", () => {
+  it("sends a written reply instead of a picked choice", async () => {
     const { onReply } = render();
     act(() => container.querySelector<HTMLButtonElement>("button[aria-pressed]")!.click());
     typeReply("Both");
     expect(container.querySelector("button[aria-pressed]")!.getAttribute("aria-pressed")).toBe("false");
-    act(() => submit().click());
+    await act(async () => submit().click());
     expect(onReply).toHaveBeenCalledWith(3, {
       kind: "answered", answers: { kind: ["__custom__"] }, custom: { kind: "Both" },
     });

@@ -1,3 +1,8 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { Switch } from "../../../shared/ui/forms/Switch";
 import { BOT_WORKTREE_IDLE_MINUTES } from "../../../integrations/harness/core/botAutonomy";
 import { Button } from "../../../shared/ui/forms/Button";
@@ -236,7 +241,7 @@ function CollapsibleSection({
   open: boolean;
   ready?: boolean;
   onToggle: () => void;
-  dialog?: { onCancel: () => void; onApply: () => void; busy: boolean };
+  dialog?: { onCancel: () => void; onApply: () => Promise<void>; busy: boolean };
   /** A factory defers content until the section first opens. */
   children: ReactNode | (() => ReactNode);
 }) {
@@ -358,7 +363,7 @@ export function BotSettings({
   onRetryCatalog,
   loadSessions,
   projects,
-  busy,
+  busy: externalBusy,
   onSave,
   onCancel,
   onCancelReminder,
@@ -418,39 +423,6 @@ export function BotSettings({
   const ModelPicker = useContext(BotModelPickerContext);
   const inspector = !mobile && presentation === "inspector";
   const section = mobile ? "all" : panel;
-  const [initialDraft] = useState<BotPatch>(
-    () =>
-      value ?? {
-        name: "Assistant",
-        persona: defaultBotPersona(),
-        harness: Object.keys(catalog.models)[0] as RemoteProvider,
-        model: Object.values(catalog.models)[0]?.[0]?.id,
-        policy: fullBotPolicy(),
-        runtimeMode: "full-access",
-        targetRuntimeMode: "full-access",
-      },
-  );
-  const [draft, setDraft] = useState<BotPatch>(initialDraft);
-  const dialogDraft = useRef(draft);
-  const cancelDialog = () => setDraft(dialogDraft.current);
-  // Permissions and wakeups default sensibly, so they stay folded away.
-  const [permissionsOpen, setPermissionsOpen] = useState(false);
-  const [eventsOpen, setEventsOpen] = useState(false);
-  const [sessionOptionsOpen, setSessionOptionsOpen] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [memoryOpen, setMemoryOpen] = useState(false);
-  const [memoryReady, setMemoryReady] = useState(false);
-  const [habitsOpen, setHabitsOpen] = useState(false);
-  // Project filters apply to explicitly followed conversations.
-  const [pickingProjects, setPickingProjects] = useState(
-    () =>
-      new Set(
-        (value?.watches ?? [])
-          .filter((watch) => watch.projectIds.length)
-          .map((watch) => watch.id),
-      ),
-  );
-  const form = useRef<HTMLFormElement>(null);
   // Fallbacks are fixed at mount so an untouched form compares as unchanged.
   const [defaults] = useState(() => ({
     schedule: {
@@ -472,6 +444,63 @@ export function BotSettings({
       },
     ] as BotConfiguration["watches"],
   }));
+  const [initialDraft] = useState<BotPatch>(
+    () =>
+      value ?? {
+        name: "Assistant",
+        persona: defaultBotPersona(),
+        harness: Object.keys(catalog.models)[0] as RemoteProvider,
+        model: Object.values(catalog.models)[0]?.[0]?.id,
+        policy: fullBotPolicy(),
+        runtimeMode: "full-access",
+        targetRuntimeMode: "full-access",
+      },
+  );
+  const draftSchema = z.custom<BotPatch>().superRefine((draft, ctx) => {
+    const schedule = draft.schedules?.[0] ?? value?.schedules[0] ?? defaults.schedule;
+    const persona = draft.persona ?? value?.persona ?? defaultBotPersona();
+    const issue = (path: string, message: string) => ctx.addIssue({ code: "custom", path: [path], message: t(message) });
+    if (section !== "automation") {
+      if (!draft.name?.trim()) issue("name", "Enter a name");
+      if (!draft.harness || !draft.model) issue("model", "Choose a model");
+      if (!inspector && personaSupported && persona.preset === "custom" && !persona.style.trim()) issue("persona", "Describe the personality");
+    }
+    if (section !== "settings") {
+      if (!inRange(schedule.intervalMinutes, 1, MAX_INTERVAL)) issue("interval", "Choose between 1 minute and 7 days");
+      if (!validTimeZone(schedule.timezone)) issue("timezone", "Unknown time zone");
+      if (!inRange(draft.maxAutoTurns ?? 8, 1, 100)) issue("maxAutoTurns", "Enter 1–100");
+      if (!inRange(draft.chainWindowMinutes ?? 15, 1, 1440)) issue("chainWindow", "Enter 1–1440 minutes");
+    }
+    if (mobile && autonomySupported && !inRange(draft.worktreeIdleMinutes ?? BOT_WORKTREE_IDLE_MINUTES, 0, 10080)) issue("worktreeIdle", "Enter 0–10080 minutes");
+  });
+  const settingsForm = useForm({
+    resolver: zodResolver(z.object({ draft: draftSchema })),
+    defaultValues: { draft: initialDraft },
+  });
+  const draft = useWatch({ control: settingsForm.control, name: "draft" });
+  const setDraft = (next: BotPatch | ((current: BotPatch) => BotPatch)) =>
+    settingsForm.setValue("draft", typeof next === "function" ? next(settingsForm.getValues("draft")) : next, { shouldDirty: true });
+  const busy = externalBusy || settingsForm.formState.isSubmitting;
+  const dialogDraft = useRef(draft);
+  const cancelDialog = () => setDraft(dialogDraft.current);
+  // Permissions and wakeups default sensibly, so they stay folded away.
+  const [permissionsOpen, setPermissionsOpen] = useState(false);
+  const [eventsOpen, setEventsOpen] = useState(false);
+  const [sessionOptionsOpen, setSessionOptionsOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [memoryOpen, setMemoryOpen] = useState(false);
+  const [memoryReady, setMemoryReady] = useState(false);
+  const [habitsOpen, setHabitsOpen] = useState(false);
+  // Project filters apply to explicitly followed conversations.
+  const [pickingProjects, setPickingProjects] = useState(
+    () =>
+      new Set(
+        (value?.watches ?? [])
+          .filter((watch) => watch.projectIds.length)
+          .map((watch) => watch.id),
+      ),
+  );
+  const form = useRef<HTMLFormElement>(null);
   useEffect(() => {
     if (!value && (!draft.harness || !draft.model)) {
       const harness = Object.keys(catalog.models).find(
@@ -569,26 +598,9 @@ export function BotSettings({
     unitFor(schedule.intervalMinutes),
   );
   const intervalAmount = schedule.intervalMinutes / intervalUnit;
-  const errors = {
-    name: section !== "automation" && !draft.name?.trim() ? "Enter a name" : undefined,
-    persona:
-      !inspector && section !== "automation" && personaSupported && persona.preset === "custom" && !persona.style.trim()
-        ? "Describe the personality"
-        : undefined,
-    interval: section !== "settings" && !inRange(schedule.intervalMinutes, 1, MAX_INTERVAL)
-      ? "Choose between 1 minute and 7 days"
-      : undefined,
-    timezone: section !== "settings" && !validTimeZone(schedule.timezone)
-      ? "Unknown time zone"
-      : undefined,
-    maxAutoTurns: section !== "settings" && !inRange(maxAutoTurns, 1, 100) ? "Enter 1–100" : undefined,
-    chainWindow: section !== "settings" && !inRange(chainWindow, 1, 1440)
-      ? "Enter 1–1440 minutes"
-      : undefined,
-    worktreeIdle: mobile && autonomySupported && !inRange(draft.worktreeIdleMinutes ?? BOT_WORKTREE_IDLE_MINUTES, 0, 10080)
-      ? "Enter 0–10080 minutes" : undefined,
-  };
-  const invalid = Object.values(errors).some(Boolean);
+  const validation = draftSchema.safeParse(draft);
+  const errors: Record<string, string | undefined> = {};
+  if (!validation.success) for (const issue of validation.error.issues) errors[String(issue.path[0])] ??= issue.message;
   const canSave = !busy && (section === "automation" || (!!draft.harness && !!draft.model)) && dirty;
   const allowed = BOT_PERMISSIONS.filter(
     (key) => policy.permissions[key],
@@ -631,12 +643,7 @@ export function BotSettings({
       });
     });
   };
-  const fieldError = (message?: string) =>
-    message && (
-      <small className="assistant-field-error" role="alert">
-        {t(message)}
-      </small>
-    );
+  const fieldError = (message?: string) => <FieldError className="assistant-field-error" errors={[message ? { message } : undefined]} />;
   const harnesses = Object.keys(catalog.models) as RemoteProvider[];
   const models = draft.harness ? (catalog.models[draft.harness] ?? []) : [];
   const reasoning = draft.harness
@@ -693,7 +700,7 @@ export function BotSettings({
       dialog={inspector ? {
         busy,
         onCancel: () => { cancelDialog(); setPermissionsOpen(false); },
-        onApply: () => setPermissionsOpen(false),
+        onApply: async () => { if (await settingsForm.trigger("draft.policy")) setPermissionsOpen(false); },
       } : undefined}
     >
       <div className="assistant-settings-row">
@@ -1223,12 +1230,11 @@ export function BotSettings({
         data-layout={mobile ? "mobile" : "desktop"}
         data-presentation={inspector ? "inspector" : undefined}
         inert={inspector && permissionsOpen}
-        onSubmit={(event) => {
-          event.preventDefault();
+        onSubmit={settingsForm.handleSubmit(async ({ draft }) => {
           if (!canSave) return;
-          if (invalid) return revealErrors();
-          void onSave(toPatch(draft));
-        }}
+          try { await onSave(toPatch(draft)); }
+          catch (cause) { toast.error(cause instanceof Error ? cause.message : String(cause)); }
+        }, revealErrors)}
       >
         <div className="assistant-settings-body">
           {section !== "automation" && <SettingsRows grouped={inspector} title={t("Model and permissions")}>{!inspector && identitySection}

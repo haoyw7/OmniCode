@@ -1,5 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { MessageSquarePlus, X } from "../../../shared/ui/icons";
 import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
 import { diffCommentLocation, formatDiffComment } from "../model/diffComment";
@@ -22,14 +25,15 @@ export function DiffCommentComposer({
   onDismiss: () => void;
 }) {
   const { t: uiT } = useTranslation();
-  const [comment, setComment] = useState("");
+  const form = useForm({ resolver: zodResolver(z.object({ comment: z.string().trim().min(1, uiT("This field is required")) })), defaultValues: { comment: "" } });
+  const comment = useWatch({ control: form.control, name: "comment" });
   const location = diffCommentLocation({ path, line: target.line });
-  const addToChat = () => {
+  const addToChat = form.handleSubmit(({ comment }) => {
     const text = formatDiffComment({ path, line: target.line }, comment);
     if (!text) return;
     requestAddToChat(text, "plain");
     onDismiss();
-  };
+  });
 
   return (
     <Popover
@@ -44,10 +48,7 @@ export function DiffCommentComposer({
       className="p-2"
     >
       <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          addToChat();
-        }}
+        noValidate onSubmit={addToChat}
       >
         <div className="mb-1.5 flex items-center gap-2 px-0.5">
           <span
@@ -69,8 +70,8 @@ export function DiffCommentComposer({
         <textarea data-ui="textarea"
           autoFocus
           rows={3}
-          value={comment}
-          onChange={(event) => setComment(event.target.value)}
+          {...form.register("comment")}
+          aria-invalid={!!form.formState.errors.comment}
           onKeyDown={(event) => {
             if (
               event.key === "Enter" &&
@@ -84,6 +85,7 @@ export function DiffCommentComposer({
           placeholder={uiT("Leave a comment…")}
           className="max-h-40 min-h-18 w-full resize-y rounded-lg border border-content/10 bg-background-base/70 px-2.5 py-2 text-[13px] leading-5 text-content outline-none placeholder:text-content/35 focus:border-content/20"
         />
+        <FieldError errors={[form.formState.errors.comment]} />
         <div className="mt-2 flex items-center justify-between gap-3">
           <span className="text-[10px] text-content/35">
             {MOD}

@@ -1,3 +1,6 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, invalidateAfterChange } from "../../../../../shared/lib/queryClient";
 import { workflowQueryScope } from "../../../model/workflowQueryKeys";
@@ -124,9 +127,27 @@ function SavedWorkflowDetails({
   const read = useQuery({ queryKey, queryFn: () => agentService.getSavedWorkflow({ ...target, name }) }, queryClient);
   const loadState: DetailLoad = read.isError ? { status: "failed", reason: String(read.error instanceof Error ? read.error.message : read.error) }
     : !read.data ? { status: "loading" } : read.data.ok ? { status: "ready", detail: read.data } : { status: "failed", reason: read.data.reason };
-  const [editedDraft, setDraft] = useState<MetaDraft | null>(null);
-  const [rowErrors, setRowErrors] = useState<Record<string, SavedWorkflowArgRowError>>({});
-  const [descriptionError, setDescriptionError] = useState(false);
+  const form = useForm({
+    resolver: zodResolver(z.object({ draft: z.custom<MetaDraft>().superRefine((draft, ctx) => {
+      if (!draft.description.trim()) ctx.addIssue({ code: "custom", path: ["description"], message: intl.formatMessage({ id: "workflows.hub.detail.meta.descriptionRequired" }) });
+      const collected = rowsToArgsDeclaration(draft.rows);
+      if (!collected.ok) draft.rows.forEach((row, index) => {
+        const message = collected.errors[row.key];
+        if (message) ctx.addIssue({ code: "custom", path: ["rows", index], message });
+      });
+    }).nullable() })),
+    defaultValues: { draft: null as MetaDraft | null },
+  });
+  const editedDraft = useWatch({ control: form.control, name: "draft" });
+  const { getValues, setValue, clearErrors } = form;
+  const setDraft = useCallback((next: MetaDraft | null | ((current: MetaDraft | null) => MetaDraft | null)) =>
+    setValue("draft", typeof next === "function" ? next(getValues("draft")) : next, { shouldDirty: true }), [getValues, setValue]);
+  const descriptionError = !!form.formState.errors.draft?.description;
+  const rowErrors: Record<string, SavedWorkflowArgRowError> = {};
+  editedDraft?.rows.forEach((row, index) => {
+    const message = form.formState.errors.draft?.rows?.[index]?.message;
+    if (message) rowErrors[row.key] = message as SavedWorkflowArgRowError;
+  });
   const mutation = useMutation({ mutationFn: (meta: OmniCodeSavedWorkflowMeta) => agentService.updateSavedWorkflowMeta({ ...target, name, meta }) }, queryClient);
   const saving = mutation.isPending;
 
@@ -151,12 +172,7 @@ function SavedWorkflowDetails({
           }
         : current;
     });
-    setRowErrors((current) => {
-      if (!(key in current)) return current;
-      const next = { ...current };
-      delete next[key];
-      return next;
-    });
+    clearErrors("draft.rows");
   }, [baseline]);
   const addRow = useCallback(() => {
     rowKeySeq += 1;
@@ -188,18 +204,14 @@ function SavedWorkflowDetails({
   }, [baseline]);
   const discard = useCallback(() => {
     setDraft(null);
-    setRowErrors({});
-    setDescriptionError(false);
+    clearErrors();
   }, [baseline]);
 
-  const save = useCallback(async () => {
-    if (!draft) return;
+  const save = form.handleSubmit(async ({ draft }) => {
+    if (!draft || saving || busy) return;
     const description = draft.description.trim();
     const collected = rowsToArgsDeclaration(draft.rows);
-    const descriptionMissing = description.length === 0;
-    setDescriptionError(descriptionMissing);
-    if (!collected.ok) setRowErrors(collected.errors);
-    if (descriptionMissing || !collected.ok) return;
+    if (!collected.ok) return;
     const whenToUse = draft.whenToUse.trim();
     const meta: OmniCodeSavedWorkflowMeta = {
       description,
@@ -231,7 +243,7 @@ function SavedWorkflowDetails({
         ),
       );
     }
-  }, [draft, intl, mutation.mutateAsync, onMetaSaved, JSON.stringify(queryKey)]);
+  });
 
   const copyScript = useCallback(() => {
     if (!detail) return;
@@ -364,7 +376,7 @@ function SavedWorkflowDetails({
             dirty={dirty}
             saving={saving}
             onDescriptionChange={(value) => {
-              setDescriptionError(false);
+              clearErrors("draft.description");
               updateDraft({ description: value });
             }}
             onWhenToUseChange={(value) => updateDraft({ whenToUse: value })}

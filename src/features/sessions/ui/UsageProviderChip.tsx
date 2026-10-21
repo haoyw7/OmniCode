@@ -1,8 +1,13 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { Omi } from "../../../shared/ui/branding/Omi";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import {
   clampUsedPercent,
   formatResetDuration,
@@ -683,22 +688,25 @@ function AddProviderAccount({
   onComplete: () => void;
 }) {
   const { t: uiT } = useTranslation();
-  const [label, setLabel] = useState("");
-  const mutation = useMutation({ mutationFn: (value: string) => onAdd!(value) }, queryClient);
+  const form = useForm({
+    resolver: zodResolver(z.object({ label: z.string().trim().min(1, uiT("Enter a name")).max(48, uiT("Use at most {count} characters", { count: 48 })) })),
+    defaultValues: { label: "" },
+  });
+  const label = useWatch({ control: form.control, name: "label" });
+  const mutation = useMutation({ mutationFn: (value: string) => onAdd!(value), onError: cause => toast.error(cause.message) }, queryClient);
   const running = mutation.isPending;
   const error = mutation.error ? mutation.error.message || "Could not add this account" : null;
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  const submit = form.handleSubmit(async ({ label }) => {
     if (!onAdd || !label.trim() || running) return;
     try {
       await mutation.mutateAsync(label);
       onComplete();
     } catch { /* The mutation error stays next to the editable label. */ }
-  };
+  });
 
   return (
-    <form onSubmit={(event) => void submit(event)}>
+    <form noValidate onSubmit={submit}>
       <div className="flex h-7 items-center gap-1">
         <button
           type="button"
@@ -725,23 +733,24 @@ function AddProviderAccount({
           autoFocus
           type="text"
           maxLength={48}
-          value={label}
+          {...form.register("label")}
+          aria-invalid={!!form.formState.errors.label}
           disabled={running}
           placeholder={uiT("Work or Personal")}
           className="mt-1.5 h-8 w-full rounded-lg border border-content/10 bg-content/[0.04] px-2.5 text-[11px] text-content outline-none placeholder:text-content/25 focus:border-input-border-hover disabled:opacity-55"
-          onChange={(event) => setLabel(event.target.value)}
         />
       </label>
       <button
       type="submit"
       className="mt-3 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-content px-3 text-[11px] font-medium text-background-base hover:bg-content/85 disabled:cursor-default disabled:opacity-45"
-      disabled={running || !label.trim()}
+      disabled={running || form.formState.isSubmitting || !label.trim()}
     >
       {running ? (
         <RefreshCw className="size-3.5 animate-spin" aria-hidden />
       ) : null}
       {running ? uiT("Waiting for browser…") : uiT("Sign in and add account")}
       </button>
+      <FieldError errors={[form.formState.errors.label]} />
       {error ? (
         <p className="mt-2 text-[10px] leading-4 text-red-500" role="status">
           {error}

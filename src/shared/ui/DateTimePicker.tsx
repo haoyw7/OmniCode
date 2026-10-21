@@ -23,6 +23,7 @@ export function parseLocalDateTime(value: string): Date | null {
 
 type Props = {
   value: string;
+  invalid?: boolean;
   onChange: (value: string) => void;
   minDate?: string;
   autoFocus?: boolean;
@@ -48,6 +49,7 @@ function shiftMonth(date: Date, amount: number): Date {
 
 export function DateTimePicker({
   value,
+  invalid,
   onChange,
   minDate,
   autoFocus = false,
@@ -251,6 +253,7 @@ export function DateTimePicker({
         <div className="w-20 rounded border border-content/10 bg-content/5 focus-within:border-content/40 focus-within:outline-2 focus-within:outline-content/40">
           <input
             id={timeId}
+            aria-invalid={invalid}
             type="text"
             aria-describedby={timeHintId}
             autoComplete="off"

@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../../../shared/ui/primitives/Field";
+import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import {
   TID_WORKFLOW_MOVE_DIALOG,
   TID_WORKFLOW_MOVE_DIALOG_SUBMIT,
@@ -54,7 +60,14 @@ export function SavedWorkflowMoveDialog({
   onSubmit,
 }: SavedWorkflowMoveDialogProps) {
   const { intl } = useWorkflowIntl();
-  const [targetKey, setTargetKey] = useState<string | null>(null);
+  const { t } = useTranslation();
+  const form = useForm({
+    resolver: zodResolver(z.object({ targetKey: z.string().nullable().refine(value => !!findAutomationWorkspaceOptionByKey(targets, value), t("Choose a project")) })),
+    defaultValues: { targetKey: null as string | null },
+  });
+  const targetKey = useWatch({ control: form.control, name: "targetKey" });
+  const setTargetKey = (next: string | null | ((current: string | null) => string | null)) =>
+    form.setValue("targetKey", typeof next === "function" ? next(form.getValues("targetKey")) : next);
 
   // 候选变化时保留仍有效的选择，否则回落到默认项目、首个候选或 null。
   useEffect(() => {
@@ -68,12 +81,12 @@ export function SavedWorkflowMoveDialog({
 
   const noTargets = targets.length === 0;
 
-  const handleSubmit = () => {
+  const handleSubmit = form.handleSubmit(({ targetKey }) => {
     if (noTargets || busy) return;
     const target = findAutomationWorkspaceOptionByKey(targets, targetKey);
     if (!target) return;
-    onSubmit(target);
-  };
+    try { onSubmit(target); } catch (cause) { toast.error(cause instanceof Error ? cause.message : String(cause)); }
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -88,10 +101,7 @@ export function SavedWorkflowMoveDialog({
         </DialogHeader>
         <form
           className="flex flex-col gap-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleSubmit();
-          }}
+          noValidate onSubmit={handleSubmit}
         >
           <div className="flex flex-col gap-1.5">
             <span className="text-ui-base font-medium text-foreground">
@@ -103,7 +113,7 @@ export function SavedWorkflowMoveDialog({
               </p>
             ) : (
               <Select value={targetKey ?? undefined} onValueChange={setTargetKey}>
-                <SelectTrigger data-testid={TID_WORKFLOW_MOVE_DIALOG_TARGET}>
+                <SelectTrigger aria-invalid={!!form.formState.errors.targetKey} data-testid={TID_WORKFLOW_MOVE_DIALOG_TARGET}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -119,6 +129,7 @@ export function SavedWorkflowMoveDialog({
               </Select>
             )}
           </div>
+          <FieldError errors={[form.formState.errors.targetKey]} />
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               {intl.formatMessage({ id: "workflows.hub.launch.cancel" })}

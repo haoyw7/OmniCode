@@ -1,3 +1,7 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
@@ -105,52 +109,68 @@ function TitleModelForm({ machineId }: { machineId: string }) {
       ? t("Title model returned HTTP {status}.", { status: http[1] })
       : t(message);
   };
-  const [settings, setSettings] = useState(DEFAULT_TITLE_MODEL);
-  const [key, setKey] = useState("");
-  const [clearKey, setClearKey] = useState(false);
+  const schema = z.object({
+    enabled: z.boolean(),
+    endpoint: z.string().trim(),
+    model: z.string().trim(),
+    key: z.string().trim(),
+    clearKey: z.boolean(),
+  }).superRefine((values, ctx) => {
+    if (!values.enabled) return;
+    if (!z.url({ protocol: /^https?$/ }).safeParse(values.endpoint).success) {
+      ctx.addIssue({ code: "custom", path: ["endpoint"], message: t("Enter a valid HTTP or HTTPS URL") });
+    }
+    if (!values.model) ctx.addIssue({ code: "custom", path: ["model"], message: t("This field is required") });
+  });
+  const form = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { enabled: DEFAULT_TITLE_MODEL.enabled, endpoint: DEFAULT_TITLE_MODEL.endpoint, model: DEFAULT_TITLE_MODEL.model, key: "", clearKey: false },
+  });
+  const settings = useWatch({ control: form.control });
+  const { key, clearKey } = settings;
+  const { reset } = form;
+  const dirty = form.formState.isDirty;
   const visible = useSurfaceVisibility();
   const queryKey = ["titleModel", machineId] as const;
   const read = useQuery({ queryKey, queryFn: () => remoteRequest<TitleModelStatus>(machineId, "titleModel.status"), enabled: visible }, queryClient);
   const [notice, setNotice] = useState("");
-  const [dirty, setDirty] = useState(false);
   const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
   const probe = useMutation({ mutationFn: () => remoteRequest<GeneratedSessionTitle | null>(machineId, "titleModel.test") }, queryClient);
   const loading = read.isPending, loaded = !!read.data, busy = mutation.isPending || probe.isPending, testing = probe.isPending;
   const problem = mutation.error ?? probe.error ?? read.error;
   const error = problem ? String(problem instanceof Error ? problem.message : problem) : "";
-  useEffect(() => { if (read.data && !dirty && !busy) setSettings(read.data); }, [read.data, dirty, busy]);
+  useEffect(() => {
+    if (read.data && !dirty && !busy) reset({ enabled: read.data.enabled, endpoint: read.data.endpoint, model: read.data.model, key: "", clearKey: false });
+  }, [read.data, dirty, busy, reset]);
 
-  function change(update: Partial<TitleModelStatus>) {
-    setSettings((current) => ({ ...current, ...update }));
-    setDirty(true);
+  function change(name: keyof z.infer<typeof schema>, value: string | boolean) {
+    form.setValue(name, value, { shouldDirty: true, shouldValidate: form.formState.isSubmitted });
     setNotice("");
   }
-  async function save() {
+  const save = form.handleSubmit((values) => {
+    if (busy || loading || !loaded || !dirty) return;
     setNotice("");
     probe.reset();
     mutation.mutate(async () => {
       const update: TitleModelUpdate = {
-        enabled: settings.enabled,
-        endpoint: settings.endpoint,
-        model: settings.model,
-        ...(clearKey
+        enabled: values.enabled,
+        endpoint: values.endpoint,
+        model: values.model,
+        ...(values.clearKey
           ? { apiKey: "" }
-          : key.trim()
-            ? { apiKey: key.trim() }
+          : values.key
+            ? { apiKey: values.key }
             : {}),
       };
       const saved = await withToast(
           () => remoteRequest<TitleModelStatus>(machineId, "titleModel.save", update),
-          { loading: t("Saving…"), success: t("Saved"), error: false },
+          { loading: t("Saving…"), success: t("Saved"), error: (reason) => errorText(reason instanceof Error ? reason.message : String(reason)) },
         );
       await queryClient.cancelQueries({ queryKey });
       queryClient.setQueryData(queryKey, saved);
-      setSettings(saved);
-      setKey("");
-      setClearKey(false);
-      setDirty(false);
+      reset({ enabled: saved.enabled, endpoint: saved.endpoint, model: saved.model, key: "", clearKey: false });
     });
-  }
+  });
   async function test() {
     mutation.reset(); setNotice("");
     try {
@@ -159,12 +179,13 @@ function TitleModelForm({ machineId }: { machineId: string }) {
     } catch { /* Expose the mutation error next to the controls. */ }
   }
   return (
+    <form noValidate onSubmit={save}>
     <fieldset disabled={loading || busy || !loaded} className="space-y-3">
       <label className="flex items-center gap-2 text-[13px] text-content">
         <input data-ui="checkbox"
           type="checkbox"
           checked={settings.enabled}
-          onChange={(event) => change({ enabled: event.target.checked })}
+          onChange={(event) => change("enabled", event.target.checked)}
         />
         {t("Generate titles with model API")}
       </label>
@@ -174,10 +195,12 @@ function TitleModelForm({ machineId }: { machineId: string }) {
           className={fieldClass}
           type="url"
           value={settings.endpoint}
-          onChange={(event) => change({ endpoint: event.target.value })}
+          aria-invalid={!!form.formState.errors.endpoint}
+          onChange={(event) => change("endpoint", event.target.value)}
           placeholder="https://api.example.com/v1/chat/completions"
           spellCheck={false}
         />
+        <FieldError errors={[form.formState.errors.endpoint]} />
         <span className="block text-[12px] leading-relaxed text-content/45">
           {t(
             "Full OpenAI-compatible Chat Completions URL. HTTP is supported for localhost.",
@@ -189,9 +212,11 @@ function TitleModelForm({ machineId }: { machineId: string }) {
         <Input
           className={fieldClass}
           value={settings.model}
-          onChange={(event) => change({ model: event.target.value })}
+          aria-invalid={!!form.formState.errors.model}
+          onChange={(event) => change("model", event.target.value)}
           spellCheck={false}
         />
+        <FieldError errors={[form.formState.errors.model]} />
       </label>
       <label className="block space-y-1 text-[12px] text-content/65">
         <span>{t("API key")}</span>
@@ -202,12 +227,11 @@ function TitleModelForm({ machineId }: { machineId: string }) {
           value={key}
           disabled={clearKey}
           onChange={(event) => {
-            setKey(event.target.value);
-            setDirty(true);
+            change("key", event.target.value);
             setNotice("");
           }}
           placeholder={
-            settings.hasApiKey
+            read.data?.hasApiKey
               ? t("Saved; leave blank to keep")
               : t("Optional for local models")
           }
@@ -221,11 +245,10 @@ function TitleModelForm({ machineId }: { machineId: string }) {
       <label className="flex items-center gap-2 text-[13px] text-content">
         <input data-ui="checkbox"
           type="checkbox"
-          disabled={!settings.hasApiKey}
+          disabled={!read.data?.hasApiKey}
           checked={clearKey}
           onChange={(event) => {
-            setClearKey(event.target.checked);
-            setDirty(true);
+            change("clearKey", event.target.checked);
             setNotice("");
           }}
         />
@@ -234,7 +257,7 @@ function TitleModelForm({ machineId }: { machineId: string }) {
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="secondary"
           disabled={!dirty || busy || loading || !loaded}
-          onClick={() => void save()}
+          type="submit"
         >
           {t("Save")}
         </Button>
@@ -264,5 +287,6 @@ function TitleModelForm({ machineId }: { machineId: string }) {
         </p>
       )}
     </fieldset>
+    </form>
   );
 }

@@ -1,3 +1,8 @@
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import { FieldError } from "../../../shared/ui/primitives/Field";
 import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -18,11 +23,16 @@ import { HARNESS_TITLE } from "../../sessions/model/session";
 
 const avatarTabs = [{ id: "bot", label: "Bot" }, { id: "generate", label: "Generate" }, { id: "upload", label: "Upload" }];
 
-export function BotIdentitySettings({ bot, busy, onSave, avatarSupported = false }: {
+export function BotIdentitySettings({ bot, busy: externalBusy, onSave, avatarSupported = false }: {
   bot: BotConfiguration; busy: boolean; onSave: (patch: BotPatch) => Promise<void>; avatarSupported?: boolean;
 }) {
   const { t } = useTranslation();
-  const [name, setName] = useState(bot.name), [avatar, setAvatar] = useState(bot.avatar ?? "");
+  const form = useForm({
+    resolver: zodResolver(z.object({ name: z.string().trim().min(1, t("Enter a name")).max(100, t("Use at most {count} characters", { count: 100 })), avatar: z.string() })),
+    defaultValues: { name: bot.name, avatar: bot.avatar ?? "" },
+  });
+  const [name, avatar] = useWatch({ control: form.control, name: ["name", "avatar"] });
+  const busy = externalBusy || form.formState.isSubmitting;
   const visible = useSurfaceVisibility();
   const [editingAvatar, setEditingAvatar] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -30,13 +40,14 @@ export function BotIdentitySettings({ bot, busy, onSave, avatarSupported = false
   const closeEditor = () => { setEditingAvatar(false); trigger.current?.focus(); };
   const saveAvatar = async (next: string) => {
     await onSave({ name: name.trim() || bot.name, avatar: next });
-    setAvatar(next); closeEditor();
+    form.setValue("avatar", next); closeEditor();
   };
   const changed = name.trim() !== bot.name;
-  return <form className="desktop-bot-identity" onSubmit={event => {
-    event.preventDefault();
-    if (changed && name.trim() && !busy) void onSave({ name: name.trim(), ...(avatarSupported ? { avatar } : {}) });
-  }}>
+  return <form className="desktop-bot-identity" noValidate onSubmit={form.handleSubmit(async ({ name, avatar }) => {
+    if (!changed || busy) return;
+    try { await onSave({ name, ...(avatarSupported ? { avatar } : {}) }); }
+    catch (cause) { toast.error(cause instanceof Error ? cause.message : String(cause)); }
+  })}>
     {avatarSupported ? <>
       <button ref={trigger} type="button" className="desktop-bot-avatar-trigger" aria-label={t("Edit avatar")} aria-haspopup="dialog" aria-expanded={editingAvatar} disabled={busy}
         onClick={() => setEditingAvatar(true)}>
@@ -47,7 +58,7 @@ export function BotIdentitySettings({ bot, busy, onSave, avatarSupported = false
       <PresenceBoundary>{editingAvatar && visible ? <AvatarDialog bot={bot} name={name.trim() || bot.name} avatar={avatar} busy={busy} onCancel={closeEditor} onSave={saveAvatar} /> : null}</PresenceBoundary>
     </> : <BotAvatar bot={{ id: bot.id, avatar }} size={40} />}
     <div className="desktop-bot-identity-text">
-      <label className="desktop-bot-identity-name"><span className="sr-only">{t("Name")}</span><Input value={name} maxLength={100} required disabled={busy} onChange={event => setName(event.target.value)} /></label>
+      <label className="desktop-bot-identity-name"><span className="sr-only">{t("Name")}</span><Input {...form.register("name")} aria-invalid={!!form.formState.errors.name} maxLength={100} disabled={busy} /><FieldError errors={[form.formState.errors.name]} /></label>
       <span className="desktop-bot-identity-model" title={bot.model}><span>{[HARNESS_TITLE[bot.harness], bot.model].filter(Boolean).join(" · ")}</span></span>
     </div>
     <AnimatedCollapse expanded={changed} className="desktop-bot-identity-save">
@@ -62,19 +73,24 @@ function AvatarDialog({ bot, name, avatar, busy, onCancel, onSave }: {
 }) {
   const { t } = useTranslation();
   const id = useId();
-  const [draft, setDraft] = useState(avatar), [tab, setTab] = useState("bot"), [prompt, setPrompt] = useState("");
-  const mutation = useMutation({ mutationFn: (avatar: string) => onSave(avatar) }, queryClient);
+  const [tab, setTab] = useState("bot"), [prompt, setPrompt] = useState("");
+  const form = useForm({
+    resolver: zodResolver(z.object({ avatar: z.string().max(8, t("Use at most {count} characters", { count: 8 })) })),
+    defaultValues: { avatar },
+  });
+  const draft = useWatch({ control: form.control, name: "avatar" });
+  const setDraft = (value: string) => form.setValue("avatar", value, { shouldValidate: true });
+  const mutation = useMutation({ mutationFn: (avatar: string) => onSave(avatar), onError: cause => toast.error(cause instanceof Error ? cause.message : String(cause)) }, queryClient);
   const saving = mutation.isPending;
   const choices = useRef<HTMLDivElement>(null);
   // Start on the current choice so arrow keys move within the selected group.
   useEffect(() => { choices.current?.querySelector<HTMLInputElement>('input[type="radio"]:checked')?.focus(); }, []);
   const disabled = busy || saving;
-  const save = async () => {
-    if (disabled || [...draft].length > 8) return;
-    await mutation.mutateAsync(draft);
-  };
+  const save = form.handleSubmit(({ avatar }) => {
+    if (!disabled) mutation.mutate(avatar);
+  });
   return <Modal title={t("Edit avatar")} minimalHeader fitViewport size="lg" className="desktop-bot-avatar-dialog" onClose={onCancel}>
-    <div className="desktop-bot-avatar-dialog-body">
+    <form noValidate onSubmit={event => { event.stopPropagation(); void save(event); }} className="desktop-bot-avatar-dialog-body">
       <div ref={choices} role="group" aria-label={t("Edit avatar")} className="desktop-bot-avatar-dialog-choices">
         <h2 aria-hidden="true">{t("Edit avatar")}</h2>
         <div className="desktop-bot-avatar-tabs" role="tablist" aria-label={t("Edit avatar")} onKeyDown={event => {
@@ -104,9 +120,10 @@ function AvatarDialog({ bot, name, avatar, busy, onCancel, onSave }: {
         <BotAvatar bot={{ id: bot.id, avatar: draft }} size={160} />
         <div className="desktop-bot-avatar-dialog-actions">
           <Button variant="ghost" type="button" disabled={disabled || !draft} onClick={() => setDraft("")}>{t("Reset")}</Button>
-          <Button variant="primary" type="button" disabled={disabled || draft === avatar || [...draft].length > 8} onClick={() => void save()}>{t(saving ? "Saving…" : "Save")}</Button>
+          <Button variant="primary" type="submit" disabled={disabled || draft === avatar || !!form.formState.errors.avatar}>{t(saving ? "Saving…" : "Save")}</Button>
         </div>
+        <FieldError errors={[form.formState.errors.avatar]} />
       </aside>
-    </div>
+    </form>
   </Modal>;
 }

@@ -1,4 +1,11 @@
 {
+  "This field is required": "此项为必填项",
+  "Enter a valid email address": "请输入有效的邮箱地址",
+  "Configuration must be a JSON object": "配置必须是 JSON 对象",
+  "Use only letters, numbers, underscores, or hyphens": "只能使用字母、数字、下划线或连字符",
+  "Use at most {count} characters": "最多输入 {count} 个字符",
+  "Choose a team member": "请选择一位团队成员",
+  "Enter a timeout between 0.001 and 240 seconds": "请输入 0.001 至 240 秒之间的超时时间",
   "Workflow artifact exceeds the size limit.": "工作流产物超出大小限制。",
   "Workflow artifact data is incomplete.": "工作流产物数据不完整。",
   "Note created": "笔记已创建",
