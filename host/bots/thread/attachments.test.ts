@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "../../test-provider";
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import {
@@ -37,6 +38,7 @@ async function setup() {
   const project = store.addProject(projectDir, "Project");
   const finishes: (() => void)[] = [];
   const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); },
     send: vi.fn(() => new Promise<void>((finish) => finishes.push(finish))),
     stop: vi.fn(async () => {
       finishes.forEach((finish) => finish());

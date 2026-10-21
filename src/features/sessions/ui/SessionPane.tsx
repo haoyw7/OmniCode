@@ -1,3 +1,5 @@
+import { NO_INTERACTION_CAPABILITIES, type SessionInteractionCapabilities } from "../../../integrations/harness/core/capabilities";
+import { harnessInteractionCapabilities } from "../../../integrations/harness/core/registry";
 import { useDragHandle } from "../../../shared/ui/primitives/Sortable";
 import { cn } from "../../../shared/lib/cn";
 import { Button } from "../../../shared/ui/forms/Button";
@@ -40,8 +42,6 @@ import { LinkedWorkItemUpdateNotice } from "../../inbox/ui/LinkedWorkItemUpdateN
 import { SessionReview } from "./SessionReview";
 import { PromptOutline } from "./PromptOutline";
 import {
-  canCompactHarnessContext,
-  canStopHarnessBackgroundTask,
   stopHarnessBackgroundTask,
   type ApprovalDecision,
   type UserQuestionReply,
@@ -276,6 +276,7 @@ type Props = SessionPaneProps & {
   /** Queue presentation supplied by the owning runtime. */
   messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
   composerNotice?: ReactNode;
+  interactionCapabilities?: SessionInteractionCapabilities;
   hostManaged?: boolean;
   remoteSession?: boolean;
   hostFeatures?: { attachments: boolean; plan: boolean; draft: boolean; orchestration?: boolean; checkpoint?: boolean };
@@ -311,6 +312,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   clockOffsetMs,
   messageQueue,
   composerNotice,
+  interactionCapabilities,
   hostManaged = false,
   remoteSession = false,
   hostFeatures,
@@ -381,13 +383,14 @@ const LocalSessionPane = memo(function LocalSessionPane({
   initialPromptId,
 }: Props) {
   const { t: uiT } = useTranslation();
+  const capabilities = interactionCapabilities ?? (hostManaged ? NO_INTERACTION_CAPABILITIES : { ...harnessInteractionCapabilities(session.harness), queue: true });
   const paneDrag = useDragHandle();
   const taskSource = useRef(Symbol("background-task-source"));
-  const stopBackgroundTask = useMemo(() => onStopBackgroundTask
+  const stopBackgroundTask = useMemo(() => !capabilities.backgroundTasks.stop ? undefined : onStopBackgroundTask
     ? (taskId: string) => onStopBackgroundTask(session.id, taskId)
-    : !hostManaged && canStopHarnessBackgroundTask(session.harness)
+    : !hostManaged && capabilities.backgroundTasks.stop
       ? (taskId: string) => stopHarnessBackgroundTask(session.harness, session.id, taskId)
-      : undefined, [onStopBackgroundTask, session.id, session.harness, hostManaged]);
+      : undefined, [onStopBackgroundTask, session.id, session.harness, hostManaged, capabilities.backgroundTasks.stop]);
   // The source stays live when its status rail is hidden or a tool pane is maximized.
   useEffect(() => {
     publishBackgroundTaskPanel(session.id, taskSource.current, backgroundTaskItems(session.blocks, session.backgroundTasks), stopBackgroundTask, clockOffsetMs ?? 0);
@@ -426,7 +429,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
       firstSend.current = null;
   }, [isEmpty, visible, session.id]);
   const recallLastTurnRef = useRef<(() => void) | null>(null);
-  const editLastTurnSupported = !hostManaged && canEditLastTurn(session);
+  const editLastTurnSupported = !hostManaged && canEditLastTurn(session, capabilities);
   const turnRecall = editLastTurnSupported ? lastTurnRecall(session) : null;
   const draftBlock = sessionDraftBlock(session);
   useSyncExternalStore(
@@ -504,18 +507,18 @@ const LocalSessionPane = memo(function LocalSessionPane({
   // Saved questions are answered from the composer dock, not inside history.
   const [openQuestionId, setOpenQuestionId] = useState<string>();
   const [, setDismissRevision] = useState(0);
-  const latestQuestionId = latestAnswerableQuestionId(session);
+  const latestQuestionId = latestAnswerableQuestionId(session, capabilities);
   // Only a question the user has not already skipped or closed opens by itself.
   const autoQuestionId =
     latestQuestionId && !dismissedDockQuestions.has(latestQuestionId)
       ? latestQuestionId
       : undefined;
   const requestedQuestionId = openQuestionId ?? autoQuestionId;
-  const lateQuestionsEnabled = !session.worktreeRemoved && session.harness === "codex";
+  const lateQuestionsEnabled = !session.worktreeRemoved && capabilities.questions.lateReply;
   const shownQuestionId =
     lateQuestionsEnabled &&
     !session.pendingQuestion &&
-    questionAnswerableLater(session, requestedQuestionId)
+    questionAnswerableLater(session, requestedQuestionId, capabilities)
       ? requestedQuestionId
       : undefined;
   const lastShownQuestionId = useRef(shownQuestionId);
@@ -534,7 +537,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
     setDismissRevision((revision) => revision + 1);
   }, []);
   const answerQuestionLater = useCallback((answer: QuestionAnswer) =>
-    onSubmit(session.id, questionFollowUp(session, answer), [], {
+    onSubmit(session.id, questionFollowUp(session, answer, capabilities), [], {
       questionAnswer: answer,
     }), [onSubmit, session]);
   const pendingQuestionId = useRef(session.pendingQuestion?.historyId);
@@ -813,7 +816,9 @@ const LocalSessionPane = memo(function LocalSessionPane({
       cwd={session.cwd}
       executionCwd={workCwd}
       sessionId={session.id}
-      compactSupported={canCompactHarnessContext(session.harness)}
+      compactSupported={capabilities.turns.compact}
+      steerSupported={capabilities.turns.steer}
+      sendSupported={!hostManaged || !hostSessionStarted || capabilities.turns.send}
       recents={recents}
       hideProjectPicker={
         !!session.inboxAsk ||
@@ -875,8 +880,8 @@ const LocalSessionPane = memo(function LocalSessionPane({
       onInboxCardDismiss={() => onInboxCardDismiss?.(session.id)}
       onNoteCardDismiss={() => onNoteCardDismiss?.(session.id)}
       onHandoffCardDismiss={() => onHandoffCardDismiss?.(session.id)}
-      onQuestionReply={replyQuestion}
-      onQuestionInteraction={(id) => onQuestionInteraction?.(session.id, id)}
+      onQuestionReply={capabilities.questions.respond ? replyQuestion : undefined}
+      onQuestionInteraction={capabilities.questions.keepOpen ? (id) => onQuestionInteraction?.(session.id, id) : undefined}
       onFocus={() => onFocus(session.id)}
       onCwdChange={(cwd) => onCwdChange(session.id, cwd)}
       onBranchChange={() => onBranchChange(session.id)}
@@ -936,8 +941,8 @@ const LocalSessionPane = memo(function LocalSessionPane({
         return accepted;
       }}
       onBtwCommand={btw.openWith}
-      onStop={() => onStop(session.id)}
-      onCompactContext={() => onCompactContext(session.id)}
+      onStop={capabilities.turns.cancel ? () => onStop(session.id) : undefined}
+      onCompactContext={() => capabilities.turns.compact && onCompactContext(session.id)}
       queuedMessages={session.queuedMessages}
       queueLastUserMessageId={lastQueueUserMessageId(session.blocks)}
       queueStatus={session.queueStatus}
@@ -960,7 +965,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
       onUsageLimitDismiss={() => onUsageLimitDismiss(session.id)}
       onOpenFile={onOpenFile}
       busy={!!session.busy}
-      allowBusySubmit={!nativeReadOnly}
+      allowBusySubmit={!nativeReadOnly && capabilities.queue}
       editLastTurnSupported={editLastTurnSupported}
       lastTurnRecall={turnRecall}
       onRecallLastTurnReady={(recall) => {

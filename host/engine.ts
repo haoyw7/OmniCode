@@ -1,3 +1,4 @@
+import { hostProviderCapabilities, validateHostProvider } from "./interactionCapabilities";
 import { botContextPrompt, snapshotBotContext, type HarnessBotContext, type HarnessBotCapabilities } from "../src/integrations/harness/core/botContext";
 import { providerBotCapabilities } from "../src/integrations/harness/providers/botCapabilities";
 import { HostResourceGuard, HostResourceWaiter, HostResourceBusyError } from "./bots/resources";
@@ -435,12 +436,13 @@ export class HostEngine {
     private readonly skills = new HostSkills(),
     options: HostOrchestrationOptions & { native?: NativeManagerOptions; im?: HostImOptions; machines?: HostMachines } = {},
   ) {
+    for (const provider of Object.values(providers)) if (provider) validateHostProvider(provider);
     this.machines = options.machines;
     if (this.machines) this.providers = this.machines.providers(providers);
     this.machines?.configureNotice((id, warnings) => {
       if (this.store.sessionIfExists(id)) this.mutateManaged(id, value => ({ ...value, executionWarnings: warnings }), { type: "session.executionWarnings" }, false);
     });
-    this.machines?.configureImport(value => ({ ...value, nativeBinding: undefined, nativeStatus: undefined,
+    this.machines?.configureImport(value => this.withInteractionCapabilities({ ...value, nativeBinding: undefined, nativeStatus: undefined,
       executionWarnings: ["Imported from the previous WSL Host. The next turn starts with a history handoff using the desktop account."],
       session: appendReadyHandoff({ ...stopStreaming(value.session), providerSessionId: undefined,
         providerAccountId: undefined, nativeSession: undefined, pendingSwitch: undefined },
@@ -454,9 +456,9 @@ export class HostEngine {
       guard: this.native,
       desktopDirectory: () => this.desktopDirectory(),
       mutate: (id, change, event) => this.mutateManaged(id, change, event, false),
-      create: (value) => this.store.transaction(() => this.store.save(value, { type: "native.imported" })),
+      create: (value) => this.store.transaction(() => this.store.save(this.withInteractionCapabilities(value), { type: "native.imported" })),
       openProject: (cwd) => this.openProject(cwd),
-      canSteer: (provider) => !!this.providers[provider as RemoteProvider]?.steer,
+      canSteer: (provider) => this.providers[provider as RemoteProvider]?.interactionCapabilities.turns.steer === true,
       busy: (id) => this.running.has(id),
       dispatch: (id) => this.dispatchQueue(id),
       stopProvider: async (id) => {
@@ -494,9 +496,12 @@ export class HostEngine {
         : stored;
       // Native links from older clients become managed once; sync has no fallbacks.
       const migrated = migrateNativeLink(current);
-      const value = migrated
+      let value = migrated
         ? store.transaction(() => store.save({ ...migrated, revision: migrated.revision + 1 }, { type: "native.migrated" }))
         : current;
+      const capabilities = this.withInteractionCapabilities(value);
+      if (JSON.stringify(value.interactionCapabilities) !== JSON.stringify(capabilities.interactionCapabilities))
+        value = this.save(capabilities, { type: "session.capabilities" }, false);
       const interrupted = value.status === "running";
       const recovered = interrupted
         ? this.settled(
@@ -509,7 +514,7 @@ export class HostEngine {
       if (
         interrupted ||
         !value.supportsQueue ||
-        value.canSteer !== !!this.provider(value.session.harness).steer ||
+        value.canSteer !== this.provider(value.session.harness).interactionCapabilities.turns.steer ||
         value.session.editingQueuedMessageId ||
         value.queueSteeringId ||
         value.session.queuedMessages?.length
@@ -518,7 +523,7 @@ export class HostEngine {
           {
             ...recovered,
             supportsQueue: true,
-            canSteer: !!this.provider(value.session.harness).steer,
+            canSteer: this.provider(value.session.harness).interactionCapabilities.turns.steer,
             queueSteeringId: undefined,
             session: {
               ...recovered.session,
@@ -661,7 +666,7 @@ export class HostEngine {
     const now = Date.now();
     const value: HostSession = retained ?? { projectId: project.id, revision: 0, status: "idle", createdAt: now, updatedAt: now,
       session: { id: task.sessionId, cwd, harness: task.harness, model: task.model, modelSettings: task.modelSettings ?? {}, runtimeMode: lead.session.runtimeMode, title: task.title, blocks: [] } };
-    this.save({ ...value, supportsQueue: true, canSteer: !!this.provider(task.harness).steer,
+    this.save({ ...value, supportsQueue: true, canSteer: this.provider(task.harness).interactionCapabilities.turns.steer,
       session: { ...value.session, cwd, executionCwd: cwd, branch: preparation.workspace.branch, worktreeRemoved: false, runtimeMode: lead.session.runtimeMode, orchestrationLeadId: run.leadId } }, { type: "orchestration.workerPrepared", leadId: run.leadId });
     if (value.session.providerSessionId) this.bindRetainedSession({ ...value.session, cwd });
   }
@@ -690,7 +695,7 @@ export class HostEngine {
     const cwd = sessionExecutionCwd(parent.session);
     const value: HostSession = retained ?? { projectId: parent.projectId, revision: 0, status: "idle", createdAt: now, updatedAt: now,
       session: { id: input.sessionId, cwd, harness: input.runtime.harness, model: input.runtime.model, modelSettings: input.runtime.modelSettings, runtimeMode: parent.session.runtimeMode, title: input.title, blocks: [] } };
-    this.save({ ...value, supportsQueue: true, canSteer: !!this.providers[input.runtime.harness as RemoteProvider]?.steer,
+    this.save({ ...value, supportsQueue: true, canSteer: this.providers[input.runtime.harness as RemoteProvider]?.interactionCapabilities.turns.steer === true,
       session: { ...value.session, harness: input.runtime.harness, model: input.runtime.model, modelSettings: input.runtime.modelSettings, cwd,
         ...(parent.session.executionCwd ? { executionCwd: parent.session.executionCwd } : {}), ...(parent.session.branch ? { branch: parent.session.branch } : {}),
         runtimeMode: parent.session.runtimeMode, workflowParentId: input.parentSessionId, workflowRunId: input.runId } }, { type: "workflow.workerPrepared", runId: input.runId });
@@ -723,7 +728,7 @@ export class HostEngine {
   private async steerManaged(id: string, prompt: string, receipt?: ControlReceiptContext): Promise<void> {
     this.flush(id);
     const value = this.store.session(id), active = this.running.get(id), provider = this.provider(value.session.harness);
-    if (!active || active.finishing || active.cancelled || !provider.steer) throw new Error("This worker cannot receive guidance during its current turn");
+    if (!active || active.finishing || active.cancelled || (!provider.interactionCapabilities.turns.steer || !provider.steer)) throw new Error("This worker cannot receive guidance during its current turn");
     if (receipt?.origin && !this.authorizeAssistantQueued?.(receipt.origin, value.projectId, value.session.id)) throw new Error("Assistant message permission was revoked.");
     const saved = this.store.transaction(() => {
       const steered = appendSteerUser(value.session, prompt);
@@ -983,10 +988,15 @@ export class HostEngine {
     return provider;
   }
 
+  private withInteractionCapabilities(value: HostSession): HostSession {
+    const interactionCapabilities = hostProviderCapabilities(this.provider(value.session.harness));
+    return { ...value, interactionCapabilities, supportsQueue: interactionCapabilities.queue, canSteer: interactionCapabilities.turns.steer };
+  }
+
   private save(value: HostSession, event: unknown, touchActivity = true): HostSession {
     return this.store.transaction(() =>
       this.store.save(
-        { ...value, revision: value.revision + 1, updatedAt: touchActivity ? Date.now() : value.updatedAt },
+        { ...this.withInteractionCapabilities(value), revision: value.revision + 1, updatedAt: touchActivity ? Date.now() : value.updatedAt },
         event,
       ),
     );
@@ -996,7 +1006,7 @@ export class HostEngine {
     this.orchestration.assertSessionWrite(id, "metadata");
     const value = this.store.session(id);
     const provider = this.provider(value.session.harness);
-    if (!provider.stopBackgroundTask) throw new Error("Stopping background tasks is unavailable for this provider.");
+    if (!provider.interactionCapabilities.backgroundTasks.stop || !provider.stopBackgroundTask) throw new Error("Stopping background tasks is unavailable for this provider.");
     await provider.stopBackgroundTask(id, taskId);
   }
 
@@ -1153,7 +1163,7 @@ export class HostEngine {
   async assistantBrainSteer(id: string, prompt: string): Promise<boolean> {
     this.flush(id);
     const value = this.store.session(id), active = this.running.get(id), provider = this.provider(value.session.harness);
-    if (!value.session.assistantOwnerId || !active || active.finishing || active.cancelled || !provider.steer) return false;
+    if (!value.session.assistantOwnerId || !active || active.finishing || active.cancelled || (!provider.interactionCapabilities.turns.steer || !provider.steer)) return false;
     const prepared = await this.skills.prepare(prompt, { harness: value.session.harness as RemoteProvider, cwd: sessionExecutionCwd(value.session), sessionId: id }, provider);
     if (active.finishing || active.cancelled || this.running.get(id) !== active) return false;
     const saved = this.save({ ...this.store.session(id), session: appendSteerUser(this.store.session(id).session, prompt) }, { type: "assistant.brainSteer" });
@@ -1195,7 +1205,7 @@ export class HostEngine {
     this.flush(id);
     const value = this.store.session(id), active = this.running.get(id), provider = this.provider(value.session.harness);
     this.orchestration.assertSessionWrite(id, "send");
-    if (!active || active.runId !== runId || active.finishing || active.cancelled || !provider.steer || !authorize()) throw new Error("This turn cannot receive guidance");
+    if (!active || active.runId !== runId || active.finishing || active.cancelled || (!provider.interactionCapabilities.turns.steer || !provider.steer) || !authorize()) throw new Error("This turn cannot receive guidance");
     const prepared = await this.skills.prepare(prompt, { harness: value.session.harness as RemoteProvider, cwd: sessionExecutionCwd(value.session), sessionId: id }, provider);
     if (!authorize() || active.finishing || active.cancelled || !this.authorizeAssistantQueued?.(origin, value.projectId, value.session.id)) throw new Error("Assistant permission was revoked");
     const next = appendSteerUser(this.store.session(id).session, prompt);
@@ -1219,7 +1229,7 @@ export class HostEngine {
       : history;
     return {
       ...value,
-      canSteer: !!incoming.steer,
+      canSteer: incoming.interactionCapabilities.turns.steer,
       nativeBinding: undefined,
       nativeStatus: undefined,
       session: {
@@ -1375,7 +1385,7 @@ export class HostEngine {
           revision: 0,
           status: "idle",
           supportsQueue: true,
-          canSteer: !!this.provider(command.harness).steer,
+          canSteer: this.provider(command.harness).interactionCapabilities.turns.steer,
           createdAt: now,
           updatedAt: now,
           session: {
@@ -1431,8 +1441,11 @@ export class HostEngine {
           value = { ...value, session: { ...value.session, ...configuration, pendingConfiguration: undefined } };
         }
         const provider = this.provider(value.session.harness);
+        if (command.type === "send" && !provider.interactionCapabilities.turns.send) throw new Error("Turn submission is unavailable for this provider");
+        if (command.type === "cancel" && !provider.interactionCapabilities.turns.cancel) throw new Error("Turn cancellation is unavailable for this provider");
+        if (command.type === "answer" && !provider.interactionCapabilities.questions.respond) throw new Error("This provider does not support questions");
         if (command.type === "send" && command.questionAnswer) {
-          const prompt = questionFollowUp(value.session, command.questionAnswer);
+          const prompt = questionFollowUp(value.session, command.questionAnswer, provider.interactionCapabilities);
           questionReply = providerQuestionReply(value.session, command.questionAnswer);
           value = { ...value, session: recordQuestionAnswer(value.session, command.questionAnswer) };
           command.text = prompt;
@@ -1485,7 +1498,7 @@ export class HostEngine {
             throw new Error("Message queue is full");
           const active = this.running.get(value.session.id);
           const steer = !command.queueReturnPosition && command.followUpBehavior === "steer" &&
-            value.status === "running" && !!provider.steer && !!active &&
+            value.status === "running" && provider.interactionCapabilities.turns.steer && !!provider.steer && !!active &&
             !active.finishing && !active.cancelled && !active.failed && !active.persistenceFailed &&
             !value.queueSteeringId && !value.session.editingQueuedMessageId &&
             value.session.queueStatus !== "paused";
@@ -1562,7 +1575,7 @@ export class HostEngine {
             throw new Error("This session is already running");
           if (nativeHolding(value))
             throw new Error("Native history is synchronizing; this conversation can continue when it is up to date");
-          if (command.type === "compact" && !provider.compact)
+          if (command.type === "compact" && (!provider.interactionCapabilities.turns.compact || !provider.compact))
             throw new Error(
               "Context compaction is unavailable for this provider",
             );
@@ -1756,7 +1769,7 @@ export class HostEngine {
           } else if (command.type === "keepQuestionOpen") {
             if (value.session.pendingQuestion?.requestId !== command.requestId)
               throw new Error("Question is already resolved");
-            if (!provider.keepQuestionOpen) throw new Error("This provider cannot keep questions open");
+            if (!provider.interactionCapabilities.questions.keepOpen || !provider.keepQuestionOpen) throw new Error("This provider cannot keep questions open");
             value = { ...value, session: applyHarnessEvent(value.session, {
               type: "question.updated", requestId: command.requestId, autoResolveAt: undefined,
             }) };
@@ -1773,7 +1786,7 @@ export class HostEngine {
               }),
             };
             effect = () =>
-              provider.answer(
+              provider.answer!(
                 command.sessionId,
                 command.requestId,
                 command.reply,
@@ -1783,7 +1796,7 @@ export class HostEngine {
       }
       const saved = this.store.save(
         {
-          ...value,
+          ...this.withInteractionCapabilities(value),
           ...(remoteControl && (command.type === "create" || command.type === "send" || command.type === "draft")
             ? { remoteControl: true, ...(remoteControlDevice ? { remoteControlDevice } : {}) } : {}),
           revision: value.revision + 1,
@@ -1905,7 +1918,7 @@ export class HostEngine {
           throw new Error(
             "This request belongs to a finished or replaced turn",
           );
-        if (!this.provider(session.harness).steer)
+        if (!this.provider(session.harness).interactionCapabilities.turns.steer)
           throw new Error("This provider does not support steering");
         if (value.queueSteeringId)
           throw new Error("Another queued message is being steered");
@@ -2008,6 +2021,7 @@ export class HostEngine {
         const prepared = await this.skills.prepare(row.text, { harness: session.harness as RemoteProvider, cwd: sessionExecutionCwd(session), sessionId: session.id }, provider);
         if (active.cancelled || active.finishing || this.closing) throw new Error("Turn stopped before the queued message could be steered");
         if (row.origin && !this.authorizeAssistantQueued?.(row.origin, value.projectId, value.session.id)) throw new Error("Assistant permission was revoked");
+        if (!provider.interactionCapabilities.turns.steer) throw new Error("This provider does not support steering");
         await provider.steer!({
           ...(row.questionReply ? { questionReply: row.questionReply } : {}),
           sessionId: session.id,

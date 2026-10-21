@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { readGrokSessionTitle } from "./grok";
 import {
   bindGrokSession,
@@ -25,9 +26,8 @@ import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const grokAdapter: HarnessAdapter = {
   id: "grok",
-  live: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.grok,
   readSessionTitle: readGrokSessionTitle,
-  canSteer: false,
   sendTurn: sendGrokTurn,
   compactContext: compactGrokContext,
   steerTurn: steerGrokTurn,

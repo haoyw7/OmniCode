@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "./test-provider";
 import { afterEach, expect, it, vi } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -66,6 +67,7 @@ async function setup() {
   let finish = () => {};
   const engine = new HostEngine(store, {
     codex: {
+      get interactionCapabilities() { return testProviderCapabilities(this); },
       send: async (input) => {
         turn = input;
         await new Promise<void>((resolve) => {

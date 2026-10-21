@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "./test-provider";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -47,6 +48,7 @@ async function setup(harness: "codex" | "claude" | "pi" | "omp" = "codex") {
     const received: Turn[] = [];
     turns[id] = received;
     providers[id] = {
+      get interactionCapabilities() { return testProviderCapabilities(this); },
       send: vi.fn((input) => new Promise<void>((finish, fail) => {
         received.push({ input, finish, fail });
       })),

@@ -1,3 +1,4 @@
+import { hostInteractionCapabilities } from "./interactionCapabilities";
 import type { Attachment, Block, QueueReturnPosition } from "../../sessions/model/session";
 import { insertQueuedMessage } from "../../sessions/model/messageQueue";
 import type { FollowUpBehavior } from "../../settings/model/settings";
@@ -23,6 +24,7 @@ export type OutgoingMessage = {
 export function outgoingPlacement(
   snapshot: HostSession | undefined,
   followUpBehavior: FollowUpBehavior | undefined,
+  hostCapabilities?: readonly string[],
 ): OutgoingMessage["placement"] {
   if (!snapshot) return "transcript";
   const { session } = snapshot;
@@ -35,7 +37,7 @@ export function outgoingPlacement(
   const steers =
     followUpBehavior === "steer" &&
     snapshot.status === "running" &&
-    !!snapshot.canSteer &&
+    hostInteractionCapabilities(snapshot, hostCapabilities).turns.steer &&
     !snapshot.queueSteeringId &&
     !session.editingQueuedMessageId &&
     session.queueStatus !== "paused";

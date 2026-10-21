@@ -1,3 +1,4 @@
+import { hostInteractionCapabilities } from "../../features/connections/model/interactionCapabilities";
 import { Omi } from "../../shared/ui/branding/Omi";
 import { Button } from "../../shared/ui/forms/Button";
 import { IconButton } from "../../shared/ui/forms/IconButton";
@@ -694,6 +695,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           {(projectBackground?.effect === "gradient-blur" || (!projectBackground && backgroundPath && backgroundEffect === "gradient-blur")) && <GradientBlurBackground />}
           {transcriptSessionId ? (
             <MobileSessionTranscript
+                hostCapabilities={client.hostCapabilities}
               key={transcriptKeys.current.get(transcriptSessionId) ?? transcriptSessionId}
               store={snapshotStore}
               sessionId={transcriptSessionId}
@@ -770,7 +772,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
             draft={draft}
             skillsContextKey={skillContextKey}
             loadSkills={loadSkillCatalog}
-            canCompact={!!snapshot && snapshot.status === "idle" && !nativeReadOnly && ["codex", "claude", "grok", "opencode", "pi", "omp"].includes(snapshot.session.harness)}
+            canCompact={!!snapshot && snapshot.status === "idle" && !nativeReadOnly && hostInteractionCapabilities(snapshot, client.hostCapabilities).turns.compact}
             configuration={
               snapshot ? snapshot.configuration : configuration
             }
@@ -784,7 +786,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               nativeReadOnly ||
               busy ||
               !!pending ||
-              (running && !snapshot?.supportsQueue) ||
+              (running && !hostInteractionCapabilities(snapshot, client.hostCapabilities).queue) ||
               loading ||
               (!!sessionId && !sessionConfirmed) ||
               (!!sessionId && !snapshot)
@@ -793,20 +795,21 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
             readingAttachments={readingAttachments}
             running={running}
             canSend={
+              (!sessionId || hostInteractionCapabilities(snapshot, client.hostCapabilities).turns.send) &&
               !nativeReadOnly &&
               !busy &&
               !pending &&
               !readingAttachments &&
               !loading &&
               (!sessionId || sessionConfirmed) &&
-              (!running || !!snapshot?.supportsQueue) &&
+              (!running || !!hostInteractionCapabilities(snapshot, client.hostCapabilities).queue) &&
               (sessionId
                 ? !!snapshot
                 : !!catalog?.models[configuration.harness]?.some(
                     (model) => model.id === configuration.model,
                   ))
             }
-            canStop={!busy && !pending && sessionConfirmed && !!snapshot?.runId}
+            canStop={hostInteractionCapabilities(snapshot, client.hostCapabilities).turns.cancel && !busy && !pending && sessionConfirmed && !!snapshot?.runId}
             onSend={onComposerSend}
             onStop={onComposerStop}
             onConfigurationChange={onComposerConfiguration}

@@ -253,6 +253,8 @@ type Props = {
   orchestrationAvailable?: boolean;
   context?: ContextUsage;
   compactSupported?: boolean;
+  steerSupported?: boolean;
+  sendSupported?: boolean;
   quoteRequest?: QuoteRequest;
   initialDraft?: string;
   draftResetToken?: number;
@@ -357,6 +359,8 @@ export function Composer({
   orchestrationAvailable = true,
   context,
   compactSupported = false,
+  steerSupported = false,
+  sendSupported = true,
   quoteRequest,
   initialDraft,
   draftResetToken,
@@ -1341,6 +1345,7 @@ export function Composer({
   }, [editLastTurnSupported, onRecallLastTurnReady, recallLastTurn]);
 
   const submit = (value: string) => {
+    if (!sendSupported) return;
     if (disabled || worktreeRemoved || submitLockRef.current) return;
     submitLockRef.current = true;
     void completeSubmit(value).finally(() => {
@@ -2127,7 +2132,7 @@ export function Composer({
             status={queueStatus}
             remote={remote}
             disabled={disabled}
-            canSteer={!hostManaged || busy}
+            canSteer={steerSupported && (!hostManaged || busy)}
             canResume={!hostManaged || !busy}
             onDelete={onDeleteQueuedMessage}
             onRestore={onDeleteQueuedMessage ? (message) => {
@@ -2166,6 +2171,7 @@ export function Composer({
       queuedMessages,
       queueLastUserMessageId,
       hostManaged,
+      steerSupported,
       readOnlyReason,
       remote,
       shownUsageLimit,
@@ -2785,12 +2791,12 @@ export function Composer({
               >
                 <ComposerAction
                   busy={busy}
-                  disabled={disabled}
+                  disabled={disabled || ((!busy || (hasValue && allowBusySubmit)) && !sendSupported)}
                   hasValue={hasValue && !worktreeRemoved}
                   allowBusySubmit={allowBusySubmit}
                   label={draftActive ? uiT("Save draft") : uiT("Send")}
                   onSend={() => submit(ref.current?.value ?? "")}
-                  onStop={() => onStop?.()}
+                  onStop={onStop}
                 />
               </motion.div>
             </div>

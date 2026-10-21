@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { registerHarness, type HarnessAdapter } from "../../core/registry";
 import {
   bindDeepseekSession,
@@ -15,8 +16,7 @@ import { refreshDeepseekCatalog } from "./deepseekCatalog";
 
 export const deepseekAdapter: HarnessAdapter = {
   id: "deepseek",
-  live: true,
-  canSteer: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.deepseek,
   sendTurn: sendDeepseekTurn,
   steerTurn: steerDeepseekTurn,
   cancelTurn: cancelDeepseekTurn,

@@ -1,21 +1,11 @@
+import type { HarnessInteractionCapabilities } from "../../../integrations/harness/core/capabilities";
 import type {
   Attachment,
   Block,
   EditedResendRejection,
-  HarnessId,
   Session,
 } from "./session";
 import { isOperatorUserTurn, operatorUserPrompt } from "./operatorCommand";
-
-/** Harnesses that can rewind provider state before resending an edited prompt. */
-export function harnessSupportsEditLastTurn(harness: HarnessId): boolean {
-  return (
-    harness === "pi" ||
-    harness === "omp" ||
-    harness === "codex" ||
-    harness === "opencode"
-  );
-}
 
 /** Index of the user block that starts the latest turn. */
 export function lastUserTurnStartIndex(blocks: Block[]): number {
@@ -67,8 +57,9 @@ export type EditedResendPreparation = {
 
 export function prepareEditedResend(
   session: Session,
+  capabilities: HarnessInteractionCapabilities,
 ): EditedResendPreparation | null {
-  if (!canEditLastTurn(session)) return null;
+  if (!canEditLastTurn(session, capabilities)) return null;
   const block = lastUserTurnBlock(session.blocks);
   if (!block) return null;
   return {
@@ -96,9 +87,10 @@ export type EditedResendAttempt = EditedResendPreparation & {
 /** State for one edit-and-resend attempt, including its failure recovery. */
 export function createEditedResendAttempt(
   session: Session,
+  capabilities: HarnessInteractionCapabilities,
   onRejected?: (recovery: EditedResendRejection) => void,
 ): EditedResendAttempt | null {
-  const preparation = prepareEditedResend(session);
+  const preparation = prepareEditedResend(session, capabilities);
   if (!preparation) return null;
 
   let providerRewound = false;
@@ -167,11 +159,11 @@ export function lastTurnRecall(session: Session): LastTurnRecall | null {
   };
 }
 
-export function canEditLastTurn(session: Session): boolean {
+export function canEditLastTurn(session: Session, capabilities: HarnessInteractionCapabilities): boolean {
   if (session.inboxAsk || session.busy || session.pendingQuestion) return false;
   if (session.editingQueuedMessageId) return false;
   if ((session.queuedMessages?.length ?? 0) > 0) return false;
-  if (!harnessSupportsEditLastTurn(session.harness)) return false;
+  if (!capabilities.turns.rewindLastTurn) return false;
   const block = lastUserTurnBlock(session.blocks);
   if (!block || block.draft) return false;
   if (session.harness === "codex" && !block.providerTurnId) return false;

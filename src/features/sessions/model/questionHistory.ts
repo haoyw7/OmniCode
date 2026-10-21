@@ -1,3 +1,4 @@
+import type { HarnessInteractionCapabilities } from "../../../integrations/harness/core/capabilities";
 import type { Session } from "./session";
 import {
   buildQuestionReply,
@@ -36,11 +37,12 @@ export function questionTranscriptText(record: UserQuestionRecord): string {
 export function questionFollowUp(
   session: Session,
   answer: QuestionAnswer,
+  capabilities: HarnessInteractionCapabilities,
 ): string {
   const record = session.blocks.find(
     (block) => block.id === answer.blockId,
   )?.question;
-  if (!["codex", "deepseek"].includes(session.harness) || !record?.allowLateReply)
+  if (!capabilities.questions.lateReply || !record?.allowLateReply)
     throw new Error("This question cannot be answered later");
   if (record.reply || record.decision === "answered")
     throw new Error("Question is already answered");
@@ -77,12 +79,13 @@ export function questionFollowUp(
 export function questionAnswerableLater(
   session: Session,
   blockId: string | undefined,
+  capabilities: HarnessInteractionCapabilities,
 ): boolean {
   const record = blockId
     ? session.blocks.find((block) => block.id === blockId)?.question
     : undefined;
   return (
-    ["codex", "deepseek"].includes(session.harness) &&
+    capabilities.questions.lateReply &&
     !!record?.allowLateReply &&
     !record.reply &&
     record.decision !== "answered" &&
@@ -93,11 +96,12 @@ export function questionAnswerableLater(
 /** The newest saved question, while the user has not written past it. */
 export function latestAnswerableQuestionId(
   session: Session,
+  capabilities: HarnessInteractionCapabilities,
 ): string | undefined {
   for (let index = session.blocks.length - 1; index >= 0; index--) {
     const block = session.blocks[index]!;
     if (block.question)
-      return questionAnswerableLater(session, block.id) ? block.id : undefined;
+      return questionAnswerableLater(session, block.id, capabilities) ? block.id : undefined;
     if (block.role === "user") return undefined;
   }
   return undefined;

@@ -51,7 +51,7 @@ export function ComposerAction({
   allowBusySubmit?: boolean;
   label?: string;
   onSend: () => void;
-  onStop: () => void;
+  onStop?: () => void;
 }) {
   const { t: uiT } = useTranslation();
   const sendIcon = <><ArrowUp className="composer-send-arrow size-3.5" /><CornerDownLeft className="composer-send-return hidden size-3.5" /></>;
@@ -84,6 +84,7 @@ export function ComposerAction({
         type="button"
         title={uiT("Stop")}
         aria-label={uiT("Stop")}
+        disabled={!onStop}
         onClick={onStop}
         className="composer-stop grid size-6.5 place-items-center rounded-md bg-white text-black hover:bg-white/90"
       >

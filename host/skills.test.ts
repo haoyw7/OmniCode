@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "./test-provider";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   mkdtempSync,
@@ -43,6 +44,7 @@ function fixture() {
     return path;
   };
   const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); },
     send: vi.fn(async () => {}),
     cancel: vi.fn(async () => {}),
     stop: vi.fn(async () => {}),

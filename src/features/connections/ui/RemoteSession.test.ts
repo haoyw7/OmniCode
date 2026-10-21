@@ -1,3 +1,5 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../../../integrations/harness/providers/interactionCapabilities";
+import { NO_INTERACTION_CAPABILITIES } from "../../../integrations/harness/core/capabilities";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { insertQueuedMessage, moveQueuedMessage } from "../../sessions/model/messageQueue";
 import { selectComposerConfiguration } from "../../sessions/model/composerConfiguration";
@@ -2364,4 +2366,23 @@ it("keeps a running background conversation on the slow polling cadence", async 
   await render(shell(), { visible: false });
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 180)); });
   expect(hostCalls("sessions.sync", host.session.id)).toHaveLength(1);
+});
+
+it.each([true, false])("uses Host declarations for Codex question interaction (enabled: %s)", async enabled => {
+  dispatch({ type: "create", commandId: "capabilities-create", projectId: "project", harness: "codex", model: gpt.id, runtimeMode: "supervised" });
+  host = { ...host!, runId: "question-run", status: "running", interactionCapabilities: enabled
+    ? { ...PROVIDER_INTERACTION_CAPABILITIES.codex, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.codex.turns, rewindLastTurn: false }, queue: true }
+    : NO_INTERACTION_CAPABILITIES, session: { ...host!.session, busy: true } };
+  rememberRemoteSession("shell", "host-session");
+  commands = [];
+  let interaction: ((sessionId: string, requestId: number) => void) | undefined;
+  await act(async () => root.render(createElement(RemoteSession, { shell: shell(), visible: true,
+    onSnapshot: vi.fn(), onOpenFile: vi.fn(), onOpenDiff: vi.fn(), onOpenPlan: vi.fn(),
+    render: overrides => { interaction = overrides.onQuestionInteraction;
+      return createElement("span", null, String(overrides.interactionCapabilities.questions.keepOpen)); },
+  })));
+  await settle();
+  await act(async () => interaction?.("shell", 7));
+  expect(commands.filter(command => command.type === "keepQuestionOpen")).toHaveLength(enabled ? 1 : 0);
+  if (enabled) expect(commands[0]).toMatchObject({ type: "keepQuestionOpen", sessionId: "host-session", runId: "question-run", requestId: 7 });
 });

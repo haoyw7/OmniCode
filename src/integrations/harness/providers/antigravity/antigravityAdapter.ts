@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { readAntigravitySessionTitle } from "./antigravity";
 import {
   bindAntigravitySession,
@@ -13,9 +14,8 @@ import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const antigravityAdapter: HarnessAdapter = {
   id: "antigravity",
-  live: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.antigravity,
   readSessionTitle: readAntigravitySessionTitle,
-  canSteer: false,
   sendTurn: sendAntigravityTurn,
   steerTurn: steerAntigravityTurn,
   cancelTurn: cancelAntigravityTurn,

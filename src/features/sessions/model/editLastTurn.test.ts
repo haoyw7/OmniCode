@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../../../integrations/harness/providers/interactionCapabilities";
 import { describe, expect, it, vi } from "vitest";
 import {
   canEditLastTurn,
@@ -29,8 +30,8 @@ describe("editLastTurn", () => {
       { id: "reply", role: "assistant", text: "Fixed the failing check." },
     ]);
 
-    expect(canEditLastTurn(session)).toBe(false);
-    expect(prepareEditedResend(session)).toBeNull();
+    expect(canEditLastTurn(session, interactionCapabilitiesForTest(session))).toBe(false);
+    expect(prepareEditedResend(session, interactionCapabilitiesForTest(session))).toBeNull();
   });
 
   it("finds the latest user turn", () => {
@@ -60,7 +61,7 @@ describe("editLastTurn", () => {
       text: "keep this",
       attachments: [],
     });
-    expect(canEditLastTurn(session)).toBe(true);
+    expect(canEditLastTurn(session, interactionCapabilitiesForTest(session))).toBe(true);
   });
 
   it("ignores internal user turns when selecting the editable turn", () => {
@@ -82,7 +83,7 @@ describe("editLastTurn", () => {
       text: "keep this",
       attachments: [],
     });
-    expect(canEditLastTurn(session)).toBe(true);
+    expect(canEditLastTurn(session, interactionCapabilitiesForTest(session))).toBe(true);
   });
 
   it("recalls the last user message", () => {
@@ -109,7 +110,7 @@ describe("editLastTurn", () => {
       { id: "u1", role: "user", text: "hello" },
       { id: "a1", role: "assistant", text: "hi" },
     ]);
-    expect(canEditLastTurn(session)).toBe(true);
+    expect(canEditLastTurn(session, interactionCapabilitiesForTest(session))).toBe(true);
   });
 
   it("rewinds the whole Codex turn when the last message was steered", () => {
@@ -135,7 +136,7 @@ describe("editLastTurn", () => {
       "u1",
       "a1",
     ]);
-    expect(prepareEditedResend(session)).toMatchObject({
+    expect(prepareEditedResend(session, interactionCapabilitiesForTest(session))).toMatchObject({
       providerTurnId: "t2",
       blocks: [
         { id: "u1" },
@@ -154,7 +155,7 @@ describe("editLastTurn", () => {
       { id: "a1", role: "assistant", text: "hi" },
     ]);
     const rejected = vi.fn();
-    const attempt = createEditedResendAttempt(session, rejected)!;
+    const attempt = createEditedResendAttempt(session, interactionCapabilitiesForTest(session), rejected)!;
 
     expect(attempt.recoverAfterFailure(session)).toBe(session);
     attempt.reject();
@@ -172,7 +173,7 @@ describe("editLastTurn", () => {
       { id: "a2", role: "assistant", text: "old answer" },
     ]);
     const rejected = vi.fn();
-    const attempt = createEditedResendAttempt(session, rejected)!;
+    const attempt = createEditedResendAttempt(session, interactionCapabilitiesForTest(session), rejected)!;
 
     attempt.markProviderRewound();
     const recovered = attempt.recoverAfterFailure(session);
@@ -188,7 +189,7 @@ describe("editLastTurn", () => {
       { id: "a1", role: "assistant", text: "hi" },
     ]);
     const rejected = vi.fn();
-    const attempt = createEditedResendAttempt(session, rejected)!;
+    const attempt = createEditedResendAttempt(session, interactionCapabilitiesForTest(session), rejected)!;
 
     attempt.markProviderRewound();
     attempt.markAccepted();
@@ -219,7 +220,7 @@ describe("editLastTurn", () => {
       ]),
       harness: "opencode" as const,
     };
-    expect(canEditLastTurn(session)).toBe(true);
+    expect(canEditLastTurn(session, interactionCapabilitiesForTest(session))).toBe(true);
   });
 
   it("blocks edit while busy, queued, or on unsupported harnesses", () => {
@@ -227,15 +228,24 @@ describe("editLastTurn", () => {
       { id: "u1", role: "user", text: "hello" },
       { id: "a1", role: "assistant", text: "hi" },
     ]);
-    expect(canEditLastTurn({ ...base, busy: true })).toBe(false);
+    expect(canEditLastTurn({ ...base, busy: true }, interactionCapabilitiesForTest({ ...base, busy: true }))).toBe(false);
     expect(
       canEditLastTurn({
         ...base,
         queuedMessages: [
           { id: "q1", text: "next", attachments: [] },
         ],
-      }),
+      }, interactionCapabilitiesForTest({
+        ...base,
+        queuedMessages: [
+          { id: "q1", text: "next", attachments: [] },
+        ],
+      })),
     ).toBe(false);
-    expect(canEditLastTurn({ ...chat([]), harness: "claude" })).toBe(false);
+    expect(canEditLastTurn({ ...chat([]), harness: "claude" }, interactionCapabilitiesForTest({ ...chat([]), harness: "claude" }))).toBe(false);
   });
 });
+
+function interactionCapabilitiesForTest(session: { harness: keyof typeof PROVIDER_INTERACTION_CAPABILITIES }) {
+  return PROVIDER_INTERACTION_CAPABILITIES[session.harness];
+}

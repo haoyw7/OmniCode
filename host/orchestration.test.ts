@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "./test-provider";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -26,6 +27,7 @@ async function setup(harness: "codex" | "pi" | "omp" = "codex") {
   const project = store.addProject(cwd, "Test");
   const turns: Array<{ input: SendTurnInput; finish(): void }> = [];
   const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); },
     send: vi.fn((input) => new Promise<void>((resolve) => turns.push({ input, finish: resolve }))),
     stop: vi.fn(async (id) => { for (const turn of turns.filter((turn) => turn.input.sessionId === id)) turn.finish(); }),
     cancel: vi.fn(async (id) => { for (const turn of turns.filter((turn) => turn.input.sessionId === id)) turn.finish(); }),

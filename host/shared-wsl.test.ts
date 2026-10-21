@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "./test-provider";
 import { afterEach, expect, it, vi } from "vitest";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -86,6 +87,7 @@ it("uses one Host database and paired-device API for local and same-path WSL pro
   const turns: Array<{ machine: string; cwd: string }> = [];
   let holdBot: (() => void) | undefined;
   const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); },
     send: async (input) => {
       if (input.text.includes("Hold bot for workspace checks")) {
         await new Promise<void>((done) => { holdBot = done; });

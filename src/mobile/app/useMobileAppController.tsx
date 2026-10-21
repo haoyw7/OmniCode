@@ -1,3 +1,4 @@
+import { hostInteractionCapabilities } from "../../features/connections/model/interactionCapabilities";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, invalidateAfterChange } from "../../shared/lib/queryClient";
 import { mobileSavedConnectionsQuery } from "../mobileQueries";
@@ -1239,7 +1240,7 @@ export function useMobileAppController() {
   const placeholder = !snapshot && sendingMessage && !sendingMessage.sessionId
     && project?.id === sendingMessage.placeholder?.projectId ? sendingMessage.placeholder : undefined;
   const transcriptSessionId = snapshot?.session.id ?? placeholder?.session.id;
-  const queue = useHostQueue(snapshot, queueRequest);
+  const queue = useHostQueue(snapshot, queueRequest, client.hostCapabilities);
   const restoreQueuedMessage = useStableCallback(async (queued: QueuedMessage) => {
     if (!sessionId) return;
     const generation = navigation.current;
@@ -1299,7 +1300,8 @@ export function useMobileAppController() {
       readingAttachments ||
       (!!sessionId && !sessionConfirmed) ||
       nativeWriteBlocked(snapshot, nativeAccess) ||
-      (snapshot?.status === "running" && !snapshot.supportsQueue)
+      (!!snapshot && !hostInteractionCapabilities(snapshot, client.hostCapabilities).turns.send) ||
+      (snapshot?.status === "running" && !hostInteractionCapabilities(snapshot, client.hostCapabilities).queue)
     )
       return;
     if (isCompactCommand(text)) {
@@ -1307,7 +1309,7 @@ export function useMobileAppController() {
         setError(t("Remove attachments before compacting context."));
         return;
       }
-      if (!snapshot || snapshot.status !== "idle" || !["codex", "claude", "grok", "opencode", "pi", "omp"].includes(snapshot.session.harness)) {
+      if (!snapshot || snapshot.status !== "idle" || !hostInteractionCapabilities(snapshot, client.hostCapabilities).turns.compact) {
         setError(t("Context compaction is unavailable for this conversation."));
         return;
       }
@@ -1352,7 +1354,7 @@ export function useMobileAppController() {
         id: commandId,
         text: parsed.text,
         startedAt: Date.now(),
-        placement: sessionId ? outgoingPlacement(snapshotStore.get(), delivery) : "transcript",
+        placement: sessionId ? outgoingPlacement(snapshotStore.get(), delivery, client.hostCapabilities) : "transcript",
         ...(queueReturnPosition ? { queueReturnPosition } : {}),
         ...(attachments.length ? { attachments } : {}),
       };
@@ -1991,7 +1993,7 @@ export function useMobileAppController() {
   };
   const onComposerSend = useStableCallback(() => void send());
   const onComposerStop = useStableCallback(() => {
-    if (sessionId && snapshot?.runId)
+    if (hostInteractionCapabilities(snapshot, client.hostCapabilities).turns.cancel && sessionId && snapshot?.runId)
       void dispatch({ type: "cancel", commandId: crypto.randomUUID(), sessionId, runId: snapshot.runId });
   });
   const onComposerConfiguration = useStableCallback((next: MobileConfiguration) => {

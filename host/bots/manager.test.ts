@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "../test-provider";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,6 +20,7 @@ async function setup({ serial = true }: { serial?: boolean } = {}) {
   const store = new HostStore(join(directory, "host.db"));
   const turns: { input: SendTurnInput; finish: () => void }[] = [];
   const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); },
     send: vi.fn(input => new Promise<void>(finish => turns.push({ input, finish }))),
     stop: vi.fn(async sessionId => { turns.filter(turn => turn.input.sessionId === sessionId).forEach(turn => turn.finish()); }),
     cancel: vi.fn(async sessionId => { turns.filter(turn => turn.input.sessionId === sessionId).forEach(turn => turn.finish()); }),
@@ -210,7 +212,8 @@ it("recovers queued inputs after restart while interrupting prior runs and prese
   store.close();
   const reopened = new HostStore(join(directory, "host.db"));
   const turns: SendTurnInput[] = [];
-  const provider: HostProvider = { send: vi.fn(async input => { turns.push(input); }), stop: vi.fn(), cancel: vi.fn(), bind: vi.fn(), approve: vi.fn(), answer: vi.fn() };
+  const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); }, send: vi.fn(async input => { turns.push(input); }), stop: vi.fn(), cancel: vi.fn(), bind: vi.fn(), approve: vi.fn(), answer: vi.fn() };
   const engine = new HostEngine(reopened, { codex: provider });
   cleanups.push(async () => { await engine.close(); reopened.close(); rmSync(directory, { recursive: true, force: true }); });
   await Promise.all([engine.ready, engine.workflows.ready]);

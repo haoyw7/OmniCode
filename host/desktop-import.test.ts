@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "./test-provider";
 import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -165,6 +166,7 @@ it("imports native history as Host-managed once and never bypasses CLI ownership
     importDesktopSessions(store, path);
     expect(readdirSync(store.attachmentDir)).toHaveLength(1);
     const provider = {
+      get interactionCapabilities() { return testProviderCapabilities(this); },
       send: vi.fn(),
       bind: vi.fn(),
       stop: vi.fn(),

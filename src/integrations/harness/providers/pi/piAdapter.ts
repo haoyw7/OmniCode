@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { readFamilySessionTitle } from "../pi/piFamily";
 import { PI_FLAVOR } from "../pi/piFlavor";
 import {
@@ -19,7 +20,7 @@ import { discoverPiCommands } from "./piSkills";
 
 export const piAdapter: HarnessAdapter = {
   id: "pi",
-  live: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.pi,
   readSessionTitle: (input) => readFamilySessionTitle(PI_FLAVOR, input),
   commands: { rawSlashCommands: true, discover: ({ cwd }) => discoverPiCommands(cwd) },
   sendTurn: sendPiTurn,

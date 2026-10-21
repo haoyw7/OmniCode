@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { readFamilySessionTitle } from "../pi/piFamily";
 import { OMP_FLAVOR } from "../pi/piFlavor";
 import {
@@ -23,7 +24,7 @@ import { ompCommandProvider, respondQuestion } from "../pi/piFamily";
 
 export const ompAdapter: HarnessAdapter = {
   id: "omp",
-  live: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.omp,
   readSessionTitle: (input) => readFamilySessionTitle(OMP_FLAVOR, input),
   commands: ompCommandProvider,
   respondQuestion: (sessionId, requestId, reply) =>

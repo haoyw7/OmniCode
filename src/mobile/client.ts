@@ -204,6 +204,7 @@ function sameCachedValue(left: unknown, right: unknown): boolean {
 let mobileClientQueryId = 0;
 
 export class MobileClient {
+  get hostCapabilities(): readonly string[] { return this.capabilities; }
   private deviceInfo?: Promise<HostDeviceInfo | undefined>;
   connection?: Connection;
   private capabilities: string[] = [];

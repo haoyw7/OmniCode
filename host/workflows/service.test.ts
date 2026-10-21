@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "../test-provider";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -20,6 +21,7 @@ type Reply = (input: SendTurnInput) => string;
 
 function fakeProvider(reply: Reply, sent: SendTurnInput[]): HostProvider {
   return {
+    get interactionCapabilities() { return testProviderCapabilities(this); },
     send: vi.fn(async (input: SendTurnInput) => {
       sent.push(input);
       input.onEvent({ type: "message.delta", text: reply(input) });

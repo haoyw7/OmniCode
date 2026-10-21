@@ -1,3 +1,4 @@
+import { NO_INTERACTION_CAPABILITIES } from "./capabilities";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   hydrateCachedModelCatalogs,
@@ -32,7 +33,12 @@ function stub(
 ): HarnessAdapter {
   return {
     id,
-    live: true,
+    interactionCapabilities: {
+      ...NO_INTERACTION_CAPABILITIES,
+      turns: { send: true, cancel: true, steer: true, compact: !!extra.compactContext, rewindLastTurn: !!extra.rewindLastTurn },
+      questions: { respond: !!extra.respondQuestion, keepOpen: !!extra.keepQuestionOpen, lateReply: false },
+      backgroundTasks: { stop: !!extra.stopBackgroundTask },
+    },
     async sendTurn(_input: SendTurnInput) {},
     async steerTurn(_input: SteerTurnInput) {},
     async cancelTurn() {},
@@ -45,6 +51,21 @@ function stub(
 }
 
 describe("harness registry", () => {
+  it("rejects a declared capability without an execution binding", () => {
+    const adapter = stub("codex");
+    adapter.interactionCapabilities.turns.compact = true;
+    expect(() => registerHarness(adapter)).toThrow("compact has no execution binding");
+  });
+
+  it("does not invoke a disabled operation even when its method exists", async () => {
+    const compactContext = vi.fn(async () => {});
+    const adapter = stub("codex", { compactContext });
+    adapter.interactionCapabilities.turns.compact = false;
+    registerHarness(adapter);
+    await expect(compactHarnessContext({ harness: "codex", sessionId: "disabled-compact", cwd: "/repo",
+      model: "codex:test", runtimeMode: "supervised", onEvent() {} })).rejects.toThrow("does not support manual compaction");
+    expect(compactContext).not.toHaveBeenCalled();
+  });
   it.each(["pi", "omp"] as const)("generates branch names with %s's isolated text adapter", async (id) => {
     const runTextPrompt = vi.fn(async () => '{"branch":"fix-login"}');
     registerHarness(stub(id, { runTextPrompt }));
@@ -80,7 +101,7 @@ describe("harness registry", () => {
     const integrated = listHarnesses().filter(adapter => adapter.id === "deepseek");
     expect(integrated).toHaveLength(1);
     expect(integrated).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: "deepseek", live: true, canSteer: true }),
+      expect.objectContaining({ id: "deepseek", interactionCapabilities: expect.objectContaining({ turns: expect.objectContaining({ send: true, steer: true }) }) }),
     ]));
     const ids: HarnessId[] = [
       "claude",
@@ -246,7 +267,7 @@ describe("harness registry", () => {
     const adapter = listHarnesses().find(
       (adapter) => adapter.id === "antigravity",
     )!;
-    expect(adapter.canSteer).toBe(false);
+    expect(adapter.interactionCapabilities.turns.steer).toBe(false);
     expect(adapter.bindSession).toBeTypeOf("function");
     expect(adapter.refreshCatalog).toBeTypeOf("function");
     expect(adapter).not.toHaveProperty("generateTitle");

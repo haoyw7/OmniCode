@@ -1,3 +1,4 @@
+import { assertInteractionBindings, NO_INTERACTION_CAPABILITIES, type HarnessInteractionCapabilities } from "./capabilities";
 import type {
   Block,
   HarnessId,
@@ -47,10 +48,7 @@ export type TextPromptInput = {
 export type HarnessAdapter = {
   readSessionTitle?(input: import("./titleCoordinator").NativeTitleInput): Promise<string | null>;
   id: HarnessId;
-  /** True when this adapter can run live turns. */
-  live: boolean;
-  /** False when the harness cannot accept a follow-up while a turn is running. Default: same as live. */
-  canSteer?: boolean;
+  interactionCapabilities: HarnessInteractionCapabilities;
   commands?: NativeCommandProvider;
   sendTurn(input: SendTurnInput): Promise<void>;
   /** Trigger provider-owned compaction outside OmniCode's normal user-turn path. */
@@ -191,6 +189,11 @@ export function resetHarnessIdlePark(): void {
 }
 
 export function registerHarness(adapter: HarnessAdapter): void {
+  assertInteractionBindings(adapter.interactionCapabilities, {
+    send: adapter.sendTurn, cancel: adapter.cancelTurn, steer: adapter.steerTurn,
+    compact: adapter.compactContext, rewindLastTurn: adapter.rewindLastTurn,
+    respond: adapter.respondQuestion, keepOpen: adapter.keepQuestionOpen, stop: adapter.stopBackgroundTask,
+  });
   adapters.set(adapter.id, adapter);
 }
 
@@ -206,8 +209,12 @@ export function requireHarness(id: HarnessId): HarnessAdapter {
   return adapter;
 }
 
+export function harnessInteractionCapabilities(id: HarnessId): HarnessInteractionCapabilities {
+  return adapters.get(id)?.interactionCapabilities ?? NO_INTERACTION_CAPABILITIES;
+}
+
 export function isLiveHarness(id: HarnessId): boolean {
-  return adapters.get(id)?.live === true;
+  return harnessInteractionCapabilities(id).turns.send;
 }
 
 export function listHarnesses(): HarnessAdapter[] {
@@ -217,7 +224,7 @@ export function listHarnesses(): HarnessAdapter[] {
 export function sendHarnessTurn(input: SendTurnInput & { harness: HarnessId }) {
   return queueSessionOperation(input.sessionId, async () => {
     const adapter = requireHarness(input.harness);
-    if (!adapter.live) {
+    if (!adapter.interactionCapabilities.turns.send) {
       throw new Error(`${input.harness} is not connected yet`);
     }
     cancelIdlePark(input.sessionId);
@@ -249,7 +256,7 @@ function assertHostNative(input: { nativeSession?: NativeSessionLink }): void {
 
 export function canCompactHarnessContext(id: HarnessId): boolean {
   const adapter = adapters.get(id);
-  return adapter?.live === true && adapter.compactContext != null;
+  return adapter?.interactionCapabilities.turns.compact === true;
 }
 
 export function compactHarnessContext(
@@ -257,10 +264,10 @@ export function compactHarnessContext(
 ): Promise<void> {
   return queueSessionOperation(input.sessionId, async () => {
     const adapter = requireHarness(input.harness);
-    if (!adapter.live) {
+    if (!adapter.interactionCapabilities.turns.send) {
       throw new Error(`${input.harness} is not connected yet`);
     }
-    if (!adapter.compactContext) {
+    if (!adapter.interactionCapabilities.turns.compact || !adapter.compactContext) {
       throw new Error(`${input.harness} does not support manual compaction`);
     }
     cancelIdlePark(input.sessionId);
@@ -275,13 +282,12 @@ export function compactHarnessContext(
 
 export function canSteerHarness(id: HarnessId): boolean {
   const adapter = adapters.get(id);
-  if (!adapter?.live) return false;
-  return adapter.canSteer !== false;
+  return adapter?.interactionCapabilities.turns.steer === true;
 }
 
 export function canRewindHarnessLastTurn(id: HarnessId): boolean {
   const adapter = adapters.get(id);
-  return adapter?.live === true && adapter.rewindLastTurn != null;
+  return adapter?.interactionCapabilities.turns.rewindLastTurn === true;
 }
 
 export function rewindHarnessLastTurn(
@@ -289,7 +295,7 @@ export function rewindHarnessLastTurn(
 ): Promise<RewindLastTurnResult> {
   return queueSessionOperation(input.sessionId, async () => {
     const adapter = requireHarness(input.harness);
-    if (!adapter.rewindLastTurn) {
+    if (!adapter.interactionCapabilities.turns.rewindLastTurn || !adapter.rewindLastTurn) {
       throw new Error(
         `${input.harness} does not support editing the last message`,
       );
@@ -309,22 +315,23 @@ export function steerHarnessTurn(
 ): Promise<void> {
   return queueSteerOperation(input.sessionId, async () => {
     const adapter = requireHarness(input.harness);
-    if (!adapter.live) {
+    if (!adapter.interactionCapabilities.turns.send) {
       throw new Error(`${input.harness} is not connected yet`);
     }
     cancelIdlePark(input.sessionId);
     assertHostNative(input);
+    if (!adapter.interactionCapabilities.turns.steer) throw new Error(translate("This provider does not support steering"));
     await adapter.steerTurn(input);
   });
 }
 
 export function canStopHarnessBackgroundTask(harness: HarnessId): boolean {
-  return !!getHarness(harness)?.stopBackgroundTask;
+  return harnessInteractionCapabilities(harness).backgroundTasks.stop;
 }
 
 export async function stopHarnessBackgroundTask(harness: HarnessId, sessionId: string, taskId: string): Promise<void> {
   const adapter = requireHarness(harness);
-  if (!adapter.stopBackgroundTask) throw new Error("Stopping background tasks is unavailable for this provider.");
+  if (!adapter.interactionCapabilities.backgroundTasks.stop || !adapter.stopBackgroundTask) throw new Error("Stopping background tasks is unavailable for this provider.");
   await adapter.stopBackgroundTask(sessionId, taskId);
 }
 
@@ -333,8 +340,9 @@ export async function cancelHarnessTurn(
   sessionId: string,
 ): Promise<void> {
   const adapter = getHarness(harness);
-  if (!adapter?.live) return;
+  if (!adapter?.interactionCapabilities.turns.send) return;
   cancelIdlePark(sessionId);
+  if (!adapter.interactionCapabilities.turns.cancel) return;
   await adapter.cancelTurn(sessionId);
   scheduleIdlePark(harness, sessionId);
 }
@@ -354,7 +362,8 @@ export function respondHarnessQuestion(
   requestId: number,
   reply: UserQuestionReply,
 ): void {
-  getHarness(harness)?.respondQuestion?.(sessionId, requestId, reply);
+  const adapter = getHarness(harness);
+  if (adapter?.interactionCapabilities.questions.respond) adapter.respondQuestion?.(sessionId, requestId, reply);
 }
 
 export function keepHarnessQuestionOpen(
@@ -362,7 +371,8 @@ export function keepHarnessQuestionOpen(
   sessionId: string,
   requestId: number,
 ): void {
-  getHarness(harness)?.keepQuestionOpen?.(sessionId, requestId);
+  const adapter = getHarness(harness);
+  if (adapter?.interactionCapabilities.questions.keepOpen) adapter.keepQuestionOpen?.(sessionId, requestId);
 }
 
 export async function stopHarnessSession(
@@ -371,7 +381,7 @@ export async function stopHarnessSession(
 ): Promise<void> {
   cancelIdlePark(sessionId);
   const adapter = getHarness(harness);
-  if (!adapter?.live) return;
+  if (!adapter?.interactionCapabilities.turns.send) return;
   await adapter.stopSession(sessionId);
 }
 
@@ -492,7 +502,7 @@ export async function warmupHarnessText(
 
 export function canRunHarnessTextPrompt(harness: HarnessId): boolean {
   const adapter = getHarness(harness);
-  return adapter?.live === true && adapter.runTextPrompt != null;
+  return adapter?.interactionCapabilities.turns.send === true && adapter.runTextPrompt != null;
 }
 
 function stopTextPrompt(adapter: HarnessAdapter): Promise<void> {
@@ -531,7 +541,7 @@ export async function runHarnessTextPrompt(
   input: TextPromptInput & { harness: HarnessId },
 ): Promise<string> {
   const adapter = requireHarness(input.harness);
-  if (!adapter.live) {
+  if (!adapter.interactionCapabilities.turns.send) {
     throw new Error(`${input.harness} is not connected yet`);
   }
   if (!adapter.runTextPrompt) {

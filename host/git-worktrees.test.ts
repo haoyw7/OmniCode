@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "./test-provider";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -45,6 +46,7 @@ it.each([[false, "oc"], [true, "oc"], [false, "mc"]] as const)("applies generate
   const branch = vi.fn(() => new Promise<string>((resolve) => { finishBranch = resolve; }));
   const engine = new HostEngine(store, {
     codex: {
+      get interactionCapabilities() { return testProviderCapabilities(this); },
       send: async () => {},
       cancel: async () => {},
       stop: async () => {},
@@ -145,6 +147,7 @@ it("creates registered host worktrees and binds new sessions to the selected che
   const store = new HostStore(join(cwd, "host.db"));
   const engine = new HostEngine(store, {
     codex: {
+      get interactionCapabilities() { return testProviderCapabilities(this); },
       send: async () => {},
       cancel: async () => {},
       stop: async () => {},

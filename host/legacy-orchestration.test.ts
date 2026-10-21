@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "./test-provider";
 import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -22,7 +23,8 @@ function fixture() {
   for (const id of ["old-lead", "old-worker", "ordinary"]) source.prepare("INSERT INTO sessions VALUES (?, ?, 'pi', 'pi:test', 'supervised', ?, '[]', 1, 2)").run(id, directory, id);
   source.close();
   const store = new HostStore(join(directory, "host.db"));
-  const provider = { send: vi.fn(async () => {}), stop: vi.fn(async () => {}), cancel: vi.fn(async () => {}), bind: vi.fn(), approve: vi.fn(), answer: vi.fn() };
+  const provider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); }, send: vi.fn(async () => {}), stop: vi.fn(async () => {}), cancel: vi.fn(async () => {}), bind: vi.fn(), approve: vi.fn(), answer: vi.fn() };
   const engine = new HostEngine(store, { pi: provider });
   cleanup.push(async () => { await engine.close(); store.close(); });
   const manifest: LegacyRetirementManifest = { manifestId: "host-orchestration-v1",

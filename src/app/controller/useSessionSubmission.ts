@@ -1,3 +1,4 @@
+import { harnessInteractionCapabilities } from "../../integrations/harness/core/registry";
 import { invoke } from "@tauri-apps/api/core";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback, useRef } from "react";
@@ -367,7 +368,7 @@ export function useSessionSubmission({
           )
         : draftCleared;
       const editedResend = options?.resendEdited
-        ? createEditedResendAttempt(current, options.onResendRejected)
+        ? createEditedResendAttempt(current, harnessInteractionCapabilities(current.harness), options.onResendRejected)
         : undefined;
       if (options?.resendEdited && !editedResend) return false;
       const editedProviderTurnId = editedResend?.providerTurnId;
@@ -1567,7 +1568,9 @@ export function useSessionSubmission({
           (entry) => entry.id === args[0],
         );
         if (!session) return false;
-        args[1] = questionFollowUp(session, questionAnswer);
+        // The owning Host validates remote capabilities and builds the reply.
+        if (!sessionUsesHost(session))
+          args[1] = questionFollowUp(session, questionAnswer, harnessInteractionCapabilities(session.harness));
         args[3] = { ...args[3], followUpBehavior: "steer" };
       }
       const recordAccepted = (accepted: boolean) => {

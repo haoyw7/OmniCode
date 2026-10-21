@@ -1,4 +1,9 @@
 {
+  "Message queue is unavailable for this conversation.": "此会话不支持消息队列。",
+  "This provider does not support steering": "此提供方不支持在运行中插话",
+  "Turn submission is unavailable for this provider": "此提供方不支持发送消息",
+  "Turn cancellation is unavailable for this provider": "此提供方不支持取消运行",
+  "This provider does not support questions": "此提供方不支持问题交互",
   "History summary attached: {title}": "已附加历史摘要：{title}",
   "Sort by {column}": "按{column}排序",
   "Open commit {sha}: {subject}": "打开提交 {sha}：{subject}",

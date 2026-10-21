@@ -17,6 +17,7 @@ export { registerBuiltinHarnesses } from "./register";
 export { probeHarnessAvailability } from "./core/availability";
 export {
   isLiveHarness,
+  harnessInteractionCapabilities,
   sendHarnessTurn,
   compactHarnessContext,
   canCompactHarnessContext,

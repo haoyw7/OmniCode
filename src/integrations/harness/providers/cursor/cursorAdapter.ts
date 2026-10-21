@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { readCursorSessionTitle } from "./cursor";
 import {
   bindCursorSession,
@@ -24,7 +25,7 @@ import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const cursorAdapter: HarnessAdapter = {
   id: "cursor",
-  live: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.cursor,
   readSessionTitle: readCursorSessionTitle,
   sendTurn: sendCursorTurn,
   steerTurn: steerCursorTurn,

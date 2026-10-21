@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "./test-provider";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   existsSync,
@@ -61,6 +62,7 @@ async function setup(providers: RemoteProvider[] = ["codex"], discoverProviders?
   });
   const engine = new HostEngine(store, {
     codex: {
+      get interactionCapabilities() { return testProviderCapabilities(this); },
       send,
       stop: async () => finish(),
       cancel: async () => finish(),
@@ -2136,4 +2138,16 @@ it("streams committed sync revisions and rechecks revoked credentials after wait
   s.store.revokeDevice(s.second.id);
   s.store.updateSession(sessionId, { title: "Changed after revocation" });
   expect((await revoked).value.error).toContain("revoked");
+});
+
+it("advertises session capabilities and includes them in sync for legacy clients", async () => {
+  const s = await setup();
+  expect((await s.call("environment.describe")).value.result.capabilities).toContain("sessions.capabilities.v1");
+  const created = await s.call("commands.dispatch", { type: "create", commandId: "capability-create",
+    projectId: s.project.id, harness: "codex", model: "codex:test", runtimeMode: "supervised" });
+  const sessionId = created.value.result.sessionId;
+  const sync = (await s.call("sessions.sync", { sessionId })).value.result;
+  expect(sync).toMatchObject({ kind: "snapshot", value: { supportsQueue: true, canSteer: false,
+    interactionCapabilities: { queue: true, turns: { send: true, steer: false, rewindLastTurn: false } } } });
+  expect((await s.call("sessions.sync", { sessionId, revision: sync.value.revision })).value.result.kind).toBe("unchanged");
 });

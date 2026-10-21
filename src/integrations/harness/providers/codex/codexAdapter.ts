@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { readCodexSessionTitle } from "./codex";
 import {
   bindCodexSession,
@@ -31,7 +32,7 @@ import {
 
 export const codexAdapter: HarnessAdapter = {
   id: "codex",
-  live: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.codex,
   readSessionTitle: readCodexSessionTitle,
   sendTurn: sendCodexTurn,
   compactContext: compactCodexContext,

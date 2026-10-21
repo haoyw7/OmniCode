@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "./test-provider";
 import { expect, it, vi } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -20,7 +21,8 @@ it("reads stored WSL history with the execution service offline", async () => {
   const request = vi.spyOn(connection, "request").mockRejectedValue(new Error("WSL is offline"));
   const machines = new HostMachines(store, new HostChildBackend({}), () => connection);
   const io = machines.io(project.machine);
-  const provider: HostProvider = { send: vi.fn(), bind: vi.fn(), stop: vi.fn(), cancel: vi.fn(), approve: vi.fn(), answer: vi.fn() };
+  const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); }, send: vi.fn(), bind: vi.fn(), stop: vi.fn(), cancel: vi.fn(), approve: vi.fn(), answer: vi.fn() };
   const engine = new HostEngine(store, { codex: provider }, undefined, { machines,
     native: { environment: { home: join(directory, "home"), env: {} } } });
   const server = createHostServer(engine, ["codex"]);

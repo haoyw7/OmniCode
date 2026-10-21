@@ -374,7 +374,7 @@ export class HostSkills {
           owned.catalog = {
             skills: commands.map((command) => ({ ...command, kind: "native" })),
             native: true,
-            canCompact: !!provider.compact,
+            canCompact: provider.interactionCapabilities.turns.compact,
           };
           owned.at = Date.now();
         },
@@ -395,7 +395,7 @@ export class HostSkills {
             await discoverHostSkills(context.cwd, this.home, this.managed),
           ),
       native: !!provider.commands,
-      canCompact: !!provider.compact,
+      canCompact: provider.interactionCapabilities.turns.compact,
     }))()
       .then((catalog) => {
         if (owned.revision !== revision && owned.catalog) return owned.catalog;

@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "../test-provider";
 import { randomUUID } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -27,7 +28,8 @@ async function setup(options: { failFirstStart?: boolean; registrationClient?: F
   const send = vi.fn(async (_target: string, _message: ImOutgoingMessage) => ({ messageId: randomUUID() }));
   const download = vi.fn(async () => ({ bytes: new TextEncoder().encode("attachment contents"), mimeType: "text/plain" }));
   let starts = 0;
-  const provider: HostProvider = { send: vi.fn(async () => {}), stop: vi.fn(async () => {}), cancel: vi.fn(async () => {}), bind: vi.fn(), approve: vi.fn(), answer: vi.fn() };
+  const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); }, send: vi.fn(async () => {}), stop: vi.fn(async () => {}), cancel: vi.fn(async () => {}), bind: vi.fn(), approve: vi.fn(), answer: vi.fn() };
   async function start() {
     store = new HostStore(join(directory, "host.db"));
     engine = new HostEngine(store, { codex: provider }, undefined, { im: { pollMs: 0, sendIntervalMs: 0, registrationClient: options.registrationClient, channelFactory: input => {

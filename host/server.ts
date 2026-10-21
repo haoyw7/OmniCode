@@ -1,3 +1,4 @@
+import { SESSION_CAPABILITIES_V1 } from "../src/integrations/harness/core/capabilities";
 import { dirname, join } from "node:path";
 import { HostProviderUsage } from "./provider-usage";
 import {
@@ -174,6 +175,7 @@ export function createHostServer(
         : provider === "codex" || provider === "claude"
     ),
     capabilities: [
+      SESSION_CAPABILITIES_V1,
       HOST_CLIENT_STATE_CAPABILITY,
       "preferences.read",
       "preferences.patch",

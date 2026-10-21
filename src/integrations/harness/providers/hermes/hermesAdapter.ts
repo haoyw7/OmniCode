@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { readHermesSessionTitle } from "./hermes";
 import {
   bindHermesSession,
@@ -13,7 +14,7 @@ import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const hermesAdapter: HarnessAdapter = {
   id: "hermes",
-  live: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.hermes,
   readSessionTitle: readHermesSessionTitle,
   sendTurn: sendHermesTurn,
   steerTurn: steerHermesTurn,

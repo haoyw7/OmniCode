@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "../../test-provider";
 import { connect } from "node:net";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -19,7 +20,8 @@ async function resourceFixture() {
   const store = new HostStore(join(directory, "host.db"));
   const project = store.addProject(cwd, "Project");
   const turns: Array<() => void> = [];
-  const provider: HostProvider = { send: vi.fn(() => new Promise<void>((resolve) => turns.push(resolve))),
+  const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); }, send: vi.fn(() => new Promise<void>((resolve) => turns.push(resolve))),
     stop: vi.fn(async () => { turns.forEach((resolve) => resolve()); }), cancel: vi.fn(async () => { turns.forEach((resolve) => resolve()); }), bind: vi.fn() };
   const engine = new HostEngine(store, { codex: provider });
   const guard = new HostResourceGuard(store);

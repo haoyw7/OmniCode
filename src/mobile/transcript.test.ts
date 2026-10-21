@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../integrations/harness/providers/interactionCapabilities";
 import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motionTestClock";
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -297,6 +298,22 @@ describe("mobile message streaming", () => {
 });
 
 describe("mobile question history", () => {
+  it("uses Host declarations for Codex keep-open and disables it when revoked", () => {
+    const { node, snapshot, update, commands } = render({ runId: "codex-run", blocks: [] });
+    snapshot.interactionCapabilities = { ...PROVIDER_INTERACTION_CAPABILITIES.codex, queue: true };
+    snapshot.session.pendingQuestion = { requestId: 4, autoResolveAt: Date.now() + 120000,
+      questions: [{ id: "q", prompt: "Choose", multiSelect: false, allowCustom: true, options: [{ id: "One", label: "One" }] }] };
+    update({ snapshot: { ...snapshot } });
+    const option = [...node.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(button => button.textContent?.includes("One"))!;
+    act(() => option.click());
+    expect(commands).toContainEqual(expect.objectContaining({ type: "keepQuestionOpen", runId: "codex-run", requestId: 4 }));
+    commands.length = 0;
+    update({ snapshot: { ...snapshot, interactionCapabilities: { ...snapshot.interactionCapabilities,
+      questions: { ...snapshot.interactionCapabilities.questions, keepOpen: false } } } });
+    act(() => option.click());
+    expect(commands).toEqual([]);
+  });
+
   it("sends a run-scoped keep-open command when a DeepSeek question is edited", () => {
     const { node, snapshot, update, commands } = render({ runId: "deepseek-run", blocks: [] });
     snapshot.session.harness = "deepseek";
@@ -316,6 +333,15 @@ describe("mobile question history", () => {
       questions: [{ id: "q", prompt: "Which source?", allowCustom: false, multiSelect: false,
         options: [{ id: "local", label: "Local" }, { id: "remote", label: "Remote" }] }] },
   };
+  it("enables DeepSeek historical answers only when the Host declares support", () => {
+    const { node, snapshot, update } = render({ blocks: [question] });
+    snapshot.session.harness = "deepseek";
+    update({ snapshot: { ...snapshot } });
+    expect(node.querySelector('[data-question-history] button[aria-haspopup="dialog"]')).toBeNull();
+    update({ snapshot: { ...snapshot, interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.deepseek, queue: true } } });
+    expect(node.querySelector('[data-question-history] button[aria-haspopup="dialog"]')).not.toBeNull();
+  });
+
   it.each([undefined, "new-run"])("answers a missed question from the transcript with active run %s", async runId => {
     const { node, commands } = render({ runId, blocks: [
       { id: "user", role: "user", text: "Work" }, question,

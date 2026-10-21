@@ -1,3 +1,4 @@
+import { NO_INTERACTION_CAPABILITIES } from "../src/integrations/harness/core/capabilities";
 import { expect, it } from "vitest";
 import { execFileSync, spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -131,7 +132,7 @@ it.runIf(process.env.OMNICODE_TEST_WSL === "1")("runs Linux workspace, branch, w
       expect(skills.map((skill) => skill.name).sort()).toEqual(["desktop", "linux"]);
       expect(skills.find((skill) => skill.name === "desktop")?.path).toMatch(/^\/mnt\//);
       const catalog = new HostSkills(desktopHome, path.join(metadata, "managed"));
-      const prompt = await catalog.prepare("/desktop /linux", { cwd, harness: "pi" }, {} as HostProvider);
+      const prompt = await catalog.prepare("/desktop /linux", { cwd, harness: "pi" }, { interactionCapabilities: NO_INTERACTION_CAPABILITIES } as HostProvider);
       expect(prompt).toContain("Desktop skill body");
       expect(prompt).toContain("Linux skill body");
       catalog.close();

@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "../test-provider";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -18,6 +19,7 @@ async function setup() {
   let store: HostStore, engine: HostEngine;
   const turns: { input: SendTurnInput; finish: () => void }[] = [];
   const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); },
     send: vi.fn(input => new Promise<void>(finish => turns.push({ input, finish }))),
     stop: vi.fn(async sessionId => { turns.filter(turn => turn.input.sessionId === sessionId).forEach(turn => turn.finish()); }),
     cancel: vi.fn(async sessionId => { turns.filter(turn => turn.input.sessionId === sessionId).forEach(turn => turn.finish()); }),

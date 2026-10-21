@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { readOpenCodeSessionTitle } from "./opencode";
 import {
   bindOpenCodeSession,
@@ -26,7 +27,7 @@ import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const openCodeAdapter: HarnessAdapter = {
   id: "opencode",
-  live: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.opencode,
   readSessionTitle: readOpenCodeSessionTitle,
   rewindLastTurn: rewindOpenCodeLastTurn,
   sendTurn: sendOpenCodeTurn,

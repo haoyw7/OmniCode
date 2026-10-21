@@ -1,3 +1,5 @@
+import type { HarnessInteractionCapabilities } from "../src/integrations/harness/core/capabilities";
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../src/integrations/harness/providers/interactionCapabilities";
 import type { HarnessBotCapabilities } from "../src/integrations/harness/core/botContext";
 import { providerBotCapabilities } from "../src/integrations/harness/providers/botCapabilities";
 import type { NativeTitleInput } from "../src/integrations/harness/core/titleCoordinator";
@@ -38,6 +40,7 @@ import {
 import { respondQuestion as respondPiQuestion } from "../src/integrations/harness/providers/pi/piFamily";
 
 export interface HostProvider {
+  interactionCapabilities: HarnessInteractionCapabilities;
   botCapabilities?: HarnessBotCapabilities;
   commands?: NativeCommandProvider;
   /** Retain a reusable process between ordinary turns even without a title reader. */
@@ -59,13 +62,14 @@ export interface HostProvider {
     nativeSession?: import("../src/features/sessions/model/session").NativeSessionLink,
   ): void;
   approve(id: string, request: number, decision: ApprovalDecision): void;
-  answer(id: string, request: number, reply: UserQuestionReply): void;
+  answer?(id: string, request: number, reply: UserQuestionReply): void;
   keepQuestionOpen?(id: string, request: number): void;
   generateBranchName?(cwd: string, message: string): Promise<string | null>;
 }
 
 export const hostProviders: Record<RemoteProvider, HostProvider> = {
   deepseek: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.deepseek, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.deepseek.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("deepseek"),
     keepAlive: true,
     idleTimeoutMs: 30 * 60_000,
@@ -77,6 +81,7 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     keepQuestionOpen: deepseek.keepDeepseekQuestionOpen,
   },
   codex: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.codex, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.codex.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("codex"),
     readSessionTitle: codex.readCodexSessionTitle,
     send: codex.sendCodexTurn,
@@ -87,9 +92,11 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     bind: codex.bindCodexSession,
     approve: codex.respondCodexApproval,
     answer: codex.respondCodexQuestion,
+    keepQuestionOpen: codex.keepCodexQuestionOpen,
     generateBranchName: generateCodexBranchName,
   },
   claude: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.claude, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.claude.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("claude"),
     readSessionTitle: claude.readClaudeSessionTitle,
     send: claude.sendClaudeTurn,
@@ -104,6 +111,7 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     generateBranchName: generateClaudeBranchName,
   },
   cursor: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.cursor, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.cursor.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("cursor"),
     generateBranchName: generateCursorBranchName,
     readSessionTitle: cursor.readCursorSessionTitle,
@@ -116,6 +124,7 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     answer: cursor.respondCursorQuestion,
   },
   grok: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.grok, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.grok.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("grok"),
     generateBranchName: generateGrokBranchName,
     readSessionTitle: grok.readGrokSessionTitle,
@@ -128,6 +137,7 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     answer: grok.respondGrokQuestion,
   },
   opencode: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.opencode, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.opencode.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("opencode"),
     generateBranchName: generateOpenCodeBranchName,
     readSessionTitle: opencode.readOpenCodeSessionTitle,
@@ -141,6 +151,7 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     answer: opencode.respondOpenCodeQuestion,
   },
   pi: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.pi, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.pi.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("pi"),
     generateBranchName: (cwd, message) => generateTextBranchName(runPiTextPrompt, cwd, message),
     commands: { rawSlashCommands: true, discover: ({ cwd }) => discoverPiCommands(cwd) },
@@ -156,6 +167,7 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
       respondPiQuestion(PI_FLAVOR, id, request, reply),
   },
   omp: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.omp, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.omp.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("omp"),
     generateBranchName: (cwd, message) => generateTextBranchName(runOmpTextPrompt, cwd, message),
     commands: ompCommandProvider,
@@ -171,6 +183,7 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
       respondPiQuestion(OMP_FLAVOR, id, request, reply),
   },
   fx: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.fx, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.fx.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("fx"),
     readSessionTitle: fx.readFxSessionTitle,
     send: fx.sendFxTurn,
@@ -178,9 +191,9 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     stop: fx.forgetFxSession,
     bind: fx.bindFxSession,
     approve: fx.respondFxApproval,
-    answer: unsupportedQuestion,
   },
   hermes: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.hermes, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.hermes.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("hermes"),
     readSessionTitle: hermes.readHermesSessionTitle,
     send: hermes.sendHermesTurn,
@@ -189,9 +202,9 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     stop: hermes.forgetHermesSession,
     bind: hermes.bindHermesSession,
     approve: hermes.respondHermesApproval,
-    answer: unsupportedQuestion,
   },
   antigravity: {
+    interactionCapabilities: { ...PROVIDER_INTERACTION_CAPABILITIES.antigravity, turns: { ...PROVIDER_INTERACTION_CAPABILITIES.antigravity.turns, rewindLastTurn: false } },
     botCapabilities: providerBotCapabilities("antigravity"),
     readSessionTitle: antigravity.readAntigravitySessionTitle,
     send: antigravity.sendAntigravityTurn,
@@ -199,10 +212,5 @@ export const hostProviders: Record<RemoteProvider, HostProvider> = {
     stop: antigravity.forgetAntigravitySession,
     bind: antigravity.bindAntigravitySession,
     approve: antigravity.respondAntigravityApproval,
-    answer: unsupportedQuestion,
   },
 };
-
-function unsupportedQuestion(): never {
-  throw new Error("This provider does not support questions");
-}

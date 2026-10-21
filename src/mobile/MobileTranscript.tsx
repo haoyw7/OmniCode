@@ -1,3 +1,4 @@
+import { hostInteractionCapabilities } from "../features/connections/model/interactionCapabilities";
 import { executionWarningText, isConfigurationExecutionWarning } from "../integrations/harness/core/executionWarnings";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -79,6 +80,7 @@ type Details = {
  * only needs to follow its snapshot. */
 export const MobileTranscript = memo(function MobileTranscript({
   snapshot,
+  hostCapabilities,
   historyEntries,
   disabled,
   onCommand,
@@ -98,6 +100,7 @@ export const MobileTranscript = memo(function MobileTranscript({
   worktreeCreation,
 }: {
   snapshot: HostSession;
+  hostCapabilities?: readonly string[];
   /** History restored after the cached conversation first painted. */
   historyEntries?: readonly { id: string; text: string }[];
   disabled: boolean;
@@ -197,6 +200,7 @@ export const MobileTranscript = memo(function MobileTranscript({
     [],
   );
   const { session, runId } = snapshot;
+  const capabilities = hostInteractionCapabilities(snapshot, hostCapabilities);
   const activitySteps = useMemo(() => {
     const opened = detail.activity?.steps;
     if (!opened) return [];
@@ -265,7 +269,7 @@ export const MobileTranscript = memo(function MobileTranscript({
   const savedQuestion = detail.question
     ? session.blocks.find((block) => block.id === detail.question!.blockId)?.question
     : undefined;
-  const canAnswerSavedQuestion = !!savedQuestion?.allowLateReply && !savedQuestion.reply &&
+  const canAnswerSavedQuestion = capabilities.questions.lateReply && !!savedQuestion?.allowLateReply && !savedQuestion.reply &&
     savedQuestion.decision !== "answered" && session.pendingQuestion?.historyId !== detail.question?.blockId;
   const workflowParent = useMemo(() => session.blocks.some((block) => block.workflowRun)
     ? { id: session.id, harness: session.harness, model: session.model, modelSettings: session.modelSettings,
@@ -273,7 +277,7 @@ export const MobileTranscript = memo(function MobileTranscript({
   [session.id, session.blocks, session.harness, session.model, session.modelSettings, session.workflowRuns, session.cwd]);
   const onQuestionFollowUp = useStableCallback((answer: QuestionAnswer) =>
     disabled || !visible ? false : onCommand({ type: "send", commandId: crypto.randomUUID(), sessionId,
-      text: questionFollowUp(session, answer), followUpBehavior: "steer", questionAnswer: answer }));
+      text: questionFollowUp(session, answer, capabilities), followUpBehavior: "steer", questionAnswer: answer }));
   const planBlock = detail.plan
     ? session.blocks.find((block) => block.id === detail.plan!.blockId && block.role === "plan")
     : undefined;
@@ -389,7 +393,7 @@ export const MobileTranscript = memo(function MobileTranscript({
         workflowParent={workflowParent}
         pendingQuestion={!!session.pendingQuestion}
         pendingQuestionHistoryId={session.pendingQuestion?.historyId}
-        onQuestionFollowUp={session.harness !== "codex" ? undefined : onQuestionFollowUp}
+        onQuestionFollowUp={!capabilities.questions.lateReply ? undefined : onQuestionFollowUp}
         onOpenFile={readBinaryFile ? openFile : undefined}
         onOpenDiff={gitSource ? openDiff : readBinaryFile ? openFile : undefined}
         onApproval={onApproval}
@@ -412,18 +416,18 @@ export const MobileTranscript = memo(function MobileTranscript({
           <div className="mobile-shared-question-clip">
             <fieldset
               className="mobile-shared-question"
-              disabled={!visible || disabled || !runId}
+              disabled={!visible || disabled || !runId || !capabilities.questions.respond}
             >
               <QuestionForm
                 key={`${runId}:${session.pendingQuestion.requestId}`}
                 prompt={session.pendingQuestion}
-                onInteraction={session.harness === "deepseek" ? requestId => {
+                onInteraction={capabilities.questions.keepOpen ? requestId => {
                   if (!disabled && runId) onCommand({ type: "keepQuestionOpen", commandId: crypto.randomUUID(),
                     sessionId: session.id, runId, requestId });
                 } : undefined}
                 onCollapse={onQuestionOpenChange ? () => onQuestionOpenChange(false) : undefined}
                 onReply={(requestId, reply) => {
-                  if (!disabled && runId)
+                  if (capabilities.questions.respond && !disabled && runId)
                     onCommand({
                       type: "answer",
                       commandId: crypto.randomUUID(),

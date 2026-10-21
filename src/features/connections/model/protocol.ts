@@ -1,3 +1,4 @@
+import type { SessionInteractionCapabilities } from "../../../integrations/harness/core/capabilities";
 import type { Block, Session, RuntimeMode, RemoteControlDevice } from "../../sessions/model/session";
 import type { QuestionAnswer, UserQuestionReply } from "../../sessions/model/userQuestion";
 import type { AgentModel } from "../../sessions/model/models";
@@ -124,6 +125,8 @@ export type HostWorktree = {
   log?: string[];
 };
 export type HostSession = {
+  /** Execution support supplied by the owning Host; absent on pre-v1 Hosts. */
+  interactionCapabilities?: SessionInteractionCapabilities;
   /** Execution differences such as a WSL-installed provider or filtered configuration. */
   executionWarnings?: string[];
   /** A paired device created or sent a message in this conversation. */

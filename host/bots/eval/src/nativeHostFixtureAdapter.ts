@@ -1,3 +1,4 @@
+import { NO_INTERACTION_CAPABILITIES } from "../../../../src/integrations/harness/core/capabilities";
 import {
   mkdtemp,
   mkdir,
@@ -115,6 +116,8 @@ export class NativeHostFixtureAdapter {
         pending.splice(0).forEach((resolve) => resolve());
       };
       const provider: HostProvider = {
+        interactionCapabilities: { ...NO_INTERACTION_CAPABILITIES,
+          turns: { ...NO_INTERACTION_CAPABILITIES.turns, send: true, cancel: true } },
         send: async () => new Promise<void>((resolve) => pending.push(resolve)),
         stop,
         cancel: stop,

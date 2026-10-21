@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "../test-provider";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { appendFileSync, mkdirSync, mkdtempSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -33,6 +34,7 @@ function setup(options: { autoSync?: boolean } = {}) {
   const turns: Turn[] = [];
   const writes: Array<(input: SendTurnInput) => void> = [];
   const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); },
     send: vi.fn((input) => new Promise<void>((resolve) => {
       writes.shift()?.(input);
       turns.push({ input, finish: resolve });

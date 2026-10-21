@@ -1,3 +1,4 @@
+import { NO_INTERACTION_CAPABILITIES } from "../integrations/harness/core/capabilities";
 import { describe, expect, it, vi } from "vitest";
 import type { HostSession } from "../features/connections/model/protocol";
 import { createSessionSnapshotStore, sameSessionShell, selectSessionShell } from "./sessionSnapshotStore";
@@ -12,6 +13,13 @@ function snapshot(revision = 1): HostSession {
 }
 
 describe("mobile session snapshots", () => {
+  it("updates the shell for capability-only changes", () => {
+    const first = { ...snapshot(), interactionCapabilities: NO_INTERACTION_CAPABILITIES };
+    const next = { ...first, revision: first.revision + 1, interactionCapabilities: { ...NO_INTERACTION_CAPABILITIES,
+      questions: { respond: true, keepOpen: true, lateReply: true } } };
+    expect(sameSessionShell(selectSessionShell(first), selectSessionShell(next))).toBe(false);
+    expect(sameSessionShell(selectSessionShell(next), selectSessionShell(structuredClone(next)))).toBe(true);
+  });
   it("rejects old revisions but accepts same-revision image hydration", () => {
     const store = createSessionSnapshotStore(snapshot(2));
     const listener = vi.fn();

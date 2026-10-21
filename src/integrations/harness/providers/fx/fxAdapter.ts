@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { readFxSessionTitle } from "./fx";
 import {
   bindFxSession,
@@ -13,9 +14,8 @@ import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const fxAdapter: HarnessAdapter = {
   id: "fx",
-  live: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.fx,
   readSessionTitle: readFxSessionTitle,
-  canSteer: false,
   sendTurn: sendFxTurn,
   steerTurn: steerFxTurn,
   cancelTurn: cancelFxTurn,

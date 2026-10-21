@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "../../test-provider";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -116,6 +117,7 @@ async function setup(options: { steer?: boolean } = {}) {
   const project = store.addProject(directory, "Test project");
   const turns: { input: SendTurnInput; finish: () => void }[] = [];
   const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); },
     send: vi.fn(
       (input) => new Promise<void>((finish) => turns.push({ input, finish })),
     ),

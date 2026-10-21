@@ -72,6 +72,7 @@ export function selectSessionShell(snapshot: Snapshot, outgoing?: OutgoingMessag
     archived: snapshot.archived,
     status: snapshot.status,
     runId: snapshot.runId,
+    interactionCapabilities: snapshot.interactionCapabilities,
     supportsQueue: snapshot.supportsQueue,
     canSteer: snapshot.canSteer,
     queueSteeringId: snapshot.queueSteeringId,

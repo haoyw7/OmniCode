@@ -1,3 +1,5 @@
+import { translate } from "../../../shared/i18n/language";
+import { hostInteractionCapabilities } from "../model/interactionCapabilities";
 import { useCallback, useMemo } from "react";
 import type {
   CommandReceipt,
@@ -8,8 +10,8 @@ import type {
 type QueueCommand = Extract<HostCommand, { type: "queue" }>;
 // Shared so an empty queue keeps one identity across renders.
 const NO_MESSAGES: NonNullable<HostSession["session"]["queuedMessages"]> = [];
-type QueueSnapshot = Pick<HostSession, "status" | "runId" | "canSteer" | "queueSteeringId"> & {
-  session: Pick<HostSession["session"], "id" | "queuedMessages" | "queueStatus" | "editingQueuedMessageId">;
+type QueueSnapshot = Pick<HostSession, "status" | "runId" | "canSteer" | "supportsQueue" | "interactionCapabilities" | "queueSteeringId"> & {
+  session: Pick<HostSession["session"], "id" | "harness" | "queuedMessages" | "queueStatus" | "editingQueuedMessageId">;
 };
 /** Queue mutations use the same durable command journal as sends. */
 export function useHostQueue(
@@ -18,7 +20,9 @@ export function useHostQueue(
     command: QueueCommand,
     transient: boolean,
   ) => Promise<CommandReceipt | undefined>,
+  hostCapabilities?: readonly string[],
 ) {
+  const capabilities = hostInteractionCapabilities(snapshot, hostCapabilities);
   const id = snapshot?.session.id;
   const editor = useMemo(() => crypto.randomUUID(), [id]);
   const execute = useCallback(
@@ -27,6 +31,7 @@ export function useHostQueue(
       fields: Partial<QueueCommand> = {},
     ) => {
       if (!id) throw new Error("Session is not available");
+      if (!capabilities.queue) throw new Error(translate("Message queue is unavailable for this conversation."));
       const receipt = await request(
         {
           type: "queue",
@@ -40,18 +45,18 @@ export function useHostQueue(
       );
       if (!receipt) throw new Error("Host has not confirmed the queue change");
     },
-    [id, editor, request],
+    [id, editor, request, capabilities.queue],
   );
   return {
     messages: snapshot?.session.queuedMessages ?? NO_MESSAGES,
     status: snapshot?.session.queueStatus,
     remote: true,
     canSteer:
-      !!snapshot?.canSteer &&
-      snapshot.status === "running" &&
-      !snapshot.queueSteeringId,
-    canResume: snapshot?.status !== "running",
-    canReorder: !snapshot?.queueSteeringId && !snapshot?.session.editingQueuedMessageId,
+      capabilities.queue && capabilities.turns.steer &&
+      snapshot?.status === "running" &&
+      !snapshot?.queueSteeringId,
+    canResume: capabilities.queue && snapshot?.status !== "running",
+    canReorder: capabilities.queue && !snapshot?.queueSteeringId && !snapshot?.session.editingQueuedMessageId,
     onReorder: useCallback(
       (messageId: string, beforeId?: string) => execute("move", { messageId, beforeId }),
       [execute],

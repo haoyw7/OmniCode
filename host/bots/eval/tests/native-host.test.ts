@@ -1,3 +1,4 @@
+import { testProviderCapabilities } from "../../../test-provider";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -17,6 +18,7 @@ async function setup() {
   const project = store.addProject(directory, "Eval fixture");
   const finishes: (() => void)[] = [];
   const provider: HostProvider = {
+    get interactionCapabilities() { return testProviderCapabilities(this); },
     send: () => new Promise<void>((resolve) => finishes.push(resolve)),
     stop: async () => {
       finishes.splice(0).forEach((fn) => fn());

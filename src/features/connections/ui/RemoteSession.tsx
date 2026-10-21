@@ -1,3 +1,5 @@
+import type { SessionInteractionCapabilities } from "../../../integrations/harness/core/capabilities";
+import { hostInteractionCapabilities } from "../model/interactionCapabilities";
 import { Button } from "../../../shared/ui/forms/Button";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
@@ -122,6 +124,7 @@ export type RemoteSessionOverrides = Partial<SessionPaneProps> & {
   initialPromptId?: string;
   messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
   composerNotice?: ReactNode;
+  interactionCapabilities: SessionInteractionCapabilities;
   hostManaged: boolean;
   remoteSession: boolean;
   hostFeatures: { attachments: boolean; plan: boolean; draft: boolean; orchestration?: boolean; checkpoint?: boolean };
@@ -349,6 +352,7 @@ function ConnectedRemoteSession({
       : undefined,
   );
   const snapshotRef = useRef(snapshot);
+  const interactionCapabilities = hostInteractionCapabilities(snapshot, descriptor?.capabilities);
   snapshotRef.current = snapshot;
   const syncFailures = useRef(0);
   const previouslyVisible = useRef(visible);
@@ -511,7 +515,7 @@ function ConnectedRemoteSession({
             text: pending.type === "send" ? pending.text : "/compact",
             queueReturnPosition: pending.type === "send" ? pending.queueReturnPosition : undefined,
             placement: pending.type === "send"
-              ? outgoingPlacement(hostSession && snapshot, pending.followUpBehavior)
+              ? outgoingPlacement(hostSession && snapshot, pending.followUpBehavior, descriptor?.capabilities)
               : "transcript",
           }
         : undefined;
@@ -783,6 +787,7 @@ function ConnectedRemoteSession({
                       ? snapshotRef.current
                       : undefined,
                     command.followUpBehavior,
+                    descriptor?.capabilities,
                   )
                 : "transcript",
             },
@@ -929,7 +934,7 @@ function ConnectedRemoteSession({
     const receipt = await mutateRemote<CommandReceipt>(machine.id, "commands.dispatch", command);
     if (alive.current) setRefresh((value) => value + 1);
     return receipt;
-  });
+  }, descriptor?.capabilities);
 
   // A conversation that was only a draft goes with it, as a local one does,
   // and the tab starts over as a new conversation.
@@ -1225,7 +1230,8 @@ function ConnectedRemoteSession({
       sending ||
       preparingRef.current ||
       pending ||
-      (busy && (!snapshot?.supportsQueue || asDraft || !!options?.draftBlockId || !!planBlockId)) ||
+      (!!snapshot && !interactionCapabilities.turns.send) ||
+      (busy && (!interactionCapabilities.queue || asDraft || !!options?.draftBlockId || !!planBlockId)) ||
       (!text.trim() && !attachments.length)
     )
       return false;
@@ -1582,7 +1588,7 @@ function ConnectedRemoteSession({
       void controlRun("stop").catch(reason => setError(String(reason)));
       return;
     }
-    if (hostSession?.busy && snapshot?.runId)
+    if (interactionCapabilities.turns.cancel && hostSession?.busy && snapshot?.runId)
       void run({
         type: "cancel",
         commandId: crypto.randomUUID(),
@@ -1608,7 +1614,7 @@ function ConnectedRemoteSession({
     requestId: number,
     reply: Parameters<SessionPaneProps["onQuestionReply"]>[2],
   ) => {
-    if (!hostSession || !snapshot?.runId) return;
+    if (!interactionCapabilities.questions.respond || !hostSession || !snapshot?.runId) return;
     void run({
       type: "answer",
       commandId: crypto.randomUUID(),
@@ -1619,12 +1625,12 @@ function ConnectedRemoteSession({
     });
   };
   const keepQuestionOpen = (requestId: number) => {
-    if (!hostSession || !snapshot?.runId || hostSession.harness !== "deepseek") return;
+    if (!hostSession || !snapshot?.runId || !interactionCapabilities.questions.keepOpen) return;
     void run({ type: "keepQuestionOpen", commandId: crypto.randomUUID(),
       sessionId: hostSession.id, runId: snapshot.runId, requestId });
   };
   const compact = () => {
-    if (!hostSession || busy || pending || changes || !online) return false;
+    if (!hostSession || !interactionCapabilities.turns.compact || busy || pending || changes || !online) return false;
     void run(message(hostSession.id, "/compact"));
     return true;
   };
@@ -1839,7 +1845,7 @@ function ConnectedRemoteSession({
     messageQueue: { render: (restore) => <MessageQueue
       key={snapshot?.session.id}
       {...queue}
-      disabled={!online || sending || !!pending}
+      disabled={!online || sending || !!pending || !interactionCapabilities.queue}
       onRestore={async (message) => {
         const id = snapshot?.session.id;
         if (!id) return;
@@ -1863,6 +1869,7 @@ function ConnectedRemoteSession({
         if (current()) restore({ ...message, attachments }, position);
       }}
     /> },
+    interactionCapabilities,
     hostManaged: true,
     remoteSession: !project.local,
     hostFeatures: {
@@ -1884,7 +1891,7 @@ function ConnectedRemoteSession({
     onSubmit: (_, text, attachments, options) =>
       submit(text, attachments, options),
     onStop: stopTurn,
-    onStopBackgroundTask: descriptor?.capabilities.includes("sessions.stopBackgroundTask") && hostSession && ["claude", "deepseek"].includes(hostSession.harness)
+    onStopBackgroundTask: interactionCapabilities.backgroundTasks.stop && hostSession
       ? async (_, taskId) => {
           await mutateRemote(machine.id, "sessions.stopBackgroundTask", {
             projectId: project.projectId, sessionId: hostSession.id, taskId,
@@ -1893,6 +1900,7 @@ function ConnectedRemoteSession({
       : undefined,
     onApproval: (_, requestId, decision) => approve(requestId, decision),
     onQuestionReply: (_, requestId, reply) => answer(requestId, reply),
+    onQuestionInteraction: (_, requestId) => keepQuestionOpen(requestId),
     onCompactContext: compact,
     onModelChange: (_, harness, model) => {
       if (!isRemoteProvider(harness)) return;

@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../interactionCapabilities";
 import { readClaudeSessionTitle } from "./claude";
 import {
   bindClaudeSession,
@@ -27,7 +28,7 @@ import { registerHarness, type HarnessAdapter } from "../../core/registry";
 
 export const claudeAdapter: HarnessAdapter = {
   id: "claude",
-  live: true,
+  interactionCapabilities: PROVIDER_INTERACTION_CAPABILITIES.claude,
   readSessionTitle: readClaudeSessionTitle,
   sendTurn: sendClaudeTurn,
   compactContext: compactClaudeContext,

@@ -1,3 +1,4 @@
+import { PROVIDER_INTERACTION_CAPABILITIES } from "../../../integrations/harness/providers/interactionCapabilities";
 import { describe, expect, it } from "vitest";
 import {
   applyHarnessEvent,
@@ -50,24 +51,27 @@ describe("question history", () => {
     expect(record).toMatchObject({ providerQuestionId: "native-call", questions: [{ detail: "# Complete plan\n\n1. Verify", intent: { callId: "native-call" } }] });
     const restored = { ...newSession("deepseek", "/repo"), blocks: saved.blocks };
     const reply = answer(saved.blocks[0].id);
-    expect(latestAnswerableQuestionId(restored)).toBe(reply.blockId);
-    expect(questionFollowUp(restored, reply)).toContain("Use the archive");
+    expect(latestAnswerableQuestionId(restored, interactionCapabilitiesForTest(restored))).toBe(reply.blockId);
+    expect(questionFollowUp(restored, reply, interactionCapabilitiesForTest(restored))).toContain("Use the archive");
     expect(providerQuestionReply(restored, reply)).toEqual({ requestId: "native-call", reply: reply.reply });
   });
   it("docks only the newest unanswered saved question until the user writes past it", () => {
     const live = ask();
-    expect(latestAnswerableQuestionId(live)).toBeUndefined();
+    expect(latestAnswerableQuestionId(live, interactionCapabilitiesForTest(live))).toBeUndefined();
     const saved = stopStreaming(live);
     const id = saved.blocks[0].id;
-    expect(latestAnswerableQuestionId(saved)).toBe(id);
+    expect(latestAnswerableQuestionId(saved, interactionCapabilitiesForTest(saved))).toBe(id);
     expect(
-      latestAnswerableQuestionId(recordQuestionAnswer(saved, answer(id))),
+      latestAnswerableQuestionId(recordQuestionAnswer(saved, answer(id)), interactionCapabilitiesForTest(recordQuestionAnswer(saved, answer(id)))),
     ).toBeUndefined();
     expect(
       latestAnswerableQuestionId({
         ...saved,
         blocks: [...saved.blocks, { id: "u", role: "user", text: "Other" }],
-      }),
+      }, interactionCapabilitiesForTest({
+        ...saved,
+        blocks: [...saved.blocks, { id: "u", role: "user", text: "Other" }],
+      })),
     ).toBeUndefined();
   });
 
@@ -85,7 +89,7 @@ describe("question history", () => {
       blocks: JSON.parse(JSON.stringify(saved.blocks)),
     };
     const reply = answer(restored.blocks[0].id);
-    expect(questionFollowUp(restored, reply)).toBe(
+    expect(questionFollowUp(restored, reply, interactionCapabilitiesForTest(restored))).toBe(
       "Which source?\nUse the archive",
     );
     const answered = sanitizeSessionForPersist(
@@ -126,19 +130,19 @@ describe("question history", () => {
   it("rejects live, blocking, duplicate and invalid late answers", () => {
     const live = ask();
     const reply = answer(live.blocks[0].id);
-    expect(() => questionFollowUp(live, reply)).toThrow("currently open");
+    expect(() => questionFollowUp(live, reply, interactionCapabilitiesForTest(live))).toThrow("currently open");
     const closed = stopStreaming(live);
     expect(() =>
-      questionFollowUp({ ...closed, harness: "claude" }, reply),
+      questionFollowUp({ ...closed, harness: "claude" }, reply, interactionCapabilitiesForTest({ ...closed, harness: "claude" })),
     ).toThrow("cannot be answered later");
     expect(() =>
-      questionFollowUp(recordQuestionAnswer(closed, reply), reply),
+      questionFollowUp(recordQuestionAnswer(closed, reply), reply, interactionCapabilitiesForTest(recordQuestionAnswer(closed, reply))),
     ).toThrow("already answered");
     expect(() =>
       questionFollowUp(closed, {
         ...reply,
         reply: { kind: "answered", answers: { q: ["unknown"] } },
-      }),
+      }, interactionCapabilitiesForTest(closed)),
     ).toThrow("Invalid question answers");
     expect(() =>
       questionFollowUp(
@@ -149,7 +153,13 @@ describe("question history", () => {
             question: { ...block.question!, allowLateReply: undefined },
           })),
         },
-        reply,
+        reply, interactionCapabilitiesForTest({
+          ...closed,
+          blocks: closed.blocks.map((block) => ({
+            ...block,
+            question: { ...block.question!, allowLateReply: undefined },
+          })),
+        }),
       ),
     ).toThrow("cannot be answered later");
   });
@@ -192,3 +202,7 @@ describe("question history", () => {
     expect(sanitizeSessionForPersist(session).blocks[0].text).toBe("Edit text\n  new\ntext  ");
   });
 });
+
+function interactionCapabilitiesForTest(session: { harness: keyof typeof PROVIDER_INTERACTION_CAPABILITIES }) {
+  return PROVIDER_INTERACTION_CAPABILITIES[session.harness];
+}
