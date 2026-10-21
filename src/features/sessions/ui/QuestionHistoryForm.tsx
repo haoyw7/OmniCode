@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import type { QuestionAnswer, UserQuestionRecord } from "../model/userQuestion";
@@ -24,8 +25,9 @@ export function QuestionHistoryForm({
 }) {
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string>();
+  const mutation = useMutation({ mutationFn: async (answer: QuestionAnswer) => onAnswer(answer) }, queryClient);
+  const sending = mutation.isPending;
+  const error = mutation.error ? t(mutation.error instanceof Error ? mutation.error.message : String(mutation.error)) : undefined;
   return (
     <fieldset
       disabled={disabled || sending || !visible}
@@ -41,16 +43,10 @@ export function QuestionHistoryForm({
             onClose();
             return;
           }
-          setSending(true);
-          setError(undefined);
           try {
-            const accepted = await onAnswer({ blockId, reply });
+            const accepted = await mutation.mutateAsync({ blockId, reply });
             if (accepted !== false) onClose();
-          } catch (reason) {
-            setError(t(reason instanceof Error ? reason.message : String(reason)));
-          } finally {
-            setSending(false);
-          }
+          } catch { /* Keep the rejected reply editable and show the mutation error. */ }
         }}
       />
       {error ? (

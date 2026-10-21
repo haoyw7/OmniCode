@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import { MenuPanel } from "../../../shared/ui/primitives/MenuPanel";
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
 import { MessageInput } from "../../../shared/ui/messaging/MessageInput";
@@ -10,7 +9,9 @@ import { captureQueueReturnPosition } from "../model/messageQueue";
 import { ComposerEnvironmentPicker } from "./ComposerEnvironmentPicker";
 import { useComposerEnvironment } from "./useComposerEnvironment";
 import { parseWslPath } from "../../../shared/lib/wslPaths";
-
+import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import type { SessionModelSettings } from "../model/models";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -64,9 +65,6 @@ import {
 } from "../../../shared/lib/drag";
 import { dragPointToClient } from "../../../shared/lib/dragPoint";
 import type { ContextUsage } from "../model/contextUsage";
-import {
-  peekProjectFiles,
-} from "../../connections/files/model/fileIndex";
 import {
   mentionLabel,
   mentionTokenAt,
@@ -536,7 +534,8 @@ export function Composer({
     openMcpPicker,
   } = useComposerMcpPicker({ executionCwd, harness, sessionId });
   const [createError, setCreateError] = useState<string | null>(null);
-  const [createBusy, setCreateBusy] = useState(false);
+  const createSkillMutation = useMutation({ mutationFn: createBlankSkill }, queryClient);
+  const createBusy = createSkillMutation.isPending;
   const remote = remoteSession;
   // Local indexes (files, skills) must never read a remote session's path.
   const localCwd = remote ? "" : executionCwd;
@@ -563,7 +562,7 @@ export function Composer({
 
   const mentionOpen =
     !remote && mention !== null && (looksLikeProject(cwd) || notesEnabled);
-  const { mentionIndex, mentionIndexRef, rankedFiles, mentionActive, setMentionActive } =
+  const { mentionIndex, mentionIndexRef, rankedFiles, mentionActive, setMentionActive, filesLoading } =
     useComposerMentionCatalog({
       localCwd,
       executionCwd,
@@ -730,9 +729,10 @@ export function Composer({
     uiT,
   };
 
+  const attachmentRead = useMutation({ mutationFn: (work: Promise<void>) => work }, queryClient);
   const rememberAttachmentRead = useCallback((work: Promise<void>) => {
     const finishRead = sessionId ? beginComposerAttachmentRead(sessionId) : undefined;
-    const flight = work.then(
+    const flight = attachmentRead.mutateAsync(work).then(
       () => undefined,
       () => undefined,
     );
@@ -743,7 +743,7 @@ export function Composer({
       if (pasteFlightRef.current === joined) pasteFlightRef.current = null;
       finishRead?.();
     });
-  }, [sessionId]);
+  }, [sessionId, attachmentRead.mutateAsync]);
 
   const readDroppedAttachments = useCallback(
     (read: () => Promise<Attachment[]>) => {
@@ -2366,13 +2366,16 @@ export function Composer({
                 el?.focus();
               }}
               onCreate={(name, scope) => {
-                setCreateBusy(true);
+                if (createBusy) return;
                 setCreateError(null);
-                void createBlankSkill({ cwd: executionCwd, name, scope })
-                  .then((path) => {
+                const contextToken = skillCatalog.contextToken;
+                const requestedDraft = ref.current?.value;
+                createSkillMutation.mutate({ cwd: executionCwd, name, scope }, {
+                  onSuccess: (path) => {
+                    if (!skillCatalog.isCurrent(contextToken)) return;
                     const el = ref.current;
                     const token = slashRef.current;
-                    if (el && token) {
+                    if (el && token && el.value === requestedDraft) {
                       const rest = el.value.slice(token.end).replace(/^\s/, "");
                       const next = `${el.value.slice(0, token.start)}${rest}`;
                       el.value = next;
@@ -2389,13 +2392,15 @@ export function Composer({
                       .catch(() => undefined);
                     onOpenFile?.(path);
                     el?.focus();
-                  })
-                  .catch((err: unknown) => {
+                  },
+                  onError: (err) => {
+                    if (!skillCatalog.isCurrent(contextToken)) return;
+                    toast.error(err instanceof Error ? err.message : String(err));
                     setCreateError(
                       err instanceof Error ? err.message : String(err),
                     );
-                  })
-                  .finally(() => setCreateBusy(false));
+                  },
+                });
               }}
             />
           </div>
@@ -2406,10 +2411,7 @@ export function Composer({
               files={rankedFiles}
               query={mention?.query ?? ""}
               active={mentionActive}
-              loading={
-                looksLikeProject(executionCwd) &&
-                peekProjectFiles(executionCwd) == null
-              }
+              loading={filesLoading}
               includeNotes={notesEnabled}
               onActive={setMentionActive}
               onPick={pickMention}

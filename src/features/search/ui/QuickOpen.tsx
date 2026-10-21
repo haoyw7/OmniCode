@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   FolderOpen,
@@ -17,8 +20,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import {
-  loadProjectFiles,
-  peekProjectFiles,
+  projectFilesQuery,
   rankProjectFiles,
   recentOpenedFiles,
   rememberOpenedFile,
@@ -112,7 +114,6 @@ export function QuickOpen({
   onClose,
 }: Props) {
   const { t: uiT } = useTranslation();
-  const peekFiles = () => peekProjectFiles(cwd);
   const search = useRef<HTMLInputElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -121,9 +122,10 @@ export function QuickOpen({
   const previousFocus = useRef<Element | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [active, setActive] = useState(0);
-  const [files, setFiles] = useState(() => peekFiles() ?? []);
-  const [loading, setLoading] = useState(() => peekFiles() == null);
-  const [error, setError] = useState<string | null>(null);
+  const filesQuery = useQuery({ ...projectFilesQuery(cwd), staleTime: 0, enabled: open && looksLikeProject(cwd) }, queryClient);
+  const files = filesQuery.data ?? [];
+  const loading = open && looksLikeProject(cwd) && filesQuery.isPending;
+  const error = errorMessage(filesQuery.error) ?? null;
   const [recentCommands] = useState(loadRecentCommands);
 
   const recentFiles = useMemo(() => {
@@ -192,35 +194,6 @@ export function QuickOpen({
     previousFocus.current = document.activeElement;
     setQuery(initialQuery);
     setActive(0);
-    setError(null);
-    const searchable = looksLikeProject(cwd);
-    const cached = peekFiles();
-    if (cached) {
-      setFiles(cached);
-      setLoading(false);
-    } else {
-      setFiles([]);
-      setLoading(searchable);
-    }
-    if (!searchable) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    void loadProjectFiles(cwd, true)
-      .then((next) => {
-        if (cancelled) return;
-        setFiles(next);
-        setLoading(false);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : String(err));
-        setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
   }, [open, cwd, initialQuery]);
 
   useEffect(() => {

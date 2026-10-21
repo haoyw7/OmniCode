@@ -1,3 +1,11 @@
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { automationKeys, automationRunsQuery } from "../model/automationQueries";
+import { automationsQuery } from "../model/automations";
+import { inboxKeys, inboxConnectionsQuery } from "../../inbox/model/inboxQueries";
+import { useProjectBranches } from "../../source-control/hooks/useProjectBranches";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { Switch } from "../../../shared/ui/forms/Switch";
@@ -18,7 +26,27 @@ import {
 } from "react";
 import { AccessPicker } from "../../sessions/ui/AccessPicker";
 import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
-import { AlertCircle, CheckCircle, ChevronDown, ChevronRight, Clock, File, Gauge, GitPullRequest, Inbox, Lock, MoreHorizontal, Play, Plus, Search, StickyNote, Terminal, Trash2, X, Zap } from "../../../shared/ui/icons";
+import {
+  AlertCircle,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  File,
+  Gauge,
+  GitPullRequest,
+  Inbox,
+  Lock,
+  MoreHorizontal,
+  Play,
+  Plus,
+  Search,
+  StickyNote,
+  Terminal,
+  Trash2,
+  X,
+  Zap,
+} from "../../../shared/ui/icons";
 import { InboxProviderMark } from "../../inbox/ui/InboxProviderMark";
 import { ModelControlPills, ModelPicker } from "../../sessions/ui/ModelPicker";
 import { Popover } from "../../../shared/ui/Popover";
@@ -42,12 +70,9 @@ import {
   formatAutomationRunAt,
   formatAutomationRunDuration,
   gmtOffsetLabel,
-  listAutomationRuns,
-  listAutomations,
   newAutomationDraft,
   nextAutomationRunAt,
   nextRunPreview,
-  peekAutomations,
   saveAutomation,
   setAutomationEnabled,
   subscribeAutomations,
@@ -66,17 +91,14 @@ import {
 } from "../model/automationTemplates";
 import {
   AZUREDEVOPS_CHANGE_EVENT,
-  azureDevOpsConnected,
 } from "../../inbox/model/azureDevOps";
-import { gitBranches } from "../../../platform/tauri/fs";
 import {
   formatRelativeTime,
-  githubStatus,
 } from "../../inbox/model/githubTasks";
-import { GITLAB_CHANGE_EVENT, gitlabConnected } from "../../inbox/model/gitlab";
+import { GITLAB_CHANGE_EVENT } from "../../inbox/model/gitlab";
 import { LAYER } from "../../../shared/lib/layers";
-import { LINEAR_CHANGE_EVENT, linearConnected } from "../../inbox/model/linear";
-import { JIRA_CHANGE_EVENT, jiraConnected } from "../../inbox/model/jira";
+import { LINEAR_CHANGE_EVENT } from "../../inbox/model/linear";
+import { JIRA_CHANGE_EVENT } from "../../inbox/model/jira";
 import {
   defaultSessionChoice,
   firstEnabledHarness,
@@ -121,6 +143,8 @@ const ACTION =
   "inline-flex items-center gap-1.5 rounded-md px-3 text-[12px] disabled:cursor-default disabled:opacity-40";
 const ACTION_FILLED = `${ACTION} h-6.5 bg-content font-medium text-background-base hover:bg-content/80`;
 const ACTION_OUTLINE = `${ACTION} h-7 border border-content/15 text-content/80 hover:border-content/30 hover:bg-content/6 hover:text-content`;
+
+const EMPTY_AUTOMATIONS: Automation[] = [];
 
 let rememberedAutomationId: string | null = null;
 
@@ -171,67 +195,67 @@ function AutomationsContent({
   onOpenSession,
 }: Pick<Props, "cwd" | "recents" | "onLaunch" | "onOpenSession">) {
   const { t: uiT } = useTranslation();
-  const [automations, setAutomations] = useState<Automation[]>(
-    () => peekAutomations() ?? [],
-  );
-  const [runs, setRuns] = useState<AutomationRun[]>([]);
+  const listQuery = useQuery(automationsQuery(), queryClient);
+  const automations = listQuery.data ?? EMPTY_AUTOMATIONS;
   const [selectedId, setSelectedId] = useState<string | null>(
     rememberedAutomationId,
   );
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(() => peekAutomations() === null);
-  const [error, setError] = useState<string | null>(null);
+  const loading = listQuery.isPending;
+  const [navigationError, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<AutomationDraft | null>(null);
   const [pickerOpen, setPickerOpen] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [running, setRunning] = useState<string | null>(null);
   const logos = useTabGroupLogos();
   const [groupLabels] = useState(loadTabGroupLabels);
   const [groupMascots] = useState(loadTabGroupMascots);
   const [groupColors] = useState(loadTabGroupColors);
   const [groupCustomColors] = useState(loadTabGroupCustomColors);
 
-  const refresh = useCallback(async () => {
-    try {
-      const next = await listAutomations();
-      setAutomations(next);
-      setSelectedId((current) => {
-        const preferred = current ?? rememberedAutomationId;
-        return preferred && next.some((entry) => entry.id === preferred)
-          ? preferred
-          : (next[0]?.id ?? null);
-      });
-      setError(null);
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  const refresh = useCallback(() => invalidateAfterChange(automationKeys.all), []);
+  useEffect(() => subscribeAutomations(() => void refresh()), [refresh]);
   useEffect(() => {
-    void refresh();
-    return subscribeAutomations(() => void refresh());
-  }, [refresh]);
-
-  useEffect(() => {
-    rememberedAutomationId = selectedId;
-    if (!selectedId) {
-      setRuns([]);
-      return;
-    }
-    let cancelled = false;
-    void listAutomationRuns(selectedId)
-      .then((next) => {
-        if (!cancelled) setRuns(next);
-      })
-      .catch(() => {
-        if (!cancelled) setRuns([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [automations, selectedId]);
+    setSelectedId((current) => {
+      const preferred = current ?? rememberedAutomationId;
+      return preferred && automations.some((entry) => entry.id === preferred)
+        ? preferred : automations[0]?.id ?? null;
+    });
+  }, [automations]);
+  useEffect(() => { rememberedAutomationId = selectedId; }, [selectedId]);
+  const { data: runs = [] } = useQuery(automationRunsQuery(selectedId), queryClient);
+  const reportError = (reason: Error) => toast.error(errorMessage(reason));
+  const saveMutation = useMutation({
+    mutationFn: (next: AutomationDraft) => withToast(() => saveAutomation(next), {
+      loading: uiT("Saving automation…"), success: uiT("Automation saved"), error: false,
+    }),
+    onSuccess: async (saved) => {
+      setPickerOpen(false); setDraft(null);
+      await refresh();
+      setSelectedId(saved.id);
+    },
+    onError: reportError,
+  }, queryClient);
+  const runMutation = useMutation({
+    mutationFn: async (automation: Automation) => {
+      const run = await createManualAutomationRun(automation.id);
+      await onLaunch(automation, run);
+    },
+    onSuccess: () => { toast.success(uiT("Automation started")); return refresh(); },
+    onError: reportError,
+  }, queryClient);
+  const deleteMutation = useMutation({
+    mutationFn: (automation: Automation) => deleteAutomation(automation.id),
+    onSuccess: () => { toast.success(uiT("Automation deleted")); return refresh(); },
+    onError: reportError,
+  }, queryClient);
+  const toggleMutation = useMutation({
+    mutationFn: ({ automation, enabled }: { automation: Automation; enabled: boolean }) => setAutomationEnabled(automation, enabled),
+    onSuccess: () => { toast.success(uiT("Automation saved")); return refresh(); },
+    onError: reportError,
+  }, queryClient);
+  const saving = saveMutation.isPending;
+  const running = runMutation.isPending ? runMutation.variables.id : null;
+  const error = navigationError ?? errorMessage(saveMutation.error) ?? errorMessage(runMutation.error)
+    ?? errorMessage(deleteMutation.error) ?? errorMessage(toggleMutation.error) ?? errorMessage(listQuery.error) ?? null;
 
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
@@ -282,60 +306,15 @@ function AutomationsContent({
     setDraft(draftFromTemplate(project, harness, model, template));
   };
 
-  const onSave = async (event: FormEvent, nextDraft: AutomationDraft) => {
+  const onSave = (event: FormEvent, nextDraft: AutomationDraft) => {
     event.preventDefault();
-    if (saving) return;
-    setSaving(true);
-    try {
-      const saved = await withToast(() => saveAutomation(nextDraft), {
-        loading: uiT("Saving automation…"),
-        success: uiT("Automation saved"),
-        error: false,
-      });
-      setPickerOpen(false);
-      setDraft(null);
-      setSelectedId(saved.id);
-      await refresh();
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setSaving(false);
-    }
+    if (!saving) saveMutation.mutate(nextDraft);
   };
-
-  const onRun = async (automation: Automation) => {
-    if (running) return;
-    setRunning(automation.id);
-    try {
-      const run = await createManualAutomationRun(automation.id);
-      await onLaunch(automation, run);
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setRunning(null);
-    }
+  const onRun = (automation: Automation) => { if (!running) runMutation.mutate(automation); };
+  const onDelete = (automation: Automation) => {
+    if (window.confirm(uiT("Delete “{name}” and its run history?", { name: automation.name }))) deleteMutation.mutate(automation);
   };
-
-  const onDelete = async (automation: Automation) => {
-    if (!window.confirm(`Delete “${automation.name}” and its run history?`))
-      return;
-    try {
-      await deleteAutomation(automation.id);
-      setSelectedId(null);
-      await refresh();
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : String(reason));
-    }
-  };
-
-  const onToggle = async (automation: Automation, enabled: boolean) => {
-    try {
-      await setAutomationEnabled(automation, enabled);
-      await refresh();
-    } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : String(reason));
-    }
-  };
+  const onToggle = (automation: Automation, enabled: boolean) => toggleMutation.mutate({ automation, enabled });
 
   const editorDraft = pickerOpen
     ? null
@@ -832,54 +811,16 @@ function AutomationEditor({
   const triggerCategoryAnchors = useRef<
     Partial<Record<AutomationTriggerKind, HTMLButtonElement>>
   >({});
-  const [providerConnected, setProviderConnected] = useState({
-    github: false,
-    linear: false,
-    jira: false,
-    gitlab: false,
-    azuredevops: false,
-  });
+  const { data: providerConnected } = useQuery(inboxConnectionsQuery(), queryClient);
   const controlsBeside =
     useSyncExternalStore(subscribeModelControls, loadModelControls) ===
     "beside";
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
   useEffect(() => {
-    let cancelled = false;
-    const load = () => {
-      void Promise.all([
-        githubStatus()
-          .then((status) => status.connected)
-          .catch(() => false),
-        linearConnected()
-          .then((status) => status.connected)
-          .catch(() => false),
-        jiraConnected()
-          .then((status) => status.connected)
-          .catch(() => false),
-        gitlabConnected()
-          .then((status) => status.connected)
-          .catch(() => false),
-        azureDevOpsConnected()
-          .then((status) => status.connected)
-          .catch(() => false),
-      ]).then(([github, linear, jira, gitlab, azuredevops]) => {
-        if (!cancelled) {
-          setProviderConnected({ github, linear, jira, gitlab, azuredevops });
-        }
-      });
-    };
-    load();
-    window.addEventListener(LINEAR_CHANGE_EVENT, load);
-    window.addEventListener(JIRA_CHANGE_EVENT, load);
-    window.addEventListener(GITLAB_CHANGE_EVENT, load);
-    window.addEventListener(AZUREDEVOPS_CHANGE_EVENT, load);
-    return () => {
-      cancelled = true;
-      window.removeEventListener(LINEAR_CHANGE_EVENT, load);
-      window.removeEventListener(JIRA_CHANGE_EVENT, load);
-      window.removeEventListener(GITLAB_CHANGE_EVENT, load);
-      window.removeEventListener(AZUREDEVOPS_CHANGE_EVENT, load);
-    };
+    const load = () => void invalidateAfterChange(inboxKeys.connections);
+    const events = [LINEAR_CHANGE_EVENT, JIRA_CHANGE_EVENT, GITLAB_CHANGE_EVENT, AZUREDEVOPS_CHANGE_EVENT];
+    for (const event of events) window.addEventListener(event, load);
+    return () => { for (const event of events) window.removeEventListener(event, load); };
   }, []);
   const triggerReady = (kind: AutomationTriggerKind) => {
     if (kind === "time") return true;
@@ -1693,27 +1634,10 @@ function TriggerRow({
   onRemove: () => void;
 }) {
   const { t: uiT } = useTranslation();
-  const [branches, setBranches] = useState<string[]>([]);
   const projectPath = looksLikeProject(cwd) ? cwd : "";
   const push = trigger.event === "push_to_branch";
-  useEffect(() => {
-    if (!projectPath || !push) {
-      setBranches([]);
-      return;
-    }
-    let cancelled = false;
-    void gitBranches(projectPath).then(
-      (info) => {
-        if (!cancelled) setBranches(info.branches.map((branch) => branch.name));
-      },
-      () => {
-        if (!cancelled) setBranches([]);
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [projectPath, push]);
+  const branchInfo = useProjectBranches(projectPath, push);
+  const branches = branchInfo?.branches.map((branch) => branch.name) ?? [];
   const branchOptions = branches.map((name) => ({ value: name, label: name }));
   if (
     trigger.branch &&

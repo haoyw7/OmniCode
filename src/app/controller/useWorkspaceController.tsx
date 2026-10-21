@@ -118,6 +118,9 @@ import { notifyGitChanged } from "../../platform/tauri/fs";
 import { IS_LINUX, IS_MAC, IS_WIN } from "../../platform/tauri/platform";
 import { translate } from "../../shared/i18n/language";
 import { useTranslation } from "../../shared/i18n/useTranslation";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../shared/lib/queryClient";
+import { withToast } from "../../shared/ui/primitives/Sonner";
 import { HELP_URLS, type CommandHandlers } from "../commands/registry";
 import { useCommandDispatcher } from "../commands/useCommandDispatcher";
 import { useEmptySessionCleanup } from "../hooks/useEmptySessionCleanup";
@@ -406,6 +409,8 @@ export function useWorkspaceController({
   historyCwd: bootHistoryCwd = null,
 }: AppProps) {
   const { t: translateUi } = useTranslation();
+  const projectRemoval = useMutation({ mutationFn: (path: string) => withToast(() => removeProjectData(path),
+    { loading: translateUi("Saving…"), success: false }) }, queryClient);
   const [desktopStartup] = useState(() => {
     const mode = loadDesktopMode();
     return {
@@ -1494,7 +1499,7 @@ export function useWorkspaceController({
   useEffect(() => {
     // A restored workspace or explicit Chat launch already owns its location.
     if (lastProjectPath() || resumed || windowTransfer || desktopStartup.mode === "chat") return;
-    void invoke<string>("default_cwd")
+    void queryClient.fetchQuery({ queryKey: ["app", "defaultCwd"], queryFn: () => invoke<string>("default_cwd"), staleTime: Infinity })
       .then((cwd) => {
         if (!looksLikeProject(cwd)) return;
         setProjectCwd(cwd);
@@ -2420,7 +2425,7 @@ export function useWorkspaceController({
           const cwd =
             candidate && candidate !== "~"
               ? candidate
-              : await invoke<string>("default_cwd");
+              : await queryClient.fetchQuery({ queryKey: ["app", "defaultCwd"], queryFn: () => invoke<string>("default_cwd"), staleTime: Infinity });
           const description =
             item.provider === "linear" || item.provider === "jira"
               ? await inboxTrackerDescription(item)
@@ -2788,7 +2793,7 @@ export function useWorkspaceController({
           }
           sessionData.resetPersistence(session.id);
         }
-        void removeProjectData(normalized);
+        projectRemoval.mutate(normalized);
       } else {
         for (const session of projectSessions) {
           if (session.busy) continue;

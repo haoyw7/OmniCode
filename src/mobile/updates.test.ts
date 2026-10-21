@@ -61,6 +61,7 @@ import {
   updateDownloadUrl,
 } from "./updates";
 import { MobileAppUpdates, useMobileAppUpdates } from "./MobileAppUpdates";
+import { queryClient } from "../shared/lib/queryClient";
 
 const manifest = {
   packageId: "com.omnicode.mobile",
@@ -74,6 +75,7 @@ const manifest = {
 vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
 let root: Root | undefined;
 beforeEach(() => {
+  queryClient.clear();
   startMotionClock();
   vi.useFakeTimers();
   vi.clearAllMocks();

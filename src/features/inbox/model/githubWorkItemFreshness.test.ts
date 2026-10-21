@@ -1,8 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { QueryObserver } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import {
   clearInboxCache,
   githubPrDiff,
+  githubPrAction,
   githubWorkItemDetails,
   githubWorkItemThread,
 } from "./githubTasks";
@@ -13,6 +16,7 @@ const mocked = vi.mocked(invoke);
 
 describe("github work item freshness", () => {
   beforeEach(() => {
+    queryClient.clear();
     clearInboxCache();
     mocked.mockReset();
     mocked.mockImplementation(async (command: string) =>
@@ -45,5 +49,39 @@ describe("github work item freshness", () => {
 
     await githubWorkItemDetails("/repo", "o/r", "pr", 1);
     expect(mocked).toHaveBeenCalledTimes(4);
+  });
+
+  it.each([
+    ["inbox", "detail", "/repo", "github:o/r:pr:1", "body"],
+    ["linkPreview", "github", "/repo", "o/r", "pr", 1, "details"],
+  ])("clears account-specific view data and rejects its late refresh (%s)", async (...queryKey) => {
+    let finish!: (value: { body: string }) => void;
+    const queryFn = vi.fn().mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }))
+      .mockResolvedValue({ body: "new account" });
+    const initialData = { body: "old account" };
+    const observer = new QueryObserver(queryClient, { queryKey, queryFn, initialData, staleTime: Infinity });
+    const unsubscribe = observer.subscribe(() => {});
+    try {
+      const pending = observer.refetch();
+      queryClient.setQueryData(["inboxSource", "linear", "details", "issue"], initialData);
+      clearInboxCache();
+      expect(queryClient.getQueryData(queryKey)).toBeUndefined();
+      expect(queryClient.getQueryData(["inboxSource", "linear", "details", "issue"])).toBeUndefined();
+      await vi.waitFor(() => expect(queryClient.getQueryData(queryKey)).toEqual({ body: "new account" }));
+      finish(initialData);
+      await pending;
+      expect(queryClient.getQueryData(queryKey)).toEqual({ body: "new account" });
+    } finally { unsubscribe(); observer.destroy(); }
+  });
+
+  it("updates matching chat link previews after a pull request action", async () => {
+    const key = ["linkPreview", "github", "/repo", "o/r", "pr", 1, "item"];
+    const other = ["linkPreview", "github", "/repo", "o/r", "pr", 2, "item"];
+    queryClient.setQueryData(key, { state: "open" });
+    queryClient.setQueryData(other, { state: "open" });
+    mocked.mockResolvedValueOnce({ kind: "pr", repo: "o/r", number: 1, state: "closed" });
+    await githubPrAction("/repo", "o/r", 1, "close");
+    expect(queryClient.getQueryData(key)).toMatchObject({ state: "closed" });
+    expect(queryClient.getQueryData(other)).toEqual({ state: "open" });
   });
 });

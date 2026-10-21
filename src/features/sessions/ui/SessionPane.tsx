@@ -1,4 +1,8 @@
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { toast } from "sonner";
 import { AnimatePresence } from "motion/react";
 import { sessionComposerConfiguration } from "../model/composerConfiguration";
 import { SessionWorktreeIcon } from "./SessionWorktreeIcon";
@@ -666,10 +670,14 @@ const LocalSessionPane = memo(function LocalSessionPane({
     loadNotesEnabled,
     () => true,
   );
+  const { mutateAsync: saveNoteRecord } = useMutation({
+    mutationFn: createNote,
+    onError: (reason) => toast.error(errorMessage(reason)),
+  }, queryClient);
   const saveNote = useCallback(
     async (text: string) => {
       const sessionTitle = sessionDisplayTitle(session.title, session.harness);
-      await createNote({
+      await saveNoteRecord({
         title:
           sessionTitle && sessionTitle !== "New session"
             ? sessionTitle
@@ -679,18 +687,18 @@ const LocalSessionPane = memo(function LocalSessionPane({
         sourceCwd: session.cwd,
       });
     },
-    [session.cwd, session.harness, session.id, session.title],
+    [session.cwd, session.harness, session.id, session.title, saveNoteRecord],
   );
   const saveSelectionNote = useCallback(
     async (text: string) => {
-      await createNote({
+      await saveNoteRecord({
         title: noteTitle(text),
         body: text,
         sourceSessionId: session.id,
         sourceCwd: session.cwd,
       });
     },
-    [session.cwd, session.id],
+    [session.cwd, session.id, saveNoteRecord],
   );
 
   useEffect(() => {

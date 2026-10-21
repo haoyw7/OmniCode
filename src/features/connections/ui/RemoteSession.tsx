@@ -1,3 +1,6 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { remoteSessionKeys, remoteSessionCatalogQuery, remoteSnapshotQuery, remoteSessionReadQuery, rememberSessionSnapshot, remoteCommandMutation } from "../model/remoteSessionQueries";
 import { RemoteSnapshotReporter } from "../model/remoteSnapshotReporter";
 import { executionWarningText } from "../../../integrations/harness/core/executionWarnings";
 import { sessionComposerConfiguration } from "../../sessions/model/composerConfiguration";
@@ -15,7 +18,7 @@ import {
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
 import { AlertCircle, Info } from "../../../shared/ui/icons";
-import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useStableHandlers } from "../../../shared/hooks/useStableHandlers";
 import { hostOrchestrationClient } from "../../orchestration/model/orchestrationClient";
 import { localizeOrchestrationMessage } from "../../orchestration/ui/orchestrationMessages";
@@ -40,7 +43,7 @@ import {
   needsRemoteAttachmentPreviews,
   reuseRemoteAttachmentPreviews,
 } from "../model/remoteAttachmentPreviews";
-import { loadRemoteHostCatalog, loadRemoteHostDescriptor } from "../model/remoteHostMetadata";
+import { loadRemoteHostDescriptor } from "../model/remoteHostMetadata";
 import { WORKTREE_NAME_ERROR } from "../../source-control/model/worktreeNaming";
 import {
   anchorWorktreeCreation,
@@ -106,7 +109,6 @@ import {
   type CommandReceipt,
   type HostCommand,
   type HostDescriptor,
-  type HostModelCatalog,
   type HostSession,
   type HostWorktree,
   type RemoteAttachment,
@@ -156,75 +158,21 @@ type OptimisticTurn = {
 };
 
 const noop = () => {};
-const cachedSessionSnapshots = new Map<string, HostSession>();
-const cachedDescriptors = new Map<string, HostDescriptor>();
-const cachedCatalogs = new Map<string, HostModelCatalog>();
-const snapshotKey = (machineId: string, sessionId: string) =>
-  `${machineId}:${sessionId}`;
-const descriptorKey = (machineId: string, environmentId: string) =>
-  JSON.stringify([machineId, environmentId]);
-const catalogKey = (machineId: string, environmentId: string, projectId: string) =>
-  JSON.stringify([machineId, environmentId, projectId]);
-function rememberSessionSnapshot(key: string, snapshot: HostSession) {
-  cachedSessionSnapshots.delete(key);
-  cachedSessionSnapshots.set(key, snapshot);
-  if (cachedSessionSnapshots.size > 8)
-    cachedSessionSnapshots.delete(cachedSessionSnapshots.keys().next().value!);
-}
+const snapshotKey = remoteSessionKeys.snapshot;
+const descriptorKey = remoteSessionKeys.descriptor;
 
-const pendingSessionSnapshots = new Map<string, Promise<HostSession>>();
-
-/** Fetches a host conversation into the snapshot cache, so its tab opens with
- * the transcript already laid out, as a local session read from disk does. */
-export async function preloadRemoteSession(
-  machineId: string,
-  sessionId: string,
-): Promise<void> {
+/** Press and hover preloads share the same request with a mounting tab. */
+export async function preloadRemoteSession(machineId: string, sessionId: string): Promise<void> {
   const key = snapshotKey(machineId, sessionId);
-  if (cachedSessionSnapshots.has(key)) return;
-  await pendingSnapshot(key, () => loadRemoteSessionText(machineId, sessionId));
+  if (queryClient.getQueryData<HostSession>(key)) return;
+  const snapshot = await queryClient.fetchQuery(remoteSnapshotQuery(key, () => loadRemoteSessionText(machineId, sessionId)));
+  rememberSessionSnapshot(key, snapshot);
 }
 
-/** One full read per conversation: a tab mounting while its press/hover
- * prefetch is still in flight waits for that read instead of starting another. */
-function pendingSnapshot(
-  key: string,
-  load: () => Promise<HostSession>,
-): Promise<HostSession> {
-  const pending = pendingSessionSnapshots.get(key);
-  if (pending) return pending;
-  const request = load().then((snapshot) => {
-    rememberSessionSnapshot(key, snapshot);
-    return snapshot;
-  });
-  pendingSessionSnapshots.set(key, request);
-  const settle = () => {
-    if (pendingSessionSnapshots.get(key) === request)
-      pendingSessionSnapshots.delete(key);
-  };
-  void request.then(settle, settle);
-  return request;
-}
-
-let activeSessionPrefetch: Promise<void> | undefined;
-
-/** Warms a host conversation from a sidebar hover or press. One prefetch runs
- * at a time so sweeping across the list does not queue full transcripts. */
+/** Sweeping over the sidebar never queues a series of transcript requests. */
 export function prefetchRemoteSession(machineId: string, sessionId: string) {
-  const key = snapshotKey(machineId, sessionId);
-  if (
-    activeSessionPrefetch ||
-    cachedSessionSnapshots.has(key) ||
-    pendingSessionSnapshots.has(key)
-  )
-    return;
-  const request = preloadRemoteSession(machineId, sessionId).catch(
-    () => undefined,
-  );
-  activeSessionPrefetch = request;
-  void request.then(() => {
-    if (activeSessionPrefetch === request) activeSessionPrefetch = undefined;
-  });
+  if (queryClient.isFetching({ queryKey: ["remoteSession", "snapshot"] })) return;
+  void preloadRemoteSession(machineId, sessionId).catch(() => undefined);
 }
 
 /** A tab in a project on another machine. The host owns the session; this
@@ -250,17 +198,12 @@ export function RemoteSession({
   unavailableHeader?: ReactNode;
 }) {
   const { t: uiT } = useTranslation();
-  const [, refreshProject] = useState(0);
-  const [projectError, setProjectError] = useState("");
   const project = remoteProjectFor(shell.cwd);
+  const registration = useMutation({ mutationFn: ensureSharedProject }, queryClient);
+  const projectError = registration.variables === shell.cwd && registration.error ? String(registration.error) : "";
   useEffect(() => {
-    if (!project?.local || project.projectId) return;
-    let alive = true;
-    void ensureSharedProject(shell.cwd).then(() => {
-      if (alive) refreshProject(value => value + 1);
-    }, error => { if (alive) setProjectError(String(error)); });
-    return () => { alive = false; };
-  }, [shell.cwd, project?.local, project?.projectId]);
+    if (project?.local && !project.projectId) registration.mutate(shell.cwd);
+  }, [shell.cwd, project?.local, project?.projectId, registration.mutate]);
   const { machines, loaded } = useRemoteMachines(!!project);
   const machine = project
     ? machines.find((entry) => entry.environmentId === project.environmentId)
@@ -335,9 +278,13 @@ function ConnectedRemoteSession({
   const { t: uiT } = useTranslation();
   // A native local chat already has a catalog before its first send mounts
   // this Host pane. Keep it until the project-specific Host catalog arrives.
+  const commandMutation = useMutation(remoteCommandMutation(), queryClient);
+  const uploadMutation = useMutation({ mutationFn: ({ machineId, attachments }: { machineId: string; attachments: Attachment[] }) => uploadRemoteAttachments(machineId, attachments) }, queryClient);
+  const mutateRemote = useCallback(<T,>(...args: Parameters<typeof remoteRequest>) =>
+    commandMutation.mutateAsync(args) as Promise<T>, [commandMutation.mutateAsync]);
   const fallbackModelSource = project.local && !project.machine ? LOCAL_MODEL_SOURCE : undefined;
   const [descriptor, setDescriptor] = useState<HostDescriptor | undefined>(() =>
-    cachedDescriptors.get(descriptorKey(machine.id, machine.environmentId)),
+    queryClient.getQueryData<HostDescriptor>(descriptorKey(machine.id, machine.environmentId)),
   );
   const parentActions = useContext(OrchestrationActions);
   const parentWorkers = useContext(OrchestrationWorkers);
@@ -376,7 +323,7 @@ function ConnectedRemoteSession({
         preparingRef.current = false;
         setSnapshot(
           next
-            ? cachedSessionSnapshots.get(snapshotKey(machine.id, next))
+            ? queryClient.getQueryData<HostSession>(snapshotKey(machine.id, next))
             : undefined,
         );
       }
@@ -396,19 +343,23 @@ function ConnectedRemoteSession({
   }, [shell.id, machine.id]);
   const [snapshot, setSnapshot] = useState<HostSession | undefined>(() =>
     sessionId
-      ? cachedSessionSnapshots.get(snapshotKey(machine.id, sessionId))
+      ? queryClient.getQueryData<HostSession>(snapshotKey(machine.id, sessionId))
       : undefined,
   );
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
-  const lastPollKey = useRef<string | undefined>(undefined);
+  const syncFailures = useRef(0);
+  const previouslyVisible = useRef(visible);
+  const previousRefresh = useRef(0);
   const describedHost = useRef<string | undefined>(undefined);
   const [refresh, setRefresh] = useState(0);
-  const [catalog, setCatalog] = useState<HostModelCatalog | undefined>(() =>
-    cachedCatalogs.get(catalogKey(machine.id, machine.environmentId, project.projectId)),
-  );
-  const [catalogError, setCatalogError] = useState("");
-  const [catalogRefresh, setCatalogRefresh] = useState(0);
+  const catalogQuery = useQuery({
+    ...remoteSessionCatalogQuery(machine.id, machine.environmentId, project.projectId),
+    enabled: !!descriptor && descriptor.environmentId === machine.environmentId,
+  }, queryClient);
+  const catalog = catalogQuery.data;
+  const catalogError = catalogQuery.error ? String(catalogQuery.error) : "";
+  const refreshCatalog = () => { void invalidateAfterChange(remoteSessionKeys.catalog(machine.id, machine.environmentId, project.projectId)); };
   const [selectedCwd, setSelectedCwd] = useState(
     () => remotePendingExecutionCwd(shell.id) ?? (project.local && shell.executionCwd ? parseRemotePath(shell.executionCwd)?.hostPath ?? shell.executionCwd : undefined) ?? project.cwd,
   );
@@ -605,27 +556,35 @@ function ConnectedRemoteSession({
       );
   }, [hostSession, unseenSend]);
 
-  useEffect(() => {
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout>;
-    let failed = 0;
-    const version = bindingVersion.current;
-    const stale = () =>
-      disposed ||
-      version !== bindingVersion.current ||
-      (!!sessionId && deletingSession.current === sessionId);
-    // Every request carries the expected host identity; describe again only
-    // after a failure, when the host may have been replaced. Revealing or
-    // hiding a tab keeps the description it already has.
-    const hostKey = descriptorKey(machine.id, machine.environmentId);
-    let described = describedHost.current === hostKey;
-    const poll = async () => {
-      let active = false;
+  const syncKey = remoteSessionKeys.sync(machine.id, machine.environmentId, project.projectId, sessionId, shell.id);
+  const { refetch: refetchSync } = useQuery({
+    queryKey: syncKey,
+    // The transcript below is a protocol projection: optimistic turns, history
+    // pacing and asynchronously hydrated images merge into it. Query owns the
+    // remote request lifecycle; polling must not deep-walk or repaint every token.
+    // Each shell owns its projection callbacks. The transport continues sharing
+    // in-flight syncs when separate shells show the same Host conversation.
+    structuralSharing: false,
+    notifyOnChangeProps: [],
+    refetchIntervalInBackground: true,
+    refetchInterval: () => syncFailures.current
+      ? Math.min(10_000, 750 * 2 ** Math.min(syncFailures.current, 4))
+      : !visible || document.hidden ? 10_000
+        : snapshotRef.current?.session.busy || snapshotRef.current?.orchestration?.status === "active"
+          ? queryClient.getQueryData<HostDescriptor>(descriptorKey(machine.id, machine.environmentId))?.capabilities.includes("sessions.sync.wait.v1") ? 50 : 100
+          : 3_000,
+    queryFn: async ({ signal }) => {
+      const version = bindingVersion.current;
+      const stale = () => signal.aborted || version !== bindingVersion.current ||
+        (!!sessionId && deletingSession.current === sessionId);
+      const hostKey = descriptorKey(machine.id, machine.environmentId);
+      const described = describedHost.current === JSON.stringify(hostKey);
+      signal.throwIfAborted();
       try {
         if (!described) {
           const host = await loadRemoteHostDescriptor(machine.id, machine.environmentId);
-          if (stale()) return;
-          cachedDescriptors.set(hostKey, host);
+          if (stale()) return null;
+          queryClient.setQueryData(hostKey, host);
           // An unchanged description keeps its object, so the pane does not
           // re-render for it.
           setDescriptor((current) =>
@@ -633,8 +592,7 @@ function ConnectedRemoteSession({
               ? current
               : host,
           );
-          described = true;
-          describedHost.current = hostKey;
+          describedHost.current = JSON.stringify(hostKey);
         }
         const known =
           snapshotRef.current?.session.id === sessionId
@@ -645,13 +603,13 @@ function ConnectedRemoteSession({
           ? known
             ? await loadRemoteSessionText(machine.id, sessionId, known,
                 visible && !document.hidden && (known.session.busy || known.orchestration?.status === "active") &&
-                  cachedDescriptors.get(hostKey)?.capabilities.includes("sessions.sync.wait.v1") ? 1_000 : undefined)
-            : await pendingSnapshot(
+                  queryClient.getQueryData<HostDescriptor>(hostKey)?.capabilities.includes("sessions.sync.wait.v1") ? 1_000 : undefined)
+            : await queryClient.fetchQuery(remoteSnapshotQuery(
                 snapshotKey(machine.id, sessionId),
                 () => loadRemoteSessionText(machine.id, sessionId),
-              )
+              ))
           : undefined;
-        if (stale()) return;
+        if (stale()) return null;
         if (next && next.projectId !== project.projectId)
           throw new Error("This session belongs to a different host project");
         // Preview downloads can finish while this text request is in flight.
@@ -661,8 +619,8 @@ function ConnectedRemoteSession({
         setOnline(true);
         reportRemoteMachineStatus(machine.id, true);
         // A catalog request that failed while offline is retried on recovery.
-        if (failed) setCatalogRefresh((value) => value + 1);
-        failed = 0;
+        if (syncFailures.current) refreshCatalog();
+        syncFailures.current = 0;
         if (next && sessionId)
           rememberSessionSnapshot(snapshotKey(machine.id, sessionId), next);
         if (next && historySyncPending.current) {
@@ -673,7 +631,7 @@ function ConnectedRemoteSession({
         if (next && sessionId && needsRemoteAttachmentPreviews(next)) {
           const key = snapshotKey(machine.id, sessionId);
           void loadRemoteSessionPreviews(machine.id, next).then((hydrated) => {
-            // Hiding the tab restarts this effect; finished downloads still apply.
+            // A visibility change must not discard completed preview downloads.
             if (hydrated === next || version !== bindingVersion.current) return;
             setSnapshot((current) => {
               if (current?.session.id !== hydrated.session.id) return current;
@@ -687,81 +645,25 @@ function ConnectedRemoteSession({
           hostOrchestrationClient.bindShell(source, next.session.id, shell.id);
           hostOrchestrationClient.accept(source, next);
         }
-        active = !!next?.session.busy || next?.orchestration?.status === "active";
+        return next ?? null;
       } catch (reason) {
-        if (stale()) return;
+        if (stale()) return null;
         setOnline(false);
         reportRemoteMachineStatus(machine.id, false);
-        described = false;
         describedHost.current = undefined;
-        failed++;
+        syncFailures.current++;
+        throw reason;
       }
-      if (!disposed)
-        timer = setTimeout(
-          () => void poll(),
-          failed
-            ? Math.min(10_000, 750 * 2 ** Math.min(failed, 4))
-            : !visible || document.hidden
-              ? 10_000
-              : active
-                ? cachedDescriptors.get(hostKey)?.capabilities.includes("sessions.sync.wait.v1") ? 50 : 100
-                : 3_000,
-        );
-    };
-    // Hiding a tab only slows its polling. Revalidating it at once would add a
-    // host round trip and a render to every tab switch.
-    const pollKey = JSON.stringify([
-      machine.id,
-      machine.environmentId,
-      project.projectId,
-      sessionId,
-      refresh,
-    ]);
-    const justHidden = !visible && lastPollKey.current === pollKey;
-    lastPollKey.current = pollKey;
-    if (justHidden) timer = setTimeout(() => void poll(), 10_000);
-    else void poll();
-    return () => {
-      disposed = true;
-      clearTimeout(timer);
-    };
-  }, [
-    machine.id,
-    machine.environmentId,
-    project.projectId,
-    sessionId,
-    refresh,
-    visible,
-    onSnapshot,
-  ]);
-
+    },
+  }, queryClient);
   useEffect(() => {
-    if (!descriptor || descriptor.environmentId !== machine.environmentId) return;
-    let disposed = false;
-    const applyCatalog = (value: HostModelCatalog) => {
-      if (disposed) return;
-      cachedCatalogs.set(catalogKey(machine.id, machine.environmentId, project.projectId), value);
-      setCatalog(value);
-      setCatalogError("");
-    };
-    void loadRemoteHostCatalog(machine.id, machine.environmentId, project.projectId, applyCatalog)
-      .then(applyCatalog)
-      .catch((reason) => {
-        if (!disposed) {
-          setCatalogError(String(reason));
-          setCatalog(value => value ? { ...value, pending: [] } : value);
-        }
-      });
-    return () => {
-      disposed = true;
-    };
-  }, [
-    machine.id,
-    machine.environmentId,
-    descriptor?.environmentId,
-    project.projectId,
-    catalogRefresh,
-  ]);
+    const revealed = visible && !previouslyVisible.current;
+    previouslyVisible.current = visible;
+    const changed = previousRefresh.current !== refresh;
+    previousRefresh.current = refresh;
+    if (changed) void invalidateAfterChange(syncKey);
+    else if (revealed) void refetchSync({ cancelRefetch: false });
+  }, [visible, refresh, machine.id, machine.environmentId, project.projectId, sessionId, refetchSync]);
 
   const providers = useMemo(
     () => (descriptor?.providers ??
@@ -894,14 +796,14 @@ function ConnectedRemoteSession({
         followup,
       );
       setPending(command);
-      const receipt = await remoteRequest<CommandReceipt>(
+      const receipt = await mutateRemote<CommandReceipt>(
         machine.id,
         "commands.dispatch",
         command,
       );
       if (command.type === "create") {
         if (titleStateFor(shell).source === "manual") {
-          await remoteRequest(machine.id, "sessions.update", {
+          await mutateRemote(machine.id, "sessions.update", {
             projectId: project.projectId,
             sessionId: receipt.sessionId,
             title: shell.title,
@@ -1022,7 +924,7 @@ function ConnectedRemoteSession({
 
   const queue = useHostQueue(hostView, async (command, transient) => {
     if (!transient) return run(command);
-    const receipt = await remoteRequest<CommandReceipt>(machine.id, "commands.dispatch", command);
+    const receipt = await mutateRemote<CommandReceipt>(machine.id, "commands.dispatch", command);
     if (alive.current) setRefresh((value) => value + 1);
     return receipt;
   });
@@ -1033,11 +935,11 @@ function ConnectedRemoteSession({
     const version = bindingVersion.current;
     deletingSession.current = id;
     try {
-      await remoteRequest(machine.id, "sessions.delete", {
+      await mutateRemote(machine.id, "sessions.delete", {
         projectId: project.projectId,
         sessionId: id,
       });
-      cachedSessionSnapshots.delete(snapshotKey(machine.id, id));
+      queryClient.removeQueries({ queryKey: snapshotKey(machine.id, id), exact: true });
       if (!alive.current || version !== bindingVersion.current) return;
       setSnapshot(undefined);
       rememberRemoteSession(shell.id);
@@ -1103,7 +1005,7 @@ function ConnectedRemoteSession({
     const refs = turn.draftBlockId
       ? []
       : (uploaded ??
-        (await uploadRemoteAttachments(machine.id, turn.attachments)));
+        (await uploadMutation.mutateAsync({ machineId: machine.id, attachments: turn.attachments })));
     if (!alive.current || version !== bindingVersion.current) return undefined;
     return run(
       turn.draft
@@ -1134,10 +1036,7 @@ function ConnectedRemoteSession({
   const startSession = async (turn: OptimisticTurn) => {
     const version = bindingVersion.current;
     try {
-      const uploaded = await uploadRemoteAttachments(
-        machine.id,
-        turn.attachments,
-      );
+      const uploaded = await uploadMutation.mutateAsync({ machineId: machine.id, attachments: turn.attachments });
       if (version !== bindingVersion.current) return;
       let executionCwd = selectedCwd;
       let persistedCreation: PersistedWorktreeCreation | undefined;
@@ -1153,14 +1052,14 @@ function ConnectedRemoteSession({
           ),
         );
         try {
-          const branch = await remoteRequest<string>(machine.id, "git.worktreeName", {
+          const branch = await mutateRemote<string>(machine.id, "git.worktreeName", {
             projectId: project.projectId,
             cwd: selectedCwd,
             harness: draft.harness,
             message: turn.text || turn.attachments.map((file) => file.name).join(", "),
           });
           if (!alive.current || version !== bindingVersion.current) return;
-          const tree = await remoteRequest<HostWorktree>(
+          const tree = await mutateRemote<HostWorktree>(
             machine.id,
             "git.worktreeCreate",
             {
@@ -1441,7 +1340,7 @@ function ConnectedRemoteSession({
       loading: (harness) => !!catalog?.pending?.includes(harness as RemoteProvider) && !models(harness).length,
       // The host re-probes when a provider CLI changes or its catalog ages,
       // so each picker opening asks again.
-      refresh: () => setCatalogRefresh((value) => value + 1),
+      refresh: () => refreshCatalog(),
     };
   }, [
     catalog,
@@ -1628,7 +1527,7 @@ function ConnectedRemoteSession({
                 detail: catalogProblem,
                 action: {
                   label: "Retry",
-                  run: () => setCatalogRefresh((value) => value + 1),
+                  run: () => refreshCatalog(),
                 },
               }
             : undefined;
@@ -1735,7 +1634,7 @@ function ConnectedRemoteSession({
       return true;
     }
     setError("");
-    void remoteRequest(machine.id, "sessions.switchAccount", {
+    void mutateRemote(machine.id, "sessions.switchAccount", {
       projectId: project.projectId,
       sessionId: id,
       providerAccountId,
@@ -1754,7 +1653,7 @@ function ConnectedRemoteSession({
   const refreshOrchestration = async () => {
     const id = hostSession?.id;
     if (!id || !alive.current) return;
-    const next = await loadRemoteSession(machine.id, id, snapshotRef.current);
+    const next = await queryClient.fetchQuery(remoteSnapshotQuery(snapshotKey(machine.id, id), () => loadRemoteSession(machine.id, id, snapshotRef.current)));
     if (!alive.current || boundSession.current !== id) return;
     snapshotRef.current = next;
     setSnapshot(next);
@@ -1860,13 +1759,12 @@ function ConnectedRemoteSession({
       relative?: string,
       turnId?: string,
     ) => {
-      const result = await remoteRequest<{ path?: string; files?: { path: string }[] }>(
-        machine.id,
-        "sessions.checkpoint",
-        { projectId: project.projectId, sessionId: hostSessionId, action,
-          ...(turnId ? { turnId } : {}),
-          ...(relative === undefined ? {} : { path: relative }) },
-      );
+      const params = { projectId: project.projectId, sessionId: hostSessionId, action,
+        ...(turnId ? { turnId } : {}), ...(relative === undefined ? {} : { path: relative }) };
+      type CheckpointResult = { path?: string; files?: { path: string }[] };
+      const result = action === "undo" || action === "keep"
+        ? await mutateRemote<CheckpointResult>(machine.id, "sessions.checkpoint", params)
+        : await queryClient.fetchQuery(remoteSessionReadQuery<CheckpointResult>(machine.id, "sessions.checkpoint", params));
       return (result.files
         ? { ...result, files: result.files.map((file) => ({ ...file, path: toWindow(file.path) })) }
         : { ...result, path: toWindow(result.path ?? "") }) as T;
@@ -1876,7 +1774,7 @@ function ConnectedRemoteSession({
       unregister();
       setCheckpointRoute(undefined);
     };
-  }, [checkpointEnabled, hostSessionId, shell.id, machine.id, machine.environmentId, project.local, project.projectId]);
+  }, [checkpointEnabled, hostSessionId, shell.id, machine.id, machine.environmentId, project.local, project.projectId, mutateRemote]);
   const completedTools = hostSession?.blocks.reduce(
     (count, block) =>
       block.role === "tool" && (block.tool?.status === "completed" || block.tool?.status === "success")
@@ -1983,7 +1881,7 @@ function ConnectedRemoteSession({
     onStop: stopTurn,
     onStopBackgroundTask: descriptor?.capabilities.includes("sessions.stopBackgroundTask") && hostSession && ["claude", "deepseek"].includes(hostSession.harness)
       ? async (_, taskId) => {
-          await remoteRequest(machine.id, "sessions.stopBackgroundTask", {
+          await mutateRemote(machine.id, "sessions.stopBackgroundTask", {
             projectId: project.projectId, sessionId: hostSession.id, taskId,
           });
         }

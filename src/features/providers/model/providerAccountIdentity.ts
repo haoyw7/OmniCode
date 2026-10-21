@@ -2,7 +2,9 @@ import { sharedHostMachineId } from "../../connections/model/remoteProjects";
 import { remoteRequest } from "../../connections/model/connections";
 import type { HostProviderAccounts } from "../../connections/model/protocol";
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { queryOptions, useQueries } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
 import type {
   ProviderAccount,
   ProviderAccountProvider,
@@ -16,7 +18,7 @@ export type ProviderAccountIdentity = {
   organization?: string | null;
 };
 
-export async function readProviderAccountIdentity(
+async function fetchProviderAccountIdentity(
   provider: ProviderAccountProvider,
   accountId: string,
   source: "host" | "local" = "host",
@@ -46,21 +48,18 @@ export async function readProviderAccountIdentity(
   }
 }
 
-const pending = new Map<string, Promise<HostProviderAccounts>>();
 function hostIdentities(machineId: string): Promise<HostProviderAccounts> {
-  const existing = pending.get(machineId);
-  if (existing) return existing;
-  const request = remoteRequest<HostProviderAccounts>(
-    machineId,
-    "providerAccounts.list",
-  );
-  pending.set(machineId, request);
-  void request
-    .finally(() => {
-      if (pending.get(machineId) === request) pending.delete(machineId);
-    })
-    .catch(() => {});
-  return request;
+  return queryClient.fetchQuery({
+    queryKey: ["providerIdentities", "host", machineId],
+    queryFn: () => remoteRequest<HostProviderAccounts>(machineId, "providerAccounts.list"),
+  });
+}
+export const providerAccountIdentityQuery = (provider: ProviderAccountProvider, accountId: string, source: "host" | "local" = "host") => queryOptions({
+  queryKey: ["providerIdentities", source, source === "host" ? sharedHostMachineId() : null, provider, accountId],
+  queryFn: () => fetchProviderAccountIdentity(provider, accountId, source),
+});
+export function readProviderAccountIdentity(provider: ProviderAccountProvider, accountId: string, source: "host" | "local" = "host") {
+  return queryClient.fetchQuery(providerAccountIdentityQuery(provider, accountId, source));
 }
 
 /** Org chip text: "Personal" for Claude's default "<name>'s Organization". */
@@ -85,29 +84,12 @@ export function useProviderAccountIdentities(
   refreshKey?: unknown,
   source: "host" | "local" = "host",
 ): Record<string, ProviderAccountIdentity | null> {
-  const [identities, setIdentities] = useState<
-    Record<string, ProviderAccountIdentity | null>
-  >({});
-  const key = accounts.map(identityKey).join("|");
-
+  const reads = useQueries({ queries: accounts.map(account => providerAccountIdentityQuery(account.provider, account.id, source)) }, queryClient);
+  const previous = useRef(refreshKey);
   useEffect(() => {
-    let cancelled = false;
-    void Promise.all(
-      accounts.map(
-        async (account) =>
-          [
-            identityKey(account),
-            await readProviderAccountIdentity(account.provider, account.id, source),
-          ] as const,
-      ),
-    ).then((entries) => {
-      if (!cancelled) setIdentities(Object.fromEntries(entries));
-    });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, refreshKey, source]);
-
-  return identities;
+    if (previous.current === refreshKey) return;
+    previous.current = refreshKey;
+    void invalidateAfterChange(["providerIdentities", source]);
+  }, [refreshKey, source]);
+  return Object.fromEntries(accounts.map((account, index) => [identityKey(account), reads[index]?.data ?? null]));
 }

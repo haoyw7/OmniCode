@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, expect, it, vi } from "vitest";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { invoke } from "@tauri-apps/api/core";
 import { configureSharedHost } from "../../connections/model/remoteProjects";
 import { loadSharedProviderDefaults, setSharedProviderDefault, importCurrentCodexAccount,
@@ -9,6 +10,7 @@ import { providerAccounts, saveProviderAccount, sharedProviderAccountId, subscri
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 let snapshot: { revision: number; accounts: Record<string, { id: string; label: string }[]>; defaults: Record<string, string> };
 beforeEach(() => {
+  queryClient.clear();
   localStorage.clear();
   configureSharedHost("env", [], "machine");
   snapshot = { revision: 1, accounts: { codex: [{ id: "default", label: "CLI" }, { id: "work", label: "Work" }] }, defaults: { codex: "work" } };

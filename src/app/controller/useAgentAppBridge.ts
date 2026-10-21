@@ -8,7 +8,7 @@ import {
   type AppSessionListing,
   type AppSessionPlacement,
 } from "../../features/agent-app/model/agentApp";
-import { NOTES_CHANGED_EVENT, upsertNote } from "../../features/notes";
+import { upsertNote } from "../../features/notes";
 import { orchestrator } from "../../features/orchestration/model/orchestration";
 import { sameProjectPath } from "../../features/projects/model/recents";
 import type { QuickLaunch } from "../../features/quick-composer/model/quickComposer";
@@ -255,11 +255,7 @@ export function useAgentAppBridge({
               createWorktree(cwd, branch, base, existing),
             notes: () => invoke("notes_list"),
             note: (id) => invoke("notes_get", { id }),
-            saveNote: async (note) => {
-              const saved = await upsertNote(note);
-              window.dispatchEvent(new Event(NOTES_CHANGED_EVENT));
-              return saved;
-            },
+            saveNote: upsertNote,
           },
         );
         appReceipts.current.set(key, { signature, promise });

@@ -1,10 +1,12 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { gitHistoryQuery, gitCommitStatsQuery, installGitQueryInvalidation, isGitCwd } from "../model/gitQueries";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { motion } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
-  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -29,9 +31,6 @@ import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { HoverSummary, useHoverSummary } from "../../../shared/ui/HoverSummary";
 import {
-  gitCommitFiles,
-  gitHistory,
-  subscribeGitChanged,
   type GitHistoryCommit,
 } from "../../../platform/tauri/fs";
 import {
@@ -55,10 +54,9 @@ type Props = {
   onOpenCommit: (commit: GitHistoryCommit, pin?: boolean) => void;
 };
 
-const historyByCwd = new Map<string, GitHistoryCommit[]>();
+const EMPTY_COMMITS: GitHistoryCommit[] = [];
 
 type CommitStats = { files: number; additions: number; deletions: number };
-const statsByCommit = new Map<string, CommitStats>();
 
 export function GitHistoryGraph({
   cwd,
@@ -186,28 +184,8 @@ function HistoryRow({
 }) {
   const graph = historyItemGraph(row);
   const badge = row.refs.find((ref) => ref.color) ?? row.refs[0];
-  const statsKey = `${cwd}\0${commit.sha}`;
-  const [stats, setStats] = useState(() => statsByCommit.get(statsKey));
-  const hover = useHoverSummary<HTMLButtonElement>({
-    openDelay: 400,
-    onOpen: () => {
-      if (statsByCommit.has(statsKey)) return;
-      void gitCommitFiles(cwd, commit.sha)
-        .then((files) => {
-          const next = files.reduce<CommitStats>(
-            (sum, file) => ({
-              files: sum.files + 1,
-              additions: sum.additions + file.additions,
-              deletions: sum.deletions + file.deletions,
-            }),
-            { files: 0, additions: 0, deletions: 0 },
-          );
-          statsByCommit.set(statsKey, next);
-          setStats(next);
-        })
-        .catch(() => undefined);
-    },
-  });
+  const hover = useHoverSummary<HTMLButtonElement>({ openDelay: 400 });
+  const { data: stats } = useQuery({ ...gitCommitStatsQuery(cwd, commit.sha), enabled: hover.open }, queryClient);
   return (
     <li className="min-w-0 overflow-visible" style={{ height: GRAPH_ROW_PX }}>
       <button
@@ -433,78 +411,10 @@ function useGitHistory(
   cwd: string,
   enabled: boolean,
 ): { commits: GitHistoryCommit[] } {
-  const [commits, setCommits] = useState<GitHistoryCommit[]>(
-    () => historyByCwd.get(cwd) ?? [],
-  );
-  const commitsRef = useRef(commits);
-  commitsRef.current = commits;
-
-  const load = useCallback(() => {
-    if (!enabled || !cwd || cwd === "~") return;
-    void gitHistory(cwd)
-      .then((next) => {
-        const prev = commitsRef.current;
-        if (sameHistory(prev, next.commits)) return;
-        historyByCwd.set(cwd, next.commits);
-        commitsRef.current = next.commits;
-        setCommits(next.commits);
-      })
-      .catch(() => {
-        historyByCwd.delete(cwd);
-        commitsRef.current = [];
-        setCommits([]);
-      });
-  }, [cwd, enabled]);
-
-  useEffect(() => {
-    if (!enabled || !cwd || cwd === "~") {
-      commitsRef.current = [];
-      setCommits([]);
-      return;
-    }
-    const cached = historyByCwd.get(cwd) ?? [];
-    commitsRef.current = cached;
-    setCommits(cached);
-    load();
-    const onResume = () => {
-      if (!document.hidden) load();
-    };
-    window.addEventListener("focus", onResume);
-    document.addEventListener("visibilitychange", onResume);
-    const unsub = subscribeGitChanged(load);
-    return () => {
-      window.removeEventListener("focus", onResume);
-      document.removeEventListener("visibilitychange", onResume);
-      unsub();
-    };
-  }, [cwd, enabled, load]);
-
-  return { commits };
-}
-
-function sameHistory(
-  prev: GitHistoryCommit[],
-  next: GitHistoryCommit[],
-): boolean {
-  if (prev.length !== next.length) return false;
-  return prev.every((commit, i) => {
-    const other = next[i];
-    return (
-      other &&
-      commit.sha === other.sha &&
-      commit.subject === other.subject &&
-      commit.author === other.author &&
-      commit.authorEmail === other.authorEmail &&
-      commit.body === other.body &&
-      commit.timestamp === other.timestamp &&
-      commit.head === other.head &&
-      commit.refs.length === other.refs.length &&
-      commit.refs.every(
-        (ref, j) =>
-          other.refs[j]?.name === ref.name && other.refs[j]?.kind === ref.kind,
-      )
-    );
-  });
+  installGitQueryInvalidation();
+  const active = enabled && isGitCwd(cwd);
+  const { data: commits = EMPTY_COMMITS } = useQuery({ ...gitHistoryQuery(cwd), enabled: active }, queryClient);
+  return { commits: active ? commits : EMPTY_COMMITS };
 }
 
 export const GRAPH_PANEL_MIN = 120;

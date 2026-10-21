@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
-import type { HostSession } from "../../connections/model/protocol";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { botWorkerQuery } from "../model/botPanelQueries";
 import type { SessionReference } from "../model/botView";
 import type { BotRpc } from "../model/botRpc";
 import { AgentTranscript } from "../../sessions/ui/AgentTranscript";
@@ -17,42 +19,9 @@ export function BotWorkerDetails({
   active: boolean;
 }) {
   const { t } = useTranslation();
-  const [snapshot, setSnapshot] = useState<HostSession>();
-  const [error, setError] = useState<string>();
-  useEffect(() => {
-    if (!active) return;
-    let disposed = false,
-      fetching = false;
-    const refresh = async () => {
-      if (fetching) return;
-      fetching = true;
-      try {
-        const value = await rpc<HostSession>("sessions.get", {
-          sessionId: target.sessionId,
-        });
-        if (
-          !value ||
-          value.projectId !== target.projectId ||
-          !value.session.orchestrationLeadId
-        )
-          throw new Error("Conversation is unavailable");
-        if (!disposed) {
-          setSnapshot(value);
-          setError(undefined);
-        }
-      } catch (e) {
-        if (!disposed) setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        fetching = false;
-      }
-    };
-    void refresh();
-    const timer = setInterval(() => void refresh(), 2000);
-    return () => {
-      disposed = true;
-      clearInterval(timer);
-    };
-  }, [rpc, target, active]);
+  const query = useQuery({ ...botWorkerQuery(rpc, target), enabled: active, refetchInterval: active ? 2000 : false }, queryClient);
+  const snapshot = query.data;
+  const error = errorMessage(query.error);
   return (
     <section className="assistant-worker" aria-label={t("Worker details")}>
       <header>

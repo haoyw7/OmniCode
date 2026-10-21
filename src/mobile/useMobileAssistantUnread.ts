@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useReducer } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { botPanelKey } from "../features/bots/model/botPanelQueries";
 import type { BotMessage as AssistantMessage, BotMessages as AssistantMessages, BotConfiguration as AssistantView } from "../features/bots/model/botView";
 import { mergeBotMessages as mergeAssistantMessages, type BotRpc as AssistantRpc } from "../features/bots/model/botRpc";
 import {
@@ -13,59 +16,33 @@ export function useMobileAssistantUnread(
   rpc: AssistantRpc,
   active: boolean,
 ) {
-  // Keep completed pages across foreground changes and reconnects. Unlike chat
-  // history, the badge only needs revisions newer than the read acknowledgement.
-  const feed = useMemo(() => ({
-    revision: hostKey ? assistantReadRevision(hostKey) : 0,
-    messages: [] as AssistantMessage[],
-  }), [hostKey, rpc]);
-  const [state, setState] = useState<{ feed: typeof feed; messages: AssistantMessage[] }>();
+  type Feed = { revision: number; messages: AssistantMessage[] };
+  const queryKey = [...botPanelKey(rpc), "mobileUnread", hostKey] as const;
   const [, refreshRead] = useReducer((value: number) => value + 1, 0);
   useEffect(() => subscribeAssistantRead(refreshRead), []);
-  useEffect(() => {
-    if (!hostKey || !active) return;
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const refresh = async () => {
-      let delay = 2000;
-      try {
-        const assistant = await rpc<AssistantView | null>("assistant.get");
-        if (disposed) return;
-        if (!assistant) {
-          feed.messages = [];
-          setState({ feed, messages: feed.messages });
-          return;
-        }
-        let page: AssistantMessages;
-        do {
-          feed.revision = Math.max(feed.revision, assistantReadRevision(hostKey));
-          page = await rpc<AssistantMessages>("assistant.messages", {
-            afterRevision: feed.revision,
-            limit: 100,
-          });
-          // Ignore late responses before advancing the cursor or fetching another
-          // page, so a paused request cannot resume against a different Host.
-          if (disposed) return;
-          feed.revision = page.nextRevision;
-          feed.messages = unreadAssistantMessages(
-            hostKey, mergeAssistantMessages(feed.messages, page.entries),
-          );
-          setState({ feed, messages: feed.messages });
-        } while (page.hasMore);
-      } catch {
-        // Retain the last count through transient connection failures.
-        delay = 30000;
-      } finally {
-        if (!disposed) timer = setTimeout(refresh, delay);
-      }
-    };
-    void refresh();
-    return () => {
-      disposed = true;
-      clearTimeout(timer);
-    };
-  }, [hostKey, rpc, active, feed]);
-  return hostKey && state?.feed === feed
-    ? unreadAssistantMessages(hostKey, state.messages).length
-    : 0;
+  const read = useQuery<Feed>({
+    queryKey, enabled: !!hostKey && active,
+    refetchInterval: active ? query => query.state.status === "error" ? 30000 : 2000 : false,
+    queryFn: async ({ signal }): Promise<Feed> => {
+      const key = hostKey!;
+      const previous = queryClient.getQueryData<Feed>(queryKey);
+      let revision = previous?.revision ?? assistantReadRevision(key), messages = previous?.messages ?? [];
+      const assistant = await rpc<AssistantView | null>("assistant.get");
+      signal.throwIfAborted();
+      if (!assistant) return { revision, messages: [] };
+      let page: AssistantMessages;
+      do {
+        const afterRevision = Math.max(revision, assistantReadRevision(key));
+        page = await rpc<AssistantMessages>("assistant.messages", { afterRevision, limit: 100 });
+        signal.throwIfAborted();
+        if (page.hasMore && page.nextRevision <= afterRevision) throw new Error("Conversation is unavailable");
+        revision = page.nextRevision;
+        messages = unreadAssistantMessages(key, mergeAssistantMessages(messages, page.entries));
+        queryClient.setQueryData(queryKey, { revision, messages });
+      } while (page.hasMore);
+      return { revision, messages };
+    },
+  }, queryClient);
+  useEffect(() => { if (!active) void queryClient.cancelQueries({ queryKey }, { revert: false }); }, [active, rpc, hostKey]);
+  return hostKey ? unreadAssistantMessages(hostKey, read.data?.messages ?? []).length : 0;
 }

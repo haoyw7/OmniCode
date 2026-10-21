@@ -1,3 +1,5 @@
+import { queryClient } from "../../../shared/lib/queryClient";
+import { fetchInboxSource, inboxSourceKey, invalidateInboxSource, peekInboxSource } from "./inboxSourceQueries";
 import { invoke } from "@tauri-apps/api/core";
 import { recordInboxSelfActivity } from "./inboxSelfActivity";
 import { normalizeProjectPath } from "../../projects/model/recents";
@@ -66,24 +68,13 @@ export type GitlabMrDiff = {
 
 export const GITLAB_CHANGE_EVENT = "omnicode:gitlab-change";
 
-const repoByPath = new Map<string, string>();
-const detailsByKey = new Map<string, GitlabWorkItemDetails>();
-const threadByKey = new Map<string, GitlabWorkItemThread>();
-const threadInflight = new Map<string, Promise<GitlabWorkItemThread>>();
-const diffByKey = new Map<string, GitlabMrDiff>();
-const diffInflight = new Map<string, Promise<GitlabMrDiff>>();
 
 function itemKey(repo: string, kind: GitlabKind, number: number): string {
   return `${repo.trim().toLowerCase()}:${kind}:${number}`;
 }
 
 export function clearGitlabCache() {
-  repoByPath.clear();
-  detailsByKey.clear();
-  threadByKey.clear();
-  threadInflight.clear();
-  diffByKey.clear();
-  diffInflight.clear();
+  queryClient.removeQueries({ queryKey: ["inboxSource", "gitlab"] });
 }
 
 export function gitlabConnected(): Promise<GitlabStatus> {
@@ -114,12 +105,8 @@ export async function disconnectGitlab(url: string): Promise<GitlabStatus> {
 }
 
 export async function gitlabRepo(cwd: string): Promise<string> {
-  const key = normalizeProjectPath(cwd);
-  const cached = repoByPath.get(key);
-  if (cached !== undefined) return cached;
-  const repo = await invoke<string>("gitlab_repo", { cwd });
-  repoByPath.set(key, repo);
-  return repo;
+  return fetchInboxSource(inboxSourceKey("gitlab", "repo", normalizeProjectPath(cwd)), () => invoke<string>("gitlab_repo", { cwd }), { maxAgeMs: Infinity });
+
 }
 
 export function listGitlabWorkItems(
@@ -155,7 +142,7 @@ export function peekGitlabWorkItemDetails(
   kind: GitlabKind,
   number: number,
 ): GitlabWorkItemDetails | null {
-  return detailsByKey.get(itemKey(repo, kind, number)) ?? null;
+  return peekInboxSource<GitlabWorkItemDetails>(inboxSourceKey("gitlab", "details", itemKey(repo, kind, number)));
 }
 
 export async function gitlabWorkItemDetails(
@@ -163,12 +150,8 @@ export async function gitlabWorkItemDetails(
   kind: GitlabKind,
   number: number,
 ): Promise<GitlabWorkItemDetails> {
-  const details = await invoke<GitlabWorkItemDetails>(
-    "gitlab_work_item_details",
-    { repo, kind, number },
-  );
-  detailsByKey.set(itemKey(repo, kind, number), details);
-  return details;
+  return fetchInboxSource(inboxSourceKey("gitlab", "details", itemKey(repo, kind, number)), () => invoke<GitlabWorkItemDetails>("gitlab_work_item_details", { repo, kind, number }));
+
 }
 
 export function peekGitlabWorkItemThread(
@@ -176,7 +159,7 @@ export function peekGitlabWorkItemThread(
   kind: GitlabKind,
   number: number,
 ): GitlabWorkItemThread | null {
-  return threadByKey.get(itemKey(repo, kind, number)) ?? null;
+  return peekInboxSource<GitlabWorkItemThread>(inboxSourceKey("gitlab", "thread", itemKey(repo, kind, number)));
 }
 
 export async function gitlabWorkItemThread(
@@ -185,27 +168,8 @@ export async function gitlabWorkItemThread(
   number: number,
   options?: { force?: boolean },
 ): Promise<GitlabWorkItemThread> {
-  const key = itemKey(repo, kind, number);
-  if (options?.force) {
-    threadByKey.delete(key);
-    threadInflight.delete(key);
-  }
-  const cached = threadInflight.get(key);
-  if (cached) return cached;
-  const pending = invoke<GitlabWorkItemThread>("gitlab_work_item_thread", {
-    repo,
-    kind,
-    number,
-  })
-    .then((thread) => {
-      threadByKey.set(key, thread);
-      return thread;
-    })
-    .finally(() => {
-      if (threadInflight.get(key) === pending) threadInflight.delete(key);
-    });
-  threadInflight.set(key, pending);
-  return pending;
+  return fetchInboxSource(inboxSourceKey("gitlab", "thread", itemKey(repo, kind, number)), () => invoke<GitlabWorkItemThread>("gitlab_work_item_thread", { repo, kind, number }), options);
+
 }
 
 export async function gitlabWorkItemComment(
@@ -221,8 +185,7 @@ export async function gitlabWorkItemComment(
     body: body.trim(),
   });
   const key = itemKey(repo, kind, number);
-  threadByKey.delete(key);
-  threadInflight.delete(key);
+  await invalidateInboxSource(inboxSourceKey("gitlab", "thread", key));
   recordInboxSelfActivity({ provider: "gitlab", kind, repo, number });
   return url;
 }
@@ -231,26 +194,15 @@ export function peekGitlabMrDiff(
   repo: string,
   number: number,
 ): GitlabMrDiff | null {
-  return diffByKey.get(itemKey(repo, "pr", number)) ?? null;
+  return peekInboxSource<GitlabMrDiff>(inboxSourceKey("gitlab", "diff", itemKey(repo, "pr", number)));
 }
 
 export async function gitlabMrDiff(
   repo: string,
   number: number,
 ): Promise<GitlabMrDiff> {
-  const key = itemKey(repo, "pr", number);
-  const cached = diffInflight.get(key);
-  if (cached) return cached;
-  const pending = invoke<GitlabMrDiff>("gitlab_mr_diff", { repo, number })
-    .then((diff) => {
-      diffByKey.set(key, diff);
-      return diff;
-    })
-    .finally(() => {
-      if (diffInflight.get(key) === pending) diffInflight.delete(key);
-    });
-  diffInflight.set(key, pending);
-  return pending;
+  return fetchInboxSource(inboxSourceKey("gitlab", "diff", itemKey(repo, "pr", number)), () => invoke<GitlabMrDiff>("gitlab_mr_diff", { repo, number }));
+
 }
 
 export function notifyGitlabChange() {

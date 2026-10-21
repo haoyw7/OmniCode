@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { SshTargetInput } from "./SshTargetInput";
+import { queryClient } from "../../../shared/lib/queryClient";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 let container: HTMLDivElement;
@@ -21,6 +22,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   act(() => root.unmount());
+  queryClient.clear();
   container.remove();
   vi.unstubAllGlobals();
 });

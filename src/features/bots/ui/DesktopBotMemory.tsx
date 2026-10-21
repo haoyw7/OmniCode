@@ -1,11 +1,14 @@
+import { useIsFetching, useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { botPanelKey, botMemoryListQuery, botMemoryDocumentQuery, botMemoryHistoryQuery } from "../model/botPanelQueries";
 import { Input } from "../../../shared/ui/forms/Input";
 import { Button } from "../../../shared/ui/forms/Button";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { SearchableSelect, type SearchableSelectOption } from "../../../shared/ui/SearchableSelect";
 import { ChevronDown, Plus, RefreshCw } from "../../../shared/ui/icons";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import type { BotRpc } from "../model/botRpc";
-import type { BotMemoryChange, BotMemoryDocument, BotMemoryKind, BotMemoryList } from "../model/botMemory";
+import type { BotMemoryDocument, BotMemoryKind } from "../model/botMemory";
 import { BotMemoryDrafts } from "../model/botMemoryDrafts";
 import { botErrorMessage } from "../model/botErrors";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -20,22 +23,15 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
   const state = useSyncExternalStore(drafts.subscribe, () => drafts.get(botId));
-  const [files, setFiles] = useState<BotMemoryList>();
-  const [error, setError] = useState<string>();
-  const [loading, setLoading] = useState(false);
+  const [actionError, setError] = useState<string>();
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [history, setHistory] = useState<BotMemoryChange[]>();
-  const [historyError, setHistoryError] = useState<string>();
   const [newTopic, setNewTopic] = useState(false);
   const [topic, setTopic] = useState("");
   const path = state.path;
-  const currentPath = useRef(path);
-  currentPath.current = path;
-  const historyRequest = useRef(0);
   const draft = state.drafts[path];
   const dirty = !!draft && draft.text !== draft.base.text;
-  const read = useCallback(async (path: string) => {
-    const doc = await rpc<BotMemoryDocument>("botMemory.read", { botId, path });
+  const applyDocument = useCallback((doc: BotMemoryDocument) => {
+    const path = doc.path;
     drafts.draft(botId, path, (current) => {
       if (current?.busy) return current;
       if (current && current.base.revision > doc.revision) return current;
@@ -45,28 +41,23 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
     });
     return doc;
   }, [botId, rpc, drafts]);
-  const list = useCallback(async () => setFiles(await rpc<BotMemoryList>("botMemory.list", { botId })), [botId, rpc]);
-  const load = useCallback(async () => {
-    setLoading(true); setError(undefined);
-    try { await Promise.all([list(), read(path)]); }
-    catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setLoading(false); }
-  }, [list, read, path]);
-  useEffect(() => { if (visible) void load(); }, [visible, load]);
-  const loadHistory = useCallback(async () => {
-    const request = ++historyRequest.current;
-    setHistoryError(undefined);
-    try {
-      const result = await rpc<BotMemoryChange[]>("botMemory.log", { botId, path, limit: 30 });
-      if (currentPath.current === path && historyRequest.current === request) setHistory(result);
-    } catch (cause) {
-      if (currentPath.current === path && historyRequest.current === request) setHistoryError(botErrorMessage(cause));
-    }
-  }, [botId, path, rpc]);
-  useEffect(() => {
-    setHistory(undefined);
-    if (visible && historyOpen) void loadHistory();
-  }, [visible, historyOpen, loadHistory]);
+  const listQuery = useQuery({ ...botMemoryListQuery(rpc, botId), enabled: visible }, queryClient);
+  const documentQuery = useQuery({ ...botMemoryDocumentQuery(rpc, botId, path), enabled: visible }, queryClient);
+  const historyQuery = useQuery({ ...botMemoryHistoryQuery(rpc, botId, path), enabled: visible && historyOpen }, queryClient);
+  const files = listQuery.data, history = historyQuery.data;
+  const loading = useIsFetching({ queryKey: [...botPanelKey(rpc), "memory", botId, "document"] }, queryClient) > 0 || listQuery.isFetching;
+  const error = actionError ?? (listQuery.error || documentQuery.error ? botErrorMessage(listQuery.error ?? documentQuery.error) : undefined);
+  const historyError = historyQuery.error ? botErrorMessage(historyQuery.error) : undefined;
+  useEffect(() => { if (documentQuery.data) applyDocument(documentQuery.data); }, [documentQuery.data, applyDocument]);
+  const read = async (path: string) => applyDocument(await queryClient.fetchQuery(botMemoryDocumentQuery(rpc, botId, path)));
+  const list = () => listQuery.refetch({ throwOnError: true });
+  const loadHistory = () => historyQuery.refetch();
+  const load = async () => { setError(undefined); await Promise.all([listQuery.refetch(), documentQuery.refetch()]); };
+  const mutation = useMutation({
+    mutationFn: ({ method, params }: { method: "botMemory.save" | "botMemory.undo"; params: object }) => rpc<BotMemoryDocument>(method, params),
+    onMutate: () => queryClient.cancelQueries({ queryKey: botMemoryDocumentQuery(rpc, botId, path).queryKey }),
+    onSuccess: doc => { queryClient.setQueryData(botMemoryDocumentQuery(rpc, botId, doc.path).queryKey, doc); },
+  }, queryClient);
   const mutate = async (changeId?: string) => {
     const current = drafts.get(botId).drafts[path];
     if (!current || current.busy || current.conflict) return;
@@ -76,9 +67,9 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
     const command = current.command?.signature === signature ? current.command : { signature, id: crypto.randomUUID() };
     drafts.draft(botId, path, () => ({ ...current, command, busy: true, error: undefined }));
     try {
-      const doc = await rpc<BotMemoryDocument>(changeId ? "botMemory.undo" : "botMemory.save", {
+      const doc = await mutation.mutateAsync({ method: changeId ? "botMemory.undo" : "botMemory.save", params: {
         botId, commandId: command.id, ...expected, ...(changeId ? { changeId } : { path, text: current.text }),
-      });
+      }});
       drafts.draft(botId, path, () => ({ base: doc, text: doc.text }));
       void list().catch(() => {});
       if (historyOpen) void loadHistory();
@@ -88,7 +79,7 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
       if (conflict) {
         // Loading the competing version never replaces the local text.
         try {
-          const latest = await rpc<BotMemoryDocument>("botMemory.read", { botId, path });
+          const latest = await queryClient.fetchQuery(botMemoryDocumentQuery(rpc, botId, path));
           drafts.draft(botId, path, (value) => ({ ...value!, latest }));
         } catch (error) { setError(botErrorMessage(error)); }
       }
@@ -97,13 +88,12 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
   const openTopic = async () => {
     if (!topic.trim()) return;
     const next = `memory/${topic.trim().replace(/\.md$/i, "")}.md`;
-    setLoading(true); setError(undefined);
+    setError(undefined);
     try {
       await read(next);
       drafts.update(botId, (value) => ({ ...value, path: next }));
       setNewTopic(false); setTopic("");
     } catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setLoading(false); }
   };
   const unsaved = (item: string) => !!state.drafts[item] && state.drafts[item].text !== state.drafts[item].base.text;
   const fileOption = (item: string, group?: string): SearchableSelectOption => ({

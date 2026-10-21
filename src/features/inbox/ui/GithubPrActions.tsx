@@ -1,7 +1,16 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { ChevronDown, GitMerge, GitPullRequest, GitPullRequestClosed, GitPullRequestDraft } from "../../../shared/ui/icons";
+import {
+  ChevronDown,
+  GitMerge,
+  GitPullRequest,
+  GitPullRequestClosed,
+  GitPullRequestDraft,
+  } from "../../../shared/ui/icons";
 import { useRef, useState } from "react";
 import { Popover } from "../../../shared/ui/Popover";
 import { githubPrAction, type GithubPrAction, type InboxItem } from "../model/githubTasks";
@@ -122,8 +131,9 @@ export function GithubPrActions({
     action: GithubPrAction;
     anchor: HTMLElement;
   } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => withToast(action, { loading: uiT("Saving…"), success: false, error: false }) }, queryClient);
+  const busy = mutation.isPending;
+  const actionError = mutation.error ? mutation.error instanceof Error ? mutation.error.message : String(mutation.error) : null;
   const [notice, setNotice] = useState<string | null>(null);
   const state = item.state.trim().toLowerCase();
   const selectedMerge =
@@ -132,7 +142,7 @@ export function GithubPrActions({
 
   const askToRun = (action: GithubPrAction, anchor: HTMLElement) => {
     setMergeMenuOpen(false);
-    setActionError(null);
+    mutation.reset();
     setNotice(null);
     setConfirmation({ action, anchor });
   };
@@ -140,15 +150,13 @@ export function GithubPrActions({
   const dismissConfirmation = () => {
     if (busy) return;
     setConfirmation(null);
-    setActionError(null);
+    mutation.reset();
   };
 
   const runAction = async () => {
     if (!confirmation || busy) return;
     const action = confirmation.action;
-    setBusy(true);
-    setActionError(null);
-    try {
+    mutation.mutate(async () => {
       const next = await githubPrAction(
         item.projectPath,
         item.repo,
@@ -168,11 +176,7 @@ export function GithubPrActions({
         projectPath: item.projectPath,
         provider: "github",
       });
-    } catch (error: unknown) {
-      setActionError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setBusy(false);
-    }
+    });
   };
 
   const confirmCopy = confirmation

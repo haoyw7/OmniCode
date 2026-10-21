@@ -1,123 +1,24 @@
-import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { gitDiffStats, subscribeGitChanged, type GitDiffStats } from "../../../platform/tauri/fs";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { gitDiffStats, type GitDiffStats } from "../../../platform/tauri/fs";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { gitKeys, installGitQueryInvalidation, isGitCwd } from "../model/gitQueries";
 
-type Entry = {
-  cwd: string;
-  stats: GitDiffStats | null;
-  listeners: Set<() => void>;
-  inFlight: boolean;
-  pending: boolean;
-  epoch: number;
-  loadedAt: number;
-  unsubscribeGit: (() => void) | null;
-  onResume: (() => void) | null;
-  onGitChanged: (() => void) | null;
-  refreshTimer: ReturnType<typeof setTimeout> | null;
-};
-
-const entries = new Map<string, Entry>();
+/** Focus and remount only revalidate stats older than this. */
 const RESUME_TTL_MS = 30_000;
+const activityTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-function entryFor(cwd: string): Entry {
-  const existing = entries.get(cwd);
-  if (existing) return existing;
-  const entry: Entry = {
-    cwd,
-    stats: null,
-    listeners: new Set(),
-    inFlight: false,
-    pending: false,
-    epoch: 0,
-    loadedAt: 0,
-    unsubscribeGit: null,
-    onResume: null,
-    onGitChanged: null,
-    refreshTimer: null,
-  };
-  entries.set(cwd, entry);
-  return entry;
-}
-
-function publish(entry: Entry, stats: GitDiffStats | null) {
-  if (
-    entry.stats?.files === stats?.files &&
-    entry.stats?.additions === stats?.additions &&
-    entry.stats?.deletions === stats?.deletions
-  ) {
-    return;
-  }
-  entry.stats = stats;
-  for (const listener of entry.listeners) listener();
-}
-
-async function load(entry: Entry, force = false) {
-  if (entry.inFlight) {
-    entry.pending = true;
-    return;
-  }
-  if (!force && document.hidden) return;
-  entry.inFlight = true;
-  const epoch = entry.epoch;
-  try {
-    const stats = await gitDiffStats(entry.cwd);
-    if (epoch === entry.epoch) {
-      entry.loadedAt = Date.now();
-      publish(entry, stats);
-    }
-  } catch {
-    if (epoch === entry.epoch) {
-      entry.loadedAt = Date.now();
-      publish(entry, null);
-    }
-  } finally {
-    entry.inFlight = false;
-    if (entry.pending) {
-      entry.pending = false;
-      void load(entry, true);
-    }
-  }
+function sameStats(a: GitDiffStats | null | undefined, b: GitDiffStats | null) {
+  return a?.files === b?.files && a?.additions === b?.additions && a?.deletions === b?.deletions;
 }
 
 /** Push stats from a fuller git index (diff pane) so the title-bar badge cannot lag behind. */
 export function applyProjectDiffStats(cwd: string, stats: GitDiffStats) {
-  if (!cwd || cwd === "~") return;
-  const entry = entryFor(cwd);
-  entry.epoch += 1;
-  entry.loadedAt = Date.now();
-  publish(entry, stats);
-}
-
-function start(entry: Entry) {
-  if (entry.onResume) return;
-  if (!entry.inFlight && Date.now() - entry.loadedAt >= RESUME_TTL_MS) {
-    void load(entry, true);
-  }
-  entry.onResume = () => {
-    if (
-      !document.hidden &&
-      !entry.inFlight &&
-      Date.now() - entry.loadedAt >= RESUME_TTL_MS
-    ) {
-      void load(entry, true);
-    }
-  };
-  entry.onGitChanged = () => void load(entry, true);
-  window.addEventListener("focus", entry.onResume);
-  document.addEventListener("visibilitychange", entry.onResume);
-  entry.unsubscribeGit = subscribeGitChanged(entry.onGitChanged);
-}
-
-function stop(entry: Entry) {
-  if (entry.refreshTimer !== null) clearTimeout(entry.refreshTimer);
-  entry.refreshTimer = null;
-  if (entry.onResume) {
-    window.removeEventListener("focus", entry.onResume);
-    document.removeEventListener("visibilitychange", entry.onResume);
-  }
-  entry.unsubscribeGit?.();
-  entry.onResume = null;
-  entry.onGitChanged = null;
-  entry.unsubscribeGit = null;
+  if (!isGitCwd(cwd)) return;
+  const queryKey = gitKeys.diffStats(cwd);
+  // An older read still in flight must not overwrite the fresher index.
+  void queryClient.cancelQueries({ queryKey });
+  queryClient.setQueryData<GitDiffStats | null>(queryKey, (old) => (sameStats(old, stats) ? old : stats));
 }
 
 export function useProjectDiffStats(
@@ -125,34 +26,28 @@ export function useProjectDiffStats(
   enabled: boolean,
   activityKey?: string,
 ): GitDiffStats | null {
-  const active = enabled && Boolean(cwd) && cwd !== "~";
+  const active = enabled && isGitCwd(cwd);
+  if (active) installGitQueryInvalidation();
   useEffect(() => {
     if (!active || activityKey === undefined) return;
-    const entry = entryFor(cwd);
     // Host edits need not produce a local watcher event. Coalesce activity
     // across panes of this checkout without querying unrelated projects.
-    if (entry.refreshTimer !== null) return;
-    entry.refreshTimer = setTimeout(() => {
-      entry.refreshTimer = null;
-      void load(entry, true);
-    }, 200);
+    if (activityTimers.has(cwd)) return;
+    activityTimers.set(cwd, setTimeout(() => {
+      activityTimers.delete(cwd);
+      void queryClient.invalidateQueries({ queryKey: gitKeys.diffStats(cwd) });
+    }, 200));
   }, [active, cwd, activityKey]);
-  const subscribe = useCallback(
-    (listener: () => void) => {
-      if (!active) return () => undefined;
-      const entry = entryFor(cwd);
-      entry.listeners.add(listener);
-      if (entry.listeners.size === 1) start(entry);
-      return () => {
-        entry.listeners.delete(listener);
-        if (entry.listeners.size === 0) stop(entry);
-      };
+  const { data } = useQuery(
+    {
+      queryKey: gitKeys.diffStats(cwd),
+      queryFn: () => gitDiffStats(cwd).catch(() => null),
+      enabled: active,
+      staleTime: RESUME_TTL_MS,
+      structuralSharing: (old, next) =>
+        sameStats(old as GitDiffStats | null | undefined, next as GitDiffStats | null) ? old : next,
     },
-    [active, cwd],
+    queryClient,
   );
-  const getSnapshot = useCallback(() => {
-    return active ? entryFor(cwd).stats : null;
-  }, [active, cwd]);
-
-  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return active ? data ?? null : null;
 }

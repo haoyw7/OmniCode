@@ -1,17 +1,17 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { piUsageQuery } from "../../providers/model/piUsageQueries";
+import { rateLimitsSnapshot } from "../../providers/model/rateLimitsQueries";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { RefreshCw } from "../../../shared/ui/icons";
 import { HarnessIcon } from "./HarnessIcon";
 import {
-  fetchPiUsage,
   piBillingProvider,
   piUsageProvider,
   type PiUsageProvider,
 } from "../../providers/model/piUsage";
 import {
-  idleRateLimits,
-  RATE_LIMIT_MIN_REFETCH_MS,
-  RATE_LIMIT_POLL_MS,
   type ProviderRateLimits,
 } from "../../providers/model/rateLimits";
 import { UsageProviderChip } from "./UsageProviderChip";
@@ -100,48 +100,16 @@ function piUsagePresentation(provider: PiUsageProvider) {
 
 /** Pi uses its own saved OAuth account rather than a Claude/Codex profile. */
 function usePiUsage(provider: PiUsageProvider) {
-  const [limits, setLimits] = useState(() =>
-    idleRateLimits(piBillingProvider(provider)),
-  );
-  const refreshRef = useRef<(force?: boolean) => void>(() => undefined);
+  const view = useId();
+  const [visible, setVisible] = useState(() => document.visibilityState === "visible");
   useEffect(() => {
-    let disposed = false;
-    let inflight = false;
-    let lastFetchAt = 0;
-    const refresh = (force = false) => {
-      if (disposed || inflight) return;
-      if (
-        !force &&
-        (document.visibilityState !== "visible" ||
-          Date.now() - lastFetchAt < RATE_LIMIT_MIN_REFETCH_MS)
-      )
-        return;
-      inflight = true;
-      setLimits({
-        ...idleRateLimits(piBillingProvider(provider)),
-        status: "fetching",
-      });
-      void fetchPiUsage(provider)
-        .then((result) => {
-          if (!disposed) setLimits(result);
-        })
-        .finally(() => {
-          inflight = false;
-          lastFetchAt = Date.now();
-        });
-    };
-    refreshRef.current = refresh;
-    refresh();
-    const timer = window.setInterval(refresh, RATE_LIMIT_POLL_MS);
-    const onVisible = () => refresh();
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
-    return () => {
-      disposed = true;
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
-    };
-  }, [provider]);
-  return { limits, refresh: () => refreshRef.current(true) };
+    const update = () => setVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", update);
+    return () => document.removeEventListener("visibilitychange", update);
+  }, []);
+  const query = useQuery({ ...piUsageQuery(provider, view), enabled: visible }, queryClient);
+  return {
+    limits: rateLimitsSnapshot(piBillingProvider(provider), query.data, query.isFetching),
+    refresh: () => { void query.refetch(); },
+  };
 }

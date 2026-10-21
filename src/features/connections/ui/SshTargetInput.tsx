@@ -2,7 +2,20 @@ import { RotatingIcon } from "../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../shared/motion/tokens";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type Ref,
+} from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { cn } from "../../../shared/lib/cn";
+import { Input, type InputProps } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
 import { ChevronDown } from "../../../shared/ui/icons";
 import { LAYER } from "../../../shared/lib/layers";
 import { Popover } from "../../../shared/ui/Popover";
@@ -27,14 +40,29 @@ export function SshTargetInput({
   onChange,
   disabled,
   className,
-}: {
+  inputRef,
+  ...inputProps
+}: Pick<InputProps, "id" | "onBlur" | "aria-invalid" | "aria-describedby"> & {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-  className: string;
+  className?: string;
+  inputRef?: Ref<HTMLInputElement>;
 }) {
   const { t } = useTranslation();
-  const [hosts, setHosts] = useState<SshConfigHost[]>([]);
+  const hostsQuery = useQuery(
+    {
+      queryKey: ["ssh-config-hosts"],
+      queryFn: async () => {
+        const hosts = await invoke<SshConfigHost[]>("remote_ssh_config_hosts");
+        return Array.isArray(hosts) ? hosts : [];
+      },
+      refetchOnWindowFocus: false,
+    },
+    queryClient,
+  );
+  // An unreadable config must still allow entering an arbitrary SSH address.
+  const hosts = hostsQuery.data ?? [];
   const [open, setOpen] = useState(false);
   const [filtering, setFiltering] = useState(false);
   const [active, setActive] = useState(0);
@@ -43,25 +71,14 @@ export function SshTargetInput({
   const listId = useId();
   const ignoreId = useId().replace(/:/g, "");
 
-  useEffect(() => {
-    let live = true;
-    void invoke<SshConfigHost[]>("remote_ssh_config_hosts")
-      .then((value) => {
-        if (live) setHosts(Array.isArray(value) ? value : []);
-      })
-      // Without a readable config the field still accepts typed addresses.
-      .catch(() => undefined);
-    return () => {
-      live = false;
-    };
-  }, []);
-
   const query = filtering ? value.trim().toLocaleLowerCase() : "";
   const options = useMemo(
     () =>
       query
         ? hosts.filter((host) =>
-            `${host.alias}\n${detail(host)}`.toLocaleLowerCase().includes(query),
+            `${host.alias}\n${detail(host)}`
+              .toLocaleLowerCase()
+              .includes(query),
           )
         : hosts,
     [hosts, query],
@@ -106,8 +123,13 @@ export function SshTargetInput({
 
   return (
     <div ref={root} className="relative" data-ssh-target={ignoreId}>
-      <input
-        ref={input}
+      <Input
+        {...inputProps}
+        ref={(node) => {
+          input.current = node;
+          if (typeof inputRef === "function") inputRef(node);
+          else if (inputRef) inputRef.current = node;
+        }}
         autoFocus
         required
         disabled={disabled}
@@ -116,7 +138,7 @@ export function SshTargetInput({
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={shown ? `${listId}-${active}` : undefined}
-        className={`${className} pr-9`}
+        className={cn(className, "pr-9")}
         value={value}
         onChange={(event) => {
           onChange(event.target.value);
@@ -130,8 +152,10 @@ export function SshTargetInput({
         spellCheck={false}
       />
       {hosts.length > 0 ? (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           tabIndex={-1}
           disabled={disabled}
           aria-label={t("Show SSH hosts")}
@@ -141,10 +165,14 @@ export function SshTargetInput({
             else show(false);
             input.current?.focus();
           }}
-          className="absolute inset-y-0 right-0 grid w-9 place-items-center text-foreground-subtle hover:text-foreground disabled:opacity-40"
+          className="absolute inset-y-0 right-0 text-foreground-subtle"
         >
-          <RotatingIcon icon={ChevronDown} angle={shown ? motionGeometry.flipAngle : 0} className="size-4" />
-        </button>
+          <RotatingIcon
+            icon={ChevronDown}
+            angle={shown ? motionGeometry.flipAngle : 0}
+            className="size-4"
+          />
+        </Button>
       ) : null}
       <Popover
         open={shown}
@@ -166,27 +194,34 @@ export function SshTargetInput({
           className="min-h-0 flex-1 overflow-y-auto overscroll-none p-1"
         >
           {options.map((host, index) => (
-            <button
+            <Button
               key={host.alias}
               id={`${listId}-${index}`}
               type="button"
+              variant="ghost"
+              data-menu-row
               role="option"
               tabIndex={-1}
               aria-selected={index === active}
               onMouseDown={(event) => event.preventDefault()}
               onMouseEnter={() => setActive(index)}
               onClick={() => pick(host)}
-              className={`flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-ui-base ${
-                index === active ? "bg-selection text-foreground" : "text-foreground/80"
-              }`}
+              className={cn(
+                "w-full items-baseline justify-start text-left",
+                index === active
+                  ? "bg-selection text-foreground"
+                  : "text-foreground/80",
+              )}
             >
-              <span className="min-w-0 truncate leading-normal font-medium">{host.alias}</span>
+              <span className="min-w-0 truncate leading-normal font-medium">
+                {host.alias}
+              </span>
               {detail(host) && detail(host) !== host.alias ? (
                 <span className="min-w-0 flex-1 truncate text-right text-ui-caption leading-normal text-foreground-subtle">
                   {detail(host)}
                 </span>
               ) : null}
-            </button>
+            </Button>
           ))}
         </div>
       </Popover>

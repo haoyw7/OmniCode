@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { message } from "@tauri-apps/plugin-dialog";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { toast } from "sonner";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import {
   loadNotificationsEnabled,
@@ -24,16 +26,22 @@ import {
   type SessionReminder,
 } from "../../sessions/model/sessionReminders";
 
+const EMPTY_REMINDERS: SessionReminder[] = [];
+
 export function useSessionReminders(
   onOpenSession: (sessionId: string) => Promise<void>,
   ensureSaved: (sessionIds: readonly string[]) => Promise<void>,
   openSessionIds: readonly string[],
 ) {
-  const [reminders, setItems] = useState<SessionReminder[]>([]);
+  const queryKey = ["sessionReminders"] as const;
+  const read = useQuery({ queryKey, queryFn: listReminders, refetchInterval: 30000 }, queryClient);
+  const reminders = read.data ?? EMPTY_REMINDERS;
+  const actions = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
+  const nativeMutation = useMutation({ mutationFn: ({ name, args }: { name: string; args?: Record<string, unknown> }) => invoke(name, args) }, queryClient);
+  const command = useCallback(<T,>(name: string, args?: Record<string, unknown>) => nativeMutation.mutateAsync({ name, args }) as Promise<T>, [nativeMutation.mutateAsync]);
   const [now, setNow] = useState(Date.now);
   const [error, setError] = useState<string | null>(null);
   const [, refreshPolicy] = useReducer((revision: number) => revision + 1, 0);
-  const revision = useRef(0);
   const configurationRevision = useRef(0);
   const configurationQueue = useRef<Promise<void>>(Promise.resolve());
   const remindersRef = useRef(reminders);
@@ -49,7 +57,7 @@ export function useSessionReminders(
       .catch(() => {})
       .then(async () => {
         if (request !== configurationRevision.current) return;
-        await invoke("reminder_configure", {
+        await command("reminder_configure", {
           preferences: {
             notificationsEnabled: loadNotificationsEnabled(),
             sound: loadSoundsEnabled(),
@@ -75,33 +83,31 @@ export function useSessionReminders(
     } catch (error) {
       if (request === configurationRevision.current) throw error;
     }
-  }, []);
+  }, [command]);
 
+  useEffect(() => {
+    if (!read.data) return;
+    remindersRef.current = read.data; setNow(Date.now());
+    void configure().catch(error => setError(String(error)));
+  }, [read.dataUpdatedAt, configure]);
   const refresh = useCallback(async () => {
-    const request = ++revision.current;
-    try {
-      const items = await listReminders();
-      if (request !== revision.current) return;
-      remindersRef.current = items;
-      setItems(items);
-      setNow(Date.now());
-      setError(null);
-      await configure();
-    } catch (error) {
-      if (request === revision.current) setError(String(error));
-    }
+    await invalidateAfterChange(["sessionReminders"]);
+    const items = queryClient.getQueryData<SessionReminder[]>(["sessionReminders"]);
+    if (items) { remindersRef.current = items; setNow(Date.now()); setError(null); await configure(); }
   }, [configure]);
 
   const report = (error: unknown) => {
-    void message(String(error), { title: "Reminder", kind: "error" });
+    toast.error(String(error));
   };
 
   const schedule = useCallback(
     async (ids: readonly string[], dueAt: number) => {
       try {
-        await callbacks.current.ensureSaved(ids);
-        await setReminders(ids, dueAt);
-        await refresh();
+        await actions.mutateAsync(async () => {
+          await callbacks.current.ensureSaved(ids);
+          await setReminders(ids, dueAt);
+          await refresh();
+        });
       } catch (error) {
         report(error);
       }
@@ -112,8 +118,10 @@ export function useSessionReminders(
   const cancel = useCallback(
     async (ids: readonly string[], expectedDueAt?: number) => {
       try {
-        await clearReminders(ids, expectedDueAt);
-        await refresh();
+        await actions.mutateAsync(async () => {
+          await clearReminders(ids, expectedDueAt);
+          await refresh();
+        });
       } catch (error) {
         report(error);
       }
@@ -135,10 +143,12 @@ export function useSessionReminders(
   const openHere = useCallback(
     async (reminder: ReminderTarget) => {
       try {
-        await callbacks.current.onOpenSession(reminder.sessionId);
-        // An old notification must never clear a newer reminder for this session.
-        await clearReminders([reminder.sessionId], reminder.dueAt);
-        await refresh();
+        await actions.mutateAsync(async () => {
+          await callbacks.current.onOpenSession(reminder.sessionId);
+          // An old notification must never clear a newer reminder for this session.
+          await clearReminders([reminder.sessionId], reminder.dueAt);
+          await refresh();
+        });
       } catch (error) {
         report(error);
       }
@@ -158,7 +168,7 @@ export function useSessionReminders(
     const takeOpen = async () => {
       if (disposed) return;
       try {
-        const request = await invoke<ReminderTarget | null>(
+        const request = await command<ReminderTarget | null>(
           "reminder_take_open",
         );
         if (request && !disposed) await openHere(request);
@@ -182,24 +192,17 @@ export function useSessionReminders(
           }),
         ]);
         if (disposed) return;
-        await refresh();
         await takeOpen();
       } catch (error) {
         if (!disposed) setError(String(error));
       }
     })();
     const onFocus = () => {
-      void refresh();
       void takeOpen();
     };
     const onVisible = () => {
       if (!document.hidden) onFocus();
     };
-    // The backend owns firing. This refresh catches renamed/deleted sessions,
-    // missed events, and a machine waking after its scheduled time.
-    const timer = window.setInterval(() => {
-      void refresh();
-    }, 30_000);
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener(NOTIFICATIONS_CHANGE_EVENT, configureCurrent);
@@ -210,10 +213,8 @@ export function useSessionReminders(
     return () => {
       disposed = true;
       unsubscribePreferences();
-      revision.current++;
       configurationRevision.current++;
       subscriptions.forEach((unlisten) => unlisten());
-      window.clearInterval(timer);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener(NOTIFICATIONS_CHANGE_EVENT, configureCurrent);
@@ -224,14 +225,14 @@ export function useSessionReminders(
 
   const sessionIdsKey = JSON.stringify(openSessionIds);
   useEffect(() => {
-    void invoke("reminder_register_window", {
+    void command("reminder_register_window", {
       sessionIds: JSON.parse(sessionIdsKey),
     }).catch((error) => setError(String(error)));
   }, [sessionIdsKey]);
 
   const open = useCallback(async (reminder: ReminderTarget) => {
     try {
-      await invoke("reminder_open", {
+      await command("reminder_open", {
         sessionId: reminder.sessionId,
         dueAt: reminder.dueAt,
       });
@@ -248,7 +249,7 @@ export function useSessionReminders(
       const rule = getProjectNotificationRule(project.id, "reminders");
       return rule.enabled && reminder.dueAt > rule.after;
     }),
-    error,
+    error: error ?? (read.error ? String(read.error) : null),
     refresh,
     schedule,
     cancel,

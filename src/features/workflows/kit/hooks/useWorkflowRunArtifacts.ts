@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../../shared/lib/queryClient";
+import { workflowQueryScope } from "../../model/workflowQueryKeys";
 import type {
   WorkflowRunArtifact,
   WorkflowRunArtifactKind,
@@ -190,56 +193,32 @@ export function useWorkflowRunArtifacts(options: {
   enabled?: boolean;
 }): WorkflowRunArtifactsViewState {
   const { workflowRunArtifacts } = useV4Conversation();
-  const [journal, setJournal] = useState<readonly WorkflowRunArtifact[] | undefined>(undefined);
-  const [loading, setLoading] = useState(false);
-  const [unavailable, setUnavailable] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  // 请求版本号：切 run / 切会话后的迟到响应必须被丢弃，不能污染新 run 的清单。
-  const requestVersionRef = useRef(0);
-
   const enabled =
     options.enabled !== false && options.sessionId.length > 0 && options.runId.length > 0;
   const signature = summariesSignature(options.live);
   const { sessionId, runId } = options;
 
-  const fetchArtifacts = useCallback(async () => {
-    const requestVersion = ++requestVersionRef.current;
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await workflowRunArtifacts({ sessionId, runId });
-      if (requestVersion !== requestVersionRef.current) return;
-      setJournal(result.artifacts);
-      setUnavailable(false);
-      setLoading(false);
-    } catch (caught) {
-      if (requestVersion !== requestVersionRef.current) return;
-      setLoading(false);
-      if (isWorkflowRunArtifactsCapabilityMissing(caught)) {
-        // 能力缺席不是错误：内容产物的卡片仍然从活投影画得出来，只有看板画不了。
-        setJournal(undefined);
-        setUnavailable(true);
-        return;
+  const query = useQuery({
+    queryKey: [...workflowQueryScope(workflowRunArtifacts), "artifacts", sessionId, runId, signature],
+    enabled,
+    gcTime: 0,
+    queryFn: async ({ signal }) => {
+      signal.throwIfAborted();
+      try {
+        const result = await workflowRunArtifacts({ sessionId, runId });
+        return { journal: result.artifacts as readonly WorkflowRunArtifact[] | undefined, unavailable: false };
+      } catch (caught) {
+        if (isWorkflowRunArtifactsCapabilityMissing(caught)) return { journal: undefined, unavailable: true };
+        const message = caught instanceof Error ? caught.message : String(caught);
+        logger.warn("[workflow-artifacts] 读取产物清单失败", { error: message, runId, sessionId });
+        throw caught;
       }
-      const message = caught instanceof Error ? caught.message : String(caught);
-      logger.warn("[workflow-artifacts] 读取产物清单失败", { error: message, runId, sessionId });
-      setError(message);
-    }
-  }, [runId, sessionId, workflowRunArtifacts]);
-
-  useEffect(() => {
-    // 切 run / 切会话：先丢掉旧 run 的清单再重查。旧产物留在屏幕上比空白危险得多。
-    requestVersionRef.current += 1;
-    setJournal(undefined);
-    setUnavailable(false);
-    setError(null);
-    if (!enabled) {
-      setLoading(false);
-      return;
-    }
-    void fetchArtifacts();
-    // signature 是刻意的依赖：新产物出现 / 同 id 发新版都要重查，`itemCount` 变化不重查。
-  }, [enabled, fetchArtifacts, signature]);
+    },
+  }, queryClient);
+  const journal = enabled ? query.data?.journal : undefined;
+  const loading = enabled && query.isFetching;
+  const unavailable = enabled && !!query.data?.unavailable;
+  const error = enabled && query.error ? String(query.error).replace(/^Error: /, "") : null;
 
   return useMemo(
     () => ({

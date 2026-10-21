@@ -1,5 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCw } from "../../../shared/ui/icons";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { remoteRequest } from "../model/connections";
@@ -40,34 +42,25 @@ export function PairingHostField({
   onChange: (url: string | undefined) => void;
 }) {
   const { t } = useTranslation();
-  const [hosts, setHosts] = useState<PairingHostCandidate[]>();
   const [selected, setSelected] = useState("");
-  const [checking, setChecking] = useState(false);
-  const [error, setError] = useState("");
-
-  const detect = useCallback(() => {
-    setChecking(true);
-    setError("");
-    void remoteRequest<{ hosts?: PairingHostCandidate[] }>(machineId, "devices.pairingHosts")
-      .then((result) => {
-        const found = Array.isArray(result.hosts) ? result.hosts : [];
-        setHosts(found);
-        setSelected((current) => {
-          const keep = [current, savedHost()].find((url) =>
-            found.some((host) => host.url === url && host.reachable),
-          );
-          return keep ?? found.find((host) => host.reachable)?.url ?? found[0]?.url ?? "";
-        });
-      })
-      .catch((reason) => {
-        setHosts([]);
-        setError(String(reason));
-      })
-      .finally(() => setChecking(false));
-  }, [machineId]);
-
-  useEffect(detect, [detect]);
-
+  const read = useQuery({
+    queryKey: ["pairingHosts", machineId],
+    queryFn: async ({ signal }) => {
+      const result = await remoteRequest<{ hosts?: PairingHostCandidate[] }>(machineId, "devices.pairingHosts");
+      signal.throwIfAborted();
+      return Array.isArray(result.hosts) ? result.hosts : [];
+    },
+  }, queryClient);
+  const hosts = read.isError ? [] : read.data;
+  const checking = read.isFetching;
+  const error = read.error ? String(read.error) : "";
+  const detect = () => { void read.refetch(); };
+  useEffect(() => {
+    const found = read.data;
+    if (!found) return;
+    setSelected(current => [current, savedHost()].find(url => found.some(host => host.url === url && host.reachable))
+      ?? found.find(host => host.reachable)?.url ?? found[0]?.url ?? "");
+  }, [read.data]);
   const current = hosts?.find((host) => host.url === selected);
   const verified = !checking && current?.reachable ? current.url : undefined;
   useEffect(() => {

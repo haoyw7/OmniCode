@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useMemo } from "react";
+import { useMutation, useQueries } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import type { ProviderRateLimits } from "./rateLimits";
 import {
-  getAllRateLimits,
+  rateLimitsQuery,
+  rateLimitsSnapshot,
   loadRateLimits,
-  subscribeRateLimits,
-} from "./rateLimitsCache";
+} from "./rateLimitsQueries";
 import {
   PROVIDER_ACCOUNT_PROVIDERS,
   providerAccounts,
@@ -49,50 +51,24 @@ export function useProviderAccountUsage(
   }: { provider?: ProviderAccountProvider; enabled?: boolean } = {},
 ): AccountUsage {
   const source = providerUsageSourceKey();
-  const usage = useSyncExternalStore(
-    subscribeRateLimits,
-    getAllRateLimits,
-    getAllRateLimits,
-  );
-  const [inflight, setInflight] = useState(0);
+  const accounts = useMemo(() => accountsFor(provider).filter(
+    (account): account is ProviderAccount & { provider: "claude" | "codex" } => account.provider !== "workbuddy",
+  ), [accountsVersion, provider, source]);
+  const queries = useQueries({
+    queries: accounts.map((account) => ({ ...rateLimitsQuery(account.provider, account.id), enabled })),
+  }, queryClient);
+  const refreshMutation = useMutation({
+    mutationFn: () => Promise.all(accounts.map((account) => loadRateLimits(account.provider, account.id, true))),
+  }, queryClient);
   const clock = useNow(CLOCK_MS);
-  // A fresh load re-reads reset windows without waiting for the next tick.
-  const [loadedAt, setLoadedAt] = useState(0);
-  const now = Math.max(clock, loadedAt);
-
-  const load = useCallback(
-    async (targets: ProviderAccount[], force = false) => {
-      if (targets.length === 0) return;
-      setInflight((count) => count + 1);
-      try {
-        await Promise.allSettled(
-          targets.map((account) =>
-            account.provider === "workbuddy" ? Promise.resolve() : loadRateLimits(account.provider, account.id, force),
-          ),
-        );
-      } finally {
-        setInflight((count) => count - 1);
-        setLoadedAt(Date.now());
-      }
-    },
-    [],
-  );
-
-  // Renames also bump the version; the shared cache prevents repeat probes.
-  useEffect(() => {
-    if (!enabled) return;
-    const cached = getAllRateLimits();
-    void load(
-      accountsFor(provider).filter(
-        (account) => !cached[accountUsageKey(account)],
-      ),
-    );
-  }, [accountsVersion, enabled, load, provider, source]);
-
-  const refresh = useCallback(
-    () => void load(accountsFor(provider), true),
-    [load, provider],
-  );
-
-  return { usage, now, refreshing: inflight > 0, refresh };
+  const usage = Object.fromEntries(accounts.map((account, index) => [
+    accountUsageKey(account),
+    rateLimitsSnapshot(account.provider, queries[index].data, queries[index].isFetching),
+  ]));
+  const now = Math.max(clock, ...queries.map((query) => query.dataUpdatedAt));
+  return {
+    usage, now,
+    refreshing: refreshMutation.isPending || queries.some((query) => query.isFetching),
+    refresh: () => refreshMutation.mutate(),
+  };
 }

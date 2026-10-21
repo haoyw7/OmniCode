@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { invoke } from "@tauri-apps/api/core";
 import { act, createElement } from "react";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { clearInboxCache, type InboxItem } from "../model/githubTasks";
@@ -31,6 +32,7 @@ const checkRequests = () =>
     .mock.calls.filter(([command]) => command === "git_github_pr_checks");
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   clearInboxCache();

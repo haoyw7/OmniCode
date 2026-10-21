@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { isCancelledError, QueryObserver } from "@tanstack/react-query";
+import { queryClient } from "../../../../shared/lib/queryClient";
 import type { ProjectFile } from "../../../../platform/tauri/fs";
 import { listProjectFiles } from "../../../../platform/tauri/fs";
 import {
@@ -8,7 +10,8 @@ import {
   rememberOpenedFile,
   resolveFileOpenRequest,
   resolveOpenablePath,
-  subscribeProjectFiles,
+  projectFilesQuery,
+  projectFileKeys,
 } from "./fileIndex";
 import { notifyDirsChanged } from "./fileTree";
 
@@ -58,7 +61,7 @@ function deferred<T>() {
 
 describe("resolveOpenablePath", () => {
   beforeEach(() => {
-    invalidateProjectFiles();
+    queryClient.clear();
     list.mockReset();
     list.mockResolvedValue(files);
   });
@@ -100,14 +103,14 @@ describe("resolveOpenablePath", () => {
 
 describe("loadProjectFiles", () => {
   beforeEach(() => {
-    invalidateProjectFiles();
+    queryClient.clear();
     list.mockReset();
     list.mockResolvedValue(files);
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    invalidateProjectFiles();
+    queryClient.clear();
   });
 
   it("returns the cached listing until refresh", async () => {
@@ -126,11 +129,13 @@ describe("loadProjectFiles", () => {
     list.mockImplementationOnce(() => second.promise);
 
     const initial = loadProjectFiles(cwd);
+    const cancelled = initial.catch((error: unknown) => error);
     const refresh = loadProjectFiles(cwd, true);
+    await vi.waitFor(() => expect(list).toHaveBeenCalledTimes(2));
     expect(list).toHaveBeenCalledTimes(2);
 
     first.resolve(files);
-    expect(await initial).toEqual(files);
+    expect(isCancelledError(await cancelled)).toBe(true);
     expect(peekProjectFiles(cwd)).toBeNull();
 
     second.resolve([...files, extra]);
@@ -175,11 +180,11 @@ describe("loadProjectFiles", () => {
     list.mockImplementationOnce(() => second.promise);
     const firstScan = loadProjectFiles(cwd);
     const secondScan = loadProjectFiles(other);
-    expect(loadProjectFiles(cwd)).toBe(firstScan);
-    expect(loadProjectFiles(other)).toBe(secondScan);
+    const repeated = [loadProjectFiles(cwd), loadProjectFiles(other)];
     first.resolve(files);
     second.resolve([extra]);
     await Promise.all([firstScan, secondScan]);
+    expect(await Promise.all(repeated)).toEqual([files, [extra]]);
     expect(peekProjectFiles(cwd)).toBe(files);
     expect(peekProjectFiles(other)).toEqual([extra]);
     expect(list).toHaveBeenCalledTimes(2);
@@ -189,8 +194,8 @@ describe("loadProjectFiles", () => {
     const other = "/Users/me/project-worktree";
     await loadProjectFiles(cwd);
     await loadProjectFiles(other);
-    invalidateProjectFiles(cwd);
-    expect(peekProjectFiles(cwd)).toBeNull();
+    await invalidateProjectFiles(cwd);
+    expect(queryClient.getQueryState(projectFileKeys.cwd(cwd))?.isInvalidated).toBe(true);
     expect(await loadProjectFiles(other)).toBe(files);
     expect(list).toHaveBeenCalledTimes(2);
     await loadProjectFiles(cwd);
@@ -201,9 +206,10 @@ describe("loadProjectFiles", () => {
     const pending = deferred<ProjectFile[]>();
     list.mockImplementationOnce(() => pending.promise);
     const scan = loadProjectFiles(cwd);
-    invalidateProjectFiles(cwd);
+    const cancelled = scan.catch((error: unknown) => error);
+    await invalidateProjectFiles(cwd);
     pending.resolve(files);
-    await scan;
+    expect(isCancelledError(await cancelled)).toBe(true);
     expect(peekProjectFiles(cwd)).toBeNull();
   });
 
@@ -218,11 +224,51 @@ describe("loadProjectFiles", () => {
     expect(list).toHaveBeenCalledTimes(9);
   });
 
-  it("notifies subscribers when the listing changes", async () => {
-    const onChange = vi.fn();
-    const stop = subscribeProjectFiles(onChange);
+  it("refreshes an observed first scan after a write and ignores its late result", async () => {
+    const pending = deferred<ProjectFile[]>();
+    list.mockReturnValueOnce(pending.promise).mockResolvedValueOnce([extra]);
+    const observer = new QueryObserver(queryClient, projectFilesQuery(cwd));
+    const stop = observer.subscribe(() => {});
+    await invalidateProjectFiles(cwd);
+    expect(observer.getCurrentResult().data).toEqual([extra]);
+    pending.resolve(files);
+    await Promise.resolve();
+    expect(peekProjectFiles(cwd)).toEqual([extra]);
+    expect(list).toHaveBeenCalledTimes(2);
+    stop();
+  });
+
+  it("keeps mounted worktrees and unfinished scans when trimming inactive indexes", async () => {
+    const observer = new QueryObserver(queryClient, projectFilesQuery(cwd));
+    const stop = observer.subscribe(() => {});
     await loadProjectFiles(cwd);
-    expect(onChange).toHaveBeenCalledTimes(1);
+    const pending = deferred<ProjectFile[]>();
+    list.mockReturnValueOnce(pending.promise);
+    const scan = loadProjectFiles("/repo/pending");
+    for (let index = 0; index < 10; index++) await loadProjectFiles(`/repo/tree-${index}`);
+    expect(observer.getCurrentResult().data).toEqual(files);
+    expect(queryClient.getQueryState(projectFileKeys.cwd("/repo/pending"))?.fetchStatus).toBe("fetching");
+    pending.resolve([extra]);
+    expect(await scan).toEqual([extra]);
+    stop();
+  });
+
+  it("keeps the last listing when a refresh fails and retries on the next read", async () => {
+    await loadProjectFiles(cwd);
+    list.mockRejectedValueOnce(new Error("offline"));
+    await expect(loadProjectFiles(cwd, true)).rejects.toThrow("offline");
+    expect(peekProjectFiles(cwd)).toEqual(files);
+    list.mockResolvedValueOnce([extra]);
+    expect(await loadProjectFiles(cwd)).toEqual([extra]);
+  });
+
+  it("shares the preloaded listing with Query observers", async () => {
+    const onChange = vi.fn();
+    await loadProjectFiles(cwd);
+    const observer = new QueryObserver(queryClient, projectFilesQuery(cwd));
+    const stop = observer.subscribe(onChange);
+    expect(observer.getCurrentResult().data).toEqual(files);
+    expect(list).toHaveBeenCalledTimes(1);
     expect(peekProjectFiles(cwd)).toEqual(files);
     stop();
   });
@@ -233,11 +279,12 @@ describe("loadProjectFiles", () => {
     list.mockResolvedValue([...files, extra]);
 
     const onChange = vi.fn();
-    const stop = subscribeProjectFiles(onChange);
+    const observer = new QueryObserver(queryClient, projectFilesQuery(cwd));
+    const stop = observer.subscribe(onChange);
     onChange.mockClear();
     notifyDirsChanged();
 
-    await vi.runAllTimersAsync();
+    await vi.advanceTimersByTimeAsync(150);
     expect(peekProjectFiles(cwd)).toEqual([...files, extra]);
     expect(onChange).toHaveBeenCalled();
     stop();
@@ -249,7 +296,7 @@ describe("loadProjectFiles", () => {
     list.mockImplementationOnce(() => pending.promise);
 
     const scan = loadProjectFiles(other);
-    invalidateProjectFiles(cwd);
+    await invalidateProjectFiles(cwd);
     pending.resolve(files);
 
     expect(await scan).toEqual(files);

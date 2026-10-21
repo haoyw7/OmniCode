@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { mobileSourceKey } from "./mobileQueries";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { takeBotNotification as takeAssistantNotification } from "../features/bots/model/botNotifications";
 import type { MobileClient } from "./client";
@@ -311,15 +314,16 @@ export function useMobileActivity(
     visibleSession?.revision, visibleSession?.lastCompletedRunId, visibleSession?.pendingInputKey,
     snapshots, readVisibleSession, setUnreadIds]);
 
-  useEffect(() => {
-    if (!environmentId || !foreground) return;
-    let live = true;
-    let timer: ReturnType<typeof setTimeout>;
-    let failures = 0;
-    const poll = async () => {
+  const activityKey = ["mobile", "activity", mobileSourceKey(client), environmentId] as const;
+  useQuery<{ failures: number }>({
+    queryKey: activityKey, enabled: !!environmentId && foreground, gcTime: 0,
+    notifyOnChangeProps: [],
+    refetchInterval: query => query.state.data?.failures ? Math.min(60000, 3000 * 2 ** query.state.data.failures) : 3000,
+    queryFn: async ({ signal }) => {
+      if (!environmentId) return { failures: 0 };
       try {
         const result = await client.activity();
-        if (!live || result.environmentId !== environmentId) return;
+        if (signal.aborted || result.environmentId !== environmentId) return { failures: 0 };
         if (nativeActivityNotifications()) {
           playActivityCue(
             activity.current?.observe(
@@ -336,7 +340,7 @@ export function useMobileActivity(
             current.current.enabled &&
               current.current.permission === "granted",
           );
-          if (live)
+          if (!signal.aborted)
             setUnreadIds(
               new Set([
                 ...state.unreadIds,
@@ -360,7 +364,7 @@ export function useMobileActivity(
               input: visible.pendingInputKey,
             });
           saveMobileActivity(environmentId, activity.current);
-          if (live) setUnreadIds(new Set(activity.current.unreadIds()));
+          if (!signal.aborted) setUnreadIds(new Set(activity.current.unreadIds()));
           if (
             current.current.enabled &&
             current.current.permission === "granted"
@@ -373,23 +377,14 @@ export function useMobileActivity(
                 onOpen,
               );
         }
-        failures = 0;
+
+        return { failures: 0 };
       } catch {
-        failures = Math.min(failures + 1, 4);
-      } finally {
-        if (live)
-          timer = setTimeout(
-            poll,
-            failures ? Math.min(60_000, 3_000 * 2 ** failures) : 3_000,
-          );
+        return { failures: Math.min((queryClient.getQueryData<{ failures: number }>(activityKey)?.failures ?? 0) + 1, 4) };
       }
-    };
-    void poll();
-    return () => {
-      live = false;
-      clearTimeout(timer);
-    };
-  }, [environmentId, foreground, client]);
+    },
+  }, queryClient);
+  useEffect(() => { if (!foreground) void queryClient.cancelQueries({ queryKey: activityKey }); }, [foreground, environmentId, client]);
 
   const setNotificationsEnabled = async (next: boolean) => {
     try {

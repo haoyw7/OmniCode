@@ -5,6 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { HostSession, HostSessionSummary, HostModelCatalog } from "../features/connections/model/protocol";
 import { MobileApp } from "./MobileApp";
+import { queryClient } from "../shared/lib/queryClient";
 // These tests cover navigation, not chunk loading. Keep cold page compilation
 // outside the interaction timeout and its pending React act scope.
 import "./MobileBots";
@@ -116,6 +117,7 @@ const catalog: HostModelCatalog = { models: { codex: [
 let root: Root;
 let node: HTMLDivElement;
 beforeEach(() => {
+  queryClient.clear();
   startMotionClock();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();

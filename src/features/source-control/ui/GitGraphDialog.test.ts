@@ -8,6 +8,7 @@ vi.mock("motion/react", async (original) => {
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { GitHistoryGraph } from "./GitHistoryGraph";
 import { gitHistory, type GitHistoryCommit } from "../../../platform/tauri/fs";
 import { setUiLanguage } from "../../../shared/i18n/language";
@@ -65,6 +66,7 @@ const onToggleExpanded = vi.fn();
 const onOpenCommit = vi.fn();
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   setUiLanguage("en");
   listeners.clear();

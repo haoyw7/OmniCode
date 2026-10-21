@@ -1,4 +1,7 @@
 import { Button } from "../shared/ui/forms/Button";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { mobileProbeQuery } from "./mobileQueries";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { lightImpact } from "./haptics";
 import { MobileSettingsGlyph } from "./MobileSettingsIcon";
@@ -57,15 +60,8 @@ function ConnectionRow({
   const { t } = useTranslation();
   const appearance = useConnectionAppearance(connection.endpoint);
   const name = appearance.displayName || connection.name;
-  const [observed, setObserved] = useState<HostConnectionStatus>({ state: "reconnecting" });
-  useEffect(() => {
-    if (active) return;
-    let live = true;
-    setObserved({ state: connection.disabled ? "disconnected" : "reconnecting" });
-    void probe(connection).then((value) => { if (live) setObserved(value); })
-      .catch(() => { if (live) setObserved({ state: "failed" }); });
-    return () => { live = false; };
-  }, [active, connection, probe]);
+  const result = useQuery({ ...mobileProbeQuery(connection, probe), enabled: !active }, queryClient);
+  const observed: HostConnectionStatus = result.isError ? { state: "failed" } : result.data ?? { state: connection.disabled ? "disconnected" : "reconnecting" };
   const status = active ? hostStatus : observed;
   const hold = useRef<
     { x: number; y: number; timer: ReturnType<typeof setTimeout> } | undefined

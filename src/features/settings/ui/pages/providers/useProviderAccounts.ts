@@ -1,3 +1,6 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../../../shared/lib/queryClient";
+import { sharedHostMachineId } from "../../../../connections/model/remoteProjects";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
@@ -28,7 +31,7 @@ import {
   useProviderAccountUsage,
   type AccountUsage,
 } from "../../../../providers/model/accountUsage";
-import { clearCachedRateLimits } from "../../../../providers/model/rateLimitsCache";
+import { clearCachedRateLimits } from "../../../../providers/model/rateLimitsQueries";
 import {
   useDeepseekAccount,
   type DeepseekAccountState,
@@ -73,45 +76,18 @@ export function useProviderAccounts() {
   const deepseek: DeepseekAccountState = useDeepseekAccount(deepseekRefresh);
   const [editor, setEditor] = useState<AccountEditor | null>(null);
   const [editorExpanded, setEditorExpanded] = useState(true);
-  const [working, setWorking] = useState<string | null>(null);
+  const mutation = useMutation({ mutationFn: ({ action }: { key: string; action: () => Promise<void> }) => action() }, queryClient);
+  const working = mutation.isPending ? mutation.variables.key : null;
   const [error, setError] = useState<string | null>(null);
-  const [defaultsError, setDefaultsError] = useState<string | null>(null);
-  const [defaultsReady, setDefaultsReady] = useState(false);
-  const [defaultsRetry, setDefaultsRetry] = useState(0);
-  const [profilesReady, setProfilesReady] = useState(false);
-  useEffect(() => {
-    let current = true;
-    void loadProviderAccounts().then(
-      () => { if (current) setProfilesReady(true); },
-      (reason) => {
-        if (current) setError(reason instanceof Error ? reason.message : String(reason));
-      },
-    );
-    return () => { current = false; };
-  }, [defaultsRetry]);
-  useEffect(() => {
-    let current = true;
-    setDefaultsReady(false);
-    void requireSharedAccountHost()
-      .then(loadSharedProviderDefaults)
-      .then(
-        () => {
-          if (current) {
-            setDefaultsReady(true);
-            setDefaultsError(null);
-          }
-        },
-        (reason) => {
-          if (current)
-            setDefaultsError(
-              reason instanceof Error ? reason.message : String(reason),
-            );
-        },
-      );
-    return () => {
-      current = false;
-    };
-  }, [defaultsRetry]);
+  const host = sharedHostMachineId();
+  const profilesRead = useQuery({
+    queryKey: ["providerAccountProfiles", host], queryFn: async () => { await loadProviderAccounts(); return true; },
+  }, queryClient);
+  const defaultsRead = useQuery({
+    queryKey: ["providerSharedDefaults", host], queryFn: async () => { await requireSharedAccountHost(); await loadSharedProviderDefaults(); return true; },
+  }, queryClient);
+  const defaultsReady = defaultsRead.isSuccess, profilesReady = profilesRead.isSuccess;
+  const defaultsError = defaultsRead.error ? defaultsRead.error instanceof Error ? defaultsRead.error.message : String(defaultsRead.error) : null;
 
   useEffect(
     () => subscribeProviderAccounts(() => setVersion((value) => value + 1)),
@@ -123,18 +99,18 @@ export function useProviderAccounts() {
     accountId: string,
   ) => {
     if (working || !defaultsReady) return;
-    setWorking(`default:${provider}`);
+    const operationKey = `default:${provider}`;
     setError(null);
     try {
+      await mutation.mutateAsync({ key: operationKey, action: async () => {
       await withToast(() => setSharedProviderDefault(provider, accountId), {
         loading: uiT("Setting default account…"),
         success: uiT("Default account updated"),
         error: false,
       });
+      } });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setWorking(null);
     }
   };
 
@@ -181,7 +157,7 @@ export function useProviderAccounts() {
     const key = editor.accountId
       ? `rename:${editor.provider}:${editor.accountId}`
       : `add:${editor.provider}`;
-    setWorking(key);
+    const operationKey = key;
     setError(null);
     const notice = editor.accountId
       ? { loading: uiT("Saving…"), success: uiT("Account saved") }
@@ -189,6 +165,7 @@ export function useProviderAccounts() {
         ? { loading: uiT("Importing account…"), success: uiT("Account imported") }
         : { loading: uiT("Adding account…"), success: uiT("Account added") };
     try {
+      await mutation.mutateAsync({ key: operationKey, action: async () => {
       await withToast(async () => {
         if (editor.accountId) {
           await updateProviderAccountProfile({
@@ -204,22 +181,22 @@ export function useProviderAccounts() {
         }
       }, { ...notice, error: false });
       setEditor(null);
+      } });
     } catch (caught) {
       setError(
         caught instanceof Error
           ? caught.message
           : "Could not save this account",
       );
-    } finally {
-      setWorking(null);
     }
   };
 
   const signIn = async (account: ProviderAccount) => {
     if (working) return;
-    setWorking(`login:${account.provider}:${account.id}`);
+    const operationKey = `login:${account.provider}:${account.id}`;
     setError(null);
     try {
+      await mutation.mutateAsync({ key: operationKey, action: async () => {
       await withToast(() => loginHarness(account.provider, account.id), {
         loading: uiT("Signing in…"),
         success: uiT("Signed in to {account}", { account: account.label }),
@@ -227,10 +204,9 @@ export function useProviderAccounts() {
       });
       if (account.provider !== "workbuddy") clearCachedRateLimits(account.provider, account.id);
       setVersion((value) => value + 1);
+      } });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setWorking(null);
     }
   };
 
@@ -247,9 +223,10 @@ export function useProviderAccounts() {
     );
     if (!confirmed) return;
     const key = `remove:${account.provider}:${account.id}`;
-    setWorking(key);
+    const operationKey = key;
     setError(null);
     try {
+      await mutation.mutateAsync({ key: operationKey, action: async () => {
       await withToast(
         () => removeProviderAccountCredentials(account.provider, account.id),
         { loading: uiT("Removing account…"), success: uiT("Account removed"), error: false },
@@ -262,14 +239,13 @@ export function useProviderAccounts() {
       ) {
         setEditor(null);
       }
+      } });
     } catch (caught) {
       setError(
         caught instanceof Error
           ? caught.message
           : "Could not remove this account",
       );
-    } finally {
-      setWorking(null);
     }
   };
 
@@ -291,13 +267,13 @@ export function useProviderAccounts() {
     editor,
     editorExpanded,
     working,
-    error,
+    error: error ?? (profilesRead.error ? String(profilesRead.error instanceof Error ? profilesRead.error.message : profilesRead.error) : null),
     defaultsError,
     defaultsReady,
     profilesReady,
     identities,
     usage,
-    retry: () => setDefaultsRetry((value) => value + 1),
+    retry: () => { void profilesRead.refetch(); void defaultsRead.refetch(); },
     cancelEditor: () => setEditor(null),
     editLabel,
     editDataHome,

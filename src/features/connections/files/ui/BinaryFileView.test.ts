@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../../../../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -31,6 +32,7 @@ let container: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:image-preview");
   vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
@@ -41,6 +43,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  queryClient.clear();
   act(() => root.unmount());
   container.remove();
   vi.restoreAllMocks();

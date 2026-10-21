@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { noteImageQuery } from "../model/transcriptImageQueries";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { motion } from "motion/react";
 import { immediateTransition, motionGeometry, popTransition } from "../../../shared/motion/tokens";
@@ -604,7 +607,7 @@ function CodeCopyButton({ code }: { code: string }) {
 
 type MarkdownImageProps = ComponentProps<"img"> & { node?: unknown };
 
-const noteImageSrcCache = new Map<string, string>();
+const resolveLocalNoteImage = (asset: string) => invoke<string>("notes_image_path", { asset }).then(convertFileSrc);
 
 function NoteAssetImage({
   asset,
@@ -612,32 +615,8 @@ function NoteAssetImage({
   ...props
 }: Omit<MarkdownImageProps, "src" | "node"> & { asset: string }) {
   const { resolveNoteImage } = useContext(TranscriptPlatformContext);
-  const [resolved, setResolved] = useState<{
-    asset: string;
-    resolver: typeof resolveNoteImage;
-    src: string;
-  }>();
-  const src =
-    resolved?.asset === asset && resolved.resolver === resolveNoteImage
-      ? resolved.src
-      : resolveNoteImage ? undefined : noteImageSrcCache.get(asset);
-
-  useEffect(() => {
-    if (src) return;
-    let cancelled = false;
-    const loading = resolveNoteImage
-      ? resolveNoteImage(asset)
-      : invoke<string>("notes_image_path", { asset }).then(convertFileSrc);
-    void loading
-      .then((next) => {
-        if (!resolveNoteImage) noteImageSrcCache.set(asset, next);
-        if (!cancelled) setResolved({ asset, resolver: resolveNoteImage, src: next });
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [asset, src, resolveNoteImage]);
+  const image = useQuery(noteImageQuery(asset, resolveNoteImage ?? resolveLocalNoteImage), queryClient);
+  const src = image.data;
 
   return (
     <img

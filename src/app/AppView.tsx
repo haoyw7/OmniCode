@@ -81,6 +81,8 @@ import { LinkedWorkItemPanel } from "./ui/workspaceSurfaces";
 import type { WorkspaceViewModel } from "./controller/useWorkspaceController";
 import { SessionPageCountsContext, useSessionPageCounts } from "./shell/sessions/sessionPageCounts";
 
+const prefetchRemoteHistory = (path: string) => prefetchRemoteProjectSessions(path).then(() => undefined);
+
 /** Workspace window layout. Pure view over the controller's view-model. */
 export function AppView({ vm }: { vm: WorkspaceViewModel }) {
   const {
@@ -275,7 +277,7 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
     loadedProjectPaths: loadedProjects,
     failedProjectPaths: failedProjectPaths,
     onLoadProject: refreshHistory,
-    onPrefetchRemoteProject: prefetchRemoteProjectSessions,
+    onPrefetchRemoteProject: prefetchRemoteHistory,
     onNewInProject: onNewInProject,
     cwd: sidebarCwd,
     gitCwd: gitCwd,

@@ -3,6 +3,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useBotUnread } from "./useBotUnread";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { botCacheKey, type BotThread } from "./bots";
 import { markBotRead } from "./botUnread";
 import type { BotMessage } from "./botView";
@@ -20,6 +21,7 @@ function Counter({ rows }: { rows: BotThread[] }) {
 }
 const render = () => act(async () => root.render(createElement(Counter, { rows: [...threads] })));
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
   rpc.mockReset().mockImplementation(async (_method, params) => ({ entries: [message(params.threadId, 5)], nextRevision: 5, hasMore: false }));

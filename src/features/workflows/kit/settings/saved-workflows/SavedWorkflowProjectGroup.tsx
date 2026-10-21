@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../../../shared/lib/queryClient";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Plus } from "../../../../../shared/ui/icons";
 import {
@@ -38,7 +40,7 @@ import type {
   SavedWorkflowsOpenArtifactParams,
   SavedWorkflowsOpenRunParams,
 } from "./savedWorkflowContract.js";
-import { selectSavedWorkflowState, useSavedWorkflowStore } from "../../store/savedWorkflowStore.js";
+import { useSavedWorkflows } from "../../hooks/useSavedWorkflows";
 
 // 组把加载态回报给页的类型定义在 savedWorkflowContract；这里再导出，历史 import 路径不变。
 export type {
@@ -109,24 +111,23 @@ export function SavedWorkflowProjectGroup({
     resolution.remoteSessionId,
   );
 
-  const state = useSavedWorkflowStore((store) => selectSavedWorkflowState(store, target));
-  const load = useSavedWorkflowStore((store) => store.load);
+  const { state, refresh: reload, updatedAt } = useSavedWorkflows(target, agentService, rpcReady);
   const [launchEntry, setLaunchEntry] = useState<OmniCodeSavedWorkflowEntry | null>(null);
-  const [busyName, setBusyName] = useState<string | null>(null);
+  const deletion = useMutation({ mutationFn: (input: Parameters<typeof agentService.deleteSavedWorkflow>[0]) => agentService.deleteSavedWorkflow(input) }, queryClient);
+  const promotion = useMutation({ mutationFn: (entry: OmniCodeSavedWorkflowEntry) => promoter.promote(launchTarget, { name: entry.name, path: entry.path, locale }) }, queryClient);
+  const busyName = deletion.isPending ? deletion.variables.name : promotion.isPending ? promotion.variables.name : null;
   const [now, setNow] = useState(() => Date.now());
 
   const refresh = useCallback(
     async (options: { bypassCache?: boolean } = {}) => {
       if (!rpcReady) return;
-      await load(target, agentService, options);
+      await reload(options);
       setNow(Date.now());
     },
-    [agentService, load, rpcReady, target],
+    [reload, rpcReady],
   );
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  useEffect(() => { if (updatedAt) setNow(updatedAt); }, [updatedAt]);
 
   // 页级刷新：refreshSeq 变化（非首挂）时绕过缓存重拉。
   const lastRefreshSeq = useRef(refreshSeq);
@@ -223,9 +224,8 @@ export function SavedWorkflowProjectGroup({
         confirmVariant: "destructive",
       });
       if (!confirmed) return;
-      setBusyName(entry.name);
       try {
-        const result = await agentService.deleteSavedWorkflow({ ...target, name: entry.name });
+        const result = await deletion.mutateAsync({ ...target, name: entry.name });
         if (!result.ok) {
           toast(
             intl.formatMessage(
@@ -245,7 +245,6 @@ export function SavedWorkflowProjectGroup({
           ),
         );
       } finally {
-        setBusyName(null);
         void refresh({ bypassCache: true });
       }
     },
@@ -262,13 +261,8 @@ export function SavedWorkflowProjectGroup({
   const promoter = useSavedWorkflowPromote({ agentService, onNavigate: onNavigateToLaunchedRun });
   const handlePromote = useCallback(
     async (entry: OmniCodeSavedWorkflowEntry) => {
-      setBusyName(entry.name);
       try {
-        const result = await promoter.promote(launchTarget, {
-          name: entry.name,
-          path: entry.path,
-          locale,
-        });
+        const result = await promotion.mutateAsync(entry);
         if (!result.ok) {
           toast(
             intl.formatMessage(
@@ -277,9 +271,7 @@ export function SavedWorkflowProjectGroup({
             ),
           );
         }
-      } finally {
-        setBusyName(null);
-      }
+      } catch (error) { toast(String(error)); }
     },
     [intl, launchTarget, locale, promoter],
   );

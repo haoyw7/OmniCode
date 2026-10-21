@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import type { PopoverAnchor } from "../../../shared/ui/Popover";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useIsPresent } from "motion/react";
@@ -72,14 +74,16 @@ export function BranchPicker({
   const [open, setOpen] = useState(initialOpen);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const [busy, setBusy] = useState(false);
+  const switching = useMutation({ mutationFn: (pending: PendingSwitch) => applySwitch(pending) }, queryClient);
+  const resolving = useMutation({ mutationFn: async ({ work, pending }: { kind: "stash" | "commit"; work: () => Promise<unknown>; pending: PendingSwitch }) => {
+    await work(); await applySwitch(pending);
+  } }, queryClient);
+  const busy = switching.isPending;
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [blocked, setBlocked] = useState<PendingSwitch | null>(null);
   const [blockedError, setBlockedError] = useState<string | null>(null);
-  const [blockedBusy, setBlockedBusy] = useState<"stash" | "commit" | null>(
-    null,
-  );
+  const blockedBusy = resolving.isPending ? resolving.variables.kind : null;
   const root = useRef<HTMLDivElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const onCloseRef = useRef(onClose);
@@ -105,10 +109,10 @@ export function BranchPicker({
     setCreating(false);
     setQuery("");
     setError(null);
-    setBusy(false);
+    switching.reset();
     setBlocked(null);
     setBlockedError(null);
-    setBlockedBusy(null);
+    resolving.reset();
     onDismiss?.();
     if (restore) onCloseRef.current?.();
   };
@@ -135,10 +139,10 @@ export function BranchPicker({
     setCreating(false);
     setQuery("");
     setError(null);
-    setBusy(false);
+    switching.reset();
     setBlocked(null);
     setBlockedError(null);
-    setBlockedBusy(null);
+    resolving.reset();
   }, [enabled]);
 
   const createName = query.trim();
@@ -214,10 +218,9 @@ export function BranchPicker({
     source: "picker" | "dialog" = "picker",
   ) => {
     if (busy || blocked) return;
-    setBusy(true);
     setError(null);
     try {
-      await applySwitch(pending);
+      await switching.mutateAsync(pending);
       finishSwitch();
     } catch (err) {
       const message = failMessage(err);
@@ -226,14 +229,14 @@ export function BranchPicker({
         setCreating(false);
         setQuery("");
         setError(null);
-        setBusy(false);
+        switching.reset();
         setBlockedError(null);
-        setBlockedBusy(null);
+        resolving.reset();
         setBlocked(pending);
         return;
       }
       setError(message);
-      setBusy(false);
+      switching.reset();
       if (source === "picker") search.current?.focus();
     }
   };
@@ -243,15 +246,13 @@ export function BranchPicker({
     work: () => Promise<unknown>,
   ) => {
     if (!blocked || blockedBusy) return;
-    setBlockedBusy(kind);
     setBlockedError(null);
     try {
-      await work();
-      await applySwitch(blocked);
+      await resolving.mutateAsync({ kind, work, pending: blocked });
       finishSwitch();
     } catch (err) {
       setBlockedError(failMessage(err));
-      setBlockedBusy(null);
+      resolving.reset();
     }
   };
 

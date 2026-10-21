@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../../../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -57,6 +58,7 @@ function deferred<T>() {
 let root: Root;
 let container: HTMLDivElement;
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   fetchGithubPrChecks.mockReset();
@@ -65,7 +67,9 @@ beforeEach(() => {
   root = createRoot(container);
 });
 afterEach(() => {
+  queryClient.clear();
   delete (document as { hidden?: boolean }).hidden;
+  delete (document as { visibilityState?: string }).visibilityState;
   act(() => {
     root.unmount();
   });
@@ -86,6 +90,7 @@ const advance = (ms: number) =>
 
 function setHidden(value: boolean) {
   Object.defineProperty(document, "hidden", { configurable: true, value });
+  Object.defineProperty(document, "visibilityState", { configurable: true, value: value ? "hidden" : "visible" });
 }
 
 it("loads once on mount for open PRs whatever the revision is", async () => {

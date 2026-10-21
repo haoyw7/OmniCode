@@ -1,5 +1,7 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
+import { useMutation, useMutationState, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { createPortal } from "react-dom";
 import { GlassBackdrop } from "../../../shared/ui/GlassBackdrop";
 import {
@@ -108,6 +110,8 @@ export async function runHarnessUpdate(
   }
 }
 
+const NO_UPDATES: HarnessUpdate[] = [];
+
 /** Checked once per app launch, in whichever window asks first. */
 export function HarnessUpdateNotice({
   topOffset = 12,
@@ -118,24 +122,27 @@ export function HarnessUpdateNotice({
 }) {
   const { t: uiT } = useTranslation();
   const panelRef = useRef<HTMLElement>(null);
-  const [updates, setUpdates] = useState<HarnessUpdate[]>([]);
-  const [rows, setRows] = useState<
-    Partial<Record<HarnessId, HarnessUpdateState>>
-  >({});
+  const updating = useMutation({ mutationKey: ["harnessUpdate"], mutationFn: (update: HarnessUpdate) => runHarnessUpdate(update), gcTime: Infinity }, queryClient);
+  const rows = Object.fromEntries(useMutationState({ filters: { mutationKey: ["harnessUpdate"] }, select: mutation => {
+    const update = mutation.state.variables as HarnessUpdate;
+    const state: HarnessUpdateState = mutation.state.status === "pending" ? { status: "updating" }
+      : mutation.state.data as HarnessUpdateState ?? { status: "idle" };
+    return [update.harness, state] as const;
+  } }, queryClient));
 
   // Mounted in every workspace window, so the window that ran an update or
   // refresh tells the others to pick up the CLIs' models too.
   useHarnessRefreshSync();
 
-  useEffect(() => {
-    let cancelled = false;
-    void checkForHarnessUpdates().then((next) => {
-      if (!cancelled) setUpdates(next);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: updates = NO_UPDATES } = useQuery(
+    {
+      queryKey: ["harness", "updates"],
+      queryFn: checkForHarnessUpdates,
+      staleTime: Infinity,
+      refetchOnWindowFocus: false,
+    },
+    queryClient,
+  );
 
   const visible = updates.length > 0;
   useLayoutEffect(() => {
@@ -166,20 +173,12 @@ export function HarnessUpdateNotice({
   );
 
   const start = (targets: HarnessUpdate[]) => {
-    for (const update of targets) {
-      setRows((current) => ({
-        ...current,
-        [update.harness]: { status: "updating" },
-      }));
-      void runHarnessUpdate(update).then((result) =>
-        setRows((current) => ({ ...current, [update.harness]: result })),
-      );
-    }
+    for (const update of targets) updating.mutate(update);
   };
   const dismiss = () => {
     // Only for this run: the next launch checks and offers again.
     launchCheck = Promise.resolve([]);
-    setUpdates([]);
+    queryClient.setQueryData(["harness", "updates"], NO_UPDATES);
   };
 
   return createPortal(

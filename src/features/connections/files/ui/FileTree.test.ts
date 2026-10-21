@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../../../../shared/lib/queryClient";
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -122,6 +123,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  queryClient.clear();
   act(() => root.unmount());
   container.remove();
   localStorage.removeItem("omnicode.showExcludedFiles");

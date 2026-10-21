@@ -1,6 +1,9 @@
-import { expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { withRemoteAttachmentPreviews } from "./remoteAttachmentPreviews";
 import type { HostSession } from "./protocol";
+beforeEach(() => queryClient.clear());
+afterEach(() => queryClient.clear());
 
 const snapshot = (): HostSession => ({
   projectId: "project",
@@ -88,4 +91,28 @@ it("hydrates and reuses images inside nested subagent transcripts", async () => 
   const second = await withRemoteAttachmentPreviews("nested-machine", value, first, read);
   expect(second.session.blocks[0].agentRun!.transcript![0].attachments![0].data).toBe(btoa("image"));
   expect(read).toHaveBeenCalledTimes(1);
+});
+
+it("deduplicates concurrent reads within a Host but isolates other Hosts", async () => {
+  let finish!: (value: { offset: number; size: number; data: string }) => void;
+  const read = vi.fn(() => new Promise<{ offset: number; size: number; data: string }>(resolve => { finish = resolve; }));
+  const first = withRemoteAttachmentPreviews("first", snapshot(), undefined, read);
+  const duplicate = withRemoteAttachmentPreviews("first", snapshot(), undefined, read);
+  const otherRead = vi.fn(async () => ({ offset: 5, size: 5, data: btoa("other") }));
+  const other = await withRemoteAttachmentPreviews("second", snapshot(), undefined, otherRead);
+  expect(read).toHaveBeenCalledTimes(1);
+  finish({ offset: 5, size: 5, data: btoa("first") });
+  for (const result of await Promise.all([first, duplicate])) expect(result.session.blocks[0].attachments![0].data).toBe(btoa("first"));
+  expect(other.session.blocks[0].attachments![0].data).toBe(btoa("other"));
+});
+
+it("does not reuse preview bytes when an attachment's metadata changes", async () => {
+  const known = snapshot();
+  known.session.blocks[0].attachments![0].data = btoa("older");
+  const next = snapshot();
+  next.session.blocks[0].attachments![0].size = 3;
+  const read = vi.fn(async () => ({ offset: 3, size: 3, data: btoa("new") }));
+  const result = await withRemoteAttachmentPreviews("machine", next, known, read);
+  expect(result.session.blocks[0].attachments![0].data).toBe(btoa("new"));
+  expect(read).toHaveBeenCalledOnce();
 });

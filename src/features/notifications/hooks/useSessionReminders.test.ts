@@ -9,6 +9,7 @@ import {
   type SessionReminder,
 } from "../../sessions/model/sessionReminders";
 import { useSessionReminders } from "./useSessionReminders";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { updateNotificationPreferences } from "../model/notificationPreferences";
 
 const { invoke, listen, message } = vi.hoisted(() => ({
@@ -18,7 +19,7 @@ const { invoke, listen, message } = vi.hoisted(() => ({
 }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
 vi.mock("@tauri-apps/api/event", () => ({ listen }));
-vi.mock("@tauri-apps/plugin-dialog", () => ({ message }));
+vi.mock("sonner", () => ({ toast: { error: message } }));
 vi.mock("../../settings/model/sounds", () => ({
   loadSoundsEnabled: () => false,
   SOUNDS_CHANGE_EVENT: "sounds-change",
@@ -79,6 +80,7 @@ async function emit(event: string) {
 }
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
   stored = [{ ...reminder }];
@@ -268,7 +270,6 @@ describe("saved session reminders", () => {
     ).toBe(false);
     expect(message).toHaveBeenCalledWith(
       "Error: Save failed",
-      expect.anything(),
     );
     expect(api.reminders).toEqual([reminder]);
     await act(async () =>

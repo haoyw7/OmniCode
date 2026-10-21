@@ -1,13 +1,19 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import { FileText, MessageSquare, RefreshCw, Wrench } from "../../../shared/ui/icons";
+import {
+  FileText,
+  MessageSquare,
+  RefreshCw,
+  Wrench,
+} from "../../../shared/ui/icons";
 import type { McpConnection } from "../model/mcp";
 import {
-  inspectMcpServer,
+  mcpInspectionQuery,
   schemaParameters,
-  type McpInspection,
   type McpPrompt,
   type McpResource,
   type McpTool,
@@ -25,45 +31,18 @@ export function McpServerDetails({
   server: McpConnection;
 }) {
   const { t: uiT } = useTranslation();
-  const [state, setState] = useState<
-    | { kind: "loading" }
-    | { kind: "error"; error: string }
-    | { kind: "ready"; inspection: McpInspection }
-  >({ kind: "loading" });
-  const [generation, setGeneration] = useState(0);
+  const read = useQuery(mcpInspectionQuery(cwd, server), queryClient);
+  const state = read.isPending ? { kind: "loading" as const } : read.isError ? { kind: "error" as const, error: String(read.error) } : { kind: "ready" as const, inspection: read.data };
   const [tab, setTab] = useState<Tab>("tools");
-  // Rows are keyed by server identity; health refreshes replace the object only.
-  const serverRef = useRef(server);
-  serverRef.current = server;
-
   useEffect(() => {
-    let current = true;
-    setState({ kind: "loading" });
-    inspectMcpServer(cwd, serverRef.current, generation > 0).then(
-      (inspection) => {
-        if (!current) return;
-        setState({ kind: "ready", inspection });
-        setTab((selected) =>
-          selected === "tools" && !inspection.tools
-            ? inspection.resources
-              ? "resources"
-              : inspection.prompts
-                ? "prompts"
-                : selected
-            : selected,
-        );
-      },
-      (cause) => current && setState({ kind: "error", error: String(cause) }),
-    );
-    return () => {
-      current = false;
-    };
-  }, [cwd, generation]);
+    const inspection = read.data;
+    if (inspection) setTab(selected => selected === "tools" && !inspection.tools ? inspection.resources ? "resources" : inspection.prompts ? "prompts" : selected : selected);
+  }, [read.data]);
 
   const reload = (
     <button
       type="button"
-      onClick={() => setGeneration((value) => value + 1)}
+      onClick={() => void read.refetch()}
       disabled={state.kind === "loading"}
       className="flex items-center gap-1.5 rounded-md border border-stroke px-2 py-1 text-xs hover:bg-content/3 disabled:opacity-50"
     >

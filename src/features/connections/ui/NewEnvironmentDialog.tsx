@@ -1,4 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { wslDistributionsQuery } from "../model/environmentQueries";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { Button } from "../../../shared/ui/forms/Button";
@@ -11,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../shared/ui/pri
 import { Folder, Plus, X } from "../../../shared/ui/icons";
 import { cn } from "../../../shared/lib/cn";
 import { pickFolders } from "../../../platform/tauri/fs";
-import { listWslDistributions, pickWslFolder } from "../../../platform/tauri/wsl";
+import { pickWslFolder } from "../../../platform/tauri/wsl";
 import { OPEN_CONNECTIONS_EVENT, OPEN_REMOTE_PROJECT_EVENT, remoteRequest, useRemoteMachines } from "../model/connections";
 import { ensureSharedProject, rememberRemoteProject } from "../model/remoteProjects";
 import { environmentProjectPath, saveHostEnvironment } from "../model/hostEnvironments";
@@ -100,7 +105,8 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
   const id = useId();
   const [name, setName] = useState("");
   const [runIn, setRunIn] = useState(LOCAL);
-  const [distributions, setDistributions] = useState<string[]>([]);
+  const distributionsQuery = useQuery({ ...wslDistributionsQuery(), enabled: kind === "local" }, queryClient);
+  const distributions = distributionsQuery.data ?? [];
   const { machines } = useRemoteMachines(kind === "ssh");
   const hosts = machines.filter((machine) => machine.ssh);
   const [hostId, setHostId] = useState("");
@@ -109,19 +115,34 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
   const [folders, setFolders] = useState<string[]>([]);
   const [variablesOpen, setVariablesOpen] = useState(false);
   const [variablesText, setVariablesText] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [pickerError, setPickerError] = useState("");
   const alive = useRef(true);
   useEffect(() => {
     alive.current = true;
-    if (kind === "local")
-      void listWslDistributions().then((names) => { if (alive.current) setDistributions(names); }, () => {});
     return () => { alive.current = false; };
   }, [kind]);
 
   const parsed = parseEnvironmentVariables(variablesText);
   const count = Object.keys(parsed.variables).length;
   const distribution = kind === "local" && runIn !== LOCAL ? runIn : undefined;
+  const createMutation = useMutation({
+    mutationFn: async ({ environment, host }: { environment: HostEnvironmentDefinition; host?: { id: string; environmentId: string } }) => {
+      if (host) {
+        // Preserve the Host write -> project open order and one operation ID per attempt.
+        await remoteRequest<HostEnvironments>(host.id, "environments.patch", {
+          operationId: crypto.randomUUID(), changes: { [environment.id]: environment },
+        });
+        const project = await remoteRequest<HostProject>(host.id, "projects.open", { cwd: environment.folders[0] });
+        return rememberRemoteProject(host.environmentId, project).key;
+      }
+      await saveHostEnvironment(environment);
+      const project = await ensureSharedProject(environmentProjectPath(environment, environment.folders[0]));
+      return project.key;
+    },
+    onError: (reason) => toast.error(errorMessage(reason)),
+  }, queryClient);
+  const busy = createMutation.isPending;
+  const error = pickerError || t(errorMessage(createMutation.error) ?? "");
   const canCreate = !!name.trim() && folders.length > 0 && !parsed.error && !busy && (kind === "local" || !!host);
   const addPaths = (picked: string[]) =>
     setFolders((current) => [...current, ...picked.filter((path) => !current.includes(path))].slice(0, MAX_FOLDERS));
@@ -133,7 +154,8 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
   };
 
   const addFolders = async () => {
-    setError("");
+    setPickerError("");
+    createMutation.reset();
     if (kind === "ssh") {
       setBrowsing(true);
       return;
@@ -144,36 +166,20 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
         : await pickFolders(t("Add folders"));
       if (alive.current && picked.length) addPaths(picked);
     } catch (reason) {
-      if (alive.current) setError(t(String(reason).replace(/^Error: /, "")));
+      if (alive.current) setPickerError(t(String(reason).replace(/^Error: /, "")));
     }
   };
 
-  const create = async () => {
+  const create = () => {
     if (!canCreate) return;
-    setBusy(true);
-    setError("");
-    try {
-      const environment: HostEnvironmentDefinition = {
+    setPickerError("");
+    createMutation.mutate({
+      environment: {
         id: crypto.randomUUID(), name: name.trim(), folders, variables: parsed.variables,
         ...(distribution ? { machine: { kind: "wsl" as const, distribution } } : {}),
-      };
-      if (host) {
-        // The SSH machine's own Host applies the variables to its processes.
-        await remoteRequest<HostEnvironments>(host.id, "environments.patch", {
-          operationId: crypto.randomUUID(), changes: { [environment.id]: environment },
-        });
-        const project = await remoteRequest<HostProject>(host.id, "projects.open", { cwd: folders[0] });
-        if (alive.current) onOpen(rememberRemoteProject(host.environmentId, project).key);
-      } else {
-        await saveHostEnvironment(environment);
-        const project = await ensureSharedProject(environmentProjectPath(environment, folders[0]));
-        if (alive.current) onOpen(project.key);
-      }
-    } catch (reason) {
-      if (alive.current) setError(t(String(reason).replace(/^Error: /, "")));
-    } finally {
-      if (alive.current) setBusy(false);
-    }
+      },
+      host,
+    }, { onSuccess: (key) => onOpen(key) });
   };
 
   return (

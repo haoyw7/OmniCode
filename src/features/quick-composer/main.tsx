@@ -1,4 +1,6 @@
 import { MotionConfig } from "motion/react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../../shared/lib/queryClient";
 import { observeNativeScrollbarEdges } from "../../shared/ui/nativeScrollbarEdges";
 import { defaultTransition } from "../../shared/motion/tokens";
 import { DESKTOP_SCHEME_KEY } from "../../shared/theme/desktopAppearance";
@@ -82,10 +84,12 @@ async function boot() {
     applyAppearance();
     root.render(
       <React.StrictMode>
+        <QueryClientProvider client={queryClient}>
           <MotionConfig reducedMotion="user" transition={defaultTransition}>
             <QuickWindow />
             <Toaster />
           </MotionConfig>
+        </QueryClientProvider>
       </React.StrictMode>,
     );
   } catch (error) {

@@ -1,7 +1,10 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { withToast } from "../shared/ui/primitives/Sonner";
+import { mobileSourceKey } from "./mobileQueries";
 import { Button } from "../shared/ui/forms/Button";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -45,90 +48,45 @@ export function MobileProjectPicker({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const [directory, setDirectory] = useState<HostDirectory>();
-  const [parent, setParent] = useState<string | null>(null);
   const [path, setPath] = useState("");
   const [filter, setFilter] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [opening, setOpening] = useState(false);
-  const [error, setError] = useState<PickerError>();
-  const [browseFailed, setBrowseFailed] = useState(false);
-  const requestVersion = useRef(0);
-  const started = useRef(false);
-  const requestedPath = useRef<string | undefined>(undefined);
+  const [requested, setRequested] = useState<{ path?: string } | null>({});
+  const [sessionActive, setSessionActive] = useState(isOpen);
+  useEffect(() => { if (isOpen) setSessionActive(true); }, [isOpen]);
+  const read = useQuery({
+    queryKey: ["mobile", "browse", mobileSourceKey(browseDirectories), requested?.path ?? null],
+    enabled: sessionActive && requested !== null,
+    queryFn: ({ signal }) => { signal.throwIfAborted(); return browseDirectories(requested?.path); },
+  }, queryClient);
+  const mutation = useMutation({ mutationFn: (path: string) => withToast(() => onOpen(path),
+    { loading: t("Opening…"), success: false, error: false }) }, queryClient);
+  const directory = requested ? read.data : undefined;
+  const parent = directory?.parent ?? directoryParent(path);
+  const loading = requested !== null && read.isFetching, opening = mutation.isPending;
+  const browseFailed = requested !== null && read.isError;
+  const problem = mutation.error ?? (browseFailed ? read.error : null);
+  const error: PickerError | undefined = problem ? problem instanceof Error ? { message: problem.message } : { key: mutation.error ? "Unable to open this project." : "Unable to browse folders." } : undefined;
   const inFlight = useRef(false);
   const folders = useRef<HTMLDivElement>(null);
   const blocked = disabled || opening;
-
-  const browse = useCallback(
-    async (next?: string) => {
-      const version = ++requestVersion.current;
-      requestedPath.current = next;
-      setPath(next ?? "");
-      setParent(directoryParent(next));
-      setDirectory(undefined);
-      setFilter("");
-      setLoading(true);
-      setError(undefined);
-      setBrowseFailed(false);
-      try {
-        const value = await browseDirectories(next);
-        if (version !== requestVersion.current) return;
-        setDirectory(value);
-        setParent(value.parent);
-        setPath(value.path);
-      } catch (problem) {
-        if (version !== requestVersion.current) return;
-        setBrowseFailed(true);
-        setError(
-          problem instanceof Error
-            ? { message: problem.message }
-            : { key: "Unable to browse folders." },
-        );
-      } finally {
-        if (version === requestVersion.current) setLoading(false);
-      }
-    },
-    [browseDirectories],
-  );
-
+  const browse = (next?: string) => {
+    mutation.reset(); setPath(next ?? ""); setFilter("");
+    if (requested && requested.path === next) void read.refetch();
+    else setRequested({ path: next });
+  };
   useEffect(() => {
-    if (!isOpen || started.current) return;
-    started.current = true;
-    void browse();
-  }, [isOpen, browse]);
-  useEffect(() => () => {
-    requestVersion.current++;
-    started.current = false;
-  }, []);
+    if (requested && read.data) setPath(read.data.path);
+  }, [requested, read.data]);
   useEffect(() => {
     if (folders.current) folders.current.scrollTop = 0;
   }, [directory?.path, filter]);
-
-  const close = () => {
-    if (blocked || inFlight.current) return;
-    onClose();
-  };
+  const close = () => { if (!blocked && !inFlight.current) onClose(); };
   const open = async () => {
     if (blocked || loading || !path.trim() || inFlight.current) return;
     inFlight.current = true;
-    setOpening(true);
-    setError(undefined);
-    setBrowseFailed(false);
-    const version = ++requestVersion.current;
-    try {
-      await onOpen(path.trim());
-    } catch (problem) {
-      if (version === requestVersion.current)
-        setError(
-          problem instanceof Error
-            ? { message: problem.message }
-            : { key: "Unable to open this project." },
-        );
-    } finally {
-      inFlight.current = false;
-      if (version === requestVersion.current) setOpening(false);
-    }
+    try { await mutation.mutateAsync(path.trim()); }
+    catch { /* Keep the draft and expose the mutation failure. */ }
+    finally { inFlight.current = false; }
   };
   const query = filter.trim().toLocaleLowerCase();
   const entries = directory?.entries.filter((entry) =>
@@ -138,9 +96,9 @@ export function MobileProjectPicker({
   return (
     <MobileSheet open={isOpen} title="Open project" anchor={anchor} onClose={close}
       onExited={() => {
-        requestVersion.current++;
-        started.current = false;
-        setOpening(false);
+        setSessionActive(false);
+        setRequested({});
+        mutation.reset();
         onExited?.();
       }}>
       <div className="mobile-project-picker">
@@ -197,14 +155,10 @@ export function MobileProjectPicker({
               value={path}
               onChange={(event) => {
                 // Typing wins over a directory response still in transit.
-                requestVersion.current++;
+                setRequested(null);
                 setPath(event.currentTarget.value);
-                setParent(directoryParent(event.currentTarget.value.trim()));
-                setDirectory(undefined);
-                setLoading(false);
                 setFilter("");
-                setError(undefined);
-                setBrowseFailed(false);
+                mutation.reset();
               }}
               autoCapitalize="none"
               autoComplete="off"
@@ -281,7 +235,7 @@ export function MobileProjectPicker({
                   type="button"
 
                   disabled={blocked || loading}
-                  onClick={() => void browse(requestedPath.current)}
+                  onClick={() => void browse(requested?.path)}
                 >
                   {t("Retry")}
                 </Button>

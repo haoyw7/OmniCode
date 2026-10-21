@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { botTopicQuery } from "../model/botQueries";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { RefreshCw } from "../../../shared/ui/icons";
 import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
-import type { BotMemoryTopic } from "../model/botView";
 import type { BotTopicNote as TopicNote } from "../model/useBotTopicNotes";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
@@ -18,32 +19,10 @@ export function BotTopicNote({
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
   active = active && visible;
-  const [doc, setDoc] = useState<BotMemoryTopic | null>();
-  const [error, setError] = useState<string>();
-  const [loading, setLoading] = useState(true);
-  const [reload, setReload] = useState(0);
-  const { rpc } = note.source;
-  useEffect(() => {
-    if (!active) return;
-    let disposed = false;
-    setLoading(true);
-    setError(undefined);
-    void rpc<BotMemoryTopic | null>("assistant.memoryTopic", { topic: note.name }).then(
-      (value) => {
-        if (!disposed) {
-          setDoc(value);
-          setLoading(false);
-        }
-      },
-      (cause: unknown) => {
-        if (!disposed) {
-          setError(cause instanceof Error ? cause.message : String(cause));
-          setLoading(false);
-        }
-      },
-    );
-    return () => { disposed = true; };
-  }, [rpc, note.name, active, reload]);
+  const query = useQuery({ ...botTopicQuery(note.source.key, note.name, note.source.rpc), enabled: active }, queryClient);
+  const doc = query.data;
+  const loading = query.isPending;
+  const error = query.error ? query.error instanceof Error ? query.error.message : String(query.error) : undefined;
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col" aria-label={t("Assistant memory")}>
       <div className="flex shrink-0 items-start gap-3 border-b border-stroke p-4">
@@ -56,7 +35,7 @@ export function BotTopicNote({
           aria-label={t("Refresh notes")}
           title={t("Refresh notes")}
           disabled={loading || !active}
-          onClick={() => setReload((value) => value + 1)}
+          onClick={() => void query.refetch()}
           className="grid size-9 shrink-0 place-items-center rounded-md hover:bg-content/6 disabled:opacity-40"
         >
           <RefreshCw className="size-4" />
@@ -67,7 +46,7 @@ export function BotTopicNote({
           <Spinner className="size-5" role="status" aria-label={t("Loading notes…")} />
         ) : error ? (
           <p role="alert" className="text-sm text-content/60">
-            {error} <button type="button" disabled={!active} onClick={() => setReload((value) => value + 1)}>{t("Retry")}</button>
+            {error} <button type="button" disabled={!active} onClick={() => void query.refetch()}>{t("Retry")}</button>
           </p>
         ) : doc ? (
           <AgentMarkdown text={doc.text} hardBreaks />

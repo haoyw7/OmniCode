@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../shared/lib/queryClient";
 import { act, createElement, createRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -17,6 +18,7 @@ let upsert: ReturnType<typeof vi.fn>,
 let client: MobileClient;
 const handle = createRef<MobileNotesHandle>();
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   setUiLanguage("en");

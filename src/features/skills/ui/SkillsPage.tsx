@@ -1,3 +1,8 @@
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { skillsQuery } from "../model/skillQueries";
+import { skillDocumentQuery } from "../model/skills";
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { Switch } from "../../../shared/ui/forms/Switch";
@@ -42,8 +47,6 @@ import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
 import { HARNESS_TITLE, type HarnessId } from "../../sessions/model/session";
 import { copyText } from "../../../platform/tauri/clipboard";
 import {
-  listSkills,
-  readTextFile,
   type DiscoveredSkill,
 } from "../../../platform/tauri/fs";
 import {
@@ -103,14 +106,12 @@ export function SkillsPage({
   const filterInput = useRef<HTMLInputElement>(null);
   const closePreview = useRef<HTMLButtonElement>(null);
   const addSkillButton = useRef<HTMLButtonElement>(null);
-  const [skills, setSkills] = useState<DiscoveredSkill[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const listQuery = useQuery(skillsQuery(cwd), queryClient);
+  const skills = listQuery.data ?? null;
+  const error = errorMessage(listQuery.error) ?? null;
   const [query, setQuery] = useState("");
   const [agent, setAgent] = useState<string>(ALL_AGENTS);
   const [adding, setAdding] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [reload, setReload] = useState(0);
   const [disabledPaths, setDisabledPaths] = useState<string[]>(() =>
     loadDisabledSkillPaths(),
   );
@@ -119,8 +120,26 @@ export function SkillsPage({
     null,
   );
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewText, setPreviewText] = useState<string | null>(null);
-  const [previewError, setPreviewError] = useState<string | null>(null);
+  const previewQuery = useQuery({
+    ...skillDocumentQuery(previewSkill?.path ?? ""),
+    enabled: previewOpen && !!previewSkill,
+  }, queryClient);
+  const previewText = previewQuery.data ?? null;
+  const previewError = previewQuery.error ? uiT("Could not read SKILL.md. {error}", {
+    error: previewQuery.error instanceof Error ? previewQuery.error.message : String(previewQuery.error),
+  }) : null;
+  const createMutation = useMutation({
+    mutationFn: ({ name, scope }: { name: string; scope: "project" | "user" }) => withToast(
+      () => createBlankSkill({ cwd, name, scope }),
+      { loading: uiT("Creating skill…"), success: uiT("Created skill {name}", { name }), error: false },
+    ),
+    onSuccess: () => {
+      window.dispatchEvent(new Event(SKILLS_CHANGE_EVENT));
+      setAdding(false);
+    },
+  }, queryClient);
+  const busy = createMutation.isPending;
+  const createError = errorMessage(createMutation.error) ?? null;
   const [previewMode, setPreviewMode] = useMarkdownMode(
     `skill:${previewSkill?.path ?? ""}`,
   );
@@ -136,10 +155,6 @@ export function SkillsPage({
     if (previewOpen && previewSkill?.path === skill.path) {
       setPreviewOpen(false);
       return;
-    }
-    if (previewSkill?.path !== skill.path) {
-      setPreviewText(null);
-      setPreviewError(null);
     }
     setPreviewSkill(skill);
     setPreviewOpen(true);
@@ -173,47 +188,10 @@ export function SkillsPage({
   }, [previewVisible]);
 
   useEffect(() => {
-    if (!previewOpen || !previewSkill) return;
-    let cancelled = false;
-    setPreviewText(null);
-    setPreviewError(null);
-    void readTextFile(previewSkill.path)
-      .then((text) => {
-        if (!cancelled) setPreviewText(text);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setPreviewError(
-            `Could not read SKILL.md. ${err instanceof Error ? err.message : String(err)}`,
-          );
-        }
-      });
-    return () => {
-      cancelled = true;
+    const onChange = (): void => {
+      setDisabledPaths(loadDisabledSkillPaths());
+      void invalidateAfterChange(["skills", "list"]);
     };
-  }, [previewSkill, previewOpen]);
-
-  useEffect(() => {
-    let cancelled = false;
-    setSkills(null);
-    setError(null);
-    listSkills(cwd)
-      .then((next) => {
-        if (cancelled) return;
-        setSkills(next);
-        setError(null);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : String(err));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [cwd, reload]);
-
-  useEffect(() => {
-    const onChange = (): void => setDisabledPaths(loadDisabledSkillPaths());
     window.addEventListener(SKILLS_CHANGE_EVENT, onChange);
     return () => window.removeEventListener(SKILLS_CHANGE_EVENT, onChange);
   }, []);
@@ -289,25 +267,7 @@ export function SkillsPage({
     });
   };
 
-  const onCreate = (name: string, scope: "project" | "user"): void => {
-    setBusy(true);
-    setCreateError(null);
-    void withToast(() => createBlankSkill({ cwd, name, scope }), {
-      loading: uiT("Creating skill…"),
-      success: uiT("Created skill {name}", { name }),
-      error: false,
-    })
-      .then(() => {
-        invalidateSkills();
-        window.dispatchEvent(new Event(SKILLS_CHANGE_EVENT));
-        setAdding(false);
-        setReload((value) => value + 1);
-      })
-      .catch((err: unknown) => {
-        setCreateError(err instanceof Error ? err.message : String(err));
-      })
-      .finally(() => setBusy(false));
-  };
+  const onCreate = (name: string, scope: "project" | "user"): void => createMutation.mutate({ name, scope });
 
   return (
     <div className="@container/skills flex min-h-0 min-w-0 flex-1">
@@ -358,7 +318,6 @@ export function SkillsPage({
                   onClick={() => {
                     invalidateSkills();
                     window.dispatchEvent(new Event(SKILLS_CHANGE_EVENT));
-                    setReload((value) => value + 1);
                   }}
                   className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content"
                 >
@@ -376,7 +335,7 @@ export function SkillsPage({
                   className="rounded-md border border-content/10 px-2.5 py-1 text-[12px] text-content/70 hover:bg-content/6 disabled:opacity-40"
                   onClick={() => {
                     setAdding((value) => !value);
-                    setCreateError(null);
+                    createMutation.reset();
                   }}
                   title={uiT("Create a starter SKILL.md you can edit")}
                 >
@@ -396,7 +355,7 @@ export function SkillsPage({
                   busy={busy}
                   onCancel={() => {
                     setAdding(false);
-                    setCreateError(null);
+                    createMutation.reset();
                     addSkillButton.current?.focus();
                   }}
                   onCreate={onCreate}

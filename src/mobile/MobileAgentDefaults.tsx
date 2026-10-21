@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { mobileSourceKey } from "./mobileQueries";
+import { useEffect, useRef } from "react";
 import { ChevronRight } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import {
@@ -55,70 +58,30 @@ export function MobileAgentDefaults({
   const [defaults, setDefaults] = usePreferenceState<Defaults>(() =>
     loadMobileAgentDefaults(hostId),
   );
-  const [catalog, setCatalog] = useState<HostModelCatalog>();
-  const [accounts, setAccounts] = useState<HostProviderAccounts | null>();
-  const [catalogLoading, setCatalogLoading] = useState(false);
-  const [accountsLoading, setAccountsLoading] = useState(false);
-  const [catalogError, setCatalogError] = useState("");
-  const [accountsError, setAccountsError] = useState("");
-  const [retry, setRetry] = useState(0);
   const trigger = useRef<HTMLButtonElement>(null);
   const hostKey = typeof hostId === "object"
     ? `${hostId.endpoint}\n${hostId.environmentId ?? ""}`
     : hostId;
+  const retry = useRef(false);
+  const catalogRead = useQuery<HostModelCatalog>({
+    queryKey: ["mobile", "defaults", mobileSourceKey(client), hostKey, "models"],
+    queryFn: () => { const force = retry.current; retry.current = false; return client.models(undefined, force); }, enabled: !!hostId,
+    initialData: () => hostId ? client.cachedModels() : undefined, initialDataUpdatedAt: 0,
+  }, queryClient);
+  const accountsRead = useQuery<HostProviderAccounts | null>({
+    queryKey: ["mobile", "defaults", mobileSourceKey(client), hostKey, "accounts"], queryFn: () => client.providerAccounts(), enabled: !!hostId,
+  }, queryClient);
+  const catalog = catalogRead.data, accounts = accountsRead.data;
+  const catalogLoading = catalogRead.isFetching, accountsLoading = accountsRead.isFetching;
+  const catalogError = catalogRead.error ? catalogRead.error.message : "";
+  const accountsError = accountsRead.error ? accountsRead.error.message : "";
   useEffect(() => {
-    let current = true;
-    setDefaults(loadMobileAgentDefaults(hostId));
-    setCatalog(hostId ? client.cachedModels() : undefined);
-    setAccounts(undefined);
-    setCatalogError("");
-    setAccountsError("");
-    setCatalogLoading(!!hostId);
-    setAccountsLoading(!!hostId);
-    if (!hostId) return;
-    void (async () => {
-      try {
-        const value = await client.models(undefined, retry > 0);
-        if (current) setCatalog(value);
-      } catch (error) {
-        if (current)
-          setCatalogError(
-            error instanceof Error
-              ? error.message
-              : t("Unable to load models."),
-          );
-      } finally {
-        if (current) setCatalogLoading(false);
-      }
-    })();
-    void (async () => {
-      try {
-        const value = await client.providerAccounts();
-        if (!current) return;
-        setAccounts(value);
-        if (value) {
-          // Read the latest preferences so discovery cannot undo a local edit.
-          const saved = loadMobileAgentDefaults(hostId);
-          const confirmed = confirmLegacyAccounts(saved, value);
-          if (confirmed !== saved) saveMobileAgentDefaults(hostId, confirmed);
-          setDefaults(confirmed);
-        }
-      } catch (error) {
-        if (current)
-          setAccountsError(
-            error instanceof Error
-              ? error.message
-              : t("Unable to load accounts."),
-          );
-      } finally {
-        if (current) setAccountsLoading(false);
-      }
-    })();
-    return () => {
-      current = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, hostKey, retry]);
+    const saved = loadMobileAgentDefaults(hostId);
+    const confirmed = accounts ? confirmLegacyAccounts(saved, accounts) : saved;
+    if (hostId && confirmed !== saved) saveMobileAgentDefaults(hostId, confirmed);
+    setDefaults(confirmed);
+  }, [hostKey, accounts]);
+  const reload = () => { retry.current = true; void catalogRead.refetch(); void accountsRead.refetch(); };
   const change = (next: Defaults) => {
     if (!hostId || disabled) return;
     saveMobileAgentDefaults(hostId, next);
@@ -290,7 +253,7 @@ export function MobileAgentDefaults({
         harness={configuration.harness}
         loading={catalogLoading || accountsLoading}
         disabled={unavailable}
-        onRetry={() => setRetry((value) => value + 1)}
+        onRetry={() => reload()}
       />
       <MobileModelControls
         open={panel === "agent-defaults" && !unavailable}

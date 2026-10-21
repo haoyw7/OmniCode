@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -33,12 +35,10 @@ import { mcpServerKey } from "../model/mcpInspect";
 import { McpServerDetails } from "./McpServerDetails";
 import { MCP_PROVIDER_LABELS, type McpConnection } from "../model/mcp";
 import {
-  getCachedMcpSettings,
+  useMcpSettings,
   loadMcpSettings,
-  subscribeMcpSettings,
   type McpServerRow,
-  type McpSettingsSnapshot,
-} from "../model/mcpSettingsCache";
+} from "../model/mcpSettingsQueries";
 
 type Scope = McpConnection["scope"];
 type ServerRow = McpServerRow;
@@ -182,7 +182,14 @@ function AddServerModal({
   const [scope, setScope] = useState<Scope>(SCOPES[initialProvider][0]);
   const [name, setName] = useState("");
   const [config, setConfig] = useState("");
-  const [busy, setBusy] = useState(false);
+  const addMutation = useMutation({
+    mutationFn: () => withToast(
+      () => invoke("mcp_add", { cwd, provider, scope, name: name.trim(), config }),
+      { loading: uiT("Adding MCP server…"), success: uiT("MCP server added"), error: false },
+    ),
+    onSuccess: async () => { await onAdded(); onClose(); },
+  }, queryClient);
+  const busy = addMutation.isPending;
   const [error, setError] = useState("");
 
   async function add(event: FormEvent<HTMLFormElement>) {
@@ -192,29 +199,10 @@ function AddServerModal({
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
         throw new Error("Configuration must be a JSON object");
       }
-      setBusy(true);
       setError("");
-      await withToast(
-        () =>
-          invoke("mcp_add", {
-            cwd,
-            provider,
-            scope,
-            name: name.trim(),
-            config,
-          }),
-        {
-          loading: uiT("Adding MCP server…"),
-          success: uiT("MCP server added"),
-          error: false,
-        },
-      );
-      await onAdded();
-      onClose();
+      await addMutation.mutateAsync();
     } catch (cause) {
       setError(String(cause));
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -342,58 +330,27 @@ function McpConnections({
   projectPicker: ReactNode;
 }) {
   const { t: uiT } = useTranslation();
-  const cached = getCachedMcpSettings(cwd);
-  const [servers, setServers] = useState<ServerRow[]>(cached?.servers ?? []);
+  const mcp = useMcpSettings(cwd);
+  const { servers, claudeError, piError } = mcp;
   const [filter, setFilter] = useState<Filter>("all");
   const [showAllProviders, setShowAllProviders] = useState(false);
-  const [loading, setLoading] = useState(!cached);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState(cached?.error ?? "");
-  const [claudeError, setClaudeError] = useState(cached?.claudeError ?? "");
-  const [piError, setPiError] = useState(cached?.piError ?? "");
+  const loading = mcp.fetching;
+  const [actionError, setError] = useState("");
+  const actionMutation = useMutation({
+    mutationFn: ({ server, scope }: { server: ServerRow; scope?: Scope }) => withToast(
+      () => scope
+        ? invoke("claude_mcp_remove", { cwd, name: server.name, scope })
+        : invoke("mcp_provider_login", { cwd, provider: server.provider, name: server.name }),
+      { loading: uiT("Saving…"), success: uiT("Saved"), error: false },
+    ),
+    onSuccess: () => loadMcpSettings(cwd, true),
+  }, queryClient);
+  const busy = actionMutation.isPending ? actionMutation.variables.server.name : null;
+  const error = actionError || (actionMutation.error ? String(actionMutation.error) : mcp.error);
   const [addOpen, setAddOpen] = useState(false);
   const [removeScopes, setRemoveScopes] = useState<Record<string, Scope>>({});
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
-  const refreshGeneration = useRef(0);
-
-  const applySnapshot = useCallback((snapshot: McpSettingsSnapshot) => {
-    setServers(snapshot.servers);
-    setError(snapshot.error);
-    setClaudeError(snapshot.claudeError);
-    setPiError(snapshot.piError);
-    setLoading(false);
-  }, []);
-
-  useEffect(
-    () => subscribeMcpSettings(cwd, applySnapshot),
-    [cwd, applySnapshot],
-  );
-
-  const refresh = useCallback(
-    async (force = true) => {
-      const generation = ++refreshGeneration.current;
-      const previous = getCachedMcpSettings(cwd);
-      if (!force) {
-        setServers(previous?.servers ?? []);
-        setError(previous?.error ?? "");
-        setClaudeError(previous?.claudeError ?? "");
-        setPiError(previous?.piError ?? "");
-      }
-      setLoading(force || !previous);
-      const snapshot = await loadMcpSettings(cwd, force);
-      if (generation === refreshGeneration.current) {
-        applySnapshot(getCachedMcpSettings(cwd) ?? snapshot);
-      }
-    },
-    [cwd, applySnapshot],
-  );
-
-  useEffect(() => {
-    void refresh(false);
-    return () => {
-      refreshGeneration.current += 1;
-    };
-  }, [refresh]);
+  const refresh = useCallback(async () => { await loadMcpSettings(cwd, true); }, [cwd]);
 
   const visible = useMemo(
     () =>
@@ -412,21 +369,8 @@ function McpConnections({
     if (filter !== "all" && !filterProviders.includes(filter)) setFilter("all");
   }, [filter, filterProviders]);
 
-  async function login(server: ServerRow) {
-    setBusy(server.name);
-    setError("");
-    try {
-      await invoke("mcp_provider_login", {
-        cwd,
-        provider: server.provider,
-        name: server.name,
-      });
-      await refresh();
-    } catch (cause) {
-      setError(String(cause));
-    } finally {
-      setBusy(null);
-    }
+  function login(server: ServerRow) {
+    actionMutation.mutate({ server });
   }
 
   async function remove(server: ServerRow) {
@@ -439,20 +383,7 @@ function McpConnections({
       }))
     )
       return;
-    setBusy(server.name);
-    setError("");
-    try {
-      await invoke("claude_mcp_remove", {
-        cwd,
-        name: server.name,
-        scope: selectedScope,
-      });
-      await refresh();
-    } catch (cause) {
-      setError(String(cause));
-    } finally {
-      setBusy(null);
-    }
+    actionMutation.mutate({ server, scope: selectedScope });
   }
 
   return (

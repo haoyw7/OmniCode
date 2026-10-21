@@ -1,3 +1,4 @@
+import { fetchInboxSource, inboxSourceKey, invalidateInboxSource, peekInboxSource } from "./inboxSourceQueries";
 import { invoke } from "@tauri-apps/api/core";
 import { recordInboxSelfActivity } from "./inboxSelfActivity";
 
@@ -66,9 +67,6 @@ export type LinearStatus = {
 const TEAM_IDS_KEY = "omnicode.linearHiddenTeams";
 export const LINEAR_CHANGE_EVENT = "omnicode:linear-change";
 
-const detailsById = new Map<string, LinearIssueDetails>();
-const threadById = new Map<string, LinearIssueThread>();
-const threadInflight = new Map<string, Promise<LinearIssueThread>>();
 
 export function linearConnected(): Promise<LinearStatus> {
   return invoke<LinearStatus>("linear_status");
@@ -115,43 +113,26 @@ export function listLinearIssues(query: {
 }
 
 export function peekLinearIssueDetails(id: string): LinearIssueDetails | null {
-  return detailsById.get(id) ?? null;
+  return peekInboxSource<LinearIssueDetails>(inboxSourceKey("linear", "details", id));
 }
 
 export async function linearIssueDetails(
   id: string,
 ): Promise<LinearIssueDetails> {
-  const details = await invoke<LinearIssueDetails>("linear_issue_details", {
-    id,
-  });
-  detailsById.set(id, details);
-  return details;
+  return fetchInboxSource(inboxSourceKey("linear", "details", id), () => invoke<LinearIssueDetails>("linear_issue_details", { id }));
+
 }
 
 export function peekLinearIssueThread(id: string): LinearIssueThread | null {
-  return threadById.get(id) ?? null;
+  return peekInboxSource<LinearIssueThread>(inboxSourceKey("linear", "thread", id));
 }
 
 export async function linearIssueThread(
   id: string,
   options?: { force?: boolean },
 ): Promise<LinearIssueThread> {
-  if (options?.force) {
-    threadById.delete(id);
-    threadInflight.delete(id);
-  }
-  const pending = threadInflight.get(id);
-  if (pending) return pending;
-  const promise = invoke<LinearIssueThread>("linear_issue_thread", { id })
-    .then((thread) => {
-      threadById.set(id, thread);
-      return thread;
-    })
-    .finally(() => {
-      if (threadInflight.get(id) === promise) threadInflight.delete(id);
-    });
-  threadInflight.set(id, promise);
-  return promise;
+  return fetchInboxSource(inboxSourceKey("linear", "thread", id), () => invoke<LinearIssueThread>("linear_issue_thread", { id }), options);
+
 }
 
 export async function linearIssueComment(
@@ -164,8 +145,7 @@ export async function linearIssueComment(
     body: body.trim(),
     parentId: options?.parentId?.trim() ?? "",
   });
-  threadById.delete(id);
-  threadInflight.delete(id);
+  await invalidateInboxSource(inboxSourceKey("linear", "thread", id));
   recordInboxSelfActivity({ provider: "linear", kind: "linear", id });
   return url;
 }

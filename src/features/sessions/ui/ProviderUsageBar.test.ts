@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 // Keep this as .ts because the project test glob intentionally excludes .test.tsx.
+import { queryClient } from "../../../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -28,13 +29,14 @@ import type {
   ProviderRateLimits,
   RateLimitProvider,
 } from "../../providers/model/rateLimits";
-import { clearCachedRateLimits } from "../../providers/model/rateLimitsCache";
+import { clearCachedRateLimits } from "../../providers/model/rateLimitsQueries";
 import { ProviderUsageBar } from "./ProviderUsageBar";
 
 let container: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal(
     "ResizeObserver",
@@ -54,6 +56,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  queryClient.clear();
   act(() => root.unmount());
   container.remove();
   vi.unstubAllGlobals();
@@ -159,7 +162,7 @@ describe("ProviderUsageBar provider authentication", () => {
     expect(dialog?.textContent).toContain("Authentication required");
     expect(dialog?.querySelector(".size-9")).not.toBeNull();
 
-    act(() => button("Sign in to Grok Build").click());
+    await act(async () => button("Sign in to Grok Build").click());
     expect(auth.loginHarness).toHaveBeenCalledWith("grok");
     expect(dialog?.textContent).toContain("Waiting for browser…");
 
@@ -194,13 +197,13 @@ describe("ProviderUsageBar provider authentication", () => {
     });
 
     act(() => button("Claude Code usage details").click());
-    act(() => button("Sign in to Claude Code").click());
+    await act(async () => button("Sign in to Claude Code").click());
     await vi.waitFor(() =>
       expect(auth.loginHarness).toHaveBeenCalledWith("claude"),
     );
 
     act(() => button("Codex usage details").click());
-    act(() => button("Sign in to Codex").click());
+    await act(async () => button("Sign in to Codex").click());
     expect(auth.loginHarness).not.toHaveBeenCalledWith("codex");
 
     await act(async () => rejectClaude?.(new Error("Claude login failed")));

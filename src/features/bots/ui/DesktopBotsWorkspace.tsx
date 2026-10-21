@@ -1,3 +1,7 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { botKeys, botDescriptorQuery, botsQuery, botTeamsQuery, botRoomsQuery, botCatalogQuery } from "../model/botQueries";
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
@@ -25,10 +29,10 @@ import { DesktopBotDelegations, DesktopBotDelegationCard } from "./DesktopBotDel
 import { DesktopBotTeams } from "./DesktopBotTeams";
 import { DesktopBotRooms } from "./DesktopBotRooms";
 import { DesktopBotRoomChat } from "./DesktopBotRoomChat";
-import type { BotTeam, BotTeams } from "../model/botTeams";
-import type { BotRoom, BotRooms } from "../model/botRooms";
+import type { BotTeam } from "../model/botTeams";
+import type { BotRoom } from "../model/botRooms";
 import { botErrorMessage } from "../model/botErrors";
-import { REMOTE_PROVIDERS, type HostDescriptor, type HostModelCatalog, type HostProject } from "../../connections/model/protocol";
+
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
@@ -50,22 +54,14 @@ const EMPTY_THREADS: BotThread[] = [];
 /** Capability boundary: old Hosts keep the unchanged assistant controller. */
 export function DesktopBotsWorkspace(props: Props) {
   const visible = useSurfaceVisibility();
-  const [descriptor, setDescriptor] = useState<HostDescriptor>();
-  const [failure, setFailure] = useState<string>();
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    if (!visible || descriptor) return;
-    let disposed = false;
-    void props.rpc<HostDescriptor>("environment.describe", { supportedProviders: REMOTE_PROVIDERS }).then((value) => {
-      if (!disposed) { setDescriptor(value); setFailure(undefined); }
-    }, (error) => { if (!disposed) setFailure(botErrorMessage(error)); });
-    return () => { disposed = true; };
-  }, [props.rpc, visible, attempt]);
+  const descriptorQuery = useQuery({ ...botDescriptorQuery(props.hostKey, props.rpc), enabled: visible }, queryClient);
+  const descriptor = descriptorQuery.data;
+  const failure = descriptorQuery.error ? botErrorMessage(descriptorQuery.error) : undefined;
   const rpc = useMemo<BotRpc>(() => (method, params) => method === "environment.describe" && descriptor
     ? Promise.resolve(descriptor as never) : props.rpc(method, params), [props.rpc, descriptor]);
   const { t } = useTranslation();
   if (failure && !descriptor) return <div className="assistant-availability" role="alert">
-    <p>{t(failure)}</p><button type="button" onClick={() => setAttempt((value) => value + 1)}>{t("Retry")}</button>
+    <p>{t(failure)}</p><button type="button" onClick={() => void descriptorQuery.refetch()}>{t("Retry")}</button>
   </div>;
   if (!descriptor) return <div className="assistant-availability assistant-loading" role="status">
     <Spinner className="size-5" /><span>{t("Connecting…")}</span>
@@ -84,13 +80,21 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
     setNavigationWidth(width);
     try { localStorage.setItem("omnicode.bots-sidebar-width", String(width)); } catch { /* Storage is optional. */ }
   };
-  const [snapshot, setSnapshot] = useState<BotsSnapshot>();
-  const [teams, setTeams] = useState<BotTeam[]>([]), [rooms, setRooms] = useState<BotRoom[]>([]);
+  const listQuery = useQuery({ ...botsQuery(props.hostKey, props.rpc), enabled: visible, refetchInterval: visible ? 2000 : false }, queryClient);
+  const snapshot = listQuery.data;
+  const setSnapshot = (update: (current: BotsSnapshot | undefined) => BotsSnapshot) =>
+    queryClient.setQueryData(botKeys.list(props.hostKey), update);
+  const teamsQuery = useQuery({ ...botTeamsQuery(props.hostKey, props.rpc), enabled: visible && props.teamsSupported, refetchInterval: visible && props.teamsSupported ? 2000 : false }, queryClient);
+  const roomsQuery = useQuery({ ...botRoomsQuery(props.hostKey, props.rpc), enabled: visible && props.roomsSupported, refetchInterval: visible && props.roomsSupported ? 2000 : false }, queryClient);
+  const teams = teamsQuery.data?.teams ?? [];
+  const rooms = roomsQuery.data?.rooms ?? [];
   const [managementPanel, setManagementPanel] = useState<"teams" | "rooms">(), [roomSelection, setRoomSelection] = useState<string>(), [visitedRooms, setVisitedRooms] = useState<string[]>([]);
-  const [collaborationError, setCollaborationError] = useState<string>();
+  const [dismissedAt, setDismissedAt] = useState(0);
+  const collaborationFailure = teamsQuery.errorUpdatedAt > dismissedAt && teamsQuery.error || roomsQuery.errorUpdatedAt > dismissedAt && roomsQuery.error;
+  const collaborationError = collaborationFailure ? botErrorMessage(collaborationFailure) : undefined;
   const botNamesKey = JSON.stringify((snapshot?.bots ?? []).map(bot => [bot.id, bot.name]));
   const botNames = useMemo<Record<string, string>>(() => Object.fromEntries(JSON.parse(botNamesKey) as [string, string][]), [botNamesKey]);
-  const [connectionError, setConnectionError] = useState<string>();
+  const connectionError = listQuery.error && listQuery.errorUpdatedAt > dismissedAt ? botErrorMessage(listQuery.error) : undefined;
   const [error, setError] = useState<string>();
   const [selection, setSelection] = useState(() => readBotSelection(props.hostKey));
   const [visited, setVisited] = useState<BotScope[]>([]);
@@ -110,10 +114,11 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
     if (active.length !== pins.length) savePins(active);
   }, [snapshot, pins, props.hostKey]);
   const [showArchive, setShowArchive] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [catalog, setCatalog] = useState<HostModelCatalog>({ models: {}, errors: {} });
-  const [projects, setProjects] = useState<HostProject[]>([]);
-  const [catalogState, setCatalogState] = useState<"loading" | "ready" | "failed">("loading");
+
+  const catalogQuery = useQuery({ ...botCatalogQuery(props.hostKey, props.rpc), enabled: creatingBot && visible }, queryClient);
+  const catalog = catalogQuery.data?.catalog ?? { models: {}, errors: {} };
+  const projects = catalogQuery.data?.projects ?? [];
+  const catalogState = catalogQuery.isError ? "failed" : catalogQuery.data ? "ready" : "loading";
   const [memoryDrafts] = useState(() => new BotMemoryDrafts());
   const workspace = useRef<HTMLDivElement>(null);
   const restoreRecipientFocus = useRef(false);
@@ -144,46 +149,20 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
   }, [props.hostKey, choose]);
   const select = useCallback((scope: BotScope) => selectBotThread(props.hostKey, scope), [props.hostKey]);
   const refresh = useCallback(async () => {
-    const next = await props.rpc<BotsSnapshot>("bots.list", { includeArchived: true });
-    setSnapshot(next);
-    setError(undefined);
-    return next;
-  }, [props.rpc]);
+    await invalidateAfterChange(botKeys.list(props.hostKey));
+    return queryClient.fetchQuery({ ...botsQuery(props.hostKey, props.rpc), staleTime: Infinity });
+  }, [props.hostKey, props.rpc]);
   const refreshCollaboration = useCallback(async () => {
-    const [nextTeams, nextRooms] = await Promise.all([
-      props.teamsSupported ? props.rpc<BotTeams>("botTeams.list", { includeArchived: true }) : undefined,
-      props.roomsSupported ? props.rpc<BotRooms>("botRooms.list", { includeArchived: true }) : undefined,
+    await Promise.all([
+      props.teamsSupported ? invalidateAfterChange(botKeys.teams(props.hostKey)) : undefined,
+      props.roomsSupported ? invalidateAfterChange(botKeys.rooms(props.hostKey)) : undefined,
     ]);
-    if (nextTeams) setTeams(nextTeams.teams);
-    if (nextRooms) setRooms(nextRooms.rooms);
-    setCollaborationError(undefined);
-  }, [props.rpc, props.teamsSupported, props.roomsSupported]);
-  useEffect(() => {
-    if (!visible || (!props.teamsSupported && !props.roomsSupported)) return;
-    let disposed = false, timer: ReturnType<typeof setTimeout>;
-    const poll = async () => { try { await refreshCollaboration(); } catch (cause) { if (!disposed) setCollaborationError(botErrorMessage(cause)); } finally { if (!disposed) timer = setTimeout(poll, 2000); } };
-    void poll();
-    return () => { disposed = true; clearTimeout(timer); };
-  }, [visible, refreshCollaboration]);
+  }, [props.hostKey, props.teamsSupported, props.roomsSupported]);
   const openRoom = useCallback((id: string) => {
     setRoomSelection(id); setVisitedRooms(current => current.includes(id) ? current : [...current, id]);
     setManagementPanel(undefined); setCreatingBot(false); setRecipientOpen(false); setShowArchive(false);
   }, []);
   const openManagement = (panel: "teams" | "rooms") => { setManagementPanel(panel); setRoomSelection(undefined); setCreatingBot(false); setRecipientOpen(false); setShowArchive(false); };
-  useEffect(() => {
-    if (!visible) return;
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout>;
-    const poll = async () => {
-      try {
-        const next = await props.rpc<BotsSnapshot>("bots.list", { includeArchived: true });
-        if (!disposed) { setSnapshot(next); setConnectionError(undefined); }
-      } catch (error) { if (!disposed) setConnectionError(botErrorMessage(error)); }
-      finally { if (!disposed) timer = setTimeout(poll, 2000); }
-    };
-    void poll();
-    return () => { disposed = true; clearTimeout(timer); };
-  }, [props.rpc, visible]);
   useEffect(() => {
     if (!snapshot) return;
     const usable = snapshot.threads.filter((thread) => !thread.archivedAt && snapshot.bots.some((bot) => bot.id === thread.botId && !bot.archivedAt));
@@ -199,21 +178,38 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
   }, [snapshot, selection, props.hostKey, select]);
   const activeThreads = useMemo(() => snapshot?.threads.filter((thread) => !thread.archivedAt && snapshot.bots.some((bot) => bot.id === thread.botId && !bot.archivedAt)) ?? EMPTY_THREADS, [snapshot]);
   const activity = useBotUnread(props.hostKey, activeThreads, props.rpc, visible);
-  const loadCatalog = useCallback(async () => {
-    setCatalogState("loading");
-    try {
-      const [models, projects] = await Promise.all([props.rpc<HostModelCatalog>("models.list"), props.rpc<HostProject[]>("projects.list")]);
-      setCatalog(models); setProjects(projects); setCatalogState("ready");
-    } catch (cause) { setError(botErrorMessage(cause)); setCatalogState("failed"); }
-  }, [props.rpc]);
-  useEffect(() => { if (creatingBot && visible && catalogState === "loading") void loadCatalog(); }, [creatingBot, visible, loadCatalog]);
+  const loadCatalog = () => catalogQuery.refetch();
+  const operation = useMutation({
+    mutationFn: (task: () => Promise<void>) => task(),
+    onSuccess: () => toast.success(t("Saved")),
+    onError: (cause) => { setError(botErrorMessage(cause)); toast.error(t(botErrorMessage(cause))); },
+  }, queryClient);
+  const archiveOperation = useMutation({
+    mutationFn: async ({ method, bot, thread }: { method: "bots.archive" | "bots.restore" | "botThreads.archive" | "botThreads.restore"; bot: BotView; thread?: BotThread }) => {
+      const expectedRevision = thread?.revision ?? bot.revision;
+      const signature = JSON.stringify([method, bot.id, thread?.id, expectedRevision]);
+      const commandId = archiveCommands.current.get(signature) ?? crypto.randomUUID();
+      archiveCommands.current.set(signature, commandId);
+      await props.rpc(method, { commandId, botId: bot.id, ...(thread ? { threadId: thread.id } : {}), expectedRevision });
+      const next = await refresh();
+      archiveCommands.current.delete(signature);
+      if (method.endsWith(".restore")) {
+        const target = thread ?? next.threads.find((item) => item.botId === bot.id && item.id === bot.defaultThreadId && !item.archivedAt);
+        if (target) select({ botId: bot.id, threadId: target.id });
+      }
+    },
+    onSuccess: () => toast.success(t("Saved")),
+    onError: (cause) => { setError(botErrorMessage(cause)); toast.error(t(botErrorMessage(cause))); },
+  }, queryClient);
+  const busy = operation.isPending || archiveOperation.isPending;
   const createBot = async (patch: BotPatch) => {
     if (busy) return;
-    setBusy(true); setError(undefined);
+    setError(undefined);
     const text = JSON.stringify(patch);
     if (createCommand.current?.text !== text) createCommand.current = { text, id: crypto.randomUUID() };
-    try {
-      const result = await props.rpc<{ bot: BotView; thread: BotThread }>("bots.create", { commandId: createCommand.current.id, patch });
+    const command = createCommand.current;
+    try { await operation.mutateAsync(async () => {
+      const result = await props.rpc<{ bot: BotView; thread: BotThread }>("bots.create", { commandId: command.id, patch });
       setSnapshot((current) => ({
         revision: (current?.revision ?? 0) + 1,
         ...current,
@@ -222,30 +218,17 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
       }));
       createCommand.current = undefined;
       select({ botId: result.bot.id, threadId: result.thread.id });
-      void refresh().catch(() => {});
-    } catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
+      await refresh();
+    }); } catch (cause) { setError(botErrorMessage(cause)); }
   };
   const archiveCommands = useRef(new Map<string, string>());
-  const changeArchive = async (method: "bots.archive" | "bots.restore" | "botThreads.archive" | "botThreads.restore", bot: BotView, thread?: BotThread) => {
-    const expectedRevision = thread?.revision ?? bot.revision;
-    const signature = JSON.stringify([method, bot.id, thread?.id, expectedRevision]);
-    const commandId = archiveCommands.current.get(signature) ?? crypto.randomUUID();
-    archiveCommands.current.set(signature, commandId);
-    await props.rpc(method, { commandId, botId: bot.id, ...(thread ? { threadId: thread.id } : {}), expectedRevision });
-    const next = await refresh();
-    archiveCommands.current.delete(signature);
-    if (method.endsWith(".restore")) {
-      const target = thread ?? next.threads.find((item) => item.botId === bot.id && item.id === bot.defaultThreadId && !item.archivedAt);
-      if (target) select({ botId: bot.id, threadId: target.id });
-    }
-  };
+  const changeArchive = (method: "bots.archive" | "bots.restore" | "botThreads.archive" | "botThreads.restore", bot: BotView, thread?: BotThread) =>
+    archiveOperation.mutateAsync({ method, bot, thread });
   const restore = async (bot: BotView, thread?: BotThread) => {
     if (busy) return;
-    setBusy(true); setError(undefined);
+    setError(undefined);
     try { await changeArchive(thread ? "botThreads.restore" : "bots.restore", bot, thread); }
     catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
   };
   const openDelegationThread = useCallback((scope: BotScope) => {
     void refresh().then(next => {
@@ -260,7 +243,7 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
       if (thread) select({ botId: bot.id, threadId: thread.id });
   };
   const roomDraft = useRef<{ signature: string; createId: string; sendId: string; room?: BotRoom } | undefined>(undefined);
-  const sendToRecipients = async (members: BotView[], text: string) => {
+  const sendToRecipients = (members: BotView[], text: string) => operation.mutateAsync(async () => {
     if (!props.roomsSupported || members.length < 2) return;
     const memberIds = members.map(bot => bot.id), signature = JSON.stringify([memberIds, text]);
     if (roomDraft.current?.signature !== signature) roomDraft.current = { signature, createId: crypto.randomUUID(), sendId: crypto.randomUUID() };
@@ -268,10 +251,11 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
     request.room ??= await props.rpc<BotRoom>("botRooms.create", { commandId: request.createId, name: members.map(bot => bot.name).join(", ").slice(0, 100), memberIds });
     const room = request.room;
     await props.rpc("botRooms.send", { commandId: request.sendId, roomId: room.id, text });
-    setRooms(current => [...current.filter(item => item.id !== room.id), room]);
+    queryClient.setQueryData(botRoomsQuery(props.hostKey, props.rpc).queryKey, current =>
+      ({ revision: current?.revision ?? 0, rooms: [...(current?.rooms ?? []).filter(item => item.id !== room.id), room] }));
     roomDraft.current = undefined; openRoom(room.id);
-    void refreshCollaboration().catch(cause => setCollaborationError(botErrorMessage(cause)));
-  };
+    await refreshCollaboration();
+  });
   const navigation = <BotNavigation navigationWidth={navigationWidth} onNavigationWidth={commitNavigationWidth} pins={pins} onTogglePin={togglePin} draftOpen={recipientOpen} hostName={props.hostName}
     teams={teams} rooms={rooms} teamsSupported={props.teamsSupported} roomsSupported={props.roomsSupported} roomSelection={roomSelection} onOpenRoom={openRoom} onManage={openManagement}
     snapshot={snapshot} selection={showArchive || managementPanel || roomSelection ? undefined : selection} activity={activity} environmentId={props.hostKey}
@@ -289,7 +273,7 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
     requestAnimationFrame(() => workspace.current?.querySelector<HTMLButtonElement>('.desktop-bots-thread-surface:not([aria-hidden]) .desktop-bots-archive-entry')?.focus());
   };
   return <div ref={workspace} className="desktop-bots-host">
-    {(error || connectionError || collaborationError) && <div className="desktop-bots-error" role="alert">{t(error ?? connectionError ?? collaborationError!)}<button type="button" onClick={() => { setError(undefined); setConnectionError(undefined); setCollaborationError(undefined); }} aria-label={t("Dismiss")}><X size={14} /></button></div>}
+    {(error || connectionError || collaborationError) && <div className="desktop-bots-error" role="alert">{t(error ?? connectionError ?? collaborationError!)}<button type="button" onClick={() => { setError(undefined); setDismissedAt(Date.now()); }} aria-label={t("Dismiss")}><X size={14} /></button></div>}
     {visited.map((scope) => {
       const thread = snapshot?.threads.find((thread) => thread.id === scope.threadId && thread.botId === scope.botId);
       const bot = snapshot?.bots.find((bot) => bot.id === scope.botId);

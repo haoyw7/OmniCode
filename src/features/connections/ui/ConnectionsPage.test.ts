@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { configureSharedHost } from "../model/remoteProjects";
 import { ConnectionsPage } from "./ConnectionsPage";
+import { queryClient } from "../../../shared/lib/queryClient";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("../../../shared/ui/primitives/Sonner", () => ({
@@ -16,6 +17,7 @@ let root: Root;
 const phone = { id: "phone", name: "My phone", admin: false, manufacturer: "Samsung", model: "SM-S9280" };
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
   configureSharedHost("local", [], "computer");
@@ -40,6 +42,7 @@ beforeEach(() => {
 
 afterEach(() => {
   act(() => root.unmount());
+  queryClient.clear();
   container.remove();
   configureSharedHost(undefined, []);
   localStorage.clear();
@@ -193,24 +196,31 @@ it.each([false, true])("retires the QR after pairing, including a grouped networ
 it("retries pairing status failures and ignores the pending response after unmount", async () => {
   vi.useFakeTimers();
   let requests = 0;
+  let fail = false;
+  let pending = false;
   let finish!: (value: unknown) => void;
   mockPairingRequests(() => {
     requests += 1;
-    if (requests <= 2) return { devices: [] };
-    if (requests === 3) throw new Error("Host unavailable");
-    return new Promise((resolve) => { finish = resolve; });
+    if (fail) throw new Error("Host unavailable");
+    if (pending) return new Promise((resolve) => { finish = resolve; });
+    return { devices: [] };
   });
   const dialog = await createPairingCode();
-  expect(dialog.querySelector('[role="alert"]')?.textContent).toContain("Host unavailable");
+  const initialRequests = requests;
+  fail = true;
   await act(async () => vi.advanceTimersByTimeAsync(1_000));
-  expect(requests).toBe(4);
+  expect(dialog.querySelector('[role="alert"]')?.textContent).toContain("Host unavailable");
+  fail = false;
+  pending = true;
+  await act(async () => vi.advanceTimersByTimeAsync(1_000));
+  expect(requests).toBe(initialRequests + 2);
   // A slow request does not start another concurrent status check.
   await act(async () => vi.advanceTimersByTimeAsync(2_000));
-  expect(requests).toBe(4);
+  expect(requests).toBe(initialRequests + 2);
   await act(async () => root.unmount());
   root = createRoot(container);
   await act(async () => finish({ devices: [{ id: "issued", pairedAt: 200 }] }));
   await act(async () => vi.advanceTimersByTimeAsync(2_000));
-  expect(requests).toBe(4);
+  expect(requests).toBe(initialRequests + 2);
   expect(document.body.querySelector('[role="dialog"]')).toBeNull();
 });

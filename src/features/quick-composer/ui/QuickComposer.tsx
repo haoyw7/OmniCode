@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { motion, AnimatePresence } from "motion/react";
 import { panelTransition, popTransition, immediateTransition, popInitial, popAnimate, popExit } from "../../../shared/motion/tokens";
@@ -154,7 +156,8 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
+  const busy = mutation.isPending;
   const attachmentsSupported = harnessSupportsAttachments(choice.harness);
   const attachments = useQuickAttachments(
     attachmentsSupported && !busy,
@@ -372,10 +375,10 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
       (attachments.files.length > 0 && !attachmentsSupported)
     )
       return;
-    setBusy(true);
     setError(null);
     const picked = { harness: model.harness, model: model.id };
     try {
+      await mutation.mutateAsync(async () => {
       const request: QuickLaunch = {
         prompt: text,
         ...(launchMode.mode === DRAFT_COMMAND.name ? { draft: true } : {}),
@@ -400,10 +403,9 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
       setPicker(null);
       setSlash(null);
       attachments.clear();
+      });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setBusy(false);
     }
   };
 

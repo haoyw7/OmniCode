@@ -1,3 +1,6 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../shared/lib/queryClient";
+import { mobileSavedConnectionsQuery } from "../mobileQueries";
 import { lightImpact, attentionHaptic, setHapticsForeground } from "../haptics";
 
 import { usePreferenceState } from "../../features/settings/model/usePreferenceState";
@@ -185,6 +188,8 @@ function saveHomeScope(scope: MobileHomeScope) {
 
 export function useMobileAppController() {
   const { language, t } = useTranslation();
+  const clientMutation = useMutation({ mutationFn: (operation: () => Promise<unknown>) => operation() }, queryClient);
+  const mutateClient = useCallback(<T,>(operation: () => Promise<T>) => clientMutation.mutateAsync(operation) as Promise<T>, [clientMutation.mutateAsync]);
   const appUpdates = useMobileAppUpdates();
   const [aboutOpen, setAboutOpen] = useState(false);
   const aboutTrigger = useRef<HTMLButtonElement>(null);
@@ -227,7 +232,8 @@ export function useMobileAppController() {
   const connectionName = connectionAppearance.displayName || client.connection?.name || "OmniCode";
   const [connected, setConnected] = useState(false);
   const [connectionRevision, setConnectionRevision] = useState(0);
-  const [savedHosts, setSavedHosts] = useState<Connection[]>([]);
+  const savedConnectionsRead = useQuery(mobileSavedConnectionsQuery(client), queryClient);
+  const savedHosts = savedConnectionsRead.data ?? [];
   // Assistant read marks and drafts belong to the Host's conversation, not to one address.
   const assistantHostId = connected ? client.connection?.environmentId : undefined;
   const resolveNoteImage = useMemo(() => {
@@ -245,16 +251,13 @@ export function useMobileAppController() {
   const [project, setProject] = useState<HostProject>();
   const [sessions, setSessions] = useState<HostSessionSummary[]>([]);
   const [sessionId, setSessionId] = useState<string>();
+  const navigation = useRef(0);
   // A draft keeps its page identity when its first send creates a session.
   const [chatPageKey, setChatPageKey] = useState("draft");
   const chatPageIdentity = useRef(chatPageKey);
   chatPageIdentity.current = chatPageKey;
   const [snapshotStore] = useState(createSessionSnapshotStore);
   const setSnapshot = snapshotStore.set;
-  const [nativeAccessResult, setNativeAccessResult] = useState<{
-    key: string;
-    value: NativeSessionAccess | undefined;
-  }>();
   const [sessionConfirmed, setSessionConfirmed] = useState(false);
   const [animateFrom, setAnimateFrom] = useState<string>();
   // A send shown in the transcript the moment it leaves, until the Host has
@@ -442,35 +445,23 @@ export function useMobileAppController() {
         sessionId, nativeLink.provider, nativeSourceKey(nativeLink), nativeLink.accountId])
     : undefined;
   const checkNativeAccess = connected && foreground && !pageOverlayOpen && view === "chat";
-  const nativeAccess = checkNativeAccess && nativeAccessResult?.key === nativeAccessKey
-    ? nativeAccessResult?.value : undefined;
-  useEffect(() => {
-    setNativeAccessResult(undefined);
-    if (!checkNativeAccess || !nativeAccessKey || !sessionId || !nativeLink) return;
-    let current = true;
-    let timer: ReturnType<typeof setTimeout>;
-    const unavailable = (): NativeSessionAccess => ({
-      state: "unknown", reason: "hostUnavailable", path: nativeLink.path, checkedAt: Date.now(),
-    });
-    const check = async () => {
-      let value: NativeSessionAccess;
+  const nativeAccessRead = useQuery<NativeSessionAccess>({
+    queryKey: ["mobile", "nativeAccess", nativeAccessKey, navigation.current, foreground], enabled: checkNativeAccess && !!nativeAccessKey && !!sessionId && !!nativeLink,
+    gcTime: 0,
+    refetchInterval: checkNativeAccess ? 5000 : false,
+    queryFn: async ({ signal }) => {
+      const unavailable = (): NativeSessionAccess => ({ state: "unknown", reason: "hostUnavailable", path: nativeLink!.path, checkedAt: Date.now() });
       try {
-        const access = await client.nativeAccess(sessionId);
-        value = access && access.path === nativeLink.path ? access : unavailable();
-      } catch {
-        value = unavailable();
-      }
-      if (!current) return;
-      setNativeAccessResult({ key: nativeAccessKey, value });
-      // One probe at a time: a slow response must not overwrite a newer owner.
-      timer = setTimeout(check, 5_000);
-    };
-    void check();
-    return () => {
-      current = false;
-      clearTimeout(timer);
-    };
-  }, [checkNativeAccess, nativeAccessKey]);
+        const access = await client.nativeAccess(sessionId!);
+        signal.throwIfAborted();
+        return access && access.path === nativeLink!.path ? access : unavailable();
+      } catch { return unavailable(); }
+    },
+  }, queryClient);
+  const nativeAccess = checkNativeAccess ? nativeAccessRead.data : undefined;
+  useEffect(() => {
+    if (!foreground) queryClient.removeQueries({ queryKey: ["mobile", "nativeAccess", nativeAccessKey] });
+  }, [foreground, nativeAccessKey]);
   const now = useNow(30_000, foreground && (drawerOpen || view === "home"));
   const [theme, setTheme] = usePreferenceState(loadThemePreference);
   const [skin, setSkin] = usePreferenceState<MobileSkinPreference>(loadMobileSkin);
@@ -486,7 +477,6 @@ export function useMobileAppController() {
     "--chat-background-image": projectBackgroundUrl ? `url(${JSON.stringify(projectBackgroundUrl)})` : "none",
     "--chat-background-opacity": String(projectBackground.opacity),
   } as CSSProperties : undefined;
-  const navigation = useRef(0);
   const appRoot = useRef<HTMLDivElement>(null);
   const [overlayHost, setOverlayHost] = useState<HTMLDivElement | null>(null);
   const setAppRoot = useCallback((element: HTMLDivElement | null) => {
@@ -539,7 +529,6 @@ export function useMobileAppController() {
     setSessionId(undefined);
     setSnapshot(undefined);
     setSessionConfirmed(false);
-    setNativeAccessResult(undefined);
     setCatalog(undefined);
     setCatalogLoading(false);
     setHistoryLoading(false);
@@ -674,17 +663,21 @@ export function useMobileAppController() {
     return lists.subscribe(ids, changed, true);
   }, [connected, hostStatus.state, foreground, pageOverlayOpen, drawerOpen, project?.id, lists, onCachedSessions]);
 
-  useEffect(() => {
-    if (!connected || hostStatus.state !== "connected" || !foreground || pageOverlayOpen || (view === "settings" && !drawerOpen)) return;
-    let live = true;
-    const turn = navigation.current;
-    const hostId = client.connection?.endpoint;
-    const current = () => live && navigation.current === turn && hostId === client.connection?.endpoint;
-    let timer: ReturnType<typeof setTimeout>;
-    let failures = 0;
-    setPollError("");
-    const poll = async () => {
-      let running = false;
+  const pollEnabled = connected && hostStatus.state === "connected" && foreground && !pageOverlayOpen && !(view === "settings" && !drawerOpen);
+  const pollKey = ["mobile", "activeWorkspace", connectionKey, connectionRevision, view, drawerOpen, project?.id, sessionId, navigation.current] as const;
+  useQuery<{ running: boolean; failures: number }>({
+    queryKey: pollKey, enabled: pollEnabled, gcTime: 0, refetchOnWindowFocus: false,
+    notifyOnChangeProps: [],
+    refetchInterval: query => {
+      const value = query.state.data;
+      return value?.failures ? Math.min(30000, 2000 * 2 ** value.failures)
+        : value?.running ? view === "chat" && sessionId && !drawerOpen ? 250 : 750 : 3000;
+    },
+    queryFn: async ({ signal }) => {
+      const turn = navigation.current, hostId = client.connection?.endpoint;
+      const current = () => !signal.aborted && navigation.current === turn && hostId === client.connection?.endpoint;
+      const previous = queryClient.getQueryData<{ running: boolean; failures: number }>(pollKey);
+      let running = false, failed = false;
       try {
         if (drawerOpen || view === "home") {
           const items = await client.projects();
@@ -713,48 +706,23 @@ export function useMobileAppController() {
         }
         if (!running && drawerOpen && listRunning.current) running = true;
         if (current()) {
-          failures = 0;
           setPollError("");
           const pending = await client.pending();
           if (current()) setPending(pending);
         }
       } catch (problem) {
+        failed = true;
         if (current()) {
-          failures += 1;
           setPollError(message(problem));
           setProjectListState((state) => state === "ready" ? state : "failed");
         }
       }
-      if (live)
-        timer = setTimeout(
-          poll,
-          failures
-            ? Math.min(30_000, 2000 * 2 ** failures)
-            : running
-              ? view === "chat" && sessionId && !drawerOpen
-                ? 250
-                : 750
-              : 3000,
-        );
-    };
-    void poll();
-    return () => {
-      live = false;
-      clearTimeout(timer);
-    };
-  }, [
-    connected,
-    connectionKey,
-    connectionRevision,
-    hostStatus.state,
-    foreground,
-    pageOverlayOpen,
-    view,
-    drawerOpen,
-    project,
-    sessionId,
-    snapshot?.status,
-  ]);
+
+      signal.throwIfAborted();
+      return { running, failures: failed ? (previous?.failures ?? 0) + 1 : 0 };
+    },
+  }, queryClient);
+  useEffect(() => { if (!pollEnabled) void queryClient.cancelQueries({ queryKey: pollKey }); }, [pollEnabled, connectionKey, connectionRevision, view, drawerOpen, project?.id, sessionId]);
 
   useLayoutEffect(() => {
     const timing = loadTiming.current;
@@ -841,7 +809,7 @@ export function useMobileAppController() {
   }), [project, sessionId, catalog]);
 
   const refreshSavedHosts = useCallback(() => {
-    void client.savedConnections().then(setSavedHosts).catch(() => undefined);
+    void invalidateAfterChange(mobileSavedConnectionsQuery(client).queryKey);
   }, [client]);
   useEffect(refreshSavedHosts, [refreshSavedHosts, connectionKey, connectionRevision, connected]);
   const openAddConnection = () => {
@@ -859,7 +827,7 @@ export function useMobileAppController() {
     try {
       await activateConnection(
         async () => {
-          await client.connect(credentials.url, normalizePairingCode(credentials.token));
+          await mutateClient(() => client.connect(credentials.url, normalizePairingCode(credentials.token)));
           pairedHost = { name: client.connection!.name };
           setPairingSuccess(pairedHost);
         },
@@ -882,7 +850,7 @@ export function useMobileAppController() {
     if (client.connection?.endpoint === endpoint && !client.connection.disabled) return;
     setDrawerOpen(false);
     void activateConnection(
-      () => client.switchTo(endpoint),
+      () => mutateClient(() => client.switchTo(endpoint)),
       (problem) => setHostError(message(problem)),
       after,
     );
@@ -1153,8 +1121,8 @@ export function useMobileAppController() {
       try {
         const completedCommand = command ?? (await client.pending())?.command;
         const receipt = command
-          ? await client.dispatch(command, text)
-          : await client.retryPending();
+          ? await mutateClient(() => client.dispatch(command, text))
+          : await mutateClient(() => client.retryPending());
         setPending(undefined);
         // A recovered create/send can belong to a different project than the
         // currently visible one. Navigate to its actual owning project.
@@ -1236,10 +1204,10 @@ export function useMobileAppController() {
       }
       try {
         const receipt = transient
-          ? await client.rpc<
+          ? await mutateClient(() => client.rpc<
               import("../../features/connections/model/protocol").CommandReceipt
-            >("commands.dispatch", command)
-          : await client.dispatch(command);
+            >("commands.dispatch", command))
+          : await mutateClient(() => client.dispatch(command));
         const result = await client.session(command.sessionId, receipt.revision);
         if (navigation.current === generation && queueView.current.view === "chat" && queueView.current.sessionId === command.sessionId) {
           setSnapshot((current) =>
@@ -1434,7 +1402,7 @@ export function useMobileAppController() {
           throw new Error(t("This provider account is no longer available. Choose an account in Settings and start a new conversation."));
       }
       if (generation !== navigation.current || hostId !== client.connection?.endpoint) return;
-      const uploaded = await client.uploadAttachments(attachments, acceptedQueueAttachments.current);
+      const uploaded = await mutateClient(() => client.uploadAttachments(attachments, acceptedQueueAttachments.current));
       if (generation !== navigation.current || hostId !== client.connection?.endpoint) return;
       const prompt: MobileFirstMessage = {
         text: parsed.text,
@@ -1460,14 +1428,14 @@ export function useMobileAppController() {
           const creationId = crypto.randomUUID();
           setWorktreeCreation(anchorWorktreeCreation(startWorktreeCreation(base, creationId), creationId, commandId));
           try {
-            const branch = await client.worktreeName(
+            const branch = await mutateClient(() => client.worktreeName(
               project.id,
               project.cwd,
               configuration.harness,
               parsed.text || attachments.map((file) => file.name).join(", "),
-            );
+            ));
             if (generation !== navigation.current || hostId !== client.connection?.endpoint) return;
-            const tree = await client.worktreeCreate(project.id, project.cwd, branch, base);
+            const tree = await mutateClient(() => client.worktreeCreate(project.id, project.cwd, branch, base));
             const finished = completeWorktreeCreation(
               (tree.log ?? []).reduce(
                 (next, line) => appendWorktreeCreationLog(next, creationId, line),
@@ -1545,7 +1513,7 @@ export function useMobileAppController() {
     setBusy(true);
     setError("");
     try {
-      const added = await client.openProject(path);
+      const added = await mutateClient(() => client.openProject(path));
       setProjects(await client.projects());
       setAddingProject(false);
       setDrawerOpen(false);
@@ -1605,7 +1573,7 @@ export function useMobileAppController() {
     const turn = navigation.current;
     setBusy(true);
     try {
-      const summary = await client.updateSession(ownerId, id, patch);
+      const summary = await mutateClient(() => client.updateSession(ownerId, id, patch));
       const result = view === "chat" && id === sessionId ? await client.session(id, summary.revision) : undefined;
       if (navigation.current === turn) {
         lists.seed([ownerId], onCachedSessions, true);
@@ -1631,7 +1599,7 @@ export function useMobileAppController() {
     setBusy(true);
     const endpoint = client.connection?.endpoint;
     try {
-      await client.disconnect();
+      await mutateClient(() => client.disconnect());
       stopSharedState();
       setConnected(false);
       setProjects([]);
@@ -1653,7 +1621,7 @@ export function useMobileAppController() {
     // Deleting the active Host falls back to another paired one.
     const next = (await client.savedConnections())[0];
     if (next)
-      await activateConnection(() => client.switchTo(next.endpoint), (problem) => setHostError(message(problem)));
+      await activateConnection(() => mutateClient(() => client.switchTo(next.endpoint)), (problem) => setHostError(message(problem)));
   };
   const reconnect = async () => {
     const attempt = ++hostAttempt.current;
@@ -1662,7 +1630,7 @@ export function useMobileAppController() {
     setBusy(true);
     setHostError("");
     try {
-      await client.reconnect();
+      await mutateClient(() => client.reconnect());
       if (!current()) return;
       const location = workspaceReady.current === client.connection?.environmentId ? undefined : await prepareSharedState();
       if (!current()) return;
@@ -1877,7 +1845,7 @@ export function useMobileAppController() {
   const forgetConnection = async (endpoint: string) => {
     if (endpoint === client.connection?.endpoint) return removeActiveConnection();
     try {
-      await client.forget(endpoint);
+      await mutateClient(() => client.forget(endpoint));
       removeConnectionAppearance(endpoint);
     } finally {
       refreshSavedHosts();
@@ -1897,7 +1865,7 @@ export function useMobileAppController() {
     setError("");
     void (async () => {
       try {
-        const chat = await client.createChat();
+        const chat = await mutateClient(() => client.createChat());
         setProjects(await client.projects());
         void openProject(chat);
         void openSession(undefined, undefined, "project");
@@ -1953,7 +1921,7 @@ export function useMobileAppController() {
     const current = () => hostId && client.connection?.endpoint === hostId;
     if (view !== "chat" || !project) {
       const owner = (note.sourceCwd && noteSourceProject(note.sourceCwd)
-        ? projects.find((item) => item.cwd === note.sourceCwd) ?? await client.openProject(note.sourceCwd)
+        ? projects.find((item) => item.cwd === note.sourceCwd) ?? await mutateClient(() => client.openProject(note.sourceCwd!))
         : project ?? projects[0]);
       if (!current()) throw new Error(t("Host connection changed."));
       if (!owner) throw new Error(t("Choose a project before adding a note to chat."));

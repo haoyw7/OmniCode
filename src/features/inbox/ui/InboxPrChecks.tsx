@@ -1,6 +1,11 @@
 import { Button } from "../../../shared/ui/forms/Button";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
-import { DetailsChevron } from "../../../shared/ui/DetailsChevron";
+import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
+import { useQuery } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { githubCheckDetailsQuery } from "../model/githubPrChecksQueries";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { CheckRepairForm, type CheckRepair } from "./CheckRepairForm";
@@ -34,14 +39,12 @@ import {
   checkStateLabel,
   countChecks,
   describeCheckCounts,
-  fetchGithubCheckDetails,
   githubActionsJobId,
   isHttpUrl,
   sortChecks,
   type GithubPrCheck,
   type GithubPrChecksOverall,
   type GithubPrCheckState,
-  type GithubCheckDetails,
 } from "../model/githubPrChecks";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
@@ -206,49 +209,28 @@ function PrCheckRow({
       (row.getBoundingClientRect().top - bounds.top) / (scaleY || 1) -
       scroller.clientTop;
   }, [revealToken, expandable]);
-  const [details, setDetails] = useState<GithubCheckDetails | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [retry, setRetry] = useState(0);
+  const visible = useSurfaceVisibility();
+  const queryOptions = githubCheckDetailsQuery(cwd, repo, headOid, jobId ?? "", check);
+  const enabled = expanded && !!jobId && !!cwd && visible;
+  const detailsQuery = useQuery({ ...queryOptions, enabled }, queryClient);
+  const details = detailsQuery.data;
+  const error = errorMessage(detailsQuery.error);
+  const loading = detailsQuery.isFetching;
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const stepsId = useId();
   const detailsId = useId();
-  const detailsKey = JSON.stringify([
-    cwd,
-    repo,
-    headOid,
-    jobId,
-    check.state,
-    check.startedAt,
-    check.completedAt,
-  ]);
+  const detailsKey = JSON.stringify(queryOptions.queryKey);
+  const previousRefresh = useRef({ detailsKey, refreshToken });
   useEffect(() => {
     if (autoExpand && expandable) setExpanded(true);
   }, [autoExpand, expandable]);
   useEffect(() => {
-    setDetails(null);
-  }, [detailsKey]);
-  useEffect(() => {
-    if (!expanded || !jobId || !cwd) return;
-    let active = true;
-    setLoading(true);
-    setError(null);
-    // Routine polls keep evidence mounted while fetching updated job steps.
-    fetchGithubCheckDetails(cwd, repo, jobId)
-      .then(
-        (result) => {
-          if (active) setDetails(result);
-        },
-        (reason: unknown) => {
-          if (active)
-            setError(reason instanceof Error ? reason.message : String(reason));
-        },
-      )
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [expanded, cwd, repo, jobId, detailsKey, refreshToken, retry]);
+    const previous = previousRefresh.current;
+    previousRefresh.current = { detailsKey, refreshToken };
+    if (enabled && previous.detailsKey === detailsKey && previous.refreshToken !== refreshToken) {
+      void invalidateAfterChange(queryOptions.queryKey);
+    }
+  }, [enabled, detailsKey, refreshToken]);
   const mark = checkMark(check.state);
   const status = checkStateLabel(check.state);
   const duration = checkDuration(check.startedAt, check.completedAt);
@@ -409,8 +391,8 @@ function PrCheckRow({
           <span className="size-6 shrink-0" aria-hidden="true" />
         )}
       </div>
-      {expanded ? (
-        <div
+      <AnimatedCollapse expanded={expanded}>
+        {() => <div
           id={detailsId}
           className="min-w-0 space-y-3 py-3 pl-10 pr-3 text-[12px] @max-[420px]/checks:pl-3"
         >
@@ -429,7 +411,7 @@ function PrCheckRow({
               <p className="break-words text-[11px]">{error}</p>
               <button
                 type="button"
-                onClick={() => setRetry((value) => value + 1)}
+                onClick={() => { void detailsQuery.refetch(); }}
                 className="rounded px-2 py-1 hover:bg-content/3"
               >
                 {uiT("Retry details")}
@@ -447,15 +429,17 @@ function PrCheckRow({
                 />
               ) : null}
               {details.steps.length ? (
-                <details className="group/steps">
-                  <summary className="flex cursor-pointer list-none items-center gap-1 text-[11px] text-content/50 hover:text-content [&::-webkit-details-marker]:hidden">
-                    <DetailsChevron className="size-3" />
+                <div>
+                  <button type="button" aria-expanded={stepsOpen} aria-controls={stepsId} aria-label={uiT("View run steps")} onClick={() => setStepsOpen(value => !value)} className="flex w-full items-center gap-1 text-[11px] text-content/50 hover:text-content focus-visible:outline focus-visible:outline-1 active:bg-content/5">
+                    <DisclosureChevron expanded={stepsOpen} className="size-3" />
                     {uiT("View run steps")}
                     <span className="ml-auto pl-2 text-right text-[10px] text-content/35 @max-[420px]/checks:hidden">
                       {describeCheckCounts(countChecks(details.steps))}
                     </span>
-                  </summary>
+                  </button>
+                  <AnimatedCollapse expanded ready={stepsOpen} keepMounted>
                   <ol
+                    id={stepsId}
                     className="space-y-1"
                     aria-label={uiT("{value0} steps", {
                       value0: String(check.name),
@@ -485,7 +469,8 @@ function PrCheckRow({
                       );
                     })}
                   </ol>
-                </details>
+                  </AnimatedCollapse>
+                </div>
               ) : (
                 <p className="text-content/50">
                   {uiT("No steps reported for this job.")}
@@ -507,8 +492,8 @@ function PrCheckRow({
               ) : null}
             </>
           ) : null}
-        </div>
-      ) : null}
+        </div>}
+      </AnimatedCollapse>
     </li>
   );
 }
@@ -759,11 +744,13 @@ export function InboxPrChecks({
         <>
           {groups.map((group) =>
             group.rows.length ? (
-              <div
+              <AnimatedCollapse
                 key={group.state}
-                hidden={group.hidden}
-                className={group.hidden ? "hidden" : ""}
+                expanded
+                ready={!group.hidden}
+                keepMounted
               >
+                <div>
                 <h3 className="desktop-section-heading mb-1.5 mt-3 flex items-center gap-2 px-2 text-[12px] font-normal text-content/55">
                   {checkStateLabel(group.state)}
                   <span className="text-[10px] text-content/35">
@@ -827,7 +814,8 @@ export function InboxPrChecks({
                     />
                   ))}
                 </ul>
-              </div>
+                </div>
+              </AnimatedCollapse>
             ) : null,
           )}
           {activeFilter === "attention" && counts.pass + counts.skipping > 0 ? (

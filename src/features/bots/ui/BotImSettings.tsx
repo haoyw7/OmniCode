@@ -1,4 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { botImQuery } from "../model/botPanelQueries";
+import { useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { ImBind, ImControl, ImView } from "../model/im";
 import { openBrowser } from "../../../platform/tauri/browser";
@@ -33,17 +37,12 @@ export function BotImSettings({
 }) {
   const { t, language } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<ImView>();
   const [error, setError] = useState<string>();
-  const [loadError, setLoadError] = useState<string>();
-  const [pending, setPending] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
   const [documentVisible, setDocumentVisible] = useState(
     () => document.visibilityState !== "hidden",
   );
   const pendingRef = useRef(false);
-  const reads = useRef(0);
   const mounted = useRef(true);
   const polling = active && open && supported && documentVisible;
   const pollingRef = useRef(polling);
@@ -56,72 +55,36 @@ export function BotImSettings({
     document.addEventListener("visibilitychange", update);
     return () => {
       mounted.current = false;
-      reads.current++;
       document.removeEventListener("visibilitychange", update);
     };
   }, []);
 
-  const load = useCallback(async () => {
-    if (pendingRef.current) return;
-    const request = ++reads.current;
-    try {
-      const next = await rpc<ImView>("im.get", {});
-      if (mounted.current && request === reads.current) {
-        setView(next);
-        setLoadError(undefined);
-      }
-    } catch (cause) {
-      if (mounted.current && request === reads.current)
-        setLoadError(cause instanceof Error ? cause.message : String(cause));
-    }
-  }, [rpc]);
-
-  useEffect(() => {
-    if (!polling) return;
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const refresh = async () => {
-      await load();
-      if (!disposed) timer = setTimeout(() => void refresh(), 2000);
-    };
-    void refresh();
-    return () => {
-      disposed = true;
-      clearTimeout(timer);
-      reads.current++;
-    };
-  }, [polling, load]);
-
-  const mutate = async (
-    method: "im.bind" | "im.control",
-    params: ImBind | ImControl,
-  ) => {
+  const options = botImQuery(rpc);
+  const mutation = useMutation({
+    mutationFn: ({ method, params }: { method: "im.bind" | "im.control"; params: ImBind | ImControl }) => rpc<ImView>(method, params),
+    onMutate: () => queryClient.cancelQueries({ queryKey: options.queryKey }),
+    onSuccess: next => { queryClient.setQueryData(options.queryKey, next); },
+  }, queryClient);
+  const pending = mutation.isPending;
+  const generating = pending && mutation.variables?.method === "im.bind" && mutation.variables.params.action === "start";
+  const query = useQuery({
+    ...options, enabled: polling && !pending,
+    // Successful command responses are already current; polling rechecks in 2s.
+    staleTime: 1500, refetchInterval: polling && !pending ? 2000 : false,
+  }, queryClient);
+  const view = query.data;
+  const loadError = errorMessage(query.error);
+  const mutate = async (method: "im.bind" | "im.control", params: ImBind | ImControl) => {
     if (pendingRef.current) return;
     pendingRef.current = true;
-    reads.current++;
-    setPending(true);
-    setGenerating(method === "im.bind" && params.action === "start");
-    setError(undefined);
-    setCopied(false);
-    let result: ImView | undefined;
+    setError(undefined); setCopied(false);
     try {
-      const next = await rpc<ImView>(method, params);
-      if (!mounted.current) return;
-      setView(next);
-      result = next;
+      const result = await mutation.mutateAsync({ method, params });
+      if (method === "im.control" && mounted.current && pollingRef.current) await query.refetch();
+      return mounted.current ? result : undefined;
     } catch (cause) {
-      if (mounted.current)
-        setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      pendingRef.current = false;
-      if (mounted.current) {
-        setPending(false);
-        setGenerating(false);
-      }
-    }
-    if (method === "im.control" && mounted.current && pollingRef.current)
-      await load();
-    return result;
+      if (mounted.current) setError(errorMessage(cause));
+    } finally { pendingRef.current = false; }
   };
 
   const busy = disabled || pending || !view;
@@ -228,7 +191,7 @@ export function BotImSettings({
                     setError(undefined);
                     if (binding?.state === "failed" || (error && !waiting))
                       void bind();
-                    else void load();
+                    else void query.refetch();
                   }}
                 >
                   {t("Retry")}

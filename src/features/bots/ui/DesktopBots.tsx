@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
+import { useCallback, useEffect, useState, type ComponentProps } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { RemoteAttachment } from "../../connections/model/protocol";
 import { DesktopBotsWorkspace } from "./DesktopBotsWorkspace";
@@ -46,24 +49,18 @@ function DesktopBotsHost({
   // copied once to a local file under its own name for the floating card.
   const filePanel = useBotFilePanel();
   const openFile = filePanel.open;
-  const attachmentPaths = useRef(new Map<string, Promise<string>>());
+  const attachment = useMutation({
+    mutationFn: ({ file, read, cacheScope }: { file: RemoteAttachment; read: () => Promise<string>; cacheScope?: string }) =>
+      withToast(() => queryClient.fetchQuery({
+        queryKey: ["botAttachmentPath", machine!.id, cacheScope ?? machine!.environmentId, file.id],
+        staleTime: Infinity,
+        queryFn: async () => invoke<string>("write_attachment", { name: file.name, data: await read() }),
+      }), { loading: t("Opening…"), success: false }),
+  }, queryClient);
   const openAttachment = useCallback(
     (file: RemoteAttachment, read: () => Promise<string>, cacheScope?: string) => {
-      if (!machine) return;
-      const key = JSON.stringify([cacheScope ?? machine.environmentId, file.id]);
-      let path = attachmentPaths.current.get(key);
-      if (!path) {
-        path = read().then((data) =>
-          invoke<string>("write_attachment", { name: file.name, data }),
-        );
-        attachmentPaths.current.set(key, path);
-        path.catch(() => attachmentPaths.current.delete(key));
-      }
-      path.then(openFile, (error) =>
-        console.error(`Could not open ${file.name}`, error),
-      );
-    },
-    [machine?.environmentId, openFile],
+      if (machine) attachment.mutate({ file, read, cacheScope }, { onSuccess: path => openFile(path) });
+    }, [machine?.id, machine?.environmentId, attachment.mutate, openFile],
   );
   const open = async (ref: SessionReference, { project, session }: BotTarget) => {
     if (!machine) return;

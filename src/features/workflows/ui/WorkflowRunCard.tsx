@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { RotatingIcon } from "../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../shared/motion/tokens";
 // A workflow run's card in its launching conversation: the run digest
@@ -34,8 +36,9 @@ export function WorkflowRunCard({ block, parent: session }: { block: Block; pare
   const meta = block.workflowRun!;
   const app = useWorkflowApp();
   const { t } = useTranslation();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
+  const mutation = useMutation({ mutationFn: async (action: () => Promise<unknown>) => action() }, queryClient);
+  const busy = mutation.isPending;
+  const error = mutation.error ? mutation.error instanceof Error ? mutation.error.message : String(mutation.error) : undefined;
   const summary = useMemo(() => buildWorkflowRunByRunId(session.workflowRuns?.runs).get(meta.runId), [meta.runId, session.workflowRuns]);
   const scope = useMemo(() => ({ workspacePath: cwd }), [cwd]);
   const run = summary?.run;
@@ -45,13 +48,7 @@ export function WorkflowRunCard({ block, parent: session }: { block: Block; pare
     [meta.graph],
   );
 
-  const act = (action: () => Promise<unknown>) => {
-    setBusy(true);
-    setError(undefined);
-    void action()
-      .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)))
-      .finally(() => setBusy(false));
-  };
+  const act = (action: () => Promise<unknown>) => mutation.mutate(action);
 
   const settingsHostFor = (): WorkflowRunSettingsHost => ({
     workspacePath: cwd,

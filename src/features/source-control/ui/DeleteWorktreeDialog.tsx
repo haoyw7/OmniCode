@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Switch } from "../../../shared/ui/forms/Switch";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
@@ -11,7 +13,14 @@ import { prettyCwd } from "../../../shared/lib/paths";
 import { type Worktree } from "../model/worktrees";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
-import { CircleAlert, CloudUpload, FileDiff, Folder, GitBranch, MessageSquare } from "../../../shared/ui/icons";
+import {
+  CircleAlert,
+  CloudUpload,
+  FileDiff,
+  Folder,
+  GitBranch,
+  MessageSquare,
+} from "../../../shared/ui/icons";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 const TONE = {
@@ -58,15 +67,14 @@ export function DeleteWorktreeDialog({
   onDeleted: () => void;
 }) {
   const { t: uiT } = useTranslation();
-  const [busy, setBusy] = useState(false);
+  const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
+  const busy = mutation.isPending;
   const [deleteSessions, setDeleteSessions] = useState(false);
-  const [error, setError] = useState<string>();
+  const error = mutation.error ? String(mutation.error) : undefined;
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (busy) return;
-    setBusy(true);
-    setError(undefined);
-    try {
+    mutation.mutate(async () => {
       // Confirmation covers the complete destructive action, including any
       // local changes that appeared after the last status refresh.
       await withToast(() => onRemove(cwd, tree.path, true, deleteSessions), {
@@ -75,11 +83,7 @@ export function DeleteWorktreeDialog({
         error: false,
       });
       onDeleted();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
+    });
   };
   return (
     <Modal

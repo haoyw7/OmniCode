@@ -1,3 +1,6 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { Input } from "../../../shared/ui/forms/Input";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useEffect, useId, useState } from "react";
@@ -105,32 +108,17 @@ function TitleModelForm({ machineId }: { machineId: string }) {
   const [settings, setSettings] = useState(DEFAULT_TITLE_MODEL);
   const [key, setKey] = useState("");
   const [clearKey, setClearKey] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loaded, setLoaded] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [error, setError] = useState("");
+  const visible = useSurfaceVisibility();
+  const queryKey = ["titleModel", machineId] as const;
+  const read = useQuery({ queryKey, queryFn: () => remoteRequest<TitleModelStatus>(machineId, "titleModel.status"), enabled: visible }, queryClient);
   const [notice, setNotice] = useState("");
   const [dirty, setDirty] = useState(false);
-  useEffect(() => {
-    let active = true;
-    void remoteRequest<TitleModelStatus>(machineId, "titleModel.status")
-      .then((value) => {
-        if (active) {
-          setSettings(value);
-          setLoaded(true);
-        }
-      })
-      .catch((err: unknown) => {
-        if (active) setError(String(err instanceof Error ? err.message : err));
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [machineId]);
+  const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
+  const probe = useMutation({ mutationFn: () => remoteRequest<GeneratedSessionTitle | null>(machineId, "titleModel.test") }, queryClient);
+  const loading = read.isPending, loaded = !!read.data, busy = mutation.isPending || probe.isPending, testing = probe.isPending;
+  const problem = mutation.error ?? probe.error ?? read.error;
+  const error = problem ? String(problem instanceof Error ? problem.message : problem) : "";
+  useEffect(() => { if (read.data && !dirty && !busy) setSettings(read.data); }, [read.data, dirty, busy]);
 
   function change(update: Partial<TitleModelStatus>) {
     setSettings((current) => ({ ...current, ...update }));
@@ -138,10 +126,9 @@ function TitleModelForm({ machineId }: { machineId: string }) {
     setNotice("");
   }
   async function save() {
-    setBusy(true);
-    setError("");
     setNotice("");
-    try {
+    probe.reset();
+    mutation.mutate(async () => {
       const update: TitleModelUpdate = {
         enabled: settings.enabled,
         endpoint: settings.endpoint,
@@ -152,42 +139,24 @@ function TitleModelForm({ machineId }: { machineId: string }) {
             ? { apiKey: key.trim() }
             : {}),
       };
-      setSettings(
-        await withToast(
+      const saved = await withToast(
           () => remoteRequest<TitleModelStatus>(machineId, "titleModel.save", update),
           { loading: t("Saving…"), success: t("Saved"), error: false },
-        ),
-      );
+        );
+      await queryClient.cancelQueries({ queryKey });
+      queryClient.setQueryData(queryKey, saved);
+      setSettings(saved);
       setKey("");
       setClearKey(false);
       setDirty(false);
-    } catch (err) {
-      setError(String(err instanceof Error ? err.message : err));
-    } finally {
-      setBusy(false);
-    }
+    });
   }
   async function test() {
-    setBusy(true);
-    setTesting(true);
-    setError("");
-    setNotice("");
+    mutation.reset(); setNotice("");
     try {
-      const result = await remoteRequest<GeneratedSessionTitle | null>(
-        machineId,
-        "titleModel.test",
-      );
-      setNotice(
-        result
-          ? t("Connection successful: {title}", { title: result.title })
-          : t("Title generation is disabled."),
-      );
-    } catch (err) {
-      setError(String(err instanceof Error ? err.message : err));
-    } finally {
-      setBusy(false);
-      setTesting(false);
-    }
+      const result = await probe.mutateAsync();
+      setNotice(result ? t("Connection successful: {title}", { title: result.title }) : t("Title generation is disabled."));
+    } catch { /* Expose the mutation error next to the controls. */ }
   }
   return (
     <fieldset disabled={loading || busy || !loaded} className="space-y-3">

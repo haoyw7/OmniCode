@@ -1,3 +1,5 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../../shared/lib/queryClient";
 import { usePreferenceState } from "../../model/usePreferenceState";
 import { formatBuildVersion } from "../../../../shared/lib/buildVersion";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
@@ -55,8 +57,12 @@ export function GeneralPage({
   const [notificationsEnabled, setNotificationsEnabled] = usePreferenceState(
     loadNotificationsEnabled,
   );
-  const [notificationPermission, setNotificationPermission] =
-    useState<NotificationPermission>(cachedNotificationPermission);
+  const permissionQuery = { queryKey: ["notificationPermission"], queryFn: probeNotificationPermission };
+  const permissionRead = useQuery({ ...permissionQuery, enabled: notificationsEnabled }, queryClient);
+  const permissionMutation = useMutation({ mutationFn: requestNotificationPermission,
+    onSuccess: value => queryClient.setQueryData(permissionQuery.queryKey, value),
+  }, queryClient);
+  const notificationPermission: NotificationPermission = permissionRead.data ?? cachedNotificationPermission();
   const [notesEnabled, setNotesEnabled] = usePreferenceState(loadNotesEnabled);
   const [liveAgentsEnabled, setLiveAgentsEnabled] = usePreferenceState(
     loadLiveAgentsEnabled,
@@ -73,18 +79,6 @@ export function GeneralPage({
     null,
   );
 
-  // The user may flip the switch in System Settings and come back: re-read
-  // the OS state whenever the window regains focus while the toggle is on.
-  useEffect(() => {
-    if (!notificationsEnabled) return;
-    const refresh = () => {
-      void probeNotificationPermission().then(setNotificationPermission);
-    };
-    refresh();
-    window.addEventListener("focus", refresh);
-    return () => window.removeEventListener("focus", refresh);
-  }, [notificationsEnabled]);
-
   const onSoundsEnabled = (next: boolean) => {
     saveSoundsEnabled(next);
     setSoundsEnabled(next);
@@ -94,7 +88,7 @@ export function GeneralPage({
     saveNotificationsEnabled(next);
     setNotificationsEnabled(next);
     if (!next) return;
-    void requestNotificationPermission().then(setNotificationPermission);
+    permissionMutation.mutate();
   };
 
   const onNotesEnabled = (next: boolean) => {
@@ -328,29 +322,15 @@ function UpdateRow({
     currentVersion: "…",
   });
 
-  useEffect(() => {
-    let cancelled = false;
-    void readAppVersion().then((currentVersion) => {
-      if (cancelled) return;
-      setSnapshot((current) => ({ ...current, currentVersion }));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const version = useQuery({ queryKey: ["app", "version"], queryFn: readAppVersion, staleTime: Infinity }, queryClient);
+  useEffect(() => { if (version.data) setSnapshot(current => ({ ...current, currentVersion: version.data })); }, [version.data]);
+  const update = useMutation({ mutationFn: () => snapshot.phase === "available" ? installPendingUpdate(setSnapshot) : runUpdateFlow(true, setSnapshot) }, queryClient);
 
   const busy =
     snapshot.phase === "checking" || snapshot.phase === "downloading";
   const hasUpdate = snapshot.phase === "available";
 
-  const onClick = async () => {
-    if (busy) return;
-    if (hasUpdate) {
-      await installPendingUpdate(setSnapshot);
-      return;
-    }
-    await runUpdateFlow(true, setSnapshot);
-  };
+  const onClick = () => { if (!busy && !update.isPending) update.mutate(); };
 
   const status =
     snapshot.phase === "available"

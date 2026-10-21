@@ -1,5 +1,8 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { botResidentMemoryQuery } from "../model/botPanelQueries";
 import {
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -9,7 +12,6 @@ import {
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronRight } from "../../../shared/ui/icons";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
-import type { BotMemory } from "../model/botView";
 import type { BotRpc } from "../model/botRpc";
 import type { BotMemoryDetailProps } from "./BotChatChrome";
 
@@ -41,9 +43,9 @@ export function BotMemoryEditor({
   onReady?: (ready: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const [memory, setMemory] = useState<BotMemory>();
-  const [error, setError] = useState<string>();
-  const [pending, setPending] = useState(false);
+  const options = botResidentMemoryQuery(rpc);
+  const query = useQuery(options, queryClient);
+  const memory = query.data;
   const [adding, setAdding] = useState("");
   // The opened fact is retained while its panel animates closed.
   const [detail, setDetail] = useState<{
@@ -52,53 +54,34 @@ export function BotMemoryEditor({
     meta?: string;
     open: boolean;
   }>();
-  const loads = useRef(0);
-  const load = useCallback(async () => {
-    const load = ++loads.current;
-    try {
-      const next = await rpc<BotMemory | null>("assistant.memory");
-      if (load === loads.current && next) setMemory(next);
-    } catch (cause) {
-      if (load === loads.current)
-        setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      if (load === loads.current) onReady?.(true);
-    }
-  }, [rpc, onReady]);
+  const previousRevision = useRef(revision);
   useEffect(() => {
-    void load();
-    return () => { loads.current++; };
-  }, [load, revision]);
+    if (previousRevision.current === revision) return;
+    previousRevision.current = revision;
+    void invalidateAfterChange(options.queryKey);
+  }, [revision, rpc]);
+  useEffect(() => { if (!query.isPending) onReady?.(true); }, [query.isPending, onReady]);
   useEffect(() => () => onReady?.(false), [onReady]);
   const notices: Record<MemoryControl["action"], [string, string]> = {
     addMemory: ["Adding memory…", "Memory added"],
     editMemory: ["Updating memory…", "Memory updated"],
     forgetMemory: ["Forgetting memory…", "Memory forgotten"],
   };
+  const mutation = useMutation({
+    mutationFn: (input: MemoryControl) => {
+      const [loading, success] = notices[input.action];
+      return withToast(() => rpc("assistant.control", {
+        commandId: crypto.randomUUID(), expectedRevision: memory!.revision, ...input,
+      }), { loading: t(loading), success: t(success), error: false });
+    },
+    onSettled: () => invalidateAfterChange(options.queryKey),
+  }, queryClient);
+  const pending = mutation.isPending;
+  const error = errorMessage(mutation.error ?? query.error);
   const control = async (input: MemoryControl) => {
     if (!memory) return false;
-    setPending(true);
-    setError(undefined);
-    try {
-      const [loading, success] = notices[input.action];
-      // Failures stay inline next to the fact they concern.
-      await withToast(
-        () =>
-          rpc("assistant.control", {
-            commandId: crypto.randomUUID(),
-            expectedRevision: memory.revision,
-            ...input,
-          }),
-        { loading: t(loading), success: t(success), error: false },
-      );
-      return true;
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-      return false;
-    } finally {
-      setPending(false);
-      await load();
-    }
+    try { await mutation.mutateAsync(input); return true; }
+    catch { return false; }
   };
   const busy = disabled || pending || !memory;
   const facts = memory?.facts.filter((fact) => !fact.struck) ?? [];
@@ -136,7 +119,7 @@ export function BotMemoryEditor({
                 aria-haspopup="dialog"
                 disabled={busy}
                 onClick={() => {
-                  setError(undefined);
+                  mutation.reset();
                   setDetail({
                     index: fact.index,
                     text: fact.text,

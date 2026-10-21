@@ -1,10 +1,12 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../../shared/lib/queryClient";
+import { errorMessage } from "../../../../shared/lib/errorMessage";
 import { isRemoteProjectPath } from "../../../projects/model/recents";
 import {
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
-  useSyncExternalStore,
   type ReactNode,
   type CSSProperties,
 } from "react";
@@ -34,10 +36,8 @@ import { useGitFileStatuses } from "../../../source-control/hooks/useGitFileStat
 import { ProjectSearch } from "../../../projects/ui/ProjectSearch";
 import type { OpenFileFn } from "../../../search/model/search";
 import {
-  loadProjectFiles,
-  peekProjectFiles,
+  projectFilesQuery,
   rankProjectFiles,
-  subscribeProjectFiles,
 } from "../model/fileIndex";
 import {
   saveEditorPreferences,
@@ -130,10 +130,9 @@ export function FileExplorerFrame({
   }, [searchOpen]);
   const [menu, setMenu] = useState<HTMLElement | null>(null);
   const [filter, setFilter] = useState("");
-  const [filterError, setFilterError] = useState("");
-  const files = useSyncExternalStore(subscribeProjectFiles, () =>
-    peekProjectFiles(cwd),
-  );
+  const fileQuery = useQuery({ ...projectFilesQuery(cwd), staleTime: 0, enabled: !!filter.trim() && visible }, queryClient);
+  const files = fileQuery.data;
+  const filterError = errorMessage(fileQuery.error) ?? "";
   const [width, setWidth] = useState(260);
   const expanded = !hasDocument || (splitLayout ? treeOpen : browsing);
   const previewVisible = hasDocument && (splitLayout || !browsing);
@@ -152,17 +151,6 @@ export function FileExplorerFrame({
   useEffect(() => {
     if (!visible || !expanded || !splitLayout) resize.finishDrag();
   }, [visible, expanded, splitLayout, resize.finishDrag]);
-  useEffect(() => {
-    if (!filter.trim()) return;
-    let cancelled = false;
-    setFilterError("");
-    void loadProjectFiles(cwd).catch((error: unknown) => {
-      if (!cancelled) setFilterError(String(error));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [cwd, filter]);
   useEffect(() => {
     if (!visible || !focused || !hasDocument) return;
     const key = (event: KeyboardEvent) => {

@@ -1,4 +1,6 @@
 import { Textarea } from "../../../shared/ui/forms/Textarea";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Input } from "../../../shared/ui/forms/Input";
 import { useEffect, useId, useRef, useState } from "react";
@@ -61,15 +63,15 @@ function AvatarDialog({ bot, name, avatar, busy, onCancel, onSave }: {
   const { t } = useTranslation();
   const id = useId();
   const [draft, setDraft] = useState(avatar), [tab, setTab] = useState("bot"), [prompt, setPrompt] = useState("");
-  const [saving, setSaving] = useState(false);
+  const mutation = useMutation({ mutationFn: (avatar: string) => onSave(avatar) }, queryClient);
+  const saving = mutation.isPending;
   const choices = useRef<HTMLDivElement>(null);
   // Start on the current choice so arrow keys move within the selected group.
   useEffect(() => { choices.current?.querySelector<HTMLInputElement>('input[type="radio"]:checked')?.focus(); }, []);
   const disabled = busy || saving;
   const save = async () => {
     if (disabled || [...draft].length > 8) return;
-    setSaving(true);
-    try { await onSave(draft); } finally { setSaving(false); }
+    await mutation.mutateAsync(draft);
   };
   return <Modal title={t("Edit avatar")} minimalHeader fitViewport size="lg" className="desktop-bot-avatar-dialog" onClose={onCancel}>
     <div className="desktop-bot-avatar-dialog-body">

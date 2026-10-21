@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { invoke } from "@tauri-apps/api/core";
 import { newSession } from "../model/session";
 import { AgentTabView } from "./AgentTabView";
@@ -10,6 +11,9 @@ import { AgentTranscript } from "./AgentTranscript";
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async (_command, args) => args?.note),
 }));
+
+beforeEach(() => queryClient.clear());
+afterEach(() => queryClient.clear());
 
 it("waits for note storage, reports failure, and lets the user retry", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

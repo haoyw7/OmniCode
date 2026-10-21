@@ -1,3 +1,4 @@
+import { queryClient } from "../../../shared/lib/queryClient";
 // Adapted from ZCode (Apache-2.0).
 import { processFile, type DiffLineAnnotation } from "@pierre/diffs";
 import { buildUnifiedFile, type UnifiedLine } from "./unifiedDiff";
@@ -101,90 +102,61 @@ export function virtualizeReviewDiff(diff: ReviewLoadedDiff): boolean {
   return false;
 }
 
-/** Lazy cache shared across source switches. A refresh invalidates pending results too. */
+let reviewCacheId = 0, reviewSnapshotId = 0;
+const REVIEW_LOADING: ReviewDiffState = { state: "loading" };
+/** Query stores diffs; the queue only bounds native diff processing to four readers. */
 export class ReviewDiffCache {
-  private states = new Map<string, ReviewDiffState>();
-  private versions = new Map<string, number>();
+  private readonly prefix = ["reviewDiff", ++reviewCacheId] as const;
   private queue: Array<() => Promise<void>> = [];
   private running = 0;
   private disposed = false;
-
+  private readonly unsubscribe: () => void;
   constructor(
-    private readonly fetchDiff: (
-      scope: ReviewScope,
-      path: string,
-    ) => Promise<ReviewDiff>,
-    private readonly changed: () => void,
+    private readonly fetchDiff: (scope: ReviewScope, path: string) => Promise<ReviewDiff>,
+    changed: () => void,
     private readonly concurrency = 4,
-  ) {}
-
-  get(scope: ReviewScope, path: string) {
-    return this.states.get(reviewDiffKey(scope, path));
-  }
-
-  invalidate(scope: ReviewScope) {
-    const scopeKey = reviewScopeKey(scope);
-    this.versions.set(scopeKey, (this.versions.get(scopeKey) ?? 0) + 1);
-    for (const key of this.states.keys()) {
-      const [cwd, source, sessionId] = JSON.parse(key) as string[];
-      if (
-        reviewScopeKey({ cwd, source: source as ReviewSource, sessionId }) ===
-        scopeKey
-      )
-        this.states.delete(key);
-    }
-  }
-
-  load(scope: ReviewScope, path: string) {
-    const key = reviewDiffKey(scope, path);
-    if (this.disposed || this.states.has(key)) return;
-    const scopeKey = reviewScopeKey(scope);
-    const version = this.versions.get(scopeKey) ?? 0;
-    const valid = () =>
-      !this.disposed && (this.versions.get(scopeKey) ?? 0) === version;
-    this.states.set(key, { state: "loading" });
-    this.queue.push(async () => {
-      if (!valid()) return;
-      try {
-        const diff = await this.fetchDiff(scope, path);
-        if (!valid()) return;
-        this.states.set(key, {
-          state: "loaded",
-          diff: {
-            ...prepareReviewDiff(diff),
-            cacheKey: JSON.stringify([key, version]),
-          },
-        });
-      } catch (error) {
-        if (!valid()) return;
-        this.states.set(key, {
-          state: "error",
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-      if (valid()) this.changed();
+  ) {
+    this.unsubscribe = queryClient.getQueryCache().subscribe(event => {
+      if (!this.disposed && event.type === "updated" && (event.action.type === "success" || event.action.type === "error") && event.query.queryKey[0] === this.prefix[0] && event.query.queryKey[1] === this.prefix[1]) changed();
     });
-    this.drain();
   }
-
+  private key(scope: ReviewScope, path?: string) { return [...this.prefix, reviewScopeKey(scope), ...(path === undefined ? [] : [path])]; }
+  get(scope: ReviewScope, path: string): ReviewDiffState | undefined {
+    const value = queryClient.getQueryState<ReviewDiffState>(this.key(scope, path));
+    if (!value) return;
+    if (value.status === "error") return { state: "error", error: value.error instanceof Error ? value.error.message : String(value.error) };
+    return value.data ?? REVIEW_LOADING;
+  }
+  invalidate(scope: ReviewScope) { queryClient.removeQueries({ queryKey: this.key(scope) }); }
+  load(scope: ReviewScope, path: string) {
+    const queryKey = this.key(scope, path);
+    if (this.disposed || queryClient.getQueryState(queryKey)) return;
+    const snapshot = ++reviewSnapshotId;
+    void queryClient.fetchQuery({
+      queryKey, staleTime: Infinity, structuralSharing: false,
+      queryFn: ({ signal }) => new Promise<ReviewDiffState>((resolve, reject) => {
+        this.queue.push(async () => {
+          try {
+            signal.throwIfAborted();
+            if (this.disposed) throw new Error("Review disposed");
+            const diff = await this.fetchDiff(scope, path);
+            signal.throwIfAborted();
+            resolve({ state: "loaded", diff: { ...prepareReviewDiff(diff), cacheKey: JSON.stringify([reviewDiffKey(scope, path), snapshot]) } });
+          } catch (error) { reject(error); }
+        });
+        this.drain();
+      }),
+    }).catch(() => undefined);
+  }
   dispose() {
-    this.disposed = true;
-    this.queue = [];
-    this.states.clear();
+    this.disposed = true; this.unsubscribe(); this.queue = [];
+    queryClient.removeQueries({ queryKey: this.prefix });
   }
-
   private drain() {
-    while (
-      !this.disposed &&
-      this.running < this.concurrency &&
-      this.queue.length
-    ) {
+    while (!this.disposed && this.running < this.concurrency && this.queue.length) {
       const task = this.queue.shift()!;
       this.running++;
-      void task().finally(() => {
-        this.running--;
-        this.drain();
-      });
+      void task().finally(() => { this.running--; this.drain(); });
     }
   }
 }

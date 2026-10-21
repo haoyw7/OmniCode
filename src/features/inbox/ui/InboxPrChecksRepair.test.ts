@@ -7,7 +7,8 @@ vi.mock("motion/react", async (importOriginal) => {
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { InboxPrChecks } from "./InboxPrChecks";
 import { buildCiRepairRequest } from "../model/ciRepair";
 import { trackCiRepair } from "../model/ciRepairTracking";
@@ -16,6 +17,7 @@ import type { GithubPrChecksView } from "../hooks/useGithubPrChecks";
 
 // @vitest-environment happy-dom
 const roots: Root[] = [];
+beforeEach(() => queryClient.clear());
 
 it("only marks the selected job as repairing when check names repeat", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -326,7 +328,7 @@ it.each([1, 0.8])(
     Object.defineProperty(linuxRow, "scrollIntoView", {
       value: unboundedScroll,
     });
-    expect(linuxRow.closest("[hidden]")).not.toBeNull();
+    expect(linuxRow.closest('[aria-hidden="true"]')).not.toBeNull();
     const show = [...card.querySelectorAll("button")].find(
       (button) => button.textContent === "Show check",
     )!;
@@ -337,7 +339,7 @@ it.each([1, 0.8])(
     expect(panel.scrollLeft).toBe(12);
     expect(shell.scrollTop).toBe(0);
     expect(document.documentElement.scrollTop).toBe(0);
-    expect(linuxRow.closest("[hidden]")).toBeNull();
+    expect(linuxRow.closest('[aria-hidden="true"]')).toBeNull();
     expect(
       host
         .querySelector('[aria-label="All checks: 2"]')
@@ -613,6 +615,7 @@ it("reports fresh checks for a later PR commit without confirming old or stale r
 });
 afterEach(() => {
   act(() => roots.splice(0).forEach((root) => root.unmount()));
+  queryClient.clear();
   document.body.replaceChildren();
   vi.unstubAllGlobals();
 });

@@ -1,4 +1,5 @@
 import { preferenceStorage } from "./sharedPreferences";
+import { queryOptions } from "@tanstack/react-query";
 import {
   applyReducedMotion,
   type ReducedMotionPreference,
@@ -73,22 +74,17 @@ export interface SystemFonts {
   monospace: string[];
 }
 
-let systemFontsRequest: Promise<SystemFonts> | null = null;
-
 /** Installed font families from the desktop backend; presets elsewhere. */
-export function loadSystemFonts(): Promise<SystemFonts> {
-  systemFontsRequest ??= import("@tauri-apps/api/core")
+export const systemFontsQuery = () => queryOptions({
+  queryKey: ["settings", "system-fonts"],
+  staleTime: Infinity,
+  queryFn: () => import("@tauri-apps/api/core")
     .then(({ invoke }) => invoke<SystemFonts>("list_system_fonts"))
     .then((fonts) => ({
       all: Array.isArray(fonts?.all) ? fonts.all : [],
       monospace: Array.isArray(fonts?.monospace) ? fonts.monospace : [],
-    }))
-    .catch(() => {
-      systemFontsRequest = null;
-      return { all: [], monospace: [] };
-    });
-  return systemFontsRequest;
-}
+    })),
+});
 
 export const CONTENT_FONT_PRESETS = [
   "Inter",

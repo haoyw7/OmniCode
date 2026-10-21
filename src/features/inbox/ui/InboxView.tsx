@@ -1,7 +1,17 @@
+import { useQuery } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { inboxKeys, inboxConnectionsQuery, inboxListQuery, linkedWorkItemQuery, linearTeamsQuery, jiraProjectsQuery, updateInboxItem } from "../model/inboxQueries";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { AppPageHeader } from "../../workspace/ui/AppPageHeader";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { CheckCheck, Inbox, ListFilter, Plus, RefreshCw, Search } from "../../../shared/ui/icons";
+import {
+  CheckCheck,
+  Inbox,
+  ListFilter,
+  Plus,
+  RefreshCw,
+  Search,
+} from "../../../shared/ui/icons";
 import {
   useCallback,
   useEffect,
@@ -18,22 +28,15 @@ import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import {
-  githubStatus,
-  githubWorkItem,
   inboxItemKey,
-  inboxListIsFresh,
   inboxProjectsForRail,
-  listInboxItems,
-  peekInboxList,
   type InboxItem,
-  type InboxProviderErrors,
   type InboxQuery,
 } from "../model/githubTasks";
 import {
   applyInboxFilters,
   connectableInboxSources,
   hasActiveInboxFilters,
-  loadInboxConnections,
   linearProjectOptions,
   inboxFetchState,
   loadInboxFilters,
@@ -73,27 +76,19 @@ import {
 import { LIST_PAGE_SIZE, listWindowSize } from "../../../shared/lib/listWindow";
 import {
   LINEAR_CHANGE_EVENT,
-  linearConnected,
-  listLinearTeams,
   loadHiddenLinearTeamIds,
   saveHiddenLinearTeamIds,
-  type LinearTeam,
 } from "../model/linear";
 import {
   JIRA_CHANGE_EVENT,
-  jiraConnected,
-  listJiraProjects,
   loadHiddenJiraProjectIds,
   saveHiddenJiraProjectIds,
-  type JiraProject,
 } from "../model/jira";
 import {
   GITLAB_CHANGE_EVENT,
-  gitlabConnected,
 } from "../model/gitlab";
 import {
   AZUREDEVOPS_CHANGE_EVENT,
-  azureDevOpsConnected,
 } from "../model/azureDevOps";
 import {
   loadTabGroupColors,
@@ -119,20 +114,7 @@ const DEFAULT_WIDTH = 280;
 
 let rememberedWidth = DEFAULT_WIDTH;
 
-function peekInboxForRail(recents: RecentProject[], cwd: string) {
-  const projects = inboxProjectsForRail(recents, cwd);
-  const filters = pruneInboxFilters(
-    loadInboxFilters(),
-    projects.map((project) => project.path),
-  );
-  return peekInboxList(projects, {
-    assignedToMe: filters.assignedToMe,
-    state: inboxFetchState(filters),
-    search: "",
-    linearHiddenTeamIds: loadHiddenLinearTeamIds(),
-    jiraHiddenProjectIds: loadHiddenJiraProjectIds(),
-  });
-}
+const EMPTY_ITEMS: InboxItem[] = [];
 
 function InboxSourceTab({
   source,
@@ -219,25 +201,16 @@ export function InboxView({
   const [groupCustomColors] = useState(loadTabGroupCustomColors);
 
   const [searchInput, setSearchInput] = useState("");
-  const [items, setItems] = useState<InboxItem[]>(
-    () => peekInboxForRail(recents, cwd)?.items ?? [],
-  );
-  const [loading, setLoading] = useState(
-    () => peekInboxForRail(recents, cwd) == null,
-  );
-  const [revalidating, setRevalidating] = useState(false);
   const [readStatusError, setReadStatusError] = useState<string | null>(null);
-  const [providerErrors, setProviderErrors] = useState<InboxProviderErrors>(
-    () => peekInboxForRail(recents, cwd)?.errors ?? {},
-  );
   const [refresh, setRefresh] = useState(0);
   const targetSelectionKey = target ? linkedWorkItemInboxKey(target) : null;
   const [selectedKey, setSelectedKey] = useState<string | null>(
     targetSelectionKey,
   );
-  const [targetItem, setTargetItem] = useState<InboxItem | null>(null);
   const [filters, setFilters] = useState(loadInboxFilters);
-  const [connections, setConnections] = useState(loadInboxConnections);
+  const connectionsQuery = useQuery(inboxConnectionsQuery(), queryClient);
+  const connections = connectionsQuery.data;
+
   const [source, setSource] = useState(() =>
     resolveInboxSource(loadInboxSource(), connections),
   );
@@ -249,12 +222,9 @@ export function InboxView({
   const [linearHiddenTeamIds, setLinearHiddenTeamIds] = useState(
     loadHiddenLinearTeamIds,
   );
-  const [linearTeams, setLinearTeams] = useState<LinearTeam[]>([]);
   const [jiraHiddenProjectIds, setJiraHiddenProjectIds] = useState(
     loadHiddenJiraProjectIds,
   );
-  const [jiraProjects, setJiraProjects] = useState<JiraProject[]>([]);
-  const prevRefresh = useRef(refresh);
 
   const projects = useMemo(
     () => inboxProjectsForRail(recents, cwd),
@@ -264,7 +234,6 @@ export function InboxView({
     () => inboxProjectOptions(projects, logos),
     [logos, projects],
   );
-  const linearProjects = useMemo(() => linearProjectOptions(items), [items]);
   const activeFilters = useMemo(
     () =>
       pruneInboxFilters(
@@ -295,6 +264,28 @@ export function InboxView({
       jiraHiddenProjectIds,
     ],
   );
+
+  const listQuery = useQuery({ ...inboxListQuery(projects, fetchQuery), enabled: active }, queryClient);
+  const items = listQuery.data?.items ?? EMPTY_ITEMS;
+  const loading = listQuery.isPending;
+  const revalidating = listQuery.isFetching;
+  const listError = listQuery.error ? String(listQuery.error) : undefined;
+  const providerErrors = listQuery.data?.errors ?? {
+    github: listError, linear: listError, jira: listError, gitlab: listError, azuredevops: listError,
+  };
+  const linearProjects = useMemo(() => linearProjectOptions(items), [items]);
+  const { data: linearTeams = [] } = useQuery({ ...linearTeamsQuery(), enabled: active && source === "linear" }, queryClient);
+  const { data: jiraProjects = [] } = useQuery({ ...jiraProjectsQuery(), enabled: active && source === "jira" }, queryClient);
+  const { data: targetItem } = useQuery({
+    ...linkedWorkItemQuery(cwd, target),
+    enabled: !!target && !items.some((item) => inboxItemMatchesLinkedWorkItem(item, target)),
+  }, queryClient);
+  const refreshInbox = useCallback(() => {
+    for (const key of [inboxKeys.lists, inboxKeys.connections, inboxKeys.teams, inboxKeys.projects, ["inbox", "item"]]) {
+      void invalidateAfterChange(key);
+    }
+    setRefresh((value) => value + 1);
+  }, []);
 
   const resize = useDragResize({
     min: MIN_WIDTH,
@@ -335,7 +326,7 @@ export function InboxView({
   useEffect(() => {
     const onChange = () => {
       setLinearHiddenTeamIds(loadHiddenLinearTeamIds());
-      setRefresh((value) => value + 1);
+      refreshInbox();
     };
     window.addEventListener(LINEAR_CHANGE_EVENT, onChange);
     return () => window.removeEventListener(LINEAR_CHANGE_EVENT, onChange);
@@ -344,14 +335,14 @@ export function InboxView({
   useEffect(() => {
     const onChange = () => {
       setJiraHiddenProjectIds(loadHiddenJiraProjectIds());
-      setRefresh((value) => value + 1);
+      refreshInbox();
     };
     window.addEventListener(JIRA_CHANGE_EVENT, onChange);
     return () => window.removeEventListener(JIRA_CHANGE_EVENT, onChange);
   }, []);
 
   useEffect(() => {
-    const onChange = () => setRefresh((value) => value + 1);
+    const onChange = refreshInbox;
     window.addEventListener(GITLAB_CHANGE_EVENT, onChange);
     window.addEventListener(AZUREDEVOPS_CHANGE_EVENT, onChange);
     return () => {
@@ -360,54 +351,9 @@ export function InboxView({
     };
   }, []);
 
-  // Returning from Settings refreshes connections without remounting this view.
-  // Only the newest overlapping read may write its connection state.
+  // The pane stays mounted when Settings is opened.
   useEffect(() => {
-    let cancelled = false;
-    let latest = 0;
-    const read = () => {
-      const generation = ++latest;
-      void Promise.allSettled([
-        githubStatus(),
-        linearConnected(),
-        jiraConnected(),
-        gitlabConnected(),
-        azureDevOpsConnected(),
-      ]).then(([github, linear, jira, gitlab, azuredevops]) => {
-        if (cancelled || generation !== latest) return;
-        setConnections((prev) => ({
-          github:
-            github.status === "fulfilled"
-              ? github.value.connected
-              : prev.github,
-          linear:
-            linear.status === "fulfilled"
-              ? linear.value.connected
-              : prev.linear,
-          jira: jira.status === "fulfilled" ? jira.value.connected : prev.jira,
-          gitlab:
-            gitlab.status === "fulfilled"
-              ? gitlab.value.connected
-              : prev.gitlab,
-          azuredevops:
-            azuredevops.status === "fulfilled"
-              ? azuredevops.value.connected
-              : prev.azuredevops,
-        }));
-      });
-    };
-    read();
-    window.addEventListener(LINEAR_CHANGE_EVENT, read);
-    window.addEventListener(JIRA_CHANGE_EVENT, read);
-    window.addEventListener(GITLAB_CHANGE_EVENT, read);
-    window.addEventListener(AZUREDEVOPS_CHANGE_EVENT, read);
-    return () => {
-      cancelled = true;
-      window.removeEventListener(LINEAR_CHANGE_EVENT, read);
-      window.removeEventListener(JIRA_CHANGE_EVENT, read);
-      window.removeEventListener(GITLAB_CHANGE_EVENT, read);
-      window.removeEventListener(AZUREDEVOPS_CHANGE_EVENT, read);
-    };
+    if (active) void invalidateAfterChange(inboxKeys.connections);
   }, [active]);
 
   useEffect(() => {
@@ -435,113 +381,6 @@ export function InboxView({
   const connectableSources = connectableInboxSources(connections);
   const sourceAvailable = visibleSources.includes(source);
   const noSourcesConnected = visibleSources.length === 0;
-
-  // The roster has to come from Linear, not from the fetched issues: hiding a
-  // team drops its issues, so a derived list could never offer it back.
-  useEffect(() => {
-    if (source !== "linear") return;
-    let cancelled = false;
-    void listLinearTeams()
-      .then((teams) => {
-        if (!cancelled) setLinearTeams(teams);
-      })
-      .catch(() => {
-        if (!cancelled) setLinearTeams([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [source, linearHiddenTeamIds]);
-
-  // Same for Jira: hidden projects are excluded from the fetch itself.
-  useEffect(() => {
-    if (source !== "jira") return;
-    let cancelled = false;
-    void listJiraProjects()
-      .then((next) => {
-        if (!cancelled) setJiraProjects(next);
-      })
-      .catch(() => {
-        if (!cancelled) setJiraProjects([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [source, jiraHiddenProjectIds]);
-
-  useEffect(() => {
-    const force = refresh !== prevRefresh.current;
-    prevRefresh.current = refresh;
-    const cached = peekInboxList(projects, fetchQuery);
-    if (cached) {
-      setItems(cached.items);
-      setProviderErrors(cached.errors);
-      setLoading(false);
-    }
-    if (!force && cached && inboxListIsFresh(projects, fetchQuery)) {
-      return;
-    }
-
-    let cancelled = false;
-    if (cached) setRevalidating(true);
-    else {
-      setLoading(true);
-      setProviderErrors({});
-    }
-    void listInboxItems(projects, fetchQuery, { force })
-      .then((next) => {
-        if (cancelled) return;
-        setItems(next.items);
-        setProviderErrors(next.errors);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        if (cached) return;
-        setItems([]);
-        const message = err instanceof Error ? err.message : String(err);
-        setProviderErrors({
-          github: message,
-          linear: message,
-          jira: message,
-          gitlab: message,
-          azuredevops: message,
-        });
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setLoading(false);
-        setRevalidating(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchQuery, projects, refresh]);
-
-  useEffect(() => {
-    if (
-      !target ||
-      items.some((item) => inboxItemMatchesLinkedWorkItem(item, target))
-    ) {
-      return;
-    }
-    let cancelled = false;
-    void githubWorkItem(cwd, target.repo, target.kind, target.number)
-      .then((item) => {
-        if (cancelled) return;
-        setTargetItem({
-          ...item,
-          projectPath: cwd,
-          provider: "github",
-        });
-      })
-      .catch(() => {
-        // The normal Inbox remains usable when an exact lookup is unavailable.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [cwd, items, target, targetSelectionKey]);
 
   const visibleItems = useMemo(() => {
     if (!sourceAvailable) return [];
@@ -608,15 +447,6 @@ export function InboxView({
     !!targetSelectionKey && selectedKey === targetSelectionKey;
   const selected =
     selectedByKey ?? (waitingForTarget ? null : visibleItems[0]) ?? null;
-  const updateInboxItem = useCallback((next: InboxItem) => {
-    const key = inboxItemKey(next);
-    setItems((current) =>
-      current.map((entry) => (inboxItemKey(entry) === key ? next : entry)),
-    );
-    setTargetItem((current) =>
-      current && inboxItemKey(current) === key ? next : current,
-    );
-  }, []);
   const shownItemCount = listWindowSize(visibleItems.length, listLimit);
   const shownItems = visibleItems.slice(0, shownItemCount);
   const hasMoreItems = shownItemCount < visibleItems.length;
@@ -782,7 +612,7 @@ export function InboxView({
           <button
             type="button"
             aria-label={uiT("Refresh")}
-            onClick={() => setRefresh((value) => value + 1)}
+            onClick={refreshInbox}
             className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content"
           >
             {loading || revalidating ? (

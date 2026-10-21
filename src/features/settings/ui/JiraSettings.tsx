@@ -1,7 +1,12 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { jiraIntegrationQuery } from "../model/inboxIntegrationQueries";
+import { jiraProjectsQuery, inboxKeys } from "../../inbox/model/inboxQueries";
 import { useMaskEmails } from "../model/displayPrefs";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Button } from "../../../shared/ui/forms/Button";
 import { PrivateEmail } from "../../../shared/ui/PrivateEmail";
@@ -9,107 +14,52 @@ import { clearInboxCache } from "../../inbox/model/githubTasks";
 import {
   disconnectJira,
   JIRA_CHANGE_EVENT,
-  jiraConnected,
-  listJiraProjects,
   loadHiddenJiraProjectIds,
   notifyJiraChange,
   saveHiddenJiraProjectIds,
   saveJiraConfig,
-  type JiraProject,
-  type JiraStatus,
 } from "../../inbox/model/jira";
 
 export function JiraSettings() {
   const masked = useMaskEmails();
   const { t: uiT } = useTranslation();
-  const [status, setStatus] = useState<JiraStatus | null>(null);
+  const statusQuery = useQuery(jiraIntegrationQuery(), queryClient);
+  const status = statusQuery.data;
   const [site, setSite] = useState("");
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
-  const [checking, setChecking] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [projects, setProjects] = useState<JiraProject[]>([]);
+  const projectQuery = useQuery({ ...jiraProjectsQuery(), enabled: !!status?.connected }, queryClient);
+  const projects = status?.connected ? projectQuery.data ?? [] : [];
+  const checking = statusQuery.isFetching;
   const [hiddenIds, setHiddenIds] = useState(loadHiddenJiraProjectIds);
-
-  const loadProjects = useCallback(async () => {
-    try {
-      setProjects(await listJiraProjects());
-    } catch (err) {
-      setProjects([]);
-      setError(String(err instanceof Error ? err.message : err));
-    }
-  }, []);
-
   useEffect(() => {
-    let cancelled = false;
-    void jiraConnected()
-      .then(async (next) => {
-        if (cancelled) return;
-        setStatus(next);
-        if (next.connected) await loadProjects();
-      })
-      .catch((err: unknown) => {
-        if (!cancelled)
-          setError(String(err instanceof Error ? err.message : err));
-      })
-      .finally(() => {
-        if (!cancelled) setChecking(false);
-      });
     const onChange = () => setHiddenIds(loadHiddenJiraProjectIds());
     window.addEventListener(JIRA_CHANGE_EVENT, onChange);
-    return () => {
-      cancelled = true;
-      window.removeEventListener(JIRA_CHANGE_EVENT, onChange);
-    };
-  }, [loadProjects]);
-
-  const connect = async () => {
-    if (busy || checking || !site.trim() || !email.trim() || !token.trim())
-      return;
-    setBusy(true);
-    setError(null);
-    try {
-      setStatus(
-        await withToast(() => saveJiraConfig({ site, email, token }), {
-          loading: uiT("Connecting to {service}…", { service: "Jira" }),
-          success: uiT("Connected to {service}", { service: "Jira" }),
-          error: false,
-        }),
-      );
+    return () => window.removeEventListener(JIRA_CHANGE_EVENT, onChange);
+  }, []);
+  const mutation = useMutation({
+    mutationFn: (action: "connect" | "disconnect") => withToast(
+      () => action === "connect" ? saveJiraConfig({ site, email, token }) : disconnectJira(), {
+        loading: uiT(action === "connect" ? "Connecting to {service}…" : "Disconnecting from {service}…", { service: "Jira" }),
+        success: uiT(action === "connect" ? "Connected to {service}" : "Disconnected from {service}", { service: "Jira" }),
+        error: false,
+      }),
+    onSuccess: async (next, action) => {
+      await queryClient.cancelQueries({ queryKey: jiraIntegrationQuery().queryKey });
+      queryClient.setQueryData(jiraIntegrationQuery().queryKey, next);
       setToken("");
       clearInboxCache();
-      saveHiddenJiraProjectIds([]);
-      await loadProjects();
-    } catch (err) {
-      setError(String(err instanceof Error ? err.message : err));
-    } finally {
-      setBusy(false);
-    }
+      if (action === "connect") saveHiddenJiraProjectIds([]);
+      else { queryClient.setQueryData(jiraProjectsQuery().queryKey, []); notifyJiraChange(); }
+      await Promise.all([invalidateAfterChange(inboxKeys.connections), invalidateAfterChange(inboxKeys.lists)]);
+    },
+  }, queryClient);
+  const busy = mutation.isPending;
+  const error = errorMessage(mutation.error ?? statusQuery.error ?? (status?.connected ? projectQuery.error : null));
+  const connect = () => {
+    if (!busy && !checking && site.trim() && email.trim() && token.trim()) mutation.mutate("connect");
   };
-
-  const disconnect = async () => {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      setStatus(
-        await withToast(() => disconnectJira(), {
-          loading: uiT("Disconnecting from {service}…", { service: "Jira" }),
-          success: uiT("Disconnected from {service}", { service: "Jira" }),
-          error: false,
-        }),
-      );
-      setProjects([]);
-      setToken("");
-      clearInboxCache();
-      notifyJiraChange();
-    } catch (err) {
-      setError(String(err instanceof Error ? err.message : err));
-    } finally {
-      setBusy(false);
-    }
-  };
+  const disconnect = () => { if (!busy) mutation.mutate("disconnect"); };
 
   return (
     <div className="px-4 py-3.5">
@@ -220,7 +170,7 @@ export function JiraSettings() {
             </span>
             <Button variant="secondary"
               disabled={busy || checking}
-              onClick={() => void loadProjects()}
+              onClick={() => void projectQuery.refetch()}
             >
               {uiT("Refresh projects")}
             </Button>

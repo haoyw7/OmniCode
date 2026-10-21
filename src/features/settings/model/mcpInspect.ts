@@ -1,3 +1,5 @@
+import { queryOptions } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { invoke } from "@tauri-apps/api/core";
 import type { McpConnection } from "./mcp";
 
@@ -57,35 +59,18 @@ export function mcpServerKey(
   return `${server.provider}:${server.scope}:${server.configPath}:${server.name}`;
 }
 
-const inspections = new Map<string, Promise<McpInspection>>();
-
-/** Inspecting starts the server, so results are reused until a forced refresh. */
-export function inspectMcpServer(
-  cwd: string,
-  server: McpConnection,
-  force = false,
-) {
-  const key = `${cwd}\n${mcpServerKey(server)}`;
-  let request = inspections.get(key);
-  if (!request || force) {
-    request = invoke<McpInspection>("mcp_inspect", {
-      cwd,
-      provider: server.provider,
-      scope: server.scope,
-      configPath: server.configPath,
-      name: server.name,
-    });
-    inspections.set(key, request);
-    const current = request;
-    request.catch(() => {
-      if (inspections.get(key) === current) inspections.delete(key);
-    });
-  }
-  return request;
+/** Inspecting starts the server, so reuse results until an explicit refresh. */
+export const mcpInspectionQuery = (cwd: string, server: McpConnection) => queryOptions({
+  queryKey: ["mcpInspection", cwd, mcpServerKey(server)], staleTime: Infinity,
+  queryFn: () => invoke<McpInspection>("mcp_inspect", { cwd, provider: server.provider, scope: server.scope, configPath: server.configPath, name: server.name }),
+});
+export async function inspectMcpServer(cwd: string, server: McpConnection, force = false) {
+  const options = mcpInspectionQuery(cwd, server);
+  if (force) await queryClient.cancelQueries({ queryKey: options.queryKey });
+  return queryClient.fetchQuery({ ...options, staleTime: force ? 0 : Infinity });
 }
-
 export function clearMcpInspections() {
-  inspections.clear();
+  queryClient.removeQueries({ queryKey: ["mcpInspection"] });
 }
 
 /** Flatten a tool's input schema into displayable parameters. */

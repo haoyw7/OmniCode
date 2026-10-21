@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { EditorView } from "@codemirror/view";
+import { queryClient } from "../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,6 +22,7 @@ describe("mobile file preview and tool navigation", () => {
   let app: HTMLDivElement;
   let uncaught: ReturnType<typeof vi.fn>;
   beforeEach(() => {
+  queryClient.clear();
     startMotionClock();
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     app = document.createElement("div");

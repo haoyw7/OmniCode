@@ -1,4 +1,7 @@
 import { IconButton } from "../../../shared/ui/forms/IconButton";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { useEffect, useId, useRef, useState } from "react";
 import type { BotView } from "../model/bots";
 import { BotAvatar } from "./BotAvatar";
@@ -14,7 +17,12 @@ export function BotRecipientPicker({ open, bots, roomsSupported, onChoose, onCre
 }) {
   const { t } = useTranslation(), visible = useSurfaceVisibility(), id = useId();
   const [query, setQuery] = useState(""), [highlight, setHighlight] = useState(0), [members, setMembers] = useState<string[]>([]);
-  const [draft, setDraft] = useState(""), [dropdown, setDropdown] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState<string>();
+  const [draft, setDraft] = useState(""), [dropdown, setDropdown] = useState(true);
+  const mutation = useMutation({ mutationFn: ({ bots, text }: { bots: BotView[]; text: string }) => withToast(() => onSend(bots, text),
+    { loading: t("Sending..."), success: false, error: cause => t(botErrorMessage(cause)) }),
+    onSuccess: () => { setDraft(""); setMembers([]); setQuery(""); },
+  }, queryClient);
+  const busy = mutation.isPending, error = mutation.error ? botErrorMessage(mutation.error) : undefined;
   const input = useRef<HTMLInputElement>(null);
   const active = open && visible;
   const selected = roomsSupported ? members.flatMap(id => { const bot = bots.find(bot => bot.id === id && !bot.archivedAt); return bot ? [bot] : []; }) : [];
@@ -31,10 +39,7 @@ export function BotRecipientPicker({ open, bots, roomsSupported, onChoose, onCre
   };
   const send = async () => {
     if (busy || !active || selected.length < 2 || !roomsSupported || !draft.trim()) return;
-    setBusy(true); setError(undefined);
-    try { await onSend(selected, draft); setDraft(""); setMembers([]); setQuery(""); }
-    catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
+    mutation.mutate({ bots: selected, text: draft });
   };
   return <section className="desktop-bot-recipient" aria-label={t("New conversation")} inert={!active} aria-hidden={!active || undefined} onKeyDown={event => {
     if (event.key === "Escape" && !busy) { event.preventDefault(); event.stopPropagation(); setDropdown(false); onClose(); }

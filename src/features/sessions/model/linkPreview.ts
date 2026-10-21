@@ -1,4 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
+import { queryOptions } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 
 export type UserLink = {
   url: string;
@@ -24,7 +26,9 @@ export type LinkPreviewMetadata = {
   faviconDataUrl: string | null;
 };
 
-const metadataCache = new Map<string, Promise<LinkPreviewMetadata>>();
+export const linkMetadataQuery = (url: string) => queryOptions({
+  queryKey: ["linkPreview", "metadata", url], queryFn: () => invoke<LinkPreviewMetadata>("fetch_link_preview", { url }), staleTime: Infinity,
+});
 
 /** Find the first web URL and preserve the rest of the user's message. */
 export function parseUserMessageLink(text: string): UserMessageLink | null {
@@ -138,11 +142,5 @@ function count(value: string, character: string): number {
 export function fetchLinkPreviewMetadata(
   url: string,
 ): Promise<LinkPreviewMetadata> {
-  const cached = metadataCache.get(url);
-  if (cached) return cached;
-
-  const pending = invoke<LinkPreviewMetadata>("fetch_link_preview", { url });
-  metadataCache.set(url, pending);
-  pending.catch(() => metadataCache.delete(url));
-  return pending;
+  return queryClient.fetchQuery(linkMetadataQuery(url));
 }

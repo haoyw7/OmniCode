@@ -1,4 +1,6 @@
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../../shared/lib/queryClient";
 import { Check, FilePlusCorner, Pencil } from "../../../../shared/ui/icons";
 import { useEffect, useRef, useState } from "react";
 import { playCue } from "../../../settings/model/sounds";
@@ -15,7 +17,8 @@ export function SaveNoteButton({
 }) {
   const { t: uiT } = useTranslation();
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const mutation = useMutation({ mutationFn: async () => onSave(text) }, queryClient);
+  const pending = mutation.isPending;
   const [saved, setSaved] = useState(false);
   const timer = useRef<number | null>(null);
 
@@ -39,17 +42,14 @@ export function SaveNoteButton({
         onClick={async () => {
           setError(null);
           setSaved(false);
-          setPending(true);
           try {
-            await onSave(text);
+            await mutation.mutateAsync();
             playCue("copy");
             setSaved(true);
             if (timer.current != null) window.clearTimeout(timer.current);
             timer.current = window.setTimeout(() => setSaved(false), 2000);
           } catch (error) {
             setError(error instanceof Error ? error.message : String(error));
-          } finally {
-            setPending(false);
           }
         }}
       >

@@ -1,8 +1,9 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { toast } from "sonner";
 import { useState, type CSSProperties, type ReactNode } from "react";
-
 import { Modal } from "../../../shared/ui/Modal";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import {
@@ -50,8 +51,9 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
     initial?.effect ?? NEW_THREAD_BACKGROUND_EFFECT_DEFAULT,
   );
   const [revision, setRevision] = useState(projectChatBackgroundImageRevision);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
+  const busy = mutation.isPending;
+  const error = mutation.error ? mutation.error instanceof Error ? mutation.error.message : String(mutation.error) : null;
   const globalPath = loadChatBackgroundPath();
   const effectPreviewSrc = useProjectBackgroundEffect(path, effect, revision);
   const previewSrc = path
@@ -78,26 +80,18 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
   };
 
   const choose = async () => {
-    setBusy(true);
-    setError(null);
-    try {
+    mutation.mutate(async () => {
       // The file picker is the progress UI here; confirm only the result.
       const nextPath = await pickAndSaveProjectChatBackground(project);
       if (!nextPath) return;
       toast.success(uiT("Background updated"));
       save(nextPath, opacity, effect, true);
       setPath(nextPath);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setBusy(false);
-    }
+    });
   };
 
   const removeImage = async () => {
-    setBusy(true);
-    setError(null);
-    try {
+    mutation.mutate(async () => {
       await withToast(() => clearProjectChatBackground(project), {
         loading: uiT("Removing background…"),
         success: uiT("Background removed"),
@@ -108,11 +102,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
       setOpacity(loadChatBackgroundOpacity());
       setEffect(NEW_THREAD_BACKGROUND_EFFECT_DEFAULT);
       setRevision(projectChatBackgroundImageRevision());
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setBusy(false);
-    }
+    });
   };
 
   const updateOpacity = (percent: number) => {

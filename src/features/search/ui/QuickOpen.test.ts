@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../../../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { projectFiles, remoteFiles, loadProjectFiles, rankProjectFiles } =
+const { projectFiles, remoteFiles, listProjectFiles, rankProjectFiles } =
   vi.hoisted(() => {
     const projectFiles = [
       {
@@ -22,7 +23,7 @@ const { projectFiles, remoteFiles, loadProjectFiles, rankProjectFiles } =
     return {
       projectFiles,
       remoteFiles,
-      loadProjectFiles: vi.fn((cwd: string) =>
+      listProjectFiles: vi.fn((cwd: string) =>
         cwd.startsWith("remote://")
           ? Promise.resolve(remoteFiles)
           : new Promise(() => {}),
@@ -39,14 +40,15 @@ const { projectFiles, remoteFiles, loadProjectFiles, rankProjectFiles } =
     };
   });
 
-vi.mock("../../connections/files/model/fileIndex", () => ({
-  loadProjectFiles,
-  peekProjectFiles: vi.fn((cwd: string) =>
-    cwd.startsWith("remote://") ? null : projectFiles,
-  ),
+vi.mock("../../connections/files/model/fileIndex", async (importOriginal) => ({
+  ...await importOriginal<typeof import("../../connections/files/model/fileIndex")>(),
   rankProjectFiles,
   recentOpenedFiles: vi.fn(() => []),
   rememberOpenedFile: vi.fn(),
+}));
+vi.mock("../../../platform/tauri/fs", async (importOriginal) => ({
+  ...await importOriginal<typeof import("../../../platform/tauri/fs")>(),
+  listProjectFiles,
 }));
 
 vi.mock("../../projects/model/recents", () => ({
@@ -56,11 +58,14 @@ vi.mock("../../projects/model/recents", () => ({
 
 import { QuickOpen } from "./QuickOpen";
 import { setUiLanguage } from "../../../shared/i18n/language";
+import { projectFileKeys } from "../../connections/files/model/fileIndex";
 
 let container: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
+  queryClient.clear();
+  queryClient.setQueryData(projectFileKeys.cwd("/repo"), projectFiles);
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
     callback(0);
@@ -73,6 +78,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  queryClient.clear();
   act(() => root.unmount());
   setUiLanguage("en");
   container.remove();
@@ -367,7 +373,7 @@ describe("quick open on a remote project", () => {
       ),
     );
     const dialog = document.querySelector<HTMLElement>("[data-file-picker]")!;
-    expect(loadProjectFiles).toHaveBeenCalledWith(cwd, true);
+    expect(listProjectFiles).toHaveBeenCalledWith(cwd);
     expect(dialog.textContent).toContain("App.tsx");
 
     press(dialog.querySelector<HTMLInputElement>("input")!, "Enter");
@@ -380,7 +386,7 @@ describe("quick open on a remote project", () => {
   });
 
   it("shows a connection error from the shared file list", async () => {
-    loadProjectFiles.mockRejectedValueOnce(
+    listProjectFiles.mockRejectedValueOnce(
       new Error("Machine is not connected"),
     );
     await act(async () =>

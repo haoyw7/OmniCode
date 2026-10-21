@@ -1,31 +1,32 @@
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { inboxKeys, inboxDetailsQuery, inboxThreadQuery, inboxDiffQuery, postInboxComment } from "../model/inboxQueries";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useGithubPrChecks } from "../hooks/useGithubPrChecks";
 import { summarizePrChecks } from "../model/githubPrChecks";
 import type { CiRepairRequest } from "../model/ciRepair";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Check, Copy, ExternalLink, GitCompare, MessageSquare, MessageMultiple } from "../../../shared/ui/icons";
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  GitCompare,
+  MessageSquare,
+  MessageMultiple,
+} from "../../../shared/ui/icons";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { InboxProviderMark } from "./InboxProviderMark";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import {
-  githubPrDiff,
   githubReviewDecisionLabel,
-  githubWorkItemComment,
-  githubWorkItemDetails,
-  githubWorkItemThread,
   gitlabAttentionLabel,
   inboxItemKey,
   inboxItemRef,
   inboxItemStatus,
-  peekGithubPrDiff,
-  peekGithubWorkItemDetails,
-  peekGithubWorkItemThread,
   formatRelativeTime,
   inboxPersonAvatarUrl,
-  type GithubPrDiff,
-  GITHUB_WORK_ITEM_FRESH_MS,
-  type GithubWorkItemDetails,
-  type GithubWorkItemThread,
   type InboxItem,
 } from "../model/githubTasks";
 import { copyText } from "../../../platform/tauri/clipboard";
@@ -34,42 +35,6 @@ import { playCue } from "../../settings/model/sounds";
 import { sameProjectPath } from "../../projects/model/recents";
 import { sessionDisplayTitle } from "../../sessions/model/session";
 import type { SessionSummary } from "../../sessions/data/sessionStore";
-import {
-  linearIssueComment,
-  linearIssueDetails,
-  linearIssueThread,
-  peekLinearIssueDetails,
-  peekLinearIssueThread,
-  type LinearIssueThread,
-} from "../model/linear";
-import {
-  jiraIssueComment,
-  jiraIssueDetails,
-  jiraIssueThread,
-  peekJiraIssueDetails,
-  peekJiraIssueThread,
-  type JiraIssueThread,
-} from "../model/jira";
-import {
-  gitlabMrDiff,
-  gitlabWorkItemComment,
-  gitlabWorkItemDetails,
-  gitlabWorkItemThread,
-  peekGitlabMrDiff,
-  peekGitlabWorkItemDetails,
-  peekGitlabWorkItemThread,
-  type GitlabWorkItemThread,
-} from "../model/gitlab";
-import {
-  azureDevOpsMrDiff,
-  azureDevOpsWorkItemComment,
-  azureDevOpsWorkItemDetails,
-  azureDevOpsWorkItemThread,
-  peekAzureDevOpsMrDiff,
-  peekAzureDevOpsWorkItemDetails,
-  peekAzureDevOpsWorkItemThread,
-  type AzureDevOpsWorkItemThread,
-} from "../model/azureDevOps";
 import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
 import { InboxComments, InboxCommentForm, type InboxReplyTarget } from "./InboxComments";
 import { InboxPrDiff } from "./InboxPrDiff";
@@ -160,7 +125,6 @@ export function InboxDetail({
   const linear = item.provider === "linear";
   const jira = item.provider === "jira";
   const tracker = linear || jira;
-  const jiraKey = jira ? (item.identifier ?? "") : "";
   const gitlab = item.provider === "gitlab";
   const azuredevops = item.provider === "azuredevops";
   const isPr = !tracker && item.kind === "pr";
@@ -184,74 +148,24 @@ export function InboxDetail({
             : azuredevops
               ? "Open on ADO"
               : "Open on GitHub";
-  const gitlabKind =
-    gitlab && (item.kind === "issue" || item.kind === "pr") ? item.kind : null;
-  const azureDevOpsKind =
-    azuredevops && (item.kind === "issue" || item.kind === "pr")
-      ? item.kind
-      : null;
-  const cached = linear
-    ? peekLinearIssueDetails(item.id ?? "")
-    : jira
-      ? peekJiraIssueDetails(jiraKey)
-      : gitlabKind
-        ? peekGitlabWorkItemDetails(item.repo, gitlabKind, item.number)
-        : azureDevOpsKind
-          ? peekAzureDevOpsWorkItemDetails(
-              item.repo,
-              azureDevOpsKind,
-              item.number,
-            )
-          : githubKind
-            ? peekGithubWorkItemDetails(item.repo, githubKind, item.number)
-            : null;
-  const cachedDiff = isPr
-    ? gitlab
-      ? peekGitlabMrDiff(item.repo, item.number)
-      : azuredevops
-        ? peekAzureDevOpsMrDiff(item.repo, item.number)
-        : peekGithubPrDiff(item.repo, item.number)
-    : null;
-  const cachedThread = linear
-    ? peekLinearIssueThread(item.id ?? "")
-    : jira
-      ? peekJiraIssueThread(jiraKey)
-      : gitlabKind
-        ? peekGitlabWorkItemThread(item.repo, gitlabKind, item.number)
-        : azureDevOpsKind
-          ? peekAzureDevOpsWorkItemThread(
-              item.repo,
-              azureDevOpsKind,
-              item.number,
-            )
-          : githubKind
-            ? peekGithubWorkItemThread(item.repo, githubKind, item.number)
-            : null;
-  const [details, setDetails] = useState<GithubWorkItemDetails | null>(cached);
-  const [loading, setLoading] = useState(cached == null);
-  const [error, setError] = useState<string | null>(null);
+  const detailsQuery = useQuery(inboxDetailsQuery(item, panel), queryClient);
+  const details = detailsQuery.data ?? null;
+  const loading = detailsQuery.isPending;
+  const error = details ? null : errorMessage(detailsQuery.error) ?? null;
   const [tab, setTab] = useState<"summary" | "code" | "checks">("summary");
   const [diffMode, setDiffMode] = useState<"hunks" | "full">("hunks");
-  // Reopening the side panel reuses recent GitHub data. Inbox keeps refetching
-  // so its explicit refresh stays live.
-  const panelMaxAge = panel ? GITHUB_WORK_ITEM_FRESH_MS : undefined;
   const [diffFocusPath, setDiffFocusPath] = useState<string | undefined>();
   // The panel summary lists changed files, so it shares the Code tab's fetch.
   const diffWanted = tab === "code" || (panel && tab === "summary");
   const fullFile = inboxShowsFullFileDiff(item) && diffMode === "full";
-  const [prDiff, setPrDiff] = useState<GithubPrDiff | null>(cachedDiff);
-  const [diffLoading, setDiffLoading] = useState(isPr && cachedDiff == null);
-  const [diffError, setDiffError] = useState<string | null>(null);
-  const [thread, setThread] = useState<
-    | GithubWorkItemThread
-    | LinearIssueThread
-    | JiraIssueThread
-    | GitlabWorkItemThread
-    | AzureDevOpsWorkItemThread
-    | null
-  >(cachedThread);
-  const [threadLoading, setThreadLoading] = useState(cachedThread == null);
-  const [threadError, setThreadError] = useState<string | null>(null);
+  const diffQuery = useQuery({ ...inboxDiffQuery(item, panel, fullFile), enabled: isPr && diffWanted }, queryClient);
+  const prDiff = diffQuery.data ?? null;
+  const diffLoading = isPr && diffQuery.isPending;
+  const diffError = prDiff ? null : errorMessage(diffQuery.error) ?? null;
+  const threadQuery = useQuery(inboxThreadQuery(item, panel), queryClient);
+  const thread = threadQuery.data ?? null;
+  const threadLoading = threadQuery.isPending;
+  const threadError = thread ? null : errorMessage(threadQuery.error) ?? null;
   // A long thread's Markdown renders interruptibly instead of blocking input
   // as it arrives. The deferred copy carries its item, so switching items
   // shows the pending state rather than the previous item's comments.
@@ -265,15 +179,28 @@ export function InboxDetail({
     shownThreadView.key === threadKey ? shownThreadView.thread : null;
   const threadRendering = shownThreadView !== threadView && shownThread == null;
   const [replyTo, setReplyTo] = useState<InboxReplyTarget | null>(null);
-  const [posting, setPosting] = useState(false);
-  const [postError, setPostError] = useState<string | null>(null);
+  const commentMutation = useMutation({
+    mutationFn: ({ body, target, reply }: { body: string; target: InboxItem; reply: InboxReplyTarget | null }) =>
+      postInboxComment(target, body, reply),
+    onSuccess: async (_result, { target }) => {
+      setReplyTo(null);
+      toast.success(uiT("Comment posted"));
+      await invalidateAfterChange(inboxKeys.detail(target));
+    },
+    onError: (reason) => toast.error(errorMessage(reason)),
+  }, queryClient);
+  const posting = commentMutation.isPending;
+  const postError = errorMessage(commentMutation.error) ?? null;
   const defaultProject =
     projects.find((project) => sameProjectPath(project.path, cwd))?.path ??
     projects[0]?.path ??
     cwd;
   const [startProject, setStartProject] = useState(defaultProject);
-  const [starting, setStarting] = useState(false);
-  const [startError, setStartError] = useState<string | null>(null);
+  const startMutation = useMutation({
+    mutationFn: async ({ target, body }: { target: InboxItem; body?: string }) => { await onStart?.(target, body); },
+  }, queryClient);
+  const starting = startMutation.isPending;
+  const startError = errorMessage(startMutation.error) ?? null;
   const chooseStartProject =
     tracker || ((gitlab || azuredevops) && !item.projectPath);
   const status = tracker
@@ -333,424 +260,20 @@ export function InboxDetail({
       })
     : null;
 
+  const previousRevision = useRef(revision);
   useEffect(() => {
-    let cancelled = false;
-    const cachedDetails = linear
-      ? peekLinearIssueDetails(item.id ?? "")
-      : jira
-        ? peekJiraIssueDetails(jiraKey)
-        : gitlabKind
-          ? peekGitlabWorkItemDetails(item.repo, gitlabKind, item.number)
-          : azureDevOpsKind
-            ? peekAzureDevOpsWorkItemDetails(
-                item.repo,
-                azureDevOpsKind,
-                item.number,
-              )
-            : githubKind
-              ? peekGithubWorkItemDetails(item.repo, githubKind, item.number)
-              : null;
-    if (cachedDetails) {
-      setDetails(cachedDetails);
-      setLoading(false);
-      setError(null);
-    } else {
-      setLoading(true);
-      setError(null);
-      setDetails(null);
-    }
-    const pending = linear
-      ? item.id
-        ? linearIssueDetails(item.id)
-        : Promise.reject(new Error("Missing Linear issue"))
-      : jira
-        ? jiraKey
-          ? jiraIssueDetails(jiraKey)
-          : Promise.reject(new Error("Missing Jira issue"))
-        : gitlabKind
-          ? gitlabWorkItemDetails(item.repo, gitlabKind, item.number)
-          : azureDevOpsKind
-            ? azureDevOpsWorkItemDetails(
-                item.repo,
-                azureDevOpsKind,
-                item.number,
-              )
-            : githubKind
-              ? githubWorkItemDetails(
-                  item.projectPath,
-                  item.repo,
-                  githubKind,
-                  item.number,
-                  { maxAgeMs: panelMaxAge },
-                )
-              : Promise.reject(new Error("Unknown inbox item"));
-    void pending
-      .then((next) => {
-        if (cancelled) return;
-        setDetails(next);
-        setError(null);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        if (cachedDetails) return;
-        setError(err instanceof Error ? err.message : String(err));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    azureDevOpsKind,
-    githubKind,
-    gitlabKind,
-    item.id,
-    item.number,
-    item.projectPath,
-    item.repo,
-    jira,
-    jiraKey,
-    linear,
-    panelMaxAge,
-    revision,
-  ]);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (linear) {
-      const id = item.id ?? "";
-      const cachedThread = peekLinearIssueThread(id);
-      if (cachedThread) {
-        setThread(cachedThread);
-        setThreadLoading(false);
-        setThreadError(null);
-      } else {
-        setThreadLoading(true);
-        setThreadError(null);
-        setThread(null);
-      }
-      void linearIssueThread(id)
-        .then((next) => {
-          if (cancelled) return;
-          setThread(next);
-          setThreadError(null);
-        })
-        .catch((err: unknown) => {
-          if (cancelled) return;
-          if (cachedThread) return;
-          setThreadError(err instanceof Error ? err.message : String(err));
-        })
-        .finally(() => {
-          if (!cancelled) setThreadLoading(false);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }
-    if (jira) {
-      const cachedThread = peekJiraIssueThread(jiraKey);
-      if (cachedThread) {
-        setThread(cachedThread);
-        setThreadLoading(false);
-        setThreadError(null);
-      } else {
-        setThreadLoading(true);
-        setThreadError(null);
-        setThread(null);
-      }
-      void jiraIssueThread(jiraKey)
-        .then((next) => {
-          if (cancelled) return;
-          setThread(next);
-          setThreadError(null);
-        })
-        .catch((err: unknown) => {
-          if (cancelled) return;
-          if (cachedThread) return;
-          setThreadError(err instanceof Error ? err.message : String(err));
-        })
-        .finally(() => {
-          if (!cancelled) setThreadLoading(false);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }
-    if (gitlabKind) {
-      const cachedThread = peekGitlabWorkItemThread(
-        item.repo,
-        gitlabKind,
-        item.number,
-      );
-      if (cachedThread) {
-        setThread(cachedThread);
-        setThreadLoading(false);
-        setThreadError(null);
-      } else {
-        setThreadLoading(true);
-        setThreadError(null);
-        setThread(null);
-      }
-      void gitlabWorkItemThread(item.repo, gitlabKind, item.number)
-        .then((next) => {
-          if (cancelled) return;
-          setThread(next);
-          setThreadError(null);
-        })
-        .catch((err: unknown) => {
-          if (cancelled) return;
-          if (cachedThread) return;
-          setThreadError(err instanceof Error ? err.message : String(err));
-        })
-        .finally(() => {
-          if (!cancelled) setThreadLoading(false);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }
-    if (azureDevOpsKind) {
-      const cachedThread = peekAzureDevOpsWorkItemThread(
-        item.repo,
-        azureDevOpsKind,
-        item.number,
-      );
-      if (cachedThread) {
-        setThread(cachedThread);
-        setThreadLoading(false);
-        setThreadError(null);
-      } else {
-        setThreadLoading(true);
-        setThreadError(null);
-        setThread(null);
-      }
-      void azureDevOpsWorkItemThread(item.repo, azureDevOpsKind, item.number)
-        .then((next) => {
-          if (cancelled) return;
-          setThread(next);
-          setThreadError(null);
-        })
-        .catch((err: unknown) => {
-          if (cancelled) return;
-          if (cachedThread) return;
-          setThreadError(err instanceof Error ? err.message : String(err));
-        })
-        .finally(() => {
-          if (!cancelled) setThreadLoading(false);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }
-    if (!githubKind) return;
-    const cachedThread = peekGithubWorkItemThread(
-      item.repo,
-      githubKind,
-      item.number,
-    );
-    if (cachedThread) {
-      setThread(cachedThread);
-      setThreadLoading(false);
-      setThreadError(null);
-    } else {
-      setThreadLoading(true);
-      setThreadError(null);
-      setThread(null);
-    }
-    void githubWorkItemThread(
-      item.projectPath,
-      item.repo,
-      githubKind,
-      item.number,
-      { maxAgeMs: panelMaxAge },
-    )
-      .then((next) => {
-        if (cancelled) return;
-        setThread(next);
-        setThreadError(null);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        if (cachedThread) return;
-        setThreadError(err instanceof Error ? err.message : String(err));
-      })
-      .finally(() => {
-        if (!cancelled) setThreadLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    azureDevOpsKind,
-    githubKind,
-    gitlabKind,
-    item.id,
-    item.number,
-    item.projectPath,
-    item.repo,
-    jira,
-    jiraKey,
-    linear,
-    panelMaxAge,
-    revision,
-  ]);
-
-  useEffect(() => {
-    if (!isPr || !diffWanted) return;
-    let cancelled = false;
-    const cachedDiff = gitlab
-      ? peekGitlabMrDiff(item.repo, item.number)
-      : azuredevops
-        ? peekAzureDevOpsMrDiff(item.repo, item.number)
-        : peekGithubPrDiff(item.repo, item.number, fullFile);
-    if (cachedDiff) {
-      setPrDiff(cachedDiff);
-      setDiffLoading(false);
-      setDiffError(null);
-    } else {
-      setDiffLoading(true);
-      setDiffError(null);
-      setPrDiff(null);
-    }
-    const pending = gitlab
-      ? gitlabMrDiff(item.repo, item.number)
-      : azuredevops
-        ? azureDevOpsMrDiff(item.repo, item.number)
-        : githubPrDiff(item.projectPath, item.repo, item.number, {
-            fullContext: fullFile,
-            maxAgeMs: panelMaxAge,
-          });
-    void pending
-      .then((next) => {
-        if (cancelled) return;
-        setPrDiff(next);
-        setDiffError(null);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        if (cachedDiff) return;
-        setDiffError(err instanceof Error ? err.message : String(err));
-      })
-      .finally(() => {
-        if (!cancelled) setDiffLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    azuredevops,
-    diffWanted,
-    fullFile,
-    gitlab,
-    isPr,
-    item.number,
-    item.projectPath,
-    item.repo,
-    panelMaxAge,
-    revision,
-  ]);
+    if (previousRevision.current === revision) return;
+    previousRevision.current = revision;
+    void invalidateAfterChange(inboxKeys.detail(item));
+  }, [revision, item]);
 
   // The side panel reveals its overview in one piece rather than letting the
   // description, files and activity land and reshuffle one after another.
   const overviewSettling =
     panel && (loading || threadLoading || (isPr && diffLoading));
 
-  const postComment = async (body: string) => {
-    setPosting(true);
-    setPostError(null);
-    try {
-      if (linear) {
-        const id = item.id ?? "";
-        await linearIssueComment(id, body, { parentId: replyTo?.id });
-        setReplyTo(null);
-        try {
-          setThread(await linearIssueThread(id, { force: true }));
-        } catch (err: unknown) {
-          setPostError(err instanceof Error ? err.message : String(err));
-        }
-        return;
-      }
-      if (jira) {
-        await jiraIssueComment({ id: item.id ?? "", key: jiraKey }, body);
-        setReplyTo(null);
-        try {
-          setThread(await jiraIssueThread(jiraKey, { force: true }));
-        } catch (err: unknown) {
-          setPostError(err instanceof Error ? err.message : String(err));
-        }
-        return;
-      }
-      if (gitlabKind) {
-        await gitlabWorkItemComment(item.repo, gitlabKind, item.number, body);
-        setReplyTo(null);
-        try {
-          setThread(
-            await gitlabWorkItemThread(item.repo, gitlabKind, item.number, {
-              force: true,
-            }),
-          );
-        } catch (err: unknown) {
-          setPostError(err instanceof Error ? err.message : String(err));
-        }
-        return;
-      }
-      if (azureDevOpsKind) {
-        await azureDevOpsWorkItemComment(
-          item.repo,
-          azureDevOpsKind,
-          item.number,
-          body,
-        );
-        setReplyTo(null);
-        try {
-          setThread(
-            await azureDevOpsWorkItemThread(
-              item.repo,
-              azureDevOpsKind,
-              item.number,
-              {
-                force: true,
-              },
-            ),
-          );
-        } catch (err: unknown) {
-          setPostError(err instanceof Error ? err.message : String(err));
-        }
-        return;
-      }
-      if (!githubKind) throw new Error("Unknown inbox item");
-      await githubWorkItemComment(
-        item.projectPath,
-        item.repo,
-        githubKind,
-        item.number,
-        body,
-        { inReplyTo: replyTo?.threadId },
-      );
-      setReplyTo(null);
-      try {
-        setThread(
-          await githubWorkItemThread(
-            item.projectPath,
-            item.repo,
-            githubKind,
-            item.number,
-            {
-              force: true,
-            },
-          ),
-        );
-      } catch (err: unknown) {
-        setPostError(err instanceof Error ? err.message : String(err));
-      }
-    } catch (err: unknown) {
-      setPostError(err instanceof Error ? err.message : String(err));
-      throw err;
-    } finally {
-      setPosting(false);
-    }
-  };
+  const postComment = (body: string) =>
+    commentMutation.mutateAsync({ body, target: item, reply: replyTo }).then(() => {});
 
   const identityRow = (
     <div
@@ -960,20 +483,10 @@ export function InboxDetail({
                       }
                       onClick={() => {
                         if (starting) return;
-                        setStarting(true);
-                        setStartError(null);
                         const next = chooseStartProject
                           ? { ...item, projectPath: startProject }
                           : item;
-                        void Promise.resolve(
-                          onStart(next, tracker ? details?.body : undefined),
-                        )
-                          .catch((err: unknown) => {
-                            setStartError(
-                              err instanceof Error ? err.message : String(err),
-                            );
-                          })
-                          .finally(() => setStarting(false));
+                        startMutation.mutate({ target: next, body: tracker ? details?.body : undefined });
                       }}
                       className={`${ACTION_FILLED} disabled:cursor-default disabled:opacity-40`}
                     >
@@ -1215,7 +728,7 @@ export function InboxDetail({
                   error={postError}
                   onCancelReply={() => {
                     setReplyTo(null);
-                    setPostError(null);
+                    commentMutation.reset();
                   }}
                   onSubmit={postComment}
                 />

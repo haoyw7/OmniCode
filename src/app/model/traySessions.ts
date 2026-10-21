@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useRef } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../shared/lib/queryClient";
 import { remoteRequest } from "../../features/connections/model/connections";
 import type {
   HostSessionActivity,
@@ -80,41 +82,28 @@ export function useTraySessions(
   labels: TrayLabels,
   focusedId: string | undefined,
 ) {
-  const tracker = useRef(new RemoteSessionUnread());
+  const machineId = sharedHostMachineId();
+  const tracker = useMemo(() => new RemoteSessionUnread(), [machineId]);
   const labelsKey = JSON.stringify(labels);
-  useEffect(() => {
-    if (!enabled) return;
-    let cancelled = false;
-    let last = "";
-    const poll = async () => {
-      const machineId = sharedHostMachineId();
-      if (!machineId) return;
-      const activity = await remoteRequest<HostSessionActivity>(
-        machineId,
-        "sessions.activity",
-      ).catch(() => undefined);
-      if (cancelled || !activity) return;
-      const unread = tracker.current.observe(activity.sessions, focusedId);
-      const projects = new Map(
-        sharedProjects().map((project) => [project.projectId, project.cwd]),
-      );
-      const sessions = traySessions(activity.sessions, unread, (id) =>
-        projects.get(id),
-      );
-      // Polls mostly return the same list; only a change rebuilds the menu.
+  const menu = useMemo(() => ({ last: "" }), [machineId, labelsKey, focusedId]);
+  useQuery({
+    queryKey: ["traySessions", machineId, focusedId, labelsKey],
+    enabled: enabled && !!machineId, gcTime: 0,
+    refetchInterval: TRAY_POLL_MS, refetchIntervalInBackground: true,
+    notifyOnChangeProps: [],
+    queryFn: async ({ signal }) => {
+      const activity = await remoteRequest<HostSessionActivity>(machineId!, "sessions.activity");
+      signal.throwIfAborted();
+      const unread = tracker.observe(activity.sessions, focusedId);
+      const projects = new Map(sharedProjects().map(project => [project.projectId, project.cwd]));
+      const sessions = traySessions(activity.sessions, unread, id => projects.get(id));
       const next = JSON.stringify(sessions);
-      if (next === last) return;
-      last = next;
-      await invoke("tray_update", {
-        labels: JSON.parse(labelsKey) as TrayLabels,
-        sessions,
-      }).catch(() => undefined);
-    };
-    void poll();
-    const timer = window.setInterval(() => void poll(), TRAY_POLL_MS);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-    };
-  }, [enabled, labelsKey, focusedId]);
+      if (next !== menu.last) {
+        await invoke("tray_update", { labels: JSON.parse(labelsKey) as TrayLabels, sessions });
+        signal.throwIfAborted();
+        menu.last = next;
+      }
+      return activity;
+    },
+  }, queryClient);
 }

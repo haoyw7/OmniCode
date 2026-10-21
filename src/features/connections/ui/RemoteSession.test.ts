@@ -1,3 +1,4 @@
+import { queryClient } from "../../../shared/lib/queryClient";
 import { insertQueuedMessage, moveQueuedMessage } from "../../sessions/model/messageQueue";
 import { selectComposerConfiguration } from "../../sessions/model/composerConfiguration";
 import { rememberSharedProviderDefaults, saveProviderAccount, selectProviderAccount } from "../../providers/model/providerAccounts";
@@ -184,6 +185,7 @@ let nameFailure: string | undefined;
 let deletedSessions: string[];
 
 beforeEach(async () => {
+  queryClient.clear();
   nameFailure = undefined;
   configureSharedHost(undefined, []);
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -347,6 +349,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await act(async () => { root.unmount(); finishPendingSyncs(); });
+  queryClient.clear();
   container.remove();
   document.body.innerHTML = "";
   vi.unstubAllGlobals();

@@ -1,4 +1,8 @@
 import { Input } from "../../../shared/ui/forms/Input";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
+import { botRpcQuery } from "../model/botPanelQueries";
 import { Button } from "../../../shared/ui/forms/Button";
 import { useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
@@ -34,7 +38,12 @@ export function DesktopBotRooms({ rooms, bots, rpc, onSaved, onOpenRoom }: Props
 export function DesktopRoomEditor({ room, bots, rpc, onSaved }: { room?: BotRoom; bots: BotView[]; rpc: BotRpc; onSaved: (room: BotRoom) => Promise<unknown> }) {
   const { t } = useTranslation();
   const [base, setBase] = useState(room), [name, setName] = useState(room?.name ?? ""), [members, setMembers] = useState(room?.memberIds ?? []), [timeout, setMemberTimeout] = useState(String((room?.memberTimeoutMs ?? 240000) / 1000));
-  const [busy, setBusy] = useState(false), [error, setError] = useState<string>();
+  const savedRead = useQuery({ ...botRpcQuery<{ room: BotRoom }>(rpc, "botRooms.get", { roomId: base?.id }), enabled: false }, queryClient);
+  const actionMutation = useMutation({ mutationFn: (action: () => Promise<void>) => withToast(action,
+    { loading: t("Saving…"), success: false, error: cause => t(botErrorMessage(cause)) }) }, queryClient);
+  const busy = actionMutation.isPending || savedRead.isFetching;
+  const cause = actionMutation.error ?? savedRead.error;
+  const error = cause ? botErrorMessage(cause) : undefined;
   const command = useRef<{ signature: string; id: string } | undefined>(undefined);
   const dirty = name !== (base?.name ?? "") || JSON.stringify(members) !== JSON.stringify(base?.memberIds ?? []) || Number(timeout) * 1000 !== (base?.memberTimeoutMs ?? 240000);
   const valid = !!name.trim() && members.length >= 1 && members.length <= 10 && Number(timeout) >= .001 && Number(timeout) <= 240;
@@ -47,17 +56,15 @@ export function DesktopRoomEditor({ room, bots, rpc, onSaved }: { room?: BotRoom
     const params = base ? { roomId: base.id, expectedRevision: base.revision, ...(action === "save" ? { patch } : {}) } : patch;
     const signature = JSON.stringify([method, params]);
     if (command.current?.signature !== signature) command.current = { signature, id: crypto.randomUUID() };
-    setBusy(true); setError(undefined);
-    try { const result = await rpc<BotRoom>(method, { ...params, commandId: command.current.id }); await onSaved(result); adopt(result); command.current = undefined; }
-    catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
+    const commandId = command.current.id;
+    actionMutation.mutate(async () => {
+      const result = await rpc<BotRoom>(method, { ...params, commandId }); await onSaved(result); adopt(result); command.current = undefined;
+    });
   };
   const reload = async () => {
     if (!base || busy) return;
-    setBusy(true);
-    try { const next = await rpc<{ room: BotRoom }>("botRooms.get", { roomId: base.id }); adopt(next.room); command.current = undefined; setError(undefined); }
-    catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
+    actionMutation.reset();
+    const next = await savedRead.refetch(); if (!next.isSuccess) return; adopt(next.data.room); command.current = undefined;
   };
   return <form className="desktop-bot-group-editor" aria-label={t(base ? "Room settings" : "New room")} onSubmit={event => { event.preventDefault(); void mutate("save"); }}>
     <h3>{t(base ? "Room settings" : "New room")}</h3>

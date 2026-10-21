@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { startMotionClock, stopMotionClock, finishMotion as settleMotion } from "../../../../tests/helpers/sharedMotionClock";
@@ -31,6 +32,7 @@ let delegationSupported: boolean;
 let teamsSupported: boolean, roomsSupported: boolean;
 let teams: BotTeam[], rooms: BotRoom[], rounds: BotRoomRound[];
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   startMotionClock();

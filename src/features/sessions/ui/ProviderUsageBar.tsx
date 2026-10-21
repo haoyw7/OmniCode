@@ -1,6 +1,9 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { RefreshCw } from "../../../shared/ui/icons";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { HarnessIcon } from "./HarnessIcon";
 import { Popover, type PopoverDismissReason } from "../../../shared/ui/Popover";
 import { consumeCodexRateLimitResetCredit } from "../../providers/model/rateLimitsFetch";
@@ -13,7 +16,7 @@ import {
   getCachedRateLimits,
   loadRateLimits,
   setCachedRateLimits,
-} from "../../providers/model/rateLimitsCache";
+} from "../../providers/model/rateLimitsQueries";
 import {
   HARNESS_LABEL,
   HARNESS_TITLE,
@@ -75,7 +78,14 @@ export function ProviderUsageBar({
   const wantCodex = providers.includes("codex");
   const wantOpencode = providers.includes("opencode");
   const now = useUsageClock();
-  const [refreshing, setRefreshing] = useState(false);
+  const actionScope = useId();
+  const action = useMutation({
+    mutationFn: (run: () => Promise<unknown>) => run(),
+    scope: { id: `provider-usage:${actionScope}` },
+    retry: false,
+  }, queryClient);
+  const execute = useCallback(<T,>(run: () => Promise<T>) => action.mutateAsync(run) as Promise<T>, [action.mutateAsync]);
+  const refreshing = action.isPending;
   const inflight = useRef<Promise<void> | null>(null);
   const {
     limits: claude,
@@ -99,113 +109,40 @@ export function ProviderUsageBar({
 
   const refresh = useCallback(() => {
     if (inflight.current) return inflight.current;
-    setRefreshing(true);
-    const jobs: Promise<unknown>[] = [];
-    if (wantClaude && claudeAccountAvailable)
-      jobs.push(loadRateLimits("claude", claudeAccountId, true));
-    if (wantCodex && codexAccountAvailable)
-      jobs.push(loadRateLimits("codex", codexAccountId, true));
-    if (wantOpencode) jobs.push(loadRateLimits("opencode", "default", true));
-    const run = Promise.allSettled(jobs)
-      .then(() => undefined)
-      .finally(() => {
-        inflight.current = null;
-        setRefreshing(false);
-      });
-    inflight.current = run;
-    return run;
-  }, [
-    claudeAccountAvailable,
-    claudeAccountId,
-    codexAccountAvailable,
-    codexAccountId,
-    wantClaude,
-    wantCodex,
-    wantOpencode,
-  ]);
+    const operation = execute(async () => {
+      const jobs: Promise<unknown>[] = [];
+      if (wantClaude && claudeAccountAvailable) jobs.push(loadRateLimits("claude", claudeAccountId, true));
+      if (wantCodex && codexAccountAvailable) jobs.push(loadRateLimits("codex", codexAccountId, true));
+      if (wantOpencode) jobs.push(loadRateLimits("opencode", "default", true));
+      await Promise.allSettled(jobs);
+    }).finally(() => { if (inflight.current === operation) inflight.current = null; });
+    inflight.current = operation;
+    return operation;
+  }, [execute, claudeAccountAvailable, claudeAccountId, codexAccountAvailable, codexAccountId, wantClaude, wantCodex, wantOpencode]);
 
-  const consumeCodexReset = useCallback(
-    async (creditId?: string) => {
-      while (inflight.current) await inflight.current;
-      setRefreshing(true);
-      let outcome: Awaited<ReturnType<typeof consumeCodexRateLimitResetCredit>>;
-      const operation = (async () => {
-        try {
-          outcome = await consumeCodexRateLimitResetCredit(
-            creditId,
-            codexAccountId,
-          );
-          await loadRateLimits("codex", codexAccountId, true);
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Could not use Codex reset";
-          setCachedRateLimits(
-            "codex",
-            codexAccountId,
-            errorRateLimits(
-              "codex",
-              message,
-              getCachedRateLimits("codex", codexAccountId),
-            ),
-          );
-          throw error;
-        }
-      })();
-      const tracked = operation.finally(() => {
-        inflight.current = null;
-        setRefreshing(false);
-      });
-      inflight.current = tracked.catch(() => undefined);
-      await tracked;
-      return outcome!;
-    },
-    [codexAccountId],
-  );
+  const consumeCodexReset = useCallback((creditId?: string) => execute(async () => {
+    try {
+      const outcome = await consumeCodexRateLimitResetCredit(creditId, codexAccountId);
+      await loadRateLimits("codex", codexAccountId, true);
+      return outcome;
+    } catch (error) {
+      setCachedRateLimits("codex", codexAccountId, errorRateLimits("codex",
+        errorMessage(error) ?? "Could not use Codex reset", getCachedRateLimits("codex", codexAccountId)));
+      throw error;
+    }
+  }), [execute, codexAccountId]);
 
-  const reconnectProvider = useCallback(
-    async (provider: RateLimitProvider, accountId: string) => {
-      while (inflight.current) await inflight.current;
-      setRefreshing(true);
-      const operation = (async () => {
-        try {
-          await (accountId === "default"
-            ? loginHarness(provider)
-            : loginHarness(provider, accountId));
-          const value = await loadRateLimits(provider, accountId, true);
-          if (value.status !== "ok") {
-            throw new Error(
-              value.error ||
-                `${HARNESS_TITLE[provider]} sign-in could not be verified`,
-            );
-          }
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Could not complete sign-in";
-          setCachedRateLimits(
-            provider,
-            accountId,
-            errorRateLimits(
-              provider,
-              message,
-              getCachedRateLimits(provider, accountId),
-            ),
-          );
-          throw error;
-        }
-      })();
-      const tracked = operation.finally(() => {
-        inflight.current = null;
-        setRefreshing(false);
-      });
-      inflight.current = tracked.catch(() => undefined);
-      await tracked;
-    },
-    [],
-  );
+  const reconnectProvider = useCallback((provider: RateLimitProvider, accountId: string) => execute(async () => {
+    try {
+      await (accountId === "default" ? loginHarness(provider) : loginHarness(provider, accountId));
+      const value = await loadRateLimits(provider, accountId, true);
+      if (value.status !== "ok") throw new Error(value.error || `${HARNESS_TITLE[provider]} sign-in could not be verified`);
+    } catch (error) {
+      setCachedRateLimits(provider, accountId, errorRateLimits(provider,
+        errorMessage(error) ?? "Could not complete sign-in", getCachedRateLimits(provider, accountId)));
+      throw error;
+    }
+  }), [execute]);
 
   const reconnectClaude = useCallback(
     () => reconnectProvider("claude", claudeAccountId),
@@ -229,14 +166,14 @@ export function ProviderUsageBar({
   );
 
   const addAccount = useCallback(
-    async (provider: ProviderAccountProvider, label: string) => {
+    (provider: ProviderAccountProvider, label: string) => execute(async () => {
       const account = newProviderAccount(provider, label);
       await loginHarness(provider, account.id);
       saveProviderAccount(account);
       selectAccount(provider, account.id);
       return account;
-    },
-    [selectAccount],
+    }),
+    [selectAccount, execute],
   );
 
   const showOpencodeChip = wantOpencode && opencode.status !== "unavailable";
@@ -337,8 +274,9 @@ function SessionChip({
   const { t: uiT } = useTranslation();
   const trigger = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
-  const [loginState, setLoginState] = useState<ProviderSignInState>("idle");
-  const [loginError, setLoginError] = useState<string | null>(null);
+  const login = useMutation({ mutationFn: () => loginHarness(session.harness), onSuccess: () => setOpen(false) }, queryClient);
+  const loginState: ProviderSignInState = login.isPending ? "running" : login.isSuccess ? "complete" : login.isError ? "error" : "idle";
+  const loginError = errorMessage(login.error) ?? null;
   const authRequired = Boolean(
     session.authRequired && loginState !== "complete",
   );
@@ -346,9 +284,9 @@ function SessionChip({
 
   useEffect(() => {
     if (!session.authRequired && loginState === "complete") {
-      setLoginState("idle");
+      login.reset();
     }
-  }, [loginState, session.authRequired]);
+  }, [loginState, session.authRequired, login.reset]);
 
   const dismiss = (reason: PopoverDismissReason) => {
     setOpen(false);
@@ -357,20 +295,7 @@ function SessionChip({
     }
   };
 
-  const signIn = async () => {
-    setLoginState("running");
-    setLoginError(null);
-    try {
-      await loginHarness(session.harness);
-      setOpen(false);
-      setLoginState("complete");
-    } catch (error) {
-      setLoginError(
-        error instanceof Error ? error.message : "Could not complete sign-in",
-      );
-      setLoginState("error");
-    }
-  };
+  const signIn = () => login.mutate();
 
   if (!canLogin) {
     return (

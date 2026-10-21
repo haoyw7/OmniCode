@@ -1,3 +1,7 @@
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { linkedWorkItemQuery, updateInboxItem } from "../model/inboxQueries";
 import { motion } from "motion/react";
 import {
   immediateTransition,
@@ -16,11 +20,8 @@ import { useDragResize } from "../../../shared/hooks/useDragResize";
 import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import {
-  githubWorkItem,
   inboxItemKey,
   inboxProjectsForRail,
-  peekGithubWorkItem,
-  type InboxItem,
 } from "../model/githubTasks";
 import { type RecentProject } from "../../projects/model/recents";
 import { type LinkedWorkItem } from "../../sessions/model/session";
@@ -65,16 +66,10 @@ export function LinkedWorkItemPanel({
     () => inboxProjectOptions(projects, logos),
     [logos, projects],
   );
-  const cachedItem = peekGithubWorkItem(
-    target.repo,
-    target.kind,
-    target.number,
-  );
-  const [item, setItem] = useState<InboxItem | null>(() =>
-    cachedItem ? { ...cachedItem, projectPath: cwd, provider: "github" } : null,
-  );
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(cachedItem == null);
+  const itemQuery = useQuery(linkedWorkItemQuery(cwd, target), queryClient);
+  const item = itemQuery.data ?? null;
+  const error = errorMessage(itemQuery.error) ?? null;
+  const loading = itemQuery.isPending;
   const resize = useDragResize({
     min: LINKED_PANEL_MIN_WIDTH,
     max: () =>
@@ -93,31 +88,6 @@ export function LinkedWorkItemPanel({
       rememberedLinkedPanelWidth = width;
     },
   });
-
-  useEffect(() => {
-    let cancelled = false;
-    const cached = peekGithubWorkItem(target.repo, target.kind, target.number);
-    setItem(
-      cached ? { ...cached, projectPath: cwd, provider: "github" } : null,
-    );
-    setError(null);
-    setLoading(cached == null);
-    void githubWorkItem(cwd, target.repo, target.kind, target.number)
-      .then((next) => {
-        if (cancelled) return;
-        setItem({ ...next, projectPath: cwd, provider: "github" });
-      })
-      .catch((reason: unknown) => {
-        if (cancelled) return;
-        setError(reason instanceof Error ? reason.message : String(reason));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [cwd, target.kind, target.number, target.repo]);
 
   useEffect(() => {
     if (!visible) return;
@@ -214,7 +184,7 @@ export function LinkedWorkItemPanel({
                 repairSessions={repairSessions}
                 onRepairChecks={onRepairChecks}
                 onOpenSession={onOpenSession}
-                onItemChange={setItem}
+                onItemChange={updateInboxItem}
               />
             ) : error ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">

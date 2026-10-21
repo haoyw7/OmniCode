@@ -2,6 +2,7 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { DesktopBots } from "./DesktopBots";
 import { selectBotThread } from "../model/botSelection";
 import { fullBotPolicy, type BotMessage } from "../model/botView";
@@ -43,6 +44,7 @@ let getSession: () => Promise<unknown>;
 const local = vi.fn(), remote = vi.fn();
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   vi.clearAllMocks();

@@ -1,3 +1,6 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { botPanelKey, botRpcQuery } from "../model/botPanelQueries";
 import { botReadRevision, markBotRead } from "../model/botUnread";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import {
@@ -40,7 +43,7 @@ import { AnimatedCollapse, useCollapseMotion } from "../../../shared/ui/Animated
 import { BotWorkerDetails } from "./BotWorkerDetails";
 import { resolveBotTarget, type BotTarget } from "../model/botNavigation";
 import { botActivityLabel } from "../model/botActivity";
-import type { BotTask, BotTimeline } from "../../../integrations/harness/core/botAutonomy";
+import type { BotTimeline } from "../../../integrations/harness/core/botAutonomy";
 import type {
   BotChatChrome,
   BotControlsProps,
@@ -73,6 +76,7 @@ import { BotAttachmentCard } from "./BotAttachmentCard";
 import { DesktopBotDetails } from "./DesktopBotDetails";
 
 /** History renders newest-first in slices so opening never blocks the app. */
+const EMPTY_MESSAGES: BotMessage[] = [];
 const INITIAL_HISTORY_ROWS = 30;
 const HISTORY_ROW_STEP = 30;
 /** Older rows load once the reader is this close to the top. */
@@ -236,8 +240,24 @@ export function BotChat({
         onOpenAttachment(file, () => client.readAttachment(messageId, file), cacheKey)
     : undefined, [client, onOpenAttachment, cacheKey]);
   // Undefined means the first sync is pending; null confirms setup is needed.
-  const [assistant, setAssistant] = useState<BotConfiguration | null>();
-  const [messages, setMessages] = useState<BotMessage[]>([]);
+  const descriptorRead = useQuery({ ...botRpcQuery<HostDescriptor>(rpc, "environment.describe", { supportedProviders: REMOTE_PROVIDERS }), enabled: visible }, queryClient);
+  const capabilities = descriptorRead.data?.capabilities;
+  const supported = descriptorRead.data ? capabilities?.includes("assistant.v1") ?? false : undefined;
+  const botsShellSupported = capabilities?.includes("bots.shell.v1") ?? false;
+  const timelineSupported = capabilities?.includes("assistant.timeline") ?? false;
+  const personaSupported = capabilities?.includes("assistant.persona") ?? false;
+  const imSupported = capabilities?.includes("im.feishu.binding.v1") ?? false;
+  const syncOptions = {
+    queryKey: [...botPanelKey(client), "conversation"],
+    queryFn: async () => ({ ...await client.sync({ history: capabilities?.includes("assistant.history") ?? false }), remoteHistory: client.hasOlderHistory }),
+  };
+  const conversation = useQuery({ ...syncOptions, enabled: visible && supported === true,
+    refetchInterval: visible ? query => query.state.data?.assistant?.lifecycle === "running" ? 250 : 2000 : false,
+  }, queryClient);
+  const assistant = conversation.data?.assistant;
+  const messages = conversation.data?.messages ?? EMPTY_MESSAGES;
+  const remoteHistory = conversation.data?.remoteHistory ?? false;
+  const sync = useCallback(() => invalidateAfterChange([...botPanelKey(client), "conversation"]), [client]);
   useEffect(() => {
     if (!visible) return;
     const markRead = () => {
@@ -255,7 +275,6 @@ export function BotChat({
   // Only the newest rows render at first. Older ones join as the reader
   // nears the top, so cost follows what is read, not the history's length.
   const [historyRows, setHistoryRows] = useState(INITIAL_HISTORY_ROWS);
-  const [remoteHistory, setRemoteHistory] = useState(false);
   const renderedMessages = useMemo(
     () => historyRows >= visibleMessages.length
       ? visibleMessages
@@ -275,16 +294,14 @@ export function BotChat({
       startTransition(() => setHistoryRows(rows));
       return;
     }
-    void client.loadOlder().then((entries) => {
-      startTransition(() => {
-        setMessages(entries);
-        setRemoteHistory(client.hasOlderHistory);
-        setHistoryRows(rows);
-      });
-    }, (e) => {
-      growingHistory.current = false;
-      setError(botErrorMessage(e));
-    });
+    void (async () => {
+      await queryClient.getQueryCache().find({ queryKey: syncOptions.queryKey })?.promise?.catch(() => undefined);
+      await queryClient.fetchQuery({ ...syncOptions, queryFn: async () => {
+        const entries = await client.loadOlder();
+        return { assistant: queryClient.getQueryData<Awaited<ReturnType<typeof syncOptions.queryFn>>>(syncOptions.queryKey)?.assistant ?? null, messages: entries, remoteHistory: client.hasOlderHistory };
+      } });
+      startTransition(() => setHistoryRows(rows));
+    })().catch(() => { growingHistory.current = false; });
   }, [client, historyRows, visibleMessages.length]);
   useEffect(() => {
     growingHistory.current = false;
@@ -312,92 +329,54 @@ export function BotChat({
     historyReady: assistant !== undefined,
     historyIds: client.historyMessageIds,
   });
-  const [catalog, setCatalog] = useState<HostModelCatalog>({
-    models: {},
-    errors: {},
-  });
-  const [projects, setProjects] = useState<HostProject[]>([]);
-  const [supported, setSupported] = useState<boolean>();
-  const [botsShellSupported, setBotsShellSupported] = useState(false);
   const mobile = !!chrome;
-  const [timelineSupported, setTimelineSupported] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [timelineRef, setTimelineRef] = useState<SessionReference>();
-  const [timelineTasks, setTimelineTasks] = useState<BotTask[]>([]);
-  const [timelineCursor, setTimelineCursor] = useState<string>();
   const [timelinePageCount, setTimelinePageCount] = useState(1);
-  const [timelineLoading, setTimelineLoading] = useState(false);
-  const [timelineError, setTimelineError] = useState<string>();
-  const [timelineRefresh, setTimelineRefresh] = useState(0);
   const showTimeline = useCallback((ref?: SessionReference) => {
     setTimelineRef(ref);
-    setTimelineTasks([]);
     setTimelinePageCount(1);
-    setTimelineCursor(undefined);
     setTimelineOpen(true);
   }, []);
-  useEffect(() => { setTimelineOpen(false); setTimelineSupported(false); }, [rpc]);
-  useEffect(() => {
-    if (!mobile || !timelineOpen || !timelineSupported || !visible) return;
-    let current = true;
-    setTimelineLoading(true);
-    setTimelineError(undefined);
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const readPages = async () => {
+  useEffect(() => { setTimelineOpen(false); }, [rpc]);
+  const timelineRead = useQuery({
+    queryKey: [...botPanelKey(rpc), "timeline", timelineRef?.sessionId ?? null, timelinePageCount],
+    enabled: mobile && timelineOpen && timelineSupported && visible,
+    refetchInterval: visible && timelineOpen ? 2000 : false,
+    queryFn: async ({ signal }) => {
       const pages: BotTimeline[] = [];
       let cursor: string | undefined;
-      for (let index = 0; index < timelinePageCount && current; index++) {
+      for (let index = 0; index < timelinePageCount; index++) {
+        signal.throwIfAborted();
         const page = await rpc<BotTimeline>("assistant.timeline", {
-          ...(timelineRef ? { sessionId: timelineRef.sessionId } : {}),
-          ...(cursor ? { cursor } : {}),
+          ...(timelineRef ? { sessionId: timelineRef.sessionId } : {}), ...(cursor ? { cursor } : {}),
         });
-        pages.push(page);
-        cursor = page.nextCursor;
+        pages.push(page); cursor = page.nextCursor;
         if (!cursor) break;
       }
-      return pages;
-    };
-    void readPages().then(pages => {
-      if (!current) return;
-      setTimelineTasks([...new Map(pages.flatMap(page => page.tasks).map(task => [task.id, task])).values()]);
-      setTimelineCursor(pages.at(-1)?.nextCursor);
-    }).catch(error => { if (current) setTimelineError(botErrorMessage(error)); })
-      .finally(() => {
-        if (!current) return;
-        setTimelineLoading(false);
-        timer = setTimeout(() => setTimelineRefresh(value => value + 1), 2000);
-      });
-    return () => { current = false; clearTimeout(timer); };
-  }, [mobile, timelineOpen, timelineSupported, timelineRef, timelinePageCount, timelineRefresh, rpc, visible]);
+      return { tasks: [...new Map(pages.flatMap(page => page.tasks).map(task => [task.id, task])).values()], cursor: pages.at(-1)?.nextCursor };
+    },
+  }, queryClient);
+  const timelineTasks = timelineRead.data?.tasks ?? [], timelineCursor = timelineRead.data?.cursor;
+  const timelineLoading = timelineRead.isFetching, timelineError = timelineRead.error ? botErrorMessage(timelineRead.error) : undefined;
   const botsLayout = desktopBots && !mobile && botsShellSupported;
   const composerReadOnly = botsLayout ? botReadOnlyReason : undefined;
   // Personality, local time and promised follow-ups need a newer Host.
-  const [personaSupported, setPersonaSupported] = useState(false);
-  const [imSupported, setImSupported] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsBase, setSettingsBase] = useState<BotConfiguration | null>(null);
   const retainedSettingsDraft = useRef(false);
   const settingsCommand = useRef<{ signature: string; id: string } | undefined>(undefined);
-  const [busy, setBusy] = useState(false);
-  const [sending, setSending] = useState(false);
+  const operationMutation = useMutation({ mutationFn: async ({ action }: { action: () => Promise<unknown>; kind?: "send" }) => {
+    setError(undefined);
+    await action(); await sync();
+  } }, queryClient);
+  const operationPending = useRef(false);
+  const busy = operationMutation.isPending;
+  const sending = busy && operationMutation.variables?.kind === "send";
   const [error, setError] = useState<string>();
   // Initial connection failures replace the loading state with a retry.
-  const [connectError, setConnectError] = useState<string>();
-  const [attempt, setAttempt] = useState(0);
-  const [catalogState, setCatalogState] = useState<
-    "loading" | "ready" | "failed"
-  >("loading");
-  const [catalogError, setCatalogError] = useState<string>();
-  const catalogLoad = useMemo(() => ({
-    requested: false,
-    disposed: false,
-    cardModelsRequested: false,
-    modelRequest: undefined as Promise<HostModelCatalog> | undefined,
-  }), [client]);
-  useEffect(() => {
-    catalogLoad.disposed = false;
-    return () => { catalogLoad.disposed = true; };
-  }, [catalogLoad]);
+  const connectionCause = descriptorRead.error ?? (!conversation.data ? conversation.error : null);
+  const connectError = connectionCause ? botErrorMessage(connectionCause) : undefined;
   const [draft, setDraft] = useBotDraft(cacheKey);
   const [retry, setRetry] = useState(() => client.pending());
   const [replyText, setReplyText] = useState<string | undefined>(() => {
@@ -455,119 +434,20 @@ export function BotChat({
   useEffect(() => {
     if (worker && !canRead(worker)) setWorkerOpen(false);
   }, [assistant, worker]);
-  const sync = useCallback(async () => {
-    const result = await client.sync({ fresh: true });
-    setAssistant(result.assistant);
-    setMessages(result.messages);
-    setRemoteHistory(client.hasOlderHistory);
-  }, [client]);
-  useEffect(() => {
-    if (!visible) return;
-    let disposed = false,
-      fetching = false,
-      capable = false,
-      historySupported = false,
-      synchronized = assistant !== undefined;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let refreshDelay = 2000;
-    setConnectError(undefined);
-    const refresh = async () => {
-      if (fetching || disposed) return;
-      fetching = true;
-      try {
-        const next = await client.sync({ history: historySupported });
-        if (disposed) return;
-        synchronized = true;
-        setConnectError(undefined);
-        setAssistant(next.assistant);
-        setMessages(next.messages);
-        setRemoteHistory(client.hasOlderHistory);
-        refreshDelay = next.assistant?.lifecycle === "running" ? 250 : 2000;
-      } catch (e) {
-        if (!disposed) {
-          if (synchronized) setError(botErrorMessage(e));
-          else setConnectError(botErrorMessage(e));
-        }
-      } finally {
-        fetching = false;
-        if (!disposed && capable)
-          timer = setTimeout(() => void refresh(), refreshDelay);
-      }
-    };
-    void rpc<HostDescriptor>("environment.describe", {
-      supportedProviders: REMOTE_PROVIDERS,
-    })
-      .then(async (descriptor) => {
-        if (disposed) return;
-        const available =
-          descriptor.capabilities?.includes("assistant.v1") ?? false;
-        setSupported(available);
-        setTimelineSupported(descriptor.capabilities?.includes("assistant.timeline") ?? false);
-        setBotsShellSupported(descriptor.capabilities?.includes("bots.shell.v1") ?? false);
-        setPersonaSupported(
-          descriptor.capabilities?.includes("assistant.persona") ?? false,
-        );
-        setImSupported(descriptor.capabilities?.includes("im.feishu.binding.v1") ?? false);
-        if (!available) return;
-        capable = true;
-        historySupported = descriptor.capabilities?.includes("assistant.history") ?? false;
-        await refresh();
-      })
-      .catch((e) => {
-        if (!disposed) setConnectError(botErrorMessage(e));
-      });
-    return () => {
-      disposed = true;
-      clearTimeout(timer);
-    };
-  }, [client, rpc, attempt, visible]);
-  const loadModels = useCallback(() => {
-    if (!catalogLoad.modelRequest) {
-      catalogLoad.modelRequest = rpc<HostModelCatalog>("models.list").then(models => {
-        if (!catalogLoad.disposed) setCatalog(models);
-        return models;
-      }).finally(() => { catalogLoad.modelRequest = undefined; });
-    }
-    return catalogLoad.modelRequest;
-  }, [rpc, catalogLoad]);
-  const loadCatalog = useCallback(async () => {
-    catalogLoad.requested = true;
-    setCatalogState("loading");
-    setCatalogError(undefined);
-    try {
-      const [models, projects] = await Promise.all([
-        loadModels(),
-        rpc<HostProject[]>("projects.list"),
-      ]);
-      if (catalogLoad.disposed) return;
-      setCatalog(models);
-      setProjects(projects);
-      setCatalogState("ready");
-    } catch (e) {
-      if (catalogLoad.disposed) return;
-      setCatalogError(botErrorMessage(e));
-      setCatalogState("failed");
-    }
-  }, [rpc, catalogLoad, loadModels]);
-  // Setup and settings need both catalogs; session cards only need model names.
-  useEffect(() => {
-    if (visible && supported === true && (settingsOpen || assistant === null) && !catalogLoad.requested)
-      void loadCatalog();
-  }, [visible, supported, settingsOpen, assistant === null, catalogLoad, loadCatalog]);
   const hasSessionCards = renderedMessages.some(message => message.kind === "session-card");
-  useEffect(() => {
-    if (visible && supported === true && !mobile && hasSessionCards && !catalogLoad.cardModelsRequested) {
-      catalogLoad.cardModelsRequested = true;
-      if (!catalogLoad.requested) void loadModels().catch(() => {});
-    }
-  }, [visible, supported, mobile, hasSessionCards, catalogLoad, loadModels]);
+  const needsCatalog = visible && supported === true && (settingsOpen || assistant === null);
+  const modelsRead = useQuery({ ...botRpcQuery<HostModelCatalog>(rpc, "models.list"), enabled: needsCatalog || (visible && supported === true && !mobile && hasSessionCards) }, queryClient);
+  const projectsRead = useQuery({ ...botRpcQuery<HostProject[]>(rpc, "projects.list"), enabled: needsCatalog }, queryClient);
+  const catalog = modelsRead.data ?? { models: {}, errors: {} }, projects = projectsRead.data ?? [];
+  const catalogCause = modelsRead.error ?? projectsRead.error;
+  const catalogError = catalogCause ? botErrorMessage(catalogCause) : undefined;
+  const catalogState = catalogCause ? "failed" : modelsRead.data && projectsRead.data ? "ready" : "loading";
+  const loadCatalog = () => Promise.all([modelsRead.refetch(), projectsRead.refetch()]);
   const loadSessions = useCallback(
     async (projectIds: string[]) => {
       const lists = await Promise.all(
         projectIds.map((projectId) =>
-          rpc<HostSessionSummary[]>("sessions.list", {
-            projectId,
-          }).then(
+          queryClient.fetchQuery(botRpcQuery<HostSessionSummary[]>(rpc, "sessions.list", { projectId })).then(
             (rows) =>
               rows.map((row) => ({
                 id: row.id,
@@ -705,22 +585,16 @@ export function BotChat({
       observer.disconnect();
     };
   }, [!!assistant, chrome, visible, supported, !!connectError]);
-  const operation = useCallback(async (action: () => Promise<unknown>) => {
-    setBusy(true);
-    setError(undefined);
-    try {
-      await action();
-      await sync();
-    } catch (e) {
-      setError(botErrorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }, [sync]);
+  const operation = useCallback(async (action: () => Promise<unknown>, kind?: "send") => {
+    if (operationPending.current) return;
+    operationPending.current = true;
+    try { await operationMutation.mutateAsync({ action, kind }); }
+    catch (e) { setError(botErrorMessage(e)); }
+    finally { operationPending.current = false; }
+  }, [operationMutation.mutateAsync]);
   const send = (text: string, files: BotDraftAttachment[] = attachments) => {
     if (composerReadOnly) return Promise.resolve();
     return operation(async () => {
-      setSending(true);
       try {
         followLog.current = true;
         await client.send(text, files.map(({ previewFile: _preview, ...ref }) => ref));
@@ -733,10 +607,9 @@ export function BotChat({
         chrome?.onSendFeedback?.(false);
         throw error;
       } finally {
-        setSending(false);
         setRetry(client.pending());
       }
-    });
+    }, "send");
   };
   const save = async (patch: BotPatch) =>
     operation(async () => {
@@ -766,7 +639,7 @@ export function BotChat({
   const open = useCallback(async (ref: SessionReference) => {
     setError(undefined);
     try {
-      const current = await rpc<BotConfiguration | null>("assistant.get");
+      const current = await queryClient.fetchQuery(botRpcQuery<BotConfiguration | null>(rpc, "assistant.get"));
       if (!current?.policy.permissions["sessions.read"] ||
         (current.policy.allowedProjects !== "all" && !current.policy.allowedProjects.includes(ref.projectId)))
         throw new Error(
@@ -1012,7 +885,12 @@ export function BotChat({
               <button data-ui="button" data-variant="primary"
                 type="button"
                 className="assistant-primary"
-                onClick={() => setAttempt((n) => n + 1)}
+                onClick={() => { void descriptorRead.refetch().then(async ({ data }) => {
+                  if (!data?.capabilities?.includes("assistant.v1")) return;
+                  await queryClient.fetchQuery({ ...syncOptions, queryFn: async () => ({
+                    ...await client.sync({ history: data.capabilities.includes("assistant.history") }), remoteHistory: client.hasOlderHistory,
+                  }) }).catch(() => undefined);
+                }); }}
               >
                 {t("Retry")}
               </button>

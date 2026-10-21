@@ -1,3 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../../shared/lib/queryClient";
+import { errorMessage } from "../../../../shared/lib/errorMessage";
+import { binaryFileQuery } from "../model/fileQueries";
 import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,7 +22,6 @@ import { watchFile } from "../model/fileWatch";
 import {
   basename,
   copyFileToClipboard,
-  readBinaryFile,
   revealPath,
 } from "../../../../platform/tauri/fs";
 import { displayPath } from "../../../../shared/lib/paths";
@@ -41,60 +44,26 @@ type LoadState =
  */
 export function BinaryFileView({ path, cwd }: Props) {
   const { t: uiT } = useTranslation();
-  const [state, setState] = useState<LoadState>({ status: "loading" });
-  const [reloadKey, setReloadKey] = useState(0);
-
+  const query = useQuery(binaryFileQuery(path), queryClient);
+  const [preview, setPreview] = useState<{ bytes: Uint8Array; state: LoadState } | null>(null);
   useEffect(() => {
-    let cancelled = false;
-    let created: string | null = null;
-    setState({ status: "loading" });
-
-    readBinaryFile(path).then(
-      (bytes) => {
-        if (cancelled) return;
-        // The blob's MIME comes from the bytes, never the extension, so a file
-        // named `.png` that holds markup can't become a same-origin document.
-        const mime = sniffImageMime(bytes);
-        if (!mime) {
-          setState({ status: "unsupported", size: bytes.byteLength });
-          return;
-        }
-        created = URL.createObjectURL(new Blob([bytes], { type: mime }));
-        setState({
-          status: "ready",
-          url: created,
-          mime,
-          size: bytes.byteLength,
-        });
-      },
-      (cause: unknown) => {
-        if (cancelled) return;
-        setState({
-          status: "error",
-          message: cause instanceof Error ? cause.message : String(cause),
-        });
-      },
-    );
-
-    return () => {
-      cancelled = true;
-      if (created) URL.revokeObjectURL(created);
-    };
-  }, [path, reloadKey]);
-
-  const reload = useCallback(() => setReloadKey((value) => value + 1), []);
-
-  useEffect(() => {
-    let timer = 0;
-    const stop = watchFile(path, () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(reload, 50);
-    });
-    return () => {
-      window.clearTimeout(timer);
-      stop();
-    };
-  }, [path, reload]);
+    const bytes = query.data;
+    if (!bytes) return;
+    // MIME comes from bytes, never a potentially misleading file extension.
+    const mime = sniffImageMime(bytes);
+    if (!mime) {
+      setPreview({ bytes, state: { status: "unsupported", size: bytes.byteLength } });
+      return;
+    }
+    const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+    setPreview({ bytes, state: { status: "ready", url, mime, size: bytes.byteLength } });
+    return () => URL.revokeObjectURL(url);
+  }, [query.data]);
+  const state: LoadState = query.isError
+    ? { status: "error", message: errorMessage(query.error) ?? "" }
+    : preview?.bytes === query.data && preview ? preview.state : { status: "loading" };
+  const reload = useCallback(() => { void invalidateAfterChange(binaryFileQuery(path).queryKey); }, [path]);
+  useEffect(() => watchFile(path, reload), [path, reload]);
 
   if (state.status === "loading") {
     return (

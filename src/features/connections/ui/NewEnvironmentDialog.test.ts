@@ -6,6 +6,7 @@ import { NewEnvironmentDialog, parseEnvironmentVariables } from "./NewEnvironmen
 import { pickFolders } from "../../../platform/tauri/fs";
 import { saveHostEnvironment } from "../model/hostEnvironments";
 import { ensureSharedProject } from "../model/remoteProjects";
+import { queryClient } from "../../../shared/lib/queryClient";
 
 vi.mock("../../../platform/tauri/fs", () => ({ pickFolders: vi.fn() }));
 vi.mock("../../../platform/tauri/wsl", () => ({ listWslDistributions: vi.fn().mockResolvedValue([]), pickWslFolder: vi.fn() }));
@@ -21,6 +22,7 @@ vi.mock("../model/remoteProjects", async (importActual) => ({
 let container: HTMLDivElement;
 let root: Root;
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   container = document.createElement("div");
   document.body.append(container);
@@ -28,6 +30,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   await act(async () => root.unmount());
+  queryClient.clear();
   container.remove();
   vi.unstubAllGlobals();
 });

@@ -1,3 +1,5 @@
+import { queryOptions } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { invoke } from "@tauri-apps/api/core";
 import { translate } from "../../../shared/i18n/language";
 import { listen } from "@tauri-apps/api/event";
@@ -448,17 +450,16 @@ export function draftFromAutomation(automation: Automation): AutomationDraft {
   };
 }
 
-let cachedAutomations: Automation[] | null = null;
+export const automationsQuery = () => queryOptions({ queryKey: ["automations", "list"], queryFn: () => invoke<Automation[]>("automations_list") });
 
 /** Last successful list, for an immediate first render while refreshing. */
 export function peekAutomations(): Automation[] | null {
-  return cachedAutomations;
+  if (queryClient.getQueryState(["automations", "list"])?.isInvalidated) return null;
+  return queryClient.getQueryData<Automation[]>(["automations", "list"]) ?? null;
 }
 
 export async function listAutomations(): Promise<Automation[]> {
-  const next = await invoke<Automation[]>("automations_list");
-  cachedAutomations = next;
-  return next;
+  return queryClient.fetchQuery(automationsQuery());
 }
 
 export async function saveAutomation(
@@ -583,7 +584,7 @@ export function subscribeAutomations(onChange: () => void): () => void {
   let disposed = false;
   let unlisten: (() => void) | undefined;
   void listen(AUTOMATIONS_CHANGED, () => {
-    cachedAutomations = null;
+    void queryClient.invalidateQueries({ queryKey: ["automations"], refetchType: "none" });
     onChange();
   })
     .then((stop) => {
@@ -599,7 +600,7 @@ export function subscribeAutomations(onChange: () => void): () => void {
 }
 
 function emitLocalChange() {
-  cachedAutomations = null;
+  void queryClient.invalidateQueries({ queryKey: ["automations"], refetchType: "none" });
   window.dispatchEvent(new Event(LOCAL_CHANGED));
 }
 

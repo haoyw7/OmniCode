@@ -1,9 +1,13 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { hostDevicesQuery, type HostDevice } from "../model/deviceQueries";
 import { Check, Computer, Copy, RefreshCw, Smartphone } from "../../../shared/ui/icons";
-import type { HostDeviceInfo } from "../model/protocol";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { remoteRequest } from "../model/connections";
@@ -16,18 +20,6 @@ import { ConnectionStatusIcon, type ConnectionState } from "./ConnectionStatusDo
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 type ConnectionsTab = "control" | "ssh";
-
-export type HostDevice = Omit<HostDeviceInfo, "installationId"> & {
-  id: string;
-  name: string;
-  admin: boolean;
-  createdAt?: number;
-  pairedAt?: number;
-  lastSeen?: number;
-  online?: boolean;
-  identityId?: string;
-  connectionIds?: string[];
-};
 
 const DEVICE_REFRESH_MS = 10_000;
 const PAIRING_REFRESH_MS = 1_000;
@@ -96,62 +88,35 @@ export function formatLastSeen(
 function ControlThisComputer() {
   const { t } = useTranslation();
   const machineId = sharedHostMachineId();
-  const [devices, setDevices] = useState<HostDevice[]>();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const devicesQuery = useQuery({
+    ...hostDevicesQuery(machineId ?? ""),
+    enabled: !!machineId,
+    refetchInterval: DEVICE_REFRESH_MS,
+  }, queryClient);
+  const devices = devicesQuery.data?.devices.filter((device) => !device.admin);
+  const loading = devicesQuery.isFetching;
   const [adding, setAdding] = useState(false);
   const [confirming, setConfirming] = useState<string>();
-  const [revoking, setRevoking] = useState<string>();
-  const alive = useRef(true);
-  useEffect(() => {
-    // StrictMode replays setup after cleanup; responses must be accepted again.
-    alive.current = true;
-    return () => {
-      alive.current = false;
-    };
-  }, []);
-
-  const refresh = useCallback(async (silent = false) => {
-    if (!machineId) return;
-    if (!silent) {
-      setLoading(true);
-      setError("");
-    }
-    try {
-      const result = await remoteRequest<{ devices: HostDevice[] }>(
-        machineId,
-        "devices.list",
-      );
-      if (!alive.current) return;
-      setDevices(result.devices.filter((device) => !device.admin));
-      setError("");
-    } catch (reason) {
-      if (alive.current) setError(String(reason));
-    } finally {
-      if (alive.current) setLoading(false);
-    }
-  }, [machineId]);
-  useEffect(() => {
-    void refresh();
-    // Presence changes as phones open and close the app.
-    const timer = setInterval(() => void refresh(true), DEVICE_REFRESH_MS);
-    return () => clearInterval(timer);
-  }, [refresh]);
-
-  const revoke = async (device: HostDevice) => {
-    if (!machineId) return;
-    setRevoking(device.id);
-    setError("");
-    try {
-      await remoteRequest(machineId, "devices.revoke", { deviceId: device.id });
-      if (!alive.current) return;
-      setConfirming(undefined);
-      setDevices((current) => current?.filter((value) => value.id !== device.id));
-    } catch (reason) {
-      if (alive.current) setError(String(reason));
-    } finally {
-      if (alive.current) setRevoking(undefined);
-    }
+  const refresh = useCallback(() => invalidateAfterChange(hostDevicesQuery(machineId ?? "").queryKey), [machineId]);
+  const revokeMutation = useMutation({
+    mutationFn: async (input: { machineId: string; deviceId: string }) => {
+      await remoteRequest(input.machineId, "devices.revoke", { deviceId: input.deviceId });
+      // A list started before the revoke must not put the credential back.
+      await queryClient.cancelQueries({ queryKey: hostDevicesQuery(input.machineId).queryKey });
+    },
+    onSuccess: (_, input) => {
+      const queryKey = hostDevicesQuery(input.machineId).queryKey;
+      queryClient.setQueryData(queryKey, (current) => current && ({ devices: current.devices.filter((device) => device.id !== input.deviceId) }));
+      void queryClient.invalidateQueries({ queryKey, refetchType: "none" });
+    },
+    onError: (reason) => toast.error(errorMessage(reason)),
+  }, queryClient);
+  const revoking = revokeMutation.isPending ? revokeMutation.variables.deviceId : undefined;
+  const error = errorMessage(revokeMutation.error ?? (!loading ? devicesQuery.error : null));
+  const revoke = (device: HostDevice) => {
+    if (machineId && !revokeMutation.isPending) revokeMutation.mutate({ machineId, deviceId: device.id }, {
+      onSuccess: () => setConfirming(undefined),
+    });
   };
 
   return (
@@ -165,7 +130,7 @@ function ControlThisComputer() {
           aria-label={t("Refresh")}
           title={t("Refresh")}
           disabled={!machineId || loading}
-          onClick={() => void refresh()}
+          onClick={() => { revokeMutation.reset(); void refresh(); }}
           className="grid size-7 place-items-center rounded-full text-foreground-subtle hover:bg-surface-hover hover:text-foreground disabled:opacity-40"
         >
           <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
@@ -263,6 +228,7 @@ function ControlThisComputer() {
       ) : null}
       <PresenceBoundary>{adding && machineId ? (
         <AddDeviceDialog
+          key={machineId}
           machineId={machineId}
           onClose={() => setAdding(false)}
           onAdded={refresh}
@@ -283,43 +249,36 @@ function AddDeviceDialog({
 }) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [issued, setIssued] = useState<{ id: string; token: string }>();
+  const issueMutation = useMutation({
+    mutationFn: (name: string) => withToast(
+      () => remoteRequest<{ id: string; token: string }>(machineId, "devices.issue", { name }),
+      { loading: t("Creating…"), success: false, error: false },
+    ),
+    gcTime: 0,
+  }, queryClient);
+  const busy = issueMutation.isPending;
+  const issued = issueMutation.data;
   const [paired, setPaired] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hostUrl, setHostUrl] = useState<string>();
   const token = issued?.token;
   const link = token && hostUrl ? pairingLink(hostUrl, token) : undefined;
+  const pairingQuery = useQuery({
+    ...hostDevicesQuery(machineId),
+    enabled: !!issued,
+    refetchInterval: PAIRING_REFRESH_MS,
+  }, queryClient);
+  const error = errorMessage(issueMutation.error ?? (issued ? pairingQuery.error : null));
 
   useEffect(() => {
     if (!issued) return;
-    let active = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const poll = async () => {
-      try {
-        const result = await remoteRequest<{ devices: HostDevice[] }>(machineId, "devices.list");
-        if (!active) return;
-        setError("");
-        if (result.devices.some((device) =>
-          (device.id === issued.id || device.connectionIds?.includes(issued.id)) && device.pairedAt !== undefined)) {
-          setPaired(true);
-          setIssued(undefined);
-          onAdded();
-          return;
-        }
-      } catch (reason) {
-        if (!active) return;
-        setError(String(reason));
-      }
-      if (active) timer = setTimeout(() => void poll(), PAIRING_REFRESH_MS);
-    };
-    void poll();
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [issued, machineId, onAdded]);
+    if (pairingQuery.data?.devices.some((device) =>
+      (device.id === issued.id || device.connectionIds?.includes(issued.id)) && device.pairedAt !== undefined)) {
+      setPaired(true);
+      issueMutation.reset();
+      onAdded();
+    }
+  }, [issued, pairingQuery.data, issueMutation.reset, onAdded]);
 
   const input =
     "w-full rounded-lg border border-border bg-transparent px-3 py-2 text-ui-base outline-none focus:border-content/35";
@@ -392,21 +351,7 @@ function AddDeviceDialog({
           onSubmit={(event) => {
             event.preventDefault();
             if (busy || !name.trim()) return;
-            setBusy(true);
-            setError("");
-            void withToast(
-              () =>
-                remoteRequest<{ id: string; token: string }>(machineId, "devices.issue", {
-                  name: name.trim(),
-                }),
-              { loading: t("Creating…"), success: false, error: false },
-            )
-              .then((device) => {
-                setIssued(device);
-                onAdded();
-              })
-              .catch((reason) => setError(String(reason)))
-              .finally(() => setBusy(false));
+            issueMutation.mutate(name.trim(), { onSuccess: onAdded });
           }}
         >
           <label className="flex flex-col gap-1.5 text-ui-caption text-foreground-subtle">

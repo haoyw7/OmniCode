@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../shared/lib/queryClient";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../shared/ui/AnimatedCollapse";
@@ -55,8 +57,9 @@ export function ExternalSessions({
   );
   const [expanded, setExpanded] = useState(true);
   const [shown, setShown] = useState(PAGE);
-  const [pending, setPending] = useState<string>();
-  const [error, setError] = useState<string>();
+  const mutation = useMutation({ mutationFn: async ({ action }: { key: string; action: () => Promise<void> }) => action() }, queryClient);
+  const pending = mutation.isPending ? mutation.variables.key : undefined;
+  const error = mutation.error ? mutation.error instanceof Error ? mutation.error.message : String(mutation.error) : undefined;
   useEffect(() => {
     void refreshNativeDiscovery();
   }, []);
@@ -69,20 +72,14 @@ export function ExternalSessions({
   const now = Date.now();
   const open = async (file: NativeSessionFile) => {
     const key = nativeSourceKey(file);
-    setPending(key);
-    setError(undefined);
-    try {
+    mutation.mutate({ key, action: async () => {
       const id = await withToast(() => importNativeSession(file), {
         loading: t("Importing conversation…"),
         success: (id) => !!id && t("Conversation imported"),
         error: false,
       });
       if (id) onOpen(id);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setPending(undefined);
-    }
+    } });
   };
   return (
     <div data-external-sessions className="px-1 pb-1">

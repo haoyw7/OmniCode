@@ -1,4 +1,8 @@
 import { Input } from "../../../shared/ui/forms/Input";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
+import { botRpcQuery } from "../model/botPanelQueries";
 import { Button } from "../../../shared/ui/forms/Button";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { Switch } from "../../../shared/ui/forms/Switch";
@@ -26,27 +30,31 @@ export function DesktopBotRuntimeSettings(props: Props) {
 function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Props) {
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
-  const [callableBots, setCallableBots] = useState<BotView[]>([]);
-  const [botsError, setBotsError] = useState<string>();
-  const [botsLoading, setBotsLoading] = useState(false);
-  const [botsAttempt, setBotsAttempt] = useState(0);
+  const botsRead = useQuery({ ...botRpcQuery<BotsSnapshot>(rpc, "bots.list"), enabled: visible && delegationSupported }, queryClient);
+  const callableBots = (botsRead.data?.bots ?? []).filter(item => item.id !== bot.id && !item.archivedAt);
+  const botsError = botsRead.error ? botErrorMessage(botsRead.error) : undefined;
+  const botsLoading = botsRead.isFetching;
   const [base, setBase] = useState(() => ({ revision: bot.revision, fields: fields(bot) }));
   const [draft, setDraft] = useState(base.fields);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
   const [conflict, setConflict] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [browsing, setBrowsing] = useState(false);
-  useEffect(() => {
-    if (!visible || !delegationSupported) return;
-    let stopped = false;
-    setBotsLoading(true);
-    void rpc<BotsSnapshot>("bots.list").then(snapshot => {
-      if (!stopped) { setCallableBots(snapshot.bots.filter(item => item.id !== bot.id && !item.archivedAt)); setBotsError(undefined); }
-    }, cause => { if (!stopped) setBotsError(botErrorMessage(cause)); }).finally(() => { if (!stopped) setBotsLoading(false); });
-    return () => { stopped = true; };
-  }, [visible, delegationSupported, bot.id, rpc, botsAttempt]);
   const command = useRef<{ signature: string; id: string } | undefined>(undefined);
+  const savedRead = useQuery({ ...botRpcQuery<BotView>(rpc, "bots.get", { botId: bot.id }), enabled: false }, queryClient);
+  const saveMutation = useMutation({ mutationFn: () => withToast(async () => {
+    const patch = { workingDirectory: draft.workingDirectory.trim() || null, maxConcurrentRuns: Number(draft.slots),
+      tools: { computer: draft.computer, ...(draft.custom ? { enabledActions: draft.actions } : {}) },
+      ...(delegationSupported ? { callableBotIds: draft.callableBotIds.filter(id => id !== bot.id) } : {}) };
+    const signature = JSON.stringify([bot.id, base.revision, patch]);
+    if (command.current?.signature !== signature) command.current = { signature, id: crypto.randomUUID() };
+    const receipt = await rpc<{ revision: number }>("bots.configure", { botId: bot.id, commandId: command.current.id, expectedRevision: base.revision, patch });
+    setBase({ revision: receipt.revision, fields: draft }); command.current = undefined; onSaved();
+  }, { loading: t("Saving…"), success: false, error: cause => t(botErrorMessage(cause)) }),
+    onError: cause => setConflict(/changed elsewhere/i.test(botErrorMessage(cause))),
+  }, queryClient);
+  const busy = saveMutation.isPending || savedRead.isFetching;
+  const cause = saveMutation.error ?? savedRead.error;
+  const error = cause ? botErrorMessage(cause) : undefined;
   const dirty = JSON.stringify(draft) !== JSON.stringify(base.fields);
   useEffect(() => {
     if (!dirty && !busy && !command.current && bot.revision > base.revision) {
@@ -55,28 +63,17 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
   }, [bot, base.revision, dirty, busy]);
   const update = (patch: Partial<Fields>) => setDraft(value => ({ ...value, ...patch }));
   const slots = Number(draft.slots), validSlots = Number.isInteger(slots) && slots >= 1 && slots <= 10;
-  const save = async () => {
+  const save = () => {
     if (busy || !dirty || conflict || !validSlots) return;
-    const patch = { workingDirectory: draft.workingDirectory.trim() || null, maxConcurrentRuns: slots,
-      tools: { computer: draft.computer, ...(draft.custom ? { enabledActions: draft.actions } : {}) },
-      ...(delegationSupported ? { callableBotIds: draft.callableBotIds.filter(id => id !== bot.id) } : {}) };
-    const signature = JSON.stringify([bot.id, base.revision, patch]);
-    if (command.current?.signature !== signature) command.current = { signature, id: crypto.randomUUID() };
-    setBusy(true); setError(undefined);
-    try {
-      const receipt = await rpc<{ revision: number }>("bots.configure", { botId: bot.id, commandId: command.current.id, expectedRevision: base.revision, patch });
-      setBase({ revision: receipt.revision, fields: draft }); command.current = undefined; onSaved();
-    } catch (cause) {
-      const message = botErrorMessage(cause); setError(message); setConflict(/changed elsewhere/i.test(message));
-    } finally { setBusy(false); }
+    saveMutation.mutate();
   };
   const reload = async () => {
-    setBusy(true); setError(undefined);
-    try {
-      const latest = await rpc<BotView>("bots.get", { botId: bot.id });
+    if (busy) return;
+    saveMutation.reset();
+    const { data: latest, isSuccess } = await savedRead.refetch();
+    if (isSuccess && latest) {
       const next = fields(latest); setBase({ revision: latest.revision, fields: next }); setDraft(next); setConflict(false); command.current = undefined;
-    } catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
+    }
   };
   const switchRow = (label: string, checked: boolean, onChange: (checked: boolean) => void, key?: string, leading?: ReactNode) =>
     <label className="desktop-bot-row" key={key}>{leading}<span className="desktop-bot-row-title">{label}</span><Switch size="sm" checked={checked} onCheckedChange={onChange} aria-label={label} /></label>;
@@ -117,7 +114,7 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
             return switchRow(target?.name ?? t("Unavailable Bot"), draft.callableBotIds.includes(id), checked => update({ callableBotIds: checked ? [...draft.callableBotIds, id] : draft.callableBotIds.filter(item => item !== id) }), id, <BotAvatar bot={{ id, avatar: target?.avatar }} size={24} />);
           })}
           {botsLoading && !callableIds.length && <p className="desktop-bot-row" role="status">{t("Loading…")}</p>}
-          {botsError && <p className="desktop-bot-row" role="alert"><span className="desktop-bot-row-title">{t(botsError)}</span><Button size="sm" variant="secondary" type="button" onClick={() => setBotsAttempt(value => value + 1)}>{t("Retry")}</Button></p>}
+          {botsError && <p className="desktop-bot-row" role="alert"><span className="desktop-bot-row-title">{t(botsError)}</span><Button size="sm" variant="secondary" type="button" onClick={() => void botsRead.refetch()}>{t("Retry")}</Button></p>}
           {!botsLoading && !botsError && !callableIds.length && <p className="desktop-bot-row">{t("No other bots on this Host")}</p>}
         </div>
       </section>}

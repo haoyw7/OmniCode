@@ -1,13 +1,14 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
 import { AlertCircle, CircleX, ExternalLink } from "../../../shared/ui/icons";
 import { gitCommitFileDiff } from "../../../platform/tauri/fs";
 import type { GithubCheckDetails } from "../model/githubPrChecks";
 
 type Annotation = GithubCheckDetails["annotations"][number];
-type SourceCache = Map<string, Promise<string | null>>;
 
 /** Source previews share reads within a job and always use its checked commit. */
 export function CheckEvidence({
@@ -23,7 +24,6 @@ export function CheckEvidence({
 }) {
   const { t: uiT } = useTranslation();
   const [showAll, setShowAll] = useState(false);
-  const sources = useMemo<SourceCache>(() => new Map(), [cwd, headOid]);
   return (
     <div className="min-w-0 space-y-3">
       {(showAll ? annotations : annotations.slice(0, 5)).map(
@@ -34,7 +34,6 @@ export function CheckEvidence({
             cwd={cwd}
             repo={repo}
             headOid={headOid}
-            sources={sources}
           />
         ),
       )}
@@ -57,13 +56,11 @@ function CheckAnnotation({
   cwd,
   repo,
   headOid,
-  sources,
 }: {
   annotation: Annotation;
   cwd: string;
   repo: string;
   headOid: string;
-  sources: SourceCache;
 }) {
   const { t: uiT } = useTranslation();
   const relative = annotation.path.replace(/^\.\//, "");
@@ -75,36 +72,15 @@ function CheckAnnotation({
   const validLine =
     Number.isSafeInteger(annotation.line) && annotation.line > 0;
   const canRead = Boolean(cwd) && validPath && validCommit && validLine;
-  const sourceKey = `${cwd}:${headOid}:${relative}`;
-  const [source, setSource] = useState<{
-    key: string;
-    text: string | null;
-  } | null>(null);
-  useEffect(() => {
-    if (!canRead) return;
-    let active = true;
-    let request = sources.get(relative);
-    if (!request) {
-      request = gitCommitFileDiff(cwd, headOid, relative)
-        .then((file) =>
-          file &&
-          !file.binary &&
-          !file.tooLarge &&
-          typeof file.current === "string"
-            ? file.current
-            : null,
-        )
-        .catch(() => null);
-      sources.set(relative, request);
-    }
-    void request.then((text) => {
-      if (active) setSource({ key: sourceKey, text });
-    });
-    return () => {
-      active = false;
-    };
-  }, [canRead, cwd, headOid, relative, sourceKey, sources]);
-  const text = source?.key === sourceKey ? source.text : null;
+  const source = useQuery({
+    queryKey: ["inbox", "checkSource", cwd, headOid, relative],
+    enabled: canRead, staleTime: Infinity,
+    queryFn: async () => {
+      const file = await gitCommitFileDiff(cwd, headOid, relative);
+      return file && !file.binary && !file.tooLarge && typeof file.current === "string" ? file.current : null;
+    },
+  }, queryClient);
+  const text = canRead ? source.data : null;
   const lines = text?.split(/\r?\n/);
   const firstLine = Math.max(1, annotation.line - 1);
   const excerpt =
@@ -177,7 +153,7 @@ function CheckAnnotation({
               {messageLines.join("\n")}
             </pre>
           ) : null}
-          {canRead && source?.key === sourceKey && !excerpt.length ? (
+          {canRead && source.isFetched && !excerpt.length ? (
             <p className="mt-2 text-[10px] text-content/40">
               {uiT("Source preview unavailable for this commit.")}
             </p>

@@ -1,6 +1,8 @@
 import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../../../shared/lib/queryClient";
 import { Input } from "../../../../../shared/ui/forms/Input";
 import {
   CONTENT_FONT_PRESETS,
@@ -9,7 +11,7 @@ import {
   FONT_SIZE_LIMITS,
   FONT_WEIGHT_LABELS,
   FONT_WEIGHTS,
-  loadSystemFonts,
+  systemFontsQuery,
   normalizeFontFamily,
   type FontSizeKind,
   type FontWeight,
@@ -27,18 +29,8 @@ const CUSTOM_FONT = "__custom__";
 function useSystemFonts(
   fallback: readonly string[],
 ): readonly string[] {
-  const [fonts, setFonts] = useState<readonly string[] | null>(null);
-  useEffect(() => {
-    let alive = true;
-    void loadSystemFonts().then((fonts) => {
-      const list = fonts.all;
-      if (alive && list.length > 0) setFonts(list);
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return fonts ?? fallback;
+  const { data } = useQuery(systemFontsQuery(), queryClient);
+  return data?.all.length ? data.all : fallback;
 }
 
 /** Installed font list plus a free-text family for anything else. */

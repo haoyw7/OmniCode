@@ -66,7 +66,7 @@ import { startWorktreeCreation } from "../../source-control/model/worktreeCreati
 import {
   clearMcpSettingsCache,
   loadMcpSettings,
-} from "../../settings/model/mcpSettingsCache";
+} from "../../settings/model/mcpSettingsQueries";
 import type { ComposerTurnOptions, Attachment } from "../model/session";
 import {
   clearComposerDraft,

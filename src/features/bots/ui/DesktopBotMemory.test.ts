@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../../../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -11,6 +12,7 @@ let node: HTMLDivElement, root: Root, drafts: BotMemoryDrafts;
 let rpc: ReturnType<typeof vi.fn>;
 let doc: BotMemoryDocument;
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   setUiLanguage("en");
   drafts = new BotMemoryDrafts();
@@ -30,7 +32,8 @@ beforeEach(() => {
   });
   node = document.createElement("div"); document.body.append(node); root = createRoot(node);
 });
-afterEach(() => { act(() => root.unmount()); node.remove(); vi.unstubAllGlobals(); });
+afterEach(() => {
+  queryClient.clear(); act(() => root.unmount()); node.remove(); vi.unstubAllGlobals(); });
 async function flush() { await act(async () => { for (let i = 0; i < 15; i++) await Promise.resolve(); }); }
 async function render() { act(() => root.render(createElement(DesktopBotMemory, { botId: "A", rpc: rpc as never, drafts }))); await flush(); }
 const editor = () => node.querySelector<HTMLTextAreaElement>('[aria-label="File contents"]')!;

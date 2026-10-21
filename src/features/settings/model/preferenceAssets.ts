@@ -1,3 +1,4 @@
+import { queryClient } from "../../../shared/lib/queryClient";
 import type { PreferenceRequest } from "./sharedPreferences";
 import { activePreferenceStore, preferenceStorage, SHARED_PREFERENCES_STATUS } from "./sharedPreferences";
 
@@ -89,11 +90,12 @@ function encode(bytes: Uint8Array): string {
 function notify(name: string) { if (typeof window !== "undefined") window.dispatchEvent(new Event(name)); }
 
 /** Blob durability and transport are separate, so a preference never references an unsaved local image. */
+let assetReaderId = 0;
 export class PreferenceAssets {
+  private readonly queryId = ++assetReaderId;
   private requests = new Map<string, PreferenceRequest>();
   private urls = new Map<string, string>();
   private wanted = new Set<string>();
-  private loading = new Map<string, Promise<string>>();
   private uploads = new Map<string, Promise<void>>();
   constructor(private readonly cache: PreferenceAssetCache) {}
   register(hostId: string, request: PreferenceRequest): () => void {
@@ -147,16 +149,16 @@ export class PreferenceAssets {
   load(reference: string): Promise<string> {
     const cached = this.urls.get(reference);
     if (cached) return Promise.resolve(cached);
-    const running = this.loading.get(reference);
-    if (running) return running;
-    const work = this.download(reference).catch(error => {
-      if (activePreferenceStore()?.hostId === parsePreferenceAsset(reference)?.hostId) activePreferenceStore()!.error = error instanceof Error ? error.message : String(error);
-      notify(SHARED_PREFERENCES_STATUS);
-      throw error;
-    }).finally(() => this.loading.delete(reference));
-    this.loading.set(reference, work);
-    return work;
+    return queryClient.fetchQuery({
+      queryKey: ["preferenceAsset", this.queryId, reference], gcTime: 0,
+      queryFn: () => this.download(reference).catch(error => {
+        if (activePreferenceStore()?.hostId === parsePreferenceAsset(reference)?.hostId) activePreferenceStore()!.error = error instanceof Error ? error.message : String(error);
+        notify(SHARED_PREFERENCES_STATUS);
+        throw error;
+      }),
+    });
   }
+
   private async download(reference: string): Promise<string> {
     const identity = parsePreferenceAsset(reference);
     if (!identity) throw new Error("Invalid background resource.");

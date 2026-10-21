@@ -14,6 +14,7 @@ import {
   type CheckpointStatus,
 } from "../../sessions/model/checkpoint";
 import { useReviewSource } from "./useReviewSource";
+import { queryClient } from "../../../shared/lib/queryClient";
 import type { ReviewSource } from "./reviewDiff";
 import { SurfaceVisibilityContext } from "../../../shared/ui/SurfaceVisibility";
 
@@ -97,6 +98,7 @@ async function render(
   });
 }
 beforeEach(() => {
+  queryClient.clear();
   vi.clearAllMocks();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.mocked(gitDiffFiles).mockResolvedValue(index());

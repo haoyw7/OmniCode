@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FILE_EDITOR_AUTOSAVE_DELAY_MS, FileEditor } from "./FileEditor";
 import { saveAutosave } from "../../../settings/model/settings";
 import { invalidateWatchedFiles } from "../model/fileWatch";
+import { queryClient } from "../../../../shared/lib/queryClient";
 
 const disk = vi.hoisted(() => ({ content: "" }));
 const written = vi.hoisted(() => ({ content: null as string | null }));
@@ -51,6 +52,7 @@ describe("file editor line endings", () => {
 
   afterEach(async () => {
     await act(async () => root.unmount());
+    queryClient.clear();
     vi.useRealTimers();
     container.remove();
     vi.restoreAllMocks();
@@ -187,6 +189,32 @@ describe("file editor line endings", () => {
 
     expect(written.content).toBeNull();
     expect(view.state.doc.toString()).toBe("local alpha\n");
+  });
+
+  it("keeps a local edit made during a failed external reload and blocks autosave", async () => {
+    disk.content = "alpha\n";
+    const path = "/repo/notes.txt";
+    const view = await renderEditor(path);
+    let fail!: (reason: Error) => void;
+    invoke.mockImplementation((command, args) => command === "read_text_file"
+      ? new Promise((_, reject) => { fail = reject; })
+      : defaultInvoke(command, args));
+    try {
+      await act(async () => {
+        invalidateWatchedFiles([path]);
+        await vi.advanceTimersByTimeAsync(50);
+      });
+      await act(async () => {
+        view.dispatch({ changes: { from: 0, insert: "local " } });
+        fail(new Error("File temporarily unavailable"));
+      });
+      await act(async () => vi.advanceTimersByTimeAsync(FILE_EDITOR_AUTOSAVE_DELAY_MS));
+      expect(view.state.doc.toString()).toBe("local alpha\n");
+      expect(container.querySelector(".cm-editor")).not.toBeNull();
+      expect(written.content).toBeNull();
+    } finally {
+      invoke.mockImplementation(defaultInvoke);
+    }
   });
 
   it("restores a pending autosave after a manual save fails", async () => {

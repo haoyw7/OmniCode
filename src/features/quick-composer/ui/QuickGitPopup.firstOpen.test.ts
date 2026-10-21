@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { act, createElement, StrictMode } from "react";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { QuickGitPopup } from "./QuickGitPopup";
@@ -38,6 +39,7 @@ const snapshot: GitBranches = {
 };
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal(
     "ResizeObserver",

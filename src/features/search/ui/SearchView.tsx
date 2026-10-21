@@ -1,5 +1,14 @@
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { projectSearchQuery, sessionSearchQuery } from "../model/searchQueries";
+import { projectFilesQuery } from "../../connections/files/model/fileIndex";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { Folder, MessageSquare, Search } from "../../../shared/ui/icons";
+import {
+  Folder,
+  MessageSquare,
+  Search,
+} from "../../../shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -29,8 +38,6 @@ import {
   type SearchScope,
 } from "../model/appSearch";
 import {
-  loadProjectFiles,
-  peekProjectFiles,
   rankProjectFiles,
   recentOpenedFiles,
 } from "../../connections/files/model/fileIndex";
@@ -41,14 +48,10 @@ import {
   type RecentProject,
 } from "../../projects/model/recents";
 import {
-  cancelProjectSearch,
-  searchProject,
   type OpenFileFn,
 } from "../model/search";
 import { type Session } from "../../sessions/model/session";
 import {
-  cancelSessionSearch,
-  searchSessions,
   type SessionSummary,
 } from "../../sessions/data/sessionStore";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
@@ -92,24 +95,23 @@ export function SearchView({
 }: Props) {
   const { t: uiT } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
-  const activeProjectSearchId = useRef<string | null>(null);
-  const activeSessionOwner = useRef<string | null>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<SearchScope>("all");
   const [active, setActive] = useState(0);
-  const [files, setFiles] = useState(() => peekProjectFiles(cwd) ?? []);
-  const [contentHits, setContentHits] = useState<AppSearchHit[]>([]);
-  const [remoteHits, setRemoteHits] = useState<AppSearchHit[]>([]);
-  const [contentTruncated, setContentTruncated] = useState(false);
-  const [sessionTruncated, setSessionTruncated] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const trimmed = query.trim();
-  const truncated = contentTruncated || sessionTruncated;
+  const { data: files = [] } = useQuery({ ...projectFilesQuery(cwd), staleTime: 0, enabled: open && searchableProject(cwd) }, queryClient);
+  const wantSessions = !!trimmed && (scope === "all" || scope === "conversations");
+  const wantFiles = !!trimmed && searchableProject(cwd) && (scope === "all" || scope === "files");
+  const sessionQuery = useQuery({ ...sessionSearchQuery(trimmed), enabled: wantSessions }, queryClient);
+  const contentQuery = useQuery({ ...projectSearchQuery({ cwd, query: trimmed }), enabled: wantFiles }, queryClient);
+  const remoteHits = useMemo(() => wantSessions && sessionQuery.data ? hitsFromSessionSearch(sessionQuery.data.hits) : [], [wantSessions, sessionQuery.data]);
+  const contentHits = useMemo(() => wantFiles && contentQuery.data ? hitsFromContentMatches(contentQuery.data.matches) : [], [wantFiles, contentQuery.data]);
+  const loading = (wantSessions && sessionQuery.isFetching) || (wantFiles && contentQuery.isFetching);
+  const error = wantFiles ? errorMessage(contentQuery.error) ?? null : null;
+  const truncated = (wantSessions && sessionQuery.data?.truncated) || (wantFiles && contentQuery.data?.truncated);
 
   useEffect(() => {
     if (!queryRequest) return;
@@ -137,22 +139,6 @@ export function SearchView({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
-
-  useEffect(() => {
-    if (!searchableProject(cwd)) {
-      setFiles([]);
-      return;
-    }
-    const cached = peekProjectFiles(cwd);
-    if (cached) setFiles(cached);
-    let cancelled = false;
-    void loadProjectFiles(cwd).then((next) => {
-      if (!cancelled) setFiles(next);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [cwd]);
 
   const conversationRows = useMemo(
     () => conversationRowsFrom(history, sessions),
@@ -192,104 +178,6 @@ export function SearchView({
     () => (trimmed ? searchRecentProjects(recents, trimmed) : []),
     [recents, trimmed],
   );
-
-  useEffect(() => {
-    if (!trimmed) {
-      setRemoteHits([]);
-      setContentHits([]);
-      setSessionTruncated(false);
-      setContentTruncated(false);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      const jobs: Promise<void>[] = [];
-      const wantSessions = scope === "all" || scope === "conversations";
-      const wantFiles = scope === "all" || scope === "files";
-
-      if (wantSessions) {
-        const searchOwner = crypto.randomUUID();
-        activeSessionOwner.current = searchOwner;
-        setLoading(true);
-        jobs.push(
-          searchSessions({ query: trimmed, searchOwner })
-            .then((result) => {
-              if (cancelled) return;
-              setRemoteHits(hitsFromSessionSearch(result.hits));
-              setSessionTruncated(result.truncated);
-            })
-            .catch(() => {
-              if (cancelled) return;
-              setRemoteHits([]);
-              setSessionTruncated(false);
-            })
-            .finally(() => {
-              if (activeSessionOwner.current === searchOwner) {
-                activeSessionOwner.current = null;
-              }
-            }),
-        );
-      } else {
-        setRemoteHits([]);
-        setSessionTruncated(false);
-      }
-
-      if (wantFiles && searchableProject(cwd)) {
-        const searchId = crypto.randomUUID();
-        activeProjectSearchId.current = searchId;
-        setLoading(true);
-        jobs.push(
-          searchProject({
-            cwd,
-            query: trimmed,
-            searchId,
-          })
-            .then((result) => {
-              if (cancelled) return;
-              setContentHits(hitsFromContentMatches(result.matches));
-              setContentTruncated(result.truncated);
-              setError(null);
-            })
-            .catch((err: unknown) => {
-              if (cancelled) return;
-              setContentHits([]);
-              setContentTruncated(false);
-              setError(err instanceof Error ? err.message : String(err));
-            })
-            .finally(() => {
-              if (activeProjectSearchId.current === searchId) {
-                activeProjectSearchId.current = null;
-              }
-            }),
-        );
-      } else {
-        setContentHits([]);
-        setContentTruncated(false);
-      }
-
-      void Promise.all(jobs).then(() => {
-        if (!cancelled) setLoading(false);
-      });
-    }, 200);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-      const searchOwner = activeSessionOwner.current;
-      activeSessionOwner.current = null;
-      if (searchOwner) {
-        void cancelSessionSearch(searchOwner).catch(() => undefined);
-      }
-      const searchId = activeProjectSearchId.current;
-      activeProjectSearchId.current = null;
-      if (searchId && searchableProject(cwd)) {
-        void cancelProjectSearch(cwd, searchId).catch(() => undefined);
-      }
-    };
-  }, [cwd, scope, trimmed]);
 
   const hits = useMemo(() => {
     if (!trimmed) return [];

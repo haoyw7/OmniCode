@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { wslDistributionsQuery } from "../../connections/model/environmentQueries";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { ChevronRight, Internet, Laptop, Plus } from "../../../shared/ui/icons";
@@ -15,7 +18,6 @@ import {
 } from "../../connections/model/hostEnvironments";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { parseWslPath } from "../../../shared/lib/wslPaths";
-import { listWslDistributions } from "../../../platform/tauri/wsl";
 import type { MenuSubmenuHandlers } from "../../../shared/ui/primitives/MenuSubmenu";
 
 /** Environment entry points use the existing project/connection flows. */
@@ -34,6 +36,7 @@ export function ComposerEnvironmentPicker({
   onEnvironmentChange?: (distribution: string | null) => void;
 }) {
   const { t } = useTranslation();
+  const openEnvironment = useMutation({ mutationFn: ensureSharedProject }, queryClient);
   const { environments } = useHostEnvironments();
   const current = remote || (selectedDistribution !== undefined && selectedDistribution !== (parseWslPath(cwd ?? "")?.machine.distribution ?? null))
     ? undefined : environmentForPath(environments, cwd);
@@ -114,7 +117,7 @@ export function ComposerEnvironmentPicker({
           const path = environmentProjectPath(environment, environment.folders[0]);
           // WSL folders open through the shared Host before the composer adopts them.
           if (!environment.machine) onCwdChange(path);
-          else void withToast(() => ensureSharedProject(path), {
+          else void withToast(() => openEnvironment.mutateAsync(path), {
             loading: t("Opening {value0}…", { value0: environment.name }),
             success: () => { onCwdChange(path); return ""; },
           }).catch(() => undefined);
@@ -132,27 +135,10 @@ function WslDistributionMenu({
   onSelect,
 }: MenuSubmenuHandlers & { selected?: string; onSelect: (distribution: string) => void }) {
   const { t } = useTranslation();
-  const [distributions, setDistributions] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    let disposed = false;
-    void listWslDistributions()
-      .then(
-        (names) => {
-          if (!disposed) setDistributions(names);
-        },
-        (reason) => {
-          if (!disposed) setError(String(reason).replace(/^Error: /, ""));
-        },
-      )
-      .finally(() => {
-        if (!disposed) setLoading(false);
-      });
-    return () => {
-      disposed = true;
-    };
-  }, []);
+  const distributionsQuery = useQuery(wslDistributionsQuery(), queryClient);
+  const distributions = distributionsQuery.data ?? [];
+  const loading = distributionsQuery.isPending;
+  const error = errorMessage(distributionsQuery.error);
   return (
     <SearchableSelect
       label={t("WSL distribution")}

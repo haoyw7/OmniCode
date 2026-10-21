@@ -3,6 +3,7 @@ import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SearchView } from "./SearchView";
+import { queryClient } from "../../../shared/lib/queryClient";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => undefined),
@@ -10,8 +11,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 vi.mock("../../connections/files/model/fileIndex", () => ({
-  peekProjectFiles: () => [],
-  loadProjectFiles: async () => [],
+  projectFilesQuery: (cwd: string) => ({ queryKey: ["files", "index", cwd], queryFn: async () => [] }),
   recentOpenedFiles: () => [],
   rankProjectFiles: () => [],
 }));
@@ -28,6 +28,7 @@ let root: Root;
 let container: HTMLDivElement;
 let onClose: ReturnType<typeof vi.fn>;
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   localStorage.clear();
@@ -38,6 +39,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   await act(async () => root.unmount());
+  queryClient.clear();
   container.remove();
   localStorage.clear();
   vi.useRealTimers();

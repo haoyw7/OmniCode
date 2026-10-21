@@ -1,60 +1,58 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef } from "react";
+import { queryOptions, useQueries } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
 import type { BotHistory, BotMessage, BotMessages } from "./botView";
 import { mergeBotMessages, type BotRpc } from "./botRpc";
 import { botReadRevision, subscribeBotRead, unreadBotMessages } from "./botUnread";
 import { botCacheKey, type BotThread } from "./bots";
+import { botPanelKey } from "./botPanelQueries";
 
-type ThreadFeed = { revision: number; messages: BotMessage[]; previewLoaded?: boolean };
+type ThreadFeed = { revision: number; messages: BotMessage[] };
+export function botUnreadQuery(environmentId: string, thread: BotThread, rpc: BotRpc) {
+  const scope = { botId: thread.botId, threadId: thread.id }, key = botCacheKey(environmentId, scope);
+  const queryKey = [...botPanelKey(rpc), "unread", key] as const;
+  return queryOptions({ queryKey, queryFn: async ({ signal }): Promise<ThreadFeed> => {
+    const cached = queryClient.getQueryData<ThreadFeed>(queryKey);
+    let revision = cached?.revision ?? botReadRevision(key), messages = cached?.messages ?? [];
+    if (!cached) {
+      const preview = await rpc<BotHistory>("botThreads.messages", { ...scope, latest: true, limit: 1 });
+      signal.throwIfAborted();
+      messages = mergeBotMessages(messages, preview.entries);
+    }
+    let more = thread.chatRevision > Math.max(revision, botReadRevision(key));
+    while (more) {
+      const afterRevision = Math.max(revision, botReadRevision(key));
+      const page = await rpc<BotMessages>("botThreads.messages", { ...scope, afterRevision, limit: 100 });
+      signal.throwIfAborted();
+      if (page.hasMore && page.nextRevision <= afterRevision) throw new Error("Conversation is unavailable");
+      revision = page.nextRevision; messages = mergeBotMessages(messages, page.entries); more = page.hasMore;
+    }
+    return { revision, messages };
+  } });
+}
 
-/** Read only changed, unread thread deltas; never share cursors across Bots. */
+/** Keep read markers local, while Query owns transport-scoped message deltas. */
 export function useBotUnread(environmentId: string, threads: BotThread[], rpc: BotRpc, active: boolean) {
-  const feeds = useRef(new Map<string, ThreadFeed>());
-  const [, changed] = useState(0);
   const [, readChanged] = useReducer((value: number) => value + 1, 0);
   useEffect(() => subscribeBotRead(readChanged), []);
-  const signature = JSON.stringify(threads.filter((thread) => !thread.archivedAt)
-    .map(({ botId, id, chatRevision }) => ({ botId, threadId: id, chatRevision })));
-  const scopes = useMemo(() => JSON.parse(signature) as { botId: string; threadId: string; chatRevision: number }[], [signature]);
+  const feeds = useQueries({ queries: threads.map(thread => ({ ...botUnreadQuery(environmentId, thread, rpc), enabled: active && !thread.archivedAt })) }, queryClient);
+  const signature = JSON.stringify(threads.map(({ botId, id, chatRevision, archivedAt }) => [botId, id, chatRevision, archivedAt]));
+  const previous = useRef(signature);
   useEffect(() => {
+    const changed = previous.current !== signature;
+    previous.current = signature;
     if (!active) return;
-    let disposed = false;
-    for (const scope of scopes) {
-      const key = botCacheKey(environmentId, scope);
-      const feed: ThreadFeed = feeds.current.get(key) ?? { revision: botReadRevision(key), messages: [] };
-      feeds.current.set(key, feed);
-      const read = botReadRevision(key);
-      if (feed.previewLoaded && scope.chatRevision <= Math.max(feed.revision, read)) continue;
-      void (async () => {
-        try {
-          if (!feed.previewLoaded) {
-            const preview = await rpc<BotHistory>("botThreads.messages", { botId: scope.botId, threadId: scope.threadId, latest: true, limit: 1 });
-            if (disposed) return;
-            feed.messages = mergeBotMessages(feed.messages, preview.entries);
-            feed.previewLoaded = true;
-            changed((value) => value + 1);
-          }
-          let more = scope.chatRevision > Math.max(feed.revision, botReadRevision(key));
-          while (more && !disposed) {
-            const page = await rpc<BotMessages>("botThreads.messages", {
-              botId: scope.botId, threadId: scope.threadId,
-              afterRevision: Math.max(feed.revision, botReadRevision(key)), limit: 100,
-            });
-            if (disposed) return;
-            feed.revision = page.nextRevision;
-            feed.messages = mergeBotMessages(feed.messages, page.entries);
-            more = page.hasMore;
-            changed((value) => value + 1);
-          }
-        } catch { /* Preserve the last observed unread state until the next snapshot. */ }
-      })();
+    for (const thread of threads) {
+      if (thread.archivedAt) continue;
+      const options = botUnreadQuery(environmentId, thread, rpc), state = queryClient.getQueryState<ThreadFeed>(options.queryKey);
+      const read = botReadRevision(botCacheKey(environmentId, { botId: thread.botId, threadId: thread.id }));
+      if (state?.status === "error" || (changed && !state?.data) || (state?.data && thread.chatRevision > Math.max(state.data.revision, read))) void invalidateAfterChange(options.queryKey);
     }
-    return () => { disposed = true; };
-  }, [environmentId, scopes, threads, rpc, active]);
-  return new Map(threads.map((thread) => {
+  }, [environmentId, signature, threads, rpc, active]);
+  return new Map(threads.map((thread, index) => {
     const key = botCacheKey(environmentId, { botId: thread.botId, threadId: thread.id });
-    const messages = feeds.current.get(key)?.messages ?? [];
-    const latest = [...messages].reverse().find((message) =>
-      (message.kind === "assistant" || message.kind === "user") && (message.text.trim() || message.attachments?.length));
+    const messages = feeds[index]?.data?.messages ?? [];
+    const latest = [...messages].reverse().find(message => (message.kind === "assistant" || message.kind === "user") && (message.text.trim() || message.attachments?.length));
     return [key, { count: unreadBotMessages(key, messages).length, latest, messages }] as const;
   }));
 }

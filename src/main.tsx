@@ -1,4 +1,6 @@
 import { observeNativeScrollbarEdges } from "./shared/ui/nativeScrollbarEdges";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./shared/lib/queryClient";
 import { animate, MotionConfig } from "motion/react";
 import { defaultTransition, immediateTransition } from "./shared/motion/tokens";
 import { prefersReducedMotion } from "./shared/lib/reducedMotion";
@@ -96,6 +98,7 @@ function BootGate({ children }: { children: React.ReactNode }) {
     dismissBootSplash();
   }, []);
   return (
+    <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user" transition={defaultTransition}>
         {children}
         <div style={{ position: "fixed", bottom: 8, right: 8, zIndex: 10000, maxWidth: "70vw" }}><SharedStateStatus /></div>
@@ -103,6 +106,7 @@ function BootGate({ children }: { children: React.ReactNode }) {
         <WindowResizeObserver />
         <Toaster />
       </MotionConfig>
+    </QueryClientProvider>
   );
 }
 

@@ -1,4 +1,8 @@
-import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
+import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { withToast } from "../shared/ui/primitives/Sonner";
+import { botRpcQuery } from "../features/bots/model/botPanelQueries";
 import { BotSettings } from "../features/bots/ui/BotSettings";
 import type { BotPatch } from "../features/bots/model/botView";
 import type { BotRpc } from "../features/bots/model/botRpc";
@@ -19,43 +23,33 @@ export function MobileBotCreate({ ref, rpc, onClose, onCreated }: {
 }) {
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
-  const [catalog, setCatalog] = useState<HostModelCatalog>({ models: {}, errors: {} });
-  const [projects, setProjects] = useState<HostProject[]>([]);
-  const [catalogState, setCatalogState] = useState<"loading" | "ready" | "failed">("loading");
-  const [catalogError, setCatalogError] = useState<string>();
-  const [attempt, setAttempt] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
+  const modelsRead = useQuery({ ...botRpcQuery<HostModelCatalog>(rpc, "models.list"), enabled: visible }, queryClient);
+  const projectsRead = useQuery({ ...botRpcQuery<HostProject[]>(rpc, "projects.list"), enabled: visible }, queryClient);
+  const catalog = modelsRead.data ?? { models: {}, errors: {} }, projects = projectsRead.data ?? [];
+  const catalogCause = modelsRead.error ?? projectsRead.error;
+  const catalogError = catalogCause ? botErrorMessage(catalogCause) : undefined;
+  const catalogState = catalogCause ? "failed" : modelsRead.data && projectsRead.data ? "ready" : "loading";
   const pending = useRef(false);
   const command = useRef<{ text: string; id: string } | undefined>(undefined);
   const mounted = useRef(true);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const back = () => { if (!pending.current) onClose(); };
   useImperativeHandle(ref, () => ({ back }));
-  useEffect(() => {
-    if (!visible) return;
-    let disposed = false;
-    setCatalogState("loading"); setCatalogError(undefined);
-    void Promise.all([rpc<HostModelCatalog>("models.list"), rpc<HostProject[]>("projects.list")]).then(([models, list]) => {
-      if (!disposed) { setCatalog(models); setProjects(list); setCatalogState("ready"); }
-    }, cause => {
-      if (!disposed) { setCatalogError(botErrorMessage(cause)); setCatalogState("failed"); }
-    });
-    return () => { disposed = true; };
-  }, [rpc, visible, attempt]);
+  const mutation = useMutation({ mutationFn: ({ patch, commandId }: { patch: BotPatch; commandId: string }) => withToast(() => rpc<{ bot: BotView; thread: BotThread }>("bots.create", { commandId, patch }),
+    { loading: t("Saving…"), success: false, error: cause => t(botErrorMessage(cause)) }) }, queryClient);
+  const busy = mutation.isPending, error = mutation.error ? botErrorMessage(mutation.error) : undefined;
   const create = async (patch: BotPatch) => {
     if (pending.current) return;
-    pending.current = true; setBusy(true); setError(undefined);
+    pending.current = true;
     const text = JSON.stringify(patch);
     if (command.current?.text !== text) command.current = { text, id: crypto.randomUUID() };
     try {
-      const result = await rpc<{ bot: BotView; thread: BotThread }>("bots.create", { commandId: command.current.id, patch });
+      const result = await mutation.mutateAsync({ commandId: command.current.id, patch });
       if (mounted.current) onCreated(result.bot, result.thread);
-    } catch (cause) {
-      if (mounted.current) setError(botErrorMessage(cause));
+    } catch {
+      // Mutation exposes the error beside the retained draft.
     } finally {
       pending.current = false;
-      if (mounted.current) setBusy(false);
     }
   };
   return <main className="mobile-bots mobile-bots-create" inert={!visible} aria-hidden={!visible || undefined}
@@ -68,7 +62,7 @@ export function MobileBotCreate({ ref, rpc, onClose, onCreated }: {
       {error && <p className="mobile-bots-error" role="alert">{t(error)}</p>}
       <BotSettings value={null} mobile Select={MobileAssistantSelect} submitLabel="Create bot"
         catalog={catalog} catalogState={catalogState} catalogError={catalogError}
-        onRetryCatalog={() => setAttempt(value => value + 1)} projects={projects} busy={busy}
+        onRetryCatalog={() => { void modelsRead.refetch(); void projectsRead.refetch(); }} projects={projects} busy={busy}
         onSave={create} onCancel={back} />
     </div>
   </main>;

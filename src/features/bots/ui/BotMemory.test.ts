@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../../../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { toast } from "sonner";
 import { finishMotion, startMotionClock, stopMotionClock } from "../../../../tests/helpers/sharedMotionClock";
@@ -11,6 +12,7 @@ import { setUiLanguage } from "../../../shared/i18n/language";
 
 let root: Root, node: HTMLDivElement;
 beforeEach(() => {
+  queryClient.clear();
   startMotionClock();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   setUiLanguage("en");
@@ -19,6 +21,7 @@ beforeEach(() => {
   root = createRoot(node);
 });
 afterEach(() => {
+  queryClient.clear();
   act(() => root.unmount());
   stopMotionClock();
   node.remove();

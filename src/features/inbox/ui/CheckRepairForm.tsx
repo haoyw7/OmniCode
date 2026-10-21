@@ -5,10 +5,22 @@ import {
   type CiRepairRequest,
 } from "../model/ciRepair";
 import { Popover, type PopoverAnchor } from "../../../shared/ui/Popover";
-import { Check, ChevronRight, MessageSquare, Plus, Search, Sparkles, X } from "../../../shared/ui/icons";
-import { useEffect, useId, useRef, useState } from "react";
 import {
-  fetchGithubCheckDetails,
+  Check,
+  ChevronRight,
+  MessageSquare,
+  Plus,
+  Search,
+  Sparkles,
+  X,
+} from "../../../shared/ui/icons";
+import { useEffect, useId, useRef, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { toast } from "sonner";
+import { githubCheckDetailsQuery } from "../model/githubPrChecksQueries";
+import {
   githubActionsJobId,
   type GithubPrCheck,
 } from "../model/githubPrChecks";
@@ -81,8 +93,6 @@ export function CheckRepairForm({
     if (restoreFocus && anchor instanceof HTMLElement && anchor.isConnected)
       anchor.focus();
   }
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const starting = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -91,12 +101,10 @@ export function CheckRepairForm({
       mounted.current = false;
     };
   }, []);
-  async function start() {
-    if (starting.current || blocked) return;
-    starting.current = true;
-    setBusy(true);
-    setError(null);
-    try {
+  const startMutation = useMutation({
+    mutationFn: async ({ checks, repo, headOid, cwd, repair, sessionId }: {
+      checks: GithubPrCheck[]; repo: string; headOid: string; cwd: string; repair: CheckRepair; sessionId: string;
+    }) => {
       const evidence = new Array<CiRepairEvidence>(checks.length);
       let nextIndex = 0;
       const loadNext = async () => {
@@ -107,7 +115,7 @@ export function CheckRepairForm({
           let details;
           try {
             details = jobId
-              ? await fetchGithubCheckDetails(cwd, repo, jobId)
+              ? await queryClient.fetchQuery(githubCheckDetailsQuery(cwd, repo, headOid, jobId, check))
               : undefined;
           } catch {
             details = {
@@ -132,14 +140,19 @@ export function CheckRepairForm({
         }),
         sessionId || undefined,
       );
+    },
+    onError: (reason) => toast.error(errorMessage(reason)),
+  }, queryClient);
+  const busy = startMutation.isPending;
+  const error = errorMessage(startMutation.error);
+  async function start() {
+    if (starting.current || blocked) return;
+    starting.current = true;
+    try {
+      await startMutation.mutateAsync({ checks, repo, headOid, cwd, repair, sessionId });
       if (mounted.current) onClose();
-    } catch (reason) {
-      if (mounted.current)
-        setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      starting.current = false;
-      if (mounted.current) setBusy(false);
-    }
+    } catch { /* The mutation owns failure feedback and explicit retry. */ }
+    finally { starting.current = false; }
   }
   return (
     <Popover

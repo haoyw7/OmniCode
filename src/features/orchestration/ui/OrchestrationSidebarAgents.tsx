@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useContext, useEffect, useState, useSyncExternalStore } from "react";
 import { useModelSource } from "../../sessions/ui/modelSource";
@@ -42,7 +44,8 @@ export function OrchestrationSidebarAgents({
     runtime.snapshot,
   );
   const [error, setError] = useState<string>();
-  const [pending, setPending] = useState(false);
+  const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
+  const pending = mutation.isPending;
   // Rows expand independently, so several agents can be watched side by side.
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(
     () => new Set(),
@@ -74,14 +77,11 @@ export function OrchestrationSidebarAgents({
   const leadBusy =
     run?.status === "paused" && runtime.resumeLeadBusy(leadId);
   const perform = async (operation: () => Promise<void>) => {
-    setPending(true);
     setError(undefined);
     try {
-      await operation();
+      await mutation.mutateAsync(operation);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setPending(false);
     }
   };
   const done = summary.tasks.filter(

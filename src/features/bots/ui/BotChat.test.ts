@@ -872,6 +872,7 @@ it.each([false, true])("shows desktop send loading until delivery succeeds or fa
     expect(send.querySelector(".animate-spin")).toBeNull();
   };
   act(() => send.click());
+  await flush();
   expectLoading();
   act(() => {
     send.click();
@@ -887,6 +888,7 @@ it.each([false, true])("shows desktop send loading until delivery succeeds or fa
     pending = new Promise<void>((resolve) => { finish = resolve; });
     act(() => [...node.querySelectorAll<HTMLButtonElement>("button")]
       .find(button => button.textContent === "Retry message")!.click());
+    await flush();
     expectLoading();
     finish();
     await flush();

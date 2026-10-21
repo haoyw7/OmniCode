@@ -1,8 +1,12 @@
 import { Button } from "../../../shared/ui/forms/Button";
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useMutation, useMutationState, useQuery } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
+import { botRoomConversationQuery, loadOlderRoomMessages } from "../model/botRoomQueries";
 import type { BotRpc } from "../model/botRpc";
 import type { BotScope, BotView } from "../model/bots";
-import type { BotRoom, BotRoomMessage, BotRoomMessages, BotRoomRound, BotRoomState, BotRoomSpeakerStatus } from "../model/botRooms";
+import type { BotRoom, BotRoomRound, BotRoomSpeakerStatus } from "../model/botRooms";
 import { botErrorMessage } from "../model/botErrors";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
@@ -17,90 +21,54 @@ import "./desktop-bot-collaboration.css";
 
 type Props = { environmentId: string; room: BotRoom; bots: BotView[]; rpc: BotRpc; onSaved: () => Promise<unknown>; onOpenThread: (scope: BotScope) => void };
 const statuses: Record<BotRoomSpeakerStatus, string> = { pending: "Pending", queued: "Queued", running: "Running", waiting_approval: "Approval needed", completed: "Completed", failed: "Failed", timed_out: "Timed out", cancelled: "Cancelled", interrupted: "Interrupted" };
-const merge = (left: BotRoomMessage[], right: BotRoomMessage[]) => [...new Map([...left, ...right].map(message => [message.id, message])).values()].sort((a, b) => a.sequence - b.sequence);
 const draftKey = (environmentId: string, roomId: string) => `omnicode.bot-room-draft:${JSON.stringify([environmentId, roomId])}`;
 export function DesktopBotRoomChat(props: Props) { return <RoomChat key={JSON.stringify([props.environmentId, props.room.id])} {...props} />; }
 function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Props) {
   const { t } = useTranslation(), visible = useSurfaceVisibility();
-  const [state, setState] = useState<BotRoomState>({ room, rounds: [] }), [messages, setMessages] = useState<BotRoomMessage[]>([]), [page, setPage] = useState<BotRoomMessages>();
-  const [error, setError] = useState<string>(), [pollError, setPollError] = useState<string>(), [sending, setSending] = useState(false), [loadingOlder, setLoadingOlder] = useState(false);
+  const options = botRoomConversationQuery(rpc, room.id);
+  const conversation = useQuery({ ...options, enabled: visible, refetchInterval: visible ? 2000 : false }, queryClient);
+  const state = conversation.data?.state ?? { room, rounds: [] }, messages = conversation.data?.messages ?? [], page = conversation.data?.page;
+  const refresh = () => invalidateAfterChange(options.queryKey);
   const [settingsOpen, setSettingsOpen] = useState(false), [roundsOpen, setRoundsOpen] = useState(true), [orderOpen, setOrderOpen] = useState(false);
   const [customOrder, setCustomOrder] = useState(false), [members, setMembers] = useState(room.memberIds);
   const storageKey = draftKey(environmentId, room.id);
   const [draft, setDraft] = useState(() => { try { return localStorage.getItem(storageKey) ?? ""; } catch { return ""; } });
-  const rows = useRef<BotRoomMessage[]>([]), revision = useRef(-1), inFlight = useRef(false), request = useRef(0), alive = useRef(true);
   const log = useRef<HTMLDivElement>(null), follow = useRef(true), prepend = useRef<{ height: number; top: number } | undefined>(undefined);
   const command = useRef<{ signature: string; id: string } | undefined>(undefined);
-  const cancellations = useRef(new Map<string, string>()), [cancelling, setCancelling] = useState(new Set<string>());
+  const cancellations = useRef(new Map<string, string>());
   useEffect(() => { try { localStorage.setItem(storageKey, draft); } catch { /* Draft remains in this retained surface. */ } }, [storageKey, draft]);
-  useEffect(() => { alive.current = true; return () => { alive.current = false; request.current++; }; }, []);
   useEffect(() => { if (!customOrder) setMembers(room.memberIds); }, [room.memberIds, customOrder]);
-  const refresh = useCallback(async () => {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    const sequence = request.current;
-    try {
-      const next = await rpc<BotRoomState>("botRooms.get", { roomId: room.id });
-      if (!alive.current || sequence !== request.current || next.room.id !== room.id) return;
-      setState(next);
-      if (next.room.chatRevision > revision.current) {
-        const known = rows.current.at(-1)?.sequence;
-        let before: BotRoomMessages["next"], result: BotRoomMessages, incoming: BotRoomMessage[] = [];
-        do {
-          result = await rpc<BotRoomMessages>("botRooms.messages", { roomId: room.id, limit: 30, ...(before ? { before } : {}) });
-          if (!alive.current || sequence !== request.current) return;
-          incoming = merge(result.messages.filter(message => message.roomId === room.id), incoming);
-          before = result.next;
-        } while (known !== undefined && result.hasMore && before && (incoming[0]?.sequence ?? 0) > known);
-        rows.current = merge(rows.current, incoming); setMessages(rows.current); revision.current = result.revision;
-        setPage(current => current && known !== undefined ? current : result);
-      }
-      setPollError(undefined);
-    } catch (cause) { if (alive.current && sequence === request.current) setPollError(botErrorMessage(cause)); }
-    finally { inFlight.current = false; }
-  }, [rpc, room.id]);
-  useEffect(() => {
-    if (!visible) return;
-    let stopped = false, timer: ReturnType<typeof setTimeout>;
-    const poll = async () => { await refresh(); if (!stopped) timer = setTimeout(poll, 2000); };
-    void poll();
-    return () => { stopped = true; request.current++; clearTimeout(timer); };
-  }, [visible, refresh]);
   useLayoutEffect(() => {
     const element = log.current;
     if (!element || !visible) return;
     if (prepend.current) { element.scrollTop = prepend.current.top + element.scrollHeight - prepend.current.height; prepend.current = undefined; }
     else if (follow.current) element.scrollTop = element.scrollHeight;
   }, [messages, visible]);
-  const older = async () => {
-    if (loadingOlder || inFlight.current || !page?.hasMore || !page.next) return;
-    const sequence = request.current;
-    setLoadingOlder(true); inFlight.current = true;
-    try {
-      const result = await rpc<BotRoomMessages>("botRooms.messages", { roomId: room.id, limit: 30, before: page.next });
-      if (!alive.current || sequence !== request.current) return;
-      if (log.current) prepend.current = { height: log.current.scrollHeight, top: log.current.scrollTop };
-      rows.current = merge(result.messages.filter(message => message.roomId === room.id), rows.current); setMessages(rows.current); setPage(result); setError(undefined);
-    } catch (cause) { if (alive.current && sequence === request.current) setError(botErrorMessage(cause)); }
-    finally { inFlight.current = false; if (alive.current) setLoadingOlder(false); }
-  };
-  const send = async () => {
+  const loadingOlder = conversation.isFetching;
+  const older = () => loadOlderRoomMessages(rpc, room.id, () => {
+    if (log.current) prepend.current = { height: log.current.scrollHeight, top: log.current.scrollTop };
+  }).catch(() => undefined);
+  const sendMutation = useMutation({ mutationFn: (params: { roomId: string; text: string; memberIds?: string[]; commandId: string }) => withToast(async () => {
+    await rpc("botRooms.send", params); command.current = undefined; setDraft(""); follow.current = true; await refresh();
+  }, { loading: t("Sending..."), success: false, error: cause => t(botErrorMessage(cause)) }) }, queryClient);
+  const cancelMutation = useMutation({ mutationKey: [...options.queryKey, "cancel"], mutationFn: (roundId: string) => withToast(async () => {
+    const commandId = cancellations.current.get(roundId) ?? crypto.randomUUID(); cancellations.current.set(roundId, commandId);
+    await rpc("botRooms.cancel", { roomId: room.id, roundId, commandId }); cancellations.current.delete(roundId); await refresh();
+  }, { loading: t("Saving…"), success: false, error: cause => t(botErrorMessage(cause)) }) }, queryClient);
+  const cancelling = new Set(useMutationState({ filters: { mutationKey: [...options.queryKey, "cancel"], status: "pending" }, select: mutation => mutation.state.variables as string }, queryClient));
+  const sending = sendMutation.isPending;
+  const cause = sendMutation.error ?? cancelMutation.error;
+  const error = cause ? botErrorMessage(cause) : undefined, pollError = conversation.error ? botErrorMessage(conversation.error) : undefined;
+  const send = () => {
     if (!visible || sending || !draft.trim() || state.room.archivedAt || (customOrder && !members.length)) return;
     const params = { roomId: room.id, text: draft, ...(customOrder ? { memberIds: members } : {}) };
     const signature = JSON.stringify(params);
     if (command.current?.signature !== signature) command.current = { signature, id: crypto.randomUUID() };
-    setSending(true); setError(undefined);
-    try { await rpc("botRooms.send", { ...params, commandId: command.current.id }); command.current = undefined; setDraft(""); follow.current = true; await refresh(); }
-    catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setSending(false); }
+    sendMutation.mutate({ ...params, commandId: command.current.id });
   };
   const cancel = async (round: BotRoomRound) => {
     if (!visible || cancelling.has(round.id) || round.roomId !== room.id) return;
-    const commandId = cancellations.current.get(round.id) ?? crypto.randomUUID(); cancellations.current.set(round.id, commandId);
-    setCancelling(current => new Set([...current, round.id])); setError(undefined);
-    try { await rpc("botRooms.cancel", { roomId: room.id, roundId: round.id, commandId }); cancellations.current.delete(round.id); await refresh(); }
-    catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setCancelling(current => { const next = new Set(current); next.delete(round.id); return next; }); }
+    cancelMutation.mutate(round.id);
   };
   const saved = async () => { await onSaved(); await refresh(); };
   const name = (id: string) => bots.find(bot => bot.id === id)?.name ?? t("Unavailable Bot");

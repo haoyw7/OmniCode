@@ -1,3 +1,5 @@
+import { QueryObserver } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { sharedHostMachineId, sharedHostEnvironment } from "../../connections/model/remoteProjects";
 import { loadRemoteHostDescriptor } from "../../connections/model/remoteHostMetadata";
 import { remoteRequest } from "../../connections/model/connections";
@@ -10,7 +12,6 @@ import {
 
 type AccountSnapshot = { revision: number; accounts: HostProviderAccounts; defaults: SharedProviderDefaults };
 const CACHE_PREFIX = "omnicode.hostAccounts.cache.v1:";
-let loading: Promise<void> | undefined;
 let loadedIdentity: string | undefined;
 let loadedRevision: number | undefined;
 let stopAccountSync: (() => void) | undefined;
@@ -66,6 +67,7 @@ async function commit(method: string, params: Record<string, unknown>): Promise<
   const target = host();
   const result = await remoteRequest<AccountSnapshot>(target.machineId, method, { ...params, operationId: crypto.randomUUID() });
   apply(result, target.environmentId);
+  queryClient.setQueryData(accountsQuery(target).queryKey, result);
   return result;
 }
 
@@ -73,12 +75,21 @@ export async function removeProviderAccountCredentials(provider: ProviderAccount
   await commit("providerAccounts.remove", { provider, accountId });
 }
 
+function accountsQuery(target = host()) {
+  return {
+    queryKey: ["hostAccountMetadata", target.environmentId, target.machineId],
+    queryFn: async () => {
+      const result = await remoteRequest<AccountSnapshot>(target.machineId, "providerAccounts.read");
+      if (!validAccountSnapshot(result)) throw new Error(translate("Host returned invalid account metadata."));
+      const cached = queryClient.getQueryData<AccountSnapshot>(["hostAccountMetadata", target.environmentId, target.machineId]);
+      const snapshot = cached && cached.revision > result.revision ? cached : result;
+      apply(snapshot, target.environmentId);
+      return snapshot;
+    },
+  };
+}
 export async function loadProviderAccounts(): Promise<void> {
-  if (loading) return loading;
-  const target = host();
-  loading = remoteRequest<AccountSnapshot>(target.machineId, "providerAccounts.read")
-    .then(snapshot => apply(snapshot, target.environmentId)).finally(() => { loading = undefined; });
-  return loading;
+  await queryClient.fetchQuery(accountsQuery());
 }
 
 /** Compatibility name: account metadata is now hydrated, never published from a webview. */
@@ -102,13 +113,22 @@ export async function initProviderAccountPublishing(): Promise<() => void> {
     if (!cached || !unavailable(error)) throw error;
   }
   if (generation !== syncGeneration) return () => {};
-  const refresh = () => { if (document.visibilityState !== "hidden") void hydrate().catch(() => {}); };
-  const timer = setInterval(refresh, 2_000);
+  const observer = new QueryObserver(queryClient, {
+    ...accountsQuery(target), refetchOnMount: false,
+    refetchInterval: () => document.visibilityState === "hidden" ? false : 2_000,
+    queryFn: async () => {
+      if (!compatible) { await requireSharedAccountHost(); compatible = true; }
+      return accountsQuery(target).queryFn();
+    },
+  });
+  const unsubscribe = observer.subscribe(() => {});
+  const refresh = () => { if (document.visibilityState !== "hidden") void observer.refetch({ cancelRefetch: false }); };
   window.addEventListener("focus", refresh);
   window.addEventListener("online", refresh);
   document.addEventListener("visibilitychange", refresh);
   const stop = () => {
-    clearInterval(timer);
+    unsubscribe();
+    observer.destroy();
     window.removeEventListener("focus", refresh);
     window.removeEventListener("online", refresh);
     document.removeEventListener("visibilitychange", refresh);
@@ -131,10 +151,7 @@ export async function updateProviderAccountProfile(account: ProviderAccount): Pr
 }
 
 export async function loadSharedProviderDefaults(): Promise<SharedProviderDefaults> {
-  const target = host();
-  const snapshot = await remoteRequest<AccountSnapshot>(target.machineId, "providerAccounts.read");
-  apply(snapshot, target.environmentId);
-  return snapshot.defaults;
+  return (await queryClient.fetchQuery(accountsQuery())).defaults;
 }
 
 export async function setSharedProviderDefault(provider: ProviderAccountProvider, accountId: string): Promise<SharedProviderDefaults> {

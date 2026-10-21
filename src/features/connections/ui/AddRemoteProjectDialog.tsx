@@ -1,11 +1,18 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { createPortal } from "react-dom";
 import { LAYER } from "../../../shared/lib/layers";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
+import { Field, FieldError } from "../../../shared/ui/primitives/Field";
 import { Empty, EmptyDescription } from "../../../shared/ui/primitives/Empty";
 import { Skeleton } from "../../../shared/ui/primitives/Skeleton";
-
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { ModalFooter } from "../../../shared/ui/Modal";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { ChevronRight, Folder } from "../../../shared/ui/icons";
@@ -15,7 +22,11 @@ import {
   useRemoteMachines,
 } from "../model/connections";
 import { rememberRemoteProject } from "../model/remoteProjects";
-import type { HostDirectory, HostProject } from "../model/protocol";
+import type {
+  HostDirectory,
+  HostProject,
+  RemoteMachine,
+} from "../model/protocol";
 
 type Props = {
   onCancel: () => void;
@@ -24,35 +35,88 @@ type Props = {
 
 /** Adds a project whose folder is on a connected machine. Sessions in it run
  * on that machine; the project otherwise behaves like any other in the rail. */
-export function AddRemoteProjectDialog({
-  onCancel,
-  onOpen,
-}: Props) {
-  const { t: uiT } = useTranslation();
+export function AddRemoteProjectDialog({ onCancel, onOpen }: Props) {
   const { machines, loaded } = useRemoteMachines();
   const [machineId, setMachineId] = useState<string>();
   const machine =
     machines.find((entry) => entry.id === machineId) ?? machines[0];
-  const [path, setPath] = useState("");
-  const [directory, setDirectory] = useState<HostDirectory>();
-  const [loading, setLoading] = useState(false);
-  const [opening, setOpening] = useState(false);
-  const [error, setError] = useState("");
-  const alive = useRef(true);
-  const requestVersion = useRef(0);
-  const cancel = () => {
-    alive.current = false;
-    requestVersion.current++;
-    onCancel();
-  };
-  // Set on every mount: development StrictMode mounts, unmounts and mounts
-  // again, and responses after the first cleanup must still be shown.
+  return (
+    <RemoteProjectForm
+      key={machine?.id ?? "unpaired"}
+      machine={machine}
+      machines={machines}
+      loaded={loaded}
+      onMachineChange={setMachineId}
+      onCancel={onCancel}
+      onOpen={onOpen}
+    />
+  );
+}
+
+function RemoteProjectForm({
+  machine,
+  machines,
+  loaded,
+  onMachineChange,
+  onCancel,
+  onOpen,
+}: Props & {
+  machine: RemoteMachine | undefined;
+  machines: RemoteMachine[];
+  loaded: boolean;
+  onMachineChange: (id: string) => void;
+}) {
+  const { t: uiT } = useTranslation();
+  const instanceId = useId();
+  const [browsePath, setBrowsePath] = useState<string>();
+  const form = useForm({
+    resolver: zodResolver(
+      z.object({ path: z.string().trim().min(1, uiT("Enter a folder path")) }),
+    ),
+    defaultValues: { path: "" },
+  });
+  const path = useWatch({ control: form.control, name: "path" });
+  const directoryQuery = useQuery(
+    {
+      queryKey: [
+        "remote-project-directory",
+        instanceId,
+        machine?.id,
+        browsePath,
+      ],
+      queryFn: () =>
+        remoteRequest<HostDirectory>(machine!.id, "projects.browse", {
+          path: browsePath,
+        }),
+      enabled: !!machine,
+      gcTime: 0,
+      refetchOnWindowFocus: false,
+    },
+    queryClient,
+  );
+  const directory = directoryQuery.data;
+  const { setValue } = form;
   useEffect(() => {
-    alive.current = true;
-    return () => {
-      alive.current = false;
-    };
-  }, []);
+    if (directory) setValue("path", directory.path, { shouldValidate: true });
+  }, [directory, directoryQuery.dataUpdatedAt, setValue]);
+
+  const openProject = useMutation(
+    {
+      mutationFn: (cwd: string) =>
+        withToast(
+          () =>
+            remoteRequest<HostProject>(machine!.id, "projects.open", { cwd }),
+          { loading: uiT("Opening…"), success: false, error: false },
+        ),
+    },
+    queryClient,
+  );
+  const { reset: resetOpen } = openProject;
+  const cancel = useCallback(() => {
+    // Detach this observer so a response after cancellation cannot open a project.
+    resetOpen();
+    onCancel();
+  }, [onCancel, resetOpen]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -63,74 +127,39 @@ export function AddRemoteProjectDialog({
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [onCancel]);
+  }, [cancel]);
 
-  const browse = async (next?: string) => {
-    if (!machine) return;
-    const version = ++requestVersion.current;
-    setLoading(true);
-    setOpening(false);
-    setError("");
-    try {
-      const value = await remoteRequest<HostDirectory>(
-        machine.id,
-        "projects.browse",
-        { path: next },
-      );
-      if (!alive.current || version !== requestVersion.current) return;
-      setDirectory(value);
-      setPath(value.path);
-    } catch (reason) {
-      if (alive.current && version === requestVersion.current)
-        setError(String(reason).replace(/^Error: /, ""));
-    } finally {
-      if (alive.current && version === requestVersion.current)
-        setLoading(false);
-    }
+  const browse = (next: string) => {
+    resetOpen();
+    if (next === browsePath) void directoryQuery.refetch();
+    else setBrowsePath(next);
   };
-
-  useEffect(() => {
-    setDirectory(undefined);
-    setPath("");
-    if (machine) void browse();
-  }, [machine?.id]);
-
-  const open = async () => {
-    if (!machine || !path.trim() || opening) return;
-    const version = ++requestVersion.current;
-    setOpening(true);
-    setLoading(false);
-    setError("");
-    try {
-      const project = await remoteRequest<HostProject>(
-        machine.id,
-        "projects.open",
-        { cwd: path.trim() },
-      );
-      if (alive.current && version === requestVersion.current)
-        onOpen(rememberRemoteProject(machine.environmentId, project).key);
-    } catch (reason) {
-      if (alive.current && version === requestVersion.current)
-        setError(String(reason).replace(/^Error: /, ""));
-    } finally {
-      if (alive.current && version === requestVersion.current)
-        setOpening(false);
-    }
-  };
+  const error = openProject.error ?? directoryQuery.error;
 
   return createPortal(
-    <div data-window-modal className="fixed inset-0" style={{ zIndex: LAYER.dialog }}>
-      <div data-window-modal-backdrop className="absolute inset-0" onMouseDown={cancel} />
+    <div
+      data-window-modal
+      className="fixed inset-0"
+      style={{ zIndex: LAYER.dialog }}
+    >
+      <div
+        data-window-modal-backdrop
+        className="absolute inset-0"
+        onMouseDown={cancel}
+      />
       <form
         data-window-modal-panel
         role="dialog"
         aria-modal="true"
         aria-label={uiT("Open folder on a machine")}
         onMouseDown={(event) => event.stopPropagation()}
-        onSubmit={(event) => {
-          event.preventDefault();
-          void open();
-        }}
+        onSubmit={form.handleSubmit(({ path: cwd }) => {
+          if (!machine || openProject.isPending) return;
+          openProject.mutate(cwd, {
+            onSuccess: (project) =>
+              onOpen(rememberRemoteProject(machine.environmentId, project).key),
+          });
+        })}
         className="popover-backdrop absolute left-1/2 top-[16%] flex max-h-[70vh] w-[min(480px,calc(100vw-24px))] -translate-x-1/2 flex-col gap-3 rounded-lg border border-content/10 p-4 shadow-xl backdrop-blur-xl"
       >
         <div className="flex flex-col gap-1">
@@ -176,7 +205,7 @@ export function AddRemoteProjectDialog({
                   label: entry.name,
                   keywords: entry.ssh?.target ?? entry.endpoint,
                 }))}
-                onChange={setMachineId}
+                onChange={onMachineChange}
                 searchable={false}
               />
             ) : (
@@ -185,19 +214,35 @@ export function AddRemoteProjectDialog({
                 <span className="text-content/80">{machine.name}</span>
               </p>
             )}
-            <input data-ui="input"
-              aria-label={uiT("Folder path on the machine")}
-              className="h-8 shrink-0 rounded-md border border-content/10 bg-content/3 px-2.5 font-mono text-[12px] text-content outline-none focus:border-content/25"
-              placeholder="/home/me/code/my-app"
-              value={path}
-              spellCheck={false}
-              autoCorrect="off"
-              autoCapitalize="off"
-              autoComplete="off"
-              onChange={(event) => setPath(event.target.value)}
+            <Controller
+              control={form.control}
+              name="path"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <Input
+                    {...field}
+                    aria-label={uiT("Folder path on the machine")}
+                    aria-invalid={fieldState.invalid}
+                    aria-describedby={
+                      fieldState.error ? `${instanceId}-path-error` : undefined
+                    }
+                    className="shrink-0 font-mono"
+                    placeholder="/home/me/code/my-app"
+                    spellCheck={false}
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    autoComplete="off"
+                  />
+                  <FieldError
+                    id={`${instanceId}-path-error`}
+                    errors={[fieldState.error]}
+                  />
+                </Field>
+              )}
             />
             <div
               aria-label={uiT("Folders")}
+              aria-busy={directoryQuery.isFetching}
               className="min-h-24 flex-1 overflow-y-auto overscroll-contain rounded-md border border-content/10"
             >
               <div className="p-1">
@@ -219,7 +264,7 @@ export function AddRemoteProjectDialog({
                     <EmptyDescription>{uiT("No subfolders")}</EmptyDescription>
                   </Empty>
                 ) : null}
-                {!directory && loading ? (
+                {!directory && directoryQuery.isLoading ? (
                   <div
                     role="status"
                     aria-label={uiT("Loading folders…")}
@@ -234,17 +279,21 @@ export function AddRemoteProjectDialog({
             {error ? (
               <p
                 role="alert"
-                className="whitespace-pre-wrap break-words text-[12px] leading-snug text-red-400/90"
+                className="whitespace-pre-wrap break-words text-ui-sm leading-snug text-destructive"
               >
-                {error}
+                {String(error).replace(/^Error: /, "")}
               </p>
             ) : null}
             <ModalFooter>
               <Button variant="secondary" onClick={cancel}>
                 {uiT("Cancel")}
               </Button>
-              <Button variant="primary" type="submit" disabled={opening || !path.trim()}>
-                {opening ? uiT("Opening…") : uiT("Open")}
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={openProject.isPending || !path.trim()}
+              >
+                {openProject.isPending ? uiT("Opening…") : uiT("Open")}
               </Button>
             </ModalFooter>
           </>
@@ -257,16 +306,16 @@ export function AddRemoteProjectDialog({
 
 function FolderRow({ name, onOpen }: { name: string; onOpen: () => void }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      data-menu-row
       onClick={onOpen}
-      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px] text-content/75 hover:bg-content/5 hover:text-content"
+      className="w-full justify-start text-left"
     >
-      <Folder
-        className="size-3.5 shrink-0 text-content/45"
-      />
+      <Folder className="size-3.5 shrink-0 text-content/45" />
       <span className="min-w-0 flex-1 truncate">{name}</span>
       <ChevronRight className="size-3 shrink-0 text-content/30" />
-    </button>
+    </Button>
   );
 }

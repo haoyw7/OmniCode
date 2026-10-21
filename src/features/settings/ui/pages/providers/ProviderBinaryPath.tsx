@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../../../shared/lib/queryClient";
+import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { ExternalLink, Pencil, RefreshCw } from "../../../../../shared/ui/icons";
 import {
   inspectHarnessBinary,
-  type HarnessBinaryInspection,
 } from "../../../../../integrations/harness/core/child";
 import { revealPath } from "../../../../../platform/tauri/fs";
 import {
@@ -36,47 +37,22 @@ export function ProviderBinaryPath({
   const [overridden, setOverridden] = useState(() =>
     Boolean(loadProviderBinaryPath(provider)),
   );
-  const [inspection, setInspection] = useState<HarnessBinaryInspection>();
-  const [working, setWorking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  /** A path the user just submitted always reports why it was rejected. */
+  const [requestedPath, setRequestedPath] = useState(() => loadProviderBinaryPath(provider));
+  const [discarded, setDiscarded] = useState(false);
+  const options = (binaryPath?: string | null) => ({
+    queryKey: ["providerBinary", provider, binaryPath ?? null],
+    queryFn: () => inspectHarnessBinary(provider, binaryPath),
+  });
+  const read = useQuery(options(requestedPath), queryClient);
+  const inspection = discarded ? undefined : read.data, working = read.isFetching;
+  const error = read.error ? String(read.error instanceof Error ? read.error.message : read.error) : inspection ? binaryInspectionError(provider, inspection) : null;
   const [formError, setFormError] = useState<string | null>(null);
   const [revealError, setRevealError] = useState<string | null>(null);
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
-  /** Resolves a path (null auto-detects) and returns why it is unusable. */
-  const inspect = useCallback(
-    async (binaryPath?: string | null): Promise<string | null> => {
-      setWorking(true);
-      setInspection(undefined);
-      setError(null);
-      setRevealError(null);
-      let problem: string | null;
-      try {
-        const next = await inspectHarnessBinary(provider, binaryPath);
-        problem = binaryInspectionError(provider, next);
-        if (mounted.current) setInspection(next);
-      } catch (cause) {
-        problem = cause instanceof Error ? cause.message : String(cause);
-      }
-      if (mounted.current) {
-        setError(problem);
-        setWorking(false);
-      }
-      return problem;
-    },
-    [provider],
-  );
-
-  useEffect(() => {
-    void inspect(loadProviderBinaryPath(provider));
-  }, [inspect, provider]);
+  const inspect = async (binaryPath?: string | null): Promise<string | null> => {
+    setRequestedPath(binaryPath ?? null); setDiscarded(false); setRevealError(null);
+    try { return binaryInspectionError(provider, await queryClient.fetchQuery(options(binaryPath))); }
+    catch (cause) { return cause instanceof Error ? cause.message : String(cause); }
+  };
 
   const closeEditor = () => {
     setFormError(null);
@@ -93,7 +69,7 @@ export function ProviderBinaryPath({
       return;
     }
     if (!saveProviderBinaryPath(provider, null)) {
-      setInspection(undefined);
+      setDiscarded(true);
       setFormError("Could not save the binary path.");
       return;
     }
@@ -117,7 +93,7 @@ export function ProviderBinaryPath({
       return;
     }
     if (!saveProviderBinaryPath(provider, value)) {
-      setInspection(undefined);
+      setDiscarded(true);
       setFormError("Could not save the binary path.");
       return;
     }

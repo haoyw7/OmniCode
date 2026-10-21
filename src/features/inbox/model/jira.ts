@@ -1,3 +1,5 @@
+import { queryClient } from "../../../shared/lib/queryClient";
+import { fetchInboxSource, inboxSourceKey, invalidateInboxSource, peekInboxSource } from "./inboxSourceQueries";
 import { invoke } from "@tauri-apps/api/core";
 import { recordInboxSelfActivity } from "./inboxSelfActivity";
 
@@ -68,17 +70,10 @@ const PROJECT_IDS_KEY = "omnicode.jiraHiddenProjects";
 export const JIRA_CHANGE_EVENT = "omnicode:jira-change";
 
 // Keyed by issue key (ENG-42): the REST paths and browse URLs both take it.
-const detailsByKey = new Map<string, JiraIssueDetails>();
-const threadByKey = new Map<string, JiraIssueThread>();
-const threadInflight = new Map<string, Promise<JiraIssueThread>>();
 
-let cacheGeneration = 0;
 
 export function clearJiraCache() {
-  cacheGeneration += 1;
-  detailsByKey.clear();
-  threadByKey.clear();
-  threadInflight.clear();
+  queryClient.removeQueries({ queryKey: ["inboxSource", "jira"] });
 }
 
 export function jiraConnected(): Promise<JiraStatus> {
@@ -142,48 +137,24 @@ export function listJiraIssues(query: {
 }
 
 export function peekJiraIssueDetails(key: string): JiraIssueDetails | null {
-  return detailsByKey.get(key) ?? null;
+  return peekInboxSource<JiraIssueDetails>(inboxSourceKey("jira", "details", key));
 }
 
 export async function jiraIssueDetails(key: string): Promise<JiraIssueDetails> {
-  const generation = cacheGeneration;
-  const details = await invoke<JiraIssueDetails>("jira_issue_details", {
-    key,
-  });
-  if (generation === cacheGeneration) detailsByKey.set(key, details);
-  return details;
+  return fetchInboxSource(inboxSourceKey("jira", "details", key), () => invoke<JiraIssueDetails>("jira_issue_details", { key }));
+
 }
 
 export function peekJiraIssueThread(key: string): JiraIssueThread | null {
-  return threadByKey.get(key) ?? null;
+  return peekInboxSource<JiraIssueThread>(inboxSourceKey("jira", "thread", key));
 }
 
 export async function jiraIssueThread(
   key: string,
   options?: { force?: boolean },
 ): Promise<JiraIssueThread> {
-  if (options?.force) {
-    threadByKey.delete(key);
-    threadInflight.delete(key);
-  }
-  const pending = threadInflight.get(key);
-  if (pending) return pending;
-  const generation = cacheGeneration;
-  const promise = invoke<JiraIssueThread>("jira_issue_thread", { key })
-    .then((thread) => {
-      if (
-        generation === cacheGeneration &&
-        threadInflight.get(key) === promise
-      ) {
-        threadByKey.set(key, thread);
-      }
-      return thread;
-    })
-    .finally(() => {
-      if (threadInflight.get(key) === promise) threadInflight.delete(key);
-    });
-  threadInflight.set(key, promise);
-  return promise;
+  return fetchInboxSource(inboxSourceKey("jira", "thread", key), () => invoke<JiraIssueThread>("jira_issue_thread", { key }), options);
+
 }
 
 export async function jiraIssueComment(
@@ -194,8 +165,7 @@ export async function jiraIssueComment(
     key: issue.key,
     body: body.trim(),
   });
-  threadByKey.delete(issue.key);
-  threadInflight.delete(issue.key);
+  await invalidateInboxSource(inboxSourceKey("jira", "thread", issue.key));
   recordInboxSelfActivity({ provider: "jira", kind: "jira", id: issue.id });
   return url;
 }

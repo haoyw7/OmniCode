@@ -1,8 +1,11 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { mobileSourceKey } from "./mobileQueries";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { motion } from "motion/react";
 import { motionGeometry, panelTransition } from "../shared/motion/tokens";
 import { useEffect, useId, useRef, useState } from "react";
-import type { GitChangedFile, GitFileDiff } from "../platform/tauri/fs";
+import type { GitChangedFile } from "../platform/tauri/fs";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { pathKey, resolveWorkspacePath } from "../shared/lib/paths";
 import { ChevronRight, WrapText } from "../shared/ui/icons";
@@ -164,7 +167,8 @@ function SessionChangeButtons({
   onDone: () => void;
 }) {
   const { t } = useTranslation();
-  const [acting, setActing] = useState<"keep" | "undo">();
+  const mutation = useMutation({ mutationFn: (action: "keep" | "undo") => actions[action]() }, queryClient);
+  const acting = mutation.isPending ? mutation.variables : undefined;
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string>();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -173,12 +177,10 @@ function SessionChangeButtons({
   const run = (action: "keep" | "undo") => {
     clearTimeout(timer.current);
     setConfirming(false);
-    setActing(action);
     setError(undefined);
-    void actions[action]()
+    void mutation.mutateAsync(action)
       .catch((problem) => setError(problem instanceof Error ? problem.message : String(problem)))
       .finally(() => {
-        setActing(undefined);
         onDone();
       });
   };
@@ -299,44 +301,19 @@ function MobileGitFile({
 }) {
   const { t } = useTranslation();
   useEffect(() => () => onReady(false), [onReady]);
-  const [loaded, setLoaded] = useState<{
-    source: MobileGitSource;
-    diff?: GitFileDiff;
-    error?: string;
-  }>({ source });
-  useEffect(() => {
-    if (!active || !enabled) return;
-    let current = true;
-    setLoaded((previous) => ({
-      source,
-      diff: previous.source === source ? previous.diff : undefined,
-    }));
-    void source
-      .loadDiff(entry.relative)
-      .then((diff) => {
-        if (current) setLoaded({ source, diff });
-      })
-      .catch((problem) => {
-        if (current)
-          setLoaded({
-            source,
-            error: problem instanceof Error ? problem.message : String(problem),
-          });
-      });
-    return () => {
-      current = false;
-    };
-  }, [source, entry.relative, active, enabled]);
-  useEffect(() => {
-    if (loaded.source === source && loaded.error) onReady(true);
-  }, [loaded, source, onReady]);
-  const diff = loaded.source === source ? loaded.diff : undefined;
+  const read = useQuery({
+    queryKey: ["mobile", "gitDiff", mobileSourceKey(source), entry.relative],
+    enabled: active && enabled, gcTime: 0,
+    queryFn: ({ signal }) => { signal.throwIfAborted(); return source.loadDiff(entry.relative); },
+  }, queryClient);
+  useEffect(() => { if (read.isError) onReady(true); }, [read.isError, onReady]);
+  const diff = read.isError ? undefined : read.data;
   return (
     <>
-      {loaded.error && (
+      {read.error && (
         <div className="mobile-git-error" role="alert">
           <strong>{t("Could not load diff.")}</strong>
-          <p>{loaded.error}</p>
+          <p>{read.error.message}</p>
         </div>
       )}
       {diff && <MobileGitDiff diff={diff} wrap={wrap} onReady={onReady} />}

@@ -1,4 +1,7 @@
 import { useState, type KeyboardEvent } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import type {
@@ -79,20 +82,17 @@ export function BotHabits({
   const [draft, setDraft] = useState<Draft>();
   // The editor keeps its last contents while it folds away.
   const [shown, setShown] = useState<Draft>(newDraft);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string>();
+  const mutation = useMutation({ mutationFn: (input: HabitControl) => withToast(() => control(input),
+    { loading: t("Saving…"), success: false }) }, queryClient);
+  const pending = mutation.isPending;
+  const error = mutation.error ? String(mutation.error instanceof Error ? mutation.error.message : mutation.error) : undefined;
   const busy = disabled || pending;
   const run = async (input: HabitControl) => {
-    setPending(true);
-    setError(undefined);
     try {
-      await control(input);
+      await mutation.mutateAsync(input);
       return true;
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
+    } catch {
       return false;
-    } finally {
-      setPending(false);
     }
   };
   const open = (next: Draft) => {

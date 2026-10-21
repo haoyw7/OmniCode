@@ -1,6 +1,16 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { AppPageHeader } from "../../workspace/ui/AppPageHeader";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { Plus, Search, RefreshCw, File, Trash2, X } from "../../../shared/ui/icons";
+import {
+  Plus,
+  Search,
+  RefreshCw,
+  File,
+  Trash2,
+  X,
+} from "../../../shared/ui/icons";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import {
   Fragment,
@@ -28,9 +38,10 @@ import { formatRelativeTime } from "../../inbox/model/githubTasks";
 import {
   createNote,
   deleteNote,
-  loadNotes,
   MAX_NOTE_TAGS,
-  NOTES_CHANGED_EVENT,
+  invalidateNotes,
+  noteKeys,
+  notesQuery,
   normalizeNoteTags,
   notePreview,
   noteSourceProject,
@@ -68,6 +79,8 @@ import { Spinner } from "../../../shared/ui/primitives/Spinner";
 const MIN_WIDTH = 240;
 const MAX_WIDTH = 420;
 const DEFAULT_WIDTH = 280;
+
+const EMPTY_NOTES: Note[] = [];
 
 let rememberedWidth = DEFAULT_WIDTH;
 let rememberedNoteId: string | null = null;
@@ -121,9 +134,10 @@ export function NotesView({
       rememberedWidth = width;
     },
   });
-  const [notes, setNotes] = useState<Note[]>(() => peekNotes() ?? []);
-  const [loading, setLoading] = useState(() => peekNotes() === null);
-  const [error, setError] = useState<string | null>(null);
+  const listQuery = useQuery(notesQuery(), queryClient);
+  const notes = listQuery.data ?? EMPTY_NOTES;
+  const loading = listQuery.isPending;
+  const setNotes = (update: (notes: Note[]) => Note[]) => queryClient.setQueryData<Note[]>(noteKeys.list, (current) => update(current ?? []));
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(() => {
     const cached = peekNotes();
@@ -133,7 +147,6 @@ export function NotesView({
       rememberedNoteId
     );
   });
-  const [creating, setCreating] = useState(false);
   const hosts = useDesktopBotsHosts();
   const topicSources = useMemo(() => hosts.map((host) => ({
     key: host.environmentId,
@@ -151,30 +164,13 @@ export function NotesView({
   const [groupColors] = useState(loadTabGroupColors);
   const [groupCustomColors] = useState(loadTabGroupCustomColors);
 
-  const refresh = useCallback(async () => {
-    try {
-      const next = await loadNotes(true);
-      setNotes(next);
-      setError(null);
-      setSelectedId((current) => {
-        const preferred = current ?? rememberedNoteId;
-        if (preferred && next.some((note) => note.id === preferred)) {
-          return preferred;
-        }
-        return next[0]?.id ?? null;
-      });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  const refresh = invalidateNotes;
   useEffect(() => {
-    void refresh();
-    window.addEventListener(NOTES_CHANGED_EVENT, refresh);
-    return () => window.removeEventListener(NOTES_CHANGED_EVENT, refresh);
-  }, [refresh]);
+    setSelectedId((current) => {
+      const preferred = current ?? rememberedNoteId;
+      return preferred && notes.some((note) => note.id === preferred) ? preferred : notes[0]?.id ?? null;
+    });
+  }, [notes]);
 
   useEffect(() => {
     rememberedNoteId = selectedId;
@@ -212,26 +208,23 @@ export function NotesView({
     notes.find((note) => note.id === selectedId) ??
     null;
 
-  const onCreate = async () => {
-    if (creating) return;
-    setCreating(true);
-    try {
-      // A blank title marks the note's generated slug as pending.
-      const note = await createNote({
-        title: "",
-        body: "",
-        ...(cwd && looksLikeProject(cwd) ? { sourceCwd: cwd } : {}),
-      });
-      setNotes(await loadNotes(true));
-      setSelectedId(note.id);
-      setSelectedTopicKey(undefined);
-      setQuery("");
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setCreating(false);
-    }
-  };
+  const createMutation = useMutation({
+    mutationFn: () => createNote({ title: "", body: "", ...(cwd && looksLikeProject(cwd) ? { sourceCwd: cwd } : {}) }),
+    onSuccess: (note) => {
+      setSelectedId(note.id); setSelectedTopicKey(undefined); setQuery("");
+      toast.success(uiT("Note created"));
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  }, queryClient);
+  const deleteMutation = useMutation({
+    mutationFn: deleteNote,
+    onSuccess: () => { toast.success(uiT("Note deleted")); },
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  }, queryClient);
+  const creating = createMutation.isPending;
+  const failure = createMutation.error ?? deleteMutation.error ?? listQuery.error;
+  const error = failure ? failure instanceof Error ? failure.message : String(failure) : null;
+  const onCreate = () => { if (!creating) createMutation.mutate(); };
 
   const onSaved = (note: Note) => {
     setNotes((current) => {
@@ -243,19 +236,7 @@ export function NotesView({
     });
   };
 
-  const onDelete = async (id: string) => {
-    try {
-      await deleteNote(id);
-      const next = await loadNotes(true);
-      setNotes(next);
-      setSelectedId((current) => {
-        if (current !== id) return current;
-        return next[0]?.id ?? null;
-      });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  };
+  const onDelete = (id: string) => deleteMutation.mutateAsync(id);
 
   const onAddToChat = (note: Note) => {
     requestAddNoteToChat(note);
@@ -617,7 +598,14 @@ function NoteEditor({
   const sourceCwd = projectChange?.path ?? note.sourceCwd;
   const [saveError, setSaveError] = useState<string | null>(null);
   const [imageDrag, setImageDrag] = useState(false);
-  const [imageBusy, setImageBusy] = useState(false);
+  const { mutateAsync: saveNote } = useMutation({
+    mutationFn: upsertNote,
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  }, queryClient);
+  const { mutateAsync: loadImages, isPending: imageBusy } = useMutation({
+    mutationFn: (load: () => Promise<NoteImageAsset[]>) => load(),
+    onError: (error) => toast.error(error instanceof Error ? error.message : String(error)),
+  }, queryClient);
   const editsRef = useRef(edits);
   const bodyRef = useRef(body);
   const projectChangeRef = useRef(projectChange);
@@ -699,7 +687,7 @@ function NoteEditor({
       return current;
     }
     try {
-      const saved = await upsertNote({
+      const saved = await saveNote({
         id: current.id,
         title: nextTitle,
         body: nextBody,
@@ -717,7 +705,7 @@ function NoteEditor({
       setSaveError(err instanceof Error ? err.message : String(err));
       return current;
     }
-  }, []);
+  }, [saveNote]);
 
   const saveNow = useCallback(() => {
     if (saveTimer.current != null) window.clearTimeout(saveTimer.current);
@@ -750,10 +738,9 @@ function NoteEditor({
       load: () => Promise<NoteImageAsset[]>,
       range: { start: number; end: number },
     ) => {
-      setImageBusy(true);
       setImageDrag(false);
       try {
-        const images = await load();
+        const images = await loadImages(load);
         const inserted = insertNoteImagesMarkdown(
           bodyRef.current,
           range.start,
@@ -771,11 +758,9 @@ function NoteEditor({
         });
       } catch (err: unknown) {
         setSaveError(err instanceof Error ? err.message : String(err));
-      } finally {
-        setImageBusy(false);
       }
     },
-    [editNote, scheduleSave],
+    [editNote, scheduleSave, loadImages],
   );
 
   useEffect(() => {

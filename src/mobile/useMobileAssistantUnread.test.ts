@@ -6,6 +6,7 @@ import type { BotMessage as AssistantMessage } from "../features/bots/model/botV
 import type { BotRpc as AssistantRpc } from "../features/bots/model/botRpc";
 import { markBotRead as markAssistantRead } from "../features/bots/model/botUnread";
 import { useMobileAssistantUnread } from "./useMobileAssistantUnread";
+import { queryClient } from "../shared/lib/queryClient";
 
 let root: Root, node: HTMLDivElement;
 let messages: AssistantMessage[];
@@ -21,6 +22,7 @@ const render = (hostKey = "host", active = true) => act(async () =>
 );
 const count = () => Number(node.textContent);
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   localStorage.clear();

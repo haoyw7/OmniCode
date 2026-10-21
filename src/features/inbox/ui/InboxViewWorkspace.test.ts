@@ -1,6 +1,7 @@
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { InboxView } from "./InboxView";
@@ -13,6 +14,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 let root: Root;
 let container: HTMLDivElement;
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
   container = document.createElement("div");

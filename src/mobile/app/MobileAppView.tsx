@@ -579,6 +579,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           }}
           archive={
             <MobileArchive
+              hostKey={client.connection?.endpoint}
               projects={projects}
               disabled={busy || !connected}
               loadSessions={onDrawerLoadSessions}

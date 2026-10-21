@@ -498,7 +498,6 @@
       "src/features/settings/model/appearance.ts -> @tauri-apps/api/core",
       "src/features/settings/model/hostPreferences.ts -> @tauri-apps/api/core",
       "src/features/settings/model/mcpInspect.ts -> @tauri-apps/api/core",
-      "src/features/settings/model/mcpSettingsCache.ts -> @tauri-apps/api/core",
       "src/features/settings/model/typography.ts -> @tauri-apps/api/core",
       "src/features/settings/model/uiScale.ts -> @tauri-apps/api/webview",
       "src/features/settings/ui/JiraSettings.tsx -> @tauri-apps/plugin-opener",

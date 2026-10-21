@@ -1,5 +1,16 @@
-import { Skeleton } from "../../../../shared/ui/primitives/Skeleton";
 import { IconButton } from "../../../../shared/ui/forms/IconButton";
+import { Button } from "../../../../shared/ui/forms/Button";
+import { Skeleton } from "../../../../shared/ui/primitives/Skeleton";
+import { withToast } from "../../../../shared/ui/primitives/Sonner";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  invalidateAfterChange,
+  queryClient,
+} from "../../../../shared/lib/queryClient";
+import {
+  gitKeys,
+  installGitQueryInvalidation,
+} from "../../../source-control/model/gitQueries";
 import { editorPreferenceExtensions } from "../editor/editorPreferences";
 import { subscribeEditorPreferences } from "../model/editorPreferences";
 import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
@@ -32,23 +43,24 @@ import {
   keymap,
   lineNumbers,
 } from "@codemirror/view";
-import {
-  AlertCircle,
-  Code,
-  Eye,
-  RotateCcw,
-} from "../../../../shared/ui/icons";
+import { AlertCircle, Code, Eye, RotateCcw } from "../../../../shared/ui/icons";
 import { minimalSetup } from "codemirror";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   MarkdownViewShell,
   useMarkdownMode,
 } from "../../../sessions/ui/MarkdownModeToggle";
 import { useColorScheme } from "../../../../shared/hooks/useColorScheme";
-import { useCodeThemePalette, useCodeThemes } from "../../../settings/model/codeAppearance";
+import {
+  useCodeThemePalette,
+  useCodeThemes,
+} from "../../../settings/model/codeAppearance";
 import { useLockOverscroll } from "../../../../shared/hooks/useLockOverscroll";
 import { isLightScheme } from "../../../settings/model/appearance";
-import { loadAutosave, loadFormatOnSave } from "../../../settings/model/settings";
+import {
+  loadAutosave,
+  loadFormatOnSave,
+} from "../../../settings/model/settings";
 import { formatText } from "../../../../shared/lib/format";
 import {
   basename,
@@ -57,9 +69,7 @@ import {
   gitStageContents,
   notifyGitChanged,
   readTextFile,
-  subscribeGitChanged,
   writeTextFile,
-  type GitFileDiffKind,
 } from "../../../../platform/tauri/fs";
 import { syncWatchedMtime, watchFile } from "../model/fileWatch";
 import { displayPath } from "../../../../shared/lib/paths";
@@ -88,16 +98,16 @@ import {
   EditorSelectionMenu,
   type EditorSelectionTarget,
 } from "./EditorSelectionMenu";
-import {
-  editorGit,
-  setGitOriginal,
-} from "../editor/editorGit";
+import { editorGit, setGitOriginal } from "../editor/editorGit";
 import { editorLint } from "../editor/editorLint";
 import { editorSearch } from "../editor/editorSearch";
 import { editorScrollbar } from "../editor/editorScrollbar";
 import { FilePreviewSearch } from "./FilePreviewSearch";
 import { FileBreadcrumb } from "./FileBreadcrumb";
-import { claimEditorResource, type EditorResource } from "../model/editorResource";
+import {
+  claimEditorResource,
+  type EditorResource,
+} from "../model/editorResource";
 
 type EditorNavigationRequest = EditorNavigation & { token: number };
 
@@ -119,15 +129,6 @@ type Props = {
   onOpenFile?: (path: string) => void;
 };
 
-type LoadState =
-  | { status: "loading" }
-  | { status: "ready"; content: string }
-  | { status: "error"; message: string };
-
-type SaveState =
-  | { status: "idle" | "saving" | "saved" }
-  | { status: "error"; message: string };
-
 export function FileEditor({
   path,
   cwd,
@@ -140,27 +141,28 @@ export function FileEditor({
   onOpenFile,
 }: Props) {
   const { t: uiT } = useTranslation();
-  const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
-  const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
-  const [reloadKey, setReloadKey] = useState(0);
+  const instanceId = useId();
+  // This is the accepted editor baseline, not a second remote-data cache.
+  // A dirty buffer must keep its baseline when a disk query finishes.
+  const [baseline, setBaseline] = useState<{ path: string; content: string }>();
   const [draft, setDraft] = useState("");
   const resource = useRef<EditorResource | undefined>(undefined);
+  const [lease, setLease] = useState<{
+    path: string;
+    resource: EditorResource;
+  }>();
   useEffect(() => {
     const lease = claimEditorResource(path);
     resource.current = lease;
+    setLease({ path, resource: lease });
+    dirtyRef.current = false;
+    pendingDiskRef.current = false;
     return () => {
       // React destroys the mounted editor in the same cleanup pass before this
       // release. Queued writes still own the file until their queue settles.
       void saveQueue.current.then(() => lease.release()).catch(() => {});
     };
   }, [path]);
-  const [gitBase, setGitBase] = useState<{
-    path: string;
-    original: string;
-    kind: GitFileDiffKind;
-    lineEnding: LineEnding;
-    eolOnly: boolean;
-  } | null>(null);
   const markdown = isMarkdownPath(path);
   const svg = isSvgPath(path);
   // Diff tabs open as source: the git gutter only renders in the editor.
@@ -180,114 +182,66 @@ export function FileEditor({
     setMode("source");
   }, [markdown, svg, navigation, setMode]);
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
-  const saveGeneration = useRef(0);
-  const loadGeneration = useRef(0);
   const dirtyRef = useRef(false);
   const pendingDiskRef = useRef(false);
   const eolRef = useRef<LineEnding>("\n");
-  const onDirtyChangeRef = useRef(onDirtyChange);
-  onDirtyChangeRef.current = onDirtyChange;
-
-  const applyDiskContent = useCallback((raw: string) => {
+  const diskQuery = useQuery(
+    {
+      queryKey: ["file-editor", instanceId, path],
+      enabled: lease?.path === path,
+      queryFn: async ({ signal }) => {
+        await lease!.resource.reclaim();
+        signal.throwIfAborted();
+        const content = await readTextFile(path);
+        signal.throwIfAborted();
+        return content;
+      },
+      gcTime: 0,
+      refetchOnWindowFocus: false,
+    },
+    queryClient,
+  );
+  const { refetch: refetchDisk } = diskQuery;
+  const reloadFromDisk = useCallback(() => refetchDisk(), [refetchDisk]);
+  useEffect(() => {
+    if (diskQuery.data === undefined) return;
+    if (dirtyRef.current) {
+      pendingDiskRef.current = true;
+      return;
+    }
+    pendingDiskRef.current = false;
     // CodeMirror documents are LF-only; keep the editor in that convention
     // and restore the file's own line endings on save. Feeding CRLF text
     // into the LF document doubles every line (see editorDoc.ts).
-    eolRef.current = detectLineEnding(raw);
-    const content = normalizeLineBreaks(raw);
-    setLoadState((current) => {
-      if (current.status === "ready" && current.content === content) {
-        return current;
-      }
-      return { status: "ready", content };
-    });
+    eolRef.current = detectLineEnding(diskQuery.data);
+    const content = normalizeLineBreaks(diskQuery.data);
+    setBaseline((current) =>
+      current?.path === path && current.content === content
+        ? current
+        : { path, content },
+    );
     setDraft(content);
-  }, []);
-
-  const reloadFromDisk = useCallback(
-    async (force = false) => {
-      const generation = ++loadGeneration.current;
-      try {
-        await resource.current?.reclaim();
-        const content = await readTextFile(path);
-        if (generation !== loadGeneration.current) return;
-        if (dirtyRef.current && !force) {
-          pendingDiskRef.current = true;
-          return;
-        }
-        pendingDiskRef.current = false;
-        if (force && dirtyRef.current) {
-          dirtyRef.current = false;
-          onDirtyChangeRef.current(path, false);
-        }
-        applyDiskContent(content);
-      } catch (error: unknown) {
-        if (generation !== loadGeneration.current) return;
-        if (dirtyRef.current && !force) {
-          pendingDiskRef.current = true;
-          return;
-        }
-        setLoadState({
-          status: "error",
-          message: error instanceof Error ? error.message : String(error),
-        });
-      }
-    },
-    [applyDiskContent, path],
-  );
-
+  }, [diskQuery.data, diskQuery.dataUpdatedAt, path]);
   useEffect(() => {
-    dirtyRef.current = false;
-    pendingDiskRef.current = false;
-    let cancelled = false;
-    setLoadState({ status: "loading" });
-    setSaveState({ status: "idle" });
-    const generation = ++loadGeneration.current;
-    void (reloadKey ? resource.current?.reclaim() : resource.current?.ready ?? Promise.resolve())?.then(() => readTextFile(path))
-      .then((content) => {
-        if (cancelled || generation !== loadGeneration.current) return;
-        applyDiskContent(content);
-      })
-      .catch((error: unknown) => {
-        if (cancelled || generation !== loadGeneration.current) return;
-        setLoadState({
-          status: "error",
-          message: error instanceof Error ? error.message : String(error),
-        });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [applyDiskContent, path, reloadKey]);
+    if (diskQuery.error && dirtyRef.current) pendingDiskRef.current = true;
+  }, [diskQuery.error, diskQuery.errorUpdatedAt]);
 
-  useEffect(() => {
-    if (!showDiff) {
-      setGitBase(null);
-      return;
-    }
-    const relative = displayPath(path, cwd);
-    if (!cwd || cwd === "~" || !relative || relative === path) {
-      setGitBase(null);
-      return;
-    }
-    let cancelled = false;
-    let generation = 0;
-    setGitBase(null);
-
-    const load = () => {
-      const request = ++generation;
-      void (async () => {
+  useEffect(installGitQueryInvalidation, []);
+  const relative = displayPath(path, cwd);
+  const gitQuery = useQuery(
+    {
+      queryKey: gitKeys.editorBase(cwd, path),
+      enabled:
+        showDiff && !!cwd && cwd !== "~" && !!relative && relative !== path,
+      queryFn: async () => {
         const { files } = await gitDiffFiles(cwd);
         const file = files.find((entry) => entry.relative === relative);
         // Normalized equality alone cannot distinguish autocrlf from a real change.
         const kind = file?.staged && !file.unstaged ? "staged" : "unstaged";
         const diff = await gitFileDiff(cwd, relative, kind);
-        if (cancelled || request !== generation) return;
-        if (diff.binary || diff.tooLarge) {
-          setGitBase(null);
-          return;
-        }
+        if (diff.binary || diff.tooLarge) return null;
         const original = normalizeLineBreaks(diff.original);
-        setGitBase({
+        return {
           path,
           original,
           kind,
@@ -296,48 +250,20 @@ export function FileEditor({
             !!(file?.staged || file?.unstaged) &&
             diff.original !== diff.current &&
             original === normalizeLineBreaks(diff.current),
-        });
-      })().catch(() => {
-        if (!cancelled && request === generation) setGitBase(null);
-      });
-    };
+        };
+      },
+    },
+    queryClient,
+  );
 
-    load();
-    const onFocus = () => {
-      if (!document.hidden) load();
-    };
-    const onGit = () => {
-      if (!document.hidden) load();
-    };
-    let timer = 0;
-    const onDisk = () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        load();
-        void reloadFromDisk();
-      }, 50);
-    };
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
-    const unsubGit = subscribeGitChanged(onGit);
-    const unsubWatch = watchFile(path, onDisk);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
-      unsubGit();
-      unsubWatch();
-    };
-  }, [cwd, path, reloadFromDisk, showDiff]);
-
-  const gitDiff = gitBase?.path === path ? gitBase : null;
+  const gitDiff = showDiff && !gitQuery.isError ? gitQuery.data : null;
   const gitOriginal = gitDiff?.original ?? null;
 
   useEffect(() => {
-    if (loadState.status !== "ready") return;
+    if (baseline?.path !== path) return;
     let timer = 0;
     const stop = watchFile(path, () => {
+      if (showDiff) void invalidateAfterChange(gitKeys.editorBase(cwd, path));
       if (dirtyRef.current) {
         pendingDiskRef.current = true;
         return;
@@ -351,12 +277,31 @@ export function FileEditor({
       window.clearTimeout(timer);
       stop();
     };
-  }, [loadState.status, path, reloadFromDisk]);
+  }, [baseline?.path, cwd, path, reloadFromDisk, showDiff]);
 
+  const saveMutation = useMutation(
+    {
+      mutationFn: ({
+        operation,
+        path: savedPath,
+      }: {
+        operation: Promise<unknown>;
+        path: string;
+      }) =>
+        withToast(
+          async () => {
+            await operation;
+            await syncWatchedMtime(savedPath);
+            notifyGitChanged();
+          },
+          { loading: uiT("Saving…"), success: false },
+        ),
+    },
+    queryClient,
+  );
+  const { mutateAsync: saveAsync, reset: resetSave } = saveMutation;
   const save = useCallback(
     async (content: string) => {
-      const generation = ++saveGeneration.current;
-      setSaveState({ status: "saving" });
       const serializedContent = restoreLineEnding(content, eolRef.current);
       const lease = resource.current;
       const operation = saveQueue.current.then(async () => {
@@ -364,24 +309,35 @@ export function FileEditor({
         return writeTextFile(path, serializedContent);
       });
       saveQueue.current = operation.catch(() => {});
-      try {
-        await operation;
-        await syncWatchedMtime(path);
-        notifyGitChanged();
-        if (generation === saveGeneration.current) {
-          setSaveState({ status: "saved" });
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (generation === saveGeneration.current) {
-          setSaveState({ status: "error", message });
-        }
-        throw error;
-      }
+      await saveAsync({ operation, path });
     },
-    [path],
+    [path, saveAsync],
   );
 
+  const stageMutation = useMutation(
+    {
+      mutationFn: async ({
+        cwd: stageCwd,
+        relative,
+        contents,
+      }: {
+        cwd: string;
+        relative: string;
+        contents: string;
+      }) => {
+        await withToast(
+          async () => {
+            // Keep the index convention outside the selected text hunk.
+            await gitStageContents(stageCwd, relative, contents);
+            notifyGitChanged();
+          },
+          { loading: uiT("Staging…"), success: false },
+        );
+      },
+    },
+    queryClient,
+  );
+  const { mutateAsync: stageAsync, reset: resetStage } = stageMutation;
   const stageGit = useCallback(
     async (contents: string) => {
       const relative = displayPath(path, cwd);
@@ -391,31 +347,29 @@ export function FileEditor({
       if (!gitDiff || gitDiff.kind !== "unstaged") {
         throw new Error("Only unstaged changes can be staged");
       }
-      try {
-        // Keep the index convention outside the selected text hunk.
-        await gitStageContents(
-          cwd,
-          relative,
-          restoreLineEnding(contents, gitDiff.lineEnding),
-        );
-        notifyGitChanged();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        setSaveState({ status: "error", message });
-        throw error;
-      }
+      // Capture the file and index EOL before the mutation can yield to navigation.
+      await stageAsync({
+        cwd,
+        relative,
+        contents: restoreLineEnding(contents, gitDiff.lineEnding),
+      });
     },
-    [cwd, path, gitDiff],
+    [cwd, path, gitDiff, stageAsync],
   );
+  const saving = saveMutation.isPending;
+  const saveError = saveMutation.error ?? stageMutation.error;
+  useEffect(() => {
+    resetSave();
+    resetStage();
+  }, [path, resetSave, resetStage]);
 
   const dirtyChange = useCallback(
     (dirty: boolean) => {
       dirtyRef.current = dirty;
       onDirtyChange(path, dirty);
       if (dirty) {
-        setSaveState((current) =>
-          current.status === "saving" ? current : { status: "idle" },
-        );
+        if (!saving) resetSave();
+        resetStage();
         return;
       }
       if (pendingDiskRef.current) {
@@ -423,7 +377,7 @@ export function FileEditor({
         void reloadFromDisk();
       }
     },
-    [onDirtyChange, path, reloadFromDisk],
+    [onDirtyChange, path, reloadFromDisk, resetSave, resetStage, saving],
   );
 
   const errorCountChange = useCallback(
@@ -435,7 +389,8 @@ export function FileEditor({
     ? path.slice(cwd.length + 1)
     : path;
 
-  if (loadState.status === "loading") {
+  const loadError = !dirtyRef.current ? diskQuery.error : null;
+  if (!loadError && (diskQuery.isPending || baseline?.path !== path)) {
     return (
       <div
         role="status"
@@ -449,26 +404,27 @@ export function FileEditor({
     );
   }
 
-  if (loadState.status === "error") {
+  if (loadError) {
     return (
       <div className="grid h-full place-items-center p-6">
         <div className="max-w-md text-center">
-          <AlertCircle className="mx-auto mb-3 size-5 text-red-400" />
+          <AlertCircle className="mx-auto mb-3 size-5 text-destructive" />
           <p className="text-[13px] text-content">
             {uiT("Couldn’t open ")}
             {basename(path)}
           </p>
           <p className="mt-1 text-[12px] leading-5 text-content/50">
-            {loadState.message}
+            {loadError instanceof Error ? loadError.message : String(loadError)}
           </p>
-          <button
+          <Button
             type="button"
-            onClick={() => setReloadKey((value) => value + 1)}
-            className="mx-auto mt-4 flex h-7 items-center gap-1.5 rounded-md bg-content/10 px-2.5 text-[12px] text-content hover:bg-content/15"
+            variant="secondary"
+            onClick={() => void reloadFromDisk()}
+            className="mx-auto mt-4"
           >
             <RotateCcw className="size-3" />
             {uiT("Retry")}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -476,9 +432,19 @@ export function FileEditor({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col">
-      {showPathHeader ? <FileBreadcrumb path={path} cwd={cwd} onOpenFile={onOpenFile}>
-        {markdown || svg ? <IconButton size="sm" label={uiT(mode === "preview" ? "Source" : "Preview")} onClick={() => setMode(mode === "preview" ? "source" : "preview")}>{mode === "preview" ? <Code /> : <Eye />}</IconButton> : null}
-      </FileBreadcrumb> : null}
+      {showPathHeader ? (
+        <FileBreadcrumb path={path} cwd={cwd} onOpenFile={onOpenFile}>
+          {markdown || svg ? (
+            <IconButton
+              size="sm"
+              label={uiT(mode === "preview" ? "Source" : "Preview")}
+              onClick={() => setMode(mode === "preview" ? "source" : "preview")}
+            >
+              {mode === "preview" ? <Code /> : <Eye />}
+            </IconButton>
+          ) : null}
+        </FileBreadcrumb>
+      ) : null}
       {showDiff && gitDiff?.eolOnly && (
         <p
           role="status"
@@ -513,10 +479,10 @@ export function FileEditor({
           source={
             <div className="flex h-full min-h-0 min-w-0 flex-col">
               <CodeMirrorEditor
-                key={`${path}:${reloadKey}`}
+                key={path}
                 path={path}
                 commentPath={relativePath}
-                value={loadState.content}
+                value={baseline!.content}
                 showDiff={showDiff}
                 gitOriginal={gitOriginal}
                 active={active && mode === "source"}
@@ -537,10 +503,10 @@ export function FileEditor({
         />
       ) : (
         <CodeMirrorEditor
-          key={`${path}:${reloadKey}`}
+          key={path}
           path={path}
           commentPath={relativePath}
-          value={loadState.content}
+          value={baseline!.content}
           showDiff={showDiff}
           gitOriginal={gitOriginal}
           active={active}
@@ -554,21 +520,29 @@ export function FileEditor({
           }
         />
       )}
-      {saveState.status !== "idle" ? <footer className="flex h-6 shrink-0 items-center justify-end border-t border-stroke px-2.5 font-mono text-[10.5px] text-content/40">
-        {saveState.status === "saving" ? (
-          <span>{uiT("Saving…")}</span>
-        ) : saveState.status === "saved" ? (
-          <span>{uiT("Saved")}</span>
-        ) : saveState.status === "error" ? (
-          <span
-            className="max-w-64 truncate text-red-400"
-            title={saveState.message}
-          >
-            {uiT("Save failed: ")}
-            {saveState.message}
-          </span>
-        ) : null}
-      </footer> : null}
+      {!saveMutation.isIdle || saveError ? (
+        <footer className="flex h-6 shrink-0 items-center justify-end border-t border-stroke px-2.5 font-mono text-[10.5px] text-content/40">
+          {saving ? (
+            <span>{uiT("Saving…")}</span>
+          ) : saveError ? (
+            <span
+              className="max-w-64 truncate text-destructive"
+              title={
+                saveError instanceof Error
+                  ? saveError.message
+                  : String(saveError)
+              }
+            >
+              {uiT("Save failed: ")}
+              {saveError instanceof Error
+                ? saveError.message
+                : String(saveError)}
+            </span>
+          ) : saveMutation.isSuccess ? (
+            <span>{uiT("Saved")}</span>
+          ) : null}
+        </footer>
+      ) : null}
     </div>
   );
 }

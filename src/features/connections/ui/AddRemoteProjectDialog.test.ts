@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { AddRemoteProjectDialog } from "./AddRemoteProjectDialog";
 import { remoteProjectFor } from "../model/remoteProjects";
 import { isLocalProject, looksLikeProject } from "../../projects/model/recents";
+import { queryClient } from "../../../shared/lib/queryClient";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 
@@ -61,6 +62,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   act(() => root.unmount());
+  queryClient.clear();
   container.remove();
   document.body.innerHTML = "";
   vi.unstubAllGlobals();
@@ -133,4 +135,21 @@ it("ignores a project that finishes opening after cancellation", async () => {
   await act(async () => button("Cancel").click());
   await act(async () => finish({ id: "late", cwd: "/home/me", name: "me" }));
   expect(opened).toEqual([]);
+});
+
+it("reports an open failure inline and allows retrying the same folder", async () => {
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  let fail = true;
+  vi.mocked(invoke).mockImplementation((command, input) => {
+    if (fail && (input as { method?: string } | undefined)?.method === "projects.open") {
+      fail = false;
+      return Promise.reject(new Error("Folder is unavailable"));
+    }
+    return original(command, input);
+  });
+  await render();
+  await act(async () => button("Open").click());
+  expect(document.body.querySelector('[role="alert"]')?.textContent).toBe("Folder is unavailable");
+  await act(async () => button("Open").click());
+  expect(opened).toEqual(["remote://env/home/me"]);
 });

@@ -1,9 +1,12 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { githubLinkItemQuery, githubLinkDetailsQuery } from "../model/linkPreviewQueries";
+import { linkMetadataQuery } from "../model/linkPreview";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { translate as translateUi } from "../../../shared/i18n/language";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
-  useCallback,
   useEffect,
   useId,
   useRef,
@@ -25,17 +28,11 @@ import { Popover } from "../../../shared/ui/Popover";
 import { Skeleton } from "../../../shared/ui/primitives/Skeleton";
 import {
   formatRelativeTime,
-  githubWorkItem,
-  githubWorkItemDetails,
-  peekGithubWorkItem,
-  peekGithubWorkItemDetails,
   type GithubWorkItem,
   type GithubWorkItemDetails,
 } from "../../inbox/model/githubTasks";
 import {
-  fetchLinkPreviewMetadata,
   type GithubWorkItemLink,
-  type LinkPreviewMetadata,
   type UserLink,
 } from "../model/linkPreview";
 
@@ -65,22 +62,10 @@ export function UserLinkPreview({
 
 function GenericLinkPreview({ link }: { link: UserLink }) {
   const { t: uiT } = useTranslation();
-  const [metadata, setMetadata] = useState<LinkPreviewMetadata | null>(null);
+  const { data: metadata } = useQuery(linkMetadataQuery(link.url), queryClient);
   const [faviconFailed, setFaviconFailed] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    setMetadata(null);
-    setFaviconFailed(false);
-    void fetchLinkPreviewMetadata(link.url)
-      .then((value) => {
-        if (!cancelled) setMetadata(value);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [link.url]);
+  useEffect(() => setFaviconFailed(false), [link.url]);
 
   const title = metadata?.title?.trim() || link.host;
   const favicon = faviconFailed ? null : metadata?.faviconDataUrl;
@@ -132,70 +117,22 @@ function GithubWorkItemPreview({
   const anchor = useRef<HTMLAnchorElement>(null);
   const openTimer = useRef<number | null>(null);
   const closeTimer = useRef<number | null>(null);
-  const mounted = useRef(true);
-  const requestStarted = useRef(false);
+  const [requested, setRequested] = useState(false);
   const tooltipId = useId();
   const [open, setOpen] = useState(false);
-  const [item, setItem] = useState<GithubWorkItem | null>(() =>
-    peekGithubWorkItem(workItem.repo, workItem.kind, workItem.number),
-  );
-  const [details, setDetails] = useState<GithubWorkItemDetails | null>(() =>
-    peekGithubWorkItemDetails(workItem.repo, workItem.kind, workItem.number),
-  );
-  const [loadState, setLoadState] = useState<
-    "idle" | "loading" | "ready" | "unavailable"
-  >(item || details ? "ready" : "idle");
+  const itemQuery = useQuery({ ...githubLinkItemQuery(cwd || ".", workItem), enabled: requested }, queryClient);
+  const detailsQuery = useQuery({ ...githubLinkDetailsQuery(cwd || ".", workItem), enabled: requested }, queryClient);
+  const item = itemQuery.data ?? null;
+  const details = detailsQuery.data ?? null;
+  const loadState = item || details ? "ready"
+    : !requested ? "idle" : itemQuery.isFetching || detailsQuery.isFetching ? "loading" : "unavailable";
 
   useEffect(() => {
-    mounted.current = true;
     return () => {
-      mounted.current = false;
       if (openTimer.current != null) window.clearTimeout(openTimer.current);
       if (closeTimer.current != null) window.clearTimeout(closeTimer.current);
     };
   }, []);
-
-  const load = useCallback(() => {
-    if (requestStarted.current) return;
-    requestStarted.current = true;
-    const cachedItem =
-      item ?? peekGithubWorkItem(workItem.repo, workItem.kind, workItem.number);
-    const cachedDetails =
-      details ??
-      peekGithubWorkItemDetails(workItem.repo, workItem.kind, workItem.number);
-    if (!cachedItem || !cachedDetails) setLoadState("loading");
-
-    void Promise.allSettled([
-      cachedItem
-        ? Promise.resolve(cachedItem)
-        : githubWorkItem(
-            cwd || ".",
-            workItem.repo,
-            workItem.kind,
-            workItem.number,
-          ),
-      cachedDetails
-        ? Promise.resolve(cachedDetails)
-        : githubWorkItemDetails(
-            cwd || ".",
-            workItem.repo,
-            workItem.kind,
-            workItem.number,
-          ),
-    ]).then(([itemResult, detailsResult]) => {
-      if (!mounted.current) return;
-      if (itemResult.status === "fulfilled") setItem(itemResult.value);
-      if (detailsResult.status === "fulfilled") {
-        setDetails(detailsResult.value);
-      }
-      setLoadState(
-        itemResult.status === "fulfilled" ||
-          detailsResult.status === "fulfilled"
-          ? "ready"
-          : "unavailable",
-      );
-    });
-  }, [cwd, details, item, workItem]);
 
   const clearOpenTimer = () => {
     if (openTimer.current == null) return;
@@ -211,7 +148,7 @@ function GithubWorkItemPreview({
     clearOpenTimer();
     clearCloseTimer();
     setOpen(true);
-    load();
+    setRequested(true);
   };
   const showAfterDelay = () => {
     clearCloseTimer();
@@ -219,7 +156,7 @@ function GithubWorkItemPreview({
     openTimer.current = window.setTimeout(() => {
       openTimer.current = null;
       setOpen(true);
-      load();
+      setRequested(true);
     }, HOVER_OPEN_DELAY_MS);
   };
   const hideAfterDelay = () => {

@@ -3,12 +3,14 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { TypographyCards } from "./TypographyCards";
-import { defaultAppearanceProfile, loadSystemFonts, type SystemFonts } from "../../../model/typography";
+import { defaultAppearanceProfile, type SystemFonts } from "../../../model/typography";
+import { invoke } from "@tauri-apps/api/core";
+import { queryClient } from "../../../../../shared/lib/queryClient";
 import type { AppearanceSettings } from "./useAppearanceSettings";
 
-vi.mock("../../../model/typography", async (importOriginal) => ({
-  ...await importOriginal<typeof import("../../../model/typography")>(),
-  loadSystemFonts: vi.fn(),
+vi.mock("@tauri-apps/api/core", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@tauri-apps/api/core")>(),
+  invoke: vi.fn(),
 }));
 
 let container: HTMLDivElement;
@@ -16,8 +18,9 @@ let root: Root;
 let resolveFonts: (fonts: SystemFonts) => void;
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  vi.mocked(loadSystemFonts).mockReturnValue(new Promise((resolve) => {
+  vi.mocked(invoke).mockReturnValue(new Promise((resolve) => {
     resolveFonts = resolve;
   }));
   container = document.createElement("div");
@@ -27,6 +30,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   await act(async () => root.unmount());
+  queryClient.clear();
   container.remove();
   vi.unstubAllGlobals();
 });

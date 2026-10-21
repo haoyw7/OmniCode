@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { act, createElement, Profiler } from "react";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { createRoot, type Root } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -95,6 +96,7 @@ function deferred<T>() {
 }
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
   startMotionClock();
@@ -229,7 +231,7 @@ describe("Settings skill preview", () => {
       const reload = deferred<DiscoveredSkill[]>();
       vi.mocked(invoke).mockImplementationOnce(() => reload.promise);
       await click("Refresh skills");
-      expect(opener.isConnected).toBe(false);
+      expect(opener.isConnected).toBe(true);
       await act(async () => reload.resolve(skills));
       const replacement = button(label);
       await click("Close skill preview");

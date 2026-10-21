@@ -1,3 +1,4 @@
+import { queryClient } from "../shared/lib/queryClient";
 import { readMobileDeviceInfo } from "./deviceInfo";
 import { ModelCatalogLoad } from "../features/connections/model/modelCatalogLoad";
 import { readMobileInstallationId } from "./deviceIdentity";
@@ -199,6 +200,8 @@ function sameCachedValue(left: unknown, right: unknown): boolean {
     Object.prototype.hasOwnProperty.call(next, key) && sameCachedValue(previous[key], next[key]));
 }
 
+let mobileClientQueryId = 0;
+
 export class MobileClient {
   private deviceInfo?: Promise<HostDeviceInfo | undefined>;
   connection?: Connection;
@@ -248,19 +251,55 @@ export class MobileClient {
       detail,
     });
   }
-  private snapshots = new Map<string, HostSession>();
+  private dataVisit = 0;
+  private dataKey(kind: string, id = "") { return ["mobileClient", this.queryId, kind, this.cacheEpoch, id] as const; }
+  private peekSnapshot(id: string) { return queryClient.getQueryData<HostSession>(this.dataKey("snapshot", id)); }
+  private cacheSnapshot(id: string, value: HostSession) { this.cacheData("snapshot", id, value); }
+  private dropSnapshot(id: string) { queryClient.removeQueries({ queryKey: this.dataKey("snapshot", id), exact: true }); }
+  private snapshotEntries(): [string, HostSession][] { return this.dataEntries<HostSession>("snapshot"); }
+  private peekSummaries(id: string) { return queryClient.getQueryData<HostSessionSummary[]>(this.dataKey("summaries", id)); }
+  private cacheSummaries(id: string, value: HostSessionSummary[]) { this.cacheData("summaries", id, value); }
+  private dropSummaries(id: string) { queryClient.removeQueries({ queryKey: this.dataKey("summaries", id), exact: true }); }
+  private summaryEntries(): [string, HostSessionSummary[]][] { return this.dataEntries<HostSessionSummary[]>("summaries"); }
+  private dataEntries<T>(kind: string): [string, T][] {
+    return queryClient.getQueryCache().findAll({ queryKey: ["mobileClient", this.queryId, kind, this.cacheEpoch] })
+      .filter(query => query.state.data !== undefined)
+      .sort((a, b) => Number(a.meta?.visited ?? 0) - Number(b.meta?.visited ?? 0))
+      .map(query => [query.queryKey[4] as string, query.state.data as T]);
+  }
+  private cacheData<T>(kind: string, id: string, value: T) {
+    const queryKey = this.dataKey(kind, id);
+    const query = queryClient.getQueryCache().build(queryClient, { queryKey, structuralSharing: false, gcTime: Infinity });
+    query.setOptions({ ...query.options, meta: { visited: ++this.dataVisit } });
+    queryClient.setQueryData(queryKey, value);
+  }
+  private projectSnapshot() { return queryClient.getQueryData<HostProject[]>(this.dataKey("projects")); }
+  private cacheProjects(value: HostProject[]) { this.cacheData("projects", "", value); }
+  private readQuery<T>(queryKey: readonly unknown[], queryFn: () => Promise<T>): Promise<T> {
+    const current = queryClient.getQueryCache().find({ queryKey, exact: true });
+    if (current?.state.fetchStatus === "fetching") return current.promise as Promise<T>;
+    void queryClient.fetchQuery({ queryKey, queryFn, gcTime: Infinity, structuralSharing: false }).catch(() => undefined);
+    const query = queryClient.getQueryCache().find({ queryKey, exact: true })!;
+    const result = query.promise as Promise<T>;
+    const release = () => {
+      if (queryClient.getQueryCache().find({ queryKey, exact: true }) === query)
+        queryClient.removeQueries({ queryKey, exact: true });
+    };
+    void result.then(release, release);
+    return result;
+  }
   // The LRU retains OFFLINE_SESSION_LIMIT transcripts; only the current and most recently read
   // conversation retain downloaded images. Late hydration never changes recency.
   private previewSessions = new Set<string>();
-  private sessionLoads = new Map<string, Promise<HostSession>>();
-  private previewLoads = new Map<string, Promise<HostSession | undefined>>();
-  private catalogs = new Map<string, { value: HostModelCatalog; expires: number }>();
-  private modelLoads = new Map<string, ModelCatalogLoad>();
-  private projectList?: HostProject[];
-  private projectLoad?: Promise<HostProject[]>;
+  private readonly queryId = ++mobileClientQueryId;
+  private catalogVisit = 0;
+  private modelQueryKey(key: string) { return ["mobileClient", this.queryId, "models", this.cacheEpoch, key] as const; }
+  private trimModelQueries() {
+    const entries = queryClient.getQueryCache().findAll({ queryKey: ["mobileClient", this.queryId, "models"] });
+    entries.sort((a, b) => Number(b.meta?.visited ?? 0) - Number(a.meta?.visited ?? 0));
+    for (const query of entries.slice(8)) if (query.state.fetchStatus !== "fetching") queryClient.removeQueries({ queryKey: query.queryKey, exact: true });
+  }
   private projectTurn = 0;
-  private summaries = new Map<string, HostSessionSummary[]>();
-  private summaryLoads = new Map<string, { turn: number; promise: Promise<HostSessionSummary[]> }>();
   private summariesEnvironmentId?: string;
   private summaryTurns = new Map<string, number>();
   private summaryWrite?: {
@@ -321,20 +360,21 @@ export class MobileClient {
     for (const entry of entries) {
       const value = entry.value;
       if (entry.kind === "session" && isOfflineSession(value, entry.id)) {
-        if (!this.snapshots.has(entry.id)) this.snapshots.set(entry.id, value);
-        if (this.snapshots.size > OFFLINE_SESSION_LIMIT) this.snapshots.delete(this.snapshots.keys().next().value!);
+        if (!!!this.peekSnapshot(entry.id)) this.cacheSnapshot(entry.id, value);
+        if (this.snapshotEntries().length > OFFLINE_SESSION_LIMIT) this.dropSnapshot(this.snapshotEntries()[0]![0]);
       } else if (entry.kind === "models" && isOfflineModels(value)) {
         // A persisted catalog is a preview, never proof that a provider is still available.
-        if (!this.catalogs.has(entry.id)) this.catalogs.set(entry.id, { value: { ...value, pending: [] }, expires: 0 });
-        if (this.catalogs.size > 8) this.catalogs.delete(this.catalogs.keys().next().value!);
+        const queryKey = this.modelQueryKey(entry.id);
+        if (!queryClient.getQueryData(queryKey)) queryClient.setQueryData(queryKey, { ...value, pending: [] }, { updatedAt: 0 });
+        this.trimModelQueries();
       } else if (entry.kind === "projects" && isOfflineProjects(value)) {
-        this.projectList ??= value;
+        if (!this.projectSnapshot()) this.cacheProjects(value);
       } else if (entry.kind === "summaries" && Array.isArray(value)) {
         this.summariesEnvironmentId = host;
         for (const item of value.slice(-SESSION_CACHE_PROJECT_LIMIT)) {
           if (!Array.isArray(item) || typeof item[0] !== "string" || !Array.isArray(item[1])) continue;
-          if (!this.summaries.has(item[0]))
-            this.summaries.set(item[0], item[1].map((row: unknown) => cachedSessionSummary(row, item[0]))
+          if (!!!this.peekSummaries(item[0]))
+            this.cacheSummaries(item[0], item[1].map((row: unknown) => cachedSessionSummary(row, item[0]))
               .filter((row): row is HostSessionSummary => row !== undefined));
         }
       }
@@ -342,36 +382,30 @@ export class MobileClient {
     if (entries.length) this.setConnectionStatus({ ...this.connectionStatus }, true);
   }
   cachedProjects(): HostProject[] | undefined {
-    return this.cacheReadable() ? this.projectList : undefined;
+    return this.cacheReadable() ? this.projectSnapshot() : undefined;
   }
   private clearCaches() {
     void this.flushOfflineCache();
     this.capabilities = [];
     this.cancelSummaryWrite();
     this.cacheEpoch += 1;
-    this.snapshots.clear();
+    queryClient.removeQueries({ queryKey: ["mobileClient", this.queryId], predicate: query =>
+      query.state.fetchStatus !== "fetching" || !["projectRead", "summaryRead", "sessionRead"].includes(String(query.queryKey[2])) });
     this.previewSessions.clear();
-    this.sessionLoads.clear();
-    this.previewLoads.clear();
-    this.catalogs.clear();
-    this.modelLoads.clear();
-    this.projectList = undefined;
-    this.projectLoad = undefined;
-    this.summaries.clear();
-    this.summaryLoads.clear();
+    queryClient.removeQueries({ queryKey: ["mobileClient", this.queryId, "models"] });
     this.summariesEnvironmentId = undefined;
     this.summaryTurns.clear();
   }
   private rememberSession(value: HostSession): HostSession {
-    const previousSnapshot = this.snapshots.get(value.session.id);
+    const previousSnapshot = this.peekSnapshot(value.session.id);
     if (!this.previewSessions.has(value.session.id)) value = withoutSessionPreviewData(value);
-    this.snapshots.delete(value.session.id);
-    this.snapshots.set(value.session.id, value);
-    if (this.snapshots.size > OFFLINE_SESSION_LIMIT)
-      this.snapshots.delete(this.snapshots.keys().next().value!);
+    this.dropSnapshot(value.session.id);
+    this.cacheSnapshot(value.session.id, value);
+    if (this.snapshotEntries().length > OFFLINE_SESSION_LIMIT)
+      this.dropSnapshot(this.snapshotEntries()[0]![0]);
     if (!previousSnapshot || previousSnapshot.revision !== value.revision || previousSnapshot.updatedAt !== value.updatedAt) {
       this.queueOffline({ kind: "session", id: value.session.id, value });
-      if (this.projectList) this.queueOffline({ kind: "projects", id: "", value: this.projectList });
+      if (this.projectSnapshot()) this.queueOffline({ kind: "projects", id: "", value: this.projectSnapshot() });
     }
     const sessions = this.cachedSessions(value.projectId) ?? [];
     const previous = sessions.find((item) => item.id === value.session.id);
@@ -399,15 +433,15 @@ export class MobileClient {
   }
   cachedSession(sessionId: string): HostSession | undefined {
     if (!this.cacheReadable()) return undefined;
-    const value = this.snapshots.get(sessionId);
+    const value = this.peekSnapshot(sessionId);
     if (value) {
-      if ([...this.snapshots.keys()].at(-1) !== sessionId) {
+      if ([...this.snapshotEntries().map(([id]) => id)].at(-1) !== sessionId) {
         this.queueOffline({ kind: "session", id: sessionId });
-        if (this.projectList) this.queueOffline({ kind: "projects", id: "" });
+        if (this.projectSnapshot()) this.queueOffline({ kind: "projects", id: "" });
       }
       this.retainSessionPreviews(sessionId);
-      this.snapshots.delete(sessionId);
-      this.snapshots.set(sessionId, value);
+      this.dropSnapshot(sessionId);
+      this.cacheSnapshot(sessionId, value);
     }
     return value;
   }
@@ -417,11 +451,11 @@ export class MobileClient {
     if (this.previewSessions.size <= 2) return;
     const oldest = this.previewSessions.values().next().value!;
     this.previewSessions.delete(oldest);
-    const snapshot = this.snapshots.get(oldest);
-    if (snapshot) this.snapshots.set(oldest, withoutSessionPreviewData(snapshot));
+    const snapshot = this.peekSnapshot(oldest);
+    if (snapshot) this.cacheSnapshot(oldest, withoutSessionPreviewData(snapshot));
     // In-flight transfer promises are shared only until they settle in
     // remoteAttachmentPreviews. They must not repopulate this evicted preview.
-    this.previewLoads.delete(oldest);
+    void queryClient.cancelQueries({ queryKey: this.dataKey("previewRead", oldest) });
   }
   private dispatching = false;
   private switchAttempt = 0;
@@ -761,23 +795,19 @@ export class MobileClient {
   }
 
   projects(): Promise<HostProject[]> {
-    if (this.projectLoad) return this.projectLoad;
-    const pending = this.loadProjects().finally(() => {
-      if (this.projectLoad === pending) this.projectLoad = undefined;
-    });
-    this.projectLoad = pending;
-    return pending;
+    return this.readQuery([...this.dataKey("projectRead"), this.projectTurn], () => this.loadProjects());
   }
   private async loadProjects() {
     const epoch = this.cacheEpoch;
-    const turn = ++this.projectTurn;
+    const turn = this.projectTurn;
     const projects = await this.rpc<HostProject[]>("projects.list");
     if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
     // Opening a project invalidates lists started before that mutation. Join
     // its replacement request instead of publishing the old project's list.
-    if (turn !== this.projectTurn) return this.projectList ?? this.projects();
-    if (this.projectList && sameCachedValue(this.projectList, projects)) return this.projectList;
-    this.projectList = projects;
+    if (turn !== this.projectTurn) return this.projectSnapshot() ?? this.projects();
+    const cached = this.projectSnapshot();
+    if (cached && sameCachedValue(cached, projects)) return cached;
+    this.cacheProjects(projects);
     this.queueOffline({ kind: "projects", id: "", value: projects });
     return projects;
   }
@@ -792,9 +822,8 @@ export class MobileClient {
     const project = await this.rpc<HostProject>("projects.open", { cwd: cwd.trim() });
     if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
     this.projectTurn += 1;
-    this.projectLoad = undefined;
-    if (this.projectList)
-      this.projectList = [...this.projectList.filter((item) => item.id !== project.id), project];
+    if (this.projectSnapshot())
+      this.cacheProjects([...this.projectSnapshot()!.filter((item) => item.id !== project.id), project]);
     return project;
   }
   /** A new projectless chat folder on the Host, listed as a project. */
@@ -803,9 +832,8 @@ export class MobileClient {
     const project = await this.rpc<HostProject>("projects.createChat");
     if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
     this.projectTurn += 1;
-    this.projectLoad = undefined;
-    if (this.projectList)
-      this.projectList = [...this.projectList.filter((item) => item.id !== project.id), project];
+    if (this.projectSnapshot())
+      this.cacheProjects([...this.projectSnapshot()!.filter((item) => item.id !== project.id), project]);
     return project;
   }
   /** Last known list, including a bounded preview restored for this Host. */
@@ -813,13 +841,13 @@ export class MobileClient {
     const connection = this.connection;
     if (!connection || connection.disabled || this.connectionStatus.reason === "identity") return undefined;
     if (this.summariesEnvironmentId !== connection.environmentId) {
-      this.summaries = readSessionCache(connection.environmentId);
+      for (const [id, rows] of readSessionCache(connection.environmentId)) this.cacheSummaries(id, rows);
       this.summariesEnvironmentId = connection.environmentId;
     }
-    const value = this.summaries.get(projectId);
+    const value = this.peekSummaries(projectId);
     if (value) {
-      this.summaries.delete(projectId);
-      this.summaries.set(projectId, value);
+      this.dropSummaries(projectId);
+      this.cacheSummaries(projectId, value);
     }
     return value;
   }
@@ -843,7 +871,7 @@ export class MobileClient {
       pending.environmentId !== this.connection?.environmentId ||
       pending.environmentId !== this.summariesEnvironmentId ||
       this.connection.disabled || this.connectionStatus.reason === "identity") return;
-    saveSessionCache(pending.environmentId, this.summaries);
+    saveSessionCache(pending.environmentId, new Map(this.summaryEntries()));
   };
   private scheduleSummaryWrite() {
     if (this.summaryWrite || !this.summariesEnvironmentId) return;
@@ -874,25 +902,20 @@ export class MobileClient {
     });
     if (previous?.length === shared.length && shared.every((item, index) => item === previous[index]))
       return previous;
-    this.summaries.delete(projectId);
-    this.summaries.set(projectId, shared);
-    if (this.summaries.size > SESSION_CACHE_PROJECT_LIMIT)
-      this.summaries.delete(this.summaries.keys().next().value!);
+    this.dropSummaries(projectId);
+    this.cacheSummaries(projectId, shared);
+    if (this.summaryEntries().length > SESSION_CACHE_PROJECT_LIMIT)
+      this.dropSummaries(this.summaryEntries()[0]![0]);
     this.scheduleSummaryWrite();
-    this.queueOffline({ kind: "summaries", id: "", value: [...this.summaries].map(([id, rows]) =>
+    this.queueOffline({ kind: "summaries", id: "", value: this.summaryEntries().map(([id, rows]) =>
       // A saved transcript must remain reachable even in a project with hundreds of rows.
-      [id, [...rows.filter(row => this.snapshots.has(row.id)), ...rows.filter(row => !this.snapshots.has(row.id))].slice(0, 100)]) });
+      [id, [...rows.filter(row => !!this.peekSnapshot(row.id)), ...rows.filter(row => !!!this.peekSnapshot(row.id))].slice(0, 100)]) });
     return shared;
   }
   sessions(projectId: string): Promise<HostSessionSummary[]> {
-    const current = this.summaryLoads.get(projectId);
-    if (current && current.turn === this.summaryTurns.get(projectId)) return current.promise;
-    const turn = this.nextSummaryTurn(projectId);
-    const promise = this.loadSummaries(projectId, turn).finally(() => {
-      if (this.summaryLoads.get(projectId)?.promise === promise) this.summaryLoads.delete(projectId);
-    });
-    this.summaryLoads.set(projectId, { turn, promise });
-    return promise;
+    const turn = this.summaryTurns.get(projectId) ?? 0;
+    this.summaryTurns.set(projectId, turn);
+    return this.readQuery([...this.dataKey("summaryRead", projectId), turn], () => this.loadSummaries(projectId, turn));
   }
   private async loadSummaries(projectId: string, turn: number) {
     const epoch = this.cacheEpoch;
@@ -944,47 +967,43 @@ export class MobileClient {
    * render its Agent and model lists immediately while `models` refreshes. */
   cachedModels(projectId?: string): HostModelCatalog | undefined {
     if (!this.cacheReadable()) return undefined;
-    const key = JSON.stringify(projectId ?? null);
-    const cached = this.catalogs.get(key);
-    if (!cached) return undefined;
-    if ([...this.catalogs.keys()].at(-1) !== key) this.queueOffline({ kind: "models", id: key });
-    this.catalogs.delete(key);
-    this.catalogs.set(key, cached);
-    return cached.value;
+    const key = JSON.stringify(projectId ?? null), queryKey = this.modelQueryKey(key);
+    const query = queryClient.getQueryCache().find({ queryKey, exact: true });
+    if (!query?.state.data) return undefined;
+    query.setOptions({ ...query.options, meta: { ...query.meta, visited: ++this.catalogVisit } });
+    this.queueOffline({ kind: "models", id: key });
+    return query.state.data as HostModelCatalog;
   }
   models(projectId?: string, refresh = false, onUpdate?: (catalog: HostModelCatalog) => void) {
-    const key = JSON.stringify(projectId ?? null);
-    const cached = this.cacheReadable() ? this.catalogs.get(key) : undefined;
-    if (!refresh && cached && Date.now() < cached.expires) {
-      onUpdate?.(cached.value);
-      return Promise.resolve(this.cachedModels(projectId)!);
-    }
-    if (cached) {
-      const preview = this.cachedModels(projectId)!;
-      onUpdate?.(preview);
-    }
-    const existing = this.modelLoads.get(key);
-    if (existing) return existing.observe(onUpdate);
+    const key = JSON.stringify(projectId ?? null), queryKey = this.modelQueryKey(key);
+    const cached = this.cachedModels(projectId);
+    if (cached) onUpdate?.(cached);
+    const ttl = cached?.pending?.length ? 0 : cached && Object.keys(cached.errors).length ? 15_000 : 5 * 60_000;
     const epoch = this.cacheEpoch;
-    const load = new ModelCatalogLoad(async params => {
+    let latest = cached;
+    const stop = onUpdate ? queryClient.getQueryCache().subscribe(event => {
+      if (event.type !== "updated" || JSON.stringify(event.query.queryKey) !== JSON.stringify(queryKey)) return;
+      const value = event.query.state.data as HostModelCatalog | undefined;
+      if (value && value !== latest) { latest = value; onUpdate(value); }
+    }) : undefined;
+    return queryClient.fetchQuery({
+      queryKey, staleTime: refresh ? 0 : ttl, structuralSharing: false, meta: { visited: ++this.catalogVisit },
+      queryFn: ({ signal }) => new ModelCatalogLoad(async params => {
+        signal.throwIfAborted();
+        if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
+        const value = await this.rpc<HostModelCatalog>("models.list", { ...(projectId === undefined ? {} : { projectId }), ...params });
+        signal.throwIfAborted();
+        if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
+        return value;
+      }, value => {
+        queryClient.setQueryData(queryKey, value);
+        this.queueOffline({ kind: "models", id: key, value });
+        this.trimModelQueries();
+      }).promise,
+    }).catch(error => {
       if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
-      const value = await this.rpc<HostModelCatalog>("models.list", { ...(projectId === undefined ? {} : { projectId }), ...params });
-      if (epoch !== this.cacheEpoch) throw new Error(translate("Host connection changed."));
-      return value;
-    }, value => {
-      // The Host caches each provider, so a partial catalog is retried sooner
-      // without discarding the providers that already answered.
-      const ttl = value.pending?.length ? 0 : Object.keys(value.errors).length ? 15_000 : 5 * 60_000;
-      this.catalogs.delete(key);
-      this.catalogs.set(key, { value, expires: Date.now() + ttl });
-      this.queueOffline({ kind: "models", id: key, value });
-      if (this.catalogs.size > 8)
-        this.catalogs.delete(this.catalogs.keys().next().value!);
-    });
-    const clear = () => { if (this.modelLoads.get(key) === load) this.modelLoads.delete(key); };
-    void load.promise.then(clear, clear);
-    this.modelLoads.set(key, load);
-    return load.observe(onUpdate);
+      throw error;
+    }).finally(() => { stop?.(); this.trimModelQueries(); });
   }
   async providerAccounts(): Promise<HostProviderAccounts | null> {
     const epoch = this.cacheEpoch;
@@ -1073,61 +1092,43 @@ export class MobileClient {
 
   async session(sessionId: string, minimumRevision?: number): Promise<HostSession> {
     this.retainSessionPreviews(sessionId);
-    const existing = this.sessionLoads.get(sessionId);
-    if (existing) {
-      const result = await existing;
-      // A command may settle while a pre-command poll is still in flight.
-      return minimumRevision !== undefined && result.revision < minimumRevision
-        ? this.session(sessionId, minimumRevision) : result;
+    const queryKey = this.dataKey("sessionRead", sessionId);
+    const current = queryClient.getQueryCache().find({ queryKey, exact: true });
+    if (current?.state.fetchStatus === "fetching") {
+      const result = await current.promise as HostSession;
+      return minimumRevision !== undefined && result.revision < minimumRevision ? this.session(sessionId, minimumRevision) : result;
     }
     const connection = this.connection;
     if (!connection) throw new Error("Connect to a Host first.");
-    const epoch = this.cacheEpoch;
-    const known = this.cachedSession(sessionId);
-    let pending!: Promise<HostSession>;
-    pending = (async () => {
+    const epoch = this.cacheEpoch, known = this.cachedSession(sessionId);
+    return this.readQuery(queryKey, async () => {
       const sync = await this.sync(connection, sessionId, known?.revision);
       let result: HostSession;
-      try {
-        result = applySessionSync(known, sync);
-      } catch {
-        result = applySessionSync(undefined, await this.sync(connection, sessionId));
-      }
-      if (epoch !== this.cacheEpoch || this.sessionLoads.get(sessionId) !== pending)
-        throw new Error(translate("Conversation request is no longer current."));
-      if (result.session.id !== sessionId)
-        throw new Error(translate("Host returned a different conversation."));
-      return this.rememberSession(reuseRemoteAttachmentPreviews(result, this.snapshots.get(sessionId)));
-    })().finally(() => {
-      if (this.sessionLoads.get(sessionId) === pending) this.sessionLoads.delete(sessionId);
+      try { result = applySessionSync(known, sync); }
+      catch { result = applySessionSync(undefined, await this.sync(connection, sessionId)); }
+      if (epoch !== this.cacheEpoch) throw new Error(translate("Conversation request is no longer current."));
+      if (result.session.id !== sessionId) throw new Error(translate("Host returned a different conversation."));
+      return this.rememberSession(reuseRemoteAttachmentPreviews(result, this.peekSnapshot(sessionId)));
+    }).catch(error => {
+      if (epoch !== this.cacheEpoch) throw new Error(translate("Conversation request is no longer current."));
+      throw error;
     });
-    this.sessionLoads.set(sessionId, pending);
-    return pending;
   }
 
   async sessionPreviews(sessionId: string): Promise<HostSession | undefined> {
-    const existing = this.previewLoads.get(sessionId);
-    if (existing) return existing;
-    const known = this.snapshots.get(sessionId);
-    const connection = this.connection;
-    if (!known || !connection || !this.previewSessions.has(sessionId) || ![...walkTranscript(known.session.blocks)].some((block) =>
-      block.attachments?.some((file) => file.kind === "image" &&
-        file.data === undefined && !file.previewUrl && file.size <= MOBILE_ATTACHMENT_BYTES)))
-      return known;
+    const known = this.peekSnapshot(sessionId), connection = this.connection;
+    if (!known || !connection || !this.previewSessions.has(sessionId) || ![...walkTranscript(known.session.blocks)].some(block =>
+      block.attachments?.some(file => file.kind === "image" && file.data === undefined && !file.previewUrl && file.size <= MOBILE_ATTACHMENT_BYTES))) return known;
     const epoch = this.cacheEpoch;
-    const pending = withRemoteAttachmentPreviews(
-      connection.environmentId, known, known,
-      (params) => this.requestWith(connection, "attachments.read", params),
-    ).then((hydrated) => {
-      const current = this.snapshots.get(sessionId);
-      if (!current || epoch !== this.cacheEpoch || this.previewLoads.get(sessionId) !== pending)
-        return undefined;
+    const value = await queryClient.fetchQuery({ queryKey: this.dataKey("previewRead", sessionId), gcTime: 0, structuralSharing: false, queryFn: async ({ signal }) => {
+      const hydrated = await withRemoteAttachmentPreviews(connection.environmentId, known, known,
+        params => this.requestWith(connection, "attachments.read", params));
+      const current = this.peekSnapshot(sessionId);
+      signal.throwIfAborted();
+      if (!current || epoch !== this.cacheEpoch) return null;
       return this.rememberSession(reuseRemoteAttachmentPreviews(current, hydrated));
-    }).finally(() => {
-      if (this.previewLoads.get(sessionId) === pending) this.previewLoads.delete(sessionId);
-    });
-    this.previewLoads.set(sessionId, pending);
-    return pending;
+    } }).catch(() => null);
+    return value ?? undefined;
   }
   /**
    * The journal only changes through this client, so one Keystore read serves

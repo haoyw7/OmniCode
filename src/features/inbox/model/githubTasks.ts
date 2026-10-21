@@ -1,3 +1,5 @@
+import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
+import { fetchInboxSource, inboxSourceKey, invalidateInboxSource, peekInboxSource } from "./inboxSourceQueries";
 import { invoke } from "@tauri-apps/api/core";
 import { clearKnownInboxItems } from "./inboxSeen";
 import {
@@ -9,7 +11,6 @@ import {
   type LinearIssue,
 } from "./linear";
 import {
-  clearJiraCache,
   jiraConnected,
   jiraProjectIdsForFetch,
   listJiraIssues,
@@ -18,7 +19,6 @@ import {
   type JiraIssue,
 } from "./jira";
 import {
-  clearGitlabCache,
   gitlabConnected,
   gitlabRepo,
   listGitlabTodos,
@@ -28,7 +28,6 @@ import {
 import {
   azureDevOpsConnected,
   azureDevOpsRepo,
-  clearAzureDevOpsCache,
   listAzureDevOpsTodos,
   listAzureDevOpsWorkItems,
   type AzureDevOpsWorkItem,
@@ -177,62 +176,25 @@ const INBOX_CACHE_FRESH_MS = 2 * 60_000;
 /** Closed history competes for the same slots, so an unfiltered fetch needs the wider page. */
 const INBOX_ALL_LIMIT = 100;
 
-type InboxListCache = InboxListResult & {
-  key: string;
-  fetchedAt: number;
-};
-
-let inboxListCache: InboxListCache | null = null;
-let inboxCacheGeneration = 0;
-const inboxListInflight = new Map<string, Promise<InboxListResult>>();
-const repoByPath = new Map<string, string>();
-const repositoriesByPath = new Map<string, string[]>();
-/**
- * Projects without a GitHub remote fail discovery. Remember that for a while,
- * or every inbox refresh asks the backend again for each of them.
- */
 const REPOSITORY_FAILURE_TTL_MS = 5 * 60_000;
-const repositoryFailures = new Map<string, { at: number; error: unknown }>();
-const workItemByKey = new Map<string, GithubWorkItem>();
-const workItemInflight = new Map<string, Promise<GithubWorkItem>>();
-const detailsByKey = new Map<string, GithubWorkItemDetails>();
-const detailsInflight = new Map<string, Promise<GithubWorkItemDetails>>();
-const threadByKey = new Map<string, GithubWorkItemThread>();
-const threadInflight = new Map<string, Promise<GithubWorkItemThread>>();
-const prDiffByKey = new Map<string, GithubPrDiff>();
-const prDiffInflight = new Map<string, Promise<GithubPrDiff>>();
-/** When each details, thread and diff entry last arrived, by cache map key. */
-const fetchedAt = new Map<string, number>();
 
 /** Work item views can reuse anything fetched this recently instead of refetching. */
 export const GITHUB_WORK_ITEM_FRESH_MS = 30_000;
 
-function freshEnough(key: string, maxAgeMs: number | undefined): boolean {
-  if (maxAgeMs == null) return false;
-  const at = fetchedAt.get(key);
-  return at != null && Date.now() - at < maxAgeMs;
-}
-
 export function clearInboxCache() {
-  inboxCacheGeneration += 1;
-  clearJiraCache();
+  queryClient.removeQueries({ queryKey: ["inboxSource"] });
   clearKnownInboxItems();
-  inboxListCache = null;
-  inboxListInflight.clear();
-  repoByPath.clear();
-  repositoriesByPath.clear();
-  repositoryFailures.clear();
-  workItemByKey.clear();
-  workItemInflight.clear();
-  detailsByKey.clear();
-  detailsInflight.clear();
-  fetchedAt.clear();
-  threadByKey.clear();
-  threadInflight.clear();
-  prDiffByKey.clear();
-  prDiffInflight.clear();
-  clearGitlabCache();
-  clearAzureDevOpsCache();
+  for (const queryKey of [
+    ["inbox", "list"], ["inbox", "detail"], ["inbox", "item"],
+    ["inbox", "linearTeams"], ["inbox", "jiraProjects"], ["linkPreview", "github"],
+  ]) {
+    void queryClient.cancelQueries({ queryKey });
+    for (const query of queryClient.getQueryCache().findAll({ queryKey })) {
+      // resetQueries would restore initialData captured from the previous account.
+      query.setState({ data: undefined, dataUpdatedAt: 0, error: null, status: "pending", isInvalidated: true });
+    }
+    void invalidateAfterChange(queryKey);
+  }
 }
 
 export function inboxListCacheKey(
@@ -252,9 +214,8 @@ export function peekInboxList(
   projects: readonly { path: string }[],
   query: InboxQuery,
 ): InboxListResult | null {
-  const key = inboxListCacheKey(projects, query);
-  if (inboxListCache?.key !== key) return null;
-  return { items: inboxListCache.items, errors: inboxListCache.errors };
+  return peekInboxSource<InboxListResult>(inboxSourceKey("github", "list", inboxListCacheKey(projects, query)));
+
 }
 
 export function inboxListIsFresh(
@@ -262,11 +223,9 @@ export function inboxListIsFresh(
   query: InboxQuery,
   now = Date.now(),
 ): boolean {
-  const key = inboxListCacheKey(projects, query);
-  return (
-    inboxListCache?.key === key &&
-    now - inboxListCache.fetchedAt < INBOX_CACHE_FRESH_MS
-  );
+  const state = queryClient.getQueryState(inboxSourceKey("github", "list", inboxListCacheKey(projects, query)));
+  return !!state?.data && !state.isInvalidated && now - state.dataUpdatedAt < INBOX_CACHE_FRESH_MS;
+
 }
 
 export function githubStatus(): Promise<GithubStatus> {
@@ -275,37 +234,22 @@ export function githubStatus(): Promise<GithubStatus> {
 
 export async function githubRepo(cwd: string): Promise<string> {
   const key = normalizeProjectPath(cwd);
-  const cached = repoByPath.get(key);
-  if (cached !== undefined) return cached;
-  const repositories = repositoriesByPath.get(key);
+  const repositories = queryClient.getQueryData<string[]>(inboxSourceKey("github", "repositories", key));
   if (repositories?.[0]) return repositories[0];
-  const repo = await invoke<string>("git_github_repo", { cwd });
-  repoByPath.set(key, repo);
-  return repo;
+  return fetchInboxSource(inboxSourceKey("github", "repo", key), () => invoke<string>("git_github_repo", { cwd }), { maxAgeMs: Infinity });
+
 }
 
 export async function githubRepositories(cwd: string): Promise<string[]> {
-  const key = normalizeProjectPath(cwd);
-  const cached = repositoriesByPath.get(key);
-  if (cached) return cached;
-  const failure = repositoryFailures.get(key);
-  if (failure && Date.now() - failure.at < REPOSITORY_FAILURE_TTL_MS) {
-    throw failure.error;
-  }
-  let repositories: string[];
-  try {
-    repositories = await invoke<string[]>("git_github_repositories", { cwd });
-    if (repositories.length === 0) {
-      throw new Error("GitHub did not return a repository");
-    }
-  } catch (error) {
-    repositoryFailures.set(key, { at: Date.now(), error });
-    throw error;
-  }
-  repositoryFailures.delete(key);
-  repositoriesByPath.set(key, repositories);
-  repoByPath.set(key, repositories[0]!);
-  return repositories;
+  const queryKey = inboxSourceKey("github", "repositories", normalizeProjectPath(cwd));
+  const state = queryClient.getQueryState<string[]>(queryKey);
+  if (state?.status === "error" && Date.now() - state.errorUpdatedAt < REPOSITORY_FAILURE_TTL_MS) throw state.error;
+  return fetchInboxSource(queryKey, async () => {
+    const repositories = await invoke<string[]>("git_github_repositories", { cwd });
+    if (!repositories.length) throw new Error("GitHub did not return a repository");
+    return repositories;
+  }, { maxAgeMs: Infinity });
+
 }
 
 export function listGithubWorkItems(
@@ -337,7 +281,7 @@ export function peekGithubWorkItem(
   kind: GithubTaskKind,
   number: number,
 ): GithubWorkItem | null {
-  return workItemByKey.get(workItemLookupKey(repo, kind, number)) ?? null;
+  return peekInboxSource<GithubWorkItem>(inboxSourceKey("github", "item", workItemLookupKey(repo, kind, number)));
 }
 
 /** Fetch one exact item after targeted Inbox navigation misses its list cache. */
@@ -348,26 +292,9 @@ export function githubWorkItem(
   number: number,
   options?: { force?: boolean },
 ): Promise<GithubWorkItem> {
-  const key = workItemLookupKey(repo, kind, number);
-  const cached = workItemByKey.get(key);
-  if (cached && !options?.force) return Promise.resolve(cached);
-  const pending = workItemInflight.get(key);
-  if (pending) return pending;
-  const promise = invoke<GithubWorkItem>("git_github_work_item", {
-    cwd,
-    repo,
-    kind,
-    number,
-  })
-    .then((item) => {
-      workItemByKey.set(key, item);
-      return item;
-    })
-    .finally(() => {
-      if (workItemInflight.get(key) === promise) workItemInflight.delete(key);
-    });
-  workItemInflight.set(key, promise);
-  return promise;
+  return fetchInboxSource(inboxSourceKey("github", "item", workItemLookupKey(repo, kind, number)),
+    () => invoke<GithubWorkItem>("git_github_work_item", { cwd, repo, kind, number }), { ...options, maxAgeMs: Infinity });
+
 }
 
 export function formatGithubQuery(query: GithubWorkItemQuery): string {
@@ -457,7 +384,7 @@ export function peekGithubWorkItemDetails(
   kind: GithubTaskKind,
   number: number,
 ): GithubWorkItemDetails | null {
-  return detailsByKey.get(detailsCacheKey(repo, kind, number)) ?? null;
+  return peekInboxSource<GithubWorkItemDetails>(inboxSourceKey("github", "details", detailsCacheKey(repo, kind, number)));
 }
 
 export async function githubWorkItemDetails(
@@ -467,27 +394,9 @@ export async function githubWorkItemDetails(
   number: number,
   options?: { maxAgeMs?: number },
 ): Promise<GithubWorkItemDetails> {
-  const key = detailsCacheKey(repo, kind, number);
-  const cached = detailsByKey.get(key);
-  if (cached && freshEnough(`details:${key}`, options?.maxAgeMs)) {
-    return cached;
-  }
-  const pending = detailsInflight.get(key);
-  if (pending) return pending;
-  const promise = invoke<GithubWorkItemDetails>(
-    "git_github_work_item_details",
-    { cwd, repo, kind, number },
-  )
-    .then((details) => {
-      detailsByKey.set(key, details);
-      fetchedAt.set(`details:${key}`, Date.now());
-      return details;
-    })
-    .finally(() => {
-      if (detailsInflight.get(key) === promise) detailsInflight.delete(key);
-    });
-  detailsInflight.set(key, promise);
-  return promise;
+  return fetchInboxSource(inboxSourceKey("github", "details", detailsCacheKey(repo, kind, number)),
+    () => invoke<GithubWorkItemDetails>("git_github_work_item_details", { cwd, repo, kind, number }), options);
+
 }
 
 export function peekGithubWorkItemThread(
@@ -495,7 +404,7 @@ export function peekGithubWorkItemThread(
   kind: GithubTaskKind,
   number: number,
 ): GithubWorkItemThread | null {
-  return threadByKey.get(detailsCacheKey(repo, kind, number)) ?? null;
+  return peekInboxSource<GithubWorkItemThread>(inboxSourceKey("github", "thread", detailsCacheKey(repo, kind, number)));
 }
 
 export async function githubWorkItemThread(
@@ -505,33 +414,9 @@ export async function githubWorkItemThread(
   number: number,
   options?: { force?: boolean; maxAgeMs?: number },
 ): Promise<GithubWorkItemThread> {
-  const key = detailsCacheKey(repo, kind, number);
-  if (options?.force) {
-    threadByKey.delete(key);
-    threadInflight.delete(key);
-  }
-  const cached = threadByKey.get(key);
-  if (cached && freshEnough(`thread:${key}`, options?.maxAgeMs)) {
-    return cached;
-  }
-  const pending = threadInflight.get(key);
-  if (pending) return pending;
-  const promise = invoke<GithubWorkItemThread>("git_github_work_item_thread", {
-    cwd,
-    repo,
-    kind,
-    number,
-  })
-    .then((thread) => {
-      threadByKey.set(key, thread);
-      fetchedAt.set(`thread:${key}`, Date.now());
-      return thread;
-    })
-    .finally(() => {
-      if (threadInflight.get(key) === promise) threadInflight.delete(key);
-    });
-  threadInflight.set(key, promise);
-  return promise;
+  return fetchInboxSource(inboxSourceKey("github", "thread", detailsCacheKey(repo, kind, number)),
+    () => invoke<GithubWorkItemThread>("git_github_work_item_thread", { cwd, repo, kind, number }), options);
+
 }
 
 export async function githubWorkItemComment(
@@ -551,8 +436,7 @@ export async function githubWorkItemComment(
     inReplyTo: options?.inReplyTo?.trim() ?? "",
   });
   const key = detailsCacheKey(repo, kind, number);
-  threadByKey.delete(key);
-  threadInflight.delete(key);
+  await invalidateInboxSource(inboxSourceKey("github", "thread", key));
   recordInboxSelfActivity({ provider: "github", kind, number, repo });
   return url;
 }
@@ -571,20 +455,20 @@ export async function githubPrAction(
     action,
   });
   const key = workItemLookupKey(repo, "pr", number);
-  workItemByKey.set(key, item);
-  if (inboxListCache) {
-    inboxListCache = {
-      ...inboxListCache,
-      items: inboxListCache.items.map((cached) =>
-        cached.provider === "github" &&
-        cached.kind === "pr" &&
-        cached.repo.toLowerCase() === repo.trim().toLowerCase() &&
-        cached.number === number
-          ? { ...cached, ...item }
-          : cached,
-      ),
-    };
+  await queryClient.cancelQueries({ queryKey: inboxSourceKey("github", "item", key) });
+  queryClient.setQueryData(inboxSourceKey("github", "item", key), item);
+  for (const query of queryClient.getQueryCache().findAll({ queryKey: ["linkPreview", "github"] })) {
+    const [, , , previewRepo, kind, previewNumber, part] = query.queryKey;
+    if (String(previewRepo).toLowerCase() !== repo.trim().toLowerCase() || kind !== "pr" || previewNumber !== number) continue;
+    await queryClient.cancelQueries({ queryKey: query.queryKey, exact: true });
+    if (part === "item") queryClient.setQueryData(query.queryKey, item);
+    else void invalidateAfterChange(query.queryKey);
   }
+  queryClient.setQueriesData<InboxListResult>({ queryKey: ["inboxSource", "github", "list"] }, current => current && ({
+    ...current, items: current.items.map(cached =>
+      cached.provider === "github" && cached.kind === "pr" && cached.repo.toLowerCase() === repo.trim().toLowerCase() && cached.number === number
+        ? { ...cached, ...item } : cached),
+  }));
   recordInboxSelfActivity({ provider: "github", kind: "pr", repo, number });
   return item;
 }
@@ -665,7 +549,7 @@ export function peekGithubPrDiff(
   number: number,
   fullContext = false,
 ): GithubPrDiff | null {
-  return prDiffByKey.get(prDiffCacheKey(repo, number, fullContext)) ?? null;
+  return peekInboxSource<GithubPrDiff>(inboxSourceKey("github", "diff", prDiffCacheKey(repo, number, fullContext)));
 }
 
 export async function githubPrDiff(
@@ -675,27 +559,9 @@ export async function githubPrDiff(
   options?: { fullContext?: boolean; maxAgeMs?: number },
 ): Promise<GithubPrDiff> {
   const fullContext = options?.fullContext === true;
-  const key = prDiffCacheKey(repo, number, fullContext);
-  const cached = prDiffByKey.get(key);
-  if (cached && freshEnough(`diff:${key}`, options?.maxAgeMs)) return cached;
-  const pending = prDiffInflight.get(key);
-  if (pending) return pending;
-  const promise = invoke<GithubPrDiff>("git_github_pr_diff", {
-    cwd,
-    repo,
-    number,
-    fullContext,
-  })
-    .then((diff) => {
-      prDiffByKey.set(key, diff);
-      fetchedAt.set(`diff:${key}`, Date.now());
-      return diff;
-    })
-    .finally(() => {
-      if (prDiffInflight.get(key) === promise) prDiffInflight.delete(key);
-    });
-  prDiffInflight.set(key, promise);
-  return promise;
+  return fetchInboxSource(inboxSourceKey("github", "diff", prDiffCacheKey(repo, number, fullContext)),
+    () => invoke<GithubPrDiff>("git_github_pr_diff", { cwd, repo, number, fullContext }), options);
+
 }
 
 export async function listInboxItems(
@@ -703,41 +569,16 @@ export async function listInboxItems(
   query: InboxQuery,
   options?: { force?: boolean },
 ): Promise<InboxListResult> {
-  const key = inboxListCacheKey(projects, query);
-  if (!options?.force && inboxListIsFresh(projects, query)) {
-    return peekInboxList(projects, query) ?? { items: [], errors: {} };
-  }
-  const pending = inboxListInflight.get(key);
-  if (pending) return pending;
-  const generation = inboxCacheGeneration;
-  const promise = fetchInboxItems(projects, query)
-    .then((result) => {
-      // Keep the last GitHub snapshot usable while the backend waits for a
-      // rate-limit reset. Other providers can continue refreshing normally.
-      if (result.errors.github && inboxListCache?.key === key) {
-        result = {
-          ...result,
-          items: dedupeInboxItems(
-            [
-              ...result.items,
-              ...inboxListCache.items.filter(
-                (item) => item.provider === "github",
-              ),
-            ],
-            projects.map((project) => project.path),
-          ),
-        };
-      }
-      if (generation === inboxCacheGeneration) {
-        inboxListCache = { key, ...result, fetchedAt: Date.now() };
-      }
-      return result;
-    })
-    .finally(() => {
-      if (inboxListInflight.get(key) === promise) inboxListInflight.delete(key);
-    });
-  inboxListInflight.set(key, promise);
-  return promise;
+  const queryKey = inboxSourceKey("github", "list", inboxListCacheKey(projects, query));
+  return fetchInboxSource(queryKey, async () => {
+    let result = await fetchInboxItems(projects, query);
+    const previous = queryClient.getQueryData<InboxListResult>(queryKey);
+    if (result.errors.github && previous) result = { ...result, items: dedupeInboxItems([
+      ...result.items, ...previous.items.filter(item => item.provider === "github"),
+    ], projects.map(project => project.path)) };
+    return result;
+  }, { ...options, maxAgeMs: INBOX_CACHE_FRESH_MS });
+
 }
 
 async function fetchInboxItems(

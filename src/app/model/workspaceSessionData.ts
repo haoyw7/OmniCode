@@ -1,3 +1,4 @@
+import { queryClient } from "../../shared/lib/queryClient";
 import {
   isRemoteProjectPath,
   sameProjectPath,
@@ -45,15 +46,21 @@ const SAVE_DELAY_MS = 650;
 const SAVE_MAX_WAIT_MS = 5_000;
 
 /** Owns desktop session reads, retained transcripts, summary state and save scheduling. */
+let sessionDataQueryId = 0;
+
 export class WorkspaceSessionData {
   private state: WorkspaceSessionSnapshot;
   private listeners = new Set<() => void>();
-  private cache = new Map<string, Session>();
-  private loads = new Map<string, Promise<Session | null>>();
+  private readonly queryScope = ["workspaceSessions", ++sessionDataQueryId] as const;
+  private retainedKey(id: string) { return [...this.queryScope, "retained", id]; }
+  private readKey(id: string) { return [...this.queryScope, "read", id, this.readVersions.get(id) ?? 0]; }
+  private readIds() { return queryClient.getQueryCache().findAll({ queryKey: [...this.queryScope, "read"], fetchStatus: "fetching" }).map(query => query.queryKey[3] as string); }
+  private retainedEntries(): [string, Session][] { return queryClient.getQueryCache().findAll({ queryKey: [...this.queryScope, "retained"] }).flatMap(query => query.state.data ? [[query.queryKey[3] as string, query.state.data as Session]] : []); }
   private readVersions = new Map<string, number>();
   private opening = new Map<string, symbol>();
   private removing = new Set<string>();
   private prefetching: Promise<Session | null> | null = null;
+  private prefetchingId?: string;
   private persisted = new Map<string, string>();
   private boundProviders = new Map<string, string>();
   private userBlocks = new Map<string, string>();
@@ -197,14 +204,13 @@ export class WorkspaceSessionData {
   refreshHistory = (cwd: string, force = false) => {
     if (isRemoteProjectPath(cwd)) return Promise.resolve();
     this.hiddenProjects.delete(pathKey(cwd));
-    return this.historyLoader.load(cwd, force);
+    return this.historyLoader.load(cwd, force).then(() => undefined);
   };
 
   refreshLinked = () => {
     const version = ++this.linkedVersion;
     const changes = this.summaryVersion;
-    void this.options.storage
-      .linked()
+    void queryClient.fetchQuery({ queryKey: [...this.queryScope, "linked"], queryFn: this.options.storage.linked })
       .then((rows) => {
         if (!this.active || version !== this.linkedVersion) return;
         const current = new Map(
@@ -282,9 +288,9 @@ export class WorkspaceSessionData {
 
   load = (id: string): Promise<Session | null> => {
     if (!this.active || this.removing.has(id)) return Promise.resolve(null);
-    const cached = this.cache.get(id);
+    const cached = queryClient.getQueryData<Session>(this.retainedKey(id));
     if (cached) {
-      this.cache.delete(id);
+      queryClient.removeQueries({ queryKey: this.retainedKey(id), exact: true });
       const version = this.readVersions.get(id) ?? 0;
       const lifecycle = this.lifecycle;
       return Promise.resolve().then(() =>
@@ -296,40 +302,32 @@ export class WorkspaceSessionData {
           : null,
       );
     }
-    const pending = this.loads.get(id);
-    if (pending) return pending;
-    const version = this.readVersions.get(id) ?? 0;
-    const lifecycle = this.lifecycle;
-    const loading = this.options.storage
-      .get(id)
-      .then((loaded) =>
-        this.active &&
-        lifecycle === this.lifecycle &&
-        !this.removing.has(id) &&
-        version === (this.readVersions.get(id) ?? 0)
-          ? loaded
-          : null,
-      )
-      .catch(() => null);
-    this.loads.set(id, loading);
-    void loading.then(() => {
-      if (this.loads.get(id) === loading) this.loads.delete(id);
-    });
-    return loading;
+    const queryKey = this.readKey(id);
+    const pending = queryClient.getQueryCache().find({ queryKey, exact: true });
+    if (pending?.state.fetchStatus === "fetching") return pending.promise as Promise<Session | null>;
+    const version = this.readVersions.get(id) ?? 0, lifecycle = this.lifecycle;
+    void queryClient.fetchQuery({
+      queryKey, gcTime: 0, structuralSharing: false,
+      queryFn: async () => {
+        const loaded = await this.options.storage.get(id).catch(() => null);
+        return this.active && lifecycle === this.lifecycle && !this.removing.has(id) && version === (this.readVersions.get(id) ?? 0) ? loaded : null;
+      },
+    }).catch(() => undefined);
+    return queryClient.getQueryCache().find({ queryKey, exact: true })!.promise as Promise<Session | null>;
   };
 
   prefetch = (id: string) => {
     if (
       this.removing.has(id) ||
-      this.cache.has(id) ||
-      this.loads.has(id) ||
+      !!queryClient.getQueryData(this.retainedKey(id)) ||
+      queryClient.getQueryState(this.readKey(id))?.fetchStatus === "fetching" ||
       this.prefetching ||
       this.options.live().some((s) => s.id === id)
     )
       return;
     const version = this.readVersions.get(id) ?? 0;
     const loading = this.load(id);
-    this.prefetching = loading;
+    this.prefetching = loading; this.prefetchingId = id;
     void loading.then((session) => {
       if (
         session &&
@@ -344,21 +342,20 @@ export class WorkspaceSessionData {
 
   invalidate = (id: string) => {
     this.opening.delete(id);
-    this.cache.delete(id);
-    if (this.prefetching === this.loads.get(id)) this.prefetching = null;
-    this.loads.delete(id);
+    queryClient.removeQueries({ queryKey: this.retainedKey(id), exact: true });
+    if (this.prefetchingId === id) { this.prefetching = null; this.prefetchingId = undefined; }
     this.readVersions.set(id, (this.readVersions.get(id) ?? 0) + 1);
   };
   invalidateAllLoads = () => {
-    for (const id of new Set([...this.cache.keys(), ...this.loads.keys()]))
+    for (const id of new Set([...this.retainedEntries().map(([id]) => id), ...this.readIds()]))
       this.invalidate(id);
     this.prefetching = null;
   };
   evict = (id: string) => {
-    this.cache.delete(id);
+    queryClient.removeQueries({ queryKey: this.retainedKey(id), exact: true });
   };
   retain = (session: Session) => {
-    rememberLoadedSession(this.cache, session);
+    rememberLoadedSession([...this.queryScope, "retained"], session);
   };
   beginOpening = (id: string) => {
     const request = Symbol(id);
@@ -370,7 +367,7 @@ export class WorkspaceSessionData {
   isOpening = (id: string) => this.opening.has(id);
   activate = (id: string) => {
     this.opening.delete(id);
-    this.cache.delete(id);
+    queryClient.removeQueries({ queryKey: this.retainedKey(id), exact: true });
   };
   isRemoving = (id: string) => this.removing.has(id);
   beginRemoval = (id: string) => {
@@ -518,9 +515,9 @@ export class WorkspaceSessionData {
 
   /** Apply ownership changes to retained data without exposing mutable queues. */
   updateRetained = (change: (session: Session) => Session) => {
-    for (const [id, cached] of this.cache)
+    for (const [id, cached] of this.retainedEntries())
       if (change(cached) !== cached) this.invalidate(id);
-    for (const id of this.loads.keys()) this.invalidate(id);
+    for (const id of this.readIds()) this.invalidate(id);
     for (const [id, pending] of this.pending)
       this.pending.set(id, change(pending));
   };
@@ -553,7 +550,7 @@ export class WorkspaceSessionData {
       }
       // Unknown reads may also belong to the moved project. Known reads from
       // other projects remain independent of this location change.
-      for (const id of this.loads.keys()) {
+      for (const id of this.readIds()) {
         const session =
           this.state.history.find((row) => row.id === id) ??
           this.options.live().find((row) => row.id === id);
@@ -569,9 +566,9 @@ export class WorkspaceSessionData {
       await this.options.storage.flush();
       await this.options.storage.rebase(from, to);
       invalidate();
-      for (const [id, session] of this.cache)
+      for (const [id, session] of this.retainedEntries())
         if (sameProjectPath(session.cwd, from))
-          this.cache.set(id, { ...session, cwd: to });
+          queryClient.setQueryData(this.retainedKey(id), { ...session, cwd: to });
       for (const [id, session] of this.pending)
         if (sameProjectPath(session.cwd, from))
           this.pending.set(id, { ...session, cwd: to });

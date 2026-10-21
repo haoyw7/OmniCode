@@ -11,12 +11,11 @@ import {
   type RateLimitProvider,
 } from "./rateLimits";
 import {
-  loadRateLimits,
-  useCachedRateLimits,
-} from "./rateLimitsCache";
+  useRateLimits,
+} from "./rateLimitsQueries";
 import type { HarnessId } from "../../sessions/model/session";
 import { useNow } from "../../../shared/hooks/useNow";
-import { providerUsageHost, providerUsageSourceKey } from "./providerUsageSource";
+import { providerUsageHost } from "./providerUsageSource";
 
 /** Usage surfaces resolve against the conversation's account and shared cache. */
 export function useProviderUsage(
@@ -25,7 +24,6 @@ export function useProviderUsage(
   project?: string,
   enabled = true,
 ) {
-  const source = providerUsageSourceKey();
   const [, setAccountsVersion] = useState(0);
   useEffect(
     () => subscribeProviderAccounts(() => setAccountsVersion((v) => v + 1)),
@@ -40,18 +38,13 @@ export function useProviderUsage(
   const accounts = accountProvider ? providerAccounts(accountProvider) : [];
   const available =
     !accountProvider || providerAccountExists(accountProvider, accountId);
-  const cached = useCachedRateLimits(provider, accountId);
+  const cached = useRateLimits(provider, accountId, enabled && available);
   const limits = available
     ? cached
     : unavailableRateLimits(
         provider,
         "This conversation uses a removed account",
       );
-
-  // The shared cache loads once and coalesces requests from different surfaces.
-  useEffect(() => {
-    if (enabled && available) void loadRateLimits(provider, accountId);
-  }, [provider, accountId, available, enabled, source]);
 
   return { limits, accountId, accounts, available, local: !providerUsageHost() };
 }

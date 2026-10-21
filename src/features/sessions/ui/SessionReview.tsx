@@ -1,9 +1,13 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronDown, ChevronRight, FileDiff } from "../../../shared/ui/icons";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { checkpointStatusQuery } from "../model/checkpointQueries";
 import {
   keepSessionChanges,
-  sessionCheckpointStatus,
   subscribeReviewChanged,
   undoSessionChanges,
   type CheckpointFile,
@@ -46,115 +50,95 @@ export function SessionReview({
 }: Props) {
   const visible = useSurfaceVisibility();
   const { t: uiT } = useTranslation();
-  const [files, setFiles] = useState<CheckpointFile[]>([]);
-  const [recordedTurnId, setRecordedTurnId] = useState<string>();
+  const [recording, setRecording] = useState<{ sessionId: string; cwd: string; turnId: string }>();
+  const recordedTurnId = recording?.sessionId === sessionId && recording.cwd === cwd ? recording.turnId : undefined;
   const reviewTurnId = historical ? turnId ?? recordedTurnId : recordedTurnId;
-  const [hostLocked, setHostLocked] = useState(false);
-  const [workspaceShared, setWorkspaceShared] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string>();
   const [expanded, setExpanded] = useState(false);
   const [othersExpanded, setOthersExpanded] = useState(false);
-  const [acting, setActing] = useState<"keep" | "undo" | null>(null);
-  const [revision, refresh] = useReducer((value: number) => value + 1, 0);
-  const filesRef = useRef(files);
-  filesRef.current = files;
+  const queryTurnId = historical ? reviewTurnId : undefined;
+  const active = enabled && visible && !busy && !!cwd && cwd !== "~" && (!historical || !!queryTurnId);
+  const statusQuery = useQuery({
+    ...checkpointStatusQuery(sessionId, cwd, queryTurnId),
+    enabled: active,
+    placeholderData: (previous, query) => historical && query?.queryKey[2] === sessionId && query.queryKey[3] === cwd && query.queryKey[4] === null && (!previous?.turnId || previous.turnId === queryTurnId)
+      ? previous : undefined,
+  }, queryClient);
+  const files = statusQuery.data?.files ?? [];
+  const hostLocked = !!statusQuery.data?.undoLocked;
+  const workspaceShared = !!statusQuery.data?.workspaceShared;
+  const loading = statusQuery.isFetching;
+  const error = errorMessage(statusQuery.error ?? statusQuery.failureReason);
+  const refresh = () => { void statusQuery.refetch(); };
+  useEffect(() => {
+    if (statusQuery.data?.turnId) setRecording({ sessionId, cwd, turnId: statusQuery.data.turnId });
+  }, [sessionId, cwd, statusQuery.data?.turnId]);
+
+  const actionMutation = useMutation({
+    mutationFn: async (input: { action: "keep" | "undo"; sessionId: string; cwd: string; paths: string[] }) => {
+      await queryClient.cancelQueries({ queryKey: checkpointStatusQuery(input.sessionId, input.cwd).queryKey });
+      return input.action === "keep"
+        ? keepSessionChanges(input.sessionId, input.cwd)
+        : undoSessionChanges(input.sessionId, input.cwd);
+    },
+    onSuccess: (status, input) => {
+      queryClient.setQueryData(checkpointStatusQuery(input.sessionId, input.cwd).queryKey, status);
+      notifyGitChanged();
+      invalidateWatchedFiles(input.paths);
+      void invalidateProjectFiles(input.cwd);
+    },
+    onError: (reason, input) => {
+      toast.error(errorMessage(reason));
+      void invalidateAfterChange(checkpointStatusQuery(input.sessionId, input.cwd).queryKey);
+    },
+  }, queryClient);
 
   useEffect(() => {
-    setFiles([]);
-    setRecordedTurnId(undefined);
-    setError(undefined);
     setExpanded(false);
     setOthersExpanded(false);
   }, [sessionId, cwd]);
 
   useEffect(() => {
+    const queryKey = checkpointStatusQuery(sessionId, cwd, queryTurnId).queryKey;
     if (busy) {
-      setFiles([]);
-      setError(undefined);
-      setLoading(false);
+      void queryClient.resetQueries({ queryKey, exact: true });
       return;
     }
-    if (!enabled || !visible || !cwd || cwd === "~") return;
-    if (historical && !reviewTurnId) return;
-    let stale = false;
-    let loading = false;
-    let pending = false;
-    let failures = 0;
-    let timer: number | null = null;
-    let scheduledAt = 0;
-    const load = () => {
-      if (loading) {
-        pending = true;
+    if (!active) {
+      if (!queryClient.getQueryCache().find({ queryKey, exact: true })?.isActive()) {
+        void queryClient.cancelQueries({ queryKey, exact: true });
+      }
+      return;
+    }
+    let disposed = false;
+    let waiting = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (disposed || waiting || timer != null) return;
+      const query = queryClient.getQueryCache().find({ queryKey, exact: true });
+      if (query?.state.fetchStatus === "fetching") {
+        waiting = true;
+        // Native checkpoint reads are serialized. Coalesce all notifications
+        // during a read into one follow-up instead of restarting that read.
+        void query.promise?.catch(() => {}).then(() => { waiting = false; schedule(); });
         return;
       }
-      loading = true;
-      setLoading(true);
-      void (historical && reviewTurnId
-        ? sessionCheckpointStatus(sessionId, cwd, undefined, reviewTurnId)
-        : sessionCheckpointStatus(sessionId, cwd))
-        .then((status) => {
-          if (stale) return;
-          setFiles(status.files);
-          if (status.turnId) setRecordedTurnId(status.turnId);
-          setHostLocked(!!status.undoLocked);
-          setWorkspaceShared(!!status.workspaceShared);
-          setError(undefined);
-          failures = 0;
-        })
-        .catch((reason: unknown) => {
-          if (stale) return;
-          // Keep a usable review while retrying transient Host/snapshot failures.
-          setError(String(reason).replace(/^Error: /, ""));
-          failures += 1;
-        })
-        .finally(() => {
-          loading = false;
-          if (stale) return;
-          setLoading(false);
-          if (pending) {
-            pending = false;
-            schedule();
-          } else if (failures > 0 && failures <= 3) {
-            schedule(500 * 2 ** (failures - 1));
-          }
-        });
-    };
-    const schedule = (delay = 200) => {
-      // Coalesce notifications without overlapping checkpoint status reads.
-      if (loading) {
-        pending = true;
-        return;
-      }
-      if (timer != null) {
-        if (scheduledAt <= Date.now() + delay) return;
-        window.clearTimeout(timer);
-      }
-      scheduledAt = Date.now() + delay;
-      timer = window.setTimeout(() => {
+      timer = setTimeout(() => {
         timer = null;
-        load();
-      }, delay);
+        if (queryClient.getQueryState(queryKey)?.fetchStatus === "fetching") schedule();
+        else void invalidateAfterChange(queryKey);
+      }, 200);
     };
-    load();
     const unsubReview = subscribeReviewChanged((id) => {
       if (!id || id === sessionId) schedule();
     });
     const unsubGit = subscribeGitChanged(() => schedule());
-    const onResume = () => {
-      if (!document.hidden) schedule();
-    };
-    window.addEventListener("focus", onResume);
-    document.addEventListener("visibilitychange", onResume);
     return () => {
-      stale = true;
-      if (timer != null) window.clearTimeout(timer);
-      window.removeEventListener("focus", onResume);
-      document.removeEventListener("visibilitychange", onResume);
+      disposed = true;
+      if (timer != null) clearTimeout(timer);
       unsubReview();
       unsubGit();
     };
-  }, [enabled, visible, cwd, sessionId, busy, revision, historical, historical ? reviewTurnId : undefined]);
+  }, [active, cwd, sessionId, busy, queryTurnId]);
 
   // External files changed in the workspace during the turn without an edit
   // event from this session: shell writes or another agent in the checkout.
@@ -202,7 +186,7 @@ export function SessionReview({
     ) : null;
   }
 
-  const disabled = busy || historical || acting != null;
+  const disabled = busy || historical || actionMutation.isPending;
   const locked = undoLocked || hostLocked || workspaceShared;
   const canUndoAll = !locked && attributed && own.every((file) => file.undoable);
   const hiddenFileCount = primary.length - 3;
@@ -213,23 +197,7 @@ export function SessionReview({
 
   const run = (action: "keep" | "undo") => {
     if (disabled || (action === "undo" && !canUndoAll)) return;
-    setActing(action);
-    const op =
-      action === "keep"
-        ? keepSessionChanges(sessionId, cwd)
-        : undoSessionChanges(sessionId, cwd);
-    const previous = filesRef.current.map((file) => file.path);
-    void op
-      .then((status) => {
-        setFiles(status.files);
-        setHostLocked(!!status.undoLocked);
-        setWorkspaceShared(!!status.workspaceShared);
-        notifyGitChanged();
-        invalidateWatchedFiles(previous);
-        invalidateProjectFiles(cwd);
-      })
-      .catch(() => refresh())
-      .finally(() => setActing(null));
+    actionMutation.mutate({ action, sessionId, cwd, paths: files.map((file) => file.path) });
   };
   const openDiff: Props["onOpenDiff"] = (path) =>
     onOpenDiff(path, { sessionId, cwd, ...(reviewTurnId ? { turnId: reviewTurnId } : {}) });

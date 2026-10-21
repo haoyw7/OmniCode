@@ -1,3 +1,7 @@
+import { toast } from "sonner";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
+import { gitHeadMessageQuery, gitRangeContextQuery, gitKeys, gitDiffIndexQuery, gitPrStatusQuery, installGitQueryInvalidation, isGitCwd } from "../model/gitQueries";
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
@@ -16,7 +20,25 @@ import {
 } from "../../../shared/ui/SurfaceVisibility";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Check, ChevronDown, ChevronRight, CloudUpload, ExternalLink, FileDiff, FolderTree, GitBranch, GitPullRequest, ListBullet, Minus, MoreHorizontal, Plus, RefreshCw, Undo2, WandSparkles, X } from "../../../shared/ui/icons";
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  CloudUpload,
+  ExternalLink,
+  FileDiff,
+  FolderTree,
+  GitBranch,
+  GitPullRequest,
+  ListBullet,
+  Minus,
+  MoreHorizontal,
+  Plus,
+  RefreshCw,
+  Undo2,
+  WandSparkles,
+  X,
+} from "../../../shared/ui/icons";
 import {
   memo,
   useCallback,
@@ -41,15 +63,11 @@ import {
 import {
   basename,
   gitCommit,
-  gitDiffIndex,
   gitDiscardAll,
   gitDiscardFile,
-  gitHeadMessage,
   gitPrCreate,
-  gitPrStatus,
   gitPull,
   gitPush,
-  gitRangeContext,
   gitStageAll,
   gitStageFile,
   gitSync,
@@ -58,7 +76,6 @@ import {
   notifyGitChanged,
   setFsWatch,
   subscribeFsWatch,
-  subscribeGitChanged,
   type GitChangedFile,
   type GitDiffIndex,
   type GitFileDiffKind,
@@ -102,8 +119,6 @@ let graphOpen = true;
 let changesView: ChangesView = loadChangesView();
 /** Folders the user collapsed in tree view, keyed `<kind>:<dir>`. */
 const collapsedDirs = new Set<string>();
-const indexByCwd = new Map<string, GitDiffIndex>();
-const prByCwd = new Map<string, GitPr | null>();
 
 type AmendTarget = { branch: string | null; head: string | null };
 
@@ -134,6 +149,12 @@ export const GitChangesPanel = memo(function GitChangesPanel({
 }: Props) {
   const { t: uiT } = useTranslation();
   const { index, reload } = useDiffIndex(cwd, enabled);
+  const mutation = useMutation({
+    mutationFn: (run: () => Promise<unknown>) => run(),
+    scope: { id: `git:${cwd}` },
+    onSuccess: () => { toast.success(uiT("Done")); return invalidateAfterChange(gitKeys.all); },
+  }, queryClient);
+  const execute = useCallback(<T,>(run: () => Promise<T>) => mutation.mutateAsync(run) as Promise<T>, [mutation.mutateAsync]);
   const files = index?.files ?? [];
   const paneRef = useRef<HTMLDivElement>(null);
   const graphPaneRef = useRef<HTMLDivElement>(null);
@@ -175,7 +196,7 @@ export const GitChangesPanel = memo(function GitChangesPanel({
     setStatus(null);
     setBusy("pull");
     try {
-      await gitPull(cwd);
+      await execute(() => gitPull(cwd));
       reload();
       notifyGitChanged();
       invalidateWatchedFiles();
@@ -318,6 +339,7 @@ export const GitChangesPanel = memo(function GitChangesPanel({
         fill
         busy={busy}
         setBusy={setBusy}
+        execute={execute}
         onOpenFile={onOpenFile}
         onOpenAllChanges={onOpenAllChanges}
         onMutated={(paths) => {
@@ -397,6 +419,7 @@ function ChangedFiles({
   fill,
   busy,
   setBusy,
+  execute,
   onOpenFile,
   onOpenAllChanges,
   onMutated,
@@ -412,6 +435,7 @@ function ChangedFiles({
   fill: boolean;
   busy: string | null;
   setBusy: (value: string | null) => void;
+  execute: <T>(run: () => Promise<T>) => Promise<T>;
   onOpenFile: (path: string, kind: GitFileDiffKind, pin?: boolean) => void;
   onOpenAllChanges: (kind: GitFileDiffKind) => void;
   onMutated: (paths?: string[]) => void;
@@ -420,6 +444,9 @@ function ChangedFiles({
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
   const menuRef = useRef<HTMLDivElement>(null);
   const generateAbortRef = useRef<AbortController | null>(null);
+  const generation = useMutation({
+    mutationFn: ({ harness, signal }: { harness?: HarnessId; signal: AbortSignal }) => generateCommitMessage(cwd, harness, signal),
+  }, queryClient);
   const [message, setMessage] = useState("");
   const [amendTarget, setAmendTarget] = useState<AmendTarget | null>(null);
   const amend = amendTarget !== null;
@@ -548,16 +575,16 @@ function ChangedFiles({
     }
     setBusy(file.relative);
     try {
-      if (action === "stage") await gitStageFile(cwd, file.relative);
-      else if (action === "unstage") await gitUnstageFile(cwd, file.relative);
-      else await gitDiscardFile(cwd, file.relative);
+      if (action === "stage") await execute(() => gitStageFile(cwd, file.relative));
+      else if (action === "unstage") await execute(() => gitUnstageFile(cwd, file.relative));
+      else await execute(() => gitDiscardFile(cwd, file.relative));
       onMutated([file.path]);
     } catch (error) {
       fail(error);
     } finally {
       setBusy(null);
     }
-  }, [busy, cwd, setBusy, onMutated, fail]);
+  }, [busy, cwd, setBusy, onMutated, fail, execute]);
 
   const runAll = async (action: "stage" | "unstage" | "discard") => {
     if (busy) return;
@@ -578,9 +605,9 @@ function ChangedFiles({
     }
     setBusy(action);
     try {
-      if (action === "stage") await gitStageAll(cwd);
-      else if (action === "unstage") await gitUnstageAll(cwd);
-      else await gitDiscardAll(cwd);
+      if (action === "stage") await execute(() => gitStageAll(cwd));
+      else if (action === "unstage") await execute(() => gitUnstageAll(cwd));
+      else await execute(() => gitDiscardAll(cwd));
       onMutated(
         action === "discard" ? unstaged.map((file) => file.path) : undefined,
       );
@@ -595,8 +622,8 @@ function ChangedFiles({
     if (busy) return;
     setBusy(`${action}:${relative}`);
     try {
-      if (action === "stage") await gitStageFile(cwd, relative);
-      else await gitUnstageFile(cwd, relative);
+      if (action === "stage") await execute(() => gitStageFile(cwd, relative));
+      else await execute(() => gitUnstageFile(cwd, relative));
       onMutated(
         files
           .filter((file) => file.relative.startsWith(`${relative}/`))
@@ -607,7 +634,7 @@ function ChangedFiles({
     } finally {
       setBusy(null);
     }
-  }, [busy, cwd, setBusy, files, onMutated, fail]);
+  }, [busy, cwd, setBusy, files, onMutated, fail, execute]);
 
   const generate = async () => {
     if (!canGenerate || generateAbortRef.current) return;
@@ -615,11 +642,7 @@ function ChangedFiles({
     generateAbortRef.current = controller;
     setBusy("generate");
     try {
-      const generated = await generateCommitMessage(
-        cwd,
-        textHarness,
-        controller.signal,
-      );
+      const generated = await generation.mutateAsync({ harness: textHarness, signal: controller.signal });
       if (!controller.signal.aborted) setMessage(generated);
     } catch (error) {
       if (!controller.signal.aborted) fail(error);
@@ -644,7 +667,7 @@ function ChangedFiles({
       return;
     }
     try {
-      const headMessage = await gitHeadMessage(cwd);
+      const headMessage = await queryClient.fetchQuery(gitHeadMessageQuery(cwd));
       if (!message.trim()) setMessage(headMessage);
       setAmendTarget({
         branch: index?.branch ?? null,
@@ -675,9 +698,9 @@ function ChangedFiles({
     setBusy(createPr ? "pr" : "commit");
     setMenuOpen(false);
     try {
-      await gitCommit(cwd, message, amend);
+      await execute(() => gitCommit(cwd, message, amend));
       if (push || createPr) {
-        await gitPush(cwd);
+        await execute(() => gitPush(cwd));
         recordPrActivity();
       }
       setMessage("");
@@ -700,7 +723,7 @@ function ChangedFiles({
     const pushesCommits = index.ahead > 0;
     setBusy("sync");
     try {
-      await gitSync(cwd);
+      await execute(() => gitSync(cwd));
       if (pushesCommits) recordPrActivity();
       onMutated();
       reloadPr();
@@ -717,13 +740,13 @@ function ChangedFiles({
       ? await remotePrContent(cwd)
       : await generatePrContent(cwd, textHarness);
     if (!content) throw new Error("Could not prepare pull request content");
-    const url = await gitPrCreate(
+    const url = await execute(() => gitPrCreate(
       cwd,
       content.title,
       content.body,
       content.base,
       content.head,
-    );
+    ));
     const number = Number(/\/pull\/(\d+)(?:[/?#]|$)/.exec(url)?.[1]);
     if (Number.isInteger(number) && number > 0) recordPrActivity(number);
     await openUrl(url.trim());
@@ -734,7 +757,7 @@ function ChangedFiles({
     if (!(await confirmDefault("pr"))) return;
     setBusy("pr");
     try {
-      if ((index?.ahead ?? 0) > 0) await gitPush(cwd);
+      if ((index?.ahead ?? 0) > 0) await execute(() => gitPush(cwd));
       await openCreatedPr();
       onMutated();
       reloadPr();
@@ -1002,47 +1025,10 @@ function usePrStatus(
   cwd: string,
   branch: string | null | undefined,
 ): { pr: GitPr | null; reload: () => void } {
-  const [pr, setPr] = useState<GitPr | null>(() => cachedPr(cwd, branch));
-  const [nonce, setNonce] = useState(0);
-  const reload = useCallback(() => setNonce((value) => value + 1), []);
-
-  useEffect(() => {
-    if (!cwd || cwd === "~" || !branch) {
-      setPr(null);
-      return;
-    }
-    let cancelled = false;
-    const load = () => {
-      void gitPrStatus(cwd)
-        .then((next) => {
-          if (cancelled) return;
-          prByCwd.set(cwd, next);
-          setPr(next);
-        })
-        .catch(() => {
-          if (cancelled) return;
-          prByCwd.set(cwd, null);
-          setPr(null);
-        });
-    };
-    load();
-    const onResume = () => load();
-    window.addEventListener("focus", onResume);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("focus", onResume);
-    };
-  }, [branch, cwd, nonce]);
-
-  return { pr, reload };
-}
-
-function cachedPr(
-  cwd: string,
-  branch: string | null | undefined,
-): GitPr | null {
-  if (!cwd || cwd === "~" || !branch) return null;
-  return prByCwd.get(cwd) ?? null;
+  installGitQueryInvalidation();
+  const active = isGitCwd(cwd) && !!branch;
+  const { data: pr = null } = useQuery({ ...gitPrStatusQuery(cwd, branch), enabled: active }, queryClient);
+  return { pr: active ? pr : null, reload: () => { void invalidateAfterChange(gitKeys.prStatus(cwd, branch)); } };
 }
 
 function syncStatusLabel(index: GitDiffIndex): string {
@@ -1282,7 +1268,7 @@ type ChangeDir = {
 };
 
 async function remotePrContent(cwd: string) {
-  const range = await gitRangeContext(cwd);
+  const range = await queryClient.fetchQuery(gitRangeContextQuery(cwd));
   const commits = range.commitSummary.trim();
   const firstCommit = commits
     .split(/\r?\n/, 1)[0]
@@ -1658,103 +1644,39 @@ function useDiffIndex(
   index: GitDiffIndex | null;
   reload: () => void;
 } {
-  const [index, setIndex] = useState<GitDiffIndex | null>(() =>
-    cachedIndex(cwd),
-  );
-  const [nonce, setNonce] = useState(0);
-  const reload = useCallback(() => setNonce((value) => value + 1), []);
+  installGitQueryInvalidation();
+  const { data: index = null } = useQuery({
+    ...gitDiffIndexQuery(cwd),
+    enabled: enabled && isGitCwd(cwd),
+    refetchInterval: enabled ? GIT_POLL_MS : false,
+    structuralSharing: (previous, next) => next && sameIndex(previous as GitDiffIndex | null, next as GitDiffIndex) ? previous : next,
+  }, queryClient);
+  const reload = useCallback(() => { void invalidateAfterChange(gitKeys.diffIndex(cwd)); }, [cwd]);
   const watchKey = `git-index:${useId()}`;
-  const indexRef = useRef(index);
-  indexRef.current = index;
-
+  const previous = useRef<{ cwd: string; index: GitDiffIndex | null }>({ cwd, index: null });
   useEffect(() => {
-    if (!enabled || !cwd || cwd === "~") {
-      return;
+    const prev = previous.current.cwd === cwd ? previous.current.index : null;
+    previous.current = { cwd, index };
+    if (!index) return;
+    applyProjectDiffStats(cwd, { files: index.files.length, additions: index.additions, deletions: index.deletions });
+    if (prev && !sameIndex(prev, index)) {
+      invalidateWatchedFiles(changedFilePaths(prev, index));
+      notifyGitChanged();
     }
-    const cached = cachedIndex(cwd);
-    if (cached && !sameIndex(indexRef.current, cached)) {
-      indexRef.current = cached;
-      setIndex(cached);
-    }
-    let cancelled = false;
-    let inFlight = false;
-    let pending = false;
-
-    const load = async () => {
-      if (inFlight) {
-        pending = true;
-        return;
-      }
-      if (document.hidden && nonce === 0) return;
-      inFlight = true;
-      try {
-        const next = await gitDiffIndex(cwd);
-        if (cancelled) return;
-        const prev = indexRef.current;
-        if (sameIndex(prev, next)) return;
-        indexByCwd.set(cwd, next);
-        indexRef.current = next;
-        setIndex(next);
-        applyProjectDiffStats(cwd, {
-          files: next.files.length,
-          additions: next.additions,
-          deletions: next.deletions,
-        });
-        if (prev) {
-          const paths = changedFilePaths(prev, next);
-          invalidateWatchedFiles(paths);
-          notifyGitChanged();
-        }
-      } catch {
-        if (!cancelled) {
-          indexByCwd.delete(cwd);
-          setIndex(null);
-        }
-      } finally {
-        inFlight = false;
-        if (pending && !cancelled) {
-          pending = false;
-          void load();
-        }
-      }
-    };
-
-    void load();
-    const onResume = () => {
-      if (!document.hidden) void load();
-    };
-    const timer = window.setInterval(onResume, GIT_POLL_MS);
-    window.addEventListener("focus", onResume);
-    document.addEventListener("visibilitychange", onResume);
-    const unsubGit = subscribeGitChanged(onResume);
-    // Git metadata changes arrive through subscribeGitChanged; folder edits
-    // inside this project come straight from the watcher.
+  }, [cwd, index]);
+  useEffect(() => {
+    if (!enabled || !isGitCwd(cwd)) return;
     void setFsWatch(watchKey, [], [cwd]);
     const root = pathKey(cwd);
-    const unsubWatch = subscribeFsWatch(({ entries, contents }) => {
-      const touched = [...entries, ...contents].some((path) => {
+    const stop = subscribeFsWatch(({ entries, contents }) => {
+      if ([...entries, ...contents].some((path) => {
         const key = pathKey(path);
         return key === root || key.startsWith(`${root}/`);
-      });
-      if (touched) onResume();
+      })) reload();
     });
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      window.removeEventListener("focus", onResume);
-      document.removeEventListener("visibilitychange", onResume);
-      unsubGit();
-      unsubWatch();
-      void setFsWatch(watchKey, []);
-    };
-  }, [cwd, enabled, nonce, watchKey]);
-
-  return { index, reload };
-}
-
-function cachedIndex(cwd: string | undefined): GitDiffIndex | null {
-  if (!cwd || cwd === "~") return null;
-  return indexByCwd.get(cwd) ?? null;
+    return () => { stop(); void setFsWatch(watchKey, []); };
+  }, [cwd, enabled, watchKey, reload]);
+  return { index: isGitCwd(cwd) ? index : null, reload };
 }
 
 function changedFilePaths(prev: GitDiffIndex, next: GitDiffIndex): string[] {

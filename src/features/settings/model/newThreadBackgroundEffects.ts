@@ -1,3 +1,4 @@
+import { queryClient } from "../../../shared/lib/queryClient";
 import type { NewThreadBackgroundEffect } from "./appearance";
 
 type WorkerResponse = { id: number; result?: Blob; error?: string };
@@ -10,7 +11,6 @@ const pending = new Map<
   number,
   { resolve: (result?: Blob) => void; reject: (error: Error) => void }
 >();
-const loadedSources = new Map<string, Promise<void>>();
 const effectCache = new Map<string, Promise<Blob>>();
 const MAX_CACHED_REVISIONS = 3;
 
@@ -65,22 +65,25 @@ function request(message: object, transfer?: Transferable[]) {
 }
 
 async function ensureSource(sourceKey: string, src: string) {
-  let loading = loadedSources.get(sourceKey);
-  if (!loading) {
-    loading = fetch(src)
-      .then((response) => {
-        if (!response.ok)
-          throw new Error("Unable to read the background image.");
-        return response.arrayBuffer();
-      })
-      .then(async (bytes) => {
+  try {
+    await queryClient.fetchQuery({
+      queryKey: ["backgroundSource", sourceKey], staleTime: Infinity, gcTime: Infinity,
+      queryFn: async () => {
+        const response = await fetch(src);
+        if (!response.ok) throw new Error("Unable to read the background image.");
+        const bytes = await response.arrayBuffer();
         await request({ kind: "load", sourceKey, bytes }, [bytes]);
-      });
-    loadedSources.set(sourceKey, loading);
-    pruneByRevision(loadedSources);
-    forgetOnReject(loadedSources, sourceKey);
+        return true;
+      },
+    });
+  } finally {
+    const sources = queryClient.getQueryCache().findAll({ queryKey: ["backgroundSource"] });
+    const revisions = [...new Set(sources.map(query => revisionOf(String(query.queryKey[1]))))]
+      .sort((a, b) => b - a).slice(0, MAX_CACHED_REVISIONS);
+    for (const query of sources)
+      if (!revisions.includes(revisionOf(String(query.queryKey[1]))) && query.state.fetchStatus !== "fetching")
+        queryClient.removeQueries({ queryKey: query.queryKey, exact: true });
   }
-  return loading;
 }
 
 export async function prepareNewThreadBackgroundEffect(

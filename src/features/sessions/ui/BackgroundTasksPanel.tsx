@@ -1,4 +1,6 @@
 import { motion, useIsPresent } from "motion/react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
@@ -145,15 +147,11 @@ function LiveElapsed({ startedAt }: { startedAt: number }) {
 
 function StopTaskButton({ taskId, onStop }: { taskId: string; onStop: StopTask }) {
   const { t } = useTranslation();
-  const [stopping, setStopping] = useState(false);
-  const [error, setError] = useState(false);
+  const mutation = useMutation({ mutationFn: () => onStop(taskId) }, queryClient);
+  const stopping = mutation.isPending, error = mutation.isError;
   return <span className="background-task-stop">
     <IconButton label={t(error ? "Retry stopping task" : stopping ? "Stopping task…" : "Stop task")} size="xs" disabled={stopping}
-      onClick={async () => {
-        setStopping(true); setError(false);
-        try { await onStop(taskId); } catch { setError(true); }
-        finally { setStopping(false); }
-      }}><Square /></IconButton>
+      onClick={() => mutation.mutate()}><Square /></IconButton>
     {error ? <span role="alert" className="background-task-stop-error">{t("Could not stop task")}</span> : null}
   </span>;
 }

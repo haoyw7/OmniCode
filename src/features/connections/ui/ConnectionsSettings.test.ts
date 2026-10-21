@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { ConnectionsSettings } from "./ConnectionsSettings";
 import { configureSharedHost } from "../model/remoteProjects";
+import { queryClient } from "../../../shared/lib/queryClient";
 import {
   REMOTE_PROVIDERS,
   type RemoteMachine,
@@ -53,6 +54,7 @@ beforeEach(() => {
 afterEach(() => {
   configureSharedHost(undefined, []);
   act(() => root.unmount());
+  queryClient.clear();
   container.remove();
   vi.useRealTimers();
   vi.unstubAllGlobals();
@@ -200,6 +202,64 @@ it("advertises every supported provider when checking a host", async () => {
     method: "environment.describe",
     params: { supportedProviders: REMOTE_PROVIDERS },
   });
+});
+
+it("stops polling a finished SSH job and starts a fresh attempt after failure", async () => {
+  state = { ...state, done: true, error: "Install failed" };
+  await start();
+  const polls = () => vi.mocked(invoke).mock.calls.filter(([command]) => command === "remote_ssh_poll").length;
+  const finishedCount = polls();
+  await act(async () => vi.advanceTimersByTimeAsync(2_000));
+  expect(polls()).toBe(finishedCount);
+  state = { id: "setup", message: "New attempt", done: false };
+  await act(async () => button("Connect").click());
+  expect(container.textContent).toContain("New attempt");
+  expect(polls()).toBe(finishedCount + 1);
+  await poll();
+  expect(polls()).toBeGreaterThan(finishedCount + 1);
+});
+
+it("cancels a native job allocated after Settings has closed", async () => {
+  const fallback = vi.mocked(invoke).getMockImplementation()!;
+  let finish!: (id: string) => void;
+  vi.mocked(invoke).mockImplementation((command, params) => command === "remote_ssh_begin"
+    ? new Promise((resolve) => { finish = resolve; })
+    : fallback(command, params));
+  await start();
+  await act(async () => root.unmount());
+  root = createRoot(container);
+  await act(async () => finish("late-job"));
+  expect(invoke).toHaveBeenCalledWith("remote_ssh_cancel", { jobId: "late-job" });
+  expect(invoke).not.toHaveBeenCalledWith("remote_ssh_poll", { jobId: "late-job" });
+});
+
+it("keeps the next SSH prompt's draft when the previous answer finishes late", async () => {
+  const fallback = vi.mocked(invoke).getMockImplementation()!;
+  let finish!: () => void;
+  vi.mocked(invoke).mockImplementation((command, params) => command === "remote_ssh_answer"
+    ? new Promise<void>((resolve) => { finish = resolve; })
+    : fallback(command, params));
+  state.prompt = { id: "first", message: "First password", confirm: false };
+  await start();
+  await fill('input[aria-label="SSH password or passphrase"]', "first-answer");
+  await act(async () => button("Continue").click());
+  state = { ...state, prompt: { id: "second", message: "Second password", confirm: false } };
+  await poll();
+  await fill('input[aria-label="SSH password or passphrase"]', "second-draft");
+  await act(async () => finish());
+  expect(container.querySelector<HTMLInputElement>('input[aria-label="SSH password or passphrase"]')!.value).toBe("second-draft");
+  expect(button("Continue").disabled).toBe(false);
+});
+
+it("validates the Host URL before connecting and keeps the token on failure", async () => {
+  await render();
+  await act(async () => button("Connect to an existing host by URL").click());
+  await fill('input[id$="-host-url"]', "ftp://example.invalid");
+  await fill('input[id$="-token"]', "device-token");
+  await act(async () => button("Connect by URL").click());
+  expect(container.textContent).toContain("Enter a valid HTTP or HTTPS URL");
+  expect(invoke).not.toHaveBeenCalledWith("remote_connect", expect.anything());
+  expect(container.querySelector<HTMLInputElement>('input[id$="-token"]')!.value).toBe("device-token");
 });
 const requested = (method: string) =>
   vi

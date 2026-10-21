@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../../../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -20,6 +21,7 @@ vi.mock("../../../platform/tauri/clipboard", async (original) => ({
 }));
 let root: Root, node: HTMLDivElement;
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   browser.open.mockReset().mockResolvedValue(undefined);
@@ -31,6 +33,7 @@ beforeEach(() => {
   root = createRoot(node);
 });
 afterEach(() => {
+  queryClient.clear();
   act(() => root.unmount());
   node.remove();
   vi.useRealTimers();

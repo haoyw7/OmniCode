@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { Switch } from "../../../shared/ui/forms/Switch";
 import { isTauri } from "@tauri-apps/api/core";
 import {
@@ -98,7 +100,10 @@ export function NativeSessionsPanel({
   const [open, setOpen] = useState<NativeSessionProvider>();
   const [query, setQuery] = useState("");
   const [shown, setShown] = useState(PAGE);
-  const [pending, setPending] = useState<string>();
+  const importing = useMutation({ mutationFn: (file: NativeSessionFile) => importNativeSession(file) }, queryClient);
+  const importingAll = useMutation({ mutationFn: (operation: () => Promise<{ done: number; failed: number }>) => operation() }, queryClient);
+  const syncing = useMutation({ mutationFn: () => syncNativeSessions() }, queryClient);
+  const pending = importing.isPending ? nativeSourceKey(importing.variables) : undefined;
   const [imported, setImported] = useState<Record<string, string>>({});
   const [bulk, setBulk] = useState<{ done: number; total: number }>();
   const bulkRun = useRef<{ cancelled: boolean }>(undefined);
@@ -118,9 +123,8 @@ export function NativeSessionsPanel({
     state.bound.has(`${file.provider}:${file.providerSessionId}`);
   const importFile = async (file: NativeSessionFile) => {
     const key = nativeSourceKey(file);
-    setPending(key);
     try {
-      const id = await withToast(() => importNativeSession(file), {
+      const id = await withToast(() => importing.mutateAsync(file), {
         loading: t("Importing conversation…"),
         success: (id) => !!id && t("Conversation imported"),
         error: false,
@@ -130,8 +134,6 @@ export function NativeSessionsPanel({
       onOpenSession?.(id);
     } catch {
       /* The shared status carries the concrete error. */
-    } finally {
-      setPending(undefined);
     }
   };
   /** Import every listed conversation that is not in OmniCode yet, one at a time. */
@@ -142,13 +144,13 @@ export function NativeSessionsPanel({
     bulkRun.current = run;
     setBulk({ done: 0, total: queue.length });
     const added: Record<string, string> = {};
-    const { done, failed } = await importNativeSessions(queue, {
+    const { done, failed } = await importingAll.mutateAsync(() => importNativeSessions(queue, {
       stop: run,
       onProgress: (progress) => setBulk(progress),
       onImported: (file, id) => {
         added[nativeSourceKey(file)] = id;
       },
-    }).catch(() => ({ done: 0, failed: 0 }));
+    })).catch(() => ({ done: 0, failed: 0 }));
     setImported((current) => ({ ...current, ...added }));
     bulkRun.current = undefined;
     setBulk(undefined);
@@ -164,8 +166,8 @@ export function NativeSessionsPanel({
     );
   };
   const syncImported = async () => {
-    const id = toast["loading"](t("Syncing imported conversations…"));
-    await syncNativeSessions();
+    const id = toast.loading(t("Syncing imported conversations…"));
+    await syncing.mutateAsync();
     // Failures stay in the panel's shared error line.
     if (nativeSessionSnapshot().error) toast.dismiss(id);
     else toast.success(t("Imported conversations synced"), { id });

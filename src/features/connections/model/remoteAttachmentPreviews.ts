@@ -1,9 +1,9 @@
 import { walkTranscript } from "../../sessions/model/agentTranscript";
 import type { Block } from "../../sessions/model/session";
 import type { HostSession } from "./protocol";
+import { queryClient } from "../../../shared/lib/queryClient";
 
 type Chunk = { data: string; offset: number; size: number };
-const downloads = new Map<string, Promise<string>>();
 const MAX_PREVIEW_BYTES = 20 * 1024 * 1024;
 
 const missingPreview = (file: NonNullable<Block["attachments"]>[number]) =>
@@ -89,16 +89,14 @@ export async function withRemoteAttachmentPreviews(
         block.attachments.map(async (file) => {
           if (!missingPreview(file)) return file;
           try {
-            let data = previous.get(file.id)?.data;
+            const before = previous.get(file.id);
+            let data = before?.kind === file.kind && before.size === file.size && before.mimeType === file.mimeType && before.path === file.path
+              ? before.data : undefined;
             if (data === undefined) {
-              const key = JSON.stringify([
-                machineId,
-                snapshot.session.id,
-                file.id,
-              ]);
-              let download = downloads.get(key);
-              if (!download) {
-                download = (async () => {
+              data = await queryClient.fetchQuery({
+                queryKey: ["remote", "attachment-preview", machineId, snapshot.session.id, file.id, file.size, file.mimeType, file.path],
+                gcTime: 0,
+                queryFn: async () => {
                   const pieces: string[] = [];
                   let offset = 0;
                   while (offset < file.size) {
@@ -120,10 +118,8 @@ export async function withRemoteAttachmentPreviews(
                     offset = chunk.offset;
                   }
                   return pieces.join("");
-                })().finally(() => downloads.delete(key));
-                downloads.set(key, download);
-              }
-              data = await download;
+                },
+              });
             }
             return { ...file, data };
           } catch {

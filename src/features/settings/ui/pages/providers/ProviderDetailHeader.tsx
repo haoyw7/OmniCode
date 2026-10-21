@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../../../shared/lib/queryClient";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
@@ -88,7 +90,8 @@ export function ProviderDetailHeader({
     }
   }, [installation]);
 
-  const [update, setUpdate] = useState<HarnessUpdateState>({ status: "idle" });
+  const updateMutation = useMutation({ mutationFn: (input: Parameters<typeof runHarnessUpdate>[0]) => runHarnessUpdate(input) }, queryClient);
+  const update: HarnessUpdateState = updateMutation.isPending ? { status: "updating" } : updateMutation.data ?? { status: "idle" };
   const installed = available ? version?.installed : undefined;
   const latest = version?.latest;
   const bundledBy = available ? version?.bundledBy : undefined;
@@ -97,15 +100,14 @@ export function ProviderDetailHeader({
   const updatable = behind && !bundledBy;
   const onUpdate = async () => {
     if (!installed || !latest || update.status === "updating") return;
-    setUpdate({ status: "updating" });
-    const result = await runHarnessUpdate({ harness, installed, latest });
-    setUpdate(result);
+    await updateMutation.mutateAsync({ harness, installed, latest });
     onUpdated();
   };
 
   // Saved path overrides apply on the next launch, like the CLI path editor.
   const [switchError, setSwitchError] = useState<string | null>(null);
-  const [switching, setSwitching] = useState(false);
+  const switchMutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
+  const switching = switchMutation.isPending;
   const [, setSwitchRevision] = useState(0);
   const pendingPath = providerBinaryPathChangePending(harness)
     ? loadProviderBinaryPath(harness)
@@ -114,10 +116,10 @@ export function ProviderDetailHeader({
   const switched = newerCopy != null && pendingPath === newerCopy.path;
   const onUseCopy = async (copy: { path: string; version: string }) => {
     if (switching) return;
-    setSwitching(true);
     setSwitchError(null);
     try {
-      const inspection = await inspectHarnessBinary(harness, copy.path);
+      await switchMutation.mutateAsync(async () => {
+      const inspection = await queryClient.fetchQuery({ queryKey: ["providerBinary", harness, copy.path], queryFn: () => inspectHarnessBinary(harness, copy.path) });
       const problem = binaryInspectionError(harness, inspection);
       if (problem) throw new Error(problem);
       if (!saveProviderBinaryPath(harness, copy.path)) {
@@ -125,10 +127,9 @@ export function ProviderDetailHeader({
       }
       setSwitchRevision((value) => value + 1);
       onBinaryChanged();
+      });
     } catch (cause) {
       setSwitchError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setSwitching(false);
     }
   };
 

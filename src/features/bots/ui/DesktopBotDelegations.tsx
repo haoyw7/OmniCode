@@ -1,8 +1,11 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
+import { botDelegationsQuery, loadMoreBotDelegations, botDelegationQuery, botNamesQuery, delegationBelongs } from "../model/botPanelQueries";
 import { Button } from "../../../shared/ui/forms/Button";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
-import type { BotDelegation, BotDelegations, BotScope, BotsSnapshot } from "../model/bots";
+import type { BotDelegation, BotScope } from "../model/bots";
 import { botErrorMessage } from "../model/botErrors";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
@@ -14,20 +17,11 @@ type Names = Readonly<Record<string, string>>;
 type ScopedProps = { scope: BotScope; rpc: BotRpc; botNames?: Names; onOpenThread?: (scope: BotScope) => void };
 const labels: Record<BotDelegation["status"], string> = { running: "Running", completed: "Completed", busy: "Bot busy", failed: "Failed", cancelled: "Cancelled", timed_out: "Timed out", interrupted: "Interrupted" };
 const matches = (a: { botId: string; threadId?: string }, b: BotScope) => a.botId === b.botId && a.threadId === b.threadId;
-const belongs = (value: BotDelegation, scope: BotScope) => matches(value.source, scope) || matches(value.target, scope);
-const merge = (rows: BotDelegation[], next: BotDelegation[]) => [...new Map([...rows, ...next].map(value => [value.id, value])).values()].sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
-
+const belongs = delegationBelongs;
 function useBotNames(rpc: BotRpc, supplied?: Names): Names {
-  const visible = useSurfaceVisibility(), [names, setNames] = useState<Names>({});
-  useEffect(() => {
-    if (!visible || supplied) return;
-    let stopped = false;
-    void rpc<BotsSnapshot>("bots.list", { includeArchived: true }).then(snapshot => {
-      if (!stopped) setNames(Object.fromEntries(snapshot.bots.map(bot => [bot.id, bot.name])));
-    }, () => {});
-    return () => { stopped = true; };
-  }, [rpc, visible, supplied]);
-  return supplied ?? names;
+  const visible = useSurfaceVisibility();
+  const query = useQuery({ ...botNamesQuery(rpc), enabled: visible && !supplied }, queryClient);
+  return supplied ?? query.data ?? {};
 }
 
 /** One retained activity surface owns polling; message cards refresh on chat revisions. */
@@ -36,52 +30,13 @@ export function DesktopBotDelegations(props: ScopedProps) {
 }
 function Delegations({ scope, rpc, botNames, onOpenThread }: ScopedProps) {
   const { t } = useTranslation(), visible = useSurfaceVisibility(), names = useBotNames(rpc, botNames);
-  const [rows, setRows] = useState<BotDelegation[]>([]), [page, setPage] = useState<BotDelegations>();
-  const [error, setError] = useState<string>(), [loading, setLoading] = useState(false);
-  const sequence = useRef(0), inFlight = useRef(false), alive = useRef(true);
-  const boundary = useRef<BotDelegations["next"]>(undefined);
-  useEffect(() => { alive.current = true; return () => { alive.current = false; sequence.current++; }; }, []);
-  const refresh = useCallback(async () => {
-    if (inFlight.current) return;
-    const request = ++sequence.current;
-    inFlight.current = true;
-    try {
-      let before: BotDelegations["next"], result: BotDelegations, collected: BotDelegation[] = [];
-      const oldest = boundary.current;
-      do {
-        result = await rpc<BotDelegations>("botDelegations.list", { botId: scope.botId, threadId: scope.threadId, limit: 30, ...(before ? { before } : {}) });
-        if (!alive.current || request !== sequence.current) return;
-        collected = merge(collected, result.delegations.filter(value => belongs(value, scope)));
-        before = result.next;
-      } while (oldest && result.hasMore && before && (before.createdAt > oldest.createdAt || (before.createdAt === oldest.createdAt && before.id > oldest.id)));
-      const last = collected.at(-1);
-      boundary.current = last ? { createdAt: last.createdAt, id: last.id } : undefined; setRows(collected); setPage(result); setError(undefined);
-    } catch (cause) { if (alive.current && request === sequence.current) setError(botErrorMessage(cause)); }
-    finally { inFlight.current = false; }
-  }, [rpc, scope.botId, scope.threadId]);
-  useEffect(() => {
-    if (!visible) return;
-    let stopped = false, timer: ReturnType<typeof setTimeout>;
-    const poll = async () => { await refresh(); if (!stopped) timer = setTimeout(poll, 2000); };
-    void poll();
-    return () => { stopped = true; sequence.current++; clearTimeout(timer); };
-  }, [visible, refresh]);
-  const more = async () => {
-    if (loading || inFlight.current || !page?.hasMore || !page.next) return;
-    const request = sequence.current;
-    inFlight.current = true; setLoading(true);
-    try {
-      const result = await rpc<BotDelegations>("botDelegations.list", { botId: scope.botId, threadId: scope.threadId, limit: 30, before: page.next });
-      if (alive.current && request === sequence.current) {
-        const incoming = merge([], result.delegations.filter(value => belongs(value, scope))), last = incoming.at(-1);
-        if (last) boundary.current = { createdAt: last.createdAt, id: last.id };
-        setRows(current => merge(current, incoming)); setPage(result); setError(undefined);
-      }
-    } catch (cause) { if (alive.current && request === sequence.current) setError(botErrorMessage(cause)); }
-    finally { inFlight.current = false; if (alive.current) setLoading(false); }
-  };
+  const query = useQuery({ ...botDelegationsQuery(rpc, scope), enabled: visible, refetchInterval: visible ? 2000 : false }, queryClient);
+  const page = query.data, rows = page?.delegations ?? [], loading = query.isFetching;
+  const error = query.error ? botErrorMessage(query.error) : undefined;
+  const refresh = async () => { await query.refetch({ cancelRefetch: false, throwOnError: true }); };
+  const more = () => loadMoreBotDelegations(rpc, scope).catch(() => undefined);
   return <section className="desktop-bot-delegations desktop-bot-page-body" aria-label={t("Delegations")}>
-    <header><IconButton size="sm" label={t("Refresh")} onClick={() => void refresh()}><RefreshCw size={16} /></IconButton></header>
+    <header><IconButton size="sm" label={t("Refresh")} onClick={() => void refresh().catch(() => undefined)}><RefreshCw size={16} /></IconButton></header>
     {error && <p className="desktop-bot-section-note" role="alert">{t(error)}</p>}
     {!rows.length && <p className="desktop-bot-section-note" role="status">{t(page ? "No delegations yet" : "Loading delegations…")}</p>}
     {rows.length > 0 && <div className="desktop-bot-row-group">{rows.map(value => <Delegation key={value.id} value={value} scope={scope} rpc={rpc} names={names} onRefresh={refresh} onOpenThread={onOpenThread} />)}</div>}
@@ -94,25 +49,18 @@ export function DesktopBotDelegationCard(props: ScopedProps & { delegationId: st
 }
 function Card({ scope, rpc, delegationId, revision, botNames, onOpenThread }: ScopedProps & { delegationId: string; revision: number }) {
   const { t } = useTranslation(), visible = useSurfaceVisibility(), names = useBotNames(rpc, botNames);
-  const [value, setValue] = useState<BotDelegation>(), [error, setError] = useState<string>();
-  const sequence = useRef(0), alive = useRef(true);
-  useEffect(() => { alive.current = true; return () => { alive.current = false; sequence.current++; }; }, []);
-  const refresh = useCallback(async () => {
-    const request = ++sequence.current;
-    try {
-      const next = await rpc<BotDelegation>("botDelegations.get", { botId: scope.botId, threadId: scope.threadId, delegationId });
-      if (!alive.current || request !== sequence.current) return;
-      if (next.id !== delegationId || !belongs(next, scope)) { setValue(undefined); setError("Delegation unavailable in this thread"); return; }
-      setValue(next); setError(undefined);
-    } catch (cause) { if (alive.current && request === sequence.current) setError(botErrorMessage(cause)); }
-  }, [rpc, scope.botId, scope.threadId, delegationId]);
+  const query = useQuery({ ...botDelegationQuery(rpc, scope, delegationId), enabled: visible }, queryClient);
+  const value = query.data, error = query.error ? botErrorMessage(query.error) : undefined;
+  const refresh = useCallback(async () => { await query.refetch({ cancelRefetch: false, throwOnError: true }); }, [query.refetch]);
+  const previousRevision = useRef(revision);
   useEffect(() => {
-    if (!visible) return;
-    void refresh();
-    return () => { sequence.current++; };
-  }, [visible, revision, refresh]);
+    const changed = previousRevision.current !== revision;
+    previousRevision.current = revision;
+    if (!visible || !changed) return;
+    void invalidateAfterChange(botDelegationQuery(rpc, scope, delegationId).queryKey);
+  }, [visible, revision, rpc, scope, delegationId]);
   return <div className="desktop-bot-delegation-message">
-    {error && <p role="alert">{t(error)} <Button size="sm" variant="secondary" type="button" onClick={() => void refresh()}>{t("Retry")}</Button></p>}
+    {error && <p role="alert">{t(error)} <Button size="sm" variant="secondary" type="button" onClick={() => void refresh().catch(() => undefined)}>{t("Retry")}</Button></p>}
     {value ? <Delegation value={value} scope={scope} rpc={rpc} names={names} onRefresh={refresh} onOpenThread={onOpenThread} /> : !error && <p role="status">{t("Loading delegations…")}</p>}
   </div>;
 }
@@ -121,16 +69,19 @@ function Delegation({ value, scope, rpc, names, onRefresh, onOpenThread }: {
   value: BotDelegation; scope: BotScope; rpc: BotRpc; names: Names; onRefresh: () => Promise<void>; onOpenThread?: (scope: BotScope) => void;
 }) {
   const { t } = useTranslation(), visible = useSurfaceVisibility();
-  const [expanded, setExpanded] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState<string>();
+  const [expanded, setExpanded] = useState(false);
   const command = useRef<string | undefined>(undefined);
-  const cancel = async () => {
-    if (!visible || busy || value.status !== "running" || !belongs(value, scope)) return;
-    setBusy(true); setError(undefined); command.current ??= crypto.randomUUID();
-    try {
+  const mutation = useMutation({
+    mutationFn: async () => {
+      command.current ??= crypto.randomUUID();
       await rpc("botDelegations.cancel", { botId: scope.botId, threadId: scope.threadId, delegationId: value.id, commandId: command.current });
       await onRefresh(); command.current = undefined;
-    } catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
+    },
+  }, queryClient);
+  const busy = mutation.isPending;
+  const error = mutation.error ? botErrorMessage(mutation.error) : undefined;
+  const cancel = () => {
+    if (visible && !busy && value.status === "running" && belongs(value, scope)) mutation.mutate();
   };
   if (!belongs(value, scope)) return null;
   const source = names[value.source.botId] ?? value.source.botId, target = names[value.target.botId] ?? value.target.botId;

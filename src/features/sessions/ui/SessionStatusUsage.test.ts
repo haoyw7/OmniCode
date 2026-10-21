@@ -13,7 +13,7 @@ import {
   saveProviderAccount,
   selectProviderAccount,
 } from "../../providers/model/providerAccounts";
-import { clearCachedRateLimits, setCachedRateLimits } from "../../providers/model/rateLimitsCache";
+import { clearCachedRateLimits, setCachedRateLimits } from "../../providers/model/rateLimitsQueries";
 import {
   idleRateLimits,
   RATE_LIMIT_MIN_REFETCH_MS,
@@ -191,9 +191,9 @@ it("keeps the shortest-window quota current while folded, independently of headr
   await finishExits();
   expect(usageRow()).toBeNull();
   expect(remaining()?.textContent).toBe("5h remaining 83%");
-  act(() => setCachedRateLimits("codex", "account-left", quota(60)));
+  await act(async () => setCachedRateLimits("codex", "account-left", quota(60)));
   expect(remaining()?.textContent).toBe("5h remaining 40%");
-  act(() => setCachedRateLimits("codex", "account-left", {
+  await act(async () => setCachedRateLimits("codex", "account-left", {
     ...quota(60),
     weekly: { usedPercent: 30, windowMinutes: 60, resetsAt: null },
   }));
@@ -223,9 +223,9 @@ it("loads usage when the card starts folded and distinguishes missing data from 
   expect(remaining()?.textContent).toBe("Checking…");
   await act(async () => resolveUsage(quota(100)));
   expect(remaining()?.textContent).toBe("5h remaining 0%");
-  act(() => setCachedRateLimits("codex", "account-left", unavailableRateLimits("codex", "not signed in")));
+  await act(async () => setCachedRateLimits("codex", "account-left", unavailableRateLimits("codex", "not signed in")));
   expect(remaining()?.textContent).toBe("Usage unavailable");
-  act(() => setCachedRateLimits("codex", "account-left", quota(0)));
+  await act(async () => setCachedRateLimits("codex", "account-left", quota(0)));
   expect(remaining()?.textContent).toBe("5h remaining 100%");
   await act(async () => usageToggle().click());
   await finishExits();
@@ -514,26 +514,26 @@ it("localizes usage controls while preserving account names", async () => {
   act(() => usageToggle().click());
   await finishExits();
   expect(remaining()?.textContent).toBe("5h 剩余 83%");
-  act(() => setCachedRateLimits("codex", "account-left", {
+  await act(async () => setCachedRateLimits("codex", "account-left", {
     ...quota(100),
     session: { usedPercent: 100, windowMinutes: 300, resetsAt: Date.now() - 60_000 },
     weekly: { usedPercent: 72, windowMinutes: 10080, resetsAt: Date.now() + 86400_000 },
   }));
   expect(remaining()?.textContent).toBe("5h 剩余 100%");
-  act(() => setCachedRateLimits("codex", "account-left", {
+  await act(async () => setCachedRateLimits("codex", "account-left", {
     ...quota(17),
     session: null,
     weekly: { usedPercent: 72, windowMinutes: 10080, resetsAt: null },
     monthly: { usedPercent: 81, windowMinutes: 43200, resetsAt: null },
   }));
   expect(remaining()?.textContent).toBe("周剩余 28%");
-  act(() => setCachedRateLimits("codex", "account-left", {
+  await act(async () => setCachedRateLimits("codex", "account-left", {
     ...quota(17),
     session: null,
     monthly: { usedPercent: 81, windowMinutes: 43200, resetsAt: null },
   }));
   expect(remaining()?.textContent).toBe("月剩余 19%");
-  act(() => setCachedRateLimits("codex", "account-left", {
+  await act(async () => setCachedRateLimits("codex", "account-left", {
     ...quota(25),
     session: { usedPercent: 25, windowMinutes: 120, resetsAt: Date.now() + 1800_000 },
   }));

@@ -1,53 +1,35 @@
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useContext, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { transcriptImageQuery } from "../model/transcriptImageQueries";
 import { TranscriptPlatformContext } from "./TranscriptPlatform";
 import { formatFileSize, sniffImageMime } from "../../connections/files/model/filePreview";
 import { ImageLightbox } from "../../../shared/ui/ImageLightbox";
 import type { GeneratedImageMeta, Attachment } from "../model/session";
 
-type State =
-  | { status: "loading" }
-  | { status: "ready"; url: string; size: number }
-  | { status: "error" };
-
 export function GeneratedImage({ image, attachment }: { image: GeneratedImageMeta; attachment?: Attachment }) {
   const { readBinaryFile } = useContext(TranscriptPlatformContext);
   const { t: uiT } = useTranslation();
-  const [state, setState] = useState<State>({ status: "loading" });
+  const imageQuery = useQuery({ ...transcriptImageQuery(image.path, readBinaryFile), enabled: !attachment }, queryClient);
+  const bytes = imageQuery.data;
+  const [preview, setPreview] = useState<{ bytes: Uint8Array; url: string }>();
+  const [failedUrl, setFailedUrl] = useState<string>();
   const [open, setOpen] = useState(false);
-
+  const attachmentUrl = attachment?.previewUrl || (attachment?.data ? `data:${attachment.mimeType};base64,${attachment.data}` : undefined);
+  const mime = bytes && sniffImageMime(bytes);
+  const url = attachment ? attachmentUrl : preview?.bytes === bytes ? preview?.url : undefined;
+  const size = attachment ? attachment.size : bytes?.byteLength ?? 0;
   useEffect(() => {
-    let cancelled = false;
-    let created: string | null = null;
-    setState({ status: "loading" });
-    if (attachment) {
-      const url = attachment.previewUrl || (attachment.data ? `data:${attachment.mimeType};base64,${attachment.data}` : undefined);
-      setState(url ? { status: "ready", url, size: attachment.size } : { status: "error" });
-      return;
-    }
-    void readBinaryFile(image.path).then(
-      (bytes) => {
-        if (cancelled) return;
-        const mime = sniffImageMime(bytes);
-        if (!mime) {
-          setState({ status: "error" });
-          return;
-        }
-        created = URL.createObjectURL(new Blob([bytes], { type: mime }));
-        setState({ status: "ready", url: created, size: bytes.byteLength });
-      },
-      () => {
-        if (!cancelled) setState({ status: "error" });
-      },
-    );
-    return () => {
-      cancelled = true;
-      if (created) URL.revokeObjectURL(created);
-    };
-  }, [image.path, readBinaryFile, attachment?.id, attachment?.data, attachment?.previewUrl, attachment?.mimeType, attachment?.size]);
+    if (attachment || !bytes || !mime) return;
+    const created = URL.createObjectURL(new Blob([bytes], { type: mime }));
+    setPreview({ bytes, url: created });
+    return () => URL.revokeObjectURL(created);
+  }, [bytes, mime, !!attachment]);
+  useEffect(() => { setOpen(false); }, [image.path, readBinaryFile, attachment?.id]);
 
-  if (state.status === "loading") {
+  if (!attachment && (imageQuery.isPending || (!!mime && !url))) {
     return (
       <div className="px-4 py-3 text-xs text-content/45" role="status">
         {uiT("Loading generated image…")}
@@ -55,7 +37,7 @@ export function GeneratedImage({ image, attachment }: { image: GeneratedImageMet
     );
   }
 
-  if (state.status === "error") {
+  if (!url || url === failedUrl || (!attachment && imageQuery.isError)) {
     return (
       <div className="px-4 py-3 text-xs text-content/50" role="alert">
         {uiT("Could not open generated image.")}
@@ -76,8 +58,8 @@ export function GeneratedImage({ image, attachment }: { image: GeneratedImageMet
         className="block max-w-full cursor-zoom-in overflow-hidden rounded-xl border border-content/10 bg-content/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <img
-          src={state.url}
-          onError={() => setState({ status: "error" })}
+          src={url}
+          onError={() => setFailedUrl(url)}
           alt={alt}
           draggable={false}
           className="max-h-[min(70vh,640px)] max-w-full object-contain"
@@ -85,11 +67,11 @@ export function GeneratedImage({ image, attachment }: { image: GeneratedImageMet
       </button>
       <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-content/45">
         <span className="truncate">{image.name}</span>
-        <span>{formatFileSize(state.size)}</span>
+        <span>{formatFileSize(size)}</span>
       </div>
       <PresenceBoundary>{open ? (
         <ImageLightbox
-          src={state.url}
+          src={url}
           alt={alt}
           onClose={() => setOpen(false)}
         />

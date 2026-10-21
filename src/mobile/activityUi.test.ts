@@ -1,6 +1,7 @@
 import { advanceMotionTimers, startMotionClock, stopMotionClock } from "./motionTestClock";
 // @vitest-environment happy-dom
 import { act, createElement, type ComponentProps } from "react";
+import { queryClient } from "../shared/lib/queryClient";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { MobileApp } from "./MobileApp";
@@ -112,6 +113,7 @@ function summary(id = "one", projectId = "project"): HostSessionSummary {
   };
 }
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   startMotionClock();

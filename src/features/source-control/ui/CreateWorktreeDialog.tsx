@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
@@ -28,8 +30,9 @@ export function CreateWorktreeDialog({
   const [name, setName] = useState("");
   const [base, setBase] = useState("HEAD");
   const [existing, setExisting] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
+  const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
+  const busy = mutation.isPending;
+  const error = mutation.error ? String(mutation.error) : undefined;
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (existing) return;
@@ -64,9 +67,7 @@ export function CreateWorktreeDialog({
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (busy || !name.trim()) return;
-    setBusy(true);
-    setError(undefined);
-    try {
+    mutation.mutate(async () => {
       await withToast(
         async () => onCreated(await createWorktree(baseCwd, name.trim(), base, existing)),
         {
@@ -75,11 +76,7 @@ export function CreateWorktreeDialog({
           error: false,
         },
       );
-    } catch (err) {
-      setError(String(err));
-    } finally {
-      setBusy(false);
-    }
+    });
   };
   const field =
     "h-9 rounded-md border border-content/10 bg-content/5 px-2.5 text-[13px] outline-none focus:border-content/25 disabled:opacity-50";

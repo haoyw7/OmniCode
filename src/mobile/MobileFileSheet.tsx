@@ -1,4 +1,8 @@
-import { useContext, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { errorMessage } from "../shared/lib/errorMessage";
+import { mobileFileQuery } from "./mobileQueries";
+import { useContext, useEffect, useId, useMemo, useState, type CSSProperties } from "react";
 import { isLongText, ReadonlyTextView } from "../shared/ui/ReadonlyTextView";
 import { TranscriptPlatformContext } from "../features/sessions/ui/TranscriptPlatform";
 import { AgentMarkdown } from "../features/sessions/ui/AgentMarkdown";
@@ -90,44 +94,26 @@ export function MobileFileSheet({
 }) {
   const { t } = useTranslation();
   const { copyText } = useContext(TranscriptPlatformContext);
-  const [loaded, setLoaded] = useState<Loaded>({ kind: "loading" });
+  const owner = useId();
+  const file = useQuery(mobileFileQuery(owner, path, readBinaryFile), queryClient);
+  const [preview, setPreview] = useState<{ bytes: Uint8Array; content: Loaded }>();
   const extension = fileExtension(path);
   const name = path.split(/[\\/]/).pop() || path;
 
   useEffect(() => {
-    let cancelled = false;
-    let objectUrl: string | undefined;
-    setLoaded({ kind: "loading" });
-    readBinaryFile(path)
-      .then((bytes) => {
-        if (cancelled) return;
-        const imageType = sniffImageMime(bytes) ??
-          (extension === "svg" ? "image/svg+xml" : null);
-        if (imageType) {
-          if (bytes.length > MAX_IMAGE_PREVIEW_BYTES) {
-            setLoaded({ kind: "large", size: bytes.length });
-            return;
-          }
-          objectUrl = URL.createObjectURL(
-            new Blob([bytes as BlobPart], { type: imageType }),
-          );
-          setLoaded({ kind: "image", url: objectUrl });
-          return;
-        }
-        setLoaded(decodePreview(bytes));
-      })
-      .catch((error: unknown) => {
-        if (!cancelled)
-          setLoaded({
-            kind: "error",
-            message: error instanceof Error ? error.message : String(error),
-          });
-      });
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [path, extension, readBinaryFile]);
+    const bytes = file.data;
+    if (!bytes) return;
+    const imageType = sniffImageMime(bytes) ?? (extension === "svg" ? "image/svg+xml" : null);
+    if (!imageType) { setPreview({ bytes, content: decodePreview(bytes) }); return; }
+    if (bytes.length > MAX_IMAGE_PREVIEW_BYTES) {
+      setPreview({ bytes, content: { kind: "large", size: bytes.length } }); return;
+    }
+    const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: imageType }));
+    setPreview({ bytes, content: { kind: "image", url } });
+    return () => URL.revokeObjectURL(url);
+  }, [file.data, extension]);
+  const loaded: Loaded = file.isError ? { kind: "error", message: errorMessage(file.error) ?? "" }
+    : preview && preview.bytes === file.data ? preview.content : { kind: "loading" };
 
   const source = useMemo(() => {
     if (loaded.kind !== "text") return undefined;
@@ -176,9 +162,9 @@ export function MobileFileSheet({
               className="mobile-file-image"
               src={loaded.url}
               alt={name}
-              onError={() => setLoaded((current) =>
-                current.kind === "image" && current.url === loaded.url
-                  ? { kind: "image-error" }
+              onError={() => setPreview(current =>
+                current?.content.kind === "image" && current.content.url === loaded.url
+                  ? { ...current, content: { kind: "image-error" } }
                   : current,
               )}
             />

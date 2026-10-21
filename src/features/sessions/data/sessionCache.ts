@@ -1,3 +1,4 @@
+import { queryClient } from "../../../shared/lib/queryClient";
 import type { Session } from "../model/session";
 
 /** Closed chats stay here so clicking a session card can paint without disk. */
@@ -46,26 +47,20 @@ export function estimateSessionCacheBytes(session: Session): number {
   return bytes;
 }
 
-export function rememberLoadedSession(
-  cache: Map<string, Session>,
-  session: Session,
-  limit = SESSION_LOAD_CACHE_LIMIT,
-  maxBytes = SESSION_LOAD_CACHE_MAX_BYTES,
-) {
-  cache.delete(session.id);
-  const sessionBytes = estimateSessionCacheBytes(session);
-  if (limit <= 0 || sessionBytes > maxBytes) return;
-
-  cache.set(session.id, session);
-  let cacheBytes = 0;
-  for (const cached of cache.values()) {
-    cacheBytes += estimateSessionCacheBytes(cached);
-  }
-  while (cache.size > limit || cacheBytes > maxBytes) {
-    const oldest = cache.keys().next().value;
-    if (oldest == null) break;
-    const evicted = cache.get(oldest);
-    if (evicted) cacheBytes -= estimateSessionCacheBytes(evicted);
-    cache.delete(oldest);
+let retainedVisit = 0;
+export function rememberLoadedSession(scope: readonly unknown[], session: Session, limit = SESSION_LOAD_CACHE_LIMIT, maxBytes = SESSION_LOAD_CACHE_MAX_BYTES) {
+  const key = [...scope, session.id];
+  queryClient.removeQueries({ queryKey: key, exact: true });
+  if (limit <= 0 || estimateSessionCacheBytes(session) > maxBytes) return;
+  queryClient.getQueryCache().build(queryClient, { queryKey: key, structuralSharing: false, meta: { visited: ++retainedVisit } });
+  queryClient.setQueryData(key, session);
+  const entries = queryClient.getQueryCache().findAll({ queryKey: scope })
+    .filter(query => query.state.data)
+    .sort((a, b) => Number(a.meta?.visited ?? 0) - Number(b.meta?.visited ?? 0));
+  let bytes = entries.reduce((total, query) => total + estimateSessionCacheBytes(query.state.data as Session), 0), count = entries.length;
+  for (const query of entries) {
+    if (count <= limit && bytes <= maxBytes) break;
+    bytes -= estimateSessionCacheBytes(query.state.data as Session); count--;
+    queryClient.removeQueries({ queryKey: query.queryKey, exact: true });
   }
 }

@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { mobileArchiveQuery } from "./mobileQueries";
 import type {
   HostProject,
   HostSessionSummary,
@@ -6,79 +8,47 @@ import type {
 import { sessionDisplayTitle } from "../features/sessions/model/session";
 import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
 import { SessionWorktreeIcon } from "../features/sessions/ui/SessionWorktreeIcon";
-import { translate } from "../shared/i18n/language";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { formatMobileRelativeTime } from "./relativeTime";
-import { archivedMobileSessions } from "./sessionList";
 import { Archive } from "../shared/ui/icons";
 import { MobileEmpty } from "./MobileEmpty";
 
-type ArchiveGroup = { project: HostProject; sessions: HostSessionSummary[] };
 
 /** Archived conversations across every project, restorable one at a time. */
 export function MobileArchive({
+  hostKey,
   projects,
   disabled,
   loadSessions,
   onRestore,
 }: {
+  hostKey?: string;
   projects: readonly HostProject[];
   disabled: boolean;
   loadSessions: (projectId: string) => Promise<HostSessionSummary[]>;
   onRestore: (session: HostSessionSummary) => Promise<void>;
 }) {
   const { t, language } = useTranslation();
-  const [groups, setGroups] = useState<ArchiveGroup[]>();
-  const [error, setError] = useState("");
-  const [restoring, setRestoring] = useState<string>();
-
-  useEffect(() => {
-    let live = true;
-    setError("");
-    void Promise.all(
-      projects
-        .filter((project) => project.kind !== "assistant")
-        .map(async (project) => ({
-          project,
-          sessions: archivedMobileSessions(await loadSessions(project.id)),
-        })),
-    )
-      .then((items) => {
-        if (live) setGroups(items.filter((item) => item.sessions.length));
-      })
-      .catch(() => {
-        if (live) {
-          setGroups([]);
-          setError(translate("Unable to load archived conversations."));
-        }
-      });
-    return () => {
-      live = false;
-    };
-  }, [projects, loadSessions]);
-
-  const restore = async (session: HostSessionSummary) => {
-    setRestoring(session.id);
-    setError("");
-    try {
-      await onRestore(session);
-      setGroups((items) =>
-        items
-          ?.map((item) => ({
-            ...item,
-            sessions: item.sessions.filter((entry) => entry.id !== session.id),
-          }))
-          .filter((item) => item.sessions.length),
-      );
-    } catch {
-      setError(t("Unable to restore the conversation."));
-    } finally {
-      setRestoring(undefined);
-    }
-  };
-
-  if (!groups)
-    return <p className="mobile-settings-footer">{t("Loading…")}</p>;
+  const options = mobileArchiveQuery(hostKey, projects, loadSessions);
+  const query = useQuery(options, queryClient);
+  const groups = query.data ?? [];
+  const mutation = useMutation({
+    mutationFn: (session: HostSessionSummary) => onRestore(session),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: options.queryKey });
+      return { queryKey: options.queryKey };
+    },
+    onSuccess: (_result, session, context) => {
+      queryClient.setQueryData(context.queryKey, current => current?.map(group => ({
+        ...group, sessions: group.sessions.filter(entry => entry.id !== session.id),
+      })).filter(group => group.sessions.length));
+    },
+  }, queryClient);
+  const restoring = mutation.isPending ? mutation.variables?.id : undefined;
+  const error = mutation.isError ? t("Unable to restore the conversation.")
+    : query.isError ? t("Unable to load archived conversations.") : "";
+  const restore = (session: HostSessionSummary) => mutation.mutate(session);
+  if (query.isPending) return <p className="mobile-settings-footer">{t("Loading…")}</p>;
   const now = Date.now();
   return (
     <>

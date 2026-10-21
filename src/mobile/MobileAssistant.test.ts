@@ -251,6 +251,7 @@ it.each([false, true])("shows sending until the Host responds and clears it afte
   type(field, "Continue");
   const send = button("Send");
   act(() => send.click());
+  await flush();
   expect(send.getAttribute("aria-busy")).toBe("true");
   expect(send.getAttribute("aria-label")).toBe("Sending...");
   expect(send.querySelector(".mobile-spin")).not.toBeNull();
@@ -277,6 +278,7 @@ it.each([false, true])("shows sending until the Host responds and clears it afte
       return invoke(method, params);
     });
     act(() => button("Retry message").click());
+    await flush();
     expect(send.getAttribute("aria-busy")).toBe("true");
     expect(send.querySelector(".mobile-spin")).not.toBeNull();
     expect(button("Retry message").disabled).toBe(true);
@@ -301,6 +303,7 @@ it("keeps the send arrow while an assistant control request is pending", async (
   type(field, "Continue");
   act(() => button("Assistant options").click());
   act(() => button("Pause").click());
+  await flush();
   const send = button("Send");
   expect(send.disabled).toBe(true);
   expect(send.getAttribute("aria-busy")).toBeNull();
@@ -517,7 +520,7 @@ it("expands activity inside the center capsule and retains it through closing an
   expect(fold()?.dataset.foldState).toBe("open");
 
   data.update({ lifecycle: "idle", activity: undefined });
-  await advanceMotionTimers(2000);
+  await advanceMotionTimers(250);
   await flush();
   expect(fold()?.dataset.foldState).toBe("closing");
   await advanceMotionTimers(350);

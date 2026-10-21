@@ -1,4 +1,8 @@
 import { Input } from "../../../shared/ui/forms/Input";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
+import { botRpcQuery } from "../model/botPanelQueries";
 import { Button } from "../../../shared/ui/forms/Button";
 import { useContext, useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
@@ -29,39 +33,31 @@ export function DesktopBotThreadSettings({ bot, thread, defaultBotId, rpc, onSav
   const [base, setBase] = useState(thread);
   const [title, setTitle] = useState(thread.title);
   const [override, setOverride] = useState(thread.modelOverride);
-  const [catalog, setCatalog] = useState<HostModelCatalog>();
-  const [catalogError, setCatalogError] = useState<string>();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
+  const catalogRead = useQuery({ ...botRpcQuery<HostModelCatalog>(rpc, "models.list"), enabled: visible && !!override }, queryClient);
+  const catalog = catalogRead.data, catalogError = catalogRead.error ? botErrorMessage(catalogRead.error) : undefined;
   const command = useRef<{ signature: string; id: string } | undefined>(undefined);
+  const actionMutation = useMutation({ mutationFn: (action: () => Promise<void>) => withToast(action,
+    { loading: t("Saving…"), success: false, error: cause => t(botErrorMessage(cause)) }) }, queryClient);
+  const busy = actionMutation.isPending, error = actionMutation.error ? botErrorMessage(actionMutation.error) : undefined;
   const dirty = signature(title, override) !== signature(base.title, base.modelOverride);
   useEffect(() => {
     if (dirty || busy) return;
     setBase(thread); setTitle(thread.title); setOverride(thread.modelOverride);
   }, [thread, dirty, busy]);
-  const loadModels = async () => {
-    try { setCatalog(await rpc<HostModelCatalog>("models.list")); setCatalogError(undefined); }
-    catch (cause) { setCatalogError(botErrorMessage(cause)); }
-  };
-  useEffect(() => { if (visible && override && !catalog && !catalogError) void loadModels(); }, [visible, !!override, rpc]);
-  const save = async () => {
+  const loadModels = () => catalogRead.refetch();
+  const save = () => {
     if (busy || !dirty) return;
-    setBusy(true); setError(undefined);
     const patch = { ...(title !== base.title ? { title: title.trim() } : {}), modelOverride: override ?? null };
     const text = JSON.stringify([base.revision, patch]);
     if (command.current?.signature !== text) command.current = { signature: text, id: crypto.randomUUID() };
-    try {
-      const saved = await rpc<BotThread>("botThreads.configure", { botId: bot.id, threadId: thread.id, commandId: command.current.id, expectedRevision: base.revision, patch });
+    const commandId = command.current.id;
+    actionMutation.mutate(async () => {
+      const saved = await rpc<BotThread>("botThreads.configure", { botId: bot.id, threadId: thread.id, commandId, expectedRevision: base.revision, patch });
       await onSaved();
       setBase(saved); setTitle(saved.title); setOverride(saved.modelOverride); command.current = undefined;
-    } catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
+    });
   };
-  const archive = async (action: () => Promise<void>) => {
-    setBusy(true); setError(undefined);
-    try { await action(); } catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
-  };
+  const archive = (action: () => Promise<void>) => { if (!busy) actionMutation.mutate(action); };
   const selectModel = (harness: RemoteProvider, model: string) => {
     const next = findRemoteModel(catalog?.models[harness] ?? [], model);
     setOverride({ harness, model, modelSettings: carryModelSettings(next?.settings ?? [], override?.modelSettings ?? {}) });
@@ -73,7 +69,7 @@ export function DesktopBotThreadSettings({ bot, thread, defaultBotId, rpc, onSav
   const harnesses = [...new Set([...(Object.keys(catalog?.models ?? {}) as RemoteProvider[]), shownOverride.harness])];
   const controls = remoteModelControls(catalog, shownOverride.harness, shownOverride.model, shownOverride.modelSettings ?? {}, base.modelOverride?.model ?? bot.model).settings;
   const ModelPicker = useContext(BotModelPickerContext);
-  const reset = () => { setBase(thread); setTitle(thread.title); setOverride(thread.modelOverride); setError(undefined); command.current = undefined; };
+  const reset = () => { setBase(thread); setTitle(thread.title); setOverride(thread.modelOverride); actionMutation.reset(); command.current = undefined; };
   const modelError = catalogError ?? catalog?.errors[shownOverride.harness];
   return <section className="desktop-bots-thread-settings">
     <form className="desktop-bot-page" onSubmit={(event) => { event.preventDefault(); void save(); }}>

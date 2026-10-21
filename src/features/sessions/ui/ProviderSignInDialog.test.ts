@@ -13,11 +13,13 @@ vi.mock("../../../integrations/harness/core/auth", () => ({
 }));
 
 import { ProviderSignInDialog } from "./ProviderSignInDialog";
+import { queryClient } from "../../../shared/lib/queryClient";
 
 let container: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   auth.loginHarness.mockReset();
   container = document.createElement("div");
@@ -27,6 +29,7 @@ beforeEach(() => {
 
 afterEach(() => {
   act(() => root.unmount());
+  queryClient.clear();
   container.remove();
   vi.unstubAllGlobals();
 });
@@ -42,6 +45,17 @@ function button(label: string): HTMLButtonElement {
 }
 
 describe("ProviderSignInDialog", () => {
+  it("does not apply the previous provider's late login to the new dialog", async () => {
+    let finish!: () => void;
+    auth.loginHarness.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+    await act(async () => root.render(createElement(ProviderSignInDialog, { harness: "grok", onClose: vi.fn() })));
+    await act(async () => button("Sign in to Grok Build").click());
+    await act(async () => root.render(createElement(ProviderSignInDialog, { harness: "codex", onClose: vi.fn() })));
+    await act(async () => finish());
+    expect(button("Sign in to Codex").disabled).toBe(false);
+    expect(document.body.textContent).not.toContain("Signed in to Codex");
+  });
+
   it("launches provider login and offers a clear continuation state", async () => {
     const close = vi.fn();
     auth.loginHarness.mockResolvedValue();

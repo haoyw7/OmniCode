@@ -1,5 +1,8 @@
 import { Button } from "../shared/ui/forms/Button";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../shared/lib/queryClient";
+import { mobileSavedConnectionsQuery } from "./mobileQueries";
 import { useHostConnections } from "../features/connections/model/hostConnections";
 import type { HostConnectionDefinition } from "../features/connections/model/hostState";
 import { useTranslation } from "../shared/i18n/useTranslation";
@@ -12,14 +15,16 @@ export function MobileSharedConnections({ client, onPair }: {
 }) {
   const { t } = useTranslation();
   const directory = useHostConnections();
-  const [paired, setPaired] = useState<string[]>([]);
+  const options = mobileSavedConnectionsQuery(client);
+  const pairedRead = useQuery(options, queryClient);
+  const paired = pairedRead.data?.map(entry => entry.environmentId) ?? [];
   const environmentId = client.connection?.environmentId;
+  const previous = useRef({ client, environmentId, connections: directory.connections });
   useEffect(() => {
-    let live = true;
-    void client.savedConnections().then((connections) => {
-      if (live) setPaired(connections.map((entry) => entry.environmentId));
-    }).catch(() => undefined);
-    return () => { live = false; };
+    const last = previous.current;
+    previous.current = { client, environmentId, connections: directory.connections };
+    if (last.client === client && last.environmentId === environmentId && last.connections === directory.connections) return;
+    void invalidateAfterChange(options.queryKey);
   }, [client, environmentId, directory.connections]);
   const unpaired = directory.connections.filter((entry) => entry.environmentId !== environmentId && !paired.includes(entry.environmentId ?? ""));
   if (!unpaired.length && !directory.pending) return null;

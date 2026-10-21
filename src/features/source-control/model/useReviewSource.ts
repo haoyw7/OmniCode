@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
 // Adapted from ZCode (Apache-2.0).
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
@@ -33,20 +35,29 @@ export function useReviewSource(
 ) {
   const visible = useSurfaceVisibility();
   const [, redraw] = useReducer((n: number) => n + 1, 0);
-  const [revision, refreshRevision] = useReducer((n: number) => n + 1, 0);
   const scope = useMemo<ReviewScope>(
     () => ({ cwd, source, sessionId, turnId }),
     [cwd, source, sessionId, turnId],
   );
   const scopeKey = reviewScopeKey(scope);
-  const [index, setIndex] = useState<{
-    key: string;
-    revision: number;
-    files: ReviewFile[] | null;
-    loading: boolean;
-    workspaceShared?: boolean;
-    error?: string;
-  }>({ key: "", revision: -1, files: null, loading: true });
+  const indexKey = ["reviewIndex", scopeKey] as const;
+  const index = useQuery({
+    queryKey: indexKey, enabled: visible, refetchOnWindowFocus: false,
+    queryFn: async ({ signal }): Promise<{ files: ReviewFile[]; workspaceShared?: boolean }> => {
+      if (!cwd || cwd === "~" || (source === "session" && !sessionId)) return { files: [] };
+      const commit = reviewCommit(source);
+      if (commit) return { files: await gitCommitFiles(cwd, commit) };
+      if (source === "uncommitted" || source === "branch") return { files: (await gitBaseDiffFiles(cwd, source === "branch" ? "branch" : "head")).files };
+      if (source === "session") {
+        const status = await (turnId ? sessionCheckpointStatus(sessionId!, cwd, undefined, turnId) : sessionCheckpointStatus(sessionId!, cwd));
+        signal.throwIfAborted();
+        return { files: status.files, workspaceShared: !!status.workspaceShared };
+      }
+      const status = await gitDiffFiles(cwd);
+      return { files: status.files.filter(file => source === "staged" ? file.staged : file.unstaged)
+        .map(file => file.staged && file.unstaged ? { ...file, additions: 0, deletions: 0 } : file) };
+    },
+  }, queryClient);
   const [cache, setCache] = useState<ReviewDiffCache>();
   // Create the resource in the effect: StrictMode's setup/cleanup replay must not
   // leave a memoized cache permanently disposed.
@@ -80,11 +91,15 @@ export function useReviewSource(
   const refresh = useCallback(
     (sources?: readonly ReviewSource[]) => {
       // A full refresh also reloads the selected commit, e.g. after a rebase.
-      const kinds = sources ?? [...WORKTREE_REVIEW_SOURCES, "session", source];
+      const kinds = new Set<ReviewSource>(sources ?? [...WORKTREE_REVIEW_SOURCES, "session", source]);
       for (const kind of kinds)
         cache?.invalidate({ cwd, source: kind, sessionId, turnId });
       redraw();
-      if (kinds.includes(source)) refreshRevision();
+      for (const kind of kinds) {
+        const queryKey = ["reviewIndex", reviewScopeKey({ cwd, source: kind, sessionId, turnId })];
+        void queryClient.cancelQueries({ queryKey, exact: true });
+        void invalidateAfterChange(queryKey);
+      }
     },
     [cache, cwd, sessionId, source, turnId],
   );
@@ -96,71 +111,6 @@ export function useReviewSource(
     for (const kind of [...WORKTREE_REVIEW_SOURCES, "session"] as const)
       cache?.invalidate({ cwd, source: kind, sessionId, turnId });
   }, [visible, cache, cwd, sessionId, turnId]);
-
-  useEffect(() => {
-    if (!visible) return;
-    let stale = false;
-    const key = scopeKey;
-    // Keep this source's rows mounted during refresh so mutations do not reset
-    // the scroll position or interrupt a disclosure animation.
-    setIndex((previous) => ({
-      key,
-      revision,
-      files: previous.key === key ? previous.files : null,
-      workspaceShared: previous.key === key ? previous.workspaceShared : undefined,
-      loading: true,
-    }));
-    if (!cwd || cwd === "~" || (source === "session" && !sessionId)) {
-      setIndex({ key, revision, files: [], loading: false });
-      return;
-    }
-    const commit = reviewCommit(source);
-    let workspaceShared = false;
-    const request = commit
-      ? gitCommitFiles(cwd, commit)
-      : source === "uncommitted" || source === "branch"
-        ? gitBaseDiffFiles(cwd, source === "branch" ? "branch" : "head").then(
-            (diff) => diff.files,
-          )
-        : source === "session"
-          ? (turnId
-              ? sessionCheckpointStatus(sessionId!, cwd, undefined, turnId)
-              : sessionCheckpointStatus(sessionId!, cwd)).then(
-              (status) => {
-                workspaceShared = !!status.workspaceShared;
-                return status.files;
-              },
-            )
-          : gitDiffFiles(cwd).then((status) =>
-              status.files
-                .filter((file) =>
-                  source === "staged" ? file.staged : file.unstaged,
-                )
-                // Index totals combine both sides for partially staged files. Wait for the exact diff counts.
-                .map((file) =>
-                  file.staged && file.unstaged
-                    ? { ...file, additions: 0, deletions: 0 }
-                    : file,
-                ),
-            );
-    void request
-      .then((files) => {
-        if (!stale) setIndex({ key, revision, files, loading: false, workspaceShared });
-      })
-      .catch((error: unknown) => {
-        if (!stale)
-          setIndex({
-            key,
-            revision,
-            files: [],
-            loading: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
-      });
-    return () => {
-      stale = true;
-    };
-  }, [visible, cwd, source, sessionId, scopeKey, revision, turnId]);
 
   useEffect(() => {
     if (!visible) return;
@@ -195,13 +145,12 @@ export function useReviewSource(
     [cache, scope],
   );
   const getDiff = (path: string) => cache?.get(scope, path);
-  const current = index.key === scopeKey;
   return {
     scopeKey,
-    files: current ? index.files : null,
-    error: current ? index.error : undefined,
-    workspaceShared: current && !!index.workspaceShared,
-    loading: !current || index.revision !== revision || index.loading,
+    files: index.data?.files ?? (index.isError ? [] : null),
+    error: index.error ? String(index.error instanceof Error ? index.error.message : index.error) : undefined,
+    workspaceShared: !!index.data?.workspaceShared,
+    loading: index.isPending || index.isFetching,
     loadDiff,
     getDiff,
     refresh,

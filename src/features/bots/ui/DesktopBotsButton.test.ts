@@ -3,6 +3,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { DesktopBotsButton } from "./DesktopBotsButton";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { markBotRead } from "../model/botUnread";
 import type { BotMessage } from "../model/botView";
 import { setUiLanguage } from "../../../shared/i18n/language";
@@ -38,6 +39,7 @@ const reply = (id: string, revision: number, text = id): BotMessage => ({
 let messages: Record<string, BotMessage[]>;
 let names: Record<string, string | null>;
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   localStorage.clear();

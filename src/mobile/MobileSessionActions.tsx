@@ -1,4 +1,6 @@
 import { Button } from "../shared/ui/forms/Button";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   Archive,
@@ -48,7 +50,8 @@ export function MobileSessionActions({
   const { t } = useTranslation();
   const [page, setPage] = useState<"menu" | "rename" | "copy">("menu");
   const [title, setTitle] = useState("");
-  const [working, setWorking] = useState(false);
+  const mutation = useMutation({ mutationFn: (action: () => Promise<void>) => action() }, queryClient);
+  const working = mutation.isPending;
   const [error, setError] = useState("");
   const inFlight = useRef(false);
   useEffect(() => {
@@ -65,10 +68,9 @@ export function MobileSessionActions({
   const run = async (action: () => Promise<void>) => {
     if (disabled || inFlight.current) return;
     inFlight.current = true;
-    setWorking(true);
     setError("");
     try {
-      await action();
+      await mutation.mutateAsync(action);
       onClose();
     } catch (problem) {
       setError(
@@ -78,7 +80,6 @@ export function MobileSessionActions({
       );
     } finally {
       inFlight.current = false;
-      setWorking(false);
     }
   };
   const close = () => {

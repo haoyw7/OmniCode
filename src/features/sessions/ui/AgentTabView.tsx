@@ -1,7 +1,12 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { toast } from "sonner";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -27,8 +32,7 @@ import {
   subscribeNotesEnabled,
 } from "../../settings/model/settings";
 import { hostOrchestrationClient } from "../../orchestration/model/orchestrationClient";
-import { loadRemoteSession } from "../../connections/model/connections";
-import type { HostSession } from "../../connections/model/protocol";
+import { workerSessionQuery } from "../../orchestration/model/workerSessionQueries";
 import { parseRemotePath, remotePath } from "../../connections/model/remoteProjects";
 
 /**
@@ -53,7 +57,14 @@ export function AgentTabView({
   onOpenFile?: (path: string) => void;
 }) {
   const { t: uiT } = useTranslation();
-  const [hostSession, setHostSession] = useState<Session>();
+  const source = initialSession && hostOrchestrationClient.reference(initialSession.id);
+  const workerQuery = useQuery({
+    ...workerSessionQuery(source),
+    enabled: !!source && source.sessionId !== source.leadId && visible,
+  }, queryClient);
+  const hostSession = useMemo(() => source && workerQuery.data
+    ? hostOrchestrationClient.desktopSession(source, workerQuery.data) : undefined,
+  [workerQuery.data, source?.machineId, source?.project]);
   const session = hostSession?.id === initialSession?.id ? hostSession : initialSession;
   const openFile = useCallback((path: string) => {
     const source = initialSession && hostOrchestrationClient.reference(initialSession.id);
@@ -63,26 +74,6 @@ export function AgentTabView({
       ? path : `${cwd ?? source.project.cwd}/${path}`;
     onOpenFile?.(remotePath(source.project.environmentId, absolute));
   }, [initialSession?.id, session, onOpenFile]);
-  useEffect(() => {
-    const source = initialSession && hostOrchestrationClient.reference(initialSession.id);
-    if (!source || source.sessionId === source.leadId || !visible) return;
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout>;
-    let known: HostSession | undefined;
-    const poll = async () => {
-      let active = false;
-      try {
-        const next = await loadRemoteSession(source.machineId, source.sessionId, known);
-        if (disposed || next.projectId !== source.project.projectId || next.session.orchestrationLeadId !== source.leadId) return;
-        known = next;
-        setHostSession(hostOrchestrationClient.desktopSession(source, next));
-        active = next.status === "running";
-      } catch { /* Retain readable worker history while disconnected. */ }
-      if (!disposed) timer = setTimeout(() => void poll(), active ? 750 : 3_000);
-    };
-    void poll();
-    return () => { disposed = true; clearTimeout(timer); };
-  }, [initialSession?.id, visible]);
   const navigateBlockRef = useRef<
     ((blockId: string | null, query?: string) => boolean) | null
   >(null);
@@ -118,11 +109,15 @@ export function AgentTabView({
     loadNotesEnabled,
     () => true,
   );
+  const { mutateAsync: saveNoteRecord } = useMutation({
+    mutationFn: createNote,
+    onError: (reason) => toast.error(errorMessage(reason)),
+  }, queryClient);
   const saveNote = useCallback(
     async (text: string) => {
       if (!session) return;
       const sessionTitle = sessionDisplayTitle(session.title, session.harness);
-      await createNote({
+      await saveNoteRecord({
         title:
           sessionTitle && sessionTitle !== "New session"
             ? sessionTitle
@@ -132,19 +127,19 @@ export function AgentTabView({
         sourceCwd: session.cwd,
       });
     },
-    [session?.cwd, session?.harness, session?.id, session?.title],
+    [session?.cwd, session?.harness, session?.id, session?.title, saveNoteRecord],
   );
   const saveSelectionNote = useCallback(
     async (text: string) => {
       if (!session) return;
-      await createNote({
+      await saveNoteRecord({
         title: noteTitle(text),
         body: text,
         sourceSessionId: session.id,
         sourceCwd: session.cwd,
       });
     },
-    [session?.cwd, session?.id],
+    [session?.cwd, session?.id, saveNoteRecord],
   );
   if (!session) {
     return (

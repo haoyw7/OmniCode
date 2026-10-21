@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { queryClient } from "../../../shared/lib/queryClient";
 import type { Attachment } from "../../sessions/model/session";
 import type { RemoteAttachment } from "./protocol";
 import { remoteRequest } from "./connections";
@@ -16,9 +17,14 @@ export async function readRemoteQueuedAttachments(
     throw new Error("Each attachment must be readable and 20 MB or smaller.");
   return Promise.all(attachments.map(async (file) => {
     if (file.data !== undefined) return { ...file };
+    return queryClient.fetchQuery({
+      queryKey: ["remoteQueuedAttachment", machineId, sessionId, file.id, file.size, file.mimeType, file.kind, file.path],
+      gcTime: 0,
+      queryFn: async ({ signal }) => {
     let offset = 0;
     const chunks: string[] = [];
     while (offset < file.size) {
+      signal.throwIfAborted();
       const chunk = await remoteRequest<{ data: string; offset: number; size: number }>(
         machineId, "attachments.read", { sessionId, id: file.id, offset },
       );
@@ -30,6 +36,8 @@ export async function readRemoteQueuedAttachments(
       offset = chunk.offset;
     }
     return { ...file, data: chunks.join("") };
+      },
+    });
   }));
 }
 

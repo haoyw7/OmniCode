@@ -1,8 +1,10 @@
+import { useIsFetching, useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { mobileNotesQuery, mobileNoteQuery } from "./mobileQueries";
 import { Button } from "../shared/ui/forms/Button";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { MobileSpinner } from "./MobileSpinner";
 import {
-  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -94,12 +96,15 @@ export function MobileNotes({
   }], [api, hostKey, hostName]);
   const topics = useAssistantTopicNotes(topicSources, visible);
   const [selectedTopicKey, setSelectedTopicKey] = useState<string>();
-  const [notes, setNotes] = useState<Note[]>([]);
+  const noteList = useQuery(mobileNotesQuery(hostKey, api.list), queryClient);
+  const notes = noteList.data ?? [];
+  const refresh = () => { setError(""); return noteList.refetch(); };
   const [selectedId, setSelectedId] = useState<string>();
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [working, setWorking] = useState(false);
-  const [error, setError] = useState("");
+  const loading = noteList.isPending;
+  const working = useIsFetching({ queryKey: ["mobile", "note", hostKey] }, queryClient) > 0;
+  const [actionError, setError] = useState("");
+  const error = actionError || (noteList.error ? errorMessage(noteList.error) : "");
   const viewer = useRef<MobileNotesHandle>(null);
   const live = useRef(true);
   const operation = useRef(false);
@@ -109,23 +114,6 @@ export function MobileNotes({
       live.current = false;
     };
   }, []);
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      const next = await api.list();
-      if (live.current) {
-        setNotes(next);
-        setError("");
-      }
-    } catch (problem) {
-      if (live.current) setError(errorMessage(problem));
-    } finally {
-      if (live.current) setLoading(false);
-    }
-  }, [api]);
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
   const back = () => {
     if (operation.current) return;
     if (selectedTopicKey) {
@@ -136,7 +124,7 @@ export function MobileNotes({
   };
   useImperativeHandle(ref, () => ({ back }));
   const loaded = (note: Note) =>
-    setNotes((current) =>
+    queryClient.setQueryData(mobileNotesQuery(hostKey, api.list).queryKey, (current = []) =>
       [note, ...current.filter((item) => item.id !== note.id)].sort(
         (a, b) => b.updatedAt - a.updatedAt || a.id.localeCompare(b.id),
       ),
@@ -144,9 +132,8 @@ export function MobileNotes({
   const open = async (id: string) => {
     if (operation.current || loading || !visible) return;
     operation.current = true;
-    setWorking(true);
     try {
-      const note = await api.get(id);
+      const note = await queryClient.fetchQuery(mobileNoteQuery(hostKey, id, api.get));
       if (!note) throw new Error(t("Note was not found."));
       if (live.current) {
         loaded(note);
@@ -157,7 +144,6 @@ export function MobileNotes({
       if (live.current) setError(errorMessage(problem));
     } finally {
       operation.current = false;
-      if (live.current) setWorking(false);
     }
   };
   const needle = query.trim().toLowerCase();
@@ -365,34 +351,12 @@ function MobileNoteViewer({
 }) {
   const { language, t } = useTranslation();
   const visible = useSurfaceVisibility();
-  const [working, setWorking] = useState(false);
-  const [actionError, setActionError] = useState("");
-  const operation = useRef(false);
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-  const back = () => {
-    if (!operation.current && visible) onBack();
-  };
+  const mutation = useMutation({ mutationFn: () => onAddToChat(note) }, queryClient);
+  const working = mutation.isPending;
+  const actionError = mutation.error ? errorMessage(mutation.error) : "";
+  const back = () => { if (!working && visible) onBack(); };
   useImperativeHandle(ref, () => ({ back }));
-  const addToChat = async () => {
-    if (operation.current || !visible) return;
-    operation.current = true;
-    setWorking(true);
-    setActionError("");
-    try {
-      await onAddToChat(note);
-    } catch (problem) {
-      if (mounted.current) setActionError(errorMessage(problem));
-    } finally {
-      operation.current = false;
-      if (mounted.current) setWorking(false);
-    }
-  };
+  const addToChat = () => { if (!working && visible) mutation.mutate(); };
   const platform = useMemo(
     () => ({ ...mobileTranscriptPlatform, resolveNoteImage: api.resolveImage }),
     [api],

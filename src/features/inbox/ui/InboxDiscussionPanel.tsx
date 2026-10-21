@@ -1,5 +1,9 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { toast } from "sonner";
 import { PanelLeft, RotateCcw } from "../../../shared/ui/icons";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
@@ -26,8 +30,13 @@ export function InboxDiscussionPanel({
 }) {
   const { t: uiT } = useTranslation();
   const host = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const openMutation = useMutation({
+    mutationFn: ({ item, open }: { item: InboxItem; open: (item: InboxItem) => Promise<string> }) => open(item),
+    onError: (reason) => toast.error(errorMessage(reason)),
+  }, queryClient);
+  const { mutateAsync } = openMutation;
+  const error = errorMessage(openMutation.error);
+  const loading = openMutation.isPending;
   const resize = useDragResize({
     min: 360,
     max: () => Math.max(360, window.innerWidth - 650),
@@ -39,27 +48,24 @@ export function InboxDiscussionPanel({
     },
   });
   const key = inboxAskKey(item);
+  const activeKey = useRef<string | null>(key);
+  activeKey.current = key;
   useEffect(() => {
     let active = true;
-    setError(null);
-    setLoading(true);
-    void onOpen(item)
+    activeKey.current = key;
+    void mutateAsync({ item, open: onOpen })
       .then((sessionId) => {
         if (active && host.current) onMount({ sessionId, host: host.current });
       })
-      .catch((reason) => {
-        if (active) setError(String(reason));
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+      .catch(() => {});
     return () => {
       active = false;
+      if (activeKey.current === key) activeKey.current = null;
       onMount(null);
     };
     // Metadata refreshes for the same item must not remount its composer.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, onOpen, onMount]);
+  }, [key, onOpen, onMount, mutateAsync]);
 
   return (
     <aside
@@ -86,14 +92,12 @@ export function InboxDiscussionPanel({
           label={uiT("Restart conversation")}
           disabled={loading}
           onClick={() => {
-            setLoading(true);
-            setError(null);
-            void onRestart(item)
-              .then((sessionId) => {
-                if (host.current) onMount({ sessionId, host: host.current });
-              })
-              .catch((reason) => setError(String(reason)))
-              .finally(() => setLoading(false));
+            if (loading) return;
+            openMutation.mutate({ item, open: onRestart }, {
+              onSuccess: (sessionId) => {
+                if (activeKey.current === key && host.current) onMount({ sessionId, host: host.current });
+              },
+            });
           }}
         >
           <RotateCcw className="size-3.5" />

@@ -1,4 +1,8 @@
 import { Input } from "../../../shared/ui/forms/Input";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
+import { botRpcQuery } from "../model/botPanelQueries";
 import { Button } from "../../../shared/ui/forms/Button";
 import { useEffect, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
@@ -33,7 +37,12 @@ export function DesktopBotTeams({ teams, bots, rpc, onSaved }: Props) {
 function TeamEditor({ team, bots, rpc, onSaved }: { team?: BotTeam; bots: BotView[]; rpc: BotRpc; onSaved: (team: BotTeam) => Promise<void> }) {
   const { t } = useTranslation();
   const [base, setBase] = useState(team), [name, setName] = useState(team?.name ?? ""), [members, setMembers] = useState(team?.memberBotIds ?? []), [chief, setChief] = useState(team?.chiefBotId ?? "");
-  const [busy, setBusy] = useState(false), [error, setError] = useState<string>();
+  const savedRead = useQuery({ ...botRpcQuery<BotTeam>(rpc, "botTeams.get", { teamId: base?.id }), enabled: false }, queryClient);
+  const actionMutation = useMutation({ mutationFn: (action: () => Promise<void>) => withToast(action,
+    { loading: t("Saving…"), success: false, error: cause => t(botErrorMessage(cause)) }) }, queryClient);
+  const busy = actionMutation.isPending || savedRead.isFetching;
+  const cause = actionMutation.error ?? savedRead.error;
+  const error = cause ? botErrorMessage(cause) : undefined;
   const command = useRef<{ signature: string; id: string } | undefined>(undefined);
   const dirty = name !== (base?.name ?? "") || JSON.stringify(members) !== JSON.stringify(base?.memberBotIds ?? []) || chief !== (base?.chiefBotId ?? "");
   const adopt = (next?: BotTeam) => { setBase(next); setName(next?.name ?? ""); setMembers(next?.memberBotIds ?? []); setChief(next?.chiefBotId ?? ""); };
@@ -44,17 +53,15 @@ function TeamEditor({ team, bots, rpc, onSaved }: { team?: BotTeam; bots: BotVie
     const params = { ...(base ? { teamId: base.id, expectedRevision: base.revision } : {}), ...(action === "save" ? { patch: { name: name.trim(), memberBotIds: members, chiefBotId: chief || null } } : {}) };
     const signature = JSON.stringify([method, params]);
     if (command.current?.signature !== signature) command.current = { signature, id: crypto.randomUUID() };
-    setBusy(true); setError(undefined);
-    try { const result = await rpc<BotTeam>(method, { ...params, commandId: command.current.id }); await onSaved(result); adopt(result); command.current = undefined; }
-    catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
+    const commandId = command.current.id;
+    actionMutation.mutate(async () => {
+      const result = await rpc<BotTeam>(method, { ...params, commandId }); await onSaved(result); adopt(result); command.current = undefined;
+    });
   };
   const reload = async () => {
     if (!base || busy) return;
-    setBusy(true);
-    try { adopt(await rpc<BotTeam>("botTeams.get", { teamId: base.id })); command.current = undefined; setError(undefined); }
-    catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
+    actionMutation.reset();
+    const next = await savedRead.refetch(); if (!next.isSuccess) return; adopt(next.data); command.current = undefined;
   };
   return <form className="desktop-bot-group-editor" aria-label={t(base ? "Team settings" : "New team")} onSubmit={event => { event.preventDefault(); void mutate("save"); }}>
     <h3>{t(base ? "Team settings" : "New team")}</h3>

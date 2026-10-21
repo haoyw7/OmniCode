@@ -1,6 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
+import { queryOptions } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../shared/lib/queryClient";
 import {
   ADD_NOTE_TO_CHAT_EVENT,
+  NOTES_CHANGED_EVENT,
   MAX_TITLE,
   normalizeNoteTags,
   noteTitle,
@@ -13,46 +16,38 @@ import {
 } from "./notesText";
 export * from "./notesText";
 
-let cache: Note[] | null = null;
-let inflight: Promise<Note[]> | null = null;
+export const noteKeys = { all: ["notes"] as const, list: ["notes", "list"] as const };
+export const notesQuery = () => queryOptions({
+  queryKey: noteKeys.list,
+  queryFn: () => invoke<Note[]>("notes_list"),
+});
 
 export function peekNotes(): Note[] | null {
-  return cache;
+  return queryClient.getQueryData(noteKeys.list) ?? null;
 }
 
-export function invalidateNotes() {
-  cache = null;
+export async function invalidateNotes() {
+  await queryClient.cancelQueries({ queryKey: noteKeys.all });
+  await invalidateAfterChange(noteKeys.all);
 }
 
 export async function loadNotes(refresh = false): Promise<Note[]> {
-  if (!refresh && cache) return cache;
-  if (!refresh && inflight) return inflight;
-
-  const promise = invoke<Note[]>("notes_list")
-    .then((notes) => {
-      cache = notes;
-      return notes;
-    })
-    .catch(() => {
-      if (!cache) cache = [];
-      return cache;
-    })
-    .finally(() => {
-      if (inflight === promise) inflight = null;
-    });
-  inflight = promise;
-  return promise;
+  if (refresh) await invalidateNotes();
+  // Optional prompt enrichment retains the last usable notes on failure;
+  // mounted editors use notesQuery directly and expose the actual error.
+  return queryClient.fetchQuery({ ...notesQuery(), staleTime: Infinity })
+    .catch(() => peekNotes() ?? []);
 }
 
 export async function upsertNote(note: NoteUpsert): Promise<Note> {
   const saved = await invoke<Note>("notes_upsert", { note });
-  cache = null;
+  await invalidateNotes();
   return saved;
 }
 
 export async function deleteNote(id: string): Promise<void> {
   await invoke("notes_delete", { id });
-  cache = null;
+  await invalidateNotes();
 }
 
 export async function createNote(input: {
@@ -99,4 +94,8 @@ export function requestAddNoteToChat(note: Note) {
       detail: noteComposerCard(note),
     }),
   );
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener(NOTES_CHANGED_EVENT, () => { void invalidateNotes(); });
 }

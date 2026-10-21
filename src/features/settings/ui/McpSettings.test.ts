@@ -3,7 +3,7 @@ import { act, createElement, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { McpSettings } from "./McpSettings";
-import { clearMcpSettingsCache } from "../model/mcpSettingsCache";
+import { clearMcpSettingsCache } from "../model/mcpSettingsQueries";
 import { clearMcpInspections } from "../model/mcpInspect";
 
 const invoke = vi.fn();

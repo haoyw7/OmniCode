@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
 import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
@@ -59,7 +61,8 @@ export function MessageQueue({
   ...props
 }: Props) {
   const { t } = useTranslation();
-  const [working, setWorking] = useState(false);
+  const mutation = useMutation({ mutationFn: (operation: Promise<void>) => operation }, queryClient);
+  const working = mutation.isPending;
   const workingRef = useRef(false);
   const [error, setError] = useState("");
   const invoke = (action: (() => void | Promise<void>) | undefined) => {
@@ -69,14 +72,12 @@ export function MessageQueue({
       const result = action();
       if (result && typeof result.then === "function") {
         workingRef.current = true;
-        setWorking(true);
-        void result
+        void mutation.mutateAsync(result)
           .catch((reason) =>
             setError(t(String(reason).replace(/^Error: /, ""))),
           )
           .finally(() => {
             workingRef.current = false;
-            setWorking(false);
           });
       }
     } catch (reason) {

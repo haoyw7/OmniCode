@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../../../shared/lib/queryClient";
 // 全局工作流组的状态与动作。抽成 hook 让组件文件守住
 // max-lines 400；载体是 `useServices().workflowAgentService`，RPC 一律带 `{ scope: "global" }`。
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -31,7 +33,7 @@ import type {
   SavedWorkflowsOpenArtifactParams,
   SavedWorkflowsOpenRunParams,
 } from "./savedWorkflowContract.js";
-import { selectSavedWorkflowState, useSavedWorkflowStore } from "../../store/savedWorkflowStore.js";
+import { useSavedWorkflows } from "../../hooks/useSavedWorkflows";
 
 interface UseSavedWorkflowGlobalGroupParams {
   refreshSeq: number;
@@ -68,26 +70,23 @@ export function useSavedWorkflowGlobalGroup({
   const requestConfirmation = useConfirmDialog();
   const { workflowAgentService: agentService, fileWatcherService } = useServices();
 
-  const state = useSavedWorkflowStore((store) =>
-    selectSavedWorkflowState(store, GLOBAL_SAVED_WORKFLOW_TARGET),
-  );
-  const load = useSavedWorkflowStore((store) => store.load);
+  const { state, refresh: reload, updatedAt } = useSavedWorkflows(GLOBAL_SAVED_WORKFLOW_TARGET, agentService);
   const [launchEntry, setLaunchEntry] = useState<OmniCodeSavedWorkflowEntry | null>(null);
   const [moveEntry, setMoveEntry] = useState<OmniCodeSavedWorkflowEntry | null>(null);
-  const [busyName, setBusyName] = useState<string | null>(null);
+  const deletion = useMutation({ mutationFn: (input: Parameters<typeof agentService.deleteSavedWorkflow>[0]) => agentService.deleteSavedWorkflow(input) }, queryClient);
+  const moving = useMutation({ mutationFn: (input: Parameters<typeof agentService.moveSavedWorkflow>[0]) => agentService.moveSavedWorkflow(input) }, queryClient);
+  const busyName = deletion.isPending ? deletion.variables.name : moving.isPending ? moving.variables.name : null;
   const [now, setNow] = useState(() => Date.now());
 
   const refresh = useCallback(
     async (options: { bypassCache?: boolean } = {}) => {
-      await load(GLOBAL_SAVED_WORKFLOW_TARGET, agentService, options);
+      await reload(options);
       setNow(Date.now());
     },
-    [agentService, load],
+    [reload],
   );
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  useEffect(() => { if (updatedAt) setNow(updatedAt); }, [updatedAt]);
 
   const lastRefreshSeq = useRef(refreshSeq);
   useEffect(() => {
@@ -197,9 +196,8 @@ export function useSavedWorkflowGlobalGroup({
         confirmVariant: "destructive",
       });
       if (!confirmed) return;
-      setBusyName(entry.name);
       try {
-        const result = await agentService.deleteSavedWorkflow({
+        const result = await deletion.mutateAsync({
           scope: "global",
           name: entry.name,
         });
@@ -222,7 +220,6 @@ export function useSavedWorkflowGlobalGroup({
           ),
         );
       } finally {
-        setBusyName(null);
         void refresh({ bypassCache: true });
       }
     },
@@ -253,9 +250,8 @@ export function useSavedWorkflowGlobalGroup({
     async (target: AutomationWorkspaceOption) => {
       const entry = moveEntry;
       if (!entry) return;
-      setBusyName(entry.name);
       try {
-        const result = await agentService.moveSavedWorkflow({
+        const result = await moving.mutateAsync({
           workspacePath: target.workspacePath,
           ...(target.workspaceIdentity ? { workspaceIdentity: target.workspaceIdentity } : {}),
           name: entry.name,
@@ -290,8 +286,6 @@ export function useSavedWorkflowGlobalGroup({
             { reason: error instanceof Error ? error.message : String(error) },
           ),
         );
-      } finally {
-        setBusyName(null);
       }
     },
     [agentService, intl, mode, moveEntry, onBack, onMoved],

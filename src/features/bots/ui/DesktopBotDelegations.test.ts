@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../../../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -13,11 +14,13 @@ const delegation = (id = "d1", at = 3): BotDelegation => ({ id, source: { ...sco
 const button = (text: string) => [...node.querySelectorAll<HTMLButtonElement>("button")].find(item => item.textContent === text)!;
 async function flush() { await act(async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); }); }
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); setUiLanguage("en"); vi.useFakeTimers();
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener() {}, removeEventListener() {} })));
   node = document.createElement("div"); document.body.append(node); root = createRoot(node);
 });
-afterEach(() => { act(() => root.unmount()); node.remove(); vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(() => {
+  queryClient.clear(); act(() => root.unmount()); node.remove(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 it("refreshes message cards only on revisions or visibility, and opens the admitted target thread", async () => {
   let value = delegation();

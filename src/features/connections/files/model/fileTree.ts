@@ -1,3 +1,5 @@
+import { queryClient } from "../../../../shared/lib/queryClient";
+import { directoryKeys, directoryQuery } from "./directoryQueries";
 import {
   listDir,
   setFsWatch,
@@ -9,7 +11,8 @@ import { joinPath, parentPath } from "../../../../shared/lib/paths";
 
 const expandedByProject = new Map<string, Set<string>>();
 const selectedByProject = new Map<string, string | null>();
-const dirs = new Map<string, FsEntry[]>();
+const cachedDirPaths = () => queryClient.getQueryCache().findAll({ queryKey: directoryKeys.all })
+  .filter(query => query.state.data !== undefined).map(query => query.queryKey[2] as string);
 const listeners = new Set<() => void>();
 
 const REFRESH_MS = 150;
@@ -36,17 +39,11 @@ export function saveSelected(cwd: string, path: string | null) {
 
 /** Cached `listDir` — same path stays instant when the tree remounts. */
 export function peekDir(path: string): FsEntry[] | null {
-  return dirs.get(path) ?? null;
+  return queryClient.getQueryData<FsEntry[]>(directoryKeys.path(path)) ?? null;
 }
 
 export function listCachedDir(path: string): Promise<FsEntry[]> {
-  const hit = dirs.get(path);
-  if (hit) return Promise.resolve(hit);
-  return listDir(path).then((entries) => {
-    dirs.set(path, entries);
-    scheduleWatchSync();
-    return entries;
-  });
+  return queryClient.fetchQuery(directoryQuery(path, listDir));
 }
 
 /** Folders the OS watches for the explorer; each costs one inotify watch. */
@@ -61,12 +58,12 @@ function scheduleWatchSync() {
   queueMicrotask(() => {
     watchSyncQueued = false;
     // Re-listing moves a key to the end; compare a sorted set, not the order.
-    const paths = [...dirs.keys()].slice(-WATCH_LIMIT).sort();
+    const paths = cachedDirPaths().slice(-WATCH_LIMIT).sort();
     const key = paths.join("\n");
     if (key === watchedKey) return;
     watchedKey = key;
     unsubscribeWatch ??= subscribeFsWatch(({ entries }) => {
-      const changed = entries.filter((path) => dirs.has(path));
+      const changed = entries.filter((path) => peekDir(path) !== null);
       if (changed.length > 0) void refreshChangedDirs(changed);
     });
     void setFsWatch("file-tree", paths);
@@ -85,21 +82,25 @@ async function refreshChangedDirs(paths: string[]) {
   for (const listener of listeners) listener();
 }
 
-export function refreshDir(path: string): Promise<FsEntry[]> {
-  dirs.delete(path);
+export async function refreshDir(path: string): Promise<FsEntry[]> {
+  const queryKey = directoryKeys.path(path);
+  // A watcher event supersedes a listing that began before the filesystem write.
+  await queryClient.cancelQueries({ queryKey, exact: true });
+  await queryClient.invalidateQueries({ queryKey, exact: true, refetchType: "none" });
   return listCachedDir(path);
 }
 
 export function forgetDir(path: string) {
-  for (const key of [...dirs.keys()]) {
-    if (key === path || key.startsWith(`${path}/`)) dirs.delete(key);
+  for (const query of queryClient.getQueryCache().findAll({ queryKey: directoryKeys.all })) {
+    const key = query.queryKey[2] as string;
+    if (key === path || key.startsWith(`${path}/`)) queryClient.removeQueries({ queryKey: directoryKeys.path(key), exact: true });
   }
   scheduleWatchSync();
 }
 
 /** Re-list every cached folder. Agent writes and window focus use this. */
 export async function refreshCachedDirs(): Promise<void> {
-  const paths = [...dirs.keys()];
+  const paths = cachedDirPaths();
   if (paths.length === 0) return;
   await Promise.all(
     paths.map((path) =>
@@ -177,3 +178,7 @@ export function dirsTouchedByMove(from: string, to: string): string[] {
   const toParent = parentPath(to);
   return fromParent === toParent ? [fromParent] : [fromParent, toParent];
 }
+
+queryClient.getQueryCache().subscribe(event => {
+  if (event.query.queryKey[0] === "files" && event.query.queryKey[1] === "directory") scheduleWatchSync();
+});

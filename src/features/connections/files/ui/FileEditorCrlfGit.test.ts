@@ -11,6 +11,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { diffNavigablePositions, stageChunkAt } from "../editor/editorGit";
 import { FileEditor } from "./FileEditor";
+import { queryClient } from "../../../../shared/lib/queryClient";
 
 const bridge = vi.hoisted(() => ({
   invoke: (_command: string, _args?: Record<string, unknown>): unknown =>
@@ -111,6 +112,7 @@ describe("CRLF editor Git boundaries", () => {
   });
   afterEach(async () => {
     await act(async () => root.unmount());
+    queryClient.clear();
     container.remove();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();

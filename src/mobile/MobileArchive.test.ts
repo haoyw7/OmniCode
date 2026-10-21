@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -31,6 +32,7 @@ const session = (
 let root: Root;
 let node: HTMLDivElement;
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   setUiLanguage("en");
   node = document.createElement("div");
@@ -38,6 +40,7 @@ beforeEach(() => {
   root = createRoot(node);
 });
 afterEach(() => {
+  queryClient.clear();
   act(() => root.unmount());
   node.remove();
   vi.unstubAllGlobals();

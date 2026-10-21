@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { QueryObserver } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 
 const mocks = vi.hoisted(() => ({
   discoverPiSkills: vi.fn(),
@@ -44,6 +46,7 @@ import {
   loadSkills,
   peekSkills,
   skillCatalogKey,
+  skillCatalogQuery,
   subscribeSkills,
   applySkillsToTurn,
 } from "./skills";
@@ -72,7 +75,7 @@ function deferred<T>() {
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-08-29T12:00:00Z"));
-  invalidateSkills();
+  queryClient.clear();
   mocks.discoverPiSkills.mockReset();
   mocks.discoverOmpCommands.mockReset();
   mocks.discoverOmpCommands.mockResolvedValue([
@@ -88,6 +91,8 @@ beforeEach(() => {
   mocks.discoverPiSkills.mockResolvedValue([piSkill("architect")]);
   mocks.listSkills.mockResolvedValue([]);
 });
+
+afterEach(() => { queryClient.clear(); vi.useRealTimers(); });
 
 describe("provider-aware skill catalog", () => {
   it("uses Pi discovery without adding OmniCode's built-in row", async () => {
@@ -139,7 +144,9 @@ describe("provider-aware skill catalog", () => {
     const onSkills = vi.fn();
     const unsubscribe = vi.fn();
     mocks.subscribe.mockReturnValue(unsubscribe);
-    const stop = subscribeSkills(context, onSkills);
+    const observer = new QueryObserver(queryClient, skillCatalogQuery(context));
+    const stopObserver = observer.subscribe((result) => onSkills(result.data));
+    const stop = subscribeSkills(context);
     mocks.subscribe.mock.calls[0]![1]([
       {
         name: "new-workflow",
@@ -163,6 +170,7 @@ describe("provider-aware skill catalog", () => {
       ]),
     );
     stop();
+    stopObserver();
     expect(unsubscribe).toHaveBeenCalledOnce();
   });
 
@@ -176,7 +184,7 @@ describe("provider-aware skill catalog", () => {
     await expect(loadSkills(context)).resolves.toMatchObject([
       { name: "workflow" },
     ]);
-    invalidateSkills();
+    queryClient.clear();
     await expect(loadSkills(context)).resolves.toEqual([]);
     expect(mocks.listSkills).not.toHaveBeenCalled();
   });

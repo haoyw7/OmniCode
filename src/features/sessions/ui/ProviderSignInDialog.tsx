@@ -1,5 +1,8 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useCallback, useEffect, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { toast } from "sonner";
 import { loginHarness } from "../../../integrations/harness/core/auth";
 import { HARNESS_TITLE, type HarnessId } from "../model/session";
 import { Modal } from "../../../shared/ui/Modal";
@@ -14,30 +17,18 @@ type Props = {
 };
 
 export function ProviderSignInDialog({ harness, onClose }: Props) {
+  return <ProviderSignInContent key={harness} harness={harness} onClose={onClose} />;
+}
+
+function ProviderSignInContent({ harness, onClose }: Props) {
   const { t: uiT } = useTranslation();
-  const [state, setState] = useState<ProviderSignInState>("idle");
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setState("idle");
-    setError(null);
-  }, [harness]);
-
-  const signIn = useCallback(() => {
-    setState("running");
-    setError(null);
-    void loginHarness(harness).then(
-      () => setState("complete"),
-      (reason: unknown) => {
-        setState("error");
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : `Could not sign in to ${HARNESS_TITLE[harness]}.`,
-        );
-      },
-    );
-  }, [harness]);
+  const login = useMutation({
+    mutationFn: () => loginHarness(harness),
+    onError: (reason) => toast.error(errorMessage(reason)),
+  }, queryClient);
+  const state: ProviderSignInState = login.isPending ? "running" : login.isSuccess ? "complete" : login.isError ? "error" : "idle";
+  const error = errorMessage(login.error) ?? null;
+  const signIn = () => { if (!login.isPending) login.mutate(); };
 
   return (
     <Modal

@@ -17,6 +17,7 @@ import {
   recordInboxSelfActivity,
 } from "../model/inboxSelfActivity";
 import { useInboxActivity, type InboxActivity } from "./useInboxUnseen";
+import { queryClient } from "../../../shared/lib/queryClient";
 
 const { githubWorkItem, listInboxItems, playCue } = vi.hoisted(() => ({
   githubWorkItem: vi.fn(),
@@ -79,6 +80,7 @@ async function mount(rows = sessions) {
 }
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
   listInboxItems.mockReset();

@@ -1,9 +1,10 @@
+import { useInfiniteQuery, useIsFetching } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
 import {
   useCallback,
   useEffect,
   useMemo,
   useRef,
-  useState,
   useSyncExternalStore,
 } from "react";
 import { MENU_BAR_HEIGHT } from "../../../app/shell/MenuBar";
@@ -15,7 +16,8 @@ import {
   type GitHistoryCommit,
 } from "../../../platform/tauri/fs";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { prettyCwd } from "../../../shared/lib/paths";
+import { pathKey, prettyCwd } from "../../../shared/lib/paths";
+import { gitKeys } from "../model/gitQueries";
 import { IS_MAC } from "../../../platform/tauri/platform";
 import { FolderTree, GitBranch, RefreshCw } from "../../../shared/ui/icons";
 import {
@@ -50,7 +52,8 @@ export function GitGraphDialog({
     useGraphHistory(cwd);
   const worktrees = useProjectWorktrees(cwd);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const fetchingWorktrees = useIsFetching({ queryKey: gitKeys.worktrees(pathKey(cwd)) }, queryClient);
+  const refreshing = loading || fetchingWorktrees > 0;
   const rows = useMemo(
     () => layoutGitGraph(commits).map(historyItemGraph),
     [commits],
@@ -112,14 +115,7 @@ export function GitGraphDialog({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const refresh = async () => {
-    setRefreshing(true);
-    try {
-      await Promise.all([reload(), worktrees.refresh()]);
-    } finally {
-      setRefreshing(false);
-    }
-  };
+  const refresh = () => Promise.all([reload(), worktrees.refresh()]);
 
   return (
     <AppViewDialog
@@ -360,151 +356,59 @@ export function GitGraphDialog({
   );
 }
 
-/** Keep loaded rows during requests; refresh the same depth in 50-row pages. */
+/** Query retains the loaded depth and serializes page reads across refreshes. */
 function useGraphHistory(cwd: string) {
-  const [state, setState] = useState<{
-    cwd: string;
-    head: string | null;
-    commits: GitHistoryCommit[];
-    offset: number;
-    hasMore: boolean;
-    loading: boolean;
-    loadingMore: boolean;
-    error?: string;
-  }>({
-    cwd,
-    head: null,
-    commits: [],
-    offset: 0,
-    hasMore: false,
-    loading: true,
-    loadingMore: false,
-  });
-  const current = useRef(state);
-  const request = useRef(0);
-  const publish = useCallback((next: typeof state) => {
-    current.current = next;
-    setState(next);
-  }, []);
+  // This paged query owns its cancellation barrier for Git events.
+  const queryKey = ["gitGraphHistory", cwd] as const;
+  const history = useInfiniteQuery({
+    queryKey, refetchOnWindowFocus: false,
+    initialPageParam: { offset: 0, head: null as string | null },
+    queryFn: async ({ pageParam, signal }) => {
+      const result = await gitHistory(cwd, HISTORY_PAGE_SIZE, true, pageParam.offset);
+      signal.throwIfAborted();
+      const moved = pageParam.offset > 0 && result.head !== pageParam.head;
+      return { ...result, commits: moved ? [] : result.commits, moved };
+    },
+    getNextPageParam: (last, pages) => {
+      const offset = pages.reduce((sum, page) => sum + page.commits.length, 0);
+      const seen = new Set(pages.slice(0, -1).flatMap(page => page.commits.map(commit => commit.sha)));
+      if (last.moved || (last.commits.length === HISTORY_PAGE_SIZE && last.commits.some(commit => !seen.has(commit.sha))))
+        return { offset, head: pages[0].head };
+      return undefined;
+    },
+  }, queryClient);
   const reload = useCallback(async () => {
-    const id = ++request.current;
-    const previous = current.current;
-    const sameRepository = previous.cwd === cwd;
-    const depth = sameRepository ? previous.offset : 0;
-    publish({
-      ...previous,
-      cwd,
-      commits: sameRepository ? previous.commits : [],
-      offset: depth,
-      hasMore: sameRepository && previous.hasMore,
-      loading: true,
-      loadingMore: false,
-      error: undefined,
-    });
-    try {
-      const commits: GitHistoryCommit[] = [];
-      const seen = new Set<string>();
-      let offset = 0;
-      let head: string | null = null;
-      let hasMore = true;
-      do {
-        const result = await gitHistory(cwd, HISTORY_PAGE_SIZE, true, offset);
-        if (id !== request.current) return;
-        // Do not splice pages from different HEADs if Git changes mid-refresh.
-        // The next load will refresh again from the new tip.
-        if (offset > 0 && result.head !== head) break;
-        head = result.head;
-        const added = result.commits.filter((commit) => {
-          if (seen.has(commit.sha)) return false;
-          seen.add(commit.sha);
-          return true;
-        });
-        commits.push(...added);
-        offset += result.commits.length;
-        hasMore =
-          result.commits.length === HISTORY_PAGE_SIZE && added.length > 0;
-      } while (hasMore && offset < depth);
-      publish({
-        cwd,
-        head,
-        commits,
-        offset,
-        hasMore,
-        loading: false,
-        loadingMore: false,
-      });
-    } catch (error) {
-      if (id === request.current)
-        publish({
-          ...current.current,
-          loading: false,
-          error: String(error),
-        });
-    }
-  }, [cwd, publish]);
+    await queryClient.cancelQueries({ queryKey });
+    await invalidateAfterChange(queryKey);
+  }, [cwd]);
   const loadMore = useCallback(async () => {
-    const previous = current.current;
-    // The ref prevents repeated scroll events from starting duplicate pages.
-    if (
-      previous.cwd !== cwd ||
-      previous.loading ||
-      previous.loadingMore ||
-      !previous.hasMore
-    )
-      return;
-    const id = ++request.current;
-    publish({ ...previous, loadingMore: true, error: undefined });
-    try {
-      const result = await gitHistory(
-        cwd,
-        HISTORY_PAGE_SIZE,
-        true,
-        previous.offset,
-      );
-      if (id !== request.current) return;
-      if (result.head !== previous.head) {
-        await reload();
-        return;
-      }
-      const seen = new Set(previous.commits.map((commit) => commit.sha));
-      const added = result.commits.filter((commit) => {
-        if (seen.has(commit.sha)) return false;
-        seen.add(commit.sha);
-        return true;
-      });
-      publish({
-        ...previous,
-        commits: [...previous.commits, ...added],
-        offset: previous.offset + result.commits.length,
-        hasMore:
-          result.commits.length === HISTORY_PAGE_SIZE && added.length > 0,
-        loadingMore: false,
-        error: undefined,
-      });
-    } catch (error) {
-      if (id === request.current)
-        publish({ ...previous, loadingMore: false, error: String(error) });
+    if (queryClient.isFetching({ queryKey }) || !history.hasNextPage) return;
+    const previous = queryClient.getQueryData(queryKey);
+    const next = await history.fetchNextPage({ cancelRefetch: false });
+    if (next.data?.pages.at(-1)?.moved) {
+      queryClient.setQueryData(queryKey, previous);
+      await reload();
     }
-  }, [cwd, publish, reload]);
+  }, [cwd, history.hasNextPage, history.fetchNextPage, reload]);
   useEffect(() => {
-    void reload();
-    const resume = () => {
-      if (!document.hidden) void reload();
-    };
+    const resume = () => { if (!document.hidden) void reload(); };
     const unsubscribe = subscribeGitChanged(resume);
     window.addEventListener("focus", resume);
     document.addEventListener("visibilitychange", resume);
     return () => {
-      request.current += 1;
       unsubscribe();
       window.removeEventListener("focus", resume);
       document.removeEventListener("visibilitychange", resume);
     };
   }, [reload]);
-  return {
-    ...state,
-    commits: state.cwd === cwd ? state.commits : [],
-    reload,
-    loadMore,
-  };
+  const commits = useMemo(() => {
+    const seen = new Set<string>();
+    return history.data?.pages.flatMap(page => page.commits).filter(commit => {
+      if (seen.has(commit.sha)) return false;
+      seen.add(commit.sha); return true;
+    }) ?? [];
+  }, [history.data]);
+  return { commits, loading: history.isPending || (history.isFetching && !history.isFetchingNextPage),
+    loadingMore: history.isFetchingNextPage, hasMore: history.hasNextPage, error: history.error ? String(history.error) : undefined,
+    reload, loadMore };
 }

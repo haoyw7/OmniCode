@@ -1,5 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchGithubPrChecks, type GithubPrChecks } from "../model/githubPrChecks";
+import { useCallback, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { githubPrChecksQuery } from "../model/githubPrChecksQueries";
+import type { GithubPrChecks } from "../model/githubPrChecks";
 
 const POLL_MS = 30_000;
 
@@ -15,13 +19,6 @@ export type GithubPrChecksView = {
   refresh: () => void;
 };
 
-/**
- * Loads PR checks on mount regardless of the active tab, keeps them fresh for
- * open PRs while mounted and visible, and allows initial and manual loads only
- * for closed or merged ones. Results are replaced together with headOid, never
- * merged across commits, and a late answer cannot outlive a PR change, a
- * revision change, or unmount.
- */
 export function useGithubPrChecks(params: {
   cwd: string;
   repo: string;
@@ -33,135 +30,54 @@ export function useGithubPrChecks(params: {
   revision?: number;
 }): GithubPrChecksView {
   const { cwd, repo, number, enabled, open, poll = true, revision = 0 } = params;
-  const [checks, setChecks] = useState<GithubPrChecks | null>(null);
-  const [loading, setLoading] = useState(enabled);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [stale, setStale] = useState(false);
-  const [manualTick, setManualTick] = useState(0);
-
-  const mountedRef = useRef(true);
-  const hasDataRef = useRef(false);
-  const identityRef = useRef<string | null>(null);
-  const epochRef = useRef(0);
-  const flightRef = useRef<{ epoch: number } | null>(null);
-  /** Trigger waiting behind an in-flight request; polls never outrank manual loads. */
-  const queuedRef = useRef<"manual" | "auto" | null>(null);
-  const openRef = useRef(open);
-  openRef.current = open;
-  const pollRef = useRef(poll);
-  pollRef.current = poll;
-  const previousPollRef = useRef(poll);
-
+  const query = useQuery({
+    ...githubPrChecksQuery(cwd, repo, number),
+    enabled,
+    refetchInterval: () => enabled && open && poll && !document.hidden ? POLL_MS : false,
+    refetchOnWindowFocus: false,
+  }, queryClient);
+  const { refetch } = query;
+  // Manual/revision triggers during a read coalesce into one follow-up.
+  // Query owns the request and results; this ticket only owns the trigger.
+  const lifetime = useRef<{ active: boolean; queued: boolean }>({ active: false, queued: false });
   useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  const refresh = useCallback(() => setManualTick((tick) => tick + 1), []);
-
-  const run = useCallback((mode?: "auto") => {
-    const automatic = mode === "auto";
-    // One request per PR revision; a trigger landing while it runs coalesces
-    // into a single follow-up instead of being dropped or overlapped. A manual
-    // load always outranks a queued poll tick.
-    const flight = flightRef.current;
-    if (flight && flight.epoch === epochRef.current) {
-      if (!automatic || queuedRef.current == null) {
-        queuedRef.current = automatic ? "auto" : "manual";
-      }
-      return;
-    }
-    queuedRef.current = null;
-    const ticket = { epoch: epochRef.current };
-    flightRef.current = ticket;
-    const initial = !hasDataRef.current;
-    if (initial) setLoading(true);
-    else setRefreshing(true);
-    fetchGithubPrChecks(cwd, repo, number)
-      .then((next) => {
-        if (!mountedRef.current || ticket.epoch !== epochRef.current) return;
-        hasDataRef.current = true;
-        // headOid and checks land together, so two commits never mix.
-        setChecks(next);
-        setError(null);
-        setStale(false);
-      })
-      .catch((reason: unknown) => {
-        if (!mountedRef.current || ticket.epoch !== epochRef.current) return;
-        setError(reason instanceof Error ? reason.message : String(reason));
-        if (hasDataRef.current) setStale(true);
-      })
-      .finally(() => {
-        if (flightRef.current !== ticket) return;
-        flightRef.current = null;
-        if (!mountedRef.current || ticket.epoch !== epochRef.current) return;
-        setLoading(false);
-        setRefreshing(false);
-        const queued = queuedRef.current;
-        if (!queued) return;
-        queuedRef.current = null;
-        // An automatic follow-up waits for an open PR and a visible document;
-        // visibilitychange or the next tick picks the work back up.
-        if (
-          queued === "auto" &&
-          (document.hidden || !openRef.current || !pollRef.current)
-        )
-          return;
-        runRef.current(queued === "auto" ? "auto" : undefined);
-      });
-  }, [cwd, repo, number]);
-  const runRef = useRef(run);
-  runRef.current = run;
-
+    const ticket = { active: enabled, queued: false };
+    lifetime.current = ticket;
+    return () => { ticket.active = false; };
+  }, [cwd, repo, number, enabled]);
+  const refresh = useCallback(() => {
+    const ticket = lifetime.current;
+    if (!ticket.active || ticket.queued) return;
+    const fetching = queryClient.getQueryState(githubPrChecksQuery(cwd, repo, number).queryKey)?.fetchStatus === "fetching";
+    if (!fetching) { void refetch({ cancelRefetch: false }); return; }
+    ticket.queued = true;
+    void refetch({ cancelRefetch: false }).then(() => {
+      ticket.queued = false;
+      if (ticket.active) void refetch({ cancelRefetch: false });
+    });
+  }, [cwd, repo, number, refetch]);
+  const previous = useRef({ cwd, repo, number, revision, poll });
   useEffect(() => {
-    if (!enabled) {
-      epochRef.current += 1;
-      flightRef.current = null;
-      queuedRef.current = null;
-      identityRef.current = null;
-      hasDataRef.current = false;
-      setChecks(null);
-      setLoading(false);
-      setRefreshing(false);
-      setError(null);
-      setStale(false);
-      return;
-    }
-    const identity = `${cwd}\u0000${repo}\u0000${number}`;
-    if (identityRef.current !== identity) {
-      // A different PR: drop the in-flight answer, any queue, and saved results.
-      epochRef.current += 1;
-      identityRef.current = identity;
-      queuedRef.current = null;
-      hasDataRef.current = false;
-      setChecks(null);
-      setError(null);
-      setStale(false);
-    }
-    runRef.current();
-  }, [cwd, repo, number, enabled, revision, manualTick]);
-
+    const last = previous.current;
+    previous.current = { cwd, repo, number, revision, poll };
+    if (last.cwd !== cwd || last.repo !== repo || last.number !== number || !enabled) return;
+    if (last.revision !== revision || (!last.poll && poll && open && !document.hidden)) refresh();
+  }, [cwd, repo, number, revision, poll, open, enabled, refresh]);
   useEffect(() => {
-    const resumed = poll && !previousPollRef.current;
-    previousPollRef.current = poll;
     if (!enabled || !open || !poll) return;
-    if (resumed && !document.hidden) runRef.current("auto");
-    const timer = window.setInterval(() => {
-      if (document.hidden) return;
-      runRef.current("auto");
-    }, POLL_MS);
     const onVisibility = () => {
-      if (!document.hidden) runRef.current("auto");
+      if (!document.hidden) void refetch({ cancelRefetch: false });
     };
     document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVisibility);
-    };
-  }, [enabled, open, poll]);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [enabled, open, poll, refetch]);
 
-  return { checks, loading, refreshing, error, stale, refresh };
+  return {
+    checks: enabled ? query.data ?? null : null,
+    loading: enabled && query.isPending,
+    refreshing: enabled && query.isFetching && query.data !== undefined,
+    error: enabled ? errorMessage(query.error) ?? null : null,
+    stale: enabled && query.isError && query.data !== undefined,
+    refresh,
+  };
 }

@@ -1,5 +1,14 @@
+import { errorMessage } from "../../../shared/lib/errorMessage";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { projectSearchQuery } from "../../search/model/searchQueries";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { CaseSensitive, ChevronLeft, Regex, WholeWord } from "../../../shared/ui/icons";
+import {
+  CaseSensitive,
+  ChevronLeft,
+  Regex,
+  WholeWord,
+} from "../../../shared/ui/icons";
 import {
   useEffect,
   useMemo,
@@ -9,7 +18,6 @@ import {
   type ReactNode,
 } from "react";
 import {
-  cancelProjectSearch,
   searchProject,
   type OpenFileFn,
   type ProjectSearchMatch,
@@ -18,6 +26,8 @@ import {
 } from "../../search/model/search";
 import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
+
+const EMPTY_MATCHES: ProjectSearchMatch[] = [];
 
 type Props = {
   cwd: string;
@@ -57,11 +67,14 @@ export function ProjectSearch({
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWord, setWholeWord] = useState(false);
   const [regex, setRegex] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [matches, setMatches] = useState<ProjectSearchMatch[]>([]);
-  const [truncated, setTruncated] = useState(false);
-  const activeSearchId = useRef<string | null>(null);
+  const result = useQuery(projectSearchQuery({
+    cwd, query: query.trim(), caseSensitive, wholeWord, regex,
+    include: include.trim() || undefined, exclude: exclude.trim() || undefined,
+  }, search), queryClient);
+  const loading = result.isFetching;
+  const error = errorMessage(result.error) ?? null;
+  const matches = result.data?.matches ?? EMPTY_MATCHES;
+  const truncated = result.data?.truncated ?? false;
 
   useEffect(() => {
     if (!focusToken) return;
@@ -79,62 +92,6 @@ export function ProjectSearch({
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, []);
-
-  useEffect(() => {
-    const trimmed = query.trim();
-    if (!trimmed || !cwd || cwd === "~") {
-      setMatches([]);
-      setTruncated(false);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    const timer = window.setTimeout(() => {
-      const searchId = crypto.randomUUID();
-      activeSearchId.current = searchId;
-      setLoading(true);
-      setError(null);
-      void search({
-        cwd,
-        query: trimmed,
-        searchId,
-        caseSensitive,
-        wholeWord,
-        regex,
-        include: include.trim() || undefined,
-        exclude: exclude.trim() || undefined,
-      })
-        .then((result) => {
-          if (cancelled) return;
-          setMatches(result.matches);
-          setTruncated(result.truncated);
-          setLoading(false);
-        })
-        .catch((err: unknown) => {
-          if (cancelled) return;
-          setMatches([]);
-          setTruncated(false);
-          setError(err instanceof Error ? err.message : String(err));
-          setLoading(false);
-        })
-        .finally(() => {
-          if (activeSearchId.current === searchId)
-            activeSearchId.current = null;
-        });
-    }, 200);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-      const searchId = activeSearchId.current;
-      activeSearchId.current = null;
-      if (searchId) {
-        void cancelProjectSearch(cwd, searchId).catch(() => undefined);
-      }
-    };
-  }, [caseSensitive, cwd, exclude, include, query, regex, wholeWord, search]);
 
   const groups = useMemo(() => groupMatches(matches), [matches]);
   const matchCount = matches.length;

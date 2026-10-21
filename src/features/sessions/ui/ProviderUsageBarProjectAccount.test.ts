@@ -8,7 +8,7 @@ import type { ProviderRateLimits } from "../../providers/model/rateLimits";
 import {
   clearCachedRateLimits,
   setCachedRateLimits,
-} from "../../providers/model/rateLimitsCache";
+} from "../../providers/model/rateLimitsQueries";
 import {
   DEFAULT_PROVIDER_ACCOUNT_ID,
   renameProviderAccount,

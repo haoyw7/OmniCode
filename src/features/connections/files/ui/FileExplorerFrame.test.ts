@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../../../../shared/lib/queryClient";
 import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -54,6 +55,7 @@ const observers = new Set<{
   callback: ResizeObserverCallback;
 }>();
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   observers.clear();
   vi.stubGlobal(
@@ -82,6 +84,7 @@ beforeEach(() => {
   root = createRoot(container);
 });
 afterEach(() => {
+  queryClient.clear();
   act(() => root.unmount());
   container.remove();
   applyReducedMotion("system");

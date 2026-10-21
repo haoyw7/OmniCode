@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import {
   Fragment,
   type ReactNode,
@@ -63,11 +65,6 @@ export function ReviewSourceSelect({
   // Keyboard focus stays on the main menu; this moves its active row into the flyout.
   const [inSubmenu, setInSubmenu] = useState(false);
   const [commitActive, setCommitActive] = useState(0);
-  const [history, setHistory] = useState<{
-    cwd: string;
-    commits: GitHistoryCommit[] | null;
-    error?: string;
-  }>();
   const trigger = useRef<HTMLButtonElement>(null);
   const commitsRow = useRef<HTMLButtonElement>(null);
   const commitList = useRef<HTMLDivElement>(null);
@@ -109,7 +106,15 @@ export function ReviewSourceSelect({
   const label = t("Review source");
   const selectedLabel = entries.find(isSelected)?.label ?? t("Review source");
   const activeIndex = Math.min(active, entries.length - 1);
-  const commits = history && history.cwd === cwd ? history.commits : null;
+  const history = useQuery({
+    queryKey: ["git", "reviewCommits", cwd], enabled: shown && submenu && gitAvailable && !!cwd,
+    queryFn: async ({ signal }) => {
+      const result = await gitHistory(cwd, COMMIT_LIMIT * 3);
+      signal.throwIfAborted();
+      return branchCommits(result.head, result.commits);
+    },
+  }, queryClient);
+  const commits = history.data ?? (history.isError ? [] : null);
   const commitIndex = Math.min(
     commitActive,
     Math.max(0, (commits?.length ?? 1) - 1),
@@ -124,34 +129,9 @@ export function ReviewSourceSelect({
       setInSubmenu(false);
     }
   }, [shown, gitAvailable]);
-  // Load the branch's commits each time the flyout opens; history can move.
   useEffect(() => {
-    if (!shown || !submenu || !gitAvailable || !cwd) return;
-    let stale = false;
-    // History also walks the upstream and default branch; fetch extra to fill the list.
-    void gitHistory(cwd, COMMIT_LIMIT * 3).then(
-      (result) => {
-        if (stale) return;
-        const list = branchCommits(result.head, result.commits);
-        setHistory({ cwd, commits: list });
-        const selected = list.findIndex(
-          (commit) => commit.sha === selectedCommit,
-        );
-        setCommitActive(Math.max(0, selected));
-      },
-      (error: unknown) => {
-        if (!stale)
-          setHistory({
-            cwd,
-            commits: [],
-            error: error instanceof Error ? error.message : String(error),
-          });
-      },
-    );
-    return () => {
-      stale = true;
-    };
-  }, [shown, submenu, gitAvailable, cwd, selectedCommit]);
+    if (commits && submenu) setCommitActive(Math.max(0, commits.findIndex(commit => commit.sha === selectedCommit)));
+  }, [commits, submenu, selectedCommit]);
   useEffect(() => {
     if (!inSubmenu) return;
     commitList.current
@@ -413,7 +393,7 @@ export function ReviewSourceSelect({
             </div>
           ) : !commits.length ? (
             <div className="px-2.5 py-2 text-ui-caption text-foreground-subtle">
-              {history?.error ?? t("No commits yet")}
+              {history.error?.message ?? t("No commits yet")}
             </div>
           ) : (
             commits.map((commit, index) => {

@@ -1,4 +1,5 @@
-import { useEffect, useSyncExternalStore } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { remoteRequest } from "./connections";
 import { sharedHostMachineId } from "./remoteProjects";
 import type { HostEnvironmentDefinition, HostEnvironments } from "./hostState";
@@ -8,48 +9,34 @@ import { parseWslPath, wslPath } from "../../../shared/lib/wslPaths";
  * their variables to provider processes started inside their folders. */
 export type HostEnvironmentState = { environments: HostEnvironmentDefinition[]; loaded: boolean; error: string };
 
-let state: HostEnvironmentState = { environments: [], loaded: false, error: "" };
-let revision = -1;
-let loading: Promise<void> | undefined;
-const subscribers = new Set<() => void>();
-
-function publish(next: Partial<HostEnvironmentState>) {
-  state = { ...state, ...next };
-  for (const listener of subscribers) listener();
+const environmentKey = () => ["hostEnvironments", sharedHostMachineId()] as const;
+function environmentsQuery() {
+  const queryKey = environmentKey(), machineId = sharedHostMachineId();
+  return queryOptions({
+    queryKey,
+    queryFn: async () => {
+      if (!machineId) throw new Error("Shared conversation service is not connected");
+      const previous = queryClient.getQueryData<HostEnvironments>(queryKey);
+      const value = await remoteRequest<HostEnvironments | null>(machineId, "environments.list", { revision: previous?.revision ?? -1 });
+      const current = queryClient.getQueryData<HostEnvironments>(queryKey);
+      return value && (!current || value.revision >= current.revision) ? value : current ?? { revision: -1, environments: [] };
+    },
+  });
 }
-
-function request<T>(method: string, params: Record<string, unknown>): Promise<T> {
-  const machineId = sharedHostMachineId();
-  if (!machineId) return Promise.reject(new Error("Shared conversation service is not connected"));
-  return remoteRequest<T>(machineId, method, params);
+export async function refreshHostEnvironments(): Promise<void> {
+  await queryClient.fetchQuery(environmentsQuery()).catch(() => undefined);
 }
-
-function accept(value: HostEnvironments | null) {
-  if (!value || value.revision < revision) return;
-  revision = value.revision;
-  publish({ environments: value.environments, loaded: true, error: "" });
-}
-
-export function refreshHostEnvironments(): Promise<void> {
-  loading ??= request<HostEnvironments | null>("environments.list", { revision })
-    .then(accept, (reason) => publish({ loaded: true, error: String(reason).replace(/^Error: /, "") }))
-    .finally(() => { loading = undefined; });
-  return loading;
-}
-
-const subscribe = (listener: () => void) => { subscribers.add(listener); return () => { subscribers.delete(listener); }; };
-const snapshot = () => state;
-
-/** Reads the Host's environments, refreshing whenever a consumer mounts. */
 export function useHostEnvironments(): HostEnvironmentState {
-  useEffect(() => { void refreshHostEnvironments(); }, []);
-  return useSyncExternalStore(subscribe, snapshot, snapshot);
+  const read = useQuery(environmentsQuery(), queryClient);
+  return { environments: read.data?.environments ?? [], loaded: read.isFetched, error: read.error?.message ?? "" };
 }
-
 export async function saveHostEnvironment(value: HostEnvironmentDefinition): Promise<void> {
-  accept(await request<HostEnvironments>("environments.patch", {
+  const machineId = sharedHostMachineId(), queryKey = environmentKey();
+  if (!machineId) throw new Error("Shared conversation service is not connected");
+  const result = await remoteRequest<HostEnvironments>(machineId, "environments.patch", {
     operationId: crypto.randomUUID(), changes: { [value.id]: value },
-  }));
+  });
+  queryClient.setQueryData<HostEnvironments>(queryKey, current => current && current.revision > result.revision ? current : result);
 }
 
 /** The project path the desktop opens for one of an environment's folders. */

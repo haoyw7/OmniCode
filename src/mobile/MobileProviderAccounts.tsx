@@ -1,5 +1,8 @@
 import { IconButton } from "../shared/ui/forms/IconButton";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { mobileSourceKey } from "./mobileQueries";
 import type { HostProviderAccounts, HostProviderUsage } from "../features/connections/model/protocol";
 import { accountStatus } from "../features/providers/model/accountUsageStatus";
 import { fetchingRateLimits, errorRateLimits } from "../features/providers/model/rateLimits";
@@ -31,81 +34,59 @@ export function MobileProviderAccounts({ client, hostId, enabled }: {
 }) {
   const { t, language } = useTranslation();
   const visible = useSurfaceVisibility();
-  const [state, setState] = useState<State>(() => empty(hostId));
-  const [refresh, setRefresh] = useState(0);
   const clock = useNow(30_000, visible && enabled);
   const connected = !!hostId && enabled;
-  useEffect(() => {
-    if (!visible) return;
-    if (!hostId || !enabled) {
-      setState(empty(hostId));
-      return;
-    }
-    let live = true;
-    const current = () => live && client.connection?.endpoint === hostId;
-    setState(previous => ({ ...(previous.hostId === hostId ? previous : empty(hostId)), loading: true, error: "" }));
-    void (async () => {
-      try {
-        // A running Host can be upgraded without reconnecting the phone.
-        // Recheck its descriptor before treating cached capabilities as final.
-        if (refresh > 0 || !client.hasCapability("providerAccounts.usage.v1")) {
-          await client.verify();
-          if (!current()) return;
-        }
-        const accounts = await client.providerAccounts();
-        if (!current()) return;
-        const supported = client.hasCapability("providerAccounts.usage.v1");
-        const targets = PROVIDERS.flatMap(provider => (accounts?.[provider] ?? []).map(account => ({ provider, account })));
-        setState(previous => ({ ...previous, accounts, unsupported: !supported, usage: Object.fromEntries(
-          supported ? targets.map(({ provider, account }) => {
-            const key = `${provider}:${account.id}`;
-            const oldAccount = previous.accounts?.[provider]?.find(old => old.id === account.id);
-            const oldUsage = JSON.stringify(oldAccount?.identity) === JSON.stringify(account.identity) ? previous.usage[key] : undefined;
-            return [key, fetchingRateLimits(provider, oldUsage)];
-          }) : [],
-        ) }));
-        if (!accounts || !supported) return;
-        // Limit process starts without making one RPC wait behind all accounts.
-        let index = 0;
-        const worker = async () => {
-          while (current() && index < targets.length) {
-            const { provider, account } = targets[index++];
-            let limits: HostProviderUsage | null;
-            try {
-              limits = await client.providerAccountUsage({ provider, accountId: account.id, refresh: refresh > 0 });
-            } catch {
-              limits = errorRateLimits(provider, "Unable to refresh account usage.");
-            }
-            if (!current()) return;
-            if (!limits) {
-              setState(previous => ({ ...previous, unsupported: true, usage: {} }));
-              index = targets.length;
-              return;
-            }
-            const result = limits;
-            const key = `${provider}:${account.id}`;
-            setState(previous => {
-              if (previous.unsupported) return previous;
-              const old = previous.usage[key];
-              // Keep the last successful timestamp when a refresh fails.
-              const value = result.status === "error" && old && meterWindows(old).length
-                ? { ...old, status: result.status, error: result.error } : result;
-              return { ...previous, usage: { ...previous.usage, [key]: value } };
-            });
-          }
-        };
-        await Promise.all([worker(), worker()]);
-      } catch (error) {
-        if (current()) setState(previous => ({ ...previous,
-          error: error instanceof Error ? error.message : "Unable to load accounts." }));
-      } finally {
-        if (current()) setState(previous => ({ ...previous, loading: false }));
+  const refreshRequested = useRef(false);
+  const queryKey = ["mobile", "providerAccounts", mobileSourceKey(client), hostId] as const;
+  const accountsRead = useQuery({
+    queryKey, enabled: visible && connected,
+    queryFn: async ({ signal }): Promise<State> => {
+      const force = refreshRequested.current; refreshRequested.current = false;
+      const current = () => !signal.aborted && client.connection?.endpoint === hostId;
+      const previous = queryClient.getQueryData<State>(queryKey) ?? empty(hostId);
+      if (force || !client.hasCapability("providerAccounts.usage.v1")) {
+        await client.verify(); signal.throwIfAborted();
+        if (!current()) throw new Error("Host connection changed");
       }
-    })();
-    return () => { live = false; };
-  }, [client, hostId, enabled, visible, refresh]);
-
-  const shown = connected && state.hostId === hostId ? state : empty(hostId);
+      const accounts = await client.providerAccounts();
+      signal.throwIfAborted();
+      if (!current()) throw new Error("Host connection changed");
+      const supported = client.hasCapability("providerAccounts.usage.v1");
+      const targets = PROVIDERS.flatMap(provider => (accounts?.[provider] ?? []).map(account => ({ provider, account })));
+      let next: State = { ...empty(hostId), accounts, unsupported: !supported, usage: Object.fromEntries(supported ? targets.map(({ provider, account }) => {
+        const key = `${provider}:${account.id}`;
+        const oldAccount = previous.accounts?.[provider]?.find(old => old.id === account.id);
+        const oldUsage = JSON.stringify(oldAccount?.identity) === JSON.stringify(account.identity) ? previous.usage[key] : undefined;
+        return [key, fetchingRateLimits(provider, oldUsage)];
+      }) : []) };
+      queryClient.setQueryData(queryKey, next);
+      if (!accounts || !supported) return next;
+      let index = 0;
+      const worker = async () => {
+        while (current() && !next.unsupported && index < targets.length) {
+          const { provider, account } = targets[index++];
+          let limits: HostProviderUsage | null;
+          try { limits = await client.providerAccountUsage({ provider, accountId: account.id, refresh: force }); }
+          catch { limits = errorRateLimits(provider, "Unable to refresh account usage."); }
+          if (!current()) return;
+          if (!limits) { next = { ...next, unsupported: true, usage: {} }; }
+          else if (!next.unsupported) {
+            const key = `${provider}:${account.id}`, old = next.usage[key];
+            const value = limits.status === "error" && old && meterWindows(old).length ? { ...old, status: limits.status, error: limits.error } : limits;
+            next = { ...next, usage: { ...next.usage, [key]: value } };
+          }
+          queryClient.setQueryData(queryKey, next);
+        }
+      };
+      await Promise.all([worker(), worker()]);
+      signal.throwIfAborted();
+      return next;
+    },
+  }, queryClient);
+  useEffect(() => { if (!visible || !connected) void queryClient.cancelQueries({ queryKey }); }, [visible, connected, hostId, client]);
+  const shown = connected ? { ...(accountsRead.data ?? empty(hostId)), loading: accountsRead.isFetching,
+    error: accountsRead.error ? accountsRead.error instanceof Error ? accountsRead.error.message : "Unable to load accounts." : "",
+  } : empty(hostId);
   const count = (shown.accounts?.workbuddy?.length ?? 0) + PROVIDERS.reduce((total, provider) => total + (shown.accounts?.[provider]?.length ?? 0), 0);
   const now = Math.max(clock, ...Object.values(shown.usage).map(value => value.updatedAt));
   return (
@@ -113,7 +94,7 @@ export function MobileProviderAccounts({ client, hostId, enabled }: {
       <div className="mobile-account-toolbar">
         <p>{t("Accounts on {host}", { host: client.connection?.name ?? "Host" })}</p>
         <IconButton type="button" label={t("Refresh usage limits")}
-          disabled={!connected || shown.loading || !visible} onClick={() => setRefresh(value => value + 1)}>
+          disabled={!connected || shown.loading || !visible} onClick={() => { refreshRequested.current = true; void accountsRead.refetch(); }}>
           <RefreshCw size={24} className={shown.loading ? "animate-spin" : undefined} />
         </IconButton>
       </div>

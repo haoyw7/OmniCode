@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { queryOptions, useQuery, type Query } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
 import {
   applySessionSync,
   migrateSavedHostCommand,
@@ -35,9 +37,6 @@ export const REMOTE_HISTORY_CHANGE = "omnicode:remote-history";
 export const REMOTE_HISTORY_UPDATED = "omnicode:remote-history-updated";
 export const refreshRemoteProjectSessions = () =>
   window.dispatchEvent(new Event(REMOTE_HISTORY_CHANGE));
-let cachedMachines: RemoteMachine[] = [];
-let machinesLoaded = false;
-let machineRequest: Promise<RemoteMachine[]> | undefined;
 let machineRevision = 0;
 export const OPEN_CONNECTIONS_EVENT = "omnicode:open-connections";
 export const OPEN_REMOTE_PROJECT_EVENT = "omnicode:open-remote-project";
@@ -302,27 +301,19 @@ export async function remoteRequest<T>(
   return result;
 }
 
-/** A visibility change or second pane must not overlap the same session's read. */
-const pendingSyncs = new Map<string, { revision?: number; request: Promise<SessionSync> }>();
-
-function syncRemoteSession(
-  machineId: string,
-  sessionId: string,
-  revision?: number,
-  waitMs?: number,
-): Promise<SessionSync> {
-  const key = JSON.stringify([machineId, sessionId]);
-  const pending = pendingSyncs.get(key);
-  if (pending) {
-    if (pending.revision === revision) return pending.request;
+/** Share one transfer at a time; a newer revision waits for the current transfer. */
+function syncRemoteSession(machineId: string, sessionId: string, revision?: number, waitMs?: number): Promise<SessionSync> {
+  const queryKey = ["remoteSessionTransfer", machineId, sessionId];
+  const pending = queryClient.getQueryCache().find<SessionSync>({ queryKey, exact: true });
+  if (pending?.state.fetchStatus === "fetching" && pending.promise) {
+    if (pending.meta?.revision === revision) return pending.promise;
     const retry = () => syncRemoteSession(machineId, sessionId, revision, waitMs);
-    return pending.request.then(retry, retry);
+    return pending.promise.then(retry, retry);
   }
-  const request = requestSessionSync(machineId, sessionId, revision, waitMs).finally(() => {
-    if (pendingSyncs.get(key)?.request === request) pendingSyncs.delete(key);
+  return queryClient.fetchQuery({
+    queryKey, gcTime: 0, meta: { revision },
+    queryFn: () => requestSessionSync(machineId, sessionId, revision, waitMs),
   });
-  pendingSyncs.set(key, { revision, request });
-  return request;
 }
 
 /** Assemble bounded pieces of one Host revision before releasing the request. */
@@ -397,38 +388,24 @@ export function loadRemoteSessionPreviews(
     (params) => remoteRequest(machineId, "attachments.read", params));
 }
 
-/** The connected machine for an environment, from the last machine list read. */
-export function knownRemoteMachine(
-  environmentId: string,
-): RemoteMachine | undefined {
-  return cachedMachines.find((entry) => entry.environmentId === environmentId);
+const machinesKey = ["remoteMachines"] as const;
+const machinesQuery = () => queryOptions({
+  queryKey: machinesKey,
+  queryFn: async () => {
+    const revision = machineRevision;
+    const value = await invoke<RemoteMachine[]>("remote_machines");
+    return machineRevision === revision ? (Array.isArray(value) ? value : []) : queryClient.getQueryData<RemoteMachine[]>(machinesKey) ?? [];
+  },
+});
+export function knownRemoteMachine(environmentId: string): RemoteMachine | undefined {
+  return queryClient.getQueryData<RemoteMachine[]>(machinesKey)?.find(entry => entry.environmentId === environmentId);
 }
-
-/** The connected machine for an environment, reading the list when needed. */
-export async function remoteMachineFor(
-  environmentId: string,
-): Promise<RemoteMachine | undefined> {
+export async function remoteMachineFor(environmentId: string): Promise<RemoteMachine | undefined> {
+  const state = queryClient.getQueryState<RemoteMachine[]>(machinesKey);
   const known = knownRemoteMachine(environmentId);
-  if (known || (machinesLoaded && !machineRequest)) return known;
-  await readRemoteMachines();
+  if (known || (state?.data && state.fetchStatus !== "fetching")) return known;
+  await queryClient.fetchQuery(machinesQuery());
   return knownRemoteMachine(environmentId);
-}
-
-function readRemoteMachines(): Promise<RemoteMachine[]> {
-  if (machineRequest) return machineRequest;
-  const revision = machineRevision;
-  const request = invoke<RemoteMachine[]>("remote_machines").then((value) => {
-    if (machineRevision === revision) {
-      cachedMachines = Array.isArray(value) ? value : [];
-      machinesLoaded = true;
-    }
-    return cachedMachines;
-  });
-  machineRequest = request;
-  void request.finally(() => {
-    if (machineRequest === request) machineRequest = undefined;
-  }).catch(() => {});
-  return request;
 }
 
 export async function connectMachine(
@@ -442,11 +419,9 @@ export async function connectMachine(
     token,
   });
   machineRevision++;
-  cachedMachines = [
-    ...cachedMachines.filter((entry) => entry.id !== machine.id),
-    machine,
-  ];
-  machinesLoaded = true;
+  queryClient.setQueryData<RemoteMachine[]>(machinesKey, current => [
+    ...(current ?? []).filter(entry => entry.id !== machine.id), machine,
+  ]);
   window.dispatchEvent(new Event(CHANGE));
   const { publishHostConnection } = await import("./hostConnections");
   await publishHostConnection(machine);
@@ -454,128 +429,52 @@ export async function connectMachine(
 }
 
 export async function disconnectMachine(machineId: string): Promise<void> {
-  const machine = cachedMachines.find((entry) => entry.id === machineId);
+  const machine = queryClient.getQueryData<RemoteMachine[]>(machinesKey)?.find(entry => entry.id === machineId);
   if (machineId === sharedHostMachineId() || (machine && isSharedHostMachine(machine)))
     throw new Error(translate("This computer cannot be removed."));
   await invoke("remote_disconnect", { machineId });
   machineRevision++;
-  cachedMachines = cachedMachines.filter((entry) => entry.id !== machineId);
+  queryClient.setQueryData<RemoteMachine[]>(machinesKey, current => (current ?? []).filter(entry => entry.id !== machineId));
   window.dispatchEvent(new Event(CHANGE));
 }
 
-export function useRemoteMachines(enabled = true): {
-  machines: RemoteMachine[];
-  loaded: boolean;
-} {
+export function useRemoteMachines(enabled = true): { machines: RemoteMachine[]; loaded: boolean } {
   const directory = useHostConnections();
-  const [state, setState] = useState<{
-    machines: RemoteMachine[];
-    loaded: boolean;
-  }>({ machines: cachedMachines, loaded: machinesLoaded });
+  const read = useQuery({ ...machinesQuery(), enabled }, queryClient);
   useEffect(() => {
     if (!enabled) return;
-    let disposed = false;
-    const refresh = () => {
-      void readRemoteMachines()
-        .then((value) => {
-          if (!disposed) {
-            setState({
-              machines: value,
-              loaded: true,
-            });
-          }
-        })
-        .catch(() => {
-          // A temporary connection failure should not blank every remote
-          // panel while a fresh machine list is requested.
-          if (!disposed) setState({ machines: cachedMachines, loaded: true });
-        });
-    };
-    refresh();
+    const refresh = () => { void invalidateAfterChange(machinesKey); };
     window.addEventListener(CHANGE, refresh);
-    return () => {
-      disposed = true;
-      window.removeEventListener(CHANGE, refresh);
-    };
+    return () => window.removeEventListener(CHANGE, refresh);
   }, [enabled]);
   return useMemo(() => ({
-    ...state,
-    machines: state.machines.map((machine) => {
-      const shared = directory.connections.find((entry) => entry.environmentId === machine.environmentId);
+    loaded: read.isFetched,
+    machines: (read.data ?? []).map(machine => {
+      const shared = directory.connections.find(entry => entry.environmentId === machine.environmentId);
       return shared && shared.name !== machine.name ? { ...machine, name: shared.name } : machine;
     }),
-  }), [state, directory.connections]);
+  }), [read.data, read.isFetched, directory.connections]);
 }
 
-const STATUS = "omnicode:remote-machine-status";
-const machineOnline = new Map<string, boolean>();
-const statusWatchers = new Map<
-  string,
-  { count: number; timer?: ReturnType<typeof setTimeout> }
->();
-
-/** Records whether a machine answered its latest request, for every view
- * that shows its connection state. */
+/** A successful request can publish reachability before the next scheduled probe. */
 export function reportRemoteMachineStatus(machineId: string, online: boolean) {
-  if (machineOnline.get(machineId) === online) return;
-  machineOnline.set(machineId, online);
-  window.dispatchEvent(new Event(STATUS));
+  queryClient.setQueryData(["remoteMachineOnline", machineId], { online, failures: 0 });
 }
-
-function watchMachineStatus(machineId: string): () => void {
-  const existing = statusWatchers.get(machineId);
-  if (existing) {
-    existing.count++;
-  } else {
-    const watcher: { count: number; timer?: ReturnType<typeof setTimeout> } =
-      { count: 1 };
-    statusWatchers.set(machineId, watcher);
-    let failures = 0;
-    const poll = async () => {
-      try {
-        await remoteRequest(machineId, "environment.describe");
-        failures = 0;
-        reportRemoteMachineStatus(machineId, true);
-      } catch {
-        failures = Math.min(4, failures + 1);
-        reportRemoteMachineStatus(machineId, false);
-      }
-      if (statusWatchers.get(machineId) === watcher)
-        watcher.timer = setTimeout(
-          () => void poll(),
-          failures ? Math.min(30_000, 3_000 * 2 ** failures) : 15_000,
-        );
-    };
-    void poll();
-  }
-  return () => {
-    const watcher = statusWatchers.get(machineId);
-    if (!watcher || --watcher.count > 0) return;
-    clearTimeout(watcher.timer);
-    statusWatchers.delete(machineId);
-  };
-}
-
-/** Whether a machine is reachable; undefined until the first check returns. */
 export function useRemoteMachineOnline(machineId?: string): boolean | undefined {
-  const [online, setOnline] = useState(() =>
-    machineId ? machineOnline.get(machineId) : undefined,
-  );
-  useEffect(() => {
-    if (!machineId) {
-      setOnline(undefined);
-      return;
-    }
-    const update = () => setOnline(machineOnline.get(machineId));
-    update();
-    window.addEventListener(STATUS, update);
-    const unwatch = watchMachineStatus(machineId);
-    return () => {
-      window.removeEventListener(STATUS, update);
-      unwatch();
-    };
-  }, [machineId]);
-  return online;
+  const read = useQuery({
+    queryKey: ["remoteMachineOnline", machineId], enabled: !!machineId,
+    refetchInterval: query => query.state.data?.failures ? Math.min(30_000, 3_000 * 2 ** query.state.data.failures) : 15_000,
+    queryFn: async () => {
+      try {
+        await remoteRequest(machineId!, "environment.describe");
+        return { online: true, failures: 0 };
+      } catch {
+        const previous = queryClient.getQueryData<{ failures: number }>(["remoteMachineOnline", machineId]);
+        return { online: false, failures: Math.min(4, (previous?.failures ?? 0) + 1) };
+      }
+    },
+  }, queryClient);
+  return read.data?.online;
 }
 
 const historyKey = (project: string) => `omnicode.remote-history.v2:${project}`;
@@ -621,246 +520,125 @@ export type RemoteProjectSessions = {
   offline: boolean;
 };
 
-type CachedRemoteProjectSessions = Omit<RemoteProjectSessions, "machine">;
-const sessionCaches = new Map<string, CachedRemoteProjectSessions>();
-const sessionRequests = new Map<string, {
-  identity: string;
-  machineId?: string;
-  promise: Promise<void>;
-}>();
-const sessionWatchers = new Map<string, {
-  count: number;
-  timer?: ReturnType<typeof setTimeout>;
-}>();
-
+type HistoryData = { sessions: HostSessionSummary[]; loaded: boolean };
+type HistoryError = Error & { failures?: number; unavailable?: boolean };
 const sessionProjectKey = (project: string) => remoteProjectFor(project)?.key ??
   (project.replace(/\\/g, "/").replace(/\/+$/, "") || "/");
 const sessionProjectIdentity = (project: string) => {
   const remote = remoteProjectFor(project);
-  return remote ? JSON.stringify([
-    remote.environmentId,
-    remote.local ? remote.key : remote.projectId,
-  ]) : undefined;
+  return remote ? JSON.stringify([remote.environmentId, remote.local ? remote.key : remote.projectId]) : undefined;
 };
-
-function sessionCache(project: string): CachedRemoteProjectSessions {
-  const key = sessionProjectKey(project);
-  const known = sessionCaches.get(key);
-  if (known) return known;
-  let sessions: HostSessionSummary[] = [];
-  let loaded = false;
+const remoteHistoryKey = (project: string) => {
+  const remote = remoteProjectFor(project);
+  return ["remoteHistory", sessionProjectKey(project), sessionProjectIdentity(project) ?? null,
+    remote ? knownRemoteMachine(remote.environmentId)?.id ?? null : null] as const;
+};
+function storedHistory(project: string): HistoryData {
   try {
-    const stored = localStorage.getItem(historyKey(key)) ??
-      localStorage.getItem(historyKey(project));
-    if (stored !== null) {
-      const value: unknown = JSON.parse(stored);
-      if (Array.isArray(value)) {
-        sessions = value as HostSessionSummary[];
-        loaded = true;
-      }
-    }
-  } catch {
-    /* A damaged or unavailable cache does not prevent a fresh request. */
-  }
-  const state = { sessions, loaded, pending: false, offline: false };
-  sessionCaches.set(key, state);
-  return state;
+    const raw = localStorage.getItem(historyKey(sessionProjectKey(project))) ?? localStorage.getItem(historyKey(project));
+    const value: unknown = raw === null ? null : JSON.parse(raw);
+    if (Array.isArray(value)) return { sessions: value, loaded: true };
+  } catch { /* A damaged disk snapshot never prevents a fresh read. */ }
+  return { sessions: [], loaded: false };
 }
-
-/** The most recent successful list, even while this project is collapsed. */
-export function cachedRemoteSessions(project: string): HostSessionSummary[] {
-  return sessionCache(project).sessions;
-}
-
-/** Whether a complete successful list is available, including an empty cache. */
-export function hasCachedRemoteProjectSessions(project: string): boolean {
-  return sessionCache(project).loaded;
-}
-
-/** Read collapsed-project load/error state without starting a polling hook. */
-export function cachedRemoteProjectSessionsState(
-  project: string,
-): Readonly<Omit<RemoteProjectSessions, "machine" | "sessions">> {
-  const { sessions: _sessions, ...state } = sessionCache(project);
+function remoteHistoryQuery(project: string) {
+  const queryKey = remoteHistoryKey(project);
+  const identity = sessionProjectIdentity(project);
   const remote = remoteProjectFor(project);
-  return {
-    ...state,
-    offline:
-      (!!remote || isRemoteProjectPath(project)) &&
-      (!remote || !knownRemoteMachine(remote.environmentId) || state.offline),
-  };
-}
-
-export function cachedRemoteSessionSummary(project: string, sessionId: string) {
-  return cachedRemoteSessions(project).find((session) => session.id === sessionId);
-}
-
-/** Reads once without starting polling. Pollers and search share this request. */
-export function prefetchRemoteProjectSessions(project: string): Promise<void> {
-  const remote = remoteProjectFor(project);
-  if (!remote) {
-    if (!isRemoteProjectPath(project)) return Promise.resolve();
-    const error = new Error("Remote project is not registered on this computer");
-    const state = sessionCache(project);
-    state.pending = false;
-    state.offline = true;
-    state.error = error.message;
-    window.dispatchEvent(new Event(REMOTE_HISTORY_UPDATED));
-    return Promise.reject(error);
-  }
-  const key = sessionProjectKey(project);
-  const identity = sessionProjectIdentity(project)!;
-  const pending = sessionRequests.get(key);
-  const knownMachineId = knownRemoteMachine(remote.environmentId)?.id;
-  if (pending?.identity === identity &&
-      (!pending.machineId || pending.machineId === knownMachineId)) return pending.promise;
-  const state = sessionCache(project);
-  const request = { identity, machineId: knownMachineId, promise: Promise.resolve() };
-  let unavailable = false;
-  // Every listener re-renders on an update event, so announce only real
-  // changes; an idle poll that returns the same list announces nothing.
-  const visible = () => [state.sessions, state.loaded, state.pending, state.error, state.offline];
-  const before = visible();
-  // A loaded, healthy list refreshes in the background with nothing to wait for.
-  if (!state.loaded || state.offline || state.error) {
-    state.pending = true;
-    state.error = undefined;
-  }
-  const started = visible();
-  request.promise = (async () => {
-    try {
-      const machine = await remoteMachineFor(remote.environmentId);
-      if (!machine) {
-        unavailable = true;
-        throw new Error("Remote machine is not connected");
-      }
-      request.machineId = machine.id;
-      const hostProject = remote.local ? await ensureSharedProject(remote.key) : remote;
-      if (sessionRequests.get(key) !== request ||
-          sessionProjectIdentity(project) !== identity ||
-          knownRemoteMachine(remote.environmentId)?.id !== machine.id) return;
-      const next = await remoteRequest<HostSessionSummary[]>(
-        machine.id, "sessions.list", { projectId: hostProject.projectId },
-      );
-      // Re-registering a folder or changing its Host must not let an older
-      // request overwrite the replacement project's history.
-      if (sessionRequests.get(key) !== request ||
-          sessionProjectIdentity(project) !== identity ||
-          knownRemoteMachine(remote.environmentId)?.id !== machine.id) return;
-      // Pollers refetch every few seconds; an identical list keeps its array so
-      // history views do not re-render (or rewrite storage) for nothing.
-      const serialized = JSON.stringify(next);
-      const unchanged = state.loaded && JSON.stringify(state.sessions) === serialized;
-      if (!unchanged) state.sessions = next;
-      for (const row of next) hostOrchestrationClient.accept({ machineId: machine.id, project: hostProject }, row);
-      state.loaded = true;
-      state.offline = false;
-      state.error = undefined;
-      if (!unchanged) persistRemoteHistory(key, next);
-    } catch (error) {
-      if (sessionRequests.get(key) === request &&
-          sessionProjectIdentity(project) === identity &&
-          knownRemoteMachine(remote.environmentId)?.id === request.machineId) {
-        state.offline = true;
-        state.error = unavailable ? undefined :
-          error instanceof Error ? error.message : String(error);
-      }
-      throw error;
-    } finally {
-      if (sessionRequests.get(key) === request) {
-        sessionRequests.delete(key);
-        state.pending = false;
-        if (visible().some((value, index) => value !== started[index]))
-          window.dispatchEvent(new Event(REMOTE_HISTORY_UPDATED));
-      }
-    }
-  })();
-  sessionRequests.set(key, request);
-  if (started.some((value, index) => value !== before[index]))
-    window.dispatchEvent(new Event(REMOTE_HISTORY_UPDATED));
-  return request.promise;
-}
-
-function watchProjectSessions(project: string): () => void {
-  const key = sessionProjectKey(project);
-  let watcher = sessionWatchers.get(key);
-  if (watcher) {
-    watcher.count++;
-  } else {
-    watcher = { count: 1 };
-    sessionWatchers.set(key, watcher);
-    const current = watcher;
-    let failures = 0;
-    const poll = async () => {
+  return queryOptions({
+    queryKey, initialData: () => storedHistory(project),
+    meta: queryClient.getQueryCache().find({ queryKey, exact: true })?.meta ?? {},
+    queryFn: async (): Promise<HistoryData> => {
+      const previous = queryClient.getQueryData<HistoryData>(queryKey) ?? storedHistory(project);
       try {
-        await prefetchRemoteProjectSessions(project);
-        failures = 0;
-      } catch {
-        failures = Math.min(4, failures + 1);
+        if (!remote) throw new Error("Remote project is not registered on this computer");
+        const machine = await remoteMachineFor(remote.environmentId);
+        if (!machine) throw Object.assign(new Error("Remote machine is not connected"), { unavailable: true });
+        const hostProject = remote.local ? await ensureSharedProject(remote.key) : remote;
+        if (sessionProjectIdentity(project) !== identity || knownRemoteMachine(remote.environmentId)?.id !== machine.id) return previous;
+        const sessions = await remoteRequest<HostSessionSummary[]>(machine.id, "sessions.list", { projectId: hostProject.projectId });
+        if (sessionProjectIdentity(project) !== identity || knownRemoteMachine(remote.environmentId)?.id !== machine.id) return previous;
+        for (const row of sessions) hostOrchestrationClient.accept({ machineId: machine.id, project: hostProject }, row);
+        if (!previous.loaded || JSON.stringify(sessions) !== JSON.stringify(previous.sessions))
+          persistRemoteHistory(sessionProjectKey(project), sessions);
+        return { sessions, loaded: true };
+      } catch (reason) {
+        const previousError = queryClient.getQueryState<HistoryData, HistoryError>(queryKey)?.error;
+        const error: HistoryError = reason instanceof Error ? reason : new Error(String(reason));
+        error.failures = Math.min(4, (previousError?.failures ?? 0) + 1);
+        throw error;
       }
-      if (sessionWatchers.get(key) === current)
-        current.timer = setTimeout(
-          () => void poll(),
-          failures ? Math.min(30_000, 3_000 * 2 ** failures) : 3_000,
-        );
-    };
-    void poll();
-  }
-  const current = watcher;
-  return () => {
-    if (sessionWatchers.get(key) !== current || --current.count > 0) return;
-    clearTimeout(current.timer);
-    sessionWatchers.delete(key);
+    },
+  });
+}
+function historyQuery(project: string) {
+  return queryClient.getQueryCache().build(queryClient, queryClient.defaultQueryOptions(remoteHistoryQuery(project)));
+}
+function historyState(query: Pick<Query<HistoryData, Error>, "state">) {
+  const { data, error, fetchStatus } = query.state;
+  return {
+    sessions: data?.sessions ?? [], loaded: data?.loaded ?? false,
+    pending: fetchStatus === "fetching" && (!data?.loaded || !!error),
+    error: fetchStatus === "fetching" || (error as HistoryError | null)?.unavailable ? undefined : error?.message,
+    offline: !!error,
   };
 }
-
-/** Lists a remote project's host sessions, keeping the last list visible
- * while the machine is unreachable. */
-export function useRemoteProjectSessions(
-  project: string,
-  enabled = true,
-): RemoteProjectSessions {
+// Legacy consumers receive only presentation changes; unchanged background reads stay silent.
+queryClient.getQueryCache().subscribe(event => {
+  if (event.type !== "updated" || event.query.queryKey[0] !== "remoteHistory") return;
+  const state = historyState(event.query as Query<HistoryData, Error>);
+  const next = [state.sessions, state.loaded, state.pending, state.error, state.offline];
+  const previous = event.query.meta?.announced as unknown[] | undefined;
+  if (previous && next.every((value, index) => value === previous[index])) return;
+  if (event.query.meta) event.query.meta.announced = next;
+  window.dispatchEvent(new Event(REMOTE_HISTORY_UPDATED));
+});
+export function cachedRemoteSessions(project: string): HostSessionSummary[] {
+  return historyQuery(project).state.data!.sessions;
+}
+export function hasCachedRemoteProjectSessions(project: string): boolean {
+  return historyQuery(project).state.data!.loaded;
+}
+export function cachedRemoteProjectSessionsState(project: string): Readonly<Omit<RemoteProjectSessions, "machine" | "sessions">> {
+  const { sessions: _sessions, ...state } = historyState(historyQuery(project));
+  const remote = remoteProjectFor(project);
+  return { ...state, offline: (!!remote || isRemoteProjectPath(project)) &&
+    (!remote || !knownRemoteMachine(remote.environmentId) || state.offline) };
+}
+export function cachedRemoteSessionSummary(project: string, sessionId: string) {
+  return cachedRemoteSessions(project).find(session => session.id === sessionId);
+}
+export function prefetchRemoteProjectSessions(project: string): Promise<unknown> {
+  if (!remoteProjectFor(project) && !isRemoteProjectPath(project)) return Promise.resolve();
+  const request = queryClient.fetchQuery(remoteHistoryQuery(project));
+  void request.catch(() => {});
+  return historyQuery(project).promise ?? request;
+}
+export function useRemoteProjectSessions(project: string, enabled = true): RemoteProjectSessions {
   const remote = remoteProjectFor(project);
   useRemoteMachines(enabled && !!remote);
   const machine = remote ? knownRemoteMachine(remote.environmentId) : undefined;
-  const [state, setState] = useState(() => ({ ...sessionCache(project) }));
+  const options = remoteHistoryQuery(project);
+  const read = useQuery({
+    ...options, enabled: enabled && !!remote,
+    refetchInterval: query => query.state.error ? Math.min(30_000, 3_000 * 2 ** ((query.state.error as HistoryError).failures ?? 1)) : 3_000,
+    notifyOnChangeProps: () => {
+      const state = queryClient.getQueryState<HistoryData>(options.queryKey);
+      return state?.data?.loaded && !state.error ? ["data", "error"] : ["data", "error", "isFetching"];
+    },
+  }, queryClient);
   useEffect(() => {
-    // Every project's history poll announces itself to every list; only a
-    // list whose own state changed should re-render.
-    const updated = () =>
-      setState((current) => {
-        const next = sessionCache(project);
-        return current.sessions === next.sessions &&
-          current.loaded === next.loaded &&
-          current.pending === next.pending &&
-          current.error === next.error &&
-          current.offline === next.offline
-          ? current
-          : { ...next };
-      });
-    // `machine` is derived outside this state, so machine changes always render.
-    const machinesChanged = () => setState({ ...sessionCache(project) });
     const refresh = () => {
-      if (remoteProjectFor(project) || isRemoteProjectPath(project))
-        void prefetchRemoteProjectSessions(project).catch(() => {});
+      if (remoteProjectFor(project) || isRemoteProjectPath(project)) void prefetchRemoteProjectSessions(project).catch(() => {});
     };
-    updated();
-    window.addEventListener(REMOTE_HISTORY_UPDATED, updated);
     window.addEventListener(REMOTE_HISTORY_CHANGE, refresh);
-    window.addEventListener(CHANGE, machinesChanged);
-    return () => {
-      window.removeEventListener(REMOTE_HISTORY_UPDATED, updated);
-      window.removeEventListener(REMOTE_HISTORY_CHANGE, refresh);
-      window.removeEventListener(CHANGE, machinesChanged);
-    };
+    return () => window.removeEventListener(REMOTE_HISTORY_CHANGE, refresh);
   }, [project]);
-  useEffect(() => {
-    if (!enabled || !remote) return;
-    return watchProjectSessions(project);
-  }, [project, enabled, remote?.environmentId, remote?.projectId, machine?.id]);
-  return {
-    ...state,
-    machine,
-    offline: (!!remote || isRemoteProjectPath(project)) && (!machine || state.offline),
+  const state = {
+    sessions: read.data?.sessions ?? [], loaded: read.data?.loaded ?? false,
+    pending: read.isFetching && (!read.data?.loaded || read.isError),
+    error: read.isFetching || (read.error as HistoryError | null)?.unavailable ? undefined : read.error?.message,
+    offline: read.isError,
   };
+  return { ...state, machine, offline: (!!remote || isRemoteProjectPath(project)) && (!machine || state.offline) };
 }

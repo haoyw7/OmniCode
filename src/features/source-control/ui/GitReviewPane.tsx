@@ -1,3 +1,6 @@
+import { useMutation, useMutationState } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
 // Adapted from ZCode (Apache-2.0).
 import {
   useCallback,
@@ -30,7 +33,16 @@ import { duration, immediateTransition } from "../../../shared/motion/tokens";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
 import { isEqualOrInside } from "../../../shared/lib/paths";
-import { AlertCircle, Check, FileDiff, FolderTree, ListBullet, MoreVertical, Search, X } from "../../../shared/ui/icons";
+import {
+  AlertCircle,
+  Check,
+  FileDiff,
+  FolderTree,
+  ListBullet,
+  MoreVertical,
+  Search,
+  X,
+} from "../../../shared/ui/icons";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import {
   DropdownMenu,
@@ -153,7 +165,12 @@ export function GitReviewPane({
   const { scopeKey, files, error, loading, workspaceShared, loadDiff, getDiff, refresh } =
     useReviewSource(cwd, source, sessionId, turnId);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [busy, setBusy] = useState<Set<string>>(new Set());
+  const actionMutation = useMutation({ mutationKey: ["gitReviewAction", scopeKey],
+    mutationFn: ({ operation }: { id: string; operation: () => Promise<void> }) => withToast(operation, { loading: t("Saving…"), success: false, error: false }),
+  }, queryClient);
+  const busy = new Set(useMutationState({ filters: { mutationKey: ["gitReviewAction", scopeKey], status: "pending" },
+    select: mutation => (mutation.state.variables as { id: string }).id,
+  }, queryClient));
   const busyRef = useRef(new Set<string>());
   const [actionError, setActionError] = useState<string>();
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -328,17 +345,15 @@ export function GitReviewPane({
     const id = `${scopeKey}:${file.relative}`;
     if (busyRef.current.has(id)) return;
     busyRef.current.add(id);
-    setBusy(new Set(busyRef.current));
     setActionError(undefined);
     try {
-      await operation();
+      await actionMutation.mutateAsync({ id, operation });
       notifyGitChanged();
     } catch (caught) {
       reportError(caught);
     } finally {
       busyRef.current.delete(id);
-      setBusy(new Set(busyRef.current));
-    }
+      }
   };
   // Cards are memoized; route their callbacks through the latest render state.
   const latest = useRef({

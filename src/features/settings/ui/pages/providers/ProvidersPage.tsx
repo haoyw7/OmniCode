@@ -1,12 +1,12 @@
+import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../../../shared/lib/queryClient";
 import { usePreferenceState } from "../../../model/usePreferenceState";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { RefreshCw } from "../../../../../shared/ui/icons";
 import {
-  useCallback,
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -155,59 +155,24 @@ export function ProvidersPage({
   const stateFor = (harness: HarnessId) =>
     providerScopeState(harness, defaults, defaultHarness);
 
-  const [versions, setVersions] = useState<
-    Partial<Record<HarnessId, HarnessVersionInfo>>
-  >({});
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-  const loadVersions = useCallback(
-    async (harnesses: HarnessId[], force = false) => {
-      const entries = await Promise.all(
-        harnesses.map(
-          async (harness) =>
-            [harness, await readHarnessVersions(harness, { force })] as const,
-        ),
-      );
-      if (!mounted.current) return;
-      setVersions((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
-    },
-    [],
-  );
-
-  useEffect(() => {
-    void probeHarnessAvailability().then(() =>
-      loadVersions(HARNESSES.filter((harness) => isHarnessAvailable(harness))),
-    );
-  }, [loadVersions]);
-
-  const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = async () => {
-    if (refreshing) return;
-    setRefreshing(true);
-    try {
-      // Re-detect binaries (a CLI may have been installed or removed since the
-      // last probe), then re-read versions and model catalogs of whatever is
-      // installed.
-      await probeHarnessAvailability({ force: true });
-      const installed = HARNESSES.filter((harness) =>
-        isHarnessAvailable(harness),
-      );
-      setVersions({});
-      await Promise.all([
-        loadVersions(installed, true),
-        refreshHarnessCatalogs(installed, { force: true }),
-      ]);
-      // Other windows' model pickers keep their own stores.
-      void announceHarnessesRefreshed([...HARNESSES]).catch(() => undefined);
-    } finally {
-      if (mounted.current) setRefreshing(false);
-    }
+  useQuery({ queryKey: ["harnessAvailability"], queryFn: async () => { await probeHarnessAvailability(); return getHarnessAvailabilitySnapshot(); } }, queryClient);
+  const versionReads = useQueries({ queries: HARNESSES.map(harness => ({
+    queryKey: ["harnessVersions", harness], queryFn: () => readHarnessVersions(harness), enabled: isHarnessAvailable(harness),
+  })) }, queryClient);
+  const versions: Partial<Record<HarnessId, HarnessVersionInfo>> = Object.fromEntries(HARNESSES.map((harness, index) => [harness, versionReads[index].data]));
+  const loadVersions = async (harnesses: HarnessId[], force = false) => {
+    await Promise.all(harnesses.map(harness => queryClient.fetchQuery({
+      queryKey: ["harnessVersions", harness], queryFn: () => readHarnessVersions(harness, { force }),
+    })));
   };
+  const refreshMutation = useMutation({ mutationFn: async () => {
+    await probeHarnessAvailability({ force: true });
+    const installed = HARNESSES.filter(harness => isHarnessAvailable(harness));
+    await Promise.all([loadVersions(installed, true), refreshHarnessCatalogs(installed, { force: true })]);
+    void announceHarnessesRefreshed([...HARNESSES]).catch(() => undefined);
+  } }, queryClient);
+  const refreshing = refreshMutation.isPending;
+  const onRefresh = () => { if (!refreshing) refreshMutation.mutate(); };
 
   const onModelChange = (harness: HarnessId, model: string) => {
     if (project) {

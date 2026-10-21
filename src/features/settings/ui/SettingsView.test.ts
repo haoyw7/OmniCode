@@ -37,7 +37,7 @@ import {
 import {
   clearCachedRateLimits,
   setCachedRateLimits,
-} from "../../providers/model/rateLimitsCache";
+} from "../../providers/model/rateLimitsQueries";
 import { HARNESSES, HARNESS_TITLE, type HarnessId } from "../../sessions/model/session";
 import { saveMaskEmails, saveShowRemainingUsage } from "../model/displayPrefs";
 

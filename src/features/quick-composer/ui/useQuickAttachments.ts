@@ -8,6 +8,10 @@ import {
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { toast } from "sonner";
+import { errorMessage } from "../../../shared/lib/errorMessage";
 import {
   attachmentsFromFiles,
   attachmentsFromPaths,
@@ -49,7 +53,6 @@ export function useQuickAttachments(
   onError: (message: string | null) => void,
 ) {
   const [files, setFiles] = useState<Attachment[]>([]);
-  const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const filesRef = useRef(files);
   const loadingRef = useRef(false);
@@ -78,12 +81,8 @@ export function useQuickAttachments(
     [],
   );
 
-  const collect = useCallback(
-    async (read: () => Promise<Attachment[]>) => {
-      if (!canCollect()) return;
-      loadingRef.current = true;
-      setLoading(true);
-      onError(null);
+  const { mutateAsync: runCollection, isPending: loading } = useMutation({
+    mutationFn: async (read: () => Promise<Attachment[]>) => {
       let incoming: Attachment[] = [];
       try {
         incoming = await read();
@@ -117,11 +116,27 @@ export function useQuickAttachments(
         setFiles(filesRef.current);
       } catch (reason) {
         incoming.forEach(revokeAttachment);
-        if (alive.current)
-          onError(reason instanceof Error ? reason.message : String(reason));
+        throw reason;
+      }
+    },
+    gcTime: 0,
+  }, queryClient);
+
+  const collect = useCallback(
+    async (read: () => Promise<Attachment[]>) => {
+      if (!canCollect()) return;
+      loadingRef.current = true;
+      onError(null);
+      try {
+        await runCollection(read);
+      } catch (reason) {
+        if (alive.current) {
+          const message = errorMessage(reason) ?? String(reason);
+          onError(message);
+          toast.error(message);
+        }
       } finally {
         loadingRef.current = false;
-        if (alive.current) setLoading(false);
         // The clipboard read started when Paste was pressed. Queue only the
         // captured result so a later clipboard change cannot replace it.
         const queued = queuedScreenshot.current;
@@ -140,7 +155,7 @@ export function useQuickAttachments(
         }
       }
     },
-    [onError, canCollect],
+    [onError, canCollect, runCollection],
   );
 
   useEffect(() => {

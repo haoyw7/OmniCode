@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../../../shared/lib/queryClient";
+import { workflowQueryScope } from "../../../model/workflowQueryKeys";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { Copy } from "../../../../../shared/ui/icons";
 import {
   TID_WORKFLOW_DETAIL,
@@ -16,7 +19,6 @@ import { Spinner } from "../../../../../shared/ui/primitives/Spinner.js";
 import { toast } from "sonner";
 import { cn } from "../../../../../shared/lib/cn";
 import { useWorkflowIntl } from "../../i18n/IntlProvider.js";
-import { logger } from "../../logger.js";
 import { SettingsBreadcrumbReporter } from "../SettingsHeaderBreadcrumb.js";
 import { SETTINGS_FRAME_CONTENT_CLASSNAME } from "../SettingsPageParts.js";
 import { SettingsSegmentedTabs } from "../SettingsSegmentedTabs.js";
@@ -89,7 +91,12 @@ interface SavedWorkflowDetailViewProps {
  * 工作流详情页：与定时任务编辑页同构——
  * 面包屑、标题、右上动作、分段标签。「定义」= 元数据行内编辑 + 只读脚本；「运行历史」= journal 行。
  */
-export function SavedWorkflowDetailView({
+export function SavedWorkflowDetailView(props: SavedWorkflowDetailViewProps) {
+  const identity = JSON.stringify([...workflowQueryScope(props.agentService), props.target, props.name]);
+  return <SavedWorkflowDetails key={identity} {...props} />;
+}
+
+function SavedWorkflowDetails({
   target,
   agentService,
   name,
@@ -113,70 +120,49 @@ export function SavedWorkflowDetailView({
 }: SavedWorkflowDetailViewProps) {
   const { intl } = useWorkflowIntl();
   const [tab, setTab] = useState<DetailTab>("definition");
-  const [loadState, setLoadState] = useState<DetailLoad>({ status: "loading" });
-  const [draft, setDraft] = useState<MetaDraft | null>(null);
+  const queryKey = [...workflowQueryScope(agentService), "savedDetail", target, name];
+  const read = useQuery({ queryKey, queryFn: () => agentService.getSavedWorkflow({ ...target, name }) }, queryClient);
+  const loadState: DetailLoad = read.isError ? { status: "failed", reason: String(read.error instanceof Error ? read.error.message : read.error) }
+    : !read.data ? { status: "loading" } : read.data.ok ? { status: "ready", detail: read.data } : { status: "failed", reason: read.data.reason };
+  const [editedDraft, setDraft] = useState<MetaDraft | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, SavedWorkflowArgRowError>>({});
   const [descriptionError, setDescriptionError] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [reloadSeq, setReloadSeq] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoadState({ status: "loading" });
-    agentService
-      .getSavedWorkflow({ ...target, name })
-      .then((result) => {
-        if (cancelled) return;
-        if (!result.ok) {
-          setLoadState({ status: "failed", reason: result.reason });
-          return;
-        }
-        setLoadState({ status: "ready", detail: result });
-        setDraft(draftFromMeta(result.meta));
-        setRowErrors({});
-        setDescriptionError(false);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        const message = error instanceof Error ? error.message : String(error);
-        logger.warn("[SavedWorkflows] 读取工作流详情失败", { name, error: message });
-        setLoadState({ status: "failed", reason: message });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [agentService, name, reloadSeq, target]);
+  const mutation = useMutation({ mutationFn: (meta: OmniCodeSavedWorkflowMeta) => agentService.updateSavedWorkflowMeta({ ...target, name, meta }) }, queryClient);
+  const saving = mutation.isPending;
 
   const detail = loadState.status === "ready" ? loadState.detail : null;
   const baseline = useMemo(() => (detail ? draftFromMeta(detail.meta) : null), [detail]);
+  const draft = editedDraft ?? baseline;
   const dirty = useMemo(() => {
     if (!draft || !baseline) return false;
     return JSON.stringify(draft) !== JSON.stringify(baseline);
   }, [baseline, draft]);
 
   const updateDraft = useCallback((patch: Partial<MetaDraft>) => {
-    setDraft((current) => (current ? { ...current, ...patch } : current));
-  }, []);
+    setDraft((current) => { const value = current ?? baseline; return value ? { ...value, ...patch } : null; });
+  }, [baseline]);
   const updateRow = useCallback((key: string, patch: Partial<SavedWorkflowArgRow>) => {
-    setDraft((current) =>
-      current
+    setDraft((edited) => {
+      const current = edited ?? baseline;
+      return current
         ? {
             ...current,
             rows: current.rows.map((row) => (row.key === key ? { ...row, ...patch } : row)),
           }
-        : current,
-    );
+        : current;
+    });
     setRowErrors((current) => {
       if (!(key in current)) return current;
       const next = { ...current };
       delete next[key];
       return next;
     });
-  }, []);
+  }, [baseline]);
   const addRow = useCallback(() => {
     rowKeySeq += 1;
-    setDraft((current) =>
-      current
+    setDraft((edited) => {
+      const current = edited ?? baseline;
+      return current
         ? {
             ...current,
             rows: [
@@ -191,16 +177,17 @@ export function SavedWorkflowDetailView({
               },
             ],
           }
-        : current,
-    );
-  }, []);
+        : current;
+    });
+  }, [baseline]);
   const removeRow = useCallback((key: string) => {
-    setDraft((current) =>
-      current ? { ...current, rows: current.rows.filter((row) => row.key !== key) } : current,
-    );
-  }, []);
+    setDraft((edited) => {
+      const current = edited ?? baseline;
+      return current ? { ...current, rows: current.rows.filter((row) => row.key !== key) } : current;
+    });
+  }, [baseline]);
   const discard = useCallback(() => {
-    if (baseline) setDraft(baseline);
+    setDraft(null);
     setRowErrors({});
     setDescriptionError(false);
   }, [baseline]);
@@ -219,9 +206,8 @@ export function SavedWorkflowDetailView({
       ...(whenToUse.length === 0 ? {} : { whenToUse }),
       ...(collected.args === undefined ? {} : { args: collected.args }),
     };
-    setSaving(true);
     try {
-      const result = await agentService.updateSavedWorkflowMeta({ ...target, name, meta });
+      const result = await mutation.mutateAsync(meta);
       if (!result.ok) {
         toast(
           intl.formatMessage(
@@ -232,7 +218,10 @@ export function SavedWorkflowDetailView({
         return;
       }
       toast(intl.formatMessage({ id: "workflows.hub.detail.meta.saved" }));
-      setReloadSeq((current) => current + 1);
+      await queryClient.cancelQueries({ queryKey, exact: true });
+      queryClient.setQueryData<OmniCodeWorkflowsGetResult>(queryKey, current => current?.ok ? { ...current, meta } : current);
+      setDraft(null);
+      await invalidateAfterChange(queryKey);
       onMetaSaved();
     } catch (error) {
       toast(
@@ -241,10 +230,8 @@ export function SavedWorkflowDetailView({
           { reason: error instanceof Error ? error.message : String(error) },
         ),
       );
-    } finally {
-      setSaving(false);
     }
-  }, [agentService, draft, intl, name, onMetaSaved, target]);
+  }, [draft, intl, mutation.mutateAsync, onMetaSaved, JSON.stringify(queryKey)]);
 
   const copyScript = useCallback(() => {
     if (!detail) return;

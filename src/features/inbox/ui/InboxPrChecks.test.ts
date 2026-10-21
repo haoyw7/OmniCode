@@ -2,6 +2,8 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { startMotionClock, stopMotionClock, finishMotion } from "../../../../tests/helpers/sharedMotionClock";
 import { InboxPrChecks, PrChecksTab } from "./InboxPrChecks";
 import { InboxDetail } from "./InboxDetail";
 import { LinkedWorkItemPanel } from "./LinkedWorkItemPanel";
@@ -53,6 +55,8 @@ function check(overrides: Partial<GithubPrCheck> = {}): GithubPrCheck {
 let root: Root;
 let container: HTMLDivElement;
 beforeEach(() => {
+  queryClient.clear();
+  startMotionClock();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   invoke.mockReset();
   openUrl.mockReset();
@@ -62,6 +66,8 @@ beforeEach(() => {
 });
 afterEach(() => {
   act(() => root.unmount());
+  stopMotionClock();
+  queryClient.clear();
   container.remove();
   vi.unstubAllGlobals();
 });
@@ -104,7 +110,7 @@ it("keeps expanded details on the same check when checks share a URL", async () 
   );
 });
 
-it("filters attention checks without hiding cancelled or unknown outcomes", () => {
+it("filters attention checks without hiding cancelled or unknown outcomes", async () => {
   render(
     createElement(InboxPrChecks, {
       view: view({
@@ -127,10 +133,10 @@ it("filters attention checks without hiding cancelled or unknown outcomes", () =
   expect(attention?.getAttribute("aria-pressed")).toBe("true");
   const visibleNames = () =>
     Array.from(container.querySelectorAll("li:not([hidden]) [data-check-name]"))
-      .filter((el) => !el.closest("[hidden]"))
+      .filter((el) => !el.closest('[hidden], [aria-hidden="true"], [inert]'))
       .map((el) => el.textContent);
   expect(visibleNames()).toEqual(["Tests", "Build", "Deploy", "External scan"]);
-  act(() => buttonByLabel("All checks: 6")?.click());
+  await act(async () => buttonByLabel("All checks: 6")?.click());
   expect(visibleNames()).toEqual([
     "Tests",
     "Build",
@@ -139,8 +145,9 @@ it("filters attention checks without hiding cancelled or unknown outcomes", () =
     "Lint",
     "Publish",
   ]);
-  act(() => attention?.click());
+  await act(async () => attention?.click());
   expect(visibleNames()).toEqual(["Tests", "Build", "Deploy", "External scan"]);
+  await act(async () => { await finishMotion(); });
 });
 
 it("shows annotation source from the checked commit and links to that same revision", async () => {
@@ -205,7 +212,7 @@ it("shows annotation source from the checked commit and links to that same revis
 });
 
 it("opens the only failed Actions job and shows its failed step and error", async () => {
-  invoke.mockResolvedValueOnce({
+  invoke.mockResolvedValue({
     steps: [
       { name: "Install", state: "pass", startedAt: null, completedAt: null },
       {
@@ -259,6 +266,16 @@ it("opens the only failed Actions job and shows its failed step and error", asyn
   expect(toggle?.getAttribute("aria-expanded")).toBe("true");
   act(() => toggle?.click());
   expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+  const content = document.getElementById(toggle!.getAttribute("aria-controls")!)!;
+  const fold = content.closest<HTMLElement>(".zen-fold-item")!;
+  expect(fold.dataset.foldState).toBe("closing");
+  expect(fold.inert).toBe(true);
+  expect(content.textContent).toContain("src/app.test.ts:42");
+  await act(async () => toggle?.click());
+  expect(fold.inert).toBe(false);
+  await act(async () => { await finishMotion(); });
+  act(() => toggle?.click());
+  await act(async () => { await finishMotion(); });
   expect(container.textContent).not.toContain("src/app.test.ts:42");
   expect(container.textContent).toContain("Expected 2, received 1");
   expect(container.textContent).toContain("Failed at Run tests");
@@ -321,14 +338,13 @@ it("keeps expanded evidence while polling a pending job and shows new steps", as
       )!
       .click(),
   );
-  const steps = container.querySelector<HTMLDetailsElement>("details")!;
-  steps.open = true;
+  await act(async () => buttonByLabel("View run steps")!.click());
   expect(container.textContent).toContain("Annotation 6");
   show();
   expect(container.textContent).toContain("Annotation 6");
   expect(container.textContent).toContain("source preview");
   expect(container.textContent).not.toContain("Loading steps");
-  expect(container.querySelector("details")?.open).toBe(true);
+  expect(buttonByLabel("View run steps")?.getAttribute("aria-expanded")).toBe("true");
   await act(async () =>
     finishRefresh({
       ...details,
@@ -345,7 +361,7 @@ it("keeps expanded evidence while polling a pending job and shows new steps", as
   );
   expect(container.textContent).toContain("Run tests");
   expect(container.textContent).toContain("Annotation 6");
-  expect(container.querySelector("details")?.open).toBe(true);
+  expect(buttonByLabel("View run steps")?.getAttribute("aria-expanded")).toBe("true");
   expect(
     invoke.mock.calls.filter(([command]) => command === "git_commit_file_diff"),
   ).toHaveLength(1);

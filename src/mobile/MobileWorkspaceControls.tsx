@@ -1,6 +1,8 @@
 import { Button } from "../shared/ui/forms/Button";
 import { MobileSpinner } from "./MobileSpinner";
-import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
+import { useId, useLayoutEffect, useState, type RefObject } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
 import {
   Check,
   ChevronRight,
@@ -47,21 +49,11 @@ type Load<T> =
 
 /** Reloads on each opening so new branches and worktrees appear. */
 function useSheetLoad<T>(open: boolean, enabled: boolean, load: () => Promise<T>) {
-  const [result, setResult] = useState<Load<T>>({ state: "loading" });
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    if (!open || !enabled) return;
-    let alive = true;
-    setResult((current) => current.state === "ready" ? current : { state: "loading" });
-    load().then(
-      (value) => { if (alive) setResult({ state: "ready", value }); },
-      () => { if (alive) setResult({ state: "failed" }); },
-    );
-    return () => { alive = false; };
-    // `load` is bound to the project by the caller's key; reload on reopen only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, enabled, attempt]);
-  return [result, () => setAttempt((value) => value + 1)] as const;
+  // The parent keys this surface by project; inline loader identities may vary.
+  const scope = useId();
+  const query = useQuery({ queryKey: ["mobile", "workspace", scope], queryFn: load, enabled: open && enabled, gcTime: 0 }, queryClient);
+  const result: Load<T> = query.isError ? { state: "failed" } : query.data !== undefined ? { state: "ready", value: query.data } : { state: "loading" };
+  return [result, () => { void query.refetch(); }] as const;
 }
 
 export function MobileWorkspaceControls({

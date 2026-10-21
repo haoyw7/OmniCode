@@ -1,82 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { mobileSourceKey } from "./mobileQueries";
 import type { GitDiffIndex } from "../platform/tauri/fs";
 import type { MobileGitSource } from "./mobileGit";
 
-export type MobileGitIndexState = {
-  index: GitDiffIndex | null;
-  loading: boolean;
-  error: string | null;
-  refresh: () => void;
-};
-
-/** Poll only the visible working copy; streaming tokens never restart a read. */
-export function useMobileGitIndex(
-  source: MobileGitSource | undefined,
-  enabled: boolean,
-  running: boolean,
-): MobileGitIndexState {
-  const [state, setState] = useState<{
-    source?: MobileGitSource;
-    index: GitDiffIndex | null;
-    loading: boolean;
-    error: string | null;
-  }>({ index: null, loading: false, error: null });
-  const refreshRef = useRef<(() => void) | undefined>(undefined);
-  const refresh = useCallback(() => refreshRef.current?.(), []);
+export type MobileGitIndexState = { index: GitDiffIndex | null; loading: boolean; error: string | null; refresh: () => void };
+export function useMobileGitIndex(source: MobileGitSource | undefined, enabled: boolean, running: boolean): MobileGitIndexState {
+  const [hidden, setHidden] = useState(() => document.hidden);
+  const queryKey = ["mobile", "gitIndex", source ? mobileSourceKey(source) : null] as const;
+  const read = useQuery({ queryKey, enabled: !!source && enabled && !hidden,
+    refetchInterval: enabled && !hidden ? running ? 5000 : 30000 : false,
+    queryFn: ({ signal }) => { signal.throwIfAborted(); return source!.loadIndex(); },
+  }, queryClient);
+  const wasRunning = useRef(running);
   useEffect(() => {
-    if (!source || !enabled) return;
-    let stopped = false;
-    let inFlight = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const load = async () => {
-      if (stopped || inFlight || document.hidden) return;
-      clearTimeout(timer);
-      inFlight = true;
-      setState((previous) => ({
-        source,
-        index: previous.source === source ? previous.index : null,
-        loading: true,
-        error: null,
-      }));
-      try {
-        const index = await source.loadIndex();
-        if (!stopped) setState({ source, index, loading: false, error: null });
-      } catch (problem) {
-        if (!stopped)
-          setState((previous) => ({
-            ...previous,
-            loading: false,
-            error: problem instanceof Error ? problem.message : String(problem),
-          }));
-      } finally {
-        inFlight = false;
-        if (!stopped && !document.hidden)
-          timer = setTimeout(load, running ? 5_000 : 30_000);
-      }
-    };
-    const onVisibility = () => {
-      clearTimeout(timer);
-      if (!document.hidden) void load();
-    };
-    refreshRef.current = () => {
-      void load();
-    };
+    if (wasRunning.current && !running && source && enabled && !hidden) void read.refetch({ cancelRefetch: false });
+    wasRunning.current = running;
+  }, [running, source, enabled, hidden, read.refetch]);
+  useEffect(() => {
+    const onVisibility = () => { setHidden(document.hidden); };
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("focus", onVisibility);
-    void load();
-    return () => {
-      stopped = true;
-      clearTimeout(timer);
-      refreshRef.current = undefined;
-      document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("focus", onVisibility);
-    };
-  }, [source, enabled, running]);
-  // A new Host/session must never flash the previous directory's counts.
-  return {
-    index: state.source === source ? state.index : null,
-    loading: !!source && enabled && (state.source !== source || state.loading),
-    error: state.source === source ? state.error : null,
-    refresh,
-  };
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [source, enabled, read.refetch]);
+  useEffect(() => { if (!enabled || hidden) void queryClient.cancelQueries({ queryKey }); }, [source, enabled, hidden]);
+  const refresh = useCallback(() => { if (source && enabled && !document.hidden) void read.refetch({ cancelRefetch: false }); }, [source, enabled, read.refetch]);
+  return { index: read.data ?? null, loading: !!source && enabled && read.isFetching, error: read.error ? String(read.error instanceof Error ? read.error.message : read.error) : null, refresh };
 }

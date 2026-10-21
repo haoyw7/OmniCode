@@ -1,11 +1,11 @@
+import { queryClient } from "../../../shared/lib/queryClient";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { McpConnection } from "./mcp";
 import {
   clearMcpSettingsCache,
   getCachedMcpSettings,
   loadMcpSettings,
-  subscribeMcpSettings,
-} from "./mcpSettingsCache";
+} from "./mcpSettingsQueries";
 
 const invoke = vi.hoisted(() => vi.fn());
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
@@ -36,7 +36,7 @@ it("publishes discovery before slow health and shares both requests across consu
         }),
   );
   const onChange = vi.fn();
-  const stop = subscribeMcpSettings("/repo", onChange);
+  const stop = queryClient.getQueryCache().subscribe(() => onChange(getCachedMcpSettings("/repo")));
   try {
     const [picker, settings] = await Promise.all([
       loadMcpSettings("/repo", false, { claudeHealth: false }),
@@ -119,6 +119,22 @@ const pi = {
   configPath: "/home/.pi/agent/mcp.json",
   scope: "user" as const,
 };
+
+it("queues a forced discovery after the current read and retains rows if that refresh fails", async () => {
+  let finish!: (servers: McpConnection[]) => void;
+  invoke.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }))
+    .mockRejectedValueOnce(new Error("Discovery offline"));
+  const options = { claudeHealth: false, piHealth: false };
+  const initial = loadMcpSettings("/repo", false, options);
+  const refresh = loadMcpSettings("/repo", true, options);
+  const repeated = loadMcpSettings("/repo", true, options);
+  expect(invoke).toHaveBeenCalledTimes(1);
+  finish(configured);
+  await Promise.all([initial, refresh, repeated]);
+  expect(invoke).toHaveBeenCalledTimes(2);
+  expect(getCachedMcpSettings("/repo")?.servers[0].name).toBe("docs");
+  expect(getCachedMcpSettings("/repo")?.error).toContain("Discovery offline");
+});
 const piReport = (state: string) => ({
   servers: [
     {

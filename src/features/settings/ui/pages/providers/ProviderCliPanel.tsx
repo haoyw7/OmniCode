@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../../../shared/lib/queryClient";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { ArrowDownCircle, FolderOpen, Trash2 } from "../../../../../shared/ui/icons";
 import {
   localHarnessCliPlan,
-  type HarnessCliPlan,
 } from "../../../../../platform/tauri/harnessInstall";
 import { revealPath } from "../../../../../platform/tauri/fs";
 import {
@@ -38,22 +38,12 @@ export function ProviderCliPanel({
 }) {
   const { t: uiT } = useTranslation();
   const { state, busy } = useHarnessInstall(harness);
-  const [plan, setPlan] = useState<HarnessCliPlan | null>(null);
-  const [planError, setPlanError] = useState<string | null>(null);
   const unavailable = harnessInstallUnavailableReason(harness);
   const settled = state.status === "installed" || state.status === "uninstalled";
 
-  useEffect(() => {
-    let current = true;
-    setPlan(null);
-    setPlanError(null);
-    localHarnessCliPlan(harness, runtimeProviderBinaryPath(harness))
-      .then((next) => { if (current) setPlan(next); })
-      .catch((cause) => {
-        if (current) setPlanError(cause instanceof Error ? cause.message : String(cause));
-      });
-    return () => { current = false; };
-  }, [harness, kind, opening, settled]);
+  const planRead = useQuery({ queryKey: ["harnessCliPlan", harness, kind, opening, settled, runtimeProviderBinaryPath(harness)], queryFn: () => localHarnessCliPlan(harness, runtimeProviderBinaryPath(harness)) }, queryClient);
+  const plan = planRead.data, planError = planRead.error ? String(planRead.error instanceof Error ? planRead.error.message : planRead.error) : null;
+  const operation = useMutation({ mutationFn: () => kind === "install" ? runHarnessInstall(harness) : runHarnessUninstall(harness), onSuccess: () => onUpdated() }, queryClient);
 
   const failure = state.status === "failed" && state.action === kind ? state.error : null;
   const running = kind === "install"
@@ -79,8 +69,7 @@ export function ProviderCliPanel({
 
   const canUninstall = Boolean(plan?.path && !plan.uninstallBlocker);
   const run = () => {
-    if (kind === "install") void runHarnessInstall(harness).then(onUpdated);
-    else void runHarnessUninstall(harness).then(onUpdated);
+    operation.mutate();
   };
 
   return (

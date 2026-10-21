@@ -1,7 +1,9 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
-  fetchInboxMedia,
+  inboxMediaQuery,
   sniffInboxMedia,
   type InboxMediaType,
 } from "../model/inboxMedia";
@@ -11,40 +13,18 @@ type Props = {
   alt?: string;
 };
 
-type LoadState =
-  | { status: "loading" }
-  | { status: "ready"; url: string; type: InboxMediaType }
-  | { status: "error" };
-
 export function InboxMedia({ src, alt }: Props) {
-  const [state, setState] = useState<LoadState>({ status: "loading" });
-
+  const read = useQuery(inboxMediaQuery(src), queryClient);
+  const [resource, setResource] = useState<{ bytes: Uint8Array; url: string; type: InboxMediaType }>();
   useEffect(() => {
-    let cancelled = false;
-    let objectUrl: string | null = null;
-    setState({ status: "loading" });
-
-    void fetchInboxMedia(src)
-      .then((bytes) => {
-        const type = sniffInboxMedia(bytes);
-        if (!type) throw new Error("unsupported");
-        const url = URL.createObjectURL(new Blob([bytes], { type: type.mime }));
-        if (cancelled) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        objectUrl = url;
-        setState({ status: "ready", url, type });
-      })
-      .catch(() => {
-        if (!cancelled) setState({ status: "error" });
-      });
-
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [src]);
+    const bytes = read.data, type = bytes && sniffInboxMedia(bytes);
+    if (!bytes || !type) return;
+    const url = URL.createObjectURL(new Blob([bytes], { type: type.mime }));
+    setResource({ bytes, url, type });
+    return () => URL.revokeObjectURL(url);
+  }, [read.data]);
+  const state = read.isError || (read.data && !sniffInboxMedia(read.data)) ? { status: "error" as const }
+    : resource && resource.bytes === read.data ? { ...resource, status: "ready" as const } : { status: "loading" as const };
 
   if (state.status === "loading") {
     return (
@@ -82,8 +62,17 @@ export function InboxMedia({ src, alt }: Props) {
       alt={alt ?? ""}
       title={label}
       draggable={false}
-      className="inbox-media my-2 inline-block max-h-[28rem] w-full max-w-xl cursor-zoom-in rounded-[10px] border border-content/10 bg-content/6 object-contain"
+      role="link"
+      tabIndex={0}
+      aria-label={label}
+      className="inbox-media my-2 inline-block max-h-[28rem] w-full max-w-xl cursor-zoom-in rounded-[10px] border border-content/10 bg-content/6 object-contain outline-none hover:border-content/20 focus-visible:ring-2 focus-visible:ring-focus active:opacity-90"
       onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        void openUrl(src);
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter") return;
         event.preventDefault();
         event.stopPropagation();
         void openUrl(src);

@@ -1,4 +1,6 @@
+import { queryOptions } from "@tanstack/react-query";
 import { listProjectFiles, type ProjectFile } from "../../../../platform/tauri/fs";
+import { invalidateAfterChange, queryClient } from "../../../../shared/lib/queryClient";
 import { subscribeDirsChanged } from "./fileTree";
 import { scorePath, type FuzzyHit } from "../../../../shared/lib/fuzzy";
 import { resolveWorkspacePath, slash } from "../../../../shared/lib/paths";
@@ -10,86 +12,42 @@ import {
 
 const MAX_RECENTS = 30;
 const MAX_RESULTS = 80;
-const REFRESH_MS = 150;
 const CACHE_LIMIT = 8;
 
-type Listener = () => void;
-
-// Tabs in separate worktrees should not evict each other's file index.
-const cache = new Map<string, ProjectFile[]>();
-const inflight = new Map<string, Promise<ProjectFile[]>>();
-let lastCwd: string | null = null;
-let refreshTimer: ReturnType<typeof setTimeout> | null = null;
-let refreshing = false;
-let refreshAgain = false;
-const listeners = new Set<Listener>();
 const recentsByCwd = new Map<string, string[]>();
+let accessOrder = 0;
+
+export const projectFileKeys = {
+  all: ["files", "index"] as const,
+  cwd: (cwd: string) => ["files", "index", cwd] as const,
+};
+
+export const projectFilesQuery = (cwd: string) => queryOptions({
+  queryKey: projectFileKeys.cwd(cwd),
+  queryFn: () => looksLikeProject(cwd) ? listProjectFiles(cwd) : Promise.resolve([]),
+  // All consumers share the same listing, including prefetch and link resolution.
+  // Directory notifications and window resume invalidate active and inactive keys.
+  staleTime: Infinity,
+  // Resume invalidation below also covers inactive keys; avoid a second scan
+  // from the global focus bridge before that invalidation runs.
+  refetchOnWindowFocus: false,
+  meta: { fileIndexAccess: ++accessOrder },
+});
 
 function normCwd(cwd: string): string {
   return slash(cwd).replace(/\/+$/, "") || "/";
 }
 
-function notifyProjectFilesChanged() {
-  for (const listener of listeners) listener();
-}
-
-export function subscribeProjectFiles(listener: Listener): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
 export function peekProjectFiles(cwd: string): ProjectFile[] | null {
-  return cache.get(cwd) ?? null;
+  return queryClient.getQueryData(projectFileKeys.cwd(cwd)) ?? null;
 }
 
-export function invalidateProjectFiles(cwd?: string) {
-  if (cwd) {
-    if (!cache.has(cwd) && !inflight.has(cwd)) return;
-    cache.delete(cwd);
-    inflight.delete(cwd);
-  } else {
-    cache.clear();
-    inflight.clear();
-    lastCwd = null;
-    if (refreshTimer != null) {
-      clearTimeout(refreshTimer);
-      refreshTimer = null;
-    }
-  }
-  notifyProjectFilesChanged();
-}
-
-function scheduleIndexRefresh() {
-  if (!lastCwd) return;
-  if (typeof document !== "undefined" && document.hidden) return;
-  if (refreshTimer != null) return;
-  refreshTimer = setTimeout(() => {
-    refreshTimer = null;
-    void runIndexRefresh();
-  }, REFRESH_MS);
-}
-
-async function runIndexRefresh() {
-  if (refreshing) {
-    refreshAgain = true;
-    return;
-  }
-  const cwd = lastCwd;
-  if (!cwd) return;
-  refreshing = true;
-  try {
-    await loadProjectFiles(cwd, true);
-  } catch {
-    /* next focus / dir change will retry */
-  } finally {
-    refreshing = false;
-    if (refreshAgain) {
-      refreshAgain = false;
-      scheduleIndexRefresh();
-    }
-  }
+export async function invalidateProjectFiles(cwd?: string) {
+  const queryKey = cwd ? projectFileKeys.cwd(cwd) : projectFileKeys.all;
+  // Native scans cannot be aborted, but cancelled Query results cannot restore
+  // a listing from before a write, including an inactive first scan.
+  await queryClient.cancelQueries({ queryKey });
+  await invalidateAfterChange(queryKey);
 }
 
 export function rememberOpenedFile(cwd: string, path: string) {
@@ -108,40 +66,20 @@ export function recentOpenedFiles(cwd: string): string[] {
 
 export function prefetchProjectFiles(cwd: string) {
   if (!looksLikeProject(cwd)) return;
-  void loadProjectFiles(cwd);
+  void loadProjectFiles(cwd).catch(() => {});
 }
 
-export function loadProjectFiles(
+export async function loadProjectFiles(
   cwd: string,
   refresh = false,
 ): Promise<ProjectFile[]> {
-  if (!looksLikeProject(cwd)) return Promise.resolve([]);
-  lastCwd = cwd;
-  const cached = cache.get(cwd);
-  if (!refresh && cached) {
-    // Bound retained listings by least-recently-used worktree.
-    cache.delete(cwd);
-    cache.set(cwd, cached);
-    return Promise.resolve(cached);
-  }
-  const pending = inflight.get(cwd);
-  if (!refresh && pending) return pending;
-
-  const promise = listProjectFiles(cwd)
-    .then((files) => {
-      // A refresh or invalidation supersedes only this checkout's scan.
-      if (inflight.get(cwd) !== promise) return files;
-      cache.delete(cwd);
-      cache.set(cwd, files);
-      if (cache.size > CACHE_LIMIT) cache.delete(cache.keys().next().value!);
-      notifyProjectFilesChanged();
-      return files;
-    })
-    .finally(() => {
-      if (inflight.get(cwd) === promise) inflight.delete(cwd);
-    });
-  inflight.set(cwd, promise);
-  return promise;
+  if (!looksLikeProject(cwd)) return [];
+  if (refresh) await invalidateProjectFiles(cwd);
+  const options = projectFilesQuery(cwd);
+  const cached = queryClient.getQueryCache().find({ queryKey: options.queryKey, exact: true });
+  // fetchQuery can return fresh data without updating the query's options.
+  if (cached?.meta) cached.meta.fileIndexAccess = options.meta?.fileIndexAccess;
+  return queryClient.fetchQuery(options);
 }
 
 export type RankedFile = ProjectFile & FuzzyHit;
@@ -296,17 +234,27 @@ function pickOpenableFile(
   return candidates.sort((a, b) => a.relative.length - b.relative.length)[0];
 }
 
-subscribeDirsChanged(scheduleIndexRefresh);
+subscribeDirsChanged(() => { void invalidateProjectFiles(); });
+
+queryClient.getQueryCache().subscribe((event) => {
+  if (event.query.queryKey[0] !== "files" || event.query.queryKey[1] !== "index") return;
+  if (event.type !== "observerRemoved" && !(event.type === "updated" && event.action.type === "success")) return;
+  const retained = queryClient.getQueryCache().findAll({ queryKey: projectFileKeys.all })
+    .filter((query) => query.state.data !== undefined)
+    .sort((a, b) => Number(b.meta?.fileIndexAccess ?? 0) - Number(a.meta?.fileIndexAccess ?? 0));
+  for (const query of retained.slice(CACHE_LIMIT)) {
+    // Mounted views and unfinished scans must survive another tab's prefetch.
+    if (query.getObserversCount() === 0 && query.state.fetchStatus === "idle") {
+      queryClient.removeQueries({ queryKey: query.queryKey, exact: true });
+    }
+  }
+});
 
 if (typeof document !== "undefined") {
   const resume = () => {
     if (document.hidden) return;
-    // Changes made outside OmniCode have no checkout-scoped notification.
-    // Revalidate the active index and discard inactive snapshots on return.
-    for (const cwd of new Set([...cache.keys(), ...inflight.keys()])) {
-      if (cwd !== lastCwd) invalidateProjectFiles(cwd);
-    }
-    scheduleIndexRefresh();
+    // Inactive worktrees become stale and reload only when used again.
+    void invalidateProjectFiles();
   };
   window.addEventListener("focus", resume);
   document.addEventListener("visibilitychange", resume);

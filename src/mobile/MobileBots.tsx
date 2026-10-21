@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { botRpcQuery, botPanelKey } from "../features/bots/model/botPanelQueries";
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, type ComponentProps } from "react";
 import { MobileAssistant, type MobileAssistantHandle } from "./MobileAssistant";
 import { BotAvatar } from "../features/bots/ui/BotAvatar";
@@ -37,12 +40,7 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
   const { t, language } = useTranslation();
   const surfaceVisible = useSurfaceVisibility();
   const visible = surfaceVisible && props.foreground !== false;
-  const [entries, setEntries] = useState<Entry[]>();
   const [selected, setSelected] = useState<Entry | undefined>(initialSelection);
-  const [error, setError] = useState<string>();
-  const [attempt, setAttempt] = useState(0);
-  const [threads, setThreads] = useState(EMPTY_THREADS);
-  const [canCreate, setCanCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [searching, setSearching] = useState(false);
   const [query, setQuery] = useState("");
@@ -56,6 +54,30 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
   const chat = useRef<MobileAssistantHandle>(null);
   const createPage = useRef<MobileAssistantHandle>(null);
   const listVisible = visible && !selected && !creating;
+  const list = useQuery({
+    queryKey: [...botPanelKey(props.rpc), "mobileBots", props.hostKey],
+    enabled: listVisible, refetchInterval: listVisible ? 5000 : false,
+    queryFn: async ({ signal }) => {
+      const descriptor = await queryClient.fetchQuery(botRpcQuery<HostDescriptor>(props.rpc, "environment.describe"));
+      signal.throwIfAborted();
+      const canCreate = !!descriptor.capabilities?.includes("bots.v1");
+      if (canCreate) {
+        const snapshot = await props.rpc<BotsSnapshot>("bots.list");
+        signal.throwIfAborted();
+        return { canCreate,
+          threads: snapshot.threads.filter(thread => !thread.archivedAt && snapshot.bots.some(bot => bot.id === thread.botId && !bot.archivedAt)),
+          entries: snapshot.bots.filter(bot => !bot.archivedAt).map(bot => ({
+            id: bot.id, name: bot.name, avatar: bot.avatar, threadId: bot.defaultThreadId,
+            defaultScope: bot.id === snapshot.defaultBotId && bot.defaultThreadId === snapshot.defaultThreadId,
+          })) as Entry[],
+        };
+      }
+      const bot = await props.rpc<BotConfiguration | null>("assistant.get");
+      return { canCreate, threads: EMPTY_THREADS, entries: (bot ? [{ id: bot.id, name: bot.name, avatar: bot.avatar, defaultScope: true }] : []) as Entry[] };
+    },
+  }, queryClient);
+  const entries = list.data?.entries, threads = list.data?.threads ?? EMPTY_THREADS, canCreate = list.data?.canCreate ?? false;
+  const error = list.error ? botErrorMessage(list.error) : undefined;
   const longPress = useLongPress<HTMLElement>(target => {
     const bot = entries?.find(bot => bot.id === target.dataset.botId);
     if (bot) setMenu(bot);
@@ -72,41 +94,6 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
     if (!surfaceVisible) { setCreating(false); setSearching(false); setQuery(""); setMenu(undefined); }
   }, [surfaceVisible]);
   useEffect(() => { if (!listVisible) setMenu(undefined); }, [listVisible]);
-  useEffect(() => {
-    if (!listVisible) return;
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout>;
-    setEntries(undefined);
-    setError(undefined);
-    setCanCreate(false);
-    setThreads(EMPTY_THREADS);
-    const load = async () => {
-      try {
-        const descriptor = await props.rpc<HostDescriptor>("environment.describe");
-        if (disposed) return;
-        setCanCreate(!!descriptor.capabilities?.includes("bots.v1"));
-        if (descriptor.capabilities?.includes("bots.v1")) {
-          const snapshot = await props.rpc<BotsSnapshot>("bots.list");
-          if (disposed) return;
-          setThreads(snapshot.threads.filter(thread => !thread.archivedAt && snapshot.bots.some(bot => bot.id === thread.botId && !bot.archivedAt)));
-          setEntries(snapshot.bots.filter(bot => !bot.archivedAt).map(bot => ({
-            id: bot.id, name: bot.name, avatar: bot.avatar, threadId: bot.defaultThreadId,
-            defaultScope: bot.id === snapshot.defaultBotId && bot.defaultThreadId === snapshot.defaultThreadId,
-          })));
-        } else {
-          const bot = await props.rpc<BotConfiguration | null>("assistant.get");
-          if (!disposed) setEntries(bot ? [{ id: bot.id, name: bot.name, avatar: bot.avatar, defaultScope: true }] : []);
-        }
-        if (!disposed) setError(undefined);
-      } catch (cause) {
-        if (!disposed) setError(botErrorMessage(cause));
-      } finally {
-        if (!disposed) timer = setTimeout(load, 5000);
-      }
-    };
-    void load();
-    return () => { disposed = true; clearTimeout(timer); };
-  }, [listVisible, attempt, props.rpc, props.hostKey]);
   const closeSearch = () => { setSearching(false); setQuery(""); searchButton.current?.focus(); };
   const back = () => {
     if (selected) chat.current?.back();
@@ -161,7 +148,7 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
       </div>
     </AnimatedCollapse>
     <nav className="mobile-bots-list" data-mobile-page-scroll aria-label={t("Bots")} {...longPress}>
-      {error && <div className="assistant-availability" role="alert"><p>{t(error)}</p><Button onClick={() => setAttempt(value => value + 1)}>{t("Retry")}</Button></div>}
+      {error && <div className="assistant-availability" role="alert"><p>{t(error)}</p><Button onClick={() => void list.refetch()}>{t("Retry")}</Button></div>}
       {!entries && !error && <div className="assistant-availability" role="status"><MobileSpinner size={20} className="animate-spin motion-reduce:animate-none" /><span>{t("Loading…")}</span></div>}
       {entries?.length === 0 && <p className="assistant-availability">{t("No bots yet")}</p>}
       <AnimatedCollapse expanded={pinned.length > 0}>

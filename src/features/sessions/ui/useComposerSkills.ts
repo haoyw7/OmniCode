@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import {
   loadSkills,
-  SKILLS_CHANGE_EVENT,
   hasNativeCommands,
   subscribeSkills,
   mergeCatalog,
-  peekSkills,
+  skillCatalogQuery,
   skillCatalogKey,
   type Skill,
   type SkillCatalogContext,
@@ -15,11 +16,6 @@ import type { HarnessId } from "../model/session";
 export type ComposerSkillContextToken = {
   key: string;
   generation: number;
-};
-
-type ComposerSkillState = {
-  key: string;
-  skills: Skill[];
 };
 
 export function nextComposerSkillContextToken(
@@ -34,15 +30,6 @@ export function pickerSkillLoadOptions(
   harness: HarnessId,
 ): { refresh: true } | undefined {
   return hasNativeCommands(harness) ? undefined : { refresh: true };
-}
-
-export function visibleComposerSkills(
-  state: ComposerSkillState,
-  currentKey: string,
-  cached: Skill[] | null,
-  fallback: Skill[],
-): Skill[] {
-  return state.key === currentKey ? state.skills : (cached ?? fallback);
 }
 
 export function useComposerSkills(input: {
@@ -70,49 +57,24 @@ export function useComposerSkills(input: {
     contextKey,
   );
   const contextToken = currentToken.current;
-  const [state, setState] = useState<ComposerSkillState>(() => ({
-    key: contextKey,
-    skills: peekSkills(context) ?? fallback,
-  }));
+  const catalog = useQuery(skillCatalogQuery(context), queryClient);
 
   const isCurrent = useCallback(
     (token: ComposerSkillContextToken) => currentToken.current === token,
     [],
   );
-  const commit = useCallback(
-    (token: ComposerSkillContextToken, skills: Skill[]) => {
-      if (!isCurrent(token)) return false;
-      setState({ key: token.key, skills });
-      return true;
-    },
-    [isCurrent],
-  );
   const refresh = useCallback(
     async (options?: { refresh?: boolean }) => {
       const token = contextToken;
-      const next = await loadSkills(context, options);
-      return commit(token, next);
+      await loadSkills(context, options);
+      return isCurrent(token);
     },
-    [commit, context, contextToken],
+    [isCurrent, context, contextToken],
   );
 
   useEffect(() => {
-    return subscribeSkills(context, (skills) => commit(contextToken, skills));
-  }, [commit, context, contextToken]);
-
-  useEffect(() => {
-    const cached = peekSkills(context);
-    if (cached) commit(contextToken, cached);
-    void refresh().catch(() => undefined);
-  }, [commit, context, contextToken, refresh]);
-
-  useEffect(() => {
-    const onChange = (): void => {
-      if (!hasNativeCommands(context.harness)) void refresh({ refresh: true });
-    };
-    window.addEventListener(SKILLS_CHANGE_EVENT, onChange);
-    return () => window.removeEventListener(SKILLS_CHANGE_EVENT, onChange);
-  }, [context.harness, refresh]);
+    return subscribeSkills(context);
+  }, [context]);
 
   useEffect(() => {
     if (!input.pickerOpen) return;
@@ -124,11 +86,6 @@ export function useComposerSkills(input: {
     contextToken,
     isCurrent,
     refresh,
-    skills: visibleComposerSkills(
-      state,
-      contextKey,
-      peekSkills(context),
-      fallback,
-    ),
+    skills: catalog.data ?? fallback,
   };
 }

@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
+import { inboxListQuery } from "../model/inboxQueries";
 import {
   useCallback,
   useEffect,
@@ -10,10 +13,10 @@ import {
   inboxListCacheKey,
   inboxItemKey,
   inboxProjectsForRail,
-  listInboxItems,
   type GithubWorkItem,
   type InboxItem,
   type InboxQuery,
+  type InboxListResult,
   type InboxProvider,
 } from "../model/githubTasks";
 import {
@@ -66,7 +69,6 @@ import {
 
 const POLL_MS = 2 * 60_000;
 const HIDDEN_POLL_MS = 5 * 60_000;
-const POLL_TICK_MS = 30_000;
 
 type ProjectSeenEntry = InboxSeenEntry & NotificationSubject;
 
@@ -114,7 +116,6 @@ export function useInboxActivity(
   const notifications = useRef(new InboxNotificationTracker());
   const sessionsRef = useRef(sessions);
   const onAppearedRef = useRef(options?.onAppeared);
-  const lastPulledAt = useRef<number | null>(null);
 
   const applyUnseen = useCallback(() => {
     const preferences = loadNotificationPreferences();
@@ -156,165 +157,133 @@ export function useInboxActivity(
     [],
   );
 
+  const projects = inboxProjectsForRail(recents, cwd);
+  const projectsKey = JSON.stringify(projects.map(project => project.path));
+  const [hidden, setHidden] = useState(() => document.hidden);
+  const activityKey = ["inbox", "activity", projectsKey] as const;
+  const interval = hidden ? HIDDEN_POLL_MS : POLL_MS;
+  const activity = useQuery({
+    queryKey: activityKey, enabled: projects.length > 0,
+    staleTime: interval, refetchInterval: query => {
+      const delay = document.hidden ? HIDDEN_POLL_MS : POLL_MS;
+      return query.state.data ? Math.max(1, delay - (Date.now() - query.state.data.polledAt)) : delay;
+    }, refetchIntervalInBackground: true,
+    queryFn: async () => {
+      const cached = queryClient.getQueryData<{ listed: InboxListResult; filters: ReturnType<typeof loadInboxFilters>; query: InboxQuery; polledAt: number }>(activityKey);
+      if (cached && !queryClient.getQueryState(activityKey)?.isInvalidated && Date.now() - cached.polledAt < (document.hidden ? HIDDEN_POLL_MS : POLL_MS)) return cached;
+      const filters = pruneInboxFilters(loadInboxFilters(), projects.map(project => project.path));
+      const query: InboxQuery = { assignedToMe: filters.assignedToMe, state: inboxFetchState(filters), search: "",
+        linearHiddenTeamIds: loadHiddenLinearTeamIds(), jiraHiddenProjectIds: loadHiddenJiraProjectIds() };
+      const listed = await queryClient.fetchQuery({ ...inboxListQuery(projects, query), staleTime: 0 });
+      return { listed, filters, query, polledAt: Date.now() };
+    },
+  }, queryClient);
   useEffect(() => {
-    const projects = inboxProjectsForRail(recents, cwd);
-    if (projects.length === 0) {
-      entriesRef.current = [];
-      applyUnseen();
-      return;
+    if (!projects.length) { entriesRef.current = []; applyUnseen(); return; }
+    if (!activity.data) return;
+    const { listed, filters, query } = activity.data;
+    const visible = applyInboxFilters(listed.items, filters, "");
+    rememberNotificationProjects(
+      listed.items.map(inboxNotificationProject),
+    );
+    const observed = notifications.current.observe(
+      listed.items,
+      inboxListCacheKey(projects, query),
+      Object.keys(listed.errors) as InboxProvider[],
+    );
+    const changed = observed.changed;
+    // Invoke on every successful poll so retained automation claims can be
+    // retried even when the item is no longer newly appeared.
+    onAppearedRef.current?.(observed.appeared);
+    const selfAuthored = changed.filter((item) =>
+      consumeInboxSelfActivity(item),
+    );
+    const selfAuthoredKeys = new Set(selfAuthored.map(inboxItemKey));
+    const visibleKeys = new Set(visible.map(inboxItemKey));
+    // The whole batch is observed even when every cue is suppressed. At most
+    // one eligible project chimes; muted projects cannot consume that slot.
+    for (const item of changed) {
+      if (selfAuthoredKeys.has(inboxItemKey(item))) continue;
+      if (!visibleKeys.has(inboxItemKey(item))) continue;
+      if (playCue("inboxUnseen", inboxNotificationSubject(item))) break;
+    }
+    const entries = seenEntries(visible);
+    entriesRef.current = entries;
+    rememberInboxItems(
+      listed.items.map((item) => ({
+        key: inboxItemKey(item),
+        updatedAt: item.updatedAt,
+        projectPath: item.projectPath,
+      })),
+    );
+    seedInboxSeenIfNeeded(entries);
+    const selfAuthoredEntries = entries.filter((entry) =>
+      selfAuthoredKeys.has(entry.key),
+    );
+    if (selfAuthoredEntries.length > 0) {
+      markInboxItemsSeen(selfAuthoredEntries);
+    }
+    for (const item of selfAuthored) {
+      if (
+        item.provider !== "github" ||
+        (item.kind !== "issue" && item.kind !== "pr")
+      )
+        continue;
+      const updatedAt = Date.parse(item.updatedAt);
+      if (!Number.isFinite(updatedAt)) continue;
+      const key = linkedWorkItemUpdateKey({
+        repo: item.repo,
+        kind: item.kind,
+        number: item.number,
+      });
+      for (const session of sessionsRef.current) {
+        if (
+          session.linkedWorkItem &&
+          linkedWorkItemUpdateKey(session.linkedWorkItem) === key
+        ) {
+          markLinkedSessionUpdateSeen(session.id, updatedAt);
+        }
+      }
+    }
+    applyUnseen();
+
+    // Linked badges reuse this list. Fetching every omitted historical
+    // item individually makes background traffic grow with session history.
+    const snapshots: Array<readonly [string, GithubWorkItem]> = [];
+    for (const item of listed.items) {
+      const kind = item.kind;
+      if (
+        item.provider !== "github" ||
+        (kind !== "issue" && kind !== "pr")
+      ) {
+        continue;
+      }
+      const key = linkedWorkItemUpdateKey({
+        repo: item.repo,
+        kind,
+        number: item.number,
+      });
+      if (Number.isFinite(Date.parse(item.updatedAt))) {
+        snapshots.push([key, { ...item, kind }]);
+      }
+    }
+    if (snapshots.length > 0) {
+      setWorkItems((current) => mergeSnapshots(current, snapshots));
     }
 
-    let cancelled = false;
-    let pulling = false;
-    let pullAgain = false;
-
-    const pull = async (force: boolean) => {
-      if (pulling) {
-        pullAgain ||= force;
-        return;
-      }
-      pulling = true;
-      lastPulledAt.current = Date.now();
-      const projectPaths = projects.map((project) => project.path);
-      const filters = pruneInboxFilters(loadInboxFilters(), projectPaths);
-      const query: InboxQuery = {
-        assignedToMe: filters.assignedToMe,
-        state: inboxFetchState(filters),
-        search: "",
-        linearHiddenTeamIds: loadHiddenLinearTeamIds(),
-        jiraHiddenProjectIds: loadHiddenJiraProjectIds(),
-      };
-      try {
-        const listed = await listInboxItems(projects, query, { force });
-        if (cancelled) return;
-        const visible = applyInboxFilters(listed.items, filters, "");
-        rememberNotificationProjects(
-          listed.items.map(inboxNotificationProject),
-        );
-        const observed = notifications.current.observe(
-          listed.items,
-          inboxListCacheKey(projects, query),
-          Object.keys(listed.errors) as InboxProvider[],
-        );
-        const changed = observed.changed;
-        // Invoke on every successful poll so retained automation claims can be
-        // retried even when the item is no longer newly appeared.
-        onAppearedRef.current?.(observed.appeared);
-        const selfAuthored = changed.filter((item) =>
-          consumeInboxSelfActivity(item),
-        );
-        const selfAuthoredKeys = new Set(selfAuthored.map(inboxItemKey));
-        const visibleKeys = new Set(visible.map(inboxItemKey));
-        // The whole batch is observed even when every cue is suppressed. At most
-        // one eligible project chimes; muted projects cannot consume that slot.
-        for (const item of changed) {
-          if (selfAuthoredKeys.has(inboxItemKey(item))) continue;
-          if (!visibleKeys.has(inboxItemKey(item))) continue;
-          if (playCue("inboxUnseen", inboxNotificationSubject(item))) break;
-        }
-        const entries = seenEntries(visible);
-        entriesRef.current = entries;
-        rememberInboxItems(
-          listed.items.map((item) => ({
-            key: inboxItemKey(item),
-            updatedAt: item.updatedAt,
-            projectPath: item.projectPath,
-          })),
-        );
-        seedInboxSeenIfNeeded(entries);
-        const selfAuthoredEntries = entries.filter((entry) =>
-          selfAuthoredKeys.has(entry.key),
-        );
-        if (selfAuthoredEntries.length > 0) {
-          markInboxItemsSeen(selfAuthoredEntries);
-        }
-        for (const item of selfAuthored) {
-          if (
-            item.provider !== "github" ||
-            (item.kind !== "issue" && item.kind !== "pr")
-          )
-            continue;
-          const updatedAt = Date.parse(item.updatedAt);
-          if (!Number.isFinite(updatedAt)) continue;
-          const key = linkedWorkItemUpdateKey({
-            repo: item.repo,
-            kind: item.kind,
-            number: item.number,
-          });
-          for (const session of sessionsRef.current) {
-            if (
-              session.linkedWorkItem &&
-              linkedWorkItemUpdateKey(session.linkedWorkItem) === key
-            ) {
-              markLinkedSessionUpdateSeen(session.id, updatedAt);
-            }
-          }
-        }
-        applyUnseen();
-
-        // Linked badges reuse this list. Fetching every omitted historical
-        // item individually makes background traffic grow with session history.
-        const snapshots: Array<readonly [string, GithubWorkItem]> = [];
-        for (const item of listed.items) {
-          const kind = item.kind;
-          if (
-            item.provider !== "github" ||
-            (kind !== "issue" && kind !== "pr")
-          ) {
-            continue;
-          }
-          const key = linkedWorkItemUpdateKey({
-            repo: item.repo,
-            kind,
-            number: item.number,
-          });
-          if (Number.isFinite(Date.parse(item.updatedAt))) {
-            snapshots.push([key, { ...item, kind }]);
-          }
-        }
-        if (snapshots.length > 0) {
-          setWorkItems((current) => mergeSnapshots(current, snapshots));
-        }
-      } catch {
-        // Leave the last known badges; a later poll can try again.
-      } finally {
-        pulling = false;
-        if (!cancelled && pullAgain) {
-          pullAgain = false;
-          void pull(true);
-        }
-      }
-    };
-
-    void pull(false);
-    const stopSelfActivity = subscribeInboxSelfActivity(() => void pull(true));
-    // Automation triggers still run in the tray, at a slower cadence. Resume
-    // events share the cadence so frequent focus changes cannot flood GitHub.
-    const poll = () => {
-      if (pulling) return;
-      const interval = document.hidden ? HIDDEN_POLL_MS : POLL_MS;
-      if (
-        lastPulledAt.current != null &&
-        Date.now() - lastPulledAt.current < interval
-      )
-        return;
-      void pull(true);
-    };
-    const timer = window.setInterval(poll, POLL_TICK_MS);
-    const onVis = () => {
-      if (!document.hidden) poll();
-    };
+  }, [activity.data, activity.dataUpdatedAt, projectsKey, applyUnseen]);
+  useEffect(() => {
+    const refresh = () => { void invalidateAfterChange(activityKey); };
+    const stopSelfActivity = subscribeInboxSelfActivity(refresh);
+    const onVis = () => setHidden(document.hidden);
     document.addEventListener("visibilitychange", onVis);
-    const onJiraChange = () => void pull(true);
-    window.addEventListener(JIRA_CHANGE_EVENT, onJiraChange);
+    window.addEventListener(JIRA_CHANGE_EVENT, refresh);
     return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener(JIRA_CHANGE_EVENT, onJiraChange);
       stopSelfActivity();
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener(JIRA_CHANGE_EVENT, refresh);
     };
-  }, [applyUnseen, cwd, recents]);
+  }, [projectsKey]);
 
   const updates = useMemo(
     () => linkedSessionUpdates(sessions, workItems, linkedSessionSeenAt),

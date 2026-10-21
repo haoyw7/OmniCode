@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { HarnessId } from "../../sessions/model/session";
 import { inspectHarnessBinary } from "../../../integrations/harness/core/child";
@@ -154,19 +155,12 @@ export type HarnessVersionInfo = {
  * a while; the manual refresh passes `force` to ask the registry again.
  */
 const LATEST_TTL_MS = 10 * 60_000;
-const latestCache = new Map<HarnessId, { version: string; at: number }>();
 
 async function cachedLatestVersion(
   harness: HarnessId,
   force: boolean,
 ): Promise<string> {
-  const cached = latestCache.get(harness);
-  if (!force && cached && Date.now() - cached.at < LATEST_TTL_MS) {
-    return cached.version;
-  }
-  const version = await fetchLatestHarnessVersion(harness);
-  latestCache.set(harness, { version, at: Date.now() });
-  return version;
+  return queryClient.fetchQuery({ queryKey: ["harnessLatestVersion", harness], queryFn: () => fetchLatestHarnessVersion(harness), staleTime: force ? 0 : LATEST_TTL_MS });
 }
 
 /** Either side is left out when it cannot be read, offline or otherwise. */

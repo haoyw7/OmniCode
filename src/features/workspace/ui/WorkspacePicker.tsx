@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import type { PopoverAnchor } from "../../../shared/ui/Popover";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -17,7 +19,16 @@ import { resolveWorktreeBase } from "../../source-control/model/worktreeBase";
 import { MOD, SHIFT } from "../../../platform/tauri/platform";
 import { prettyCwd } from "../../../shared/lib/paths";
 import type { WorkspaceMode } from "../../sessions/model/session";
-import { Check, ChevronRight, Folder, FolderPlus, FolderTree, GitBranch, Search, Settings } from "../../../shared/ui/icons";
+import {
+  Check,
+  ChevronRight,
+  Folder,
+  FolderPlus,
+  FolderTree,
+  GitBranch,
+  Search,
+  Settings,
+} from "../../../shared/ui/icons";
 import { GitPickerTrigger } from "../../source-control/ui/GitPickerTrigger";
 import { BranchMenuScrollArea, branchMenuLayout } from "../../source-control/ui/branchMenu";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
@@ -221,8 +232,9 @@ function WorkspaceModePicker({
   }, [open, onOpenChange]);
   useEffect(() => () => onOpenChange?.(false), [onOpenChange]);
   const [worktreeMenu, setWorktreeMenu] = useState(false);
-  const [busyPath, setBusyPath] = useState<string>();
-  const [pickError, setPickError] = useState<string>();
+  const mutation = useMutation({ mutationFn: (tree: Worktree) => onSelectWorktree!(tree) }, queryClient);
+  const busyPath = mutation.isPending ? mutation.variables.path : undefined;
+  const pickError = mutation.error ? String(mutation.error) : undefined;
   const anchor = useRef<HTMLDivElement>(null);
   const worktreeAnchor = useRef<HTMLButtonElement>(null);
   const closeWorktreeTimer = useRef<number | null>(null);
@@ -237,8 +249,7 @@ function WorkspaceModePicker({
     if (enabled) return;
     setOpen(false);
     setWorktreeMenu(false);
-    setBusyPath(undefined);
-    setPickError(undefined);
+    mutation.reset();
   }, [enabled]);
   useEffect(
     () => () => {
@@ -256,21 +267,16 @@ function WorkspaceModePicker({
     }
     setOpen(false);
     setWorktreeMenu(false);
-    setBusyPath(undefined);
-    setPickError(undefined);
+    mutation.reset();
     onClose?.();
   };
   const selectWorktree = async (tree: Worktree) => {
     if (!onSelectWorktree || busyPath) return;
-    setBusyPath(tree.path);
-    setPickError(undefined);
+    mutation.reset();
     try {
-      await onSelectWorktree(tree);
+      await mutation.mutateAsync(tree);
       dismiss();
-    } catch (error) {
-      setPickError(String(error));
-      setBusyPath(undefined);
-    }
+    } catch { /* The mutation retains its error for retry. */ }
   };
   const openWorktreeMenu = () => {
     if (closeWorktreeTimer.current != null) {
@@ -285,7 +291,7 @@ function WorkspaceModePicker({
       closeWorktreeTimer.current = null;
     }
     setWorktreeMenu(false);
-    setPickError(undefined);
+    mutation.reset();
   };
   const scheduleCloseWorktreeMenu = () => {
     if (closeWorktreeTimer.current != null) {
@@ -294,7 +300,7 @@ function WorkspaceModePicker({
     closeWorktreeTimer.current = window.setTimeout(() => {
       closeWorktreeTimer.current = null;
       setWorktreeMenu(false);
-      setPickError(undefined);
+      mutation.reset();
     }, HOVER_CLOSE_MS);
   };
   // The marker names the working copy once one exists; "New worktree" is only

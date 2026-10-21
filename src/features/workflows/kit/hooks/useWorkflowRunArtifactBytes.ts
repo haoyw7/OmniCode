@@ -1,4 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../../shared/lib/queryClient";
+import { translate } from "../../../../shared/i18n/language";
+import { workflowQueryScope } from "../../model/workflowQueryKeys";
 import { PROTOCOL_V4_LIMITS } from "../_shims/protocol.js";
 import { logger } from "../logger.js";
 import { useV4Conversation } from "../v4/V4ConversationContext.js";
@@ -75,9 +79,7 @@ export function useWorkflowRunArtifactBytes(options: {
   enabled?: boolean;
 }): WorkflowRunArtifactBytesState {
   const { workflowRunArtifactRead } = useV4Conversation();
-  const [state, setState] = useState<WorkflowRunArtifactBytesState>(emptyState);
-  // 已发出的 object URL：卸载与换版本时必须 revoke，否则每翻一版就漏一份 20 MiB。
-  const objectUrlRef = useRef<string | null>(null);
+  const [preview, setPreview] = useState<{ blob: Blob; url: string | null }>();
 
   const { artifactId, runId, sessionId, version } = options;
   const enabled =
@@ -87,29 +89,24 @@ export function useWorkflowRunArtifactBytes(options: {
     artifactId.length > 0 &&
     version > 0;
 
-  useEffect(() => {
-    const revokePrevious = () => {
-      if (objectUrlRef.current !== null) {
-        if (typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
-          URL.revokeObjectURL(objectUrlRef.current);
-        }
-        objectUrlRef.current = null;
-      }
-    };
-    revokePrevious();
-    setState(emptyState());
-    if (!enabled) return;
-
-    let alive = true;
-    setState((current) => ({ ...current, loading: true }));
-    void (async () => {
+  const queryKey = [...workflowQueryScope(workflowRunArtifactRead), "bytes", sessionId, runId, artifactId, version] as const;
+  const query = useQuery({
+    queryKey,
+    enabled,
+    gcTime: 0,
+    staleTime: Infinity,
+    structuralSharing: false,
+    queryFn: async ({ signal }) => {
       try {
         const chunks: Uint8Array<ArrayBuffer>[] = [];
         let offset = 0;
         let mediaType = "application/octet-stream";
         let totalBytes = 0;
         let storedPath: string | null = null;
+        let size = 0;
+        let complete = false;
         for (let index = 0; index < MAX_CHUNKS; index += 1) {
+          signal.throwIfAborted();
           const result = await workflowRunArtifactRead({
             sessionId,
             runId,
@@ -118,42 +115,28 @@ export function useWorkflowRunArtifactBytes(options: {
             offset,
             limit: CHUNK_BYTES,
           });
-          if (!alive) return;
+          signal.throwIfAborted();
           mediaType = result.mediaType;
           totalBytes = result.totalBytes;
           storedPath = result.storedPath ?? storedPath;
-          chunks.push(decodeBase64(result.dataBase64));
-          if (result.nextOffset === null) break;
+          const chunk = decodeBase64(result.dataBase64);
+          size += chunk.length;
+          if (size > PROTOCOL_V4_LIMITS.attachmentMaxBytes || totalBytes > PROTOCOL_V4_LIMITS.attachmentMaxBytes) throw new Error(translate("Workflow artifact exceeds the size limit."));
+          chunks.push(chunk);
+          if (result.nextOffset === null) { complete = true; break; }
+          if (result.nextOffset <= offset) throw new Error(translate("Workflow artifact data is incomplete."));
           offset = result.nextOffset;
         }
-        if (!alive) return;
-        const size = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+        if (!complete || size !== totalBytes) throw new Error(translate("Workflow artifact data is incomplete."));
         const bytes = new Uint8Array(size);
         let cursor = 0;
         for (const chunk of chunks) {
           bytes.set(chunk, cursor);
           cursor += chunk.length;
         }
-        const blob = new Blob([bytes], { type: mediaType });
-        // jsdom 里没有 createObjectURL：拿不到 URL 不是错误，只是 `<img>` 那条路走不了，
-        // Blob / bytes 两条路仍然通（PdfViewer 与 office 查看器读的就是它们）。
-        const objectUrl =
-          typeof URL !== "undefined" && typeof URL.createObjectURL === "function"
-            ? URL.createObjectURL(blob)
-            : null;
-        objectUrlRef.current = objectUrl;
-        setState({
-          bytes,
-          blob,
-          objectUrl,
-          mediaType,
-          totalBytes,
-          storedPath,
-          loading: false,
-          error: null,
-        });
+        return { bytes, mediaType, totalBytes, storedPath };
       } catch (caught) {
-        if (!alive) return;
+        if (signal.aborted) throw caught;
         const message = caught instanceof Error ? caught.message : String(caught);
         logger.warn("[workflow-artifacts] 读取产物字节失败", {
           artifactId,
@@ -162,15 +145,28 @@ export function useWorkflowRunArtifactBytes(options: {
           sessionId,
           version,
         });
-        setState({ ...emptyState(), error: message });
+        throw caught;
       }
-    })();
-
-    return () => {
-      alive = false;
-      revokePrevious();
-    };
-  }, [artifactId, enabled, runId, sessionId, version, workflowRunArtifactRead]);
-
-  return useMemo(() => state, [state]);
+    },
+  }, queryClient);
+  const data = enabled ? query.data : undefined;
+  const blob = useMemo(() => data ? new Blob([data.bytes], { type: data.mediaType }) : null, [data]);
+  useEffect(() => {
+    if (!blob) { setPreview(undefined); return; }
+    const url = typeof URL.createObjectURL === "function" ? URL.createObjectURL(blob) : null;
+    setPreview({ blob, url });
+    return () => { if (url) URL.revokeObjectURL(url); };
+  }, [blob]);
+  useEffect(() => {
+    if (!enabled && !queryClient.getQueryCache().find({ queryKey, exact: true })?.isActive()) {
+      queryClient.removeQueries({ queryKey, exact: true });
+    }
+  }, [enabled, artifactId, runId, sessionId, version, workflowRunArtifactRead]);
+  if (!enabled) return emptyState();
+  return {
+    ...emptyState(), ...data, blob,
+    objectUrl: preview?.blob === blob ? preview?.url ?? null : null,
+    loading: query.isFetching,
+    error: query.error ? String(query.error).replace(/^Error: /, "") : null,
+  };
 }

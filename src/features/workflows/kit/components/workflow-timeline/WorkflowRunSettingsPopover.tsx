@@ -10,6 +10,8 @@
 // subagents that start afterwards (and to the run's resume or amend).
 
 import { useCallback, useRef, useState, type RefObject } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../../../shared/lib/queryClient";
 import { RotateCcw as RotateCcwIcon } from "../../../../../shared/ui/icons";
 import type { WorkflowRunState } from "../../_shims/protocol.js";
 import { Button } from "../../../../../shared/ui/forms/Button";
@@ -202,24 +204,22 @@ export function WorkflowRunSettingsForm({ host, subject, onClose, applyLabel }: 
   const [agents, setAgents] = useState<Record<string, RuntimeDraft | undefined>>(() =>
     Object.fromEntries(agentNames.map((name) => [name, draftOf(host.settings?.agents?.[name], defaults ?? session)])),
   );
-  const [pending, setPending] = useState(false);
+  const mutation = useMutation({ mutationFn: (input: Parameters<WorkflowRunSettingsHost["apply"]>[0]) => host.apply(input) }, queryClient);
+  const pending = mutation.isPending;
   const [error, setError] = useState<string | undefined>(undefined);
 
   const apply = async () => {
-    setPending(true);
     setError(undefined);
     const overrides = Object.fromEntries(Object.entries(agents).filter((entry): entry is [string, RuntimeDraft] => entry[1] !== undefined).map(([name, draft]) => [name, runtimeOf(draft)]));
     try {
-      const result = await host.apply({
+      const result = await mutation.mutateAsync({
         maxConcurrency: bound,
         defaults: defaults ? runtimeOf(defaults) : null,
         agents: Object.keys(overrides).length ? overrides : null,
       });
       if (result.status === "accepted") onClose();
       else setError(result.message ?? intl.formatMessage({ id: "chat.toolCall.workflow.run.settings.rejected.generic", defaultMessage: "The change was not applied." }));
-    } finally {
-      setPending(false);
-    }
+    } catch (error) { setError(error instanceof Error ? error.message : String(error)); }
   };
 
   const actorRuntime = (name: string) => subject.actorRuntime?.(name);

@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { quickComposerKeys, quickGitPopupQuery } from "../model/quickComposerQueries";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   useCallback,
@@ -22,44 +25,32 @@ import {
 import type { QuickWorkspace } from "../model/quickWorkspace";
 
 export function QuickGitPopup({ onShown }: { onShown: () => void }) {
-  const [request, setRequest] = useState<QuickGitRequest | null>(null);
+  const [ready, setReady] = useState(false);
+  const { data: request } = useQuery({ ...quickGitPopupQuery(), enabled: ready }, queryClient);
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     let disposed = false;
-    let received = false;
     let stop: (() => void) | undefined;
-    const accept = (request: QuickGitRequest | null) => {
-      if (disposed) return;
-      onShown();
-      if (request?.branches) {
-        seedProjectBranches(
-          request.choice.tree?.path ?? request.choice.cwd ?? "",
-          request.branches,
-        );
-      }
-      if (errorRef.current) errorRef.current.textContent = "";
-      setRequest(request);
-    };
     void listen<QuickGitRequest>(QUICK_GIT_REQUEST, ({ payload }) => {
-      received = true;
-      accept(payload);
-    })
-      .then(async (unlisten) => {
-        if (disposed) {
-          unlisten();
-          return;
-        }
-        stop = unlisten;
-        const initial = await invoke<QuickGitRequest | null>("quick_git_state");
-        if (!received) accept(initial);
-      })
-      .catch(() => undefined);
-    return () => {
-      disposed = true;
-      stop?.();
-    };
-  }, [onShown]);
+      if (disposed) return;
+      // Events supersede a slow initial state read from the native popup.
+      void queryClient.cancelQueries({ queryKey: quickComposerKeys.gitPopup });
+      queryClient.setQueryData(quickComposerKeys.gitPopup, payload);
+    }).then((unlisten) => {
+      if (disposed) unlisten();
+      else { stop = unlisten; setReady(true); }
+    }).catch(() => undefined);
+    return () => { disposed = true; stop?.(); };
+  }, []);
+  useEffect(() => {
+    if (request === undefined) return;
+    onShown();
+    if (request?.branches) {
+      seedProjectBranches(request.choice.tree?.path ?? request.choice.cwd ?? "", request.branches);
+    }
+    if (errorRef.current) errorRef.current.textContent = "";
+  }, [request, onShown]);
 
   useLayoutEffect(() => {
     if (!host || !request) return;

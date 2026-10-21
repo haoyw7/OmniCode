@@ -1,8 +1,18 @@
+import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../../shared/lib/queryClient";
+import { errorMessage } from "../../../../shared/lib/errorMessage";
+import { directoryQuery } from "../model/directoryQueries";
 import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
 import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { translate as translateUi } from "../../../../shared/i18n/language";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
-import { ChevronRight, FilePlus, FolderPlus, FoldVertical, Search } from "../../../../shared/ui/icons";
+import {
+  ChevronRight,
+  FilePlus,
+  FolderPlus,
+  FoldVertical,
+  Search,
+} from "../../../../shared/ui/icons";
 import {
   createContext,
   memo,
@@ -32,7 +42,6 @@ import {
   dirsTouchedByCreate,
   dirsTouchedByMove,
   forgetDir,
-  listCachedDir,
   loadExpanded,
   loadSelected,
   notifyDirsChanged,
@@ -40,13 +49,13 @@ import {
   refreshDir,
   saveExpanded,
   saveSelected,
-  subscribeDirsChanged,
 } from "../model/fileTree";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { REMOTE_PATH_PREFIX } from "../../../../shared/lib/remotePaths";
 import { dragPointToClient } from "../../../../shared/lib/dragPoint";
 import {
   basename,
+  listDir,
   clipboardFilePaths,
   copyPath,
   createPath,
@@ -111,7 +120,6 @@ type TreeCtxValue = {
   renaming: string | null;
   cutPath: string | null;
   dragOverPath: string | null;
-  epoch: number;
   showExcludedFiles: boolean;
   gitStatuses?: GitStatusMap;
   onToggle: (path: string) => void;
@@ -275,17 +283,18 @@ export const FileTree = memo(function FileTree({
     setSelectedPath(activePath);
     if (!navigationOnly) saveSelected(cwd, activePath);
   }, [activePath, cwd, navigationOnly]);
-  const [children, setChildren] = useState<FsEntry[] | null>(() =>
-    peekDir(cwd),
-  );
-  const [error, setError] = useState<string | null>(null);
+  const listing = useQuery({
+    ...directoryQuery(cwd, listDir),
+    refetchInterval: cwd.startsWith(REMOTE_PATH_PREFIX) ? 5000 : false,
+  }, queryClient);
+  const children = listing.data ?? (listing.isError ? [] : null);
+  const error = errorMessage(listing.error) ?? null;
   const [creating, setCreating] = useState<Creating | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [clip, setClip] = useState<Clip | null>(null);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [dragOverPath, setDragOverPath] = useState<string | null>(null);
   const [opError, setOpError] = useState<string | null>(null);
-  const [epoch, setEpoch] = useState(0);
   const showExcludedFiles = useSyncExternalStore(
     subscribeShowExcludedFiles,
     loadShowExcludedFiles,
@@ -502,7 +511,6 @@ export const FileTree = memo(function FileTree({
   const refreshTouched = async (touched: string[], forget: string[] = []) => {
     for (const path of forget) forgetDir(path);
     await Promise.all([...new Set(touched)].map((path) => refreshDir(path)));
-    setEpoch((n) => n + 1);
   };
 
   const remapTreePaths = (from: string, to: string) => {
@@ -668,10 +676,11 @@ export const FileTree = memo(function FileTree({
     saveSelected(cwd, created);
   };
 
+  const fileAction = useMutation({ mutationFn: (work: () => Promise<void>) => work() }, queryClient);
   const run = async (work: () => Promise<void>) => {
     setOpError(null);
     try {
-      await work();
+      await fileAction.mutateAsync(work);
     } catch (err: unknown) {
       setOpError(err instanceof Error ? err.message : String(err));
     }
@@ -996,51 +1005,16 @@ export const FileTree = memo(function FileTree({
   }, [cwd, navigationOnly]);
 
   useEffect(() => {
-    const unsub = subscribeDirsChanged(() => setEpoch((n) => n + 1));
     const onResume = () => {
       if (!document.hidden) notifyDirsChanged();
     };
     window.addEventListener("focus", onResume);
     document.addEventListener("visibilitychange", onResume);
     return () => {
-      unsub();
       window.removeEventListener("focus", onResume);
       document.removeEventListener("visibilitychange", onResume);
     };
   }, []);
-
-  useEffect(() => {
-    if (!cwd.startsWith(REMOTE_PATH_PREFIX)) return;
-    const timer = window.setInterval(() => {
-      if (!document.hidden) notifyDirsChanged();
-    }, 5000);
-    return () => window.clearInterval(timer);
-  }, [cwd]);
-
-  useEffect(() => {
-    const hit = peekDir(cwd);
-    if (hit) {
-      setChildren(hit);
-      setError(null);
-      return;
-    }
-    let cancelled = false;
-    setChildren(null);
-    setError(null);
-    void listCachedDir(cwd)
-      .then((entries) => {
-        if (!cancelled) setChildren(entries);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-          setChildren([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [cwd, epoch]);
 
   const rootRow = (
     <div className="flex h-7 shrink-0 items-center">
@@ -1093,7 +1067,6 @@ export const FileTree = memo(function FileTree({
         renaming,
         cutPath: clip?.mode === "cut" ? clip.path : null,
         dragOverPath,
-        epoch,
         showExcludedFiles,
         gitStatuses,
         onToggle: toggle,
@@ -1292,7 +1265,6 @@ function TreeNode({ entry, depth }: { entry: FsEntry; depth: number }) {
     renaming,
     cutPath,
     dragOverPath,
-    epoch,
     gitStatuses,
     onToggle,
     onSelect,
@@ -1304,44 +1276,20 @@ function TreeNode({ entry, depth }: { entry: FsEntry; depth: number }) {
     onItemContextMenu,
   } = useTree();
   const open = expanded.has(entry.path);
-  const [children, setChildren] = useState<FsEntry[] | null>(() =>
-    entry.isDir ? peekDir(entry.path) : null,
-  );
-  const [error, setError] = useState<string | null>(null);
-  const loading = entry.isDir && open && children === null && !error;
+  const directoryOptions = entry.isDir ? [{
+    ...directoryQuery(entry.path, listDir), enabled: open,
+    refetchInterval: entry.path.startsWith(REMOTE_PATH_PREFIX) && open ? 5000 : false as const,
+  }] : [];
+  const [listing] = useQueries({ queries: directoryOptions }, queryClient);
+  const children = listing?.data ?? (listing?.isError ? [] : null);
+  const error = errorMessage(listing?.error) ?? null;
+  const loading = entry.isDir && open && listing?.isPending;
   const selected = selectedPath === entry.path;
   const editing = renaming === entry.path;
   const gitStatus = entry.isDir
     ? gitStatuses?.dirs.get(entry.path)
     : gitStatuses?.files.get(entry.path);
   const gitColor = gitStatus ? GIT_STATUS_COLOR[gitStatus] : undefined;
-
-  useEffect(() => {
-    if (!entry.isDir || !open) return;
-    const hit = peekDir(entry.path);
-    if (hit) {
-      setChildren(hit);
-      setError(null);
-      return;
-    }
-    let cancelled = false;
-    void listCachedDir(entry.path)
-      .then((entries) => {
-        if (!cancelled) {
-          setChildren(entries);
-          setError(null);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-          setChildren([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [entry.isDir, entry.path, open, epoch]);
 
   const onClick = () => {
     if (consumeFileClick()) return;
@@ -1454,7 +1402,8 @@ export function NameRow({
   const finished = useRef(false);
   const [value, setValue] = useState(initial);
   const [attempted, setAttempted] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const commit = useMutation({ mutationFn: (value: string) => onCommit(value) }, queryClient);
+  const busy = commit.isPending;
   const [submitError, setSubmitError] = useState<string | null>(null);
   const issue = validateFileName(value, siblings);
   const leaf = leafName(value);
@@ -1479,11 +1428,9 @@ export function NameRow({
         return;
       }
       finished.current = true;
-      setBusy(true);
       setSubmitError(null);
-      void onCommit(value).catch((err: unknown) => {
+      void commit.mutateAsync(value).catch((err: unknown) => {
         finished.current = false;
-        setBusy(false);
         setSubmitError(err instanceof Error ? err.message : String(err));
       });
       return;
@@ -1529,7 +1476,7 @@ export function NameRow({
           )}
           onChange={(e) => {
             setValue(e.target.value);
-            setSubmitError(null);
+          setSubmitError(null);
           }}
           onKeyDown={(e) => {
             if (e.nativeEvent.isComposing) return;

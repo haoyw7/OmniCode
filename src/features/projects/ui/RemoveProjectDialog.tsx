@@ -1,5 +1,7 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { createPortal } from "react-dom";
 import { LAYER } from "../../../shared/lib/layers";
 import { Button } from "../../../shared/ui/forms/Button";
@@ -27,22 +29,17 @@ export function RemoveProjectDialog({
 }: Props) {
   const { t: uiT } = useTranslation();
   const visible = useSurfaceVisibility();
-  const [sessions, setSessions] = useState<number | null>(null);
+  const { data: sessions } = useQuery({
+    queryKey: ["projects", "session-count", path],
+    queryFn: () => projectSessionCount(path),
+    enabled: visible,
+    gcTime: 0,
+  }, queryClient);
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (visible) cancelRef.current?.focus();
   }, [visible]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void projectSessionCount(path).then((count) => {
-      if (!cancelled) setSessions(count);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [path]);
 
   useEffect(() => {
     if (!visible) return;

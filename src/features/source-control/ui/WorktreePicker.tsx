@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useIsPresent } from "motion/react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -10,7 +12,14 @@ import { BranchPicker } from "./BranchPicker";
 import { CreateWorktreeDialog } from "./CreateWorktreeDialog";
 import { GitPickerTrigger } from "./GitPickerTrigger";
 import { Popover } from "../../../shared/ui/Popover";
-import { Check, FolderTree, GitBranch, Plus, Search, Settings } from "../../../shared/ui/icons";
+import {
+  Check,
+  FolderTree,
+  GitBranch,
+  Plus,
+  Search,
+  Settings,
+} from "../../../shared/ui/icons";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 export function WorktreePicker({
@@ -38,8 +47,9 @@ export function WorktreePicker({
   const [open, setOpen] = useState(false);
   const [branchPicker, setBranchPicker] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
+  const mutation = useMutation({ mutationFn: (tree: Worktree) => onSelect(tree) }, queryClient);
+  const busy = mutation.isPending;
+  const error = mutation.error ? String(mutation.error) : undefined;
   const [query, setQuery] = useState("");
   const [activePath, setActivePath] = useState<string>();
   const anchor = useRef<HTMLDivElement>(null);
@@ -80,16 +90,10 @@ export function WorktreePicker({
   };
   const select = async (tree: Worktree) => {
     if (busy || tree.missing) return;
-    setBusy(true);
-    setError(undefined);
     try {
-      await onSelect(tree);
+      await mutation.mutateAsync(tree);
       dismiss();
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
+    } catch { /* The query mutation retains its error. */ }
   };
   const rows =
     data?.worktrees.filter((tree) =>
@@ -142,7 +146,7 @@ export function WorktreePicker({
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => {
-          setError(undefined);
+          mutation.reset();
           setQuery("");
           setActivePath(undefined);
           if (!open) refresh();

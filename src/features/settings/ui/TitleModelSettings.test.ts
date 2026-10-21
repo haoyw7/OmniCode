@@ -4,6 +4,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { TitleModelSettings } from "./TitleModelSettings";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { remoteRequest } from "../../connections/model/connections";
 
 vi.mock("../../connections/model/connections", () => ({
@@ -28,6 +29,7 @@ const status = {
 let container: HTMLDivElement;
 let root: Root;
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal(
     "ResizeObserver",

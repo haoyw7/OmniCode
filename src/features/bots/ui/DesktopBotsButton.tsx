@@ -1,4 +1,7 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { botPanelKey } from "../model/botPanelQueries";
+import { useEffect, useMemo, useReducer, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { NOTIFICATION_CLICK_EVENT, notifyApp } from "../../notifications/model/notifications";
@@ -61,105 +64,66 @@ export function DesktopBotsButton({
   const targets = JSON.stringify(
     hosts.map(({ id, environmentId }) => ({ id, environmentId })),
   );
-  const [messages, setMessages] = useState<Record<string, BotMessage[]>>(
-    {},
-  );
-  const [botTargets, setBotTargets] = useState<Record<string, { machineId: string; environmentId: string; scope: BotScope }>>({});
+  const machines = useMemo(() => (JSON.parse(targets) as { id: string; environmentId: string }[]).map(machine => ({
+    ...machine, client: new BotClient(machine.environmentId, (method, params) => remoteRequest(machine.id, method, params)),
+    clients: new Map<string, BotClient>(),
+  })), [targets]);
   const [, refreshRead] = useReducer((value: number) => value + 1, 0);
   useEffect(() => subscribeBotRead(refreshRead), []);
-  useEffect(() => {
-    let disposed = false;
-    const timers = new Set<ReturnType<typeof setTimeout>>();
-    const machines: { id: string; environmentId: string }[] =
-      JSON.parse(targets);
-    for (const machine of machines) {
-      const client = new BotClient(
-        machine.environmentId,
-        (method, params) => remoteRequest(machine.id, method, params),
-      );
-      let supported: boolean | undefined;
-      let botsSupported = false;
-      const botClients = new Map<string, BotClient>();
-      const refresh = async () => {
-        let delay = 2000;
-        try {
-          if (supported === undefined) {
-            const descriptor = await remoteRequest<HostDescriptor>(
-              machine.id,
-              "environment.describe",
-              {
-                supportedProviders: REMOTE_PROVIDERS,
-              },
-            );
-            botsSupported = descriptor.capabilities?.includes("bots.v1") ?? false;
-            supported = botsSupported || (descriptor.capabilities?.includes("assistant.v1") ?? false);
-          }
-          if (disposed || !supported) return;
-          if (botsSupported) {
-            const snapshot = await remoteRequest<BotsSnapshot>(machine.id, "bots.list");
-            if (disposed) return;
-            const targets: typeof botTargets = {};
-            for (const thread of snapshot.threads.filter((thread) => !thread.archivedAt && snapshot.bots.some((bot) => bot.id === thread.botId && !bot.archivedAt))) {
-              const scope = { botId: thread.botId, threadId: thread.id };
-              const key = botCacheKey(machine.environmentId, scope);
-              const isDefault = scope.botId === snapshot.defaultBotId && scope.threadId === snapshot.defaultThreadId;
-              if (isDefault) migrateDefaultBotCache(machine.environmentId, key);
-              targets[key] = { machineId: machine.id, environmentId: machine.environmentId, scope };
-              let scoped = botClients.get(key);
-              if (!scoped) {
-                scoped = new BotClient(key, scopedBotRpc((method, params) => remoteRequest(machine.id, method, params), scope, isDefault), undefined, botReadRevision(key));
-                botClients.set(key, scoped);
-              }
-              const next = await scoped.sync();
-              if (disposed) return;
-              const activity = botNotificationActivity(next.assistant, next.messages);
-              const notice = takeBotNotification(key, activity);
-              const selected = readBotSelection(machine.environmentId);
-              if (notice && activity) void notifyApp(botNotificationTarget(machine.environmentId, getCurrentWindow().label, scope), {
-                title: "OmniCode", subtitle: activity.name || translate("Bots"),
-                body: notice.text || translate(notice.kind === "input" ? "This conversation needs your input." : "A new reply is ready."),
-              }, current.current.visibleHost === machine.environmentId && selected?.botId === scope.botId && selected.threadId === scope.threadId);
-              setMessages((current) => ({ ...current, [key]: next.messages }));
-            }
-            setBotTargets((current) => ({ ...Object.fromEntries(Object.entries(current).filter(([, target]) => target.environmentId !== machine.environmentId)), ...targets }));
-            return;
+  const feeds = useQueries({ queries: machines.map(machine => ({
+    queryKey: [...botPanelKey(remoteRequest), "notificationFeed", machine.id, machine.environmentId],
+    refetchInterval: (query: { state: { status: string; data?: { supported: boolean } } }) => query.state.data?.supported === false ? false : query.state.status === "error" ? 30000 : 2000,
+    queryFn: async ({ signal }: { signal: AbortSignal }) => {
+      const descriptor = await queryClient.fetchQuery({
+        queryKey: [...botPanelKey(remoteRequest), "notificationDescriptor", machine.id, machine.environmentId],
+        staleTime: Infinity,
+        queryFn: () => remoteRequest<HostDescriptor>(machine.id, "environment.describe", { supportedProviders: REMOTE_PROVIDERS }),
+      });
+      signal.throwIfAborted();
+      const botsSupported = descriptor.capabilities?.includes("bots.v1") ?? false;
+      const supported = botsSupported || (descriptor.capabilities?.includes("assistant.v1") ?? false);
+      const messages: Record<string, BotMessage[]> = {};
+      const targets: Record<string, { machineId: string; environmentId: string; scope: BotScope }> = {};
+      if (!supported) return { messages, targets, supported };
+      if (botsSupported) {
+        const snapshot = await remoteRequest<BotsSnapshot>(machine.id, "bots.list");
+        signal.throwIfAborted();
+        for (const thread of snapshot.threads.filter(thread => !thread.archivedAt && snapshot.bots.some(bot => bot.id === thread.botId && !bot.archivedAt))) {
+          const scope = { botId: thread.botId, threadId: thread.id };
+          const key = botCacheKey(machine.environmentId, scope);
+          const isDefault = scope.botId === snapshot.defaultBotId && scope.threadId === snapshot.defaultThreadId;
+          if (isDefault) migrateDefaultBotCache(machine.environmentId, key);
+          targets[key] = { machineId: machine.id, environmentId: machine.environmentId, scope };
+          let client = machine.clients.get(key);
+          if (!client) {
+            client = new BotClient(key, scopedBotRpc((method, params) => remoteRequest(machine.id, method, params), scope, isDefault), undefined, botReadRevision(key));
+            machine.clients.set(key, client);
           }
           const next = await client.sync();
-          if (!disposed) {
-            const activity = botNotificationActivity(next.assistant, next.messages);
-            const notice = takeBotNotification(machine.environmentId, activity);
-            if (notice && activity)
-              void notifyApp(botLegacyNotificationTarget(machine.environmentId, getCurrentWindow().label), {
-                title: "OmniCode",
-                subtitle: activity.name || translate("Assistant"),
-                body: notice.text || translate(notice.kind === "input"
-                  ? "This conversation needs your input." : "A new reply is ready."),
-              }, current.current.visibleHost === machine.environmentId);
-            setMessages((current) => ({
-              ...current,
-              [machine.environmentId]: next.messages,
-            }));
-          }
-        } catch {
-          // Keep unread messages through a disconnect and back off before retrying.
-          delay = 30000;
-        } finally {
-          if (!disposed && supported !== false) {
-            const timer = setTimeout(() => {
-              timers.delete(timer);
-              void refresh();
-            }, delay);
-            timers.add(timer);
-          }
+          signal.throwIfAborted();
+          const activity = botNotificationActivity(next.assistant, next.messages), notice = takeBotNotification(key, activity);
+          const selected = readBotSelection(machine.environmentId);
+          if (notice && activity) void notifyApp(botNotificationTarget(machine.environmentId, getCurrentWindow().label, scope), {
+            title: "OmniCode", subtitle: activity.name || translate("Bots"),
+            body: notice.text || translate(notice.kind === "input" ? "This conversation needs your input." : "A new reply is ready."),
+          }, current.current.visibleHost === machine.environmentId && selected?.botId === scope.botId && selected.threadId === scope.threadId);
+          messages[key] = next.messages;
         }
-      };
-      void refresh();
-    }
-    return () => {
-      disposed = true;
-      for (const timer of timers) clearTimeout(timer);
-    };
-  }, [targets]);
+      } else {
+        const next = await machine.client.sync();
+        signal.throwIfAborted();
+        const activity = botNotificationActivity(next.assistant, next.messages), notice = takeBotNotification(machine.environmentId, activity);
+        if (notice && activity) void notifyApp(botLegacyNotificationTarget(machine.environmentId, getCurrentWindow().label), {
+          title: "OmniCode", subtitle: activity.name || translate("Assistant"),
+          body: notice.text || translate(notice.kind === "input" ? "This conversation needs your input." : "A new reply is ready."),
+        }, current.current.visibleHost === machine.environmentId);
+        messages[machine.environmentId] = next.messages;
+      }
+      return { messages, targets, supported };
+    },
+  })) }, queryClient);
+  const messages = Object.assign({}, ...feeds.map(feed => feed.data?.messages)) as Record<string, BotMessage[]>;
+  const botTargets = Object.assign({}, ...feeds.map(feed => feed.data?.targets)) as Record<string, { machineId: string; environmentId: string; scope: BotScope }>;
   const unread = [...hosts
     .flatMap((host) =>
       unreadBotMessages(

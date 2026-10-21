@@ -1,3 +1,5 @@
+import { QueryObserver } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { translate } from "../../../shared/i18n/language";
 import { isTauri } from "@tauri-apps/api/core";
 import {
@@ -210,10 +212,18 @@ function publishListing(listing: NativeSourceListing): void {
   });
 }
 
+const nativeSources = new WeakMap<object, number>();
+let nativeSourceId = 0;
+function nativeQueryScope(source: object) {
+  if (!nativeSources.has(source)) nativeSources.set(source, ++nativeSourceId);
+  return nativeSources.get(source)!;
+}
+const discoveryKey = () => ["nativeSessionSources", hostNative() ? nativeQueryScope(hostNative()!) : null] as const;
+
 async function discover(refresh = false): Promise<NativeSessionFile[]> {
   const host = hostNative();
   if (!host) return [];
-  const listing = await host.list(refresh ? { refresh: true } : {});
+  const listing = await queryClient.fetchQuery({ queryKey: discoveryKey(), queryFn: () => host.list(refresh ? { refresh: true } : {}) });
   publishListing(listing);
   return listing.sources;
 }
@@ -246,8 +256,6 @@ export function externalNativeSessions(
   );
 }
 
-let discoveryRun: Promise<void> | undefined;
-let lastDiscovery = -Infinity;
 const DISCOVERY_INTERVAL = 10_000;
 let discoveryTimer: ReturnType<typeof setTimeout> | undefined;
 let discoveryPending = false;
@@ -255,36 +263,33 @@ let discoveryPending = false;
 /** Coalesce refresh requests into one Host listing per interval. */
 function scheduleDiscovery(): void {
   discoveryPending = true;
-  if (discoveryRun || discoveryTimer !== undefined) return;
+  const query = queryClient.getQueryState(discoveryKey());
+  if (query?.fetchStatus === "fetching" || discoveryTimer !== undefined) return;
   discoveryTimer = setTimeout(() => {
     discoveryTimer = undefined;
     void refreshNativeDiscovery();
-  }, Math.max(0, lastDiscovery + DISCOVERY_INTERVAL - Date.now()));
+  }, Math.max(0, Math.max(query?.dataUpdatedAt ?? 0, query?.errorUpdatedAt ?? 0) + DISCOVERY_INTERVAL - Date.now()));
 }
 
 /** Quiet sidebar refresh: no busy state, no error banner, at most every few seconds. */
 export function refreshNativeDiscovery(force = false): Promise<void> {
   if (!desktop()) return Promise.resolve();
-  if (discoveryRun) {
+  const query = queryClient.getQueryCache().find({ queryKey: discoveryKey(), exact: true });
+  if (query?.state.fetchStatus === "fetching") {
     scheduleDiscovery();
-    return discoveryRun;
+    return query.promise!.then(() => undefined, () => undefined);
   }
-  if (!force && Date.now() - lastDiscovery < DISCOVERY_INTERVAL) {
+  if (!force && query && Date.now() - Math.max(query.state.dataUpdatedAt, query.state.errorUpdatedAt) < DISCOVERY_INTERVAL) {
     scheduleDiscovery();
     return Promise.resolve();
   }
   if (discoveryTimer !== undefined) clearTimeout(discoveryTimer);
   discoveryTimer = undefined;
   discoveryPending = false;
-  lastDiscovery = Date.now();
   const run = discover()
     .then(() => undefined)
     .catch(() => undefined);
-  discoveryRun = run;
-  void run.finally(() => {
-    if (discoveryRun === run) discoveryRun = undefined;
-    if (discoveryPending) scheduleDiscovery();
-  });
+  void run.finally(() => { if (discoveryPending) scheduleDiscovery(); });
   return run;
 }
 
@@ -391,13 +396,8 @@ async function hostAccess(session: Session): Promise<NativeSessionAccess | null>
   });
 }
 
-let accessPoll: Promise<void> | undefined;
-/** Ownership only matters where a composer is shown: probe open native conversations. */
-export function pollNativeSessionAccess(): Promise<void> {
-  if (accessPoll) return accessPoll;
-  const run = (async () => {
-    const owner = runtime;
-    if (!owner) return;
+function accessPollQuery(owner: Runtime) {
+  return { queryKey: ["nativeSessionAccessPoll", nativeQueryScope(owner)], queryFn: async () => {
     for (const current of owner.live()) {
       if (!current.nativeSession || runtime !== owner) continue;
       try {
@@ -415,12 +415,13 @@ export function pollNativeSessionAccess(): Promise<void> {
         });
       }
     }
-  })().catch(() => undefined);
-  accessPoll = run;
-  void run.then(() => {
-    if (accessPoll === run) accessPoll = undefined;
-  });
-  return run;
+
+    return null;
+  } };
+}
+export function pollNativeSessionAccess(): Promise<void> {
+  if (!runtime) return Promise.resolve();
+  return queryClient.fetchQuery(accessPollQuery(runtime)).then(() => undefined, () => undefined);
 }
 
 /** Install once in the desktop app. */
@@ -432,13 +433,15 @@ export function installNativeSessionSync(owner: Runtime): () => void {
   const discoverRun = () => {
     void refreshNativeDiscovery();
   };
-  const accessTimer = window.setInterval(accessRun, 5_000);
+  const accessObserver = new QueryObserver(queryClient, { ...accessPollQuery(owner), refetchInterval: 5000, refetchIntervalInBackground: true });
+  const stopAccess = accessObserver.subscribe(() => undefined);
   window.addEventListener("focus", accessRun);
   window.addEventListener("focus", discoverRun);
   accessRun();
   discoverRun();
   return () => {
-    window.clearInterval(accessTimer);
+    stopAccess();
+    void queryClient.cancelQueries({ queryKey: accessPollQuery(owner).queryKey });
     window.removeEventListener("focus", accessRun);
     window.removeEventListener("focus", discoverRun);
     if (runtime === owner) {
@@ -446,7 +449,7 @@ export function installNativeSessionSync(owner: Runtime): () => void {
       if (discoveryTimer !== undefined) clearTimeout(discoveryTimer);
       discoveryTimer = undefined;
       discoveryPending = false;
-      lastDiscovery = -Infinity;
+      queryClient.removeQueries({ queryKey: ["nativeSessionSources"] });
     }
   };
 }

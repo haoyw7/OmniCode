@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
 import { version } from "../../../../package.json";
 import { parseDeepseekAccount, type DeepseekAccount } from "../../../integrations/harness/providers/deepseek/deepseekAccount";
 import { knownRemoteMachine, remoteRequest, useRemoteMachines } from "../../connections/model/connections";
@@ -30,45 +32,35 @@ export function useDeepseekAccount(
     : machine && { machineId: machine.id, environmentId: machine.environmentId };
   const machineId = target?.machineId, environmentId = target?.environmentId;
   const source = JSON.stringify([remote?.environmentId, machineId, environmentId]);
-  const [pollKey, setPollKey] = useState(0);
-  useEffect(() => {
-    if (!visible || !autoRefresh) return;
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") setPollKey(key => key + 1);
-    }, RATE_LIMIT_POLL_MS);
-    return () => window.clearInterval(timer);
-  }, [autoRefresh, visible]);
-  const [state, setState] = useState<DeepseekAccountState & { source: string }>({ source, loading: true });
-  useEffect(() => {
-    if (!visible) return;
-    if (!machineId || !environmentId) {
-      setState({ source, loading: false, error: usesSharedHost
-        ? "Connect to the shared Host to view the DeepSeek account."
-        : "Connect to the conversation's Host to view the DeepSeek account." });
-      return;
-    }
-    let current = true;
-    setState({ source, loading: true });
-    void (async () => {
+  const queryKey = ["deepseekAccount", source, language] as const;
+  const read = useQuery({
+    queryKey, enabled: visible && !!machineId && !!environmentId,
+    refetchInterval: visible && autoRefresh ? RATE_LIMIT_POLL_MS : false,
+    queryFn: async ({ signal }) => {
+      const descriptor = await loadRemoteHostDescriptor(machineId!, environmentId!);
+      signal.throwIfAborted();
+      if (!descriptor.capabilities.includes("providerAccounts.deepseek.v1"))
+        throw new Error("Update and restart the Host to view the DeepSeek account.");
       try {
-        const descriptor = await loadRemoteHostDescriptor(machineId, environmentId);
-        if (!current) return;
-        if (!descriptor.capabilities.includes("providerAccounts.deepseek.v1")) {
-          setState({ source, loading: false, error: "Update and restart the Host to view the DeepSeek account." });
-          return;
-        }
-        const account = parseDeepseekAccount(await remoteRequest(machineId, "providerAccounts.deepseek", {
+        const account = parseDeepseekAccount(await remoteRequest(machineId!, "providerAccounts.deepseek", {
           client: { version, locale: language, timezoneOffsetSeconds: -new Date().getTimezoneOffset() * 60 },
         }));
-        const host = usesSharedHost ? providerUsageHost()
-          : { machineId: knownRemoteMachine(environmentId)?.id, environmentId };
-        if (current && host?.machineId === machineId && host.environmentId === environmentId)
-          setState({ source, loading: false, account });
+        signal.throwIfAborted();
+        const host = usesSharedHost ? providerUsageHost() : { machineId: knownRemoteMachine(environmentId!)?.id, environmentId };
+        if (!host || host.machineId !== machineId || host.environmentId !== environmentId) throw new Error("Host changed");
+        return account;
       } catch {
-        if (current) setState({ source, loading: false, error: "Unable to read the DeepSeek account. Check that DSH is installed and configured on Host, then refresh." });
+        throw new Error("Unable to read the DeepSeek account. Check that DSH is installed and configured on Host, then refresh.");
       }
-    })();
-    return () => { current = false; };
-  }, [machineId, environmentId, source, usesSharedHost, visible, language, refreshKey, pollKey]);
-  return state.source === source ? state : { loading: !!target };
+    },
+  }, queryClient);
+  const previousRefresh = useRef(refreshKey);
+  useEffect(() => { if (!visible) void queryClient.cancelQueries({ queryKey }); }, [visible, source, language]);
+  useEffect(() => {
+    if (previousRefresh.current === refreshKey) return;
+    previousRefresh.current = refreshKey;
+    void invalidateAfterChange(queryKey);
+  }, [refreshKey, source, language]);
+  if (!target) return { loading: false, error: usesSharedHost ? "Connect to the shared Host to view the DeepSeek account." : "Connect to the conversation's Host to view the DeepSeek account." };
+  return { loading: read.isFetching, account: read.isSuccess ? read.data : undefined, error: read.error ? read.error.message : undefined };
 }

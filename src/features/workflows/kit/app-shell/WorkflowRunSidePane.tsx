@@ -1,4 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../../shared/lib/queryClient";
 import type {
   WorkflowRunArtifactSummary,
   WorkflowRunPendingQuestion,
@@ -78,6 +80,7 @@ const WorkflowRunContent = memo(function WorkflowRunContent({
 }) {
   const { intl } = useWorkflowIntl();
   const { layer, sendCommand } = useV4Conversation();
+  const command = useMutation({ mutationFn: (envelope: Parameters<typeof sendCommand>[0]) => sendCommand(envelope) }, queryClient);
   const [lease, setLease] = useState<SessionLease | null>(null);
 
   // 详情页重新订阅**父会话**的投影（照 PlanDetailSidePane）：运行态是父会话的权威投影，
@@ -203,14 +206,14 @@ const WorkflowRunContent = memo(function WorkflowRunContent({
 
   const handleCancel = useCallback(() => {
     // 取消只有一条路径：既有的 v4 cancelBackgroundWork {workId ≡ runId}。
-    void sendCommand(
+    void command.mutateAsync(
       createCommandEnvelope({
         type: "cancelBackgroundWork",
         payload: { workId: tab.runId },
         sessionId: tab.parentSessionId,
       }),
     ).then((ack) => recordAck("cancel", ack));
-  }, [recordAck, sendCommand, tab.parentSessionId, tab.runId]);
+  }, [recordAck, command.mutateAsync, tab.parentSessionId, tab.runId]);
 
   // Resume 可用性只读投影的 `resumable` 状态位：
   // 重启后投影由 CLI 冷回放补齐，这里不再另查 journal 摘要。
@@ -234,7 +237,7 @@ const WorkflowRunContent = memo(function WorkflowRunContent({
   const handleResume = useCallback(() => {
     // resume 是新 v4 命令（不携 baseRevision，与 cancel 同类）；workId ≡ runId。
     // `name` 喂恢复后完成通知的主题——重启后原工具 input 不可得，tab 上的展示名是仅存来源。
-    void sendCommand(
+    void command.mutateAsync(
       createCommandEnvelope({
         type: "resumeWorkflowRun",
         payload: {
@@ -247,7 +250,7 @@ const WorkflowRunContent = memo(function WorkflowRunContent({
       recordAck("resume", ack);
       // 接受后活投影会以 run-started 翻回 running，reducer 随之剥掉 resumable，按钮自然收起。
     });
-  }, [recordAck, sendCommand, tab.parentSessionId, tab.runId, tab.workflowName]);
+  }, [recordAck, command.mutateAsync, tab.parentSessionId, tab.runId, tab.workflowName]);
 
   const handleOpenActor = useCallback(
     (instance: WorkflowActorInstance) => {

@@ -1,57 +1,55 @@
+// @vitest-environment happy-dom
+const discover = vi.hoisted(() => vi.fn(async () => []));
 vi.mock("../../../integrations/harness/core/registry", () => ({
   getHarness: (id: string) =>
     id === "pi" || id === "omp"
       ? {
           commands: {
-            discover: async () => [],
+            discover,
             rawSlashCommands: id === "omp",
           },
         }
       : undefined,
 }));
 
-import { describe, expect, it, vi } from "vitest";
-import type { Skill } from "../../skills/model/skills";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
+import { act, createElement } from "react";
+import { createRoot } from "react-dom/client";
+import { queryClient } from "../../../shared/lib/queryClient";
 import {
   nextComposerSkillContextToken,
   pickerSkillLoadOptions,
-  visibleComposerSkills,
+  useComposerSkills,
 } from "./useComposerSkills";
 
-const piSkill: Skill = {
-  kind: "native",
+const piSkill = {
   name: "architect",
   description: "Design first.",
   invocation: "skill:architect",
-  source: "pi",
+  source: "pi" as const,
 };
 
-const cachedSkill: Skill = {
-  kind: "native",
-  name: "cached",
-  description: "Cached current context.",
-  invocation: "skill:cached",
-  source: "pi",
-};
+beforeEach(() => { queryClient.clear(); discover.mockReset(); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); });
+afterEach(() => { queryClient.clear(); vi.unstubAllGlobals(); });
 
 describe("composer skill catalog policies", () => {
-  it("uses loaded rows only for their owning context", () => {
-    expect(
-      visibleComposerSkills(
-        { key: "pi\0/a", skills: [piSkill] },
-        "pi\0/a",
-        null,
-        [],
-      ),
-    ).toEqual([piSkill]);
-    expect(
-      visibleComposerSkills(
-        { key: "pi\0/a", skills: [piSkill] },
-        "pi\0/b",
-        [cachedSkill],
-        [],
-      ),
-    ).toEqual([cachedSkill]);
+  it("does not render a previous project's late catalog after switching", async () => {
+    let finish!: (skills: typeof piSkill[]) => void;
+    discover.mockReturnValueOnce(new Promise(resolve => { finish = resolve; }))
+      .mockResolvedValueOnce([{ ...piSkill, name: "current" }]);
+    const container = document.createElement("div");
+    const root = createRoot(container);
+    function View({ cwd }: { cwd: string }) {
+      const catalog = useComposerSkills({ harness: "pi", executionCwd: cwd, pickerOpen: false });
+      return createElement("span", null, catalog.skills.map(skill => skill.name).join(","));
+    }
+    try {
+      await act(async () => root.render(createElement(View, { cwd: "/a" })));
+      await act(async () => root.render(createElement(View, { cwd: "/b" })));
+      expect(container.textContent).toBe("current");
+      await act(async () => finish([piSkill]));
+      expect(container.textContent).toBe("current");
+    } finally { act(() => root.unmount()); }
   });
 
   it("preserves filesystem refresh while Pi uses its TTL", () => {

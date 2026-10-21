@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -474,7 +476,8 @@ export function OrchestrationPreview({
     (entry) =>
       entry.leadId === proposal.leadId && entry.proposalId === block.id,
   );
-  const [pending, setPending] = useState(false);
+  const mutation = useMutation({ mutationFn: async (action: () => Promise<void>) => action() }, queryClient);
+  const pending = mutation.isPending;
   const [error, setError] = useState<string>();
   const [expanded, setExpanded] = useState<string[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -490,14 +493,11 @@ export function OrchestrationPreview({
   const starting = pending || proposal.status === "starting";
   const visible = showAll ? proposal.tasks : proposal.tasks.slice(0, 3);
   const perform = async (fn: () => Promise<void>) => {
-    setPending(true);
     setError(undefined);
     try {
-      await fn();
+      await mutation.mutateAsync(fn);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason));
-    } finally {
-      setPending(false);
     }
   };
   const change = (id: string, patch: Partial<ProposedTask>) => {

@@ -2,6 +2,7 @@
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { queryClient } from "../../../shared/lib/queryClient";
 import {
   keepSessionChanges,
   notifyReviewChanged,
@@ -91,6 +92,7 @@ async function changed(id = "s1") {
 }
 
 beforeEach(() => {
+  queryClient.clear();
   vi.useFakeTimers();
   vi.clearAllMocks();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -102,6 +104,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   act(() => root.unmount());
+  queryClient.clear();
   container.remove();
   vi.useRealTimers();
   vi.restoreAllMocks();
@@ -414,4 +417,30 @@ it("keeps a legacy current turn visible using the recording identity returned by
   expect(sessionCheckpointStatus).toHaveBeenLastCalledWith("s1", "/repo", undefined, "legacy");
   await act(async () => button("Review")!.click());
   expect(onOpenDiff).toHaveBeenLastCalledWith(undefined, { sessionId: "s1", cwd: "/repo", turnId: "legacy" });
+});
+
+it("coalesces writes during the first status read into one follow-up", async () => {
+  const initial = deferred<CheckpointStatus>();
+  vi.mocked(sessionCheckpointStatus).mockReturnValueOnce(initial.promise);
+  await render();
+  await changed();
+  await changed();
+  await advance(400);
+  expect(sessionCheckpointStatus).toHaveBeenCalledTimes(1);
+  await act(async () => initial.resolve({ files: [] }));
+  await advance();
+  expect(sessionCheckpointStatus).toHaveBeenCalledTimes(2);
+  expect(row("a.ts")).not.toBeNull();
+});
+
+it("keeps a late action result scoped to the session where it started", async () => {
+  await render();
+  const kept = deferred<CheckpointStatus>();
+  vi.mocked(keepSessionChanges).mockReturnValueOnce(kept.promise);
+  await act(async () => button("Keep")!.click());
+  vi.mocked(sessionCheckpointStatus).mockResolvedValue({ files: [file("new-session.ts")] });
+  await render({ sessionId: "s2", cwd: "/second" });
+  await act(async () => kept.resolve({ files: [] }));
+  expect(row("new-session.ts")).not.toBeNull();
+  expect(row("a.ts")).toBeNull();
 });

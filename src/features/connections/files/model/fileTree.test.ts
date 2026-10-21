@@ -1,3 +1,4 @@
+import { queryClient } from "../../../../shared/lib/queryClient";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FsEntry } from "../../../../platform/tauri/fs";
 import {
@@ -33,11 +34,13 @@ vi.mock("../../../../platform/tauri/fs", async (importOriginal) => {
 
 describe("fileTree cache", () => {
   beforeEach(() => {
+    queryClient.clear();
     forgetDir(root);
     listDir.mockReset();
   });
 
   afterEach(() => {
+    queryClient.clear();
     vi.useRealTimers();
   });
 
@@ -78,4 +81,30 @@ describe("fileTree cache", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     stop();
   });
+});
+
+it("shares simultaneous directory reads and rejects an old answer after a watcher refresh", async () => {
+  queryClient.clear();
+  let finish!: (entries: FsEntry[]) => void;
+  listDir.mockReset().mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+  const first = listCachedDir(root).catch(() => undefined);
+  const second = listCachedDir(root).catch(() => undefined);
+  expect(listDir).toHaveBeenCalledTimes(1);
+  listDir.mockResolvedValueOnce([entry("new.ts")]);
+  await refreshDir(root);
+  finish([entry("old.ts")]);
+  await Promise.all([first, second]);
+  expect(peekDir(root)).toEqual([entry("new.ts")]);
+  queryClient.clear();
+});
+
+it("forgets a pending directory read when its folder is removed", async () => {
+  queryClient.clear();
+  let finish!: (entries: FsEntry[]) => void;
+  listDir.mockReset().mockReturnValueOnce(new Promise(resolve => { finish = resolve; }));
+  const read = listCachedDir(root).catch(() => undefined);
+  forgetDir(root);
+  finish([entry("deleted.ts")]);
+  await read;
+  expect(peekDir(root)).toBeNull();
 });

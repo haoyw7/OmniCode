@@ -22,7 +22,7 @@ import {
   useProviderAccountUsage,
   type AccountUsage,
 } from "./accountUsage";
-import { clearCachedRateLimits, loadRateLimits } from "./rateLimitsCache";
+import { clearCachedRateLimits, loadRateLimits } from "./rateLimitsQueries";
 import type { ProviderAccount } from "./providerAccounts";
 
 const now = Date.parse("2026-09-25T12:00:00Z");
@@ -246,7 +246,6 @@ describe("useProviderAccountUsage", () => {
     const first = loadRateLimits("claude", "default");
     const second = loadRateLimits("claude", "default");
     expect(fetches.claude).toHaveBeenCalledTimes(1);
-    expect(second).toBe(first);
 
     complete?.(limits(window(15)));
     await Promise.all([first, second]);

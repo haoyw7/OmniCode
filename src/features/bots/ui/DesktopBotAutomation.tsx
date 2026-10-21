@@ -1,5 +1,9 @@
 import { Button } from "../../../shared/ui/forms/Button";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { withToast } from "../../../shared/ui/primitives/Sonner";
+import { botRpcQuery } from "../model/botPanelQueries";
+import { useCallback, useRef, useState } from "react";
 import type { BotRpc } from "../model/botRpc";
 import type { BotPatch } from "../model/botView";
 import type { BotView } from "../model/bots";
@@ -18,39 +22,29 @@ export function DesktopBotAutomation(props: Props) {
 function Automation({ bot, rpc, onSaved }: Props) {
   const { t } = useTranslation(), visible = useSurfaceVisibility();
   const [base, setBase] = useState(bot), [version, setVersion] = useState(0);
-  const [catalog, setCatalog] = useState<HostModelCatalog>({ models: {}, errors: {} }), [projects, setProjects] = useState<HostProject[]>([]);
-  const [catalogState, setCatalogState] = useState<"loading" | "ready" | "failed">("loading");
-  const [busy, setBusy] = useState(false), [error, setError] = useState<string>();
+  const modelsRead = useQuery({ ...botRpcQuery<HostModelCatalog>(rpc, "models.list"), enabled: visible }, queryClient);
+  const projectsRead = useQuery({ ...botRpcQuery<HostProject[]>(rpc, "projects.list"), enabled: visible }, queryClient);
+  const savedRead = useQuery({ ...botRpcQuery<BotView>(rpc, "bots.get", { botId: bot.id }), enabled: false }, queryClient);
+  const catalog = modelsRead.data ?? { models: {}, errors: {} }, projects = projectsRead.data ?? [];
+  const catalogState = modelsRead.isError || projectsRead.isError ? "failed" : modelsRead.data && projectsRead.data ? "ready" : "loading";
   const command = useRef<{ signature: string; id: string } | undefined>(undefined), controls = useRef(new Map<string, string>());
-  const alive = useRef(true);
-  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-  const load = useCallback(async () => {
-    setCatalogState("loading");
-    try {
-      const [nextCatalog, nextProjects] = await Promise.all([rpc<HostModelCatalog>("models.list"), rpc<HostProject[]>("projects.list")]);
-      if (alive.current) { setCatalog(nextCatalog); setProjects(nextProjects); setCatalogState("ready"); }
-    } catch (cause) { if (alive.current) { setCatalogState("failed"); setError(botErrorMessage(cause)); } }
-  }, [rpc]);
-  useEffect(() => { if (visible && catalogState === "loading") void load(); }, [visible, load]);
-  const save = async (patch: BotPatch) => {
-    if (busy) return;
+  const load = () => Promise.all([modelsRead.refetch(), projectsRead.refetch()]);
+  const saveMutation = useMutation({ mutationFn: (patch: BotPatch) => withToast(async () => {
     const signature = JSON.stringify([bot.id, base.revision, patch]);
     if (command.current?.signature !== signature) command.current = { signature, id: crypto.randomUUID() };
-    setBusy(true); setError(undefined);
-    try {
       const receipt = await rpc<{ revision: number }>("bots.configure", { botId: bot.id, commandId: command.current.id, expectedRevision: base.revision, patch });
       setBase(current => ({ ...current, ...patch, workingDirectory: current.workingDirectory, revision: receipt.revision }));
       setVersion(value => value + 1); command.current = undefined; onSaved();
-    } catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
-  };
+  }, { loading: t("Saving…"), success: false, error: cause => t(botErrorMessage(cause)) }) }, queryClient);
+  const busy = saveMutation.isPending || savedRead.isFetching;
+  const cause = saveMutation.error ?? savedRead.error ?? modelsRead.error ?? projectsRead.error;
+  const error = cause ? botErrorMessage(cause) : undefined;
+  const save = async (patch: BotPatch) => { if (!busy) await saveMutation.mutateAsync(patch).catch(() => undefined); };
   const reload = async () => {
     if (busy) return;
-    setBusy(true); setError(undefined);
-    try {
-      const latest = await rpc<BotView>("bots.get", { botId: bot.id }); setBase(latest); setVersion(value => value + 1); command.current = undefined;
-    } catch (cause) { setError(botErrorMessage(cause)); }
-    finally { setBusy(false); }
+    saveMutation.reset();
+    const latest = await savedRead.refetch();
+    if (latest.isSuccess) { setBase(latest.data); setVersion(value => value + 1); command.current = undefined; }
   };
   const control = async (input: Record<string, unknown>) => {
     const signature = JSON.stringify(input), commandId = controls.current.get(signature) ?? crypto.randomUUID();
@@ -59,7 +53,7 @@ function Automation({ bot, rpc, onSaved }: Props) {
     controls.current.delete(signature); onSaved();
   };
   const loadSessions = useCallback(async (projectIds: string[]) => (await Promise.all(projectIds.map(async projectId =>
-    (await rpc<HostSessionSummary[]>("sessions.list", { projectId })).map(row => ({ id: row.id, title: row.title || row.id, harness: row.harness, projectId, activityAt: row.activityAt ?? row.lastUserMessageAt ?? row.createdAt }))
+    (await queryClient.fetchQuery(botRpcQuery<HostSessionSummary[]>(rpc, "sessions.list", { projectId }))).map(row => ({ id: row.id, title: row.title || row.id, harness: row.harness, projectId, activityAt: row.activityAt ?? row.lastUserMessageAt ?? row.createdAt }))
   ))).flat(), [rpc]);
   return <section className="desktop-bot-automation" aria-label={t("Bot automation")}>
     {/* Reloading discards the draft, so it is offered only after a save fails. */}

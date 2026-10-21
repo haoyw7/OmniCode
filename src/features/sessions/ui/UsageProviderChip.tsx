@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { Omi } from "../../../shared/ui/branding/Omi";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
@@ -108,12 +110,14 @@ export function UsageProviderChip({
   const [accountView, setAccountView] = useState<"usage" | "accounts" | "add">(
     "usage",
   );
-  const [resetAction, setResetAction] = useState<ResetActionState>("idle");
+  const resetMutation = useMutation({ mutationFn: (id: string | undefined) => onConsumeReset!(id) }, queryClient);
+  const reconnectMutation = useMutation({ mutationFn: () => onReconnect!() }, queryClient);
+  const [confirmingReset, setConfirmingReset] = useState(false);
+  const resetAction: ResetActionState = resetMutation.isPending ? "using" : confirmingReset ? "confirming" : resetMutation.isError ? "error" : resetMutation.data ?? "idle";
   const [activeResetKey, setActiveResetKey] = useState<string | null>(null);
-  const [resetError, setResetError] = useState<string | null>(null);
-  const [reconnectState, setReconnectState] =
-    useState<ProviderSignInState>("idle");
-  const [reconnectError, setReconnectError] = useState<string | null>(null);
+  const resetError = resetMutation.error ? resetMutation.error.message || "Could not use this reset" : null;
+  const reconnectState: ProviderSignInState = reconnectMutation.isPending ? "running" : reconnectMutation.isError ? "error" : reconnectMutation.isSuccess ? "complete" : "idle";
+  const reconnectError = reconnectMutation.error ? reconnectMutation.error.message || "Could not complete sign-in" : null;
   const loading =
     limits.status === "idle" ||
     (limits.status === "fetching" &&
@@ -178,11 +182,10 @@ export function UsageProviderChip({
   );
 
   const resetPopup = () => {
-    setResetAction("idle");
+    setConfirmingReset(false);
+    resetMutation.reset();
     setActiveResetKey(null);
-    setResetError(null);
-    setReconnectState("idle");
-    setReconnectError(null);
+    reconnectMutation.reset();
     setAccountView("usage");
   };
 
@@ -198,32 +201,13 @@ export function UsageProviderChip({
     rowKey: string,
   ) => {
     if (!onConsumeReset) return;
+    setConfirmingReset(false);
     setActiveResetKey(rowKey);
-    setResetAction("using");
-    setResetError(null);
-    try {
-      setResetAction(await onConsumeReset(credit?.id));
-    } catch (error) {
-      setResetError(
-        error instanceof Error ? error.message : "Could not use this reset",
-      );
-      setResetAction("error");
-    }
+    await resetMutation.mutateAsync(credit?.id).catch(() => undefined);
   };
 
   const reconnect = async () => {
-    if (!onReconnect) return;
-    setReconnectState("running");
-    setReconnectError(null);
-    try {
-      await onReconnect();
-      setReconnectState("complete");
-    } catch (error) {
-      setReconnectError(
-        error instanceof Error ? error.message : "Could not complete sign-in",
-      );
-      setReconnectState("error");
-    }
+    if (onReconnect) await reconnectMutation.mutateAsync().catch(() => undefined);
   };
 
   const detailsLabel = uiT("{value0} usage details", {
@@ -379,11 +363,12 @@ export function UsageProviderChip({
               mascotColor={mascotColor}
               onConfirm={(creditId) => {
                 setActiveResetKey(creditId);
-                setResetAction("confirming");
+                setConfirmingReset(true);
               }}
               onCancel={() => {
                 setActiveResetKey(null);
-                setResetAction("idle");
+                setConfirmingReset(false);
+                resetMutation.reset();
               }}
               onUse={useReset}
               canUse={Boolean(onConsumeReset)}
@@ -699,23 +684,17 @@ function AddProviderAccount({
 }) {
   const { t: uiT } = useTranslation();
   const [label, setLabel] = useState("");
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useMutation({ mutationFn: (value: string) => onAdd!(value) }, queryClient);
+  const running = mutation.isPending;
+  const error = mutation.error ? mutation.error.message || "Could not add this account" : null;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!onAdd || !label.trim() || running) return;
-    setRunning(true);
-    setError(null);
     try {
-      await onAdd(label);
+      await mutation.mutateAsync(label);
       onComplete();
-    } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Could not add this account",
-      );
-      setRunning(false);
-    }
+    } catch { /* The mutation error stays next to the editable label. */ }
   };
 
   return (

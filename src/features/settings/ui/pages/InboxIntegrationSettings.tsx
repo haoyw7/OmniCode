@@ -1,27 +1,28 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient, invalidateAfterChange } from "../../../../shared/lib/queryClient";
+import { errorMessage } from "../../../../shared/lib/errorMessage";
+import { githubIntegrationQuery, gitlabIntegrationQuery, azureDevOpsIntegrationQuery, linearIntegrationQuery } from "../../model/inboxIntegrationQueries";
+import { inboxKeys, linearTeamsQuery } from "../../../inbox/model/inboxQueries";
 import { usePreferenceState } from "../../model/usePreferenceState";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Check } from "../../../../shared/ui/icons";
 import { withToast } from "../../../../shared/ui/primitives/Sonner";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../../../../shared/ui/forms/Button";
-import { clearInboxCache, githubStatus, type GithubStatus } from "../../../inbox/model/githubTasks";
-import { disconnectGitlab, gitlabConnected, saveGitlabConfig } from "../../../inbox/model/gitlab";
+import { clearInboxCache } from "../../../inbox/model/githubTasks";
+import { disconnectGitlab, saveGitlabConfig } from "../../../inbox/model/gitlab";
 import {
-  azureDevOpsConnected,
   disconnectAzureDevOps,
   saveAzureDevOpsConfig,
 } from "../../../inbox/model/azureDevOps";
 import {
   disconnectLinear,
   LINEAR_CHANGE_EVENT,
-  linearConnected,
-  listLinearTeams,
   loadHiddenLinearTeamIds,
   notifyLinearChange,
   saveHiddenLinearTeamIds,
   saveLinearToken,
-  type LinearTeam,
 } from "../../../inbox/model/linear";
 import { Row } from "../settingsLayout";
 
@@ -29,33 +30,11 @@ import { Row } from "../settingsLayout";
 
 export function GithubSettings() {
   const { t: uiT } = useTranslation();
-  const [status, setStatus] = useState<GithubStatus | null>(null);
-  const [checking, setChecking] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const request = useRef(0);
-
-  const checkStatus = useCallback(async () => {
-    const generation = ++request.current;
-    setChecking(true);
-    setError(null);
-    try {
-      const next = await githubStatus();
-      if (generation === request.current) setStatus(next);
-    } catch (err: unknown) {
-      if (generation === request.current) {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-    } finally {
-      if (generation === request.current) setChecking(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void checkStatus();
-    return () => {
-      request.current += 1;
-    };
-  }, [checkStatus]);
+  const query = useQuery(githubIntegrationQuery(), queryClient);
+  const status = query.data;
+  const checking = query.isFetching;
+  const error = errorMessage(query.error);
+  const checkStatus = () => query.refetch();
 
   const description = status?.connected
     ? "GitHub CLI is installed and authenticated. OmniCode uses it for GitHub inbox items."
@@ -98,70 +77,29 @@ export function GithubSettings() {
 
 export function GitlabSettings() {
   const { t: uiT } = useTranslation();
-  const [url, setUrl] = useState("https://gitlab.com");
+  const statusQuery = useQuery(gitlabIntegrationQuery(), queryClient);
+  const [urlDraft, setUrl] = useState<string>();
+  const url = urlDraft ?? (statusQuery.data?.url || "https://gitlab.com");
   const [token, setToken] = useState("");
-  const [connected, setConnected] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void gitlabConnected()
-      .then((status) => {
-        if (cancelled) return;
-        setConnected(status.connected);
-        setUrl(status.url);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : String(err));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const onSave = async () => {
-    if (!token.trim() || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const status = await withToast(() => saveGitlabConfig(url, token), {
-        loading: uiT("Connecting to {service}…", { service: "GitLab" }),
-        success: (result) => result.connected && uiT("Connected to {service}", { service: "GitLab" }),
+  const connected = !!statusQuery.data?.connected;
+  const mutation = useMutation({
+    mutationFn: (action: "connect" | "disconnect") => withToast(
+      () => action === "connect" ? saveGitlabConfig(url, token) : disconnectGitlab(url), {
+        loading: uiT(action === "connect" ? "Connecting to {service}…" : "Disconnecting from {service}…", { service: "GitLab" }),
+        success: result => action === "disconnect" ? uiT("Disconnected from {service}", { service: "GitLab" }) : result.connected && uiT("Connected to {service}", { service: "GitLab" }),
         error: false,
-      });
-      setUrl(status.url);
-      setToken("");
-      setConnected(status.connected);
-      clearInboxCache();
-    } catch (err: unknown) {
-      setConnected(false);
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onDisconnect = async () => {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const status = await withToast(() => disconnectGitlab(url), {
-        loading: uiT("Disconnecting from {service}…", { service: "GitLab" }),
-        success: uiT("Disconnected from {service}", { service: "GitLab" }),
-        error: false,
-      });
-      setConnected(false);
-      setUrl(status.url);
-      clearInboxCache();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
+      }),
+    onSuccess: async next => {
+      await queryClient.cancelQueries({ queryKey: gitlabIntegrationQuery().queryKey });
+      queryClient.setQueryData(gitlabIntegrationQuery().queryKey, next);
+      setUrl(next.url || url); setToken(""); clearInboxCache();
+      await Promise.all([invalidateAfterChange(inboxKeys.connections), invalidateAfterChange(inboxKeys.lists)]);
+    },
+  }, queryClient);
+  const busy = mutation.isPending;
+  const error = errorMessage(mutation.error ?? statusQuery.error);
+  const onSave = () => { if (token.trim() && !busy) mutation.mutate("connect"); };
+  const onDisconnect = () => { if (!busy) mutation.mutate("disconnect"); };
 
   return (
     <>
@@ -232,70 +170,29 @@ export function GitlabSettings() {
 
 export function AzureDevOpsSettings() {
   const { t: uiT } = useTranslation();
-  const [url, setUrl] = useState("https://dev.azure.com/myorg");
+  const statusQuery = useQuery(azureDevOpsIntegrationQuery(), queryClient);
+  const [urlDraft, setUrl] = useState<string>();
+  const url = urlDraft ?? (statusQuery.data?.url || "https://dev.azure.com/myorg");
   const [token, setToken] = useState("");
-  const [connected, setConnected] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void azureDevOpsConnected()
-      .then((status) => {
-        if (cancelled) return;
-        setConnected(status.connected);
-        if (status.url) setUrl(status.url);
-      })
-      .catch((err: unknown) => {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : String(err));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const onSave = async () => {
-    if (!token.trim() || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const status = await withToast(() => saveAzureDevOpsConfig(url, token), {
-        loading: uiT("Connecting to {service}…", { service: "Azure DevOps" }),
-        success: (result) => result.connected && uiT("Connected to {service}", { service: "Azure DevOps" }),
+  const connected = !!statusQuery.data?.connected;
+  const mutation = useMutation({
+    mutationFn: (action: "connect" | "disconnect") => withToast(
+      () => action === "connect" ? saveAzureDevOpsConfig(url, token) : disconnectAzureDevOps(url), {
+        loading: uiT(action === "connect" ? "Connecting to {service}…" : "Disconnecting from {service}…", { service: "Azure DevOps" }),
+        success: result => action === "disconnect" ? uiT("Disconnected from {service}", { service: "Azure DevOps" }) : result.connected && uiT("Connected to {service}", { service: "Azure DevOps" }),
         error: false,
-      });
-      setUrl(status.url);
-      setToken("");
-      setConnected(status.connected);
-      clearInboxCache();
-    } catch (err: unknown) {
-      setConnected(false);
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onDisconnect = async () => {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const status = await withToast(() => disconnectAzureDevOps(url), {
-        loading: uiT("Disconnecting from {service}…", { service: "Azure DevOps" }),
-        success: uiT("Disconnected from {service}", { service: "Azure DevOps" }),
-        error: false,
-      });
-      setConnected(false);
-      setUrl(status.url || url);
-      clearInboxCache();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
+      }),
+    onSuccess: async next => {
+      await queryClient.cancelQueries({ queryKey: azureDevOpsIntegrationQuery().queryKey });
+      queryClient.setQueryData(azureDevOpsIntegrationQuery().queryKey, next);
+      setUrl(next.url || url); setToken(""); clearInboxCache();
+      await Promise.all([invalidateAfterChange(inboxKeys.connections), invalidateAfterChange(inboxKeys.lists)]);
+    },
+  }, queryClient);
+  const busy = mutation.isPending;
+  const error = errorMessage(mutation.error ?? statusQuery.error);
+  const onSave = () => { if (token.trim() && !busy) mutation.mutate("connect"); };
+  const onDisconnect = () => { if (!busy) mutation.mutate("disconnect"); };
 
   return (
     <>
@@ -367,87 +264,35 @@ export function AzureDevOpsSettings() {
 export function LinearSettings() {
   const { t: uiT } = useTranslation();
   const [token, setToken] = useState("");
-  const [connected, setConnected] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [teams, setTeams] = useState<LinearTeam[]>([]);
+  const statusQuery = useQuery(linearIntegrationQuery(), queryClient);
+  const connected = !!statusQuery.data?.connected;
+  const teamQuery = useQuery({ ...linearTeamsQuery(), enabled: connected }, queryClient);
+  const teams = connected ? teamQuery.data ?? [] : [];
   const [hiddenTeamIds, setHiddenTeamIds] = usePreferenceState(loadHiddenLinearTeamIds);
-
-  const loadTeams = useCallback(async () => {
-    try {
-      const next = await listLinearTeams();
-      setTeams(next);
-    } catch {
-      setTeams([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    void linearConnected()
-      .then((status) => {
-        if (cancelled) return;
-        setConnected(status.connected);
-        if (status.connected) void loadTeams();
-      })
-      .catch(() => {
-        if (!cancelled) setConnected(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [loadTeams]);
-
-  // The inbox filter menu writes the same list, so follow it while both are mounted.
   useEffect(() => {
     const onChange = () => setHiddenTeamIds(loadHiddenLinearTeamIds());
     window.addEventListener(LINEAR_CHANGE_EVENT, onChange);
     return () => window.removeEventListener(LINEAR_CHANGE_EVENT, onChange);
   }, []);
-
-  const onSave = async () => {
-    if (!token.trim() || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await withToast(() => saveLinearToken(token), {
-        loading: uiT("Connecting to {service}…", { service: "Linear" }),
-        success: uiT("Connected to {service}", { service: "Linear" }),
+  const mutation = useMutation({
+    mutationFn: (action: "connect" | "disconnect") => withToast(
+      () => action === "connect" ? saveLinearToken(token) : disconnectLinear(), {
+        loading: uiT(action === "connect" ? "Connecting to {service}…" : "Disconnecting from {service}…", { service: "Linear" }),
+        success: uiT(action === "connect" ? "Connected to {service}" : "Disconnected from {service}", { service: "Linear" }),
         error: false,
-      });
-      setToken("");
-      setConnected(true);
-      clearInboxCache();
-      notifyLinearChange();
-      await loadTeams();
-    } catch (err: unknown) {
-      setConnected(false);
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onDisconnect = async () => {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await withToast(() => disconnectLinear(), {
-        loading: uiT("Disconnecting from {service}…", { service: "Linear" }),
-        success: uiT("Disconnected from {service}", { service: "Linear" }),
-        error: false,
-      });
-      setConnected(false);
-      setTeams([]);
-      clearInboxCache();
-      notifyLinearChange();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
+      }),
+    onSuccess: async (_result, action) => {
+      await queryClient.cancelQueries({ queryKey: linearIntegrationQuery().queryKey });
+      queryClient.setQueryData(linearIntegrationQuery().queryKey, { connected: action === "connect" });
+      if (action === "disconnect") queryClient.setQueryData(linearTeamsQuery().queryKey, []);
+      setToken(""); clearInboxCache(); notifyLinearChange();
+      await Promise.all([invalidateAfterChange(inboxKeys.connections), invalidateAfterChange(inboxKeys.lists)]);
+    },
+  }, queryClient);
+  const busy = mutation.isPending;
+  const error = errorMessage(mutation.error ?? statusQuery.error ?? (connected ? teamQuery.error : null));
+  const onSave = () => { if (token.trim() && !busy) mutation.mutate("connect"); };
+  const onDisconnect = () => { if (!busy) mutation.mutate("disconnect"); };
 
   const toggleTeam = (id: string) => {
     const next = new Set(hiddenTeamIds);

@@ -3,7 +3,9 @@
 // accepted 则导航到新会话（启动卡已在顶部）；rejected / 抛错则删掉空会话、把错误回给调用方
 // （实参窗行内 / toast），用户留在中枢。「失败在会话存在之前」（不变式 2）：createSession
 // 被拒时不发 start、不留会话；start 被拒时立即 deleteSession 收回刚建的空会话。
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../../../shared/lib/queryClient";
 import {
   savedWorkflowStartRejectionReasonSchema,
   type SavedWorkflowStartRejectionReason,
@@ -66,17 +68,9 @@ export function useSavedWorkflowLauncher(params: {
   onNavigate?: (target: SavedWorkflowLaunchTarget, sessionId: string) => void;
 }): UseSavedWorkflowLauncherResult {
   const { onNavigate } = params;
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<SavedWorkflowLaunchError | null>(null);
   const pendingRef = useRef(false);
-  const clearError = useCallback(() => setError(null), []);
-
-  const launch = useCallback(
-    async (target: SavedWorkflowLaunchTarget, request: SavedWorkflowLaunchRequest): Promise<SavedWorkflowLaunchResult> => {
-      if (pendingRef.current) return { ok: false, error: { reason: "generic", code: "launch_in_flight" } };
-      pendingRef.current = true;
-      setPending(true);
-      setError(null);
+  const mutation = useMutation({
+    mutationFn: async ({ target, request }: { target: SavedWorkflowLaunchTarget; request: SavedWorkflowLaunchRequest }): Promise<SavedWorkflowLaunchResult> => {
       try {
         const result = await workflowRequest<
           | { ok: true; runId: string; sessionId: string }
@@ -88,7 +82,6 @@ export function useSavedWorkflowLauncher(params: {
           },
         });
         if (result.ok) {
-          onNavigate?.(target, result.sessionId);
           return { ok: true, sessionId: result.sessionId, runId: result.runId, toolCallId: `workflow-${result.runId}` };
         }
         const err = launchError(
@@ -96,19 +89,26 @@ export function useSavedWorkflowLauncher(params: {
           [result.message, ...(result.diagnostics ?? [])].join("\n"),
         );
         logger.warn("[saved-workflow-launch] start rejected", { reason: result.reason });
-        setError(err);
         return { ok: false, error: err };
       } catch (thrown) {
         const err: SavedWorkflowLaunchError = { reason: "generic", code: "exception", message: thrown instanceof Error ? thrown.message : String(thrown) };
-        setError(err);
         return { ok: false, error: err };
-      } finally {
-        pendingRef.current = false;
-        setPending(false);
       }
     },
-    [onNavigate],
-  );
-
-  return { launch, pending, error, clearError };
+  }, queryClient);
+  const { mutateAsync } = mutation;
+  const launch = useCallback(async (target: SavedWorkflowLaunchTarget, request: SavedWorkflowLaunchRequest): Promise<SavedWorkflowLaunchResult> => {
+    if (pendingRef.current) return { ok: false, error: { reason: "generic", code: "launch_in_flight" } };
+    pendingRef.current = true;
+    try {
+      const result = await mutateAsync({ target, request });
+      if (result.ok) onNavigate?.(target, result.sessionId);
+      return result;
+    } finally { pendingRef.current = false; }
+  }, [mutateAsync, onNavigate]);
+  return {
+    launch, pending: mutation.isPending,
+    error: !mutation.isPending && mutation.data?.ok === false ? mutation.data.error : null,
+    clearError: mutation.reset,
+  };
 }

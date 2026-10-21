@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import {
-  loadProjectFiles,
-  peekProjectFiles,
+  projectFilesQuery,
   recentOpenedFiles,
-  subscribeProjectFiles,
 } from "../../connections/files/model/fileIndex";
 import {
   buildMentionIndex,
@@ -12,7 +12,10 @@ import {
 } from "../../connections/files/model/fileMentions";
 import type { ProjectFile } from "../../../platform/tauri/fs";
 import { looksLikeProject } from "../../projects/model/recents";
-import { loadNotes, peekNotes, rankNoteFiles, notesAsProjectFiles, type Note } from "../../notes";
+import { rankNoteFiles, notesAsProjectFiles, notesQuery, type Note } from "../../notes";
+
+const EMPTY_FILES: ProjectFile[] = [];
+const EMPTY_NOTES: Note[] = [];
 
 /** Project files and notes offered by an open `@` mention, ranked for its query. */
 export function useComposerMentionCatalog({
@@ -30,10 +33,17 @@ export function useComposerMentionCatalog({
   mentionQuery: string | undefined;
   notesEnabled: boolean;
 }) {
-  const [files, setFiles] = useState<ProjectFile[]>(
-    () => peekProjectFiles(localCwd) ?? [],
-  );
-  const [notes, setNotes] = useState<Note[]>(() => peekNotes() ?? []);
+  const fileQuery = useQuery({
+    ...projectFilesQuery(localCwd),
+    enabled: looksLikeProject(localCwd),
+  }, queryClient);
+  const { refetch: refreshFiles } = fileQuery;
+  useEffect(() => {
+    if (mentionOpen && looksLikeProject(localCwd)) void refreshFiles({ cancelRefetch: false });
+  }, [mentionOpen, localCwd, refreshFiles]);
+  const noteQuery = useQuery({ ...notesQuery(), enabled: mentionOpen && notesEnabled }, queryClient);
+  const files = fileQuery.data ?? EMPTY_FILES;
+  const notes = noteQuery.data ?? EMPTY_NOTES;
   const [mentionActive, setMentionActive] = useState(0);
   const mentionFiles = useMemo(
     () => (notesEnabled ? [...files, ...notesAsProjectFiles(notes)] : files),
@@ -62,38 +72,6 @@ export function useComposerMentionCatalog({
   }, [executionCwd, files, mentionQuery, mentionOpen, notes, notesEnabled]);
 
   useEffect(() => {
-    let cancelled = false;
-    const apply = (next: ProjectFile[]) => {
-      if (!cancelled) setFiles(next);
-    };
-    const cached = peekProjectFiles(localCwd);
-    apply(cached ?? []);
-    if (!localCwd) return;
-    void loadProjectFiles(localCwd, mentionOpen)
-      .then(apply)
-      .catch(() => undefined);
-    const unsub = subscribeProjectFiles(() => {
-      const next = peekProjectFiles(localCwd);
-      if (next) apply(next);
-    });
-    return () => {
-      cancelled = true;
-      unsub();
-    };
-  }, [localCwd, mentionOpen]);
-
-  useEffect(() => {
-    if (!mentionOpen || !notesEnabled) return;
-    let cancelled = false;
-    void loadNotes().then((next) => {
-      if (!cancelled) setNotes(next);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [mentionOpen, notesEnabled]);
-
-  useEffect(() => {
     setMentionActive(0);
   }, [mentionQuery, cwd]);
 
@@ -103,5 +81,5 @@ export function useComposerMentionCatalog({
     );
   }, [rankedFiles.length]);
 
-  return { mentionIndex, mentionIndexRef, rankedFiles, mentionActive, setMentionActive };
+  return { mentionIndex, mentionIndexRef, rankedFiles, mentionActive, setMentionActive, filesLoading: fileQuery.isLoading };
 }

@@ -1,6 +1,9 @@
 import { Button } from "../shared/ui/forms/Button";
 import { MobileSpinner } from "./MobileSpinner";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../shared/lib/queryClient";
+import { withToast } from "../shared/ui/primitives/Sonner";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { ArrowDownCircle, RefreshCw } from "../shared/ui/icons";
@@ -18,53 +21,39 @@ import {
   hasMobileUpdate,
   updateBaseUrls,
   updateDownloadUrl,
-  type InstalledBuild,
   type MobileUpdate,
 } from "./updates";
 
-// Keep the loading indicator and duplicate-action guard active together.
-const minimumLoading = () =>
-  new Promise<void>((resolve) => setTimeout(resolve, 2_000));
-
 export function useMobileAppUpdates() {
-  const [installed, setInstalled] = useState<InstalledBuild>();
-  const [latest, setLatest] = useState<MobileUpdate>();
-  const [checking, setChecking] = useState(false);
-  const [installing, setInstalling] = useState(false);
+  const { t } = useTranslation();
   const [progress, setProgress] = useState(0);
-  const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const live = useRef(true);
   const busy = useRef(false);
   const ios = Capacitor.getPlatform() === "ios";
+  // This is only the minimum indicator duration; Query publishes results immediately.
+  const [indicator, setIndicator] = useState<"check" | "install" | null>(ios ? null : "check");
+  useEffect(() => {
+    if (!indicator) return;
+    const timer = setTimeout(() => setIndicator(null), 2000);
+    return () => clearTimeout(timer);
+  }, [indicator]);
+  const installedRead = useQuery({ queryKey: ["mobile", "installedBuild"], queryFn: getInstalledBuild, enabled: !ios }, queryClient);
+  const latestRead = useQuery({
+    queryKey: ["mobile", "update"], enabled: !ios,
+    queryFn: checkMobileUpdate,
+  }, queryClient);
+  const installed = installedRead.data, latest = latestRead.data;
+  const checking = installedRead.isFetching || latestRead.isFetching || indicator === "check";
   const available = installed && latest && hasMobileUpdate(installed, latest);
-
   const check = useCallback(async () => {
-    if (busy.current || ios) return;
-    busy.current = true;
-    const loading = minimumLoading();
-    setChecking(true);
-    setError("");
-    try {
-      const build = await getInstalledBuild();
-      if (live.current) setInstalled(build);
-      const update = await checkMobileUpdate();
-      if (live.current) setLatest(update);
-    } catch (problem) {
-      if (live.current)
-        setError(
-          problem instanceof Error ? problem.message : "Update check failed.",
-        );
-    } finally {
-      await loading;
-      busy.current = false;
-      if (live.current) setChecking(false);
-    }
-  }, [ios]);
+    if (busy.current || ios || queryClient.isFetching({ queryKey: ["mobile", "update"] })) return;
+    busy.current = true; setIndicator("check");
+    await Promise.all([installedRead.refetch(), latestRead.refetch()]);
+  }, [ios, installedRead.refetch, latestRead.refetch]);
 
   useEffect(() => {
     live.current = true;
-    void check();
     const foreground = Capacitor.isNativePlatform()
       ? App.addListener("appStateChange", ({ isActive }) => {
           if (isActive) void check();
@@ -76,56 +65,33 @@ export function useMobileAppUpdates() {
     };
   }, [check]);
 
-  const install = async () => {
-    if (!latest || installing || !available || busy.current) return;
-    busy.current = true;
-    const loading = minimumLoading();
-    setError("");
-    setNotice("");
-    setInstalling(true);
-    setProgress(0);
+  const mutation = useMutation({ mutationFn: (update: MobileUpdate) => withToast(async () => {
+    setNotice(""); setProgress(0);
     let listener;
     try {
-      if (Capacitor.getPlatform() !== "android") {
-        window.location.assign(updateDownloadUrl(latest));
-        return;
-      }
+      if (Capacitor.getPlatform() !== "android") { window.location.assign(updateDownloadUrl(update)); return; }
       const permission = await Updates.installPermission({ request: true });
       if (!permission.allowed) {
-        setNotice(
-          "Allow OmniCode to install apps, then return and tap Download and install again.",
-        );
+        if (live.current) setNotice("Allow OmniCode to install apps, then return and tap Download and install again.");
         return;
       }
-      listener = await Updates.addListener(
-        "downloadProgress",
-        ({ received, total }) => {
-          if (live.current)
-            setProgress(Math.min(100, Math.round((received / total) * 100)));
-        },
-      );
-      await Updates.downloadAndInstall({
-        url: updateDownloadUrl(latest),
-        ...latest,
+      listener = await Updates.addListener("downloadProgress", ({ received, total }) => {
+        if (live.current) setProgress(Math.min(100, Math.round((received / total) * 100)));
       });
-      if (live.current)
-        setNotice("Confirm the update in the Android installer.");
-    } catch (problem) {
-      if (live.current)
-        setError(
-          problem instanceof Error
-            ? problem.message
-            : "Update installation failed.",
-        );
+      await Updates.downloadAndInstall({ url: updateDownloadUrl(update), ...update });
+      if (live.current) setNotice("Confirm the update in the Android installer.");
     } finally {
-      try {
-        await listener?.remove();
-      } finally {
-        await loading;
-        busy.current = false;
-        if (live.current) setInstalling(false);
-      }
+      await listener?.remove();
     }
+  }, { loading: t("Downloading…"), success: false, error: false }) }, queryClient);
+  const installing = mutation.isPending || indicator === "install";
+  busy.current = checking || installing;
+  const problem = mutation.error ?? installedRead.error ?? latestRead.error;
+  const error = problem ? problem instanceof Error ? problem.message : mutation.error ? "Update installation failed." : "Update check failed." : "";
+  const install = async () => {
+    if (!latest || installing || checking || !available || busy.current) return;
+    busy.current = true; setIndicator("install");
+    try { await mutation.mutateAsync(latest); } catch { /* The page shows the failure. */ }
   };
 
   return {

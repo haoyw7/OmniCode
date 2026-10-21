@@ -1,3 +1,5 @@
+import { queryClient } from "../../../shared/lib/queryClient";
+import { fetchInboxSource, inboxSourceKey, invalidateInboxSource, peekInboxSource } from "./inboxSourceQueries";
 import { invoke } from "@tauri-apps/api/core";
 import { recordInboxSelfActivity } from "./inboxSelfActivity";
 import { normalizeProjectPath } from "../../projects/model/recents";
@@ -67,26 +69,13 @@ export type AzureDevOpsMrDiff = {
 
 export const AZUREDEVOPS_CHANGE_EVENT = "omnicode:azuredevops-change";
 
-const repoByPath = new Map<string, string>();
-const detailsByKey = new Map<string, AzureDevOpsWorkItemDetails>();
-const detailsInflight = new Map<string, Promise<AzureDevOpsWorkItemDetails>>();
-const threadByKey = new Map<string, AzureDevOpsWorkItemThread>();
-const threadInflight = new Map<string, Promise<AzureDevOpsWorkItemThread>>();
-const diffByKey = new Map<string, AzureDevOpsMrDiff>();
-const diffInflight = new Map<string, Promise<AzureDevOpsMrDiff>>();
 
 function itemKey(repo: string, kind: AzureDevOpsKind, number: number): string {
   return `${repo.trim().toLowerCase()}:${kind}:${number}`;
 }
 
 export function clearAzureDevOpsCache() {
-  repoByPath.clear();
-  detailsByKey.clear();
-  detailsInflight.clear();
-  threadByKey.clear();
-  threadInflight.clear();
-  diffByKey.clear();
-  diffInflight.clear();
+  queryClient.removeQueries({ queryKey: ["inboxSource", "azuredevops"] });
 }
 
 export function azureDevOpsConnected(): Promise<AzureDevOpsStatus> {
@@ -119,12 +108,8 @@ export async function disconnectAzureDevOps(
 }
 
 export async function azureDevOpsRepo(cwd: string): Promise<string> {
-  const key = normalizeProjectPath(cwd);
-  const cached = repoByPath.get(key);
-  if (cached !== undefined) return cached;
-  const repo = await invoke<string>("azure_devops_repo", { cwd });
-  repoByPath.set(key, repo);
-  return repo;
+  return fetchInboxSource(inboxSourceKey("azuredevops", "repo", normalizeProjectPath(cwd)), () => invoke<string>("azure_devops_repo", { cwd }), { maxAgeMs: Infinity });
+
 }
 
 export function listAzureDevOpsWorkItems(
@@ -160,7 +145,7 @@ export function peekAzureDevOpsWorkItemDetails(
   kind: AzureDevOpsKind,
   number: number,
 ): AzureDevOpsWorkItemDetails | null {
-  return detailsByKey.get(itemKey(repo, kind, number)) ?? null;
+  return peekInboxSource<AzureDevOpsWorkItemDetails>(inboxSourceKey("azuredevops", "details", itemKey(repo, kind, number)));
 }
 
 export async function azureDevOpsWorkItemDetails(
@@ -168,24 +153,8 @@ export async function azureDevOpsWorkItemDetails(
   kind: AzureDevOpsKind,
   number: number,
 ): Promise<AzureDevOpsWorkItemDetails> {
-  const key = itemKey(repo, kind, number);
-  const cached = detailsInflight.get(key);
-  if (cached) return cached;
-  const pending = invoke<AzureDevOpsWorkItemDetails>(
-    "azure_devops_work_item_details",
-    { repo, kind, number },
-  )
-    .then((details) => {
-      // A cache clear (e.g. org change) supersedes this request: skip the
-      // write so a stale completion cannot repopulate the cache.
-      if (detailsInflight.get(key) === pending) detailsByKey.set(key, details);
-      return details;
-    })
-    .finally(() => {
-      if (detailsInflight.get(key) === pending) detailsInflight.delete(key);
-    });
-  detailsInflight.set(key, pending);
-  return pending;
+  return fetchInboxSource(inboxSourceKey("azuredevops", "details", itemKey(repo, kind, number)), () => invoke<AzureDevOpsWorkItemDetails>("azure_devops_work_item_details", { repo, kind, number }));
+
 }
 
 export function peekAzureDevOpsWorkItemThread(
@@ -193,7 +162,7 @@ export function peekAzureDevOpsWorkItemThread(
   kind: AzureDevOpsKind,
   number: number,
 ): AzureDevOpsWorkItemThread | null {
-  return threadByKey.get(itemKey(repo, kind, number)) ?? null;
+  return peekInboxSource<AzureDevOpsWorkItemThread>(inboxSourceKey("azuredevops", "thread", itemKey(repo, kind, number)));
 }
 
 export async function azureDevOpsWorkItemThread(
@@ -202,32 +171,8 @@ export async function azureDevOpsWorkItemThread(
   number: number,
   options?: { force?: boolean },
 ): Promise<AzureDevOpsWorkItemThread> {
-  const key = itemKey(repo, kind, number);
-  if (options?.force) {
-    threadByKey.delete(key);
-    threadInflight.delete(key);
-  }
-  const cached = threadInflight.get(key);
-  if (cached) return cached;
-  const pending = invoke<AzureDevOpsWorkItemThread>(
-    "azure_devops_work_item_thread",
-    {
-      repo,
-      kind,
-      number,
-    },
-  )
-    .then((thread) => {
-      // A forced refresh or cache clear supersedes this request: skip the
-      // write so a stale completion cannot repopulate the cache.
-      if (threadInflight.get(key) === pending) threadByKey.set(key, thread);
-      return thread;
-    })
-    .finally(() => {
-      if (threadInflight.get(key) === pending) threadInflight.delete(key);
-    });
-  threadInflight.set(key, pending);
-  return pending;
+  return fetchInboxSource(inboxSourceKey("azuredevops", "thread", itemKey(repo, kind, number)), () => invoke<AzureDevOpsWorkItemThread>("azure_devops_work_item_thread", { repo, kind, number }), options);
+
 }
 
 export async function azureDevOpsWorkItemComment(
@@ -243,8 +188,7 @@ export async function azureDevOpsWorkItemComment(
     body: body.trim(),
   });
   const key = itemKey(repo, kind, number);
-  threadByKey.delete(key);
-  threadInflight.delete(key);
+  await invalidateInboxSource(inboxSourceKey("azuredevops", "thread", key));
   recordInboxSelfActivity({ provider: "azuredevops", kind, repo, number });
   return url;
 }
@@ -253,30 +197,15 @@ export function peekAzureDevOpsMrDiff(
   repo: string,
   number: number,
 ): AzureDevOpsMrDiff | null {
-  return diffByKey.get(itemKey(repo, "pr", number)) ?? null;
+  return peekInboxSource<AzureDevOpsMrDiff>(inboxSourceKey("azuredevops", "diff", itemKey(repo, "pr", number)));
 }
 
 export async function azureDevOpsMrDiff(
   repo: string,
   number: number,
 ): Promise<AzureDevOpsMrDiff> {
-  const key = itemKey(repo, "pr", number);
-  const cached = diffInflight.get(key);
-  if (cached) return cached;
-  const pending = invoke<AzureDevOpsMrDiff>("azure_devops_mr_diff", {
-    repo,
-    number,
-  })
-    .then((diff) => {
-      // Same staleness guard as the thread cache above.
-      if (diffInflight.get(key) === pending) diffByKey.set(key, diff);
-      return diff;
-    })
-    .finally(() => {
-      if (diffInflight.get(key) === pending) diffInflight.delete(key);
-    });
-  diffInflight.set(key, pending);
-  return pending;
+  return fetchInboxSource(inboxSourceKey("azuredevops", "diff", itemKey(repo, "pr", number)), () => invoke<AzureDevOpsMrDiff>("azure_devops_mr_diff", { repo, number }));
+
 }
 
 export function notifyAzureDevOpsChange() {

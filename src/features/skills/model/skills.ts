@@ -1,3 +1,5 @@
+import { isCancelledError, queryOptions } from "@tanstack/react-query";
+import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
 import {
   createPath,
   homeDir,
@@ -71,21 +73,38 @@ export type SkillCatalogContext = {
   sessionId?: string;
 };
 
-type CatalogRequest = {
-  generation: number;
-  promise: Promise<Skill[]>;
+type SkillCatalog = { skills: Skill[]; failed: boolean };
+
+export const skillCatalogKeys = {
+  all: ["skills", "catalog"] as const,
+  cwd: (cwd: string) => ["skills", "catalog", normalizeProjectPath(cwd)] as const,
 };
 
-type CatalogEntry = {
-  cwd: string;
-  skills: Skill[] | null;
-  loadedAt: number;
-  retryAt: number;
-  generation: number;
-  inFlight: CatalogRequest | null;
-};
-
-const catalogEntries = new Map<string, CatalogEntry>();
+export function skillCatalogQuery(context: SkillCatalogContext) {
+  const normalized = { ...context, cwd: normalizeProjectPath(context.cwd) };
+  const sessionScoped = !!getHarness(context.harness)?.commands?.subscribe;
+  const queryKey = [...skillCatalogKeys.cwd(normalized.cwd), context.harness, sessionScoped ? context.sessionId ?? null : null] as const;
+  const native = hasNativeCommands(context.harness);
+  return queryOptions({
+    queryKey,
+    queryFn: async (): Promise<SkillCatalog> => {
+      try {
+        return { skills: await loadCatalog(normalized), failed: false };
+      } catch {
+        // Provider discovery is optional. Keep the last inventory and use a
+        // short freshness window after failure rather than caching it for 30s.
+        return {
+          skills: native ? queryClient.getQueryData<SkillCatalog>(queryKey)?.skills ?? [] : mergeCatalog([]),
+          failed: true,
+        };
+      }
+    },
+    staleTime: (query) => native
+      ? query.state.data?.failed ? NATIVE_SKILL_RETRY_MS : NATIVE_SKILL_TTL_MS
+      : Infinity,
+    select: (catalog: SkillCatalog) => catalog.skills,
+  });
+}
 
 export function skillCatalogKey(context: SkillCatalogContext): string {
   const sessionScoped = !!getHarness(context.harness)?.commands?.subscribe;
@@ -109,146 +128,52 @@ export function isNativeCommandPrompt(
 /** A live update supersedes any cold probe already in flight. */
 export function subscribeSkills(
   context: SkillCatalogContext,
-  onSkills: (skills: Skill[]) => void,
 ): () => void {
   return (
     getHarness(context.harness)?.commands?.subscribe?.(context, (commands) => {
-      const key = skillCatalogKey(context);
-      const previous = catalogEntries.get(key);
+      const queryKey = skillCatalogQuery(context).queryKey;
       const skills: Skill[] = commands.map((command) => ({
         ...command,
         kind: "native",
       }));
-      catalogEntries.set(key, {
-        cwd: normalizeProjectPath(context.cwd),
-        skills,
-        loadedAt: Date.now(),
-        retryAt: 0,
-        generation: (previous?.generation ?? 0) + 1,
-        inFlight: null,
-      });
-      onSkills(skills);
+      // Cancellation is synchronous; publish the live inventory before any
+      // rejected cold-probe consumer resumes on its next microtask.
+      void queryClient.cancelQueries({ queryKey, exact: true });
+      queryClient.setQueryData(queryKey, { skills, failed: false });
     }) ?? (() => undefined)
   );
 }
 
 export function peekSkills(context: SkillCatalogContext): Skill[] | null {
-  return catalogEntries.get(skillCatalogKey(context))?.skills ?? null;
+  return queryClient.getQueryData(skillCatalogQuery(context).queryKey)?.skills ?? null;
 }
 
+export const skillDocumentQuery = (path: string) => queryOptions({
+  queryKey: ["skills", "document", path],
+  queryFn: () => readTextFile(path),
+});
+
 export function invalidateSkills(context?: { cwd: string }) {
-  if (!context) {
-    catalogEntries.clear();
-    return;
-  }
-  const cwd = normalizeProjectPath(context.cwd);
-  for (const entry of catalogEntries.values()) {
-    if (entry.cwd !== cwd) continue;
-    entry.generation += 1;
-    entry.loadedAt = 0;
-    entry.retryAt = 0;
-    entry.inFlight = null;
-  }
+  const queryKey = context ? skillCatalogKeys.cwd(context.cwd) : skillCatalogKeys.all;
+  void queryClient.cancelQueries({ queryKey });
+  return invalidateAfterChange(queryKey);
 }
 
 export function loadSkills(
   context: SkillCatalogContext,
   options?: { refresh?: boolean },
 ): Promise<Skill[]> {
-  const normalized = {
-    harness: context.harness,
-    cwd: normalizeProjectPath(context.cwd),
-    ...(context.sessionId ? { sessionId: context.sessionId } : {}),
-  } satisfies SkillCatalogContext;
-  const key = skillCatalogKey(normalized);
-  let entry = catalogEntries.get(key);
-  if (!entry) {
-    entry = {
-      cwd: normalized.cwd,
-      skills: null,
-      loadedAt: 0,
-      retryAt: 0,
-      generation: 0,
-      inFlight: null,
-    };
-    catalogEntries.set(key, entry);
-  }
-
-  const now = Date.now();
+  const query = skillCatalogQuery(context);
   if (options?.refresh) {
-    if (entry.inFlight?.generation === entry.generation) {
-      return entry.inFlight.promise;
-    }
-    entry.generation += 1;
-    entry.retryAt = 0;
-    return startCatalogLoad(key, entry, normalized);
+    // Opening the picker may request fresh files, but shares an ongoing scan.
+    void queryClient.invalidateQueries({ queryKey: query.queryKey, exact: true, refetchType: "none" });
   }
-
-  if (entry.inFlight?.generation === entry.generation) {
-    return entry.inFlight.promise;
-  }
-  if (!hasNativeCommands(normalized.harness) && entry.skills) {
-    return Promise.resolve(entry.skills);
-  }
-  if (
-    hasNativeCommands(normalized.harness) &&
-    entry.skills &&
-    now - entry.loadedAt < NATIVE_SKILL_TTL_MS
-  ) {
-    return Promise.resolve(entry.skills);
-  }
-  if (hasNativeCommands(normalized.harness) && now < entry.retryAt) {
-    return Promise.resolve(entry.skills ?? []);
-  }
-  return startCatalogLoad(key, entry, normalized);
-}
-
-function startCatalogLoad(
-  key: string,
-  entry: CatalogEntry,
-  context: SkillCatalogContext,
-): Promise<Skill[]> {
-  const generation = entry.generation;
-  const promise = loadCatalog(context)
-    .then((skills) => {
-      if (
-        catalogEntries.get(key) !== entry ||
-        entry.generation !== generation
-      ) {
-        return catalogEntries.get(key)?.skills ?? [];
-      }
-      entry.skills = skills;
-      entry.loadedAt = Date.now();
-      entry.retryAt = 0;
-      return skills;
-    })
-    .catch(() => {
-      if (
-        catalogEntries.get(key) !== entry ||
-        entry.generation !== generation
-      ) {
-        return catalogEntries.get(key)?.skills ?? [];
-      }
-      if (hasNativeCommands(context.harness)) {
-        entry.retryAt = Date.now() + NATIVE_SKILL_RETRY_MS;
-        return entry.skills ?? [];
-      }
-      const fallback = mergeCatalog([]);
-      entry.skills = fallback;
-      entry.loadedAt = Date.now();
-      return fallback;
-    })
-    .finally(() => {
-      if (
-        catalogEntries.get(key) === entry &&
-        entry.generation === generation &&
-        entry.inFlight?.promise === promise
-      ) {
-        entry.inFlight = null;
-      }
-    });
-  entry.inFlight = { generation, promise };
-  return promise;
+  return queryClient.fetchQuery(query).then((catalog) => catalog.skills).catch(async (error: unknown) => {
+    if (!isCancelledError(error)) throw error;
+    const current = queryClient.getQueryCache().find<SkillCatalog>({ queryKey: query.queryKey, exact: true });
+    if (current?.state.fetchStatus === "fetching" && current.promise) return (await current.promise).skills;
+    return peekSkills(context) ?? (hasNativeCommands(context.harness) ? [] : mergeCatalog([]));
+  });
 }
 
 async function loadCatalog(context: SkillCatalogContext): Promise<Skill[]> {
@@ -306,7 +231,7 @@ export async function readSkillBody(
 ): Promise<string> {
   if (skill.kind === "builtin") return CREATE_SKILL_BODY;
   try {
-    return await readTextFile(skill.path);
+    return await queryClient.fetchQuery(skillDocumentQuery(skill.path));
   } catch {
     return `Skill "${skill.name}" could not be read from ${skill.path}.`;
   }
@@ -366,7 +291,7 @@ export async function createBlankSkill(input: {
   await createPath(root, relative, true);
   const path = joinPath(root, `${relative}/SKILL.md`);
   await writeTextFile(path, blankSkillMarkdown(name));
-  invalidateSkills({ cwd: input.cwd });
-  invalidateProjectFiles(input.cwd);
+  await invalidateSkills(input.scope === "user" || !isLocalProject(input.cwd) ? undefined : { cwd: input.cwd });
+  void invalidateProjectFiles(input.cwd);
   return path;
 }

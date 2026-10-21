@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { queryClient } from "../shared/lib/queryClient";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -22,6 +23,7 @@ describe("mobile image files in the bottom sheet", () => {
   let revoke: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+  queryClient.clear();
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     app = document.createElement("div");
     app.className = "mobile-app";

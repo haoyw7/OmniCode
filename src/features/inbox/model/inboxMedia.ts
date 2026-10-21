@@ -1,3 +1,5 @@
+import { queryOptions } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { invoke } from "@tauri-apps/api/core";
 import { sniffImageMime } from "../../connections/files/model/filePreview";
 
@@ -26,9 +28,27 @@ export type InboxMediaType = { kind: InboxMediaKind; mime: string };
 // Each file can be up to 25 MB, so keep recent bytes under a total budget
 // instead of every image and video ever shown. Requests in flight are shared.
 const MEDIA_CACHE_BYTES = 32 * 1024 * 1024;
-const mediaCache = new Map<string, Uint8Array>();
-const mediaRequests = new Map<string, Promise<Uint8Array>>();
-let mediaCacheBytes = 0;
+let mediaVisit = 0;
+function trimMedia() {
+  const candidates = queryClient.getQueryCache().findAll({ queryKey: ["inboxMedia"] })
+    .filter(query => query.state.data instanceof Uint8Array)
+    .sort((a, b) => Number(a.meta?.visited ?? 0) - Number(b.meta?.visited ?? 0));
+  for (const query of candidates) {
+    if ((query.state.data as Uint8Array).byteLength > MEDIA_CACHE_BYTES && !query.getObserversCount() && query.state.fetchStatus !== "fetching")
+      queryClient.removeQueries({ queryKey: query.queryKey, exact: true });
+  }
+  const entries = candidates.filter(query => (query.state.data as Uint8Array).byteLength <= MEDIA_CACHE_BYTES);
+  let bytes = entries.reduce((total, query) => total + (query.state.data as Uint8Array).byteLength, 0);
+  for (const query of entries) {
+    if (bytes <= MEDIA_CACHE_BYTES) break;
+    if (query.getObserversCount() || query.state.fetchStatus === "fetching") continue;
+    bytes -= (query.state.data as Uint8Array).byteLength;
+    queryClient.removeQueries({ queryKey: query.queryKey, exact: true });
+  }
+}
+queryClient.getQueryCache().subscribe(event => {
+  if (event.query.queryKey[0] === "inboxMedia" && (event.type === "observerRemoved" || (event.type === "updated" && event.action.type === "success"))) trimMedia();
+});
 
 /** Remote image/video URLs GitHub and Linear actually put in issue bodies. */
 export function isInboxMediaUrl(value: string): boolean {
@@ -68,45 +88,16 @@ export function sniffInboxMedia(bytes: Uint8Array): InboxMediaType | null {
   return sniffVideoType(bytes);
 }
 
+export const inboxMediaQuery = (url: string) => queryOptions({
+  queryKey: ["inboxMedia", url.trim()], staleTime: Infinity, structuralSharing: false,
+  meta: { visited: ++mediaVisit },
+  queryFn: async () => new Uint8Array(await invoke<ArrayBuffer>("fetch_inbox_media", { url: url.trim() })),
+});
 export function fetchInboxMedia(url: string): Promise<Uint8Array> {
-  const key = url.trim();
-  const cached = mediaCache.get(key);
-  if (cached) {
-    mediaCache.delete(key);
-    mediaCache.set(key, cached);
-    return Promise.resolve(cached);
-  }
-  const inFlight = mediaRequests.get(key);
-  if (inFlight) return inFlight;
-  const pending = invoke<ArrayBuffer>("fetch_inbox_media", { url: key }).then(
-    (buffer) => {
-      const bytes = new Uint8Array(buffer);
-      rememberMedia(key, bytes);
-      return bytes;
-    },
-  );
-  mediaRequests.set(key, pending);
-  const settle = () => {
-    mediaRequests.delete(key);
-  };
-  pending.then(settle, settle);
-  return pending;
-}
-
-function rememberMedia(key: string, bytes: Uint8Array) {
-  if (bytes.byteLength > MEDIA_CACHE_BYTES) return;
-  const previous = mediaCache.get(key);
-  if (previous) {
-    mediaCache.delete(key);
-    mediaCacheBytes -= previous.byteLength;
-  }
-  mediaCache.set(key, bytes);
-  mediaCacheBytes += bytes.byteLength;
-  for (const [oldest, old] of mediaCache) {
-    if (mediaCacheBytes <= MEDIA_CACHE_BYTES) break;
-    mediaCache.delete(oldest);
-    mediaCacheBytes -= old.byteLength;
-  }
+  const options = inboxMediaQuery(url);
+  const existing = queryClient.getQueryCache().find({ queryKey: options.queryKey, exact: true });
+  if (existing) existing.setOptions({ ...existing.options, meta: options.meta });
+  return queryClient.fetchQuery(options);
 }
 
 function sniffVideoType(bytes: Uint8Array): InboxMediaType | null {
