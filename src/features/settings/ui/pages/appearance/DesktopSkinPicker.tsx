@@ -44,7 +44,7 @@ export function DesktopSkinPicker({
           <span className="desktop-skin-preview">
             {skin === "auto" ? (
               <span className="desktop-skin-preview-auto">
-                <SkinScene skin="midnight" />
+                <SkinScene skin="ripple" />
                 <SkinScene skin="daylight" />
               </span>
             ) : <SkinScene skin={skin} />}

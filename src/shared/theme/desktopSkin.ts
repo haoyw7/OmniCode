@@ -2,6 +2,7 @@ import { preferenceStorage } from "../../features/settings/model/sharedPreferenc
 
 /** Settings order matches mobile: dark palettes followed by light palettes. */
 export const DESKTOP_SKIN_IDS = [
+  "ripple",
   "midnight",
   "foundry",
   "graphite",
@@ -29,6 +30,7 @@ type SkinInfo = {
 };
 
 export const DESKTOP_SKIN_INFO: Record<DesktopSkinId, SkinInfo> = {
+  ripple: { label: "Ripple", scheme: "dark", app: "#071018" },
   midnight: { label: "Midnight", scheme: "dark", app: "#242423" },
   atelier: { label: "Atelier", scheme: "light", app: "#f5f1eb" },
   foundry: { label: "Foundry", scheme: "dark", app: "#100e0b" },
@@ -52,12 +54,13 @@ export function normalizeDesktopSkin(value: unknown): DesktopSkinPreference {
   return DESKTOP_SKIN_DEFAULT;
 }
 
-/** Named skins own their scheme; automatic and legacy classic follow color mode. */
+/** Named skins own their scheme; automatic and legacy classic follow color mode
+ * and resolve dark mode to the 涟漪 brand palette. */
 export function resolveDesktopSkin(
   preference: DesktopSkinPreference,
   light: boolean,
 ): DesktopSkinId {
-  return isDesktopSkinId(preference) ? preference : light ? "daylight" : "midnight";
+  return isDesktopSkinId(preference) ? preference : light ? "daylight" : "ripple";
 }
 
 export function loadDesktopSkin(): DesktopSkinPreference {

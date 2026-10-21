@@ -133,9 +133,12 @@ export function collectImports(root = ROOT) {
       const start = match.index + match[0].length - match[0].trimStart().length;
       const line = source.slice(0, start).split("\n").length;
       const typeOnly = isTypeOnly(match);
-      if (!spec.startsWith(".")) imports.push({ from, to: spec, typeOnly, line, bare: true });
+      // `@/` is the shadcn/ui alias for src/ and obeys the same layer rules.
+      const aliased = spec.startsWith("@/");
+      const local = aliased ? join(root, "src", spec.slice(2)) : spec;
+      if (!aliased && !spec.startsWith(".")) imports.push({ from, to: spec, typeOnly, line, bare: true });
       else {
-        const target = resolveImport(file, spec);
+        const target = resolveImport(file, local);
         if (target) imports.push({ from, to: slash(relative(root, target)), typeOnly, line, bare: false });
       }
     }

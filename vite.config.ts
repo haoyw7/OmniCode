@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig, type UserConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -11,6 +12,8 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
 
   return {
     plugins: [excludeEvaluationVite(), react(), tailwindcss()],
+    // shadcn/ui registry imports resolve through `@/` (see components.json).
+    resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
     // Pierre's highlighting worker imports Shiki's WASM engine dynamically.
     worker: { format: "es", plugins: () => [excludeEvaluationVite()] },
     // Settings → Appearance font sizes and reduced-motion override.

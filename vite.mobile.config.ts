@@ -114,5 +114,5 @@ export default defineConfig({
   worker: { format: "es", plugins: () => [excludeEvaluationVite()] },
   build: { outDir: "dist-mobile", rollupOptions: { input: "mobile.html" } },
   // Capacitor loads index.html. Keep mobile.html separate from the desktop entry.
-  resolve: { alias: { "@mobile": resolve("src/mobile") } },
+  resolve: { alias: { "@mobile": resolve("src/mobile"), "@": resolve("src") } },
 });

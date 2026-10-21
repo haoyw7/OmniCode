@@ -1,5 +1,17 @@
 /* Desktop semantic palette and utility color bindings. Layout belongs to each surface. */
 [data-skin] {
+  /* shadcn/ui semantic variables. Skins set the --color-* palette; the 涟漪
+     skin pins the brand values directly. Tailwind maps them in index.css. */
+  --background: var(--color-app);
+  --foreground: var(--color-ink);
+  --primary: var(--color-primary);
+  --primary-foreground: var(--color-primary-foreground);
+  --accent: var(--color-accent);
+  --accent-foreground: var(--color-accent-ink);
+  --muted: var(--color-ink);
+  --muted-foreground: var(--color-ink-secondary);
+  --border: var(--color-hairline);
+  --ring: var(--color-focus);
   --color-sidebar: color-mix(in srgb, var(--color-app) 90%, white);
   --color-sidebar-divider: color-mix(in srgb, var(--color-sidebar) 65%, white);
   --desktop-sidebar-fill: color-mix(in srgb, var(--color-sidebar, var(--color-panel)) calc(var(--sidebar-opacity) * 100%), transparent);
@@ -167,6 +179,45 @@ html[data-skin][data-skin]:not(.theme-light) {
   --color-backdrop: #00000080;
   --radius-lg: 8px;
   --radius-xl: 12px;
+}
+
+/* 涟漪 (Ripple) brand palette: deep ink navy ground, seafoam accent,
+   silver-foam ink and mid-teal primary fills. */
+[data-skin="ripple"] {
+  --color-app: #071018;
+  --color-panel: #0b1821;
+  --color-raised: #143540;
+  --color-raised-hover: #19414d;
+  --color-composer: #10232e;
+  --color-composer-ring: #4d7b84;
+  --color-card: #0f202b;
+  --color-menu: #132a35;
+  --color-inset: #050c12;
+  --color-control: #122d37;
+  --color-hairline: #24434e;
+  --color-ink: #e7eef4;
+  --color-ink-secondary: #b3c3ce;
+  --color-ink-tertiary: #8aa0ad;
+  --color-accent: #3dcdb4;
+  --color-accent-border: #5ad8c2;
+  --color-accent-text: #6fe0cc;
+  --color-focus: #3dcdb4;
+  --color-accent-ink: #04201b;
+  --color-primary: #0d3c42;
+  --color-primary-foreground: #e7eef4;
+  --color-bubble-user: #0d3c42;
+  --color-bubble-user-ink: #e7eef4;
+  --color-success: #4fc98a;
+  --color-success-ink: #04160d;
+  --color-danger: #f0717b;
+  --color-danger-ink: #1e0b0e;
+  --color-warning: #e2b05a;
+  --color-scrollbar: #e7eef433;
+  --color-backdrop: #00000080;
+  --background: #071018;
+  --accent: #3dcdb4;
+  --muted: #e7eef4;
+  --primary: #0d3c42;
 }
 
 html[data-skin].theme-light {

@@ -30,6 +30,29 @@ are not prerequisites for local work.
   it does not need to be restated in each feature request.
 
 
+## 前端技术栈（涟漪，强制）
+
+- 只使用下列库，不引入同类替代品（MUI、Ant Design、Chakra、Mantine、Redux、
+  Jotai、Recoil、framer-motion 及其他动画库均禁止）：shadcn/ui（`radix-nova`，
+  见 `components.json`）、lucide-react、Motion（`motion/react`）、
+  react-resizable-panels、@dnd-kit（core/sortable/utilities）、Zustand、
+  TanStack Query/Table/Virtual、React Hook Form + Zod（`@hookform/resolvers`）、
+  Sonner、next-themes、nuqs、cmdk、Tailwind CSS + CSS Variables、`cn()`。
+- shadcn 组件放在 `src/shared/ui/primitives/`（PascalCase 文件名；Windows 文件系统
+  不区分大小写，不要让 CLI 生成同名小写文件覆盖现有组件），表单控件仍在
+  `src/shared/ui/forms/`。`@/` 别名指向 `src/`，与相对导入一样受 `check:arch` 约束。
+- 远程数据用 TanStack Query，禁止在组件内直接 fetch/invoke + useState 管理加载态；
+  全局状态用 Zustand，组件内部状态用 useState；需同步到 URL 的筛选/分页/Tab 用 nuqs。
+- 表单用 React Hook Form + Zod；交互反馈用 Sonner；命令面板与可搜索列表用 cmdk；
+  表格用 TanStack Table + shadcn Table；拖拽排序/移动用 dnd-kit；长列表用
+  TanStack Virtual；加载态优先用 Skeleton，空状态用统一 Empty。
+- 图标只用 Lucide（经 `src/shared/ui/icons.tsx`），默认 size 16、颜色 currentColor；
+  Provider 品牌标志与文件类型图标属于资产例外。
+- 品牌色以 CSS 变量为准：`--background #071018`、`--accent #3dcdb4`、
+  `--muted #e7eef4`、`--primary #0d3c42`，由 `desktop-theme.css` 的「涟漪」皮肤提供。
+- 所有可点击区域必须有 hover/focus-visible/active 状态与正确的 aria/键盘支持；
+  必须支持暗色模式。旧实现按迁移阶段替换，不得为旧实现新增调用点。
+
 ## UI architecture
 
 - Separate business logic, shared control behavior, and platform presentation.
@@ -92,18 +115,20 @@ are not prerequisites for local work.
 - 只使用免费、MIT 许可的 Motion；不引入 Motion+ 付费功能，跳过 `llms.txt`
   及 MCP 结果中标记为 paid 的页面和功能。本项目规则优先于 skill 中的通用建议。
 - React 引入路径使用 `motion/react`，不使用旧的 `framer-motion`。
-- 列表增删和排序使用 `@formkit/auto-animate`；hover、按压和 loading 点使用 CSS。
+- 列表增删使用 Motion 的 `layout` 与 `AnimatePresence`，拖拽排序使用 dnd-kit；
+  不使用 `@formkit/auto-animate`。hover、按压和 loading 点使用 CSS。
 - 缓动曲线统一为 `[0.22, 1, 0.36, 1]`（CSS 为
   `cubic-bezier(0.22, 1, 0.36, 1)`）；时长：消息 `0.18s`、弹出 `0.2s`、面板 `0.24s`。
 - 必须支持减少动态效果：Motion 使用 `useReducedMotion()` 或
   `<MotionConfig reducedMotion="user">`；CSS 和列表动画同样遵循
-  `prefers-reduced-motion`，不要禁用 AutoAnimate 默认的减少动态效果支持。
+  `prefers-reduced-motion`。
 - 展开/折叠仍遵循上面的共享 `AnimatedCollapse` / `useCollapseMotion` 规则。
 
 ## 面板拖动与重排性能
 
-- 分隔线拖动复用 `ResizeHandle`、`useDragResize` 和 `paneResize` 的共享机制。
-  临时尺寸放在 ref 中，移动时直接写 DOM 的 `flex`、`width` 或布局使用的 CSS
+- 可调整面板使用 react-resizable-panels（共享封装见
+  `src/shared/ui/primitives/Resizable.tsx`），`paneResize` 继续提供全局 resize 状态。
+  尚未迁移的分隔线沿用 `ResizeHandle`/`useDragResize`。临时尺寸放在 ref 中，移动时直接写 DOM 的 `flex`、`width` 或布局使用的 CSS
   属性；松手后才提交 React 布局状态和持久化。不得在每次移动时更新上层业务
   store 或重渲染聊天、文件树、审查列表。React 重渲染不得覆盖正在拖动的尺寸。
 - 按下时缓存起始坐标、容器尺寸、比例和尺寸约束；移动路径以计算和必要的样式

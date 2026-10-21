@@ -6,7 +6,7 @@ export const DESKTOP_APPEARANCE_BACKUP_KEY = "omnicode.desktopAppearanceBackup.v
 
 /** Scheme migration for stored named skins. Keep old values intact. */
 export const LEGACY_SKIN_SCHEMES: Record<string, "light" | "dark"> = {
-  midnight: "dark", atelier: "light", foundry: "dark", lagoon: "light",
+  ripple: "dark", midnight: "dark", atelier: "light", foundry: "dark", lagoon: "light",
   graphite: "dark", linen: "light", dusk: "dark", black: "dark", daylight: "light", meadow: "light",
 };
 

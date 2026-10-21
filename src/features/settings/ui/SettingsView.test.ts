@@ -1070,7 +1070,7 @@ describe("settings pages", () => {
     expect(localStorage.getItem("omnicode.desktopSkin")).toBe("auto");
     expect(localStorage.getItem("omnicode.desktopColorScheme")).toBe("system");
     expect(document.documentElement.dataset.skin).toBe(
-      window.matchMedia("(prefers-color-scheme: light)").matches ? "daylight" : "midnight",
+      window.matchMedia("(prefers-color-scheme: light)").matches ? "daylight" : "ripple",
     );
     expect(localStorage.getItem("omnicode.mobile.skin")).toBe("linen");
     expect(localStorage.getItem("omnicode.accentColor")).toBe("#8b5cf6");
@@ -1080,7 +1080,7 @@ describe("settings pages", () => {
       .find((button) => button.textContent === "Restore defaults")!;
     await act(async () => restore.click());
     expect(localStorage.getItem("omnicode.desktopSkin")).toBe("auto");
-    expect(document.documentElement.dataset.skin).toBe("midnight");
+    expect(document.documentElement.dataset.skin).toBe("ripple");
   });
 
   it("restores appearance defaults after reversing navigation before the old page exits", async () => {

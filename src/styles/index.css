@@ -144,6 +144,13 @@
   --color-primary: var(--color-content);
   --color-primary-foreground: var(--color-background-base);
   --color-secondary: var(--color-selection-strong);
+  --color-secondary-foreground: var(--color-foreground);
+  --color-card-foreground: var(--color-foreground);
+  /* shadcn muted/accent pairs. --muted is the skin ink (silver foam in 涟漪),
+     mixed into a quiet surface so muted fills stay legible on dark grounds. */
+  --color-muted: color-mix(in srgb, var(--muted, var(--color-content)) 8%, transparent);
+  --color-muted-foreground: var(--muted-foreground, var(--color-foreground-subtle));
+  --color-accent-foreground: var(--accent-foreground, #ffffff);
   --color-destructive-foreground: #ffffff;
   --color-success: #16a34a;
   --color-success-foreground: #ffffff;

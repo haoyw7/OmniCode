@@ -25,7 +25,7 @@ describe("desktop skin preference", () => {
   });
 
   it("uses the default pair for automatic mode and preserves named palettes", () => {
-    expect(resolveDesktopSkin("auto", false)).toBe("midnight");
+    expect(resolveDesktopSkin("auto", false)).toBe("ripple");
     expect(resolveDesktopSkin("auto", true)).toBe("daylight");
     expect(resolveDesktopSkin("classic", true)).toBe("daylight");
     for (const skin of DESKTOP_SKIN_IDS) {

@@ -33,7 +33,7 @@
           }
           var scheme = localStorage.getItem("omnicode.desktopColorScheme");
           var skin = localStorage.getItem("omnicode.desktopSkin");
-          var skinSchemes = { midnight: "dark", atelier: "light", foundry: "dark", lagoon: "light", graphite: "dark", linen: "light", dusk: "dark", black: "dark", daylight: "light", meadow: "light" };
+          var skinSchemes = { ripple: "dark", midnight: "dark", atelier: "light", foundry: "dark", lagoon: "light", graphite: "dark", linen: "light", dusk: "dark", black: "dark", daylight: "light", meadow: "light" };
           var namedSkin = Object.prototype.hasOwnProperty.call(skinSchemes, skin);
           if (scheme === null) {
             scheme = namedSkin
@@ -42,7 +42,7 @@
           }
           var light = namedSkin ? skinSchemes[skin] === "light" : scheme === "light" || scheme === "system" && window.matchMedia("(prefers-color-scheme: light)").matches;
           root.classList.toggle("theme-light", light);
-          root.dataset.skin = namedSkin ? skin : light ? "daylight" : "midnight";
+          root.dataset.skin = namedSkin ? skin : light ? "daylight" : "ripple";
           root.dataset.desktopVisual = "claude-measured-v1";
           root.dataset.desktopMode = localStorage.getItem("omnicode.desktopMode") === "chat" ? "chat" : "code";
           root.style.colorScheme = light ? "light" : "dark";

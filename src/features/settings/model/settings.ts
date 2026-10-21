@@ -294,7 +294,7 @@ export const SETTINGS_INDEX: SettingsEntry[] = [
     id: "desktop-skin",
     section: "appearance",
     label: "Skin",
-    keywords: "palette theme automatic midnight foundry graphite dusk black daylight atelier lagoon linen meadow 自动 午夜 铸铁 石墨 暮色 纯黑 日光 画室 潟湖 亚麻 草地",
+    keywords: "palette theme automatic ripple midnight foundry graphite dusk black daylight atelier lagoon linen meadow 自动 涟漪 午夜 铸铁 石墨 暮色 纯黑 日光 画室 潟湖 亚麻 草地",
   },
   {
     id: "compact-sidebar",
