@@ -12,7 +12,6 @@ import {
   resolveOmpBinary,
   resolveOpenCodeBinary,
   resolvePiBinary,
-  resolveWorkBuddyBinary,
 } from "./child";
 import { isLiveHarness } from "./registry";
 import {
@@ -36,7 +35,6 @@ export {
  */
 const CLI: Record<HarnessId, { name: string; install?: string }> = {
   deepseek: { name: "DeepSeek Harness (dsh)", install: "npm install -g @deepseek-ai/dsh@0.2.1-rc.2" },
-  workbuddy: { name: "WorkBuddy" },
   claude: { name: "Claude Code CLI" },
   codex: { name: "Codex CLI" },
   cursor: { name: "Cursor CLI" },
@@ -83,10 +81,6 @@ export function probeHarnessAvailability(
   inflight = Promise.all(
     HARNESSES.map(async (id) => {
       if (!isLiveHarness(id)) return [id, false] as const;
-      if (id === "workbuddy") {
-        try { await resolveWorkBuddyBinary(); return [id, true] as const; }
-        catch { return [id, false] as const; }
-      }
       if (id === "cursor") {
         try {
           await resolveCursorBinary();

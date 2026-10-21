@@ -1,7 +1,6 @@
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
-import { workBuddyAccounts, workBuddyOptionsForOwner } from "./workbuddy";
 import type {
   HostProviderAccount,
   HostProviderAccounts,
@@ -176,17 +175,7 @@ export function resolveDefaultAccount(
   owner: string,
   provider: string,
   requested?: string,
-  model?: string,
 ): string | undefined {
-  if (provider === "workbuddy") {
-    const accounts = workBuddyAccounts(workBuddyOptionsForOwner(owner));
-    if (requested && requested !== "default") {
-      if (!accounts.some(account => account.id === requested)) throw new Error("This provider account is no longer available");
-      return requested;
-    }
-    const edition = model?.startsWith("workbuddy:global:") ? "global" : "cn";
-    return accounts.find(account => account.edition === edition)?.id;
-  }
   if (!ACCOUNT_PROVIDERS.includes(provider as never)) return undefined;
   if (requested === "default") return undefined;
   const directory = providerAccountDirectory(owner);
@@ -274,10 +263,9 @@ function publicIdentity(
 }
 /** Public account metadata only; credentials and profile paths never leave Host. */
 export function desktopProviderAccounts(owner: string): HostProviderAccounts {
-  const workbuddy = workBuddyAccounts(workBuddyOptionsForOwner(owner));
   const directory = providerAccountDirectory(owner);
-  if (!directory) return workbuddy.length ? { workbuddy } : {};
-  return { ...(workbuddy.length ? { workbuddy } : {}), ...Object.fromEntries(
+  if (!directory) return {};
+  return Object.fromEntries(
     ACCOUNT_PROVIDERS.map((provider) => {
       const accounts = accountsIn(directory, provider).map(
         (account) =>
@@ -301,5 +289,5 @@ export function desktopProviderAccounts(owner: string): HostProviderAccounts {
       }
       return [provider, accounts];
     }),
-  ) };
+  );
 }

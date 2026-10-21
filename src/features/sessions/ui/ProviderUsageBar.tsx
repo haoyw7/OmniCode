@@ -41,7 +41,6 @@ import {
 } from "../../providers/model/providerAccounts";
 import { useProviderUsage, useUsageClock } from "../../providers/model/useProviderUsage";
 import { hasSessionUsage, type UsageSession } from "../../providers/model/sessionUsage";
-import { WorkBuddyAccountPicker } from "./WorkBuddyAccountPicker";
 import { DeepseekUsage } from "./DeepseekUsage";
 
 function usageProvidersFor(session?: UsageSession): RateLimitProvider[] {
@@ -184,7 +183,6 @@ export function ProviderUsageBar({
     return hasSessionUsage(session)
       ? <DeepseekUsage key={session.id} project={project} render={render} />
       : null;
-  if (session?.harness === "workbuddy") return present(<WorkBuddyAccountPicker session={session} onChange={id => selectAccount("workbuddy", id)} />);
 
   if (session?.harness === "pi")
     return (

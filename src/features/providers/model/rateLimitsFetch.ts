@@ -1,6 +1,6 @@
 import { remoteRequest } from "../../connections/model/connections";
 import { loadRemoteHostDescriptor } from "../../connections/model/remoteHostMetadata";
-import type { ManagedProviderAccountProvider as ProviderAccountProvider } from "./providerAccounts";
+import type { ProviderAccountProvider } from "./providerAccounts";
 import { providerUsageHost, providerUsageSourceKey } from "./providerUsageSource";
 
 import { invoke } from "@tauri-apps/api/core";

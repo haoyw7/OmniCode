@@ -169,9 +169,7 @@ it("resolves every provider and runs only allowed provider commands", async () =
     Object.fromEntries(REMOTE_PROVIDERS.map((provider) => [provider, file])),
   );
   try {
-    // WorkBuddy requires an installed product bundle, not an interchangeable CLI stub.
-    // Its discovery/launch contract is covered by workbuddyRuntime.test.ts and the opt-in live test.
-    for (const provider of REMOTE_PROVIDERS.filter(provider => provider !== "workbuddy")) {
+    for (const provider of REMOTE_PROVIDERS) {
       const resolved = await backend.invoke<{ path: string; args?: string[] }>(
         `harness_resolve_${provider}`,
       );

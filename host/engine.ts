@@ -1363,7 +1363,6 @@ export class HostEngine {
           join(dirname(this.store.attachmentDir), "desktop-owner.json"),
           command.harness,
           command.providerAccountId,
-          command.model,
         );
         const cwd = resolveHostWorktree(project.cwd, command.executionCwd);
         const worktree = cwd !== project.cwd ? hostWorktreeAt(project.cwd, cwd) : undefined;

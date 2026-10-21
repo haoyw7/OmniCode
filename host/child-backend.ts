@@ -38,7 +38,6 @@ import { randomUUID } from "node:crypto";
 import { withProviderAccountLock } from "./provider-account-lock";
 import { sharedProviderHome } from "./wsl-provider-config";
 import { prepareDeepseekBridge } from "./deepseek-bridge";
-import { resolveWorkBuddy, workBuddyAccounts, workBuddyCatalog, workBuddyLaunch, workBuddyVersion, workBuddyOptionsForOwner } from "./workbuddy";
 
 const exec = promisify(execFile);
 const ALLOWED_EXEC_ARGS = new Set([
@@ -52,7 +51,6 @@ const ALLOWED_EXEC_ARGS = new Set([
 ]);
 
 export function execArgsAllowed(provider: RemoteProvider, args: string[]): boolean {
-  if (provider === "workbuddy") return args.length === 1 && args[0] === "--version";
   return (
     ALLOWED_EXEC_ARGS.has(args.join(" ")) ||
     (provider === "grok" &&
@@ -98,7 +96,6 @@ export class HostChildBackend implements ChildBackend {
     private readonly binaries: Partial<Record<RemoteProvider, string>> = {},
     private readonly desktopConfigPath?: string,
     private readonly store?: HostStore,
-    private readonly workBuddyConfigRoot?: string,
   ) {
     this.events.setMaxListeners(0);
     const supervisor = providerSupervisorPath();
@@ -128,17 +125,11 @@ export class HostChildBackend implements ChildBackend {
     this.sessionEnvironment = environment;
   }
 
-  private workBuddyOptions(): { binaryPath?: string; configRoot?: string } {
-    const binaryPath = this.binaries.workbuddy ?? workBuddyOptionsForOwner(this.desktopConfigPath).binaryPath ?? undefined;
-    return { binaryPath, configRoot: this.workBuddyConfigRoot };
-  }
-
   environmentForSession(id: string): Record<string, string> {
     return this.sessionEnvironment?.(id) ?? {};
   }
 
   async resolve(provider: RemoteProvider): Promise<string> {
-    if (provider === "workbuddy") return resolveWorkBuddy(this.workBuddyOptions());
     if (this.binaries[provider]) return this.binaries[provider]!;
     if (this.desktopConfigPath) {
       let owner;
@@ -202,10 +193,6 @@ export class HostChildBackend implements ChildBackend {
       case "harness_prepare_deepseek_bridge":
         return await prepareDeepseekBridge(await this.resolve("deepseek"), String(args.cwd ?? process.cwd()),
           { ...childEnvironment(), ...this.environmentForSession(String(args.environmentSessionId ?? "")) }) as T;
-      case "harness_workbuddy_accounts":
-        return workBuddyAccounts(this.workBuddyOptions()) as T;
-      case "harness_workbuddy_catalog":
-        return await workBuddyCatalog(this.workBuddyOptions()) as T;
       case "harness_read_claude_title":
         return await readClaudeTitleFile({ cwd: String(args.cwd ?? ""), providerSessionId: String(args.providerSessionId ?? ""), providerAccountId: typeof args.providerAccountId === "string" ? args.providerAccountId : undefined }, this.desktopConfigPath) as T;
       case "harness_exec": {
@@ -220,7 +207,6 @@ export class HostChildBackend implements ChildBackend {
           !execArgsAllowed(provider, args.args)
         )
           throw new Error("Unsupported headless catalog command");
-        if (provider === "workbuddy") return workBuddyVersion(this.workBuddyOptions()) as T;
         const launch = await providerLaunch(commandPath, args.args as string[]);
         const { stdout } = await exec(launch.command, launch.args, {
           cwd: typeof args.cwd === "string" ? args.cwd : undefined,
@@ -423,7 +409,7 @@ export class HostChildBackend implements ChildBackend {
       : undefined;
     Object.assign(env, this.sessionEnvironment?.(shared?.environmentSessionId ?? id));
     if (shared?.deepseekHome) env.DSH_HOME = shared.deepseekHome;
-    if (account?.provider !== "workbuddy" && account?.id && (account.id !== "default" || ["codex", "claude"].includes(account.provider ?? ""))) {
+    if (account?.id && (account.id !== "default" || ["codex", "claude"].includes(account.provider ?? ""))) {
       if (!this.desktopConfigPath && account.id !== "default")
         throw new Error("Named provider accounts require a desktop-owned Host");
       if (
@@ -463,9 +449,7 @@ export class HostChildBackend implements ChildBackend {
         }
       }
     }
-    const isWorkBuddy = args.binaryProvider === "workbuddy";
-    if (isWorkBuddy) env.ELECTRON_RUN_AS_NODE = "1";
-    const launch = isWorkBuddy ? workBuddyLaunch({ ...this.workBuddyOptions(), accountId: account?.id }, args.args as string[]) : await providerLaunch(
+    const launch = await providerLaunch(
       String(args.command),
       args.args as string[],
     );

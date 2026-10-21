@@ -15,7 +15,6 @@ import {
   PROVIDER_ACCOUNT_PROVIDERS,
   removeProviderAccount,
   subscribeProviderAccounts,
-  type ManagedProviderAccountProvider,
   type ProviderAccount,
   type ProviderAccountProvider,
 } from "../../../../providers/model/providerAccounts";
@@ -51,7 +50,7 @@ export type AccountEditor = {
 /** Providers with locally named profiles that Settings can add and edit. */
 export function isAccountProvider(
   harness: HarnessId,
-): harness is ManagedProviderAccountProvider {
+): harness is ProviderAccountProvider {
   return PROVIDER_ACCOUNT_PROVIDERS.some((provider) => provider === harness);
 }
 
@@ -59,8 +58,7 @@ export function isAccountProvider(
 export function hasProviderAccounts(harness: HarnessId): boolean {
   return (
     isAccountProvider(harness) ||
-    harness === "deepseek" ||
-    (harness === "workbuddy" && providerAccounts("workbuddy").length > 0)
+    harness === "deepseek"
   );
 }
 
@@ -174,7 +172,7 @@ export function useProviderAccounts() {
             id: editor.accountId, provider: editor.provider,
             label: values.label, ...(values.homeEdited ? { dataHome: values.dataHome } : {}),
           });
-          if (editor.provider !== "workbuddy") clearCachedRateLimits(editor.provider, editor.accountId);
+          clearCachedRateLimits(editor.provider, editor.accountId);
           setVersion((value) => value + 1);
         } else if (editor.importCurrent) {
           await importCurrentCodexAccount(values.label);
@@ -204,7 +202,7 @@ export function useProviderAccounts() {
         success: uiT("Signed in to {account}", { account: account.label }),
         error: false,
       });
-      if (account.provider !== "workbuddy") clearCachedRateLimits(account.provider, account.id);
+      clearCachedRateLimits(account.provider, account.id);
       setVersion((value) => value + 1);
       } });
     } catch (reason) {
@@ -234,7 +232,7 @@ export function useProviderAccounts() {
         { loading: uiT("Removing account…"), success: uiT("Account removed"), error: false },
       );
       removeProviderAccount(account.provider, account.id);
-      if (account.provider !== "workbuddy") clearCachedRateLimits(account.provider, account.id);
+      clearCachedRateLimits(account.provider, account.id);
       if (
         editor?.provider === account.provider &&
         editor.accountId === account.id

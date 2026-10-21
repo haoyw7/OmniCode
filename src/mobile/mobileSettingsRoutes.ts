@@ -3,7 +3,7 @@ export type MobileSettingsPage =
   "connections" | "updates" | "glass" | "skin" | "archive" | "accounts";
 export type MobilePreferencePanel =
   "theme" | "accent" | "language" | "glass" | "follow-up" | "transcript-layout" |
-  "agent-defaults" | "default-permissions" | "account-claude" | "account-codex" | "account-workbuddy" |
+  "agent-defaults" | "default-permissions" | "account-claude" | "account-codex" |
   "connection-menu" | "connection-edit" | "connection-delete" | null;
 
 const SETTINGS_TITLES: Record<MobileSettingsPage, string> = {

@@ -77,11 +77,10 @@ describe("harness registry", () => {
   it("advertises isolated text prompt support by harness", () => {
     registerBuiltinHarnesses();
     registerBuiltinHarnesses();
-    const integrated = listHarnesses().filter(adapter => adapter.id === "deepseek" || adapter.id === "workbuddy");
-    expect(integrated).toHaveLength(2);
+    const integrated = listHarnesses().filter(adapter => adapter.id === "deepseek");
+    expect(integrated).toHaveLength(1);
     expect(integrated).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: "deepseek", live: true, canSteer: true }),
-      expect.objectContaining({ id: "workbuddy", live: true, canSteer: false }),
     ]));
     const ids: HarnessId[] = [
       "claude",

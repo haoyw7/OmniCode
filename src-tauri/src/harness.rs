@@ -1080,26 +1080,13 @@ pub fn harness_spawn(
         terminate(prev.pid);
     }
 
-    let is_workbuddy = binary_provider.as_deref() == Some("workbuddy");
-    let (launch_command, launch_args) = if is_workbuddy {
-        crate::workbuddy::launch(
-            account.as_ref().map(|a| a.id.as_str()),
-            binary_path.as_deref(),
-            &args,
-        )?
-    } else {
-        (PathBuf::from(&command), args)
-    };
-    let mut cmd = Command::new(&launch_command);
-    cmd.args(&launch_args)
+    let mut cmd = Command::new(&command);
+    cmd.args(&args)
         .current_dir(&workdir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     prepare_child(&mut cmd, &command);
-    if is_workbuddy {
-        cmd.env("ELECTRON_RUN_AS_NODE", "1");
-    }
     let account = account.or_else(|| {
         binary_provider
             .as_deref()
@@ -1109,9 +1096,7 @@ pub fn harness_spawn(
                 id: DEFAULT_PROVIDER_ACCOUNT_ID.into(),
             })
     });
-    if !is_workbuddy {
-        apply_provider_account(&app, &mut cmd, account.as_ref())?;
-    }
+    apply_provider_account(&app, &mut cmd, account.as_ref())?;
 
     crate::control::configure_child(&app, &session_id, &mut cmd);
 
@@ -1571,9 +1556,6 @@ const EXEC_ALLOWED_ARGS: &[&[&str]] = &[
 ];
 
 fn exec_args_allowed(binary_provider: Option<&str>, args: &[String]) -> bool {
-    if binary_provider == Some("workbuddy") {
-        return args == ["--version"];
-    }
     EXEC_ALLOWED_ARGS
         .iter()
         .any(|a| a.len() == args.len() && a.iter().zip(args).all(|(x, y)| x == y))
@@ -1620,16 +1602,6 @@ pub async fn harness_exec(
         if !is_resolved_harness_binary(&command, binary_provider.as_deref(), binary_path.as_deref())
         {
             return Err("harness_exec: not a resolved harness CLI".to_string());
-        }
-        if binary_provider.as_deref() == Some("workbuddy") {
-            return crate::workbuddy::metadata(
-                "resolve",
-                serde_json::json!({ "binaryPath": binary_path }),
-            )?
-            .get("cliVersion")
-            .and_then(|value| value.as_str())
-            .map(String::from)
-            .ok_or_else(|| "WorkBuddy version is unavailable".into());
         }
         exec_capture(&command, &args, cwd.as_deref())
     })
@@ -2121,7 +2093,6 @@ fn resolve_harness_binary_default(provider: &str) -> Option<PathBuf> {
         "hermes" => resolve_hermes(),
         "deepseek" => resolve_deepseek(),
         "antigravity" => resolve_antigravity(),
-        "workbuddy" => crate::workbuddy::resolve(None).ok(),
         _ => None,
     }
 }
@@ -2153,9 +2124,6 @@ fn configured_binary_fingerprint(path: &Path) -> Option<String> {
 }
 
 fn resolve_harness_binary_override(provider: &str, binary_path: &str) -> Result<PathBuf, String> {
-    if provider == "workbuddy" {
-        return crate::workbuddy::resolve(Some(binary_path));
-    }
     if provider == "antigravity" && cfg!(windows) {
         return Err("Antigravity ACP server overrides are not supported on Windows.".into());
     }

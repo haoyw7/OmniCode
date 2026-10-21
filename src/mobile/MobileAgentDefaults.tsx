@@ -158,8 +158,7 @@ export function MobileAgentDefaults({
         {accountChoices(accounts ?? undefined, defaults).map(
           ({ agent, accounts: options }) => {
             const panelId = `account-${agent}` as const;
-            const selected = defaults.agents?.[agent]?.accountId ?? (agent === "workbuddy"
-              ? options.find(account => account.edition === (configuration.model.startsWith("workbuddy:global:") ? "global" : "cn"))?.id ?? options[0]?.id ?? "default" : "default");
+            const selected = defaults.agents?.[agent]?.accountId ?? "default";
             const missing = !options.some((account) => account.id === selected);
             const needsConfirmation =
               defaults.agents?.[agent]?.accountNeedsConfirmation;

@@ -58,7 +58,6 @@ mod window;
 mod window_transfer;
 #[cfg(windows)]
 mod windows;
-mod workbuddy;
 mod worktree_lifecycle;
 mod worktrees;
 mod wsl_path;
@@ -475,9 +474,6 @@ pub fn run() {
             harness::harness_resolve_antigravity,
             harness::harness_free_port,
             harness::harness_spawn,
-            workbuddy::harness_resolve_workbuddy,
-            workbuddy::harness_workbuddy_accounts,
-            workbuddy::harness_workbuddy_catalog,
             harness::harness_write,
             harness::harness_kill,
             harness::harness_kill_all,

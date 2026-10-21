@@ -23,7 +23,6 @@ export { accountHeadroom, accountStatus, bestAlternativeAccount, type AccountSta
 export const accountUsageKey = identityKey;
 
 function accountsFor(provider?: ProviderAccountProvider): ProviderAccount[] {
-  if (provider === "workbuddy") return [];
   return provider
     ? providerAccounts(provider)
     : PROVIDER_ACCOUNT_PROVIDERS.flatMap((entry) => providerAccounts(entry));
@@ -51,9 +50,7 @@ export function useProviderAccountUsage(
   }: { provider?: ProviderAccountProvider; enabled?: boolean } = {},
 ): AccountUsage {
   const source = providerUsageSourceKey();
-  const accounts = useMemo(() => accountsFor(provider).filter(
-    (account): account is ProviderAccount & { provider: "claude" | "codex" } => account.provider !== "workbuddy",
-  ), [accountsVersion, provider, source]);
+  const accounts = useMemo(() => accountsFor(provider), [accountsVersion, provider, source]);
   const queries = useQueries({
     queries: accounts.map((account) => ({ ...rateLimitsQuery(account.provider, account.id), enabled })),
   }, queryClient);

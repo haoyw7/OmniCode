@@ -43,7 +43,6 @@ import {
   conversationProviderAccountId,
   providerAccountExists,
   selectedProviderAccountId,
-  workBuddyAccountIdForModel,
   supportsProviderAccounts,
 } from "../../features/providers/model/providerAccounts";
 import {
@@ -434,7 +433,7 @@ export function useSessionSubmission({
         : undefined;
       const providerAccountId = accountProvider
         ? (conversationProviderAccountId(current) ??
-          (accountProvider === "workbuddy" ? workBuddyAccountIdForModel(current.model, selectedProviderAccountId(accountProvider, current.cwd)) : selectedProviderAccountId(accountProvider, current.cwd)))
+          selectedProviderAccountId(accountProvider, current.cwd))
         : undefined;
       if (
         accountProvider &&

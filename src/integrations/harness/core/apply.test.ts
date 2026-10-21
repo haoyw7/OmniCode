@@ -17,11 +17,11 @@ import {
 let now = 0;
 
 it("persists the provider-bound account and preserves it when older providers omit the optional field", () => {
-  const bound = applyHarnessEvent(newSession("workbuddy", "/repo"), {
-    type: "session.providerBound", providerSessionId: "native", providerAccountId: "wb-cn-one",
+  const bound = applyHarnessEvent(newSession("codex", "/repo"), {
+    type: "session.providerBound", providerSessionId: "native", providerAccountId: "account-one",
   });
-  expect(sanitizeSessionForPersist(bound)).toMatchObject({ providerSessionId: "native", providerAccountId: "wb-cn-one" });
-  expect(applyHarnessEvent(bound, { type: "session.providerBound", providerSessionId: "native-next" }).providerAccountId).toBe("wb-cn-one");
+  expect(sanitizeSessionForPersist(bound)).toMatchObject({ providerSessionId: "native", providerAccountId: "account-one" });
+  expect(applyHarnessEvent(bound, { type: "session.providerBound", providerSessionId: "native-next" }).providerAccountId).toBe("account-one");
 });
 
 it.each(["pi", "omp"] as const)("preserves queued %s message IDs when dispatching and steering", (harness) => {

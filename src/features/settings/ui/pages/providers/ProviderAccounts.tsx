@@ -67,32 +67,22 @@ export function ProviderAccounts({
           <p className="mt-0.5 text-ui-caption leading-5 text-foreground-subtle">
             {provider === "deepseek"
               ? uiT("Account managed by DeepSeek Harness")
-              : provider === "workbuddy"
-                ? uiT("Manage this login in WorkBuddy on the execution machine")
-                : uiT(
-                    "The badged profile is the default for new conversations on desktop and phone. Accounts apply to every project.",
-                  )}
+              : uiT(
+                  "The badged profile is the default for new conversations on desktop and phone. Accounts apply to every project.",
+                )}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {accountProvider ? (
             <AccountActions provider={accountProvider} controller={controller} />
           ) : null}
-          {provider !== "workbuddy" ? <AccountUsageRefresh usage={usage} /> : null}
+          <AccountUsageRefresh usage={usage} />
         </div>
       </div>
       {accountProvider ? (
         <AccountList provider={accountProvider} controller={controller} />
       ) : provider === "deepseek" ? (
         <DeepseekAccountSettings {...controller.deepseek} />
-      ) : provider === "workbuddy" ? (
-        <div data-ui="provider-account-list">
-          {providerAccounts("workbuddy").map((account) => (
-            <div key={account.id} data-ui="provider-account" className="p-3 text-[12px] text-content/80">
-              {uiT(account.label)}
-            </div>
-          ))}
-        </div>
       ) : null}
       {error ? (
         <p

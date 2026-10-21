@@ -33,6 +33,6 @@ export function hasSessionUsage(session: UsageSession): boolean {
   if (session.harness === "deepseek")
     return !!session.model && parseDeepseekModelRoute(session.model)?.[0] === "deepseek-account";
   return session.harness === "claude" || session.harness === "codex" ||
-    session.harness === "opencode" || session.harness === "pi" || session.harness === "workbuddy" ||
+    session.harness === "opencode" || session.harness === "pi" ||
     !!(session.authRequired && supportsHarnessLogin(session.harness));
 }

@@ -87,7 +87,7 @@ export function MobileProviderAccounts({ client, hostId, enabled }: {
   const shown = connected ? { ...(accountsRead.data ?? empty(hostId)), loading: accountsRead.isFetching,
     error: accountsRead.error ? accountsRead.error instanceof Error ? accountsRead.error.message : "Unable to load accounts." : "",
   } : empty(hostId);
-  const count = (shown.accounts?.workbuddy?.length ?? 0) + PROVIDERS.reduce((total, provider) => total + (shown.accounts?.[provider]?.length ?? 0), 0);
+  const count = PROVIDERS.reduce((total, provider) => total + (shown.accounts?.[provider]?.length ?? 0), 0);
   const now = Math.max(clock, ...Object.values(shown.usage).map(value => value.updatedAt));
   return (
     <div className="mobile-provider-accounts">
@@ -110,11 +110,6 @@ export function MobileProviderAccounts({ client, hostId, enabled }: {
       {shown.loading && !count ? <p role="status" className="mobile-settings-footer">{t("Loading accounts…")}</p> : null}
       {connected && shown.accounts && !count && !shown.loading ?
         <p className="mobile-settings-footer">{t("No shared accounts are available on this Host.")}</p> : null}
-      {!!shown.accounts?.workbuddy?.length && <section className="mobile-settings-group" aria-label="WorkBuddy">
-        <h2 className="mobile-account-provider"><HarnessIcon harness="workbuddy" className="size-4" />WorkBuddy</h2>
-        <p className="mobile-settings-footer">{t("Manage this login in WorkBuddy on the execution machine")}</p>
-        <div className="mobile-account-list">{shown.accounts.workbuddy.map(account => <article key={account.id} className="mobile-account-row"><strong>{t(account.label)}</strong></article>)}</div>
-      </section>}
       {PROVIDERS.map(provider => {
         const accounts = shown.accounts?.[provider] ?? [];
         if (!accounts.length) return null;

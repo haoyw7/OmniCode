@@ -20,7 +20,6 @@ const initialAvailability: HarnessAvailability = {
   fx: false,
   hermes: false,
   antigravity: false,
-  workbuddy: false,
 };
 const availabilityStore = createStore(() => ({ availability: initialAvailability, version: 0, probedAt: 0, restoredFromCache: false }));
 

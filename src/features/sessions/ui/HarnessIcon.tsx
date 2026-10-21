@@ -11,7 +11,6 @@ import omp from "../../../assets/providers/omp.svg";
 import opencode from "../../../assets/providers/opencode.svg";
 import pi from "../../../assets/providers/pi.svg";
 import antigravity from "../../../assets/providers/antigravity.svg";
-import workbuddy from "../../../assets/providers/workbuddy.svg";
 import type { HarnessId } from "../model/session";
 
 export const HARNESS_ICONS: Record<HarnessId, string> = {
@@ -26,7 +25,6 @@ export const HARNESS_ICONS: Record<HarnessId, string> = {
   fx,
   hermes,
   antigravity,
-  workbuddy,
 };
 
 /** White marks that must follow `currentColor` so they stay visible in light mode. */
