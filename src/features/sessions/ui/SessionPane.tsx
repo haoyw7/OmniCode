@@ -25,6 +25,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useNativeSessionAccess } from "./useNativeSessionAccess";
+import { OccupiedSessionNotice } from "./OccupiedSessionNotice";
 import { Composer } from "./Composer";
 import { lastQueueUserMessageId } from "../model/messageQueue";
 import type { Worktree } from "../../source-control/model/worktrees";
@@ -237,6 +238,7 @@ export type SessionPaneProps = {
     turn: Block[],
   ) => void;
   onHandoff?: (sessionId: string, target: ModelTarget, turn: Block[]) => void;
+  onForkSession?: (source: Session) => void;
   onBtwSubmit?: (
     sessionId: string,
     turn: Block[],
@@ -366,6 +368,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onBuildPlan,
   onSecondOpinion,
   onHandoff,
+  onForkSession,
   onBtwSubmit,
   onBtwRetry,
   onBtwDelete,
@@ -379,7 +382,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   const { t: uiT } = useTranslation();
   const openSubagent = useOpenSubagent(session);
   const closePaneLabel = useShortcutLabel("Close Pane", "Pane: Close");
-  const { readOnly: nativeReadOnly, hint: nativeAccessHint } =
+  const { readOnly: nativeReadOnly, hint: nativeAccessHint, occupied } =
     useNativeSessionAccess(session);
   const orchestrationRuntime = useContext(OrchestrationRuntimeContext);
   const orchestrationRuns = useSyncExternalStore(
@@ -726,7 +729,10 @@ const LocalSessionPane = memo(function LocalSessionPane({
     (!draftBlock && (!isEmpty || inSplit || !!session.inboxAsk));
   const composerDockMotion = useComposerDockMotion(dockComposer);
   const draftRef = useRef<string | undefined>(getComposerDraft(session.id));
-  const composer = (
+  const composer = occupied && !session.busy ? (
+    <OccupiedSessionNotice onFork={onForkSession && !session.worktreeRemoved
+      ? () => onForkSession(session) : undefined} />
+  ) : (
     <Composer
       key={session.id}
       disabled={

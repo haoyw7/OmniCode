@@ -1,5 +1,6 @@
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { MobileSpinner } from "./MobileSpinner";
+import { useMobileComposerDock } from "./useMobileComposerDock";
 import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Keyboard } from "@capacitor/keyboard";
@@ -71,6 +72,7 @@ export type MobileComposerPanel =
   | null;
 const planStyle = MODE_COMMAND_STYLES[PLAN_COMMAND.name];
 type Props = {
+  context?: ReactNode;
   queue?: ReactNode;
   /** Receives the slot beside the model picker for the session progress capsule. */
   progressSlot?: (element: HTMLDivElement | null) => void;
@@ -228,61 +230,7 @@ function useMobileComposerController(props: Props) {
   const workspaceText = workspace && workspaceLabel(workspace.value, workspace.creating);
   const workspaceName = workspaceText && ("key" in workspaceText ? t(workspaceText.key) : workspaceText.text);
   const hasQueue = !!props.queue;
-  // The dock floats over the transcript; publish its height so content can
-  // scroll past it without hiding the last message.
-  useLayoutEffect(() => {
-    const element = dock.current;
-    const host = element?.parentElement;
-    if (!element || !host) return;
-    // Queued pills float on their own glass, so the dock blur starts at the
-    // composer rather than behind the queue. Measure the composer's own top:
-    // the queue's height omits its collapsed margin and the dock padding,
-    // which left a blurred strip showing in the gap.
-    const queue = element.querySelector<HTMLElement>(":scope > .mobile-message-queue");
-    const composer = form.current;
-    let queueTop = 0;
-    let width: number | undefined;
-    let dockHeight = 0;
-    let composerHeight = 0;
-    let queueSpace: number | undefined;
-    const publish = (entries: ResizeObserverEntry[] = []) => {
-      const entry = entries.find(({ target }) => target === element);
-      const composerEntry = entries.find(({ target }) => target === composer);
-      // The observer already measured padding and borders. Reading offsetHeight
-      // again can force layout after another observer has updated the transcript.
-      if (entry || !entries.length)
-        dockHeight = entry?.borderBoxSize?.[0]?.blockSize ?? element.offsetHeight;
-      if (queue && composer && (composerEntry || !entries.length))
-        composerHeight = composerEntry?.borderBoxSize?.[0]?.blockSize ?? composer.offsetHeight;
-      const height = `calc(${Math.round(dockHeight)}px + max(0px, var(--mobile-safe-bottom) - 8px))`;
-      const widthChanged = entry !== undefined && entry.contentRect.width !== width;
-      if (entry) width = entry.contentRect.width;
-      // The queue precedes the composer inside fixed dock padding. Textarea
-      // height changes leave their size difference unchanged. The difference
-      // also catches collapsed margins disappearing after a queue child unmounts,
-      // even when the queue's own border box was already zero-sized.
-      const nextQueueSpace = dockHeight - composerHeight;
-      if (!entries.length || widthChanged || queueSpace === undefined || Math.abs(nextQueueSpace - queueSpace) > 0.001)
-        queueTop = queue && composer ? composer.offsetTop : 0;
-      queueSpace = nextQueueSpace;
-      const queueHeight = `${queueTop}px`;
-      // Complete layout reads before publishing anything to the transcript.
-      if (host.style.getPropertyValue("--mobile-dock-height") !== height)
-        host.style.setProperty("--mobile-dock-height", height);
-      if (
-        element.style.getPropertyValue("--mobile-dock-queue-height") !== queueHeight
-      )
-        element.style.setProperty("--mobile-dock-queue-height", queueHeight);
-    };
-    publish();
-    const observer = new ResizeObserver(publish);
-    observer.observe(element, { box: "border-box" });
-    if (queue && composer) observer.observe(composer, { box: "border-box" });
-    return () => {
-      observer.disconnect();
-      host.style.removeProperty("--mobile-dock-height");
-    };
-  }, [hasQueue]);
+  useMobileComposerDock(dock, form, hasQueue);
   useMobileTextareaAutosize(area, props.value, {
     minHeight: 24,
     widthSource: dock,
@@ -505,6 +453,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           <MobileSkillList skills={options} loading={skillsState.loading} failed={!!skillsState.failed} error={skillsState.error}
             active={skillActive} id={skillListId} onPick={pickSkill} onActive={setSkillActive} onRetry={() => void skillsState.reload(true)} />
         </div>}
+        {props.context}
         {props.queue ? <div className="mobile-message-queue">{props.queue}</div> : null}
         <motion.form
           layout

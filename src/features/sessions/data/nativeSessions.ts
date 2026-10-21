@@ -92,12 +92,20 @@ export function nativeSessionReadOnly(session: Session): boolean {
   return accessBlocked(nativeSessionAccess(session));
 }
 
+export function nativeSessionOccupied(session: Session): boolean {
+  if (!session.nativeSession) return false;
+  const access = nativeSessionAccess(session);
+  return accessBlocked(access) && (access?.state === "external" ||
+    access?.reason === "anotherOmniCode" || access?.reason === "ambiguousProcess");
+}
+
 /** Composer-visible access state; an unchanged ownership check only renews its lease. */
 export function nativeSessionAccessSnapshot(session: Session): string {
   if (!session.nativeSession) return "";
   const access = nativeSessionAccess(session);
   return JSON.stringify([
     nativeSessionReadOnly(session),
+    nativeSessionOccupied(session),
     session.nativeSyncStatus?.state,
     session.nativeSyncStatus?.reason,
     access?.state,

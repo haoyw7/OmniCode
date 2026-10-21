@@ -32,6 +32,7 @@ import {
   nativeAutoSyncEnabled,
   nativeSessionSnapshot,
   nativeSessionReadOnly,
+  nativeSessionOccupied,
   nativeSessionAccessHint,
   nativeSessionAccess,
   pollNativeSessionAccess,
@@ -141,6 +142,7 @@ it("keeps 39 panes quiet on lease renewals, but redraws a changed owner", async 
     await act(async () => pollNativeSessionAccess());
     expect(renders).toEqual(initial.map((count, index) => count + Number(index === 0)));
     expect(views[0].readOnly).toBe(true);
+    expect(views[0].occupied).toBe(true);
     expect(views[0].hint).toContain("pid 42");
   } finally {
     act(() => root.unmount());
@@ -171,6 +173,7 @@ it("releases the composer when an owner seen by a stopped poller ages out", asyn
     cleanup();
     await act(async () => vi.advanceTimersByTimeAsync(15_001));
     expect(view!.readOnly).toBe(false);
+    expect(view!.occupied).toBe(false);
     expect(view!.hint).toBeUndefined();
     expect(renders).toBe(initial + 1);
   } finally {
@@ -238,6 +241,23 @@ it("lists only unbound sessions belonging to a project", () => {
 });
 
 describe("Host-managed native conversations", () => {
+  it.each([
+    ["external", "externalProcess", true],
+    ["unknown", "anotherOmniCode", true],
+    ["unknown", "ambiguousProcess", true],
+    ["unknown", "unsupportedPlatform", false],
+    ["checking", "checking", false],
+    ["idle", "available", false],
+  ] as const)("distinguishes %s/%s from an occupied conversation", async (state, reason, occupied) => {
+    native.access.mockResolvedValue({ state, reason, checkedAt: Date.now(), path: file.path });
+    await pollNativeSessionAccess();
+    expect(nativeSessionOccupied(hostSession)).toBe(occupied);
+    vi.setSystemTime(Date.now() + 15_001);
+    expect(nativeSessionOccupied({ ...hostSession,
+      nativeSyncStatus: { state: "error", reason: "diverged", checkedAt: 1 },
+    })).toBe(false);
+  });
+
   it("lists through the Host with its import count, last sync and auto-sync setting", async () => {
     native.list.mockResolvedValue(listing({ managedCount: 3, lastSyncedAt: 42, autoSync: false }));
     await discoverNativeSessions();

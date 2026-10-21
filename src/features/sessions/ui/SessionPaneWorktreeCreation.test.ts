@@ -3,6 +3,16 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
+const nativeAccess = vi.hoisted(() => ({
+  read: vi.fn(() => ({ readOnly: false, hint: undefined as string | undefined, occupied: false })),
+  retry: vi.fn(async () => {}),
+}));
+vi.mock("./useNativeSessionAccess", () => ({ useNativeSessionAccess: nativeAccess.read }));
+vi.mock("../data/nativeSessions", async (original) => ({
+  ...await original<typeof import("../data/nativeSessions")>(),
+  pollNativeSessionAccess: nativeAccess.retry,
+}));
+
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async (command: string) => command === "git_branches"
     ? { current: null, detached: false, branches: [] }
@@ -42,11 +52,14 @@ import {
 import { SessionPane, type SessionPaneProps } from "./SessionPane";
 import { TranscriptPool, TranscriptPoolOutlet } from "./TranscriptPool";
 import { saveTranscriptLayout } from "../../settings/model/appearance";
+import { setComposerDraft } from "../model/draftCache";
 
 let container: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
+  nativeAccess.read.mockReturnValue({ readOnly: false, hint: undefined, occupied: false });
+  nativeAccess.retry.mockClear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   container = document.createElement("div");
   document.body.append(container);
@@ -110,6 +123,39 @@ const draft: Session = {
   workspaceMode: "worktree",
   worktreeBase: "main",
 };
+
+it("replaces an occupied composer's controls, retries access, forks the visible snapshot and restores its draft", async () => {
+  const session = { ...draft, id: "occupied-session", blocks: [
+    { id: "u", role: "user" as const, text: "Saved history" },
+  ] };
+  const onForkSession = vi.fn();
+  setComposerDraft(session.id, "Unsent draft");
+  await render(session, { onForkSession });
+  expect(container.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("Unsent draft");
+
+  nativeAccess.read.mockReturnValue({ readOnly: true, hint: "External owner", occupied: true });
+  await render({ ...session }, { onForkSession });
+  expect(container.querySelector("[data-composer]")).toBeNull();
+  expect(container.querySelector("textarea")).toBeNull();
+  expect(container.textContent).toContain("Open in another app");
+  const buttons = [...container.querySelectorAll<HTMLButtonElement>(".desktop-session-occupied button")];
+  await act(async () => buttons.find(button => button.textContent === "Retry")!.click());
+  expect(nativeAccess.retry).toHaveBeenCalledTimes(1);
+  await act(async () => buttons.find(button => button.textContent === "Fork chat")!.click());
+  expect(onForkSession).toHaveBeenCalledWith(session);
+
+  nativeAccess.read.mockReturnValue({ readOnly: false, hint: undefined, occupied: false });
+  await render({ ...session }, { onForkSession });
+  expect(container.querySelector(".desktop-session-occupied")).toBeNull();
+  expect(container.querySelector<HTMLTextAreaElement>("textarea")?.value).toBe("Unsent draft");
+});
+
+it("keeps the Stop control available during this app's own running turn", async () => {
+  nativeAccess.read.mockReturnValue({ readOnly: true, hint: "External owner", occupied: true });
+  await render({ ...draft, busy: true, blocks: [{ id: "u", role: "user", text: "Running" }] });
+  expect(container.querySelector(".desktop-session-occupied")).toBeNull();
+  expect(container.querySelector('[aria-label="Stop"]')).not.toBeNull();
+});
 
 it("restores a cached conversation at the bottom immediately when switching back", async () => {
   const pool = new TranscriptPool();

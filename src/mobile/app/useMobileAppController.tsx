@@ -26,6 +26,8 @@ import {
   type OutgoingMessage,
 } from "../../features/connections/model/outgoing";
 import { consumePlanCommand } from "../../features/sessions/model/plan";
+import { forkSession } from "../../features/sessions/model/forkSession";
+import { wrapHandoffPrompt } from "../../features/sessions/model/handoff";
 import { saveLastSelectedModel } from "../../features/sessions/model/models";
 import {
   IMPLEMENT_PLAN_PROMPT,
@@ -38,6 +40,7 @@ import { backMobileSheet } from "../mobileSheetBack";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type MouseEvent } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
+import { Keyboard } from "@capacitor/keyboard";
 import {
   DEFAULT_RUNTIME_MODE,
   sessionDisplayTitle,
@@ -274,6 +277,7 @@ export function useMobileAppController() {
     runtimeMode: "supervised",
   });
   const [draft] = useState(createMobileDraft);
+  const [draftFork, setDraftFork] = useState<ReturnType<typeof forkSession>>();
   const setDraft = draft.set;
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [readingAttachments, setReadingAttachments] = useState(false);
@@ -419,6 +423,9 @@ export function useMobileAppController() {
     projectId: string; sessionId?: string; text: string; attachments: Attachment[];
     planMode: boolean; accepted: Attachment[]; parked: typeof parkedDrafts.current;
     queueReturnPosition?: QueueReturnPosition;
+    fork?: ReturnType<typeof forkSession>;
+    configuration?: MobileConfiguration;
+    workspace?: MobileWorkspace;
   }>());
   const nativeLink = snapshot?.session.nativeSession;
   const imageProjectId = snapshot?.projectId ?? project?.id;
@@ -504,11 +511,11 @@ export function useMobileAppController() {
     if (previousConnection.current === connectionKey) return;
     const previous = previousConnection.current;
     previousConnection.current = connectionKey;
-    if (previous && project && (draft.get() || attachments.length || parkedDrafts.current.length)) {
+    if (previous && project && (draft.get() || attachments.length || parkedDrafts.current.length || draftFork)) {
       hostDrafts.current.set(previous, { projectId: project.id, sessionId,
         text: draft.get(), attachments, planMode, accepted: acceptedQueueAttachments.current,
         queueReturnPosition: acceptedQueueReturnPosition.current,
-        parked: parkedDrafts.current });
+        parked: parkedDrafts.current, fork: draftFork, configuration, workspace });
     }
     navigation.current += 1;
     offlineNavigation.current = undefined;
@@ -526,6 +533,7 @@ export function useMobileAppController() {
     setHistoryLoading(false);
     setLoading(false);
     setDraft("");
+    setDraftFork(undefined);
     setAttachments([]);
     acceptedQueueAttachments.current = [];
     acceptedQueueReturnPosition.current = undefined;
@@ -929,6 +937,7 @@ export function useMobileAppController() {
       runtimeMode: defaults.runtimeMode ?? DEFAULT_RUNTIME_MODE,
     });
     setSessionId(undefined);
+    setDraftFork(undefined);
     setWorkspace(CURRENT_WORKSPACE);
     setWorktreeCreation(undefined);
     setChatPageKey(`draft:${item.id}:${turn}`);
@@ -1028,6 +1037,12 @@ export function useMobileAppController() {
     const restoreDraft = savedDraft?.projectId === (restoredProjectId ?? project?.id) && savedDraft?.sessionId === id
       ? savedDraft : undefined;
     setDraft(restoreDraft?.text ?? "");
+    setDraftFork(restoreDraft?.fork);
+    if (restoreDraft?.fork) {
+      draftConfigurationChanged.current = true;
+      if (restoreDraft.configuration) setConfiguration(restoreDraft.configuration);
+      if (restoreDraft.workspace) setWorkspace(restoreDraft.workspace);
+    }
     setAttachments(restoreDraft?.attachments ?? []);
     acceptedQueueAttachments.current = restoreDraft?.accepted ?? [];
     acceptedQueueReturnPosition.current = restoreDraft?.queueReturnPosition;
@@ -1154,6 +1169,7 @@ export function useMobileAppController() {
           }
         }
         setSessionId(receipt.sessionId);
+        setDraftFork(undefined);
         const samePage = navigation.current === startedAt && chatPageIdentity.current === startedPage;
         if (!(samePage && queueView.current.view === "chat" &&
           (queueView.current.sessionId === receipt.sessionId ||
@@ -1385,7 +1401,8 @@ export function useMobileAppController() {
     try {
       const hostId = client.connection?.endpoint;
       const providerAccountId = !sessionId
-        ? defaultProviderAccount(configuration.harness, draftDefaults.current, configuration.model)
+        ? (draftFork?.harness === configuration.harness ? draftFork.providerAccountId : undefined)
+          ?? defaultProviderAccount(configuration.harness, draftDefaults.current, configuration.model)
         : undefined;
       if (providerAccountId) {
         const accounts = await client.providerAccounts();
@@ -1397,7 +1414,9 @@ export function useMobileAppController() {
       const uploaded = await mutateClient(() => client.uploadAttachments(attachments, acceptedQueueAttachments.current));
       if (generation !== navigation.current || hostId !== client.connection?.endpoint) return;
       const prompt: MobileFirstMessage = {
-        text: parsed.text,
+        text: !sessionId && draftFork?.handoffCard
+          ? wrapHandoffPrompt(draftFork.handoffCard.brief, draftFork.handoffCard.from, parsed.text)
+          : parsed.text,
         ...(uploaded.length ? { attachments: uploaded } : {}),
         ...(planMode || parsed.planning ? { intent: "plan" } : {}),
       };
@@ -1715,6 +1734,36 @@ export function useMobileAppController() {
     (item) => item.id === sessionActionsTarget,
   ) ?? (homeActionSession?.id === sessionActionsTarget ? homeActionSession : undefined);
   const nativeReadOnly = nativeWriteBlocked(snapshot, nativeAccess);
+  const nativeOccupied = !!nativeLink && nativeReadOnly && !snapshot?.archived &&
+    !snapshot?.session.orchestrationLeadId && !(snapshot?.status === "running" && snapshot.runId) &&
+    (nativeAccess?.state === "external" || nativeAccess?.reason === "anotherOmniCode" ||
+      nativeAccess?.reason === "ambiguousProcess");
+  useEffect(() => {
+    if (!nativeOccupied) return;
+    setComposerPanel(null);
+    if (Capacitor.isNativePlatform()) void Keyboard.hide().catch(() => undefined);
+  }, [nativeOccupied]);
+  const onRetryNativeAccess = useStableCallback(() => {
+    if (checkNativeAccess && nativeAccessKey) void nativeAccessRead.refetch();
+  });
+  const onForkNativeSession = useStableCallback(() => {
+    const source = snapshotStore.get();
+    if (!nativeOccupied || !source || source.session.id !== sessionId || !project ||
+      !sessionConfirmed || !hostScopeReady || busy || pending || loading || readingAttachments) return;
+    const fork = forkSession(source.session);
+    const hostId = client.connection?.endpoint;
+    if (hostId) hostDrafts.current.set(hostId, {
+      projectId: project.id, sessionId, text: draft.get(), attachments, planMode,
+      accepted: acceptedQueueAttachments.current, queueReturnPosition: acceptedQueueReturnPosition.current,
+      parked: parkedDrafts.current,
+    });
+    void openSession(undefined, project.id);
+    draftConfigurationChanged.current = true;
+    setConfiguration(configurationForSession({ ...source, session: fork }));
+    setWorkspace({ mode: "current", cwd: sessionExecutionCwd(source.session),
+      linkedWorktree: !!source.session.executionCwd && source.session.executionCwd !== project.cwd });
+    setDraftFork(fork);
+  });
   const skillHarness = snapshot?.session.pendingConfiguration?.harness ?? snapshot?.session.harness ?? configuration.harness;
   const skillContextKey = `${client.connection?.endpoint ?? ""}\0${project?.id ?? ""}\0${skillHarness}\0${sessionId ?? ""}\0${snapshot?.session.executionCwd || snapshot?.session.cwd || project?.cwd || ""}`;
   const loadSkillCatalog = useCallback((refresh = false) => {
@@ -2065,6 +2114,11 @@ export function useMobileAppController() {
     loading,
     nativeAccess,
     nativeReadOnly,
+    nativeOccupied,
+    retryingNativeAccess: nativeAccessRead.isFetching,
+    onRetryNativeAccess,
+    onForkNativeSession,
+    draftFork,
     navigate,
     navigationReady,
     notesOpen,

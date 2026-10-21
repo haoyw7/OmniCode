@@ -1,4 +1,5 @@
 import { supportsProjectTerminal } from "../../features/terminal/model/terminalAvailability";
+import { forkSession } from "../../features/sessions/model/forkSession";
 import { useStore } from "zustand";
 import { createWorkspaceUiStore } from "../model/workspaceUiStore";
 import { resolveBotOrigin } from "../../features/bots/model/botOrigin";
@@ -3014,6 +3015,11 @@ export function useWorkspaceController({
     [appendTab],
   );
 
+  const onForkSession = useCallback((source: Session) => {
+    if (source.worktreeRemoved) return;
+    openSessionBeside(source.id, forkSession(source), source.cwd, true);
+  }, [openSessionBeside]);
+
   const onSecondOpinion = useCallback(
     (sourceId: string, target: ModelTarget, turn: Block[]) => {
       const source = sessionsRef.current.find(
@@ -4007,6 +4013,7 @@ export function useWorkspaceController({
     onOpenPlan,
     onBuildPlan,
     onSecondOpinion,
+    onForkSession,
     onHandoff,
     onBtwSubmit,
     onBtwRetry,

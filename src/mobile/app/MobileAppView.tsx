@@ -21,6 +21,7 @@ import {
 } from "../../shared/ui/icons";
 import { MobileSessionTranscript, MobileSessionContextRing, MobileSnapshotActions, MobileSnapshotStatus } from "../MobileSessionViews";
 import { MobileDraftComposer } from "../MobileDraftComposer";
+import { MobileOccupiedSessionNotice } from "../MobileOccupiedSessionNotice";
 import { MobileSheet, SHEET_WIDTH } from "../MobileSheet";
 import { MobileDrawer } from "../MobileDrawer";
 import { isChatFolder } from "../../features/projects/model/chatFolderPath";
@@ -152,6 +153,11 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     loading,
     nativeAccess,
     nativeReadOnly,
+    nativeOccupied,
+    retryingNativeAccess,
+    onRetryNativeAccess,
+    onForkNativeSession,
+    draftFork,
     navigate,
     navigationReady,
     notesOpen,
@@ -744,11 +750,19 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
                   })}
             </MobileEmpty>
           )}
-          {nativeReadOnly ? <p className="mobile-native-readonly" role="status">
+          {nativeReadOnly && !nativeOccupied ? <p className="mobile-native-readonly" role="status">
             {snapshot?.archived ? t("Archived") : snapshot?.session.orchestrationLeadId ? t("This worker is managed by its lead. Use desktop orchestration controls.")
               : nativeSyncNotice(snapshot?.nativeStatus) ?? nativeAccessNotice(nativeAccess)}
           </p> : null}
-          {project && <MobileDraftComposer
+          {nativeOccupied ? <MobileOccupiedSessionNotice
+            retrying={retryingNativeAccess}
+            disabled={busy || !!pending || loading || readingAttachments || !sessionConfirmed || !hostScopeReady}
+            onRetry={onRetryNativeAccess}
+            onFork={onForkNativeSession}
+          /> : project && <MobileDraftComposer
+            context={draftFork ? <p className="mobile-fork-context">
+              {t("History summary attached: {title}", { title: draftFork.title })}
+            </p> : undefined}
             progressSlot={setProgressDock}
             compact={questionOpen || planDecisionOpen}
             onExpand={onComposerExpand}

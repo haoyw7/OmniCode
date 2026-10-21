@@ -1,6 +1,7 @@
 import { queryClient } from "../../../shared/lib/queryClient";
 import { insertQueuedMessage, moveQueuedMessage } from "../../sessions/model/messageQueue";
 import { selectComposerConfiguration } from "../../sessions/model/composerConfiguration";
+import { forkSession } from "../../sessions/model/forkSession";
 import { rememberSharedProviderDefaults, saveProviderAccount, selectProviderAccount } from "../../providers/model/providerAccounts";
 // @vitest-environment happy-dom
 import { act, createElement, useRef, useState, type ReactNode } from "react";
@@ -630,6 +631,26 @@ async function send(text: string) {
   await act(async () => byLabel("Send")!.click());
   await settle();
 }
+
+it("sends a fork's history recap to a fresh Host conversation on its first message", async () => {
+  const source: Session = { ...shell(), providerSessionId: "occupied-provider-session",
+    blocks: [
+      { id: "u", role: "user", text: "Find the bug in the parser" },
+      { id: "a", role: "assistant", text: "The parser drops empty tokens" },
+    ],
+  };
+  const fork = forkSession(source);
+  await render(fork);
+  expect(container.textContent).toContain("Find the bug in the parser");
+  await send("Continue fixing it");
+  expect(commands.filter(command => command.type === "create")).toHaveLength(1);
+  const first = commands.find(command => command.type === "send");
+  expect(first).toMatchObject({ type: "send", text: expect.stringContaining("The parser drops empty tokens") });
+  expect(first).toMatchObject({ text: expect.stringContaining("Continue fixing it") });
+  await send("One more change");
+  expect(commands.filter(command => command.type === "send").at(-1))
+    .toMatchObject({ text: "One more change" });
+});
 
 it("delivers a projectless chat's first message after its Host pane mounts", async () => {
   const cwd = "/home/me/Documents/omnicode/2026-10-19/chat-120000-abcdef";

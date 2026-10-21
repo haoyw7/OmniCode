@@ -511,6 +511,7 @@ vi.mock("../features/sessions/ui/SessionPane", async () => {
       onModelChange,
       onModelSettingsChange,
       onRuntimeModeChange,
+      onForkSession,
       onCwdChange,
       onSubmit,
     }: {
@@ -524,10 +525,11 @@ vi.mock("../features/sessions/ui/SessionPane", async () => {
       onModelChange: SessionPaneProps["onModelChange"];
       onModelSettingsChange: SessionPaneProps["onModelSettingsChange"];
       onRuntimeModeChange: SessionPaneProps["onRuntimeModeChange"];
+      onForkSession: SessionPaneProps["onForkSession"];
       onCwdChange: SessionPaneProps["onCwdChange"];
       onSubmit: SessionPaneProps["onSubmit"];
     }) => {
-      mocks.paneRendered({ session, onModelChange, onModelSettingsChange, onRuntimeModeChange, onCwdChange, onSubmit, onOpenBot });
+      mocks.paneRendered({ session, onModelChange, onModelSettingsChange, onRuntimeModeChange, onForkSession, onCwdChange, onSubmit, onOpenBot });
       return el(
         "div",
         {
@@ -1275,6 +1277,22 @@ describe("local composer agent selection", () => {
   });
   const pane = () => mocks.paneRendered.mock.calls.map(([props]) => props as SessionPaneProps)
     .filter(props => props.session.id === "first").at(-1)!;
+
+  it("opens a fork from the displayed snapshot without changing the occupied source", async () => {
+    await mount(false, "bottom", { providerSessionId: "occupied-thread", title: "Existing work",
+      blocks: [{ id: "old-user", role: "user", text: "Earlier work" }] });
+    const before = pane().session;
+    const displayed = { ...before, blocks: [
+      ...before.blocks, { id: "new-reply", role: "assistant" as const, text: "Latest Host history" },
+    ] };
+    await act(async () => pane().onForkSession!(displayed));
+    const fork = mocks.paneRendered.mock.calls.map(([props]) => props as SessionPaneProps)
+      .find(props => props.session.id !== "first" && props.session.handoffCard)?.session;
+    expect(fork?.handoffCard?.brief).toContain("Latest Host history");
+    expect(fork?.providerSessionId).toBeUndefined();
+    expect(fork?.nativeSession).toBeUndefined();
+    expect(pane().session).toEqual(before);
+  });
 
   it("keeps the existing agent until a non-empty message is submitted", async () => {
     await mount(false, "bottom", { providerSessionId: "original-thread", title: "Existing work",

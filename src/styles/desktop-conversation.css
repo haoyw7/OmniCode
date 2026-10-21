@@ -423,6 +423,33 @@ html[data-skin][data-desktop-mode] .desktop-composer-dock {
   padding-bottom: 8px;
 }
 
+.desktop-session-occupied {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px 24px;
+  border: var(--desktop-border) solid var(--color-composer-ring);
+  border-radius: var(--desktop-radius-composer);
+  background: color-mix(in srgb, var(--color-composer) calc(var(--panel-opacity) * 100%), transparent);
+  color: var(--color-content);
+  box-shadow: var(--desktop-shadow-composer);
+}
+
+.desktop-session-occupied > svg { flex-shrink: 0; }
+.desktop-session-occupied-copy { flex: 1 1 240px; min-width: 0; }
+.desktop-session-occupied-copy strong { font-weight: 600; }
+.desktop-session-occupied-copy p { margin: 4px 0 0; color: var(--color-foreground-subtle); }
+.desktop-session-occupied-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-left: auto;
+  padding-left: 16px;
+  border-left: var(--desktop-border) solid var(--color-border);
+}
+
 html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] {
   padding: 0;
 }

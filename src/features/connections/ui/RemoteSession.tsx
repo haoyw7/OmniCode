@@ -5,6 +5,7 @@ import { remoteSessionKeys, remoteSessionCatalogQuery, remoteSnapshotQuery, remo
 import { RemoteSnapshotReporter } from "../model/remoteSnapshotReporter";
 import { executionWarningText } from "../../../integrations/harness/core/executionWarnings";
 import { sessionComposerConfiguration } from "../../sessions/model/composerConfiguration";
+import { wrapHandoffPrompt } from "../../sessions/model/handoff";
 import { requestedProviderAccountId, supportsProviderAccounts, workBuddyAccountIdForModel } from "../../providers/model/providerAccounts";
 import { MessageQueue } from "../../sessions/ui/MessageQueue";
 import { captureQueueReturnPosition, lastQueueUserMessageId } from "../../sessions/model/messageQueue";
@@ -1217,6 +1218,8 @@ function ConnectedRemoteSession({
     planBlockId?: string,
     initialTurn?: { id: string; startedAt: number },
   ): boolean => {
+    const handoff = !hostSession ? shell.handoffCard : undefined;
+    if (handoff && !asDraft) text = wrapHandoffPrompt(handoff.brief, handoff.from, text);
     if (
       !online ||
       sending ||
@@ -1432,6 +1435,7 @@ function ConnectedRemoteSession({
       blocks: [],
     }),
     id: shell.id,
+    handoffCard: hostSession ? viewSession?.handoffCard : shell.handoffCard,
     usageLimit:
       usageLimitKey && usageLimitKey !== dismissedUsageLimit
         ? viewSession?.usageLimit

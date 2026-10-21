@@ -1,6 +1,42 @@
 .mobile-composer-card::before {
   display: none;
 }
+
+.mobile-session-occupied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--m-control-border);
+  border-radius: var(--radius-m-composer);
+  background: var(--m-control-field);
+  color: var(--color-m-ink);
+  box-shadow: var(--m-navigation-shadow);
+}
+.mobile-session-occupied > svg { flex-shrink: 0; }
+.mobile-session-occupied-copy { flex: 1 1 180px; min-width: 0; }
+.mobile-session-occupied-copy strong { font-weight: 600; }
+.mobile-session-occupied-copy p {
+  margin: 4px 0 0;
+  font-size: var(--mobile-font-sm);
+  color: var(--color-m-ink-secondary);
+}
+.mobile-session-occupied-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 1 1 100%;
+  border-top: 1px solid var(--m-control-border);
+  padding-top: 8px;
+}
+.mobile-fork-context {
+  margin: 0 0 8px;
+  padding: 8px 14px;
+  font-size: var(--mobile-font-sm);
+  color: var(--color-m-ink-secondary);
+}
 /* The rear card spans the full composer; both glass cards share a bottom edge. */
 .mobile-composer-context {
   background: var(--m-control-field);

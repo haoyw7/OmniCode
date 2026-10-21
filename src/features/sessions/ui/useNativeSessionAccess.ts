@@ -1,5 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import {
+  nativeSessionOccupied,
   nativeSessionAccessHint,
   nativeSessionAccessSnapshot,
   nativeSessionReadOnly,
@@ -22,6 +23,7 @@ export function useNativeSessionAccess(session: Session) {
   useSyncExternalStore(subscribe, snapshot, snapshot);
   return {
     readOnly: nativeSessionReadOnly(session),
+    occupied: nativeSessionOccupied(session),
     hint: nativeSessionAccessHint(session),
   };
 }

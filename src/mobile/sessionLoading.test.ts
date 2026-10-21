@@ -72,12 +72,15 @@ vi.mock("./MobileTranscript", () => ({
     createElement("button", { "data-transcript": true, disabled }, snapshot.session.blocks[0]?.text),
 }));
 vi.mock("./MobileComposer", () => ({
-  MobileComposer: ({ disabled, catalogLoading, configuration, value, onChange, onSend, canSend, canStop, onStop, onFiles, readingAttachments }: {
+  MobileComposer: ({ disabled, catalogLoading, configuration, value, onChange, onSend, canSend, canStop, onStop, onFiles, readingAttachments, context, attachments }: {
     catalogLoading?: boolean;
     disabled: boolean; configuration: { model: string }; value: string; onChange: (value: string) => void;
     onSend: () => void; canSend: boolean; canStop: boolean; onStop: () => void;
     onFiles: (files: File[]) => void; readingAttachments?: boolean;
+    context?: import("react").ReactNode; attachments: Attachment[];
   }) => createElement("div", {},
+    context,
+    createElement("span", { "data-attachment-count": attachments.length }),
     createElement("textarea", { disabled, "data-model": configuration.model, "data-catalog-loading": catalogLoading, value,
       onChange: (event: { target: { value: string } }) => onChange(event.target.value) }),
     createElement("button", { "data-send": true, disabled: !canSend, onClick: onSend }, "Send"),
@@ -158,6 +161,9 @@ const activePage = () => node.querySelector<HTMLElement>('[data-page-active="tru
 const mount = () => act(async () => root.render(createElement(MobileApp)));
 const transcript = () => activePage().querySelector<HTMLButtonElement>("[data-transcript]");
 const composer = () => activePage().querySelector<HTMLTextAreaElement>("textarea")!;
+const occupiedNotice = () => activePage().querySelector(".mobile-session-occupied");
+const occupiedAction = (label: string) => [...occupiedNotice()!.querySelectorAll("button")]
+  .find(button => button.textContent === label)!;
 const conversationLoading = () => activePage().querySelector(".mobile-chat > .mobile-loading");
 async function open(id: string) {
   const homeRow = activePage().querySelector<HTMLButtonElement>(`.mobile-home-session[data-session-id="${id}"]`);
@@ -769,8 +775,10 @@ describe("mobile imported native continuation", () => {
     expect(composer().disabled).toBe(true);
     expect(node.querySelector(".mobile-native-readonly")?.textContent).toContain("Checking whether");
     await act(async () => check.resolve({ ...access("external"), holder: { pid: 42, command: "pi", provider: "pi" } }));
-    expect(composer().disabled).toBe(true);
-    expect(node.querySelector(".mobile-native-readonly")?.textContent).toContain("Pi (pid 42)");
+    expect(composer()).toBeNull();
+    expect(occupiedNotice()?.textContent).toContain("Open in another app");
+    expect(occupiedAction("Retry").disabled).toBe(false);
+    expect(occupiedAction("Fork chat").disabled).toBe(false);
     await advanceMotionTimers(5000);
     expect(composer().disabled).toBe(false);
   });
@@ -778,8 +786,6 @@ describe("mobile imported native continuation", () => {
   it.each([
     [null, "Reconnect to the Host"],
     [{ ...access("unknown"), reason: "unsupportedPlatform" }, "ownership cannot be verified on this platform"],
-    [{ ...access("unknown"), reason: "anotherOmniCode" }, "OmniCode desktop is using"],
-    [{ ...access("unknown"), reason: "ambiguousProcess", holder: { pid: 43, provider: "pi", command: "pi" } }, "may be using this conversation"],
     [new Error("Timeout"), "Reconnect to the Host"],
     [access("idle", "/native/different.jsonl"), "Reconnect to the Host"],
   ])("blocks unavailable access with the correct recovery hint (%s)", async (result, hint) => {
@@ -799,8 +805,8 @@ describe("mobile imported native continuation", () => {
     host.nativeAccess.mockResolvedValue(access("external"));
     await mount();
     await open("one");
-    expect(composer().disabled).toBe(true);
-    expect(node.querySelector(".mobile-native-readonly")).not.toBeNull();
+    expect(composer()).toBeNull();
+    expect(occupiedNotice()).not.toBeNull();
     host.session.mockResolvedValue({ ...value, runId: "host-run", supportsQueue: true });
     await advanceMotionTimers(1000);
     expect(composer().disabled).toBe(false);
@@ -822,7 +828,8 @@ describe("mobile imported native continuation", () => {
     expect(host.nativeAccess).toHaveBeenCalledTimes(1);
     await open("two");
     await act(async () => old.resolve(access()));
-    expect(composer().disabled).toBe(true);
+    expect(composer()).toBeNull();
+    expect(occupiedNotice()).not.toBeNull();
     expect(transcript()?.textContent).toBe("two revision 1");
   });
 
@@ -843,7 +850,7 @@ describe("mobile imported native continuation", () => {
     expect(composer().disabled).toBe(true);
     expect(host.nativeAccess).toHaveBeenCalledTimes(2);
     await act(async () => check.resolve(access("external", "/native/opencode.db")));
-    expect(composer().disabled).toBe(true);
+    expect(composer()).toBeNull();
   });
 
   it("clears idle access in the background and checks again immediately on resume", async () => {
@@ -862,6 +869,99 @@ describe("mobile imported native continuation", () => {
     expect(composer().disabled).toBe(true);
     expect(host.nativeAccess).toHaveBeenCalledTimes(2);
     await act(async () => check.resolve(access("external")));
-    expect(composer().disabled).toBe(true);
+    expect(composer()).toBeNull();
+  });
+
+  it.each(["anotherOmniCode", "ambiguousProcess"])("shows the occupied notice for %s", async reason => {
+    host.session.mockResolvedValue(nativeSnapshot());
+    host.nativeAccess.mockResolvedValue({ ...access("unknown"), reason });
+    await mount();
+    await open("one");
+    expect(composer()).toBeNull();
+    expect(occupiedNotice()?.textContent).toContain("Close the session there before continuing here.");
+    expect(host.dispatch).not.toHaveBeenCalled();
+  });
+
+  it("retries immediately, retains a locked notice while checking, and restores text and attachments", async () => {
+    host.session.mockResolvedValue(nativeSnapshot());
+    vi.spyOn(attachmentFiles, "readMobileAttachments").mockResolvedValue([
+      { id: "image", kind: "image", name: "photo.png", mime: "image/png", size: 5, data: "image" } as Attachment,
+    ]);
+    await mount();
+    await open("one");
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(composer(), "Keep my draft");
+      composer().dispatchEvent(new Event("input", { bubbles: true }));
+      activePage().querySelector<HTMLButtonElement>("[data-attach]")!.click();
+    });
+    host.nativeAccess.mockResolvedValue(access("external"));
+    await advanceMotionTimers(5000);
+    expect(composer()).toBeNull();
+    const check = deferred<NativeSessionAccess>();
+    host.nativeAccess.mockReturnValue(check.promise);
+    const calls = host.nativeAccess.mock.calls.length;
+    await act(async () => occupiedAction("Retry").click());
+    expect(host.nativeAccess).toHaveBeenCalledTimes(calls + 1);
+    expect(occupiedAction("Checking session status…").disabled).toBe(true);
+    expect(composer()).toBeNull();
+    await act(async () => check.resolve(access()));
+    expect(occupiedNotice()).toBeNull();
+    expect(composer().value).toBe("Keep my draft");
+    expect(activePage().querySelector("[data-attachment-count]")?.getAttribute("data-attachment-count")).toBe("1");
+  });
+
+  it("forks into a fresh Host conversation, sends the recap once and leaves the source untouched", async () => {
+    const original = nativeSnapshot("codex");
+    original.session.executionCwd = "/project/worktree";
+    original.session.blocks.push({ id: "user", role: "user", text: "Fix the parser" });
+    host.session.mockImplementation(async id => id === "forked" ? snapshot("forked") : original);
+    host.models.mockResolvedValue({ models: { codex: [{ id: original.session.model, harness: "codex", name: "Existing" }] }, errors: {} });
+    host.nativeAccess.mockResolvedValue(access("external"));
+    await mount();
+    await open("one");
+    const before = structuredClone(original);
+    await act(async () => occupiedAction("Fork chat").click());
+    expect(occupiedNotice()).toBeNull();
+    expect(composer().disabled).toBe(false);
+    expect(activePage().textContent).toContain("History summary attached:");
+    expect(host.dispatch).not.toHaveBeenCalled();
+    host.dispatch.mockResolvedValue({ commandId: "fork", sessionId: "forked", revision: 1 });
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(composer(), "Continue here");
+      composer().dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => activePage().querySelector<HTMLButtonElement>("[data-send]")!.click());
+    expect(host.dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "create", projectId: "project",
+      harness: "codex", model: original.session.model, executionCwd: "/project/worktree" }),
+      expect.objectContaining({ text: expect.stringContaining("Fix the parser") }));
+    expect(host.dispatch.mock.calls[0][0]).not.toHaveProperty("sessionId");
+    expect(host.dispatch.mock.calls[0][1].text).toContain("Continue here");
+    expect(original).toEqual(before);
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(composer(), "Next message");
+      composer().dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => activePage().querySelector<HTMLButtonElement>("[data-send]")!.click());
+    expect(host.dispatch).toHaveBeenLastCalledWith(expect.objectContaining({ type: "send", sessionId: "forked", text: "Next message" }), undefined);
+  });
+
+  it("keeps the source draft when opening a fork and returning to the occupied conversation", async () => {
+    host.session.mockImplementation(async id => nativeSnapshot("codex", id));
+    await mount();
+    await open("one");
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(composer(), "Original draft");
+      composer().dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    host.nativeAccess.mockResolvedValue(access("external"));
+    await advanceMotionTimers(5000);
+    await act(async () => occupiedAction("Fork chat").click());
+    expect(composer().value).toBe("");
+    await open("one");
+    expect(composer()).toBeNull();
+    host.nativeAccess.mockResolvedValue(access());
+    await act(async () => occupiedAction("Retry").click());
+    expect(composer().value).toBe("Original draft");
+    expect(activePage().querySelector(".mobile-fork-context")).toBeNull();
   });
 });

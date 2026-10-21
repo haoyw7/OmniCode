@@ -1,4 +1,9 @@
 {
+  "History summary attached: {title}": "已附加历史摘要：{title}",
+  "Open in another app": "已在另一个应用中打开",
+  "Close the session there before continuing here.": "请先在那边关闭会话，才能在这里继续。",
+  "Fork chat": "创建聊天分叉",
+  "{title} (fork)": "{title}（分叉）",
   "This field is required": "此项为必填项",
   "Enter a valid email address": "请输入有效的邮箱地址",
   "Configuration must be a JSON object": "配置必须是 JSON 对象",

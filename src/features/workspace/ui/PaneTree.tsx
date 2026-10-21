@@ -201,6 +201,7 @@ type Shared = {
     turn: Block[],
   ) => void;
   onHandoff?: (sessionId: string, target: ModelTarget, turn: Block[]) => void;
+  onForkSession?: (source: Session) => void;
   onBtwSubmit?: (
     sessionId: string,
     turn: Block[],
@@ -317,6 +318,7 @@ function PaneTreeComponent({
   onBtwStop,
   onBtwModelChange,
   onHandoff,
+  onForkSession,
   onMovePane,
   onMovePaneToDock,
   onTerminalMetaChange,
@@ -1041,6 +1043,7 @@ function PaneTreeComponent({
                     onBuildPlan={onBuildPlan}
                     onSecondOpinion={onSecondOpinion}
                     onHandoff={onHandoff}
+                    onForkSession={onForkSession}
                     onBtwSubmit={onBtwSubmit}
                     onBtwRetry={onBtwRetry}
                     onBtwDelete={onBtwDelete}
