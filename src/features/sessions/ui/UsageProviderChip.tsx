@@ -1,3 +1,5 @@
+import { createColumnHelper } from "@tanstack/react-table";
+import { DataTable, dataTableFeatures } from "../../../shared/ui/primitives/DataTable";
 import { Button } from "../../../shared/ui/forms/Button";
 import { cn } from "../../../shared/lib/cn";
 import { Input } from "../../../shared/ui/forms/Input";
@@ -10,7 +12,7 @@ import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { Omi } from "../../../shared/ui/branding/Omi";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   clampUsedPercent,
   formatResetDuration,
@@ -133,7 +135,8 @@ export function UsageProviderChip({
       !limits.weekly &&
       !limits.monthly);
   const disconnected = limits.status === "unavailable" && needsProviderLogin(limits);
-  const windows = usageWindows(limits);
+  const windows = useMemo(() => usageWindows(limits), [limits]);
+  const summaryId = useId();
   const loginView = Boolean(
     onReconnect &&
     windows.length === 0 &&
@@ -390,49 +393,66 @@ export function UsageProviderChip({
   const harnessIcon = <HarnessIcon harness={iconHarness} className="size-3 shrink-0" />;
   return (
     <>
-      <Button variant="ghost" size="content"
-        ref={trigger}
-        type="button"
-        data-ui="session-usage-trigger"
-        className="flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
-        aria-label={uiT("{value0} usage details", {
-          value0: String(providerLabel),
-        })}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        title={
-          tooltip ||
-          limits.error ||
-          (disconnected
-            ? uiT("Not connected")
-            : loading
-              ? uiT("Loading usage…")
-              : uiT("Usage details"))
-        }
-        onClick={() => setOpen((value) => !value)}
+      <div
+        data-ui="session-usage-chip"
+        className="relative flex min-h-7 min-w-0 flex-1 items-center rounded-lg"
       >
-        {loading || disconnected || windows.length === 0 ? harnessIcon : null}
-        {loading ? (
-          <span className="animate-pulse text-content/35">···</span>
-        ) : disconnected ? (
-          <span className="text-content/35">{uiT("not connected")}</span>
-        ) : windows.length === 0 ? (
-          <span className="min-w-0 truncate text-content/35">
-            {limits.status === "unavailable" ? uiT("Usage unavailable") : emptyUsageLabel(limits)}
-          </span>
-        ) : (
-          <span className="grid min-w-0 flex-1 grid-cols-[max-content_max-content_minmax(0,1fr)_max-content] items-center gap-x-1.5 gap-y-1 py-1 text-left tabular-nums">
+        <Button
+          variant="ghost"
+          size="content"
+          ref={trigger}
+          type="button"
+          data-ui="session-usage-trigger"
+          className="absolute inset-0 size-full justify-start gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
+          aria-label={uiT("{value0} usage details", {
+            value0: String(providerLabel),
+          })}
+          aria-describedby={
+            !loading && !disconnected && windows.length > 0 ? summaryId : undefined
+          }
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          title={
+            tooltip ||
+            limits.error ||
+            (disconnected
+              ? uiT("Not connected")
+              : loading
+                ? uiT("Loading usage…")
+                : uiT("Usage details"))
+          }
+          onClick={() => setOpen((value) => !value)}
+        >
+          {loading || disconnected || windows.length === 0 ? harnessIcon : null}
+          {loading ? (
+            <span className="animate-pulse text-content/35">···</span>
+          ) : disconnected ? (
+            <span className="text-content/35">{uiT("not connected")}</span>
+          ) : windows.length === 0 ? (
+            <span className="min-w-0 truncate text-content/35">
+              {limits.status === "unavailable"
+                ? uiT("Usage unavailable")
+                : emptyUsageLabel(limits)}
+            </span>
+          ) : (
+            <span className="sr-only">{uiT("Usage details")}</span>
+          )}
+        </Button>
+
+        {!loading && !disconnected && windows.length > 0 ? (
+          <div
+            id={summaryId}
+            className="pointer-events-none w-full min-w-0 px-2 py-1"
+          >
             {accounts.length > 1 && activeAccount ? (
-              <span className="col-span-3 col-start-2 min-w-0 truncate text-content/45">
+              <div className="truncate pl-5 text-content/45">
                 {activeAccount.label}
-              </span>
+              </div>
             ) : null}
-            {windows.map((entry, index) => (
-              <UsageWindowSummary key={entry.key} entry={entry} now={now} icon={index === 0 ? harnessIcon : null} />
-            ))}
-          </span>
-        )}
-      </Button>
+            <UsageSummaryTable windows={windows} now={now} icon={harnessIcon} />
+          </div>
+        ) : null}
+      </div>
       <Popover
         open={open}
         onExitComplete={resetPopup}
@@ -771,33 +791,107 @@ function usageWindows(limits: ProviderRateLimits): UsageWindowEntry[] {
   ].filter((entry): entry is UsageWindowEntry => entry != null);
 }
 
-function UsageWindowSummary({ entry, now, icon }: { entry: UsageWindowEntry; now: number; icon: ReactNode }) {
+const usageColumn = createColumnHelper<
+  typeof dataTableFeatures,
+  UsageWindowEntry
+>();
+
+function UsageSummaryTable({
+  windows,
+  now,
+  icon,
+}: {
+  windows: UsageWindowEntry[];
+  now: number;
+  icon: ReactNode;
+}) {
   const { t: uiT } = useTranslation();
-  const { window } = entry;
-  const pct = window.resetsAt != null && window.resetsAt <= now
-    ? 0
-    : clampUsedPercent(window.usedPercent);
-  const remaining = 100 - pct;
-  const duration = formatWindowLabel(window.windowMinutes);
-  const label = duration === "wk" ? uiT("Week") : duration === "mo" ? uiT("Month") : duration;
+  const columns = useMemo(
+    () => [
+      usageColumn.display({
+        id: "provider",
+        header: uiT("Provider"),
+        meta: { className: "w-5 pr-1.5" },
+      }),
+      usageColumn.display({
+        id: "period",
+        header: uiT("Usage period"),
+        meta: { className: "w-1 whitespace-nowrap pr-1.5 text-content/45" },
+      }),
+      usageColumn.display({ id: "progress", header: uiT("Usage") }),
+      usageColumn.display({
+        id: "remaining",
+        header: uiT("remaining"),
+        meta: { className: "w-1 whitespace-nowrap pl-1.5 text-content/60" },
+      }),
+    ],
+    [uiT],
+  );
   return (
-    <span data-ui="session-usage-window" data-window={entry.key} className="contents">
-      <span aria-hidden>{icon}</span>
-      <span className="text-content/45">{label}</span>
-      <span
-        role="progressbar"
-        aria-label={uiT("{value0} limit {value1}", { value0: label, value1: uiT("remaining") })}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(remaining)}
-        className="h-1 min-w-0 overflow-hidden rounded-full bg-content/10"
-      >
-        <span className={cn("block h-full rounded-full", barClass(pct))} style={{ width: `${remaining}%` }} />
-      </span>
-      <span className="text-content/60">
-        {uiT("{value0} left", { value0: formatUsagePercent(remaining) })}
-      </span>
-    </span>
+    <DataTable
+      label={uiT("Usage details")}
+      data={windows}
+      columns={columns}
+      getRowId={(entry) => entry.key}
+      virtualize={false}
+      hideHeader
+      containerClassName="overflow-visible"
+      className="text-left text-inherit tabular-nums"
+      rowClassName="border-0 hover:bg-transparent"
+      cellClassName="p-0 py-0.5 leading-none"
+      rowProps={({ original: entry }) => ({
+        "data-ui": "session-usage-window",
+        "data-window": entry.key,
+      })}
+      renderCell={(cell) => {
+        const { window } = cell.row.original;
+        const pct =
+          window.resetsAt != null && window.resetsAt <= now
+            ? 0
+            : clampUsedPercent(window.usedPercent);
+        const remaining = 100 - pct;
+        const duration = formatWindowLabel(window.windowMinutes);
+        const label =
+          duration === "wk"
+            ? uiT("Week")
+            : duration === "mo"
+              ? uiT("Month")
+              : duration;
+        switch (cell.column.id) {
+          case "provider":
+            return (
+              <span aria-hidden>{cell.row.index === 0 ? icon : null}</span>
+            );
+          case "period":
+            return label;
+          case "progress":
+            return (
+              <span
+                role="progressbar"
+                aria-label={uiT("{value0} limit {value1}", {
+                  value0: label,
+                  value1: uiT("remaining"),
+                })}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(remaining)}
+                className="block h-1 min-w-4 overflow-hidden rounded-full bg-content/10"
+              >
+                <span
+                  className={cn("block h-full rounded-full", barClass(pct))}
+                  style={{ width: `${remaining}%` }}
+                />
+              </span>
+            );
+          case "remaining":
+            return uiT("{value0} left", {
+              value0: formatUsagePercent(remaining),
+            });
+          default:
+            return null;
+        }
+      }}
+    />
   );
 }
 

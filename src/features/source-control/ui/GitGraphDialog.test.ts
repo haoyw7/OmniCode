@@ -253,11 +253,14 @@ function history(count: number, prefix = "page") {
 }
 
 async function scrollHistory(remaining = 0, times = 1) {
-  const scroller = document.querySelector<HTMLElement>("[aria-busy]")!;
+  const scroller = document.querySelector<HTMLElement>('[data-ui="table-container"]')!;
+  const height = Number(document.querySelector("table")!.getAttribute("aria-rowcount")) * 44;
   Object.defineProperties(scroller, {
+    offsetHeight: { configurable: true, value: 500 },
+    offsetWidth: { configurable: true, value: 900 },
     clientHeight: { configurable: true, value: 500 },
-    scrollHeight: { configurable: true, value: 5000 },
-    scrollTop: { configurable: true, value: 4500 - remaining },
+    scrollHeight: { configurable: true, value: height },
+    scrollTop: { configurable: true, writable: true, value: Math.max(0, height - 500 - remaining) },
   });
   await act(async () => {
     for (let index = 0; index < times; index++) {
@@ -275,27 +278,23 @@ it("loads 50 commits at a time, coalesces scroll events, and continues past 500 
     }),
   );
   await open();
-  expect(document.querySelectorAll("tbody tr")).toHaveLength(50);
+  expect(Number(document.querySelector("table")?.getAttribute("aria-rowcount")) - 1).toBe(50);
   expect(gitHistory).toHaveBeenCalledExactlyOnceWith("/repo", 50, true, 0);
   await scrollHistory(1000);
   expect(gitHistory).toHaveBeenCalledTimes(1);
   await scrollHistory(100, 3);
-  expect(document.querySelectorAll("tbody tr")).toHaveLength(100);
+  expect(Number(document.querySelector("table")?.getAttribute("aria-rowcount")) - 1).toBe(100);
   expect(gitHistory).toHaveBeenCalledTimes(2);
   for (let offset = 100; offset <= 500; offset += 50) {
     await scrollHistory();
     expect(gitHistory).toHaveBeenLastCalledWith("/repo", 50, true, offset);
-    expect(document.querySelectorAll("tbody tr")).toHaveLength(
+    expect(Number(document.querySelector("table")?.getAttribute("aria-rowcount")) - 1).toBe(
       Math.min(offset + 50, 521),
     );
   }
-  const subjects = Array.from(document.querySelectorAll("tbody button")).map(
-    (button) => button.textContent,
-  );
-  expect(subjects).toEqual(commits.map((commit) => commit.subject));
-  expect(document.querySelector("tbody")?.textContent).toContain(
-    "page commit 520",
-  );
+  const renderedRows = document.querySelectorAll("tbody [data-row-id]");
+  expect(renderedRows.length).toBeLessThan(40);
+  expect(new Set(Array.from(renderedRows, row => row.getAttribute("data-row-id"))).size).toBe(renderedRows.length);
   await scrollHistory();
   expect(gitHistory).toHaveBeenCalledTimes(11);
   expect(document.querySelector('[aria-busy="true"]')).toBeNull();
@@ -318,7 +317,7 @@ it("retains rows after a page failure and retries the same offset without duplic
   expect(document.querySelector('[role="alert"]')?.textContent).toContain(
     "offline",
   );
-  expect(document.querySelectorAll("tbody tr")).toHaveLength(50);
+  expect(Number(document.querySelector("table")?.getAttribute("aria-rowcount")) - 1).toBe(50);
   await scrollHistory();
   expect(gitHistory).toHaveBeenCalledTimes(2);
   await act(async () => {
@@ -327,7 +326,7 @@ it("retains rows after a page failure and retries the same offset without duplic
       .click();
   });
   expect(gitHistory).toHaveBeenLastCalledWith("/repo", 50, true, 50);
-  expect(document.querySelectorAll("tbody tr")).toHaveLength(60);
+  expect(Number(document.querySelector("table")?.getAttribute("aria-rowcount")) - 1).toBe(60);
   expect(document.querySelector('[role="alert"]')).toBeNull();
 });
 
@@ -356,7 +355,7 @@ it("refreshes the loaded depth and ignores a page that completes after the refre
   await act(async () =>
     resolvePage({ head: commits[0].sha, commits: commits.slice(100) }),
   );
-  expect(document.querySelectorAll("tbody tr")).toHaveLength(100);
+  expect(Number(document.querySelector("table")?.getAttribute("aria-rowcount")) - 1).toBe(100);
   expect(document.querySelector("tbody")?.textContent).not.toContain(
     "page commit 100",
   );
@@ -373,7 +372,7 @@ it("restarts pagination when HEAD changes and stops if an older host repeats a p
   await open();
   await scrollHistory();
   expect(gitHistory).toHaveBeenLastCalledWith("/repo", 50, true, 0);
-  expect(document.querySelectorAll("tbody tr")).toHaveLength(50);
+  expect(Number(document.querySelector("table")?.getAttribute("aria-rowcount")) - 1).toBe(50);
   expect(document.querySelector("tbody")?.textContent).toContain(
     "new commit 0",
   );
@@ -381,8 +380,18 @@ it("restarts pagination when HEAD changes and stops if an older host repeats a p
     "initial commit",
   );
   await scrollHistory();
-  expect(document.querySelectorAll("tbody tr")).toHaveLength(50);
+  expect(Number(document.querySelector("table")?.getAttribute("aria-rowcount")) - 1).toBe(50);
   const calls = vi.mocked(gitHistory).mock.calls.length;
   await scrollHistory();
   expect(gitHistory).toHaveBeenCalledTimes(calls);
+});
+
+it.each(["Enter", " "])("opens a focused commit row with %s", async key => {
+  await open();
+  const row = document.querySelector<HTMLTableRowElement>("tbody [data-row-id]")!;
+  expect(row.tabIndex).toBe(0);
+  expect(row.getAttribute("aria-label")).toContain(commit.shortSha);
+  act(() => row.focus());
+  await act(async () => row.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true })));
+  expect(onOpenCommit).toHaveBeenCalledExactlyOnceWith(commit, true);
 });

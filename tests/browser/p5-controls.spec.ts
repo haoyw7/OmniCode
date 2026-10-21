@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.setTimeout(60_000);
 
 for (const theme of ["dark", "light"]) {
-  test(`automation controls retain card, grid and menu geometry (${theme})`, async ({ page }) => {
+  test(`automation controls retain card, table and menu geometry (${theme})`, async ({ page }) => {
     await page.goto(`/tests/browser/p5-controls.html?theme=${theme}`);
     const cards = page.locator(".automation-template-grid > button");
     await expect(cards.first()).toBeVisible();
@@ -16,8 +16,8 @@ for (const theme of ["dark", "light"]) {
     await expect(name).toHaveCSS("font-size", "20px");
     await expect(name).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await page.getByRole("tab", { name: "Run history", exact: true }).click();
-    const row = page.getByRole("button", { name: /^Test run / });
-    await expect(row).toHaveCSS("display", "grid");
+    const row = page.getByRole("table", { name: "Run history", exact: true }).locator('[data-row-id="sample-run"]');
+    await expect(row).toHaveCSS("display", "table-row");
     const columns = await row.evaluate(node => Array.from(node.children, child => child.getBoundingClientRect().x));
     expect(columns.every((x, i) => i === 0 || x > columns[i - 1])).toBe(true);
     await page.getByRole("tab", { name: "Settings", exact: true }).click();

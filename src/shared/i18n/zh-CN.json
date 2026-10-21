@@ -1,5 +1,9 @@
 {
   "History summary attached: {title}": "已附加历史摘要：{title}",
+  "Sort by {column}": "按{column}排序",
+  "Open commit {sha}: {subject}": "打开提交 {sha}：{subject}",
+  "Actions": "操作",
+  "Usage period": "用量周期",
   "Open in another app": "已在另一个应用中打开",
   "Close the session there before continuing here.": "请先在那边关闭会话，才能在这里继续。",
   "Fork chat": "创建聊天分叉",

@@ -1,3 +1,5 @@
+import { createColumnHelper } from "@tanstack/react-table";
+import { DataTable, dataTableFeatures } from "../../../shared/ui/primitives/DataTable";
 import { Input } from "../../../shared/ui/forms/Input";
 import { Button } from "../../../shared/ui/forms/Button";
 import { cn } from "../../../shared/lib/cn";
@@ -270,6 +272,12 @@ function AutomationsContent({
   const error = navigationError ?? errorMessage(saveMutation.error) ?? errorMessage(runMutation.error)
     ?? errorMessage(deleteMutation.error) ?? errorMessage(toggleMutation.error) ?? errorMessage(listQuery.error) ?? null;
 
+  const listColumns = useMemo(
+    () => [createColumnHelper<typeof dataTableFeatures, Automation>().display({
+      id: "automation", header: uiT("Automations"),
+    })],
+    [uiT],
+  );
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
     return automations.filter((automation) => {
@@ -370,9 +378,20 @@ function AutomationsContent({
               <Spinner className="size-4" />
             </div>
           ) : visible.length > 0 ? (
-            <ul className="space-y-0.5">
-              {visible.map((automation) => (
-                <li key={automation.id}>
+            <DataTable
+              label={uiT("Automations")}
+              data={visible}
+              columns={listColumns}
+              getRowId={(automation) => automation.id}
+              hideHeader
+              estimateRowHeight={90}
+              className="table-fixed"
+              containerClassName="max-h-full overflow-auto overscroll-none"
+              rowClassName="border-0 hover:bg-transparent"
+              cellClassName="p-0 pb-0.5"
+              renderCell={(cell) => {
+                const automation = cell.row.original;
+                return (
                   <AutomationCard
                     automation={automation}
                     active={
@@ -392,9 +411,9 @@ function AutomationsContent({
                     }}
                     onToggle={(enabled) => void onToggle(automation, enabled)}
                   />
-                </li>
-              ))}
-            </ul>
+                );
+              }}
+            />
           ) : (
             <p className="px-3 py-8 text-center text-[12px] text-content/45">
               {query.trim()
@@ -667,55 +686,120 @@ function AutomationPicker({
   );
 }
 
-const RUN_GRID =
-  "grid grid-cols-[minmax(0,1.4fr)_9.5rem_6.75rem_3.5rem] items-center gap-4 px-4";
+const runColumn = createColumnHelper<typeof dataTableFeatures, AutomationRun>();
 
-function RunRow({
-  run,
+function AutomationRunsTable({
+  runs,
   draft,
   onOpenSession,
 }: {
-  run: AutomationRun;
+  runs: AutomationRun[];
   draft: AutomationDraft;
   onOpenSession: (sessionId: string) => void | Promise<void>;
 }) {
   const { t: uiT } = useTranslation();
-  const trigger = runTriggerMeta(run, draft);
-  const sessionId = run.sessionId;
+  const columns = useMemo(
+    () =>
+      runColumn.columns([
+        runColumn.accessor((run) => runTriggerMeta(run, draft).label, {
+          id: "trigger",
+          header: uiT("Trigger"),
+        }),
+        runColumn.accessor((run) => run.scheduledFor || run.createdAt, {
+          id: "triggered",
+          header: uiT("Triggered"),
+          sortDescFirst: true,
+          meta: { style: { width: "10.5rem" } },
+        }),
+        runColumn.accessor("status", {
+          header: uiT("Status"),
+          meta: { style: { width: "7.75rem" } },
+        }),
+        runColumn.accessor(
+          (run) => {
+            const start =
+              run.startedAt ??
+              (run.status === "pending" ? undefined : run.createdAt);
+            const end =
+              run.completedAt ??
+              (run.status === "running" ? Date.now() : undefined);
+            return start && end != null && end >= start
+              ? end - start
+              : undefined;
+          },
+          {
+            id: "duration",
+            header: uiT("Duration"),
+            meta: {
+              style: { width: "5.5rem" },
+              className: "text-right tabular-nums text-content/55",
+            },
+          },
+        ),
+      ]),
+    [draft, uiT],
+  );
   return (
-    <li>
-      <Button variant="ghost" size="content"
-        type="button"
-        disabled={!sessionId}
-        title={
-          sessionId
-            ? uiT("Open session")
-            : (run.error ?? uiT("This run has no session yet"))
+    <DataTable
+      label={uiT("Run history")}
+      data={runs}
+      columns={columns}
+      getRowId={(run) => run.id}
+      containerClassName="mt-3 max-h-128 overflow-auto rounded-md border border-content/10"
+      className="min-w-140 table-fixed text-[13px]"
+      estimateRowHeight={44}
+      headClassName="h-10 px-4 text-[11px] font-normal text-content/40"
+      cellClassName="h-11 truncate py-0 pl-4 pr-0 last:pr-4"
+      rowClassName="border-content/8 hover:bg-content/3 focus-within:bg-content/3 active:bg-content/6"
+      rowProps={({ original: run }) => ({
+        className: run.sessionId ? "cursor-pointer" : undefined,
+        onClick: (event) => {
+          if (run.sessionId && !(event.target as Element).closest("button"))
+            void onOpenSession(run.sessionId);
+        },
+      })}
+      renderCell={(cell) => {
+        const run = cell.row.original;
+        const trigger = runTriggerMeta(run, draft);
+        switch (cell.column.id) {
+          case "trigger":
+            return (
+              <Button
+                variant="ghost"
+                size="content"
+                disabled={!run.sessionId}
+                title={
+                  run.sessionId
+                    ? uiT("Open session")
+                    : (run.error ?? uiT("This run has no session yet"))
+                }
+                onClick={() => {
+                  if (run.sessionId) void onOpenSession(run.sessionId);
+                }}
+                className="flex h-11 w-full min-w-0 justify-start gap-2 text-left text-[13px] disabled:opacity-100"
+              >
+                <TriggerMark
+                  kind={trigger.kind}
+                  className="size-3.5 shrink-0 text-content/40"
+                />
+                <span className="min-w-0 truncate">{trigger.label}</span>
+              </Button>
+            );
+          case "triggered":
+            return (
+              <span className="text-content/70">
+                {formatAutomationRunAt(run.scheduledFor || run.createdAt)}
+              </span>
+            );
+          case "status":
+            return <RunStatusPill status={run.status} />;
+          case "duration":
+            return formatAutomationRunDuration(run);
+          default:
+            return null;
         }
-        onClick={() => {
-          if (!sessionId) return;
-          void onOpenSession(sessionId);
-        }}
-        className={cn(RUN_GRID, "h-11 w-full text-left text-[13px] disabled:opacity-100", sessionId ? "cursor-pointer hover:bg-content/3" : "cursor-default")}
-      >
-        <span className="flex min-w-0 items-center gap-2 text-content">
-          <TriggerMark
-            kind={trigger.kind}
-            className="size-3.5 shrink-0 text-content/40"
-          />
-          <span className="min-w-0 truncate">{trigger.label}</span>
-        </span>
-        <span className="truncate text-content/70">
-          {formatAutomationRunAt(run.scheduledFor || run.createdAt)}
-        </span>
-        <span>
-          <RunStatusPill status={run.status} />
-        </span>
-        <span className="text-right tabular-nums text-content/55">
-          {formatAutomationRunDuration(run)}
-        </span>
-      </Button>
-    </li>
+      }}
+    />
   );
 }
 
@@ -1383,24 +1467,7 @@ function AutomationEditor({
           <section className="mx-auto w-full max-w-5xl px-8 py-5 pb-10">
             <SectionTitle>{uiT("Run history")}</SectionTitle>
             {runs.length > 0 ? (
-              <div className="mt-3 overflow-hidden rounded-md border border-content/10">
-                <div className={cn(RUN_GRID, "h-10 text-[11px] text-content/40")}>
-                  <span>{uiT("Trigger")}</span>
-                  <span>{uiT("Triggered")}</span>
-                  <span>{uiT("Status")}</span>
-                  <span className="text-right">{uiT("Duration")}</span>
-                </div>
-                <ul className="divide-y divide-content/8 border-t border-content/8">
-                  {runs.slice(0, 100).map((run) => (
-                    <RunRow
-                      key={run.id}
-                      run={run}
-                      draft={draft}
-                      onOpenSession={onOpenSession}
-                    />
-                  ))}
-                </ul>
-              </div>
+              <AutomationRunsTable runs={runs} draft={draft} onOpenSession={onOpenSession} />
             ) : (
               <div className="mt-3 rounded-md border border-dashed border-content/10 px-4 py-16 text-center text-[12px] text-content/40">
                 {uiT("This automation has not run yet.")}

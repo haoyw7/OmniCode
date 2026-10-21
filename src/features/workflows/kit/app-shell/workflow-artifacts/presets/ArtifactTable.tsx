@@ -1,37 +1,24 @@
-import { motion as motionElement } from "motion/react";
-import { workflowEntry } from "./../../../components/workflow-timeline/workflow-motion.js";
-/**
- * `table` 预置渲染器：一行一条（或按 `key` upsert 的一行一实体）。
- *
- * 两种形态：
- * - `compact`：run 侧板卡片里的行数 + 前 3 行；
- * - 全尺寸：`workflow-artifact` tab 里的完整表格，表头吸顶、自带纵横滚动。
- *
- * 刻意**不复用** `MarkdownTable`：那是一份 1400 行、带排序 / 选区 / 复制 / 虚拟化的富组件，
- * 为一张只读投影表把它整棵拖进来不划算（spec 允许「或轻量表格，实现期定」）。行数用一个
- * 固定上限兜住 DOM 规模，超出的部分在表头的计数里如实呈现——这比装一个虚拟器便宜得多，
- * 而条目本身在投影侧已经是有界的。
- */
-
 import { memo, useMemo } from "react";
+import { createColumnHelper, sortFn_alphanumeric } from "@tanstack/react-table";
 import {
-  applyArtifactItems,
-  type ArtifactItem,
-} from "./apply.js";
+  DataTable,
+  dataTableFeatures,
+} from "../../../../../../shared/ui/primitives/DataTable";
+import { applyArtifactItems, type ArtifactItem } from "./apply.js";
 import {
   fieldHeading,
   PresetEmpty,
   PresetHeading,
-  REVEAL_ANIMATION_CLASS,
   type PresetLabels,
 } from "./parts.js";
 import type { TableSpec } from "./spec.js";
 import { cn } from "../../../../../../shared/lib/cn";
 
-/** 小卡片里只露前几行——它是一个「有东西了」的信号，不是阅读面。 */
 const COMPACT_ROWS = 3;
-/** 全尺寸下真正挂进 DOM 的行数上限；再多也读不过来，且 DOM 规模必须有界。 */
-const ARTIFACT_TABLE_MAX_ROWS = 200;
+const columnHelper = createColumnHelper<
+  typeof dataTableFeatures,
+  { id: string; cells: string[] }
+>();
 
 export const ArtifactTable = memo(function ArtifactTable({
   spec,
@@ -46,17 +33,50 @@ export const ArtifactTable = memo(function ArtifactTable({
   labels: PresetLabels;
   className?: string;
 }) {
-  const model = useMemo(() => applyArtifactItems("table", spec, items), [spec, items]);
-  const total = model.rows.length;
-  const visible = compact
-    ? model.rows.slice(0, COMPACT_ROWS)
-    : model.rows.slice(0, ARTIFACT_TABLE_MAX_ROWS);
+  const model = useMemo(
+    () => applyArtifactItems("table", spec, items),
+    [spec, items],
+  );
+  const data = useMemo(
+    () => (compact ? model.rows.slice(0, COMPACT_ROWS) : model.rows),
+    [compact, model.rows],
+  );
+  const columns = useMemo(
+    () =>
+      model.columns.map((column, index) =>
+        columnHelper.accessor((row) => row.cells[index], {
+          id: column.field,
+          header: fieldHeading(column.label, column.unit),
+          enableSorting: !compact,
+          sortFn: (left, right, id) => {
+            const a = left.getValue<string>(id);
+            const b = right.getValue<string>(id);
+            const numeric =
+              a?.trim() &&
+              b?.trim() &&
+              Number.isFinite(Number(a)) &&
+              Number.isFinite(Number(b));
+            return numeric
+              ? Number(a) - Number(b)
+              : sortFn_alphanumeric(left, right, id);
+          },
+          cell: (info) => (
+            <span title={info.getValue()}>{info.getValue()}</span>
+          ),
+        }),
+      ),
+    [model.columns, compact],
+  );
 
-  if (total === 0) {
+  if (model.rows.length === 0) {
     return (
       <div className={className}>
         {compact ? null : (
-          <PresetHeading className="mb-3" description={spec.description} title={spec.title} />
+          <PresetHeading
+            className="mb-3"
+            description={spec.description}
+            title={spec.title}
+          />
         )}
         <PresetEmpty compact={compact} label={labels.empty} />
       </div>
@@ -68,7 +88,7 @@ export const ArtifactTable = memo(function ArtifactTable({
       className="shrink-0 font-mono text-ui-xs text-foreground-subtlest tabular-nums"
       data-testid="artifact-table-count"
     >
-      {labels.itemsCount(total)}
+      {labels.itemsCount(model.rows.length)}
     </span>
   );
 
@@ -84,53 +104,23 @@ export const ArtifactTable = memo(function ArtifactTable({
           trailing={count}
         />
       )}
-      {/* 宽内容在自己的容器里横向滚动，绝不把面板本身撑出横向滚动条（DESIGN.md 响应式）。 */}
-      <div
-        className={cn(
+      <DataTable
+        label={spec.title ?? labels.itemsCount(model.rows.length)}
+        data={data}
+        columns={columns}
+        getRowId={(row) => row.id}
+        animateRows
+        estimateRowHeight={25}
+        containerClassName={cn(
           "min-w-0 overflow-auto rounded-lg border border-border",
-          compact ? "" : "max-h-128",
+          !compact && "max-h-128",
         )}
-      >
-        <table className="w-full border-collapse text-left">
-          <thead className="sticky top-0 z-10 bg-surface">
-            <tr>
-              {model.columns.map((column) => (
-                <th
-                  className="whitespace-nowrap border-b border-border px-2 py-1.5 text-ui-xs font-medium text-foreground-subtle"
-                  key={column.field}
-                  scope="col"
-                >
-                  {fieldHeading(column.label, column.unit)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((row) => (
-              // 身份是行 id（spec 的 key 值，或 journal 的 siteId@ordinal）——它稳定，
-              // 于是只有**新行**会播揭示动画，既有行原地更新不闪。
-              <motionElement.tr {...workflowEntry()}
-                className={cn(
-                  "border-b border-border/60 last:border-b-0 hover:bg-hover",
-                  REVEAL_ANIMATION_CLASS,
-                )}
-                data-testid="artifact-table-row"
-                key={row.id}
-              >
-                {row.cells.map((cell, index) => (
-                  <td
-                    className="max-w-56 truncate px-2 py-1 font-mono text-ui-xs text-foreground"
-                    key={model.columns[index]?.field ?? index}
-                    title={cell}
-                  >
-                    {cell}
-                  </td>
-                ))}
-              </motionElement.tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+        className="w-full border-collapse text-left"
+        headClassName="h-auto whitespace-nowrap border-b border-border px-2 py-1.5 text-ui-xs font-medium text-foreground-subtle"
+        rowClassName="border-border/60 hover:bg-hover"
+        cellClassName="max-w-56 truncate px-2 py-1 font-mono text-ui-xs text-foreground"
+        rowProps={() => ({ "data-testid": "artifact-table-row" })}
+      />
     </div>
   );
 });

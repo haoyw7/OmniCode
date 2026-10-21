@@ -177,20 +177,22 @@ describe("UsageProviderChip", () => {
 
     const trigger = button("Codex usage details");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    expect(trigger.textContent).toBe("5h58% leftWeek19% left");
+    expect(trigger.querySelector("table")).toBeNull();
+    expect(document.getElementById(trigger.getAttribute("aria-describedby")!)?.querySelector("table")).not.toBeNull();
+    expect(trigger.parentElement!.querySelector("tbody")!.textContent).toBe("5h58% leftWeek19% left");
     expect(trigger.title).toBe(
       "58% remaining · Resets in 2h · 19% remaining · Resets in 2d 23h",
     );
-    expect(trigger.querySelectorAll('[role="progressbar"]')).toHaveLength(2);
-    const sessionSummary = trigger.querySelector('[data-window="session"] [role="progressbar"]')!;
-    const weeklySummary = trigger.querySelector('[data-window="weekly"] [role="progressbar"]')!;
+    expect(trigger.parentElement!.querySelectorAll('[role="progressbar"]')).toHaveLength(2);
+    const sessionSummary = trigger.parentElement!.querySelector('[data-window="session"] [role="progressbar"]')!;
+    const weeklySummary = trigger.parentElement!.querySelector('[data-window="weekly"] [role="progressbar"]')!;
     expect(sessionSummary.getAttribute("aria-valuenow")).toBe("58");
-    expect(sessionSummary.previousElementSibling?.textContent).toBe("5h");
-    expect(sessionSummary.nextElementSibling?.textContent).toBe("58% left");
+    expect(sessionSummary.parentElement?.previousElementSibling?.textContent).toBe("5h");
+    expect(sessionSummary.parentElement?.nextElementSibling?.textContent).toBe("58% left");
     expect(sessionSummary.querySelector("span")?.getAttribute("style")).toBe("width: 58%;");
     expect(weeklySummary.getAttribute("aria-valuenow")).toBe("19");
-    expect(weeklySummary.previousElementSibling?.textContent).toBe("Week");
-    expect(weeklySummary.nextElementSibling?.textContent).toBe("19% left");
+    expect(weeklySummary.parentElement?.previousElementSibling?.textContent).toBe("Week");
+    expect(weeklySummary.parentElement?.nextElementSibling?.textContent).toBe("19% left");
     expect(weeklySummary.querySelector("span")?.getAttribute("style")).toBe(
       "width: 19%;",
     );
@@ -232,11 +234,11 @@ describe("UsageProviderChip", () => {
     );
 
     const trigger = button("Codex usage details");
-    expect(trigger.textContent).toBe("5h58% leftWeek19% left");
+    expect(trigger.parentElement!.querySelector("tbody")!.textContent).toBe("5h58% leftWeek19% left");
     expect(trigger.title).toBe(
       "58% remaining · Resets in 2h · 19% remaining · Resets in 2d 23h",
     );
-    expect(trigger.querySelector('[data-window="weekly"] [role="progressbar"] > span')?.getAttribute("style")).toBe(
+    expect(trigger.parentElement!.querySelector('[data-window="weekly"] [role="progressbar"] > span')?.getAttribute("style")).toBe(
       "width: 19%;",
     );
     await act(async () => trigger.click());
@@ -279,9 +281,9 @@ describe("UsageProviderChip", () => {
       };
 
       await changePreference(true);
-      expect(trigger.textContent).toBe("5h58% leftWeek19% left");
+      expect(trigger.parentElement!.querySelector("tbody")!.textContent).toBe("5h58% leftWeek19% left");
       expect(trigger.title).toContain("19% remaining");
-      expect(trigger.querySelector('[data-window="weekly"] [role="progressbar"] > span')?.getAttribute("style")).toBe(
+      expect(trigger.parentElement!.querySelector('[data-window="weekly"] [role="progressbar"] > span')?.getAttribute("style")).toBe(
         "width: 19%;",
       );
       const remainingBar = document.querySelector(
@@ -293,9 +295,9 @@ describe("UsageProviderChip", () => {
       );
 
       await changePreference(false);
-      expect(trigger.textContent).toBe("5h58% leftWeek19% left");
+      expect(trigger.parentElement!.querySelector("tbody")!.textContent).toBe("5h58% leftWeek19% left");
       expect(trigger.title).toContain("19% remaining");
-      expect(trigger.querySelector('[data-window="weekly"] [role="progressbar"] > span')?.getAttribute("style")).toBe(
+      expect(trigger.parentElement!.querySelector('[data-window="weekly"] [role="progressbar"] > span')?.getAttribute("style")).toBe(
         "width: 19%;",
       );
       const usedBar = document.querySelector(
@@ -316,7 +318,7 @@ describe("UsageProviderChip", () => {
     act(() => root.render(createElement(UsageProviderChip, { limits, now })));
 
     expect(
-      button("Codex usage details")
+      button("Codex usage details").parentElement!
         .querySelector('[data-window="weekly"] [role="progressbar"] > span')
         ?.getAttribute("style"),
     ).toBe("width: 0%;");

@@ -1,7 +1,16 @@
+import { createColumnHelper } from "@tanstack/react-table";
+import {
+  DataTable,
+  dataTableFeatures,
+  type DataTableCell,
+} from "../../../shared/ui/primitives/DataTable";
 import { Button } from "../../../shared/ui/forms/Button";
 import { cn } from "../../../shared/lib/cn";
 import { useInfiniteQuery, useIsFetching } from "@tanstack/react-query";
-import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
+import {
+  queryClient,
+  invalidateAfterChange,
+} from "../../../shared/lib/queryClient";
 import {
   useCallback,
   useEffect,
@@ -35,6 +44,18 @@ const HISTORY_PAGE_SIZE = 50;
 const ROW_HEIGHT = 44;
 const LANE_SCALE = 1.5;
 
+const graphColumn = createColumnHelper<
+  typeof dataTableFeatures,
+  GitHistoryCommit
+>();
+const GRAPH_COLUMNS = [
+  "Graph",
+  "Description",
+  "Date",
+  "Author",
+  "Commit",
+] as const;
+
 export function GitGraphDialog({
   cwd,
   selectedSha,
@@ -54,7 +75,10 @@ export function GitGraphDialog({
     useGraphHistory(cwd);
   const worktrees = useProjectWorktrees(cwd);
   const contentRef = useRef<HTMLDivElement>(null);
-  const fetchingWorktrees = useIsFetching({ queryKey: gitKeys.worktrees(pathKey(cwd)) }, queryClient);
+  const fetchingWorktrees = useIsFetching(
+    { queryKey: gitKeys.worktrees(pathKey(cwd)) },
+    queryClient,
+  );
   const refreshing = loading || fetchingWorktrees > 0;
   const rows = useMemo(
     () => layoutGitGraph(commits).map(historyItemGraph),
@@ -89,7 +113,9 @@ export function GitGraphDialog({
     const trapFocus = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
       const buttons = Array.from(
-        panel.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
+        panel.querySelectorAll<HTMLElement>(
+          'button:not(:disabled):not([tabindex="-1"]), [tabindex="0"]',
+        ),
       );
       const first = buttons[0];
       const last = buttons.at(-1);
@@ -117,6 +143,160 @@ export function GitGraphDialog({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  const columns = useMemo(
+    () =>
+      GRAPH_COLUMNS.map((label, index) =>
+        graphColumn.display({
+          id: label,
+          header: t(label),
+          meta: {
+            className: [
+              "border-r border-stroke p-0 align-middle",
+              "px-3 py-0",
+              "truncate px-3 py-0 tabular-nums text-content/50",
+              "truncate px-3 py-0 text-content/50",
+              "truncate px-3 py-0 font-mono text-content/50",
+            ][index],
+          },
+        }),
+      ),
+    [t],
+  );
+  const renderCell = (cell: DataTableCell<GitHistoryCommit>) => {
+    const commit = cell.row.original;
+    const index = cell.row.index;
+    const graph = rows[index]!;
+    const trees = treesByHead.get(commit.sha) ?? [];
+    const date = new Date(commit.timestamp * 1000);
+    const validDate = commit.timestamp > 0 && Number.isFinite(date.getTime());
+
+    switch (cell.column.id) {
+      case "Graph":
+        return (
+          <>
+            <svg
+              aria-hidden
+              width={graph.width * LANE_SCALE}
+              height={ROW_HEIGHT}
+              className="git-history-graph pointer-events-none"
+            >
+              <g
+                transform={`scale(${LANE_SCALE},${ROW_HEIGHT / graph.height})`}
+              >
+                {graph.paths.map((path, i) => (
+                  <path
+                    key={i}
+                    d={path.d}
+                    fill="none"
+                    stroke={path.color}
+                    strokeWidth={1.5}
+                    vectorEffect="non-scaling-stroke"
+                    strokeLinecap="round"
+                  />
+                ))}
+              </g>
+              {graph.circles.map((circle, i) => (
+                <circle
+                  key={i}
+                  cx={circle.cx * LANE_SCALE}
+                  cy={(circle.cy * ROW_HEIGHT) / graph.height}
+                  r={circle.r}
+                  fill={circle.fill ?? "none"}
+                  strokeWidth={circle.strokeWidth}
+                />
+              ))}
+            </svg>
+          </>
+        );
+      case "Description":
+        return (
+          <>
+            <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+              {commit.head ? (
+                <span
+                  className="git-graph-ref"
+                  style={{ borderColor: graph.circleColor }}
+                >
+                  HEAD
+                </span>
+              ) : null}
+              {commit.refs.map((ref) => (
+                <span
+                  key={`${ref.kind}:${ref.name}`}
+                  className="git-graph-ref"
+                  title={ref.name}
+                >
+                  <GitBranch className="size-3 shrink-0" />
+                  <span data-code-label className="truncate">
+                    {ref.name}
+                  </span>
+                </span>
+              ))}
+              {trees.map((path) => (
+                <span
+                  key={path}
+                  className="git-graph-ref text-content/70"
+                  title={t("Worktree: {path}", { path })}
+                >
+                  <FolderTree className="size-3 shrink-0" />
+                  <span data-file-label className="truncate">
+                    {path
+                      .replace(/\\/g, "/")
+                      .split("/")
+                      .filter(Boolean)
+                      .at(-1) || path}
+                  </span>
+                </span>
+              ))}
+              <Button
+                variant="ghost"
+                size="content"
+                tabIndex={-1}
+                data-code-label
+                title={[commit.subject, commit.body]
+                  .filter(Boolean)
+                  .join("\n\n")}
+                className="min-w-20 flex-1 truncate rounded py-2 text-left text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-hover justify-start"
+              >
+                {commit.subject || commit.shortSha}
+              </Button>
+            </div>
+          </>
+        );
+      case "Date":
+        return (
+          <>
+            {validDate ? (
+              <time
+                dateTime={date.toISOString()}
+                title={date.toLocaleString(language)}
+              >
+                {dateFormat.format(date)}
+              </time>
+            ) : (
+              "—"
+            )}
+          </>
+        );
+      case "Author":
+        return (
+          <>
+            <span title={commit.author}>
+              {commit.author || t("Unknown author")}
+            </span>
+          </>
+        );
+      case "Commit":
+        return (
+          <>
+            <span title={commit.sha}>{commit.shortSha}</span>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
   const refresh = () => Promise.all([reload(), worktrees.refresh()]);
 
   return (
@@ -143,7 +323,9 @@ export function GitGraphDialog({
           >
             {prettyCwd(cwd)}
           </span>
-          <Button variant="ghost" size="content"
+          <Button
+            variant="ghost"
+            size="content"
             type="button"
             onClick={() => void refresh()}
             disabled={loading || refreshing}
@@ -152,7 +334,10 @@ export function GitGraphDialog({
             className="grid size-7 shrink-0 place-items-center rounded-lg text-content/55 hover:bg-content/3 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-hover disabled:opacity-50"
           >
             <RefreshCw
-              className={cn("size-3.5", loading || refreshing ? "motion-safe:animate-spin" : "")}
+              className={cn(
+                "size-3.5",
+                loading || refreshing ? "motion-safe:animate-spin" : "",
+              )}
             />
           </Button>
         </header>
@@ -168,19 +353,56 @@ export function GitGraphDialog({
           </p>
         ) : null}
         <div
-          className="min-h-0 flex-1 overflow-auto overscroll-contain"
+          className="flex min-h-0 flex-1 flex-col"
           aria-busy={loading || loadingMore}
-          onScroll={({ currentTarget }) => {
-            const remaining =
-              currentTarget.scrollHeight -
-              currentTarget.scrollTop -
-              currentTarget.clientHeight;
-            if (!error && remaining <= ROW_HEIGHT * 4) void loadMore();
-          }}
         >
-          <table
+          <DataTable
+            label={t("Git graph")}
+            data={commits}
+            columns={columns}
+            getRowId={(commit) => commit.sha}
+            estimateRowHeight={ROW_HEIGHT}
+            containerClassName="min-h-0 max-h-none flex-1 overflow-auto overscroll-contain"
             className="git-graph-table w-full table-fixed border-collapse text-left text-ui-sm"
             style={{ minWidth: Math.max(820, graphWidth + 740) }}
+            headerClassName="content-sticky text-content/50"
+            headClassName="h-10 border-b border-r border-stroke px-3 font-normal text-inherit last:border-r-0"
+            rowProps={({ original: commit }) => ({
+              tabIndex: 0,
+              "aria-label": t("Open commit {sha}: {subject}", {
+                sha: commit.shortSha,
+                subject: commit.subject,
+              }),
+              "aria-current": commit.sha === selectedSha ? "true" : undefined,
+              onClick: () => onOpenCommit(commit),
+              onKeyDown: (event) => {
+                if (
+                  event.target === event.currentTarget &&
+                  (event.key === "Enter" || event.key === " ")
+                ) {
+                  event.preventDefault();
+                  onOpenCommit(commit);
+                }
+              },
+              className: cn(
+                "git-history-item cursor-pointer border-0 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-hover active:bg-content/10",
+                commit.head && "is-head",
+                commit.sha === selectedSha
+                  ? "is-selected bg-selection"
+                  : commit.head
+                    ? "bg-content/5"
+                    : "hover:bg-content/5",
+              ),
+              style: { height: ROW_HEIGHT },
+            })}
+            renderCell={renderCell}
+            onScroll={({ currentTarget }) => {
+              const remaining =
+                currentTarget.scrollHeight -
+                currentTarget.scrollTop -
+                currentTarget.clientHeight;
+              if (!error && remaining <= ROW_HEIGHT * 4) void loadMore();
+            }}
           >
             <colgroup>
               <col style={{ width: graphWidth }} />
@@ -189,147 +411,7 @@ export function GitGraphDialog({
               <col className="w-32" />
               <col className="w-24" />
             </colgroup>
-            <thead className="content-sticky sticky top-0 z-10 text-content/50">
-              <tr>
-                {["Graph", "Description", "Date", "Author", "Commit"].map(
-                  (label) => (
-                    <th
-                      key={label}
-                      scope="col"
-                      className="h-10 border-b border-r border-stroke px-3 font-normal last:border-r-0"
-                    >
-                      {t(label)}
-                    </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {commits.map((commit, index) => {
-                const graph = rows[index]!;
-                const trees = treesByHead.get(commit.sha) ?? [];
-                const date = new Date(commit.timestamp * 1000);
-                const validDate =
-                  commit.timestamp > 0 && Number.isFinite(date.getTime());
-                const selected = commit.sha === selectedSha;
-                return (
-                  <tr
-                    key={commit.sha}
-                    onClick={() => onOpenCommit(commit)}
-                    className={cn("git-history-item cursor-pointer", commit.head ? "is-head" : "", selected ? "is-selected bg-selection" : commit.head ? "bg-content/5" : "hover:bg-content/5")}
-                    style={{ height: ROW_HEIGHT }}
-                  >
-                    <td className="border-r border-stroke p-0 align-middle">
-                      <svg
-                        aria-hidden
-                        width={graph.width * LANE_SCALE}
-                        height={ROW_HEIGHT}
-                        className="git-history-graph pointer-events-none"
-                      >
-                        <g
-                          transform={`scale(${LANE_SCALE},${ROW_HEIGHT / graph.height})`}
-                        >
-                          {graph.paths.map((path, i) => (
-                            <path
-                              key={i}
-                              d={path.d}
-                              fill="none"
-                              stroke={path.color}
-                              strokeWidth={1.5}
-                              vectorEffect="non-scaling-stroke"
-                              strokeLinecap="round"
-                            />
-                          ))}
-                        </g>
-                        {graph.circles.map((circle, i) => (
-                          <circle
-                            key={i}
-                            cx={circle.cx * LANE_SCALE}
-                            cy={(circle.cy * ROW_HEIGHT) / graph.height}
-                            r={circle.r}
-                            fill={circle.fill ?? "none"}
-                            strokeWidth={circle.strokeWidth}
-                          />
-                        ))}
-                      </svg>
-                    </td>
-                    <td className="px-3 py-0">
-                      <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
-                        {commit.head ? (
-                          <span
-                            className="git-graph-ref"
-                            style={{ borderColor: graph.circleColor }}
-                          >
-                            HEAD
-                          </span>
-                        ) : null}
-                        {commit.refs.map((ref) => (
-                          <span
-                            key={`${ref.kind}:${ref.name}`}
-                            className="git-graph-ref"
-                            title={ref.name}
-                          >
-                            <GitBranch className="size-3 shrink-0" />
-                            <span data-code-label className="truncate">{ref.name}</span>
-                          </span>
-                        ))}
-                        {trees.map((path) => (
-                          <span
-                            key={path}
-                            className="git-graph-ref text-content/70"
-                            title={t("Worktree: {path}", { path })}
-                          >
-                            <FolderTree className="size-3 shrink-0" />
-                            <span data-file-label className="truncate">
-                              {path
-                                .replace(/\\/g, "/")
-                                .split("/")
-                                .filter(Boolean)
-                                .at(-1) || path}
-                            </span>
-                          </span>
-                        ))}
-                        <Button variant="ghost" size="content"
-                          type="button"
-                          data-code-label
-                          title={[commit.subject, commit.body]
-                            .filter(Boolean)
-                            .join("\n\n")}
-                          className="min-w-20 flex-1 truncate rounded py-2 text-left text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-hover justify-start"
-                        >
-                          {commit.subject || commit.shortSha}
-                        </Button>
-                      </div>
-                    </td>
-                    <td className="truncate px-3 py-0 tabular-nums text-content/50">
-                      {validDate ? (
-                        <time
-                          dateTime={date.toISOString()}
-                          title={date.toLocaleString(language)}
-                        >
-                          {dateFormat.format(date)}
-                        </time>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td
-                      title={commit.author}
-                      className="truncate px-3 py-0 text-content/50"
-                    >
-                      {commit.author || t("Unknown author")}
-                    </td>
-                    <td
-                      title={commit.sha}
-                      className="truncate px-3 py-0 font-mono text-content/50"
-                    >
-                      {commit.shortSha}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          </DataTable>
           {commits.length === 0 ? (
             <p
               role="status"
@@ -343,7 +425,9 @@ export function GitGraphDialog({
             </p>
           ) : null}
           {hasMore ? (
-            <Button variant="ghost" size="content"
+            <Button
+              variant="ghost"
+              size="content"
               type="button"
               onClick={() => void loadMore()}
               disabled={loading || loadingMore}
@@ -362,23 +446,43 @@ export function GitGraphDialog({
 function useGraphHistory(cwd: string) {
   // This paged query owns its cancellation barrier for Git events.
   const queryKey = ["gitGraphHistory", cwd] as const;
-  const history = useInfiniteQuery({
-    queryKey, refetchOnWindowFocus: false,
-    initialPageParam: { offset: 0, head: null as string | null },
-    queryFn: async ({ pageParam, signal }) => {
-      const result = await gitHistory(cwd, HISTORY_PAGE_SIZE, true, pageParam.offset);
-      signal.throwIfAborted();
-      const moved = pageParam.offset > 0 && result.head !== pageParam.head;
-      return { ...result, commits: moved ? [] : result.commits, moved };
+  const history = useInfiniteQuery(
+    {
+      queryKey,
+      refetchOnWindowFocus: false,
+      initialPageParam: { offset: 0, head: null as string | null },
+      queryFn: async ({ pageParam, signal }) => {
+        const result = await gitHistory(
+          cwd,
+          HISTORY_PAGE_SIZE,
+          true,
+          pageParam.offset,
+        );
+        signal.throwIfAborted();
+        const moved = pageParam.offset > 0 && result.head !== pageParam.head;
+        return { ...result, commits: moved ? [] : result.commits, moved };
+      },
+      getNextPageParam: (last, pages) => {
+        const offset = pages.reduce(
+          (sum, page) => sum + page.commits.length,
+          0,
+        );
+        const seen = new Set(
+          pages
+            .slice(0, -1)
+            .flatMap((page) => page.commits.map((commit) => commit.sha)),
+        );
+        if (
+          last.moved ||
+          (last.commits.length === HISTORY_PAGE_SIZE &&
+            last.commits.some((commit) => !seen.has(commit.sha)))
+        )
+          return { offset, head: pages[0].head };
+        return undefined;
+      },
     },
-    getNextPageParam: (last, pages) => {
-      const offset = pages.reduce((sum, page) => sum + page.commits.length, 0);
-      const seen = new Set(pages.slice(0, -1).flatMap(page => page.commits.map(commit => commit.sha)));
-      if (last.moved || (last.commits.length === HISTORY_PAGE_SIZE && last.commits.some(commit => !seen.has(commit.sha))))
-        return { offset, head: pages[0].head };
-      return undefined;
-    },
-  }, queryClient);
+    queryClient,
+  );
   const reload = useCallback(async () => {
     await queryClient.cancelQueries({ queryKey });
     await invalidateAfterChange(queryKey);
@@ -393,7 +497,9 @@ function useGraphHistory(cwd: string) {
     }
   }, [cwd, history.hasNextPage, history.fetchNextPage, reload]);
   useEffect(() => {
-    const resume = () => { if (!document.hidden) void reload(); };
+    const resume = () => {
+      if (!document.hidden) void reload();
+    };
     const unsubscribe = subscribeGitChanged(resume);
     window.addEventListener("focus", resume);
     document.addEventListener("visibilitychange", resume);
@@ -405,12 +511,24 @@ function useGraphHistory(cwd: string) {
   }, [reload]);
   const commits = useMemo(() => {
     const seen = new Set<string>();
-    return history.data?.pages.flatMap(page => page.commits).filter(commit => {
-      if (seen.has(commit.sha)) return false;
-      seen.add(commit.sha); return true;
-    }) ?? [];
+    return (
+      history.data?.pages
+        .flatMap((page) => page.commits)
+        .filter((commit) => {
+          if (seen.has(commit.sha)) return false;
+          seen.add(commit.sha);
+          return true;
+        }) ?? []
+    );
   }, [history.data]);
-  return { commits, loading: history.isPending || (history.isFetching && !history.isFetchingNextPage),
-    loadingMore: history.isFetchingNextPage, hasMore: history.hasNextPage, error: history.error ? String(history.error) : undefined,
-    reload, loadMore };
+  return {
+    commits,
+    loading:
+      history.isPending || (history.isFetching && !history.isFetchingNextPage),
+    loadingMore: history.isFetchingNextPage,
+    hasMore: history.hasNextPage,
+    error: history.error ? String(history.error) : undefined,
+    reload,
+    loadMore,
+  };
 }
