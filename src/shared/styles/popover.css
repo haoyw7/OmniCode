@@ -1,0 +1,6 @@
+[data-radix-popper-content-wrapper]:has(> [data-native-popover-frame]) {
+  position: relative !important;
+  transform: none !important;
+  width: 100%;
+  min-width: 0 !important;
+}

@@ -1,3 +1,5 @@
+import { cn } from "../../../../../shared/lib/cn";
+import { Button } from "../../../../../shared/ui/forms/Button";
 import { DisclosureChevron } from "../../../../../shared/ui/DisclosureChevron";
 import { useContext, useState } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
@@ -87,9 +89,7 @@ export function ToolRow({
   const summary =
     renderer === "question" ? (
       <span
-        className={`min-w-0 flex-1 truncate font-sans text-sm ${
-          failed ? "text-red-400" : "text-foreground-subtlest"
-        }`}
+        className={cn("min-w-0 flex-1 truncate font-sans text-sm", failed ? "text-red-400" : "text-foreground-subtlest")}
       >
         {t("Asked a question")}
       </span>
@@ -111,7 +111,7 @@ export function ToolRow({
       <ToolOpenRow
         block={block}
         label={label}
-        className={`flex w-full min-w-0 items-center ${gap} py-1`}
+        className={cn("flex w-full min-w-0 items-center", gap, "py-1")}
         onOpen={openTool}
       >
         {icon}
@@ -129,7 +129,7 @@ export function ToolRow({
             ? t("Failed tool call: {value0}", { value0: label })
             : t("Tool call: {value0}", { value0: label })
         }
-        className={`group flex min-w-0 items-center ${gap} py-1`}
+        className={cn("group flex min-w-0 items-center", gap, "py-1")}
       >
         {icon}
         {expandable ? (
@@ -141,7 +141,7 @@ export function ToolRow({
         )}
         {statusIcon}
         {expandable ? (
-          <button
+          <Button data-session-disclosure variant="ghost" size="content"
             type="button"
             aria-expanded={open}
             aria-label={
@@ -158,11 +158,9 @@ export function ToolRow({
           >
             <DisclosureChevron
               expanded={open}
-              className={`zen-disclosure-chevron size-3.5 ${
-                failed ? "text-red-400/60" : ""
-              } ${open ? "opacity-100" : ""}`}
+              className={cn("zen-disclosure-chevron size-3.5", failed ? "text-red-400/60" : "", open ? "opacity-100" : "")}
             />
-          </button>
+          </Button>
         ) : null}
       </div>
       {pending ? (

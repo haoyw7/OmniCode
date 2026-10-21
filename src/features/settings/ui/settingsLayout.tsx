@@ -1,3 +1,6 @@
+import { Slider as RangeSlider } from "../../../shared/ui/forms/Slider";
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { motion, useIsPresent } from "motion/react";
 import {
   immediateTransition,
@@ -108,9 +111,7 @@ export function Group({
         initial={false}
         animate={{ borderColor: flash ? "color-mix(in srgb, var(--color-accent) 60%, transparent)" : "var(--color-border)" }}
         transition={reduced ? immediateTransition : panelTransition}
-        className={`settings-card overflow-hidden rounded-xl border ${
-          flash ? "border-accent/60" : "border-border"
-        }`}
+        className={cn("settings-card overflow-hidden rounded-xl border", flash ? "border-accent/60" : "border-border")}
       >
         {children}
       </motion.div>
@@ -142,9 +143,7 @@ export function Row({
       data-setting-id={id}
       data-stacked={stacked || undefined}
       data-revealed={flash || undefined}
-      className={`settings-row flex ${stacked ? "flex-col items-stretch gap-3" : "items-center gap-6"} border-t border-border px-4 py-3 first:border-t-0 ${
-        flash ? "bg-accent/10" : ""
-      }`}
+      className={cn("settings-row flex", stacked ? "flex-col items-stretch gap-3" : "items-center gap-6", "border-t border-border px-4 py-3 first:border-t-0", flash ? "bg-accent/10" : "")}
     >
       <div className="min-w-0 flex-1">
         <div className="settings-row-label text-ui-base font-medium text-foreground">{label}</div>
@@ -209,7 +208,7 @@ export function Segmented<T extends string>({
       }
     >
       {options.map((option) => (
-        <button
+        <Button variant="ghost" size="content"
           id={
             optionIdPrefix
               ? `${optionIdPrefix}-${option.value.toLowerCase()}`
@@ -220,15 +219,13 @@ export function Segmented<T extends string>({
           role="radio"
           aria-checked={value === option.value}
           onClick={() => onChange(option.value)}
-          className={`relative isolate h-7 min-w-0 truncate rounded-full px-3 font-medium transition-colors ${
-            value === option.value
+          className={cn("relative isolate h-7 min-w-0 truncate rounded-full px-3 font-medium transition-colors", value === option.value
               ? "text-foreground"
-              : "text-foreground-subtle hover:bg-surface-hover hover:text-foreground"
-          }`}
+              : "text-foreground-subtle hover:bg-surface-hover hover:text-foreground")}
         >
           {value === option.value ? <motion.span layoutId={indicatorId} transition={reduced ? immediateTransition : panelTransition} data-segment-indicator aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-selection" style={{ width: "auto", inset: 0 }} /> : null}
           {option.label}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -334,33 +331,16 @@ export function Slider({
   onCommit?: (value: number) => void;
   disabled?: boolean;
 }) {
-  const commit = (event: { currentTarget: HTMLInputElement }) =>
-    onCommit?.(Number(event.currentTarget.value));
   return (
     <div
-      className={`flex w-60 max-w-full items-center gap-4 ${disabled ? "opacity-40" : ""}`}
+      className={cn("flex w-60 max-w-full items-center gap-4", disabled ? "opacity-40" : "")}
     >
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        aria-valuemin={min}
-        aria-valuemax={max}
-        aria-valuenow={value}
-        aria-label={label}
-        disabled={disabled}
-        className="settings-slider min-w-0 flex-1 disabled:cursor-not-allowed"
-        style={
-          {
-            "--slider-fill": `${max > min ? ((value - min) / (max - min)) * 100 : 0}%`,
-          } as CSSProperties
-        }
-        onChange={(event) => onChange(Number(event.target.value))}
-        onPointerUp={commit}
-        onKeyUp={commit}
-        onBlur={commit}
+      <RangeSlider
+        min={min} max={max} step={step} value={[value]}
+        aria-label={label} aria-valuetext={display} disabled={disabled}
+        className="min-w-0 flex-1"
+        onValueChange={([next]) => onChange(next)}
+        onValueCommit={([next]) => onCommit?.(next)}
       />
       <span className="w-10 shrink-0 text-right text-ui-base text-foreground tabular-nums">
         {display}

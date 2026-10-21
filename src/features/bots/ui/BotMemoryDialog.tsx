@@ -1,3 +1,4 @@
+import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -45,7 +46,7 @@ export function BotMemoryDialog({
       onClose={onClose}
     >
       <form noValidate onSubmit={event => { event.stopPropagation(); void save(event); }} className="assistant-settings assistant-memory-dialog">
-        <textarea data-ui="textarea"
+        <Textarea data-ui="textarea"
           aria-label={t("Edit fact")}
           {...form.register("text")}
           aria-invalid={!!form.formState.errors.text}

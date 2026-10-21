@@ -1,3 +1,4 @@
+import { cn } from "../../../../../shared/lib/cn";
 import { agentStepCount } from "../../../model/agentTranscript";
 import { ProjectMascot } from "../../../../projects/ui/ProjectMascot";
 import { type AgentStep, type Block } from "../../../model/session";
@@ -27,13 +28,11 @@ export function SubagentMascot({
     <ProjectMascot
       project={name}
       active={active}
-      className={`size-3.5 shrink-0 ${
-        state === "rejected"
+      className={cn("size-3.5 shrink-0", state === "rejected"
           ? "text-red-400"
           : state === "pending"
             ? "text-content/70"
-            : "text-content/45"
-      }`}
+            : "text-content/45")}
     />
   );
 }

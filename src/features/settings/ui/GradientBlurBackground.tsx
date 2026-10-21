@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import type { CSSProperties } from "react";
 
 /** Shared image-only treatment for the chat pane and both background previews. */
@@ -11,7 +12,7 @@ export function GradientBlurBackground({
   return (
     <div
       aria-hidden
-      className={`gradient-blur-background ${className}`}
+      className={cn("gradient-blur-background", className)}
       style={style}
     >
       <span className="gradient-blur-background-soft" />

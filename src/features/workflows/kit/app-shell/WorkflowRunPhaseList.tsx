@@ -1,3 +1,4 @@
+import { Button } from "../../../../shared/ui/forms/Button";
 import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { animate } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../../shared/motion/tokens";
@@ -334,7 +335,7 @@ export const WorkflowRunPhaseList = memo(function WorkflowRunPhaseList({
             key={station.id}
           >
             <SpinePieces section={spine} />
-            <button
+            <Button variant="ghost" size="content"
               aria-expanded={expanded}
               aria-label={intl.formatMessage(
                 {
@@ -345,7 +346,7 @@ export const WorkflowRunPhaseList = memo(function WorkflowRunPhaseList({
                 { name },
               )}
               className={cn(
-                "wf-station-open relative flex h-9 w-full items-center gap-2 pl-[39px] pr-3 text-left outline-none transition-colors hover:bg-surface focus-visible:ring-2 focus-visible:ring-ring/40",
+                "wf-station-open relative flex h-9 w-full items-center justify-start gap-2 pl-[39px] pr-3 text-left",
                 landed?.phaseId === station.id && "wf-landed",
               )}
               data-testid="workflow-run-phase-toggle"
@@ -378,7 +379,7 @@ export const WorkflowRunPhaseList = memo(function WorkflowRunPhaseList({
                 <Rounds station={station} />
                 <DisclosureChevron expanded={expanded} className="size-3.5" />
               </span>
-            </button>
+            </Button>
             <AnimatedCollapse expanded={expanded} motion="height">{() => (
               <div
                 className="flex flex-col gap-1.5 pb-3 pl-[39px] pr-3 pt-0.5"

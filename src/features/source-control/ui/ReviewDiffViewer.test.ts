@@ -121,7 +121,7 @@ it.each([
       received.push((event as CustomEvent<AddToChatRequest>).detail);
     window.addEventListener(ADD_TO_CHAT_EVENT, listener);
     try {
-      act(() =>
+      await act(async () =>
         textarea
           .closest("form")!
           .dispatchEvent(

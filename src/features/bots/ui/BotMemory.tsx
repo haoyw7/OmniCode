@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -120,7 +122,7 @@ export function BotMemoryEditor({
         <ul className="assistant-memory-list" aria-label={t("Remembered facts")}>
           {facts.map((fact) => (
             <li key={`${fact.index}:${fact.text}`}>
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 className="assistant-memory-row"
                 aria-haspopup="dialog"
@@ -143,13 +145,13 @@ export function BotMemoryEditor({
                 </time>
                 <span className="assistant-memory-row-text">{fact.text}</span>
                 <ChevronRight size={16} aria-hidden="true" />
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
       )}
       <div className="assistant-memory-add">
-        <input data-ui="input"
+        <Input data-ui="input"
           aria-label={t("Add a fact for the assistant to remember")}
           placeholder={t("Add a fact for the assistant to remember")}
           {...form.register("fact")}
@@ -158,13 +160,13 @@ export function BotMemoryEditor({
           disabled={busy}
           onKeyDown={onEnter(add)}
         />
-        <button data-ui="button" data-variant="secondary"
+        <Button variant="secondary" size="sm" data-ui="button"
           type="button"
           disabled={busy || !adding.trim()}
           onClick={() => void add()}
         >
           {t("Add")}
-        </button>
+        </Button>
       </div>
       <FieldError errors={[form.formState.errors.fact]} />
       {!!memory?.topics.length && (

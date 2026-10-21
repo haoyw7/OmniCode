@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { AnimatePresence, motion, useIsPresent } from "motion/react";
 import {
   immediateTransition,
@@ -220,7 +222,7 @@ export function SessionStatusPanel({
         </RailFrame>
       ) : statusCardsVisible && background.length ? (
         <RailFrame key="background-compact" reduced={reduced} data-background-tasks-compact className="background-tasks-compact">
-          <button type="button" onClick={() => openBackground()} className="background-task-open font-medium">{uiT("Background tasks")}</button>
+          <Button variant="ghost" size="content" type="button" onClick={() => openBackground()} className="background-task-open font-medium">{uiT("Background tasks")}</Button>
           {summary}
         </RailFrame>
       ) : null}
@@ -327,15 +329,15 @@ function RailCards({
                   {() => <TaskRows items={tasks.slice(span.end)} />}
                 </AnimatedCollapse>
                 <li>
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     onClick={() => setMoreTasks((value) => !value)}
-                    className="w-full rounded-md py-1 pr-2 pl-8 text-left font-mono text-[11px] text-content/45 hover:bg-content/4 hover:text-content/70"
+                    className="w-full rounded-md py-1 pr-2 pl-8 text-left font-mono text-[11px] text-content/45 hover:bg-content/4 hover:text-content/70 justify-start"
                   >
                     {moreTasks
                       ? uiT("Show fewer")
                       : uiT("+{count} more", { count: String(folded) })}
-                  </button>
+                  </Button>
                 </li>
               </>
             ) : (
@@ -491,7 +493,7 @@ function UsageRemaining({ limits }: { limits?: ProviderRateLimits }) {
   return (
     <span
       data-session-usage-remaining
-      className={`min-w-0 truncate text-[11px] tabular-nums ${tone}`}
+      className={cn("min-w-0 truncate text-[11px] tabular-nums", tone)}
       title={remaining !== null ? uiT("Shortest usage window") : undefined}
     >
       {remaining !== null
@@ -561,7 +563,7 @@ function ContextBar({ percent }: { percent: number }) {
     percent >= 90 ? "bg-red-400" : percent >= 75 ? "bg-amber-400" : "bg-blue-500";
   return (
     <span aria-hidden="true" className="relative h-1.5 w-7 overflow-hidden rounded-full bg-content/12">
-      <span className={`absolute inset-y-0 left-0 rounded-full ${tone}`} style={{ width: `${percent}%` }} />
+      <span className={cn("absolute inset-y-0 left-0 rounded-full", tone)} style={{ width: `${percent}%` }} />
     </span>
   );
 }
@@ -588,13 +590,11 @@ function TaskRows({ items }: { items: SessionStatusPanelModel["tasks"] }) {
             <TaskState status={item.status} />
           </span>
           <span
-            className={`min-w-0 flex-1 text-[12.5px] leading-4 ${
-              item.status === "completed" || item.status === "cancelled"
+            className={cn("min-w-0 flex-1 text-[12.5px] leading-4", item.status === "completed" || item.status === "cancelled"
                 ? "text-content/40 line-through decoration-content/25"
                 : item.status === "in_progress"
                   ? "text-content/85"
-                  : "text-content/60"
-            }`}
+                  : "text-content/60")}
           >
             {item.text}
           </span>
@@ -648,14 +648,15 @@ function Card({
       ref={(node) => reorder?.setItemRef(id, node)}
       data-status-card={id}
       data-dragging={dragging || undefined}
-      className={`shrink-0 overflow-hidden rounded-xl border border-content/10 bg-card text-content ${dragging ? "relative z-10 shadow-lg" : "shadow-sm"}`}
+      className={cn("shrink-0 overflow-hidden rounded-xl border border-content/10 bg-card text-content", dragging ? "relative z-10 shadow-lg" : "shadow-sm")}
     >
       <div className="group/status-card relative">
-      <button
+      <Button variant="ghost" size="content"
         type="button"
+        data-session-disclosure
         onClick={toggle}
         aria-expanded={expanded}
-        className="flex h-9 w-full min-w-0 items-center gap-1.5 px-3.5 text-left"
+        className="flex h-9 w-full min-w-0 items-center gap-1.5 px-3.5 text-left justify-start"
       >
         <h3 className="max-w-[70%] shrink-0 truncate text-[13px] leading-4 font-medium text-content/85">
           {title}
@@ -666,7 +667,7 @@ function Card({
         />
         <span className="flex-1" />
         {/* The drag handle takes the summary's place while the header is hovered. */}
-        <span className={`flex min-w-0 items-center gap-2 transition-opacity duration-150 motion-reduce:transition-none${reorder?.movable ? " group-hover/status-card:opacity-0" : ""}${dragging ? " opacity-0" : ""}`}>
+        <span className={cn("flex min-w-0 items-center gap-2 transition-opacity duration-150 motion-reduce:transition-none", reorder?.movable ? " group-hover/status-card:opacity-0" : "", dragging ? " opacity-0" : "")}>
           {!expanded && foldedMeta ? foldedMeta : null}
           {meta ? (
             typeof meta === "string" ? (
@@ -676,18 +677,18 @@ function Card({
             )
           ) : null}
         </span>
-      </button>
+      </Button>
       {reorder?.movable ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           data-status-card-handle
           title={uiT("Drag to move")}
           aria-label={uiT("Drag to move")}
           onPointerDown={(event) => reorder.onHandlePointerDown(id, event)}
-          className={`absolute top-1/2 right-2 grid size-6 -translate-y-1/2 touch-none cursor-grab place-items-center rounded-md text-content/45 transition-opacity duration-150 hover:bg-content/5 hover:text-content/75 active:cursor-grabbing motion-reduce:transition-none group-hover/status-card:opacity-100 focus-visible:opacity-100${dragging ? " opacity-100" : " opacity-0"}`}
+          className={cn("absolute top-1/2 right-2 grid size-6 -translate-y-1/2 touch-none cursor-grab place-items-center rounded-md text-content/45 transition-opacity duration-150 hover:bg-content/5 hover:text-content/75 active:cursor-grabbing motion-reduce:transition-none group-hover/status-card:opacity-100 focus-visible:opacity-100", dragging ? " opacity-100" : " opacity-0")}
         >
           <GripVertical className="size-3.5" />
-        </button>
+        </Button>
       ) : null}
       </div>
       <AnimatedCollapse expanded={expanded} motion="height">
@@ -707,11 +708,11 @@ function RowIcon({ children, title }: { children: ReactNode; title?: string }) {
 
 const rowBaseClassName =
   "flex w-full min-w-0 gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] leading-4 text-content/80";
-const rowClassName = `${rowBaseClassName} items-center`;
+const rowClassName = cn(rowBaseClassName, "items-center justify-start");
 
 function Row({ children, title, wrap = false }: { children: ReactNode; title?: string; wrap?: boolean }) {
   return (
-    <div data-status-row title={title} className={wrap ? `${rowBaseClassName} items-start` : rowClassName}>
+    <div data-status-row title={title} className={wrap ? cn(rowBaseClassName, "items-start") : rowClassName}>
       {children}
     </div>
   );
@@ -728,15 +729,15 @@ function RowButton({
   children: ReactNode;
 } & Pick<ButtonHTMLAttributes<HTMLButtonElement>, "title">) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       data-status-row
       disabled={disabled}
       onClick={onClick}
-      className={`${rowClassName} enabled:hover:bg-content/5 enabled:hover:text-content disabled:cursor-default`}
+      className={cn(rowClassName, "enabled:hover:bg-content/5 enabled:hover:text-content disabled:cursor-default")}
       {...rest}
     >
       {children}
-    </button>
+    </Button>
   );
 }

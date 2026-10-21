@@ -1,3 +1,5 @@
+import { Textarea } from "../../../shared/ui/forms/Textarea";
+import { Checkbox } from "../../../shared/ui/forms/Checkbox";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -111,8 +113,8 @@ function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Pro
     <div className="desktop-bot-room-composer">
       {(error || pollError) && <p role="alert">{t(error ?? pollError!)} <Button variant="secondary" type="button" onClick={() => void refresh()}>{t("Refresh")}</Button></p>}
       <Button variant="ghost" type="button" aria-expanded={orderOpen} onClick={() => setOrderOpen(value => !value)}>{t("This round's speakers")}</Button>
-      <AnimatedCollapse expanded={orderOpen} keepMounted><div className="desktop-bot-room-order"><label><input data-ui="checkbox" type="checkbox" checked={!customOrder} onChange={event => setCustomOrder(!event.target.checked)} />{t("Use room member order")}</label><AnimatedCollapse expanded={customOrder}><DesktopBotMembers bots={bots.filter(bot => state.room.memberIds.includes(bot.id))} ids={members} ordered onChange={setMembers} disabled={sending} /></AnimatedCollapse></div></AnimatedCollapse>
-      <form noValidate onSubmit={send}><textarea data-ui="textarea" aria-label={t("Message room")} placeholder={t("Message room")} {...form.register("draft")} aria-invalid={!!form.formState.errors.draft} disabled={sending || !!state.room.archivedAt} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} /><Button variant="primary" size="icon" type="submit" aria-label={t("Send")} disabled={sending || !!state.room.archivedAt || !draft.trim() || (customOrder && !members.length)}><ArrowUp size={17} /></Button><FieldError errors={[form.formState.errors.draft, form.formState.errors.members]} /></form>
+      <AnimatedCollapse expanded={orderOpen} keepMounted><div className="desktop-bot-room-order"><label><Checkbox data-ui="checkbox"  checked={!customOrder} onCheckedChange={(checked) => setCustomOrder(!(checked === true))} />{t("Use room member order")}</label><AnimatedCollapse expanded={customOrder}><DesktopBotMembers bots={bots.filter(bot => state.room.memberIds.includes(bot.id))} ids={members} ordered onChange={setMembers} disabled={sending} /></AnimatedCollapse></div></AnimatedCollapse>
+      <form noValidate onSubmit={send}><Textarea variant="editor" aria-label={t("Message room")} placeholder={t("Message room")} {...form.register("draft")} aria-invalid={!!form.formState.errors.draft} disabled={sending || !!state.room.archivedAt} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} /><Button variant="primary" size="icon" type="submit" aria-label={t("Send")} disabled={sending || !!state.room.archivedAt || !draft.trim() || (customOrder && !members.length)}><ArrowUp size={17} /></Button><FieldError errors={[form.formState.errors.draft, form.formState.errors.members]} /></form>
     </div>
   </section>;
 }

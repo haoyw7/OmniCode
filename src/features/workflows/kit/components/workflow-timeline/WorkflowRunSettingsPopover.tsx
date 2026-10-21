@@ -95,10 +95,10 @@ function RuntimeRow({ label, draft, seed, cwd, placeholder, onChange, onReset }:
       <div className="flex min-w-0 items-center justify-between gap-2">
         <FieldLabel>{label}</FieldLabel>
         {draft && onReset ? (
-          <button type="button" className="flex items-center gap-1 text-ui-xs text-foreground-subtlest hover:text-foreground-subtle" onClick={onReset}>
+          <Button variant="ghost" size="content" type="button" className="flex items-center gap-1 text-ui-xs text-foreground-subtlest hover:text-foreground-subtle" onClick={onReset}>
             <RotateCcwIcon className="size-3" aria-hidden="true" />
             {t("Inherit")}
-          </button>
+          </Button>
         ) : null}
       </div>
       {shown ? (
@@ -120,13 +120,13 @@ function RuntimeRow({ label, draft, seed, cwd, placeholder, onChange, onReset }:
           />
         </div>
       ) : (
-        <button
+        <Button variant="secondary" size="sm"
           type="button"
-          className="w-fit rounded-md border border-dashed border-border px-2 py-1 text-ui-sm text-foreground-subtle hover:border-border-hover hover:text-foreground"
+          className="w-fit border-dashed"
           onClick={() => onChange(seed ?? { harness: "claude", model: "claude:sonnet-5", modelSettings: {} })}
         >
           {placeholder}
-        </button>
+        </Button>
       )}
     </div>
   );

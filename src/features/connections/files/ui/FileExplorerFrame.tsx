@@ -1,3 +1,4 @@
+import { Button } from "../../../../shared/ui/forms/Button";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../../shared/lib/queryClient";
 import { errorMessage } from "../../../../shared/lib/errorMessage";
@@ -356,7 +357,7 @@ export function FileExplorerFrame({
                       <p>{t("No files found")}</p>
                     ) : (
                       results.map((file) => (
-                        <button
+                        <Button variant="ghost" size="content"
                           type="button"
                           key={file.path}
                           title={file.path}
@@ -372,7 +373,7 @@ export function FileExplorerFrame({
                         >
                           <FileTypeIcon name={file.name} isDir={false} />
                           <span>{file.relative}</span>
-                        </button>
+                        </Button>
                       ))
                     )}
                   </div>

@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Check, ListEnd, Minus } from "../../../shared/ui/icons";
 import type { TaskListItem, TaskListItemStatus } from "../model/session";
@@ -44,15 +45,13 @@ export function TaskListPreview({ items, explanation }: Props) {
           >
             <TaskState status={item.status} />
             <span
-              className={`min-w-0 flex-1 font-sans text-[12.5px] leading-4.5 ${
-                item.status === "completed"
+              className={cn("min-w-0 flex-1 font-sans text-[12.5px] leading-4.5", item.status === "completed"
                   ? "text-content/40 line-through decoration-content/25"
                   : item.status === "cancelled"
                     ? "text-content/35 line-through decoration-content/20"
                     : item.status === "in_progress"
                       ? "text-content/85"
-                      : "text-content/60"
-              }`}
+                      : "text-content/60")}
             >
               {item.text}
             </span>

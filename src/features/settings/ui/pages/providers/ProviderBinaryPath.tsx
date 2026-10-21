@@ -1,3 +1,4 @@
+import { Input } from "../../../../../shared/ui/forms/Input";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -252,7 +253,7 @@ export function ProviderBinaryPath({
           >
             {uiT("CLI path")}
           </label>
-          <input
+          <Input
             data-ui="input"
             id={`${provider}-binary-path`}
             type="text"

@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 // The left sidebar's Workflows section: conversations with workflow runs (each
 // with run lines; a line opens the run's detail tab) and the saved
 // workflows hub.
@@ -32,12 +34,12 @@ export function WorkflowSidebarSection({ activeSessionId, onOpenSession, onOpenW
           <div
             key={entry.sessionId}
             data-workflow-conversation
-            className={`flex min-w-0 flex-col rounded-lg px-2.5 py-1.5 hover:bg-surface-hover ${entry.sessionId === activeSessionId ? "bg-selection" : ""}`}
+            className={cn("flex min-w-0 flex-col rounded-lg px-2.5 py-1.5 hover:bg-surface-hover", entry.sessionId === activeSessionId ? "bg-selection" : "")}
           >
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               data-workflow-conversation-select
-              className="min-w-0 truncate text-left text-ui-base text-content"
+              className="block min-w-0 truncate text-left text-ui-base text-content"
               onClick={() => onOpenSession(entry.sessionId)}
             >
               <span className="flex min-w-0 items-center gap-2">
@@ -56,7 +58,7 @@ export function WorkflowSidebarSection({ activeSessionId, onOpenSession, onOpenW
               <span data-session-project title={entry.cwd}>
                 {entry.cwd === "~" ? t("Chats") : projectName(entry.cwd)}
               </span>
-            </button>
+            </Button>
             <TaskWorkflowRunLines
               activity={entry.activity}
               isActive={entry.sessionId === activeSessionId}
@@ -66,15 +68,16 @@ export function WorkflowSidebarSection({ activeSessionId, onOpenSession, onOpenW
             />
           </div>
         ))}
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           aria-current={workflowsActive ? "page" : undefined}
+          data-active={workflowsActive || undefined}
           onClick={onOpenWorkflows}
-          className={`flex h-7 min-w-0 items-center gap-2 rounded-lg px-2.5 text-left text-ui-sm text-content/60 hover:bg-surface-hover hover:text-content ${workflowsActive ? "bg-selection text-content" : ""}`}
+          className="flex h-7 min-w-0 items-center justify-start gap-2 rounded-lg px-2.5 text-left text-ui-sm"
         >
           <Workflow className="size-3.5 shrink-0" />
           <span className="truncate">{t("Saved workflows")}</span>
-        </button>
+        </Button>
       </div>
     </TooltipProvider>
   );

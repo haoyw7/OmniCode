@@ -1,3 +1,4 @@
+import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
@@ -184,7 +185,7 @@ export function SkillPromptField({ value, harness, cwd, onChange, invalid }: Pro
           anchorRef={slashAnchorRef}
         />
       </div>
-      <textarea
+      <Textarea variant="editor"
         ref={fieldRef}
         rows={1}
         spellCheck={false}

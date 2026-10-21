@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { motion as motionElement } from "motion/react";
 import { panelTransition, immediateTransition, duration } from "../../../shared/motion/tokens";
 import { reducedMotionQuery as motionPreferenceQuery } from "../../../shared/lib/reducedMotion";
@@ -162,7 +164,7 @@ export function BotFilePanel({
       "grid size-7 shrink-0 self-center place-items-center rounded-md text-content/55 hover:bg-content/3 hover:text-content";
     return (
       <div className="mr-1 flex items-center">
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           className={button}
           aria-label={t("Collapse")}
@@ -171,10 +173,10 @@ export function BotFilePanel({
           onClick={() => setExpanded(false)}
         >
           <Minus className="size-3.5" />
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" size="content"
           type="button"
-          className={`${button} ${maximized ? "bg-content/8 text-content" : ""}`}
+          className={cn(button, maximized ? "bg-content/8 text-content" : "")}
           aria-label={maximizeLabel}
           aria-pressed={maximized}
           title={maximizeLabel}
@@ -182,8 +184,8 @@ export function BotFilePanel({
           onClick={() => setMaximized((value) => !value)}
         >
           <Maximize2 className="size-3.5" />
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" size="content"
           type="button"
           className={button}
           aria-label={t("Close All")}
@@ -192,7 +194,7 @@ export function BotFilePanel({
           onClick={closeAll}
         >
           <X className="size-4" />
-        </button>
+        </Button>
       </div>
     );
   }, [maximized, t, setExpanded, closeAll]);

@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -92,16 +93,16 @@ export function ReminderNotices({
         {error ? (
           <div role="alert" className="px-3 py-2 text-[12px] text-content/70">
             {uiT("Couldn’t load reminders.")}{" "}
-            <button className="underline" onClick={onRetry}>
+            <Button variant="ghost" size="content" className="underline" onClick={onRetry}>
               {uiT("Retry")}
-            </button>
+            </Button>
           </div>
         ) : null}
         <div className="max-h-[min(320px,50vh)] overflow-y-auto overscroll-none divide-y divide-stroke">
           {reminders.map((reminder) => (
             <article key={reminder.sessionId} className="px-3 py-2.5">
-              <button
-                className="block w-full text-left"
+              <Button variant="ghost" size="content"
+                className="block w-full text-left justify-start"
                 onClick={() => onOpen(reminder)}
               >
                 <span className="block truncate text-[13px] font-medium hover:underline">
@@ -114,15 +115,15 @@ export function ReminderNotices({
                   {projectName(reminder.cwd)} ·{" "}
                   {formatReminderTime(reminder.dueAt)}
                 </span>
-              </button>
+              </Button>
               <div className="mt-2 flex items-center gap-1.5 text-[11px]">
-                <button
+                <Button variant="ghost" size="content"
                   className="rounded-md bg-content/10 px-2 py-1 hover:bg-content/15"
                   onClick={() => onOpen(reminder)}
                 >
                   {uiT("Open session")}
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" size="content"
                   aria-haspopup="menu"
                   aria-expanded={
                     snooze?.reminder.sessionId === reminder.sessionId
@@ -134,26 +135,26 @@ export function ReminderNotices({
                   }}
                 >
                   {uiT("Snooze")}
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" size="content"
                   className="ml-auto rounded-md px-2 py-1 text-content/50 hover:bg-content/6"
                   onClick={() =>
                     onDismiss([reminder.sessionId], reminder.dueAt)
                   }
                 >
                   {uiT("Dismiss")}
-                </button>
+                </Button>
               </div>
             </article>
           ))}
         </div>
         {!notifications && reminders.length ? (
-          <button
-            className="w-full border-t border-stroke px-3 py-2 text-left text-[11px] text-content/50 hover:text-content"
+          <Button variant="ghost" size="content"
+            className="w-full border-t border-stroke px-3 py-2 text-left text-[11px] text-content/50 hover:text-content justify-start"
             onClick={onOpenSettings}
           >
             {uiT("Desktop alerts are off. Enable in Settings.")}
-          </button>
+          </Button>
         ) : null}
       </section>
       <PresenceBoundary propagate>{snooze &&

@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import {
@@ -159,11 +161,11 @@ export function ReviewSourceSelect({
   };
 
   const rowClass = (highlight: boolean) =>
-    `flex min-h-8 w-full shrink-0 items-center gap-2 rounded-lg px-2.5 text-left text-ui-base outline-none hover:bg-menu-hover ${highlight ? "bg-menu-hover" : ""}`;
+    cn("flex w-full shrink-0 items-center justify-start gap-2 rounded-lg text-left text-ui-base outline-none hover:bg-menu-hover", highlight && "bg-menu-hover");
 
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         ref={trigger}
         type="button"
         aria-label={`${label}: ${selectedLabel}`}
@@ -177,14 +179,14 @@ export function ReviewSourceSelect({
           event.preventDefault();
           if (!open) openMenu(true);
         }}
-        className="review-source-select flex h-8 min-w-0 shrink items-center gap-1.5 rounded-lg border pr-2 pl-3 text-left text-ui-base outline-none focus-visible:ring-2 focus-visible:ring-content/25"
+        className="review-source-select flex h-8 min-w-0 shrink items-center gap-1.5 rounded-lg border pr-2 pl-3 text-left text-ui-base outline-none focus-visible:ring-2 focus-visible:ring-content/25 justify-start"
       >
         <span className="min-w-0 truncate" title={selectedLabel}>
           {selectedLabel}
         </span>
         <ChevronDown className="size-3.5 shrink-0 text-foreground-subtle" />
         {trailing}
-      </button>
+      </Button>
       {visible ? (
         <Popover
           open={shown}
@@ -294,7 +296,7 @@ export function ReviewSourceSelect({
                   (keyboardNavigation && index === activeIndex) ||
                   (entry.kind === "commits" && submenu);
                 return entry.kind === "commits" ? (
-                  <button
+                  <Button variant="ghost" size="content"
                     key="commits"
                     ref={commitsRow}
                     id={`${menuId}-option-${index}`}
@@ -325,9 +327,9 @@ export function ReviewSourceSelect({
                       {entry.label}
                     </span>
                     <ChevronRight className="size-4 shrink-0 text-foreground-subtle" />
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button variant="ghost" size="content"
                     key={entry.value}
                     id={`${menuId}-option-${index}`}
                     type="button"
@@ -358,7 +360,7 @@ export function ReviewSourceSelect({
                         <Check className="size-4 text-foreground-subtle" />
                       ) : null}
                     </span>
-                  </button>
+                  </Button>
                 );
               })}
             </Fragment>
@@ -399,7 +401,7 @@ export function ReviewSourceSelect({
             commits.map((commit, index) => {
               const selected = commit.sha === selectedCommit;
               return (
-                <button
+                <Button variant="ghost" size="content"
                   key={commit.sha}
                   id={`${submenuId}-${index}`}
                   type="button"
@@ -425,7 +427,7 @@ export function ReviewSourceSelect({
                       <Check className="size-4 text-foreground-subtle" />
                     ) : null}
                   </span>
-                </button>
+                </Button>
               );
             })
           )}

@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
@@ -38,14 +40,14 @@ export function CheckEvidence({
         ),
       )}
       {!showAll && annotations.length > 5 ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           onClick={() => setShowAll(true)}
           className="rounded px-2 py-1 text-[11px] text-content/55 hover:bg-content/3 hover:text-content"
         >
           {uiT("Show ")}
           {annotations.length - 5} {uiT("more annotations")}
-        </button>
+        </Button>
       ) : null}
     </div>
   );
@@ -106,7 +108,7 @@ function CheckAnnotation({
             {location}
           </span>
           {fileUrl ? (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               title={uiT("View source at the checked commit")}
               aria-label={uiT("View {value0} on GitHub", {
@@ -116,7 +118,7 @@ function CheckAnnotation({
               className="-my-1 -mr-1 grid size-6 shrink-0 place-items-center rounded text-content/40 hover:bg-content/3 hover:text-content"
             >
               <ExternalLink className="size-3" />
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}
@@ -128,7 +130,7 @@ function CheckAnnotation({
           {excerpt.map((line, index) => (
             <div
               key={index}
-              className={`flex min-w-max gap-4 border-l-2 pr-3 ${firstLine + index === annotation.line ? "border-rose-400/40 bg-rose-400/[0.06] text-content/85" : "border-transparent text-content/45"}`}
+              className={cn("flex min-w-max gap-4 border-l-2 pr-3", firstLine + index === annotation.line ? "border-rose-400/40 bg-rose-400/[0.06] text-content/85" : "border-transparent text-content/45")}
             >
               <span className="w-8 shrink-0 select-none text-right tabular-nums text-content/30">
                 {firstLine + index}
@@ -139,10 +141,10 @@ function CheckAnnotation({
         </div>
       ) : null}
       <div
-        className={`flex min-w-0 items-start gap-2 px-3 py-3 ${excerpt.length ? "border-t border-stroke" : ""}`}
+        className={cn("flex min-w-0 items-start gap-2 px-3 py-3", excerpt.length ? "border-t border-stroke" : "")}
       >
         <Mark
-          className={`mt-0.5 size-3 shrink-0 ${annotation.level === "failure" ? "text-rose-400/70" : "text-amber-400/70"}`}
+          className={cn("mt-0.5 size-3 shrink-0", annotation.level === "failure" ? "text-rose-400/70" : "text-amber-400/70")}
         />
         <div className="min-w-0 flex-1">
           <p className="max-h-32 overflow-auto whitespace-pre-wrap break-words text-[12px] text-content/75">

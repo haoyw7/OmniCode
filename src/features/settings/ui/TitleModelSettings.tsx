@@ -1,3 +1,4 @@
+import { Checkbox } from "../../../shared/ui/forms/Checkbox";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,7 +42,7 @@ export function TitleModelSettings({
   }, [revealed]);
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         aria-expanded={expanded}
         aria-controls={contentId}
@@ -53,7 +54,7 @@ export function TitleModelSettings({
           aria-hidden="true"
           className="size-4 shrink-0"
         />
-      </button>
+      </Button>
       <div id={contentId}>
         <AnimatedCollapse expanded={expanded} keepMounted>
           <TitleModelConfiguration />
@@ -182,10 +183,9 @@ function TitleModelForm({ machineId }: { machineId: string }) {
     <form noValidate onSubmit={save}>
     <fieldset disabled={loading || busy || !loaded} className="space-y-3">
       <label className="flex items-center gap-2 text-[13px] text-content">
-        <input data-ui="checkbox"
-          type="checkbox"
+        <Checkbox
           checked={settings.enabled}
-          onChange={(event) => change("enabled", event.target.checked)}
+          onCheckedChange={(checked) => change("enabled", checked === true)}
         />
         {t("Generate titles with model API")}
       </label>
@@ -243,12 +243,11 @@ function TitleModelForm({ machineId }: { machineId: string }) {
         </span>
       </label>
       <label className="flex items-center gap-2 text-[13px] text-content">
-        <input data-ui="checkbox"
-          type="checkbox"
+        <Checkbox
           disabled={!read.data?.hasApiKey}
           checked={clearKey}
-          onChange={(event) => {
-            change("clearKey", event.target.checked);
+          onCheckedChange={(checked) => {
+            change("clearKey", checked === true);
             setNotice("");
           }}
         />

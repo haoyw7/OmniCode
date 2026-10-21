@@ -1,3 +1,7 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
+import { Textarea } from "../../../shared/ui/forms/Textarea";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
@@ -486,11 +490,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
   );
 
   const optionClass = (index: number, stacked = false) =>
-    `flex w-full ${stacked ? "flex-col items-start gap-0.5" : "items-center gap-2.5"} rounded-lg px-2 py-1.5 text-left text-[13px] ${
-      index === highlight
-        ? "bg-selection-emphasis text-content"
-        : "text-content/75"
-    }`;
+    cn("flex w-full justify-start text-left", stacked ? "flex-col items-start" : "items-center", index === highlight && "bg-selection");
 
   return (
     // Selectors expand below the toolbar without moving the prompt.
@@ -523,15 +523,15 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
       >
         <span className="pointer-events-none h-0.5 w-6 rounded-full bg-content/15 transition-colors group-hover:bg-content/35" />
       </div>
-      <button
+      <Button variant="ghost" size="icon-xs"
         type="button"
         aria-label={uiT("Close composer")}
         title={uiT("Close (Esc)")}
         onClick={dismiss}
-        className="absolute right-2 top-5.5 z-20 grid size-5 place-items-center rounded text-content/35 hover:bg-selection-hover hover:text-content"
+        className="absolute right-2 top-5.5 z-20"
       >
         <X className="size-3" />
-      </button>
+      </Button>
       {attachments.dragging ? (
         <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center rounded-[16px] border border-dashed border-accent/60 bg-background-base/90 text-sm text-accent">
           {uiT("Drop to attach")}
@@ -547,14 +547,14 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
           onOpenChange={onGitOpenChange}
           onClose={focusPrompt}
         />
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => openPicker("project")}
           disabled={projects.length === 0}
           title={uiT("Project (⌘P)")}
           aria-expanded={picker === "project"}
-          className={`ml-auto flex min-w-0 max-w-[40%] shrink items-center gap-1.5 rounded-md px-1.5 h-6 text-[12px] disabled:opacity-50 ${picker === "project" ? "bg-selection-emphasis text-content" : "text-content/55 hover:bg-selection-hover hover:text-content"}`}
+          className={cn("ml-auto flex min-w-0 max-w-[40%] shrink items-center gap-1.5 rounded-md px-1.5 h-6 text-[12px] disabled:opacity-50", picker === "project" ? "bg-selection-emphasis text-content" : "text-content/55 hover:bg-selection-hover hover:text-content")}
         >
           {cwd ? (
             <QuickProjectIcon
@@ -567,7 +567,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
             {cwd ? projectName(cwd) : uiT("No project")}
           </span>
           <ChevronDown className="size-3 shrink-0 opacity-60" />
-        </button>
+        </Button>
       </div>
       {attachments.files.length ? (
         <div
@@ -605,7 +605,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
           )}
           {prompt.endsWith("\n") ? "\n" : null}
         </div>
-        <textarea
+        <Textarea variant="editor"
           ref={promptRef}
           value={prompt}
           rows={2}
@@ -657,7 +657,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
         </p>
       ) : null}
       <div className="flex shrink-0 items-center gap-1.5 border-t border-stroke px-3 py-2">
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           ref={plusRef}
           aria-label={uiT("Add attachment")}
@@ -670,30 +670,30 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
           disabled={!attachmentsSupported || attachments.loading || busy}
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => openPicker("attachments")}
-          className={`grid size-6.5 shrink-0 place-items-center rounded-md disabled:opacity-40 ${picker === "attachments" ? "bg-selection-emphasis text-content" : "text-content/70 hover:bg-selection-hover hover:text-content"}`}
+          className={cn("grid size-6.5 shrink-0 place-items-center rounded-md disabled:opacity-40", picker === "attachments" ? "bg-selection-emphasis text-content" : "text-content/70 hover:bg-selection-hover hover:text-content")}
         >
           <Plus className="size-3.5" strokeWidth={1.5} />
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" size="content"
           type="button"
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => openPicker("model")}
           title={uiT("Model (⌘.)")}
           aria-expanded={picker === "model"}
-          className={`flex min-w-0 max-w-[40%] items-center gap-1.5 rounded-md px-2 py-1 text-[12px] ${picker === "model" ? "bg-selection-emphasis text-content" : "text-content/70 hover:bg-selection-hover hover:text-content"}`}
+          className={cn("flex min-w-0 max-w-[40%] items-center gap-1.5 rounded-md px-2 py-1 text-[12px]", picker === "model" ? "bg-selection-emphasis text-content" : "text-content/70 hover:bg-selection-hover hover:text-content")}
         >
           <HarnessIcon harness={model.harness} className="size-3.5 shrink-0" />
           <span className="truncate">{model.name}</span>
           <ChevronDown className="size-3 shrink-0 opacity-60" />
-        </button>
+        </Button>
         {model.harness !== "fx" ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => openPicker("permissions")}
             title={uiT("Permissions")}
             aria-expanded={picker === "permissions"}
-            className={`flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-[12px] ${picker === "permissions" ? "bg-selection-emphasis text-content" : "text-content/70 hover:bg-selection-hover hover:text-content"}`}
+            className={cn("flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1 text-[12px]", picker === "permissions" ? "bg-selection-emphasis text-content" : "text-content/70 hover:bg-selection-hover hover:text-content")}
           >
             <QuickPermissionIcon
               mode={runtimeMode}
@@ -703,7 +703,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
               {uiT(RUNTIME_MODE_LABEL[runtimeMode])}
             </span>
             <ChevronDown className="size-3 shrink-0 opacity-60" />
-          </button>
+          </Button>
         ) : null}
         <span className="ml-auto flex shrink-0 items-center gap-3 text-[11px] text-content/45">
           {attachments.loading ? (
@@ -722,16 +722,15 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
               </span>
             </>
           )}
-          <button
+          <Button variant="primary" size="sm"
             type="button"
             onClick={() => void submit(false)}
             disabled={!canSubmit}
-            className="rounded-md bg-accent px-2.5 py-1 text-[12px] font-medium text-white disabled:opacity-40"
           >
             {leadingMode?.name === DRAFT_COMMAND.name
               ? uiT("Save draft")
               : uiT("Start")}
-          </button>
+          </Button>
         </span>
       </div>
 
@@ -747,7 +746,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
           onDismiss={closePicker}
           className="p-1"
         >
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             disabled={attachments.loading || !attachmentsSupported}
             onMouseDown={(event) => event.preventDefault()}
@@ -755,12 +754,13 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
               setPicker(null);
               void attachments.chooseFiles().then(focusPrompt);
             }}
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-selection-hover disabled:opacity-40"
+            data-menu-row="single"
+                className="flex w-full items-center justify-start text-left"
           >
             <ImagePlus className="size-3.5" />
             {uiT("Choose files…")}
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="content"
             type="button"
             disabled={attachments.loading || !attachmentsSupported}
             onMouseDown={(event) => event.preventDefault()}
@@ -768,11 +768,12 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
               setPicker(null);
               void attachments.takeScreenshot().then(focusPrompt);
             }}
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-selection-hover disabled:opacity-40"
+            data-menu-row="single"
+                className="flex w-full items-center justify-start text-left"
           >
             <Maximize2 className="size-3.5" />
             {uiT("Take screenshot…")}
-          </button>
+          </Button>
         </Popover>
       ) : null}</PresenceBoundary>
       <AnimatePresence>
@@ -792,7 +793,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
                 </p>
               ) : (
                 commandOptions.map((command, index) => (
-                  <button
+                  <Button variant="ghost" size="content"
                     key={command.invocation}
                     id={`quick-command-${command.invocation}`}
                     type="button"
@@ -802,13 +803,14 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
                     onMouseEnter={() => setHighlight(index)}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => chooseAt(index)}
+                    data-menu-row="description"
                     className={optionClass(index, true)}
                   >
                     <CommandLabel name={command.name} />
                     <span className="text-[11px] leading-4 text-content/50">
                       {uiT(command.description)}
                     </span>
-                  </button>
+                  </Button>
                 ))
               )}
             </div>
@@ -842,7 +844,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
             <div className="flex min-h-0 flex-col border-t border-stroke">
               <label className="flex shrink-0 items-center gap-2 px-4 py-2 text-content/45">
                 <Search className="size-3.5 shrink-0" />
-                <input
+                <Input variant="inline"
                   ref={queryRef}
                   value={query}
                   onChange={(event) => {
@@ -878,10 +880,11 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
                   </p>
                 ) : (
                   projectOptions.map((path, index) => (
-                    <button
+                    <Button variant="ghost" size="content"
                       key={path}
                       type="button"
                       role="option"
+                    data-menu-row="single"
                       aria-selected={index === highlight}
                       tabIndex={-1}
                       onMouseEnter={() => setHighlight(index)}
@@ -898,7 +901,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
                       <span className="ml-auto truncate pl-3 text-[11px] text-content/40">
                         {prettyParent(path)}
                       </span>
-                    </button>
+                    </Button>
                   ))
                 )}
               </div>
@@ -917,7 +920,7 @@ function CommandLabel({ name }: { name: string }) {
     <span className="flex items-center gap-1.5">
       {style ? (
         <style.Icon
-          className={`size-3.5 shrink-0 ${style.menu?.iconClassName ?? ""}`}
+          className={cn("size-3.5 shrink-0", style.menu?.iconClassName ?? "")}
         />
       ) : null}
       {name.charAt(0).toUpperCase() + name.slice(1)}

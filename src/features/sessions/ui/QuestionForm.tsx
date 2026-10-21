@@ -1,3 +1,6 @@
+import { Textarea } from "../../../shared/ui/forms/Textarea";
+import { Input } from "../../../shared/ui/forms/Input";
+import { cn } from "../../../shared/lib/cn";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -170,7 +173,7 @@ export function QuestionForm({
             ) : null}
             {total > 1 ? (
               <div className="flex shrink-0 items-center gap-0.5">
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   aria-label={uiT("Previous question")}
                   title={uiT("Previous question")}
@@ -179,12 +182,12 @@ export function QuestionForm({
                   className="grid size-6 place-items-center rounded-md hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-30"
                 >
                   <ChevronLeft className="size-3.5" aria-hidden="true" />
-                </button>
+                </Button>
                 <span className="px-1 text-[12px] tabular-nums text-content/45" aria-live="polite">
                   {index + 1} {uiT("of ")}
                   {total}
                 </span>
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   aria-label={uiT("Next question")}
                   title={uiT("Next question")}
@@ -193,11 +196,11 @@ export function QuestionForm({
                   className="grid size-6 place-items-center rounded-md hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-30"
                 >
                   <ChevronRight className="size-3.5" aria-hidden="true" />
-                </button>
+                </Button>
               </div>
             ) : null}
             {onCollapse ? (
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 aria-label={uiT("Collapse question")}
                 title={uiT("Collapse question")}
@@ -205,7 +208,7 @@ export function QuestionForm({
                 onClick={onCollapse}
               >
                 <X className="size-4" aria-hidden="true" />
-              </button>
+              </Button>
             ) : null}
           </div>
           <DockQuestionFields
@@ -275,7 +278,7 @@ export function QuestionForm({
               className="flex shrink-0 items-center gap-0.5"
               data-question-navigation
             >
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 aria-label={uiT("Previous question")}
                 title={uiT("Previous question")}
@@ -284,7 +287,7 @@ export function QuestionForm({
                 className="grid size-6 place-items-center rounded-md text-content/55 hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-30"
               >
                 <ChevronLeft className="size-3.5" aria-hidden="true" />
-              </button>
+              </Button>
               <span
                 className="px-1 text-[11px] tabular-nums text-content/40"
                 aria-live="polite"
@@ -292,7 +295,7 @@ export function QuestionForm({
                 {index + 1} {uiT("of ")}
                 {total}
               </span>
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 aria-label={uiT("Next question")}
                 title={uiT("Next question")}
@@ -301,7 +304,7 @@ export function QuestionForm({
                 className="grid size-6 place-items-center rounded-md text-content/55 hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-30"
               >
                 <ChevronRight className="size-3.5" aria-hidden="true" />
-              </button>
+              </Button>
             </div>
           ) : null}
           <Button variant="secondary"
@@ -313,7 +316,7 @@ export function QuestionForm({
             {uiT("Skip")}
           </Button>
           {onCollapse ? (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               aria-label={uiT("Collapse question")}
               title={uiT("Collapse question")}
@@ -322,7 +325,7 @@ export function QuestionForm({
               onClick={onCollapse}
             >
               <ChevronDown className="size-3.5" aria-hidden="true" />
-            </button>
+            </Button>
           ) : null}
         </div>
         <div
@@ -451,7 +454,7 @@ function QuestionFields({
       ) : null}
       {options.length === 0 && question.allowCustom ? (
         question.input?.kind === "multiline" ? (
-          <textarea data-ui="textarea"
+          <Textarea size="sm"
             value={custom}
             aria-invalid={invalid}
             onChange={(event) => onCustom(event.target.value)}
@@ -462,7 +465,7 @@ function QuestionFields({
             className="mt-1.5 w-full resize-y rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none placeholder:text-content/35 focus:border-content/30"
           />
         ) : (
-        <input data-ui="input"
+        <Input data-ui="input"
           value={custom}
           aria-invalid={invalid}
           onChange={(event) => onCustom(event.target.value)}
@@ -484,27 +487,21 @@ function QuestionFields({
             const active = selected.includes(option.id);
             return (
               <div key={option.id}>
-                <button
+                <Button variant="ghost" size="content"
                   {...optionProps(optionIndex)}
                   type="button"
                   aria-pressed={active}
                   data-question-option
-                  className={`flex w-full items-start gap-2 rounded-md border px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${
-                    active
+                  className={cn("flex w-full items-start gap-2 rounded-md border px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent justify-start", active
                       ? "border-content/35 bg-selection"
-                      : "border-content/10 hover:bg-content/3"
-                  }`}
+                      : "border-content/10 hover:bg-content/3")}
                 >
                   <span
                     aria-hidden
                     data-question-mark
-                    className={`mt-0.5 grid size-3.5 shrink-0 place-items-center border ${
-                      question.multiSelect ? "rounded-[3px]" : "rounded-full"
-                    } ${
-                      active
+                    className={cn("mt-0.5 grid size-3.5 shrink-0 place-items-center border", question.multiSelect ? "rounded-[3px]" : "rounded-full", active
                         ? "border-content bg-content text-background-base"
-                        : "border-content/30"
-                    }`}
+                        : "border-content/30")}
                   >
                     {active ? (
                       <Check className="size-2.5" strokeWidth={2.5} />
@@ -526,9 +523,9 @@ function QuestionFields({
                       </span>
                     ) : null}
                   </span>
-                </button>
+                </Button>
                 {isCustom && (active || customSelected) ? (
-                  <input data-ui="input"
+                  <Input data-ui="input"
                     value={custom}
                     aria-invalid={invalid}
                     onChange={(event) => onCustom(event.target.value)}
@@ -692,13 +689,13 @@ function DockQuestionFields({
               {options.map((option, optionIndex) => {
                 const active = selected.includes(option.id);
                 return (
-                  <button
+                  <Button variant="ghost" size="content"
                     key={option.id}
                     {...optionProps(optionIndex)}
                     type="button"
                     aria-pressed={active}
                     data-question-dock-option
-                    className="flex w-full items-center gap-3 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-content/4 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none"
+                    className="flex w-full items-center gap-3 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-content/4 focus-visible:outline-2 focus-visible:outline-accent motion-reduce:transition-none justify-start"
                   >
                     <span
                       aria-hidden
@@ -717,7 +714,7 @@ function DockQuestionFields({
                         </span>
                       ) : null}
                     </span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -734,7 +731,7 @@ function DockQuestionFields({
           <label className="flex min-w-0 flex-1 items-center gap-3 self-center">
             <Pencil className="size-4 shrink-0 text-content/40" strokeWidth={1.75} aria-hidden="true" />
             {question.input?.kind === "multiline" ? (
-              <textarea
+              <Textarea variant="editor"
                 value={custom}
                 aria-invalid={invalid}
                 onChange={(event) => onCustom(event.target.value)}
@@ -742,37 +739,37 @@ function DockQuestionFields({
                 maxLength={question.input.maxLength}
                 rows={3}
                 aria-label={fieldLabel}
-                className={`${fieldClass} resize-none`}
+                className={cn(fieldClass, "resize-none")}
               />
             ) : (
-              <input
+              <Input
                 value={custom}
                 aria-invalid={invalid}
                 onChange={(event) => onCustom(event.target.value)}
                 placeholder={placeholder}
                 maxLength={question.input?.maxLength}
                 aria-label={fieldLabel}
-                className={fieldClass}
+                variant="inline" className={fieldClass}
               />
             )}
           </label>
         ) : (
           <span className="flex-1" />
         )}
-        <button
+        <Button size="content"
           type="button"
-          className="question-dock-skip h-8 shrink-0 rounded-full border px-3.5 text-[13px] font-medium"
+          variant="secondary" className="question-dock-skip h-8 shrink-0 rounded-full border px-3.5 text-[13px] font-medium"
           onClick={onSkip}
         >
           {uiT("Skip")}
-        </button>
-        <button
+        </Button>
+        <Button size="content"
           type="submit"
           disabled={!ready}
-          className="question-dock-submit h-8 shrink-0 rounded-full px-3.5 text-[13px] font-medium"
+          variant="primary" className="question-dock-submit h-8 shrink-0 rounded-full px-3.5 text-[13px] font-medium"
         >
           {last ? uiT("Send") : uiT("Continue")}
-        </button>
+        </Button>
       </div>
     </>
   );

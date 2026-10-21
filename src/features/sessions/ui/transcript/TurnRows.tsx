@@ -1,3 +1,5 @@
+import { cn } from "../../../../shared/lib/cn";
+import { Button } from "../../../../shared/ui/forms/Button";
 import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { ChevronRight } from "../../../../shared/ui/icons";
@@ -82,7 +84,7 @@ export function WorkFoldLine({
       {harness ? (
         <HarnessIcon
           harness={harness}
-          className={`size-3.5 shrink-0 ${iconTone}`}
+          className={cn("size-3.5 shrink-0", iconTone)}
         />
       ) : (
         <ActivityPhaseIcon kind={kind} className={iconTone} />
@@ -100,15 +102,14 @@ export function WorkFoldLine({
       {title}
     </span>
   );
-  const row = `desktop-work-fold-line flex w-full min-w-0 items-center gap-1.5 px-4 @md:px-6 py-1 text-left${
-    open ? " zen-fold-drop" : ""
-  }`;
+  const row = cn("desktop-work-fold-line flex w-full min-w-0 items-center justify-start gap-1.5 px-4 @md:px-6 py-1 text-left", open && "zen-fold-drop");
 
   // Keep one host element as work becomes collapsible. Switching div/button
   // remounts the live title, resetting its clock.
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
+      data-session-disclosure
       role={!expandable ? (live ? "status" : "presentation") : undefined}
       tabIndex={expandable ? undefined : -1}
       aria-haspopup={sheet ? "dialog" : undefined}
@@ -116,7 +117,7 @@ export function WorkFoldLine({
       aria-label={expandable ? (open && !sheet ? uiT("Hide the work") : uiT("Show the work")) : undefined}
       aria-live={live ? "polite" : undefined}
       onClick={expandable ? onToggle : undefined}
-      className={`group group/activity-disclosure ${row}${expandable ? "" : " cursor-default"}`}
+      className={cn("group group/activity-disclosure", row, expandable ? "" : " cursor-default")}
       data-activity-sheet={sheet ? true : undefined}
     >
       {icon}
@@ -128,6 +129,6 @@ export function WorkFoldLine({
         </span>
       ) : null}
       {sheet ? <ChevronRight className="size-3.5 shrink-0 text-foreground-subtlest" /> : null}
-    </button>
+    </Button>
   );
 }

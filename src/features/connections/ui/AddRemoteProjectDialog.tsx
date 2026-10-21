@@ -4,8 +4,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { createPortal } from "react-dom";
-import { LAYER } from "../../../shared/lib/layers";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { Button } from "../../../shared/ui/forms/Button";
 import { Input } from "../../../shared/ui/forms/Input";
@@ -13,7 +11,7 @@ import { Field, FieldError } from "../../../shared/ui/primitives/Field";
 import { Empty, EmptyDescription } from "../../../shared/ui/primitives/Empty";
 import { Skeleton } from "../../../shared/ui/primitives/Skeleton";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
-import { ModalFooter } from "../../../shared/ui/Modal";
+import { Modal, ModalFooter } from "../../../shared/ui/Modal";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { ChevronRight, Folder } from "../../../shared/ui/icons";
 import {
@@ -118,16 +116,6 @@ function RemoteProjectForm({
     onCancel();
   }, [onCancel, resetOpen]);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      event.stopPropagation();
-      cancel();
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [cancel]);
 
   const browse = (next: string) => {
     resetOpen();
@@ -136,23 +124,9 @@ function RemoteProjectForm({
   };
   const error = openProject.error ?? directoryQuery.error;
 
-  return createPortal(
-    <div
-      data-window-modal
-      className="fixed inset-0"
-      style={{ zIndex: LAYER.dialog }}
-    >
-      <div
-        data-window-modal-backdrop
-        className="absolute inset-0"
-        onMouseDown={cancel}
-      />
+  return (
+    <Modal title={uiT("Open folder on a machine")} onClose={cancel} fitViewport>
       <form
-        data-window-modal-panel
-        role="dialog"
-        aria-modal="true"
-        aria-label={uiT("Open folder on a machine")}
-        onMouseDown={(event) => event.stopPropagation()}
         onSubmit={form.handleSubmit(({ path: cwd }) => {
           if (!machine || openProject.isPending) return;
           openProject.mutate(cwd, {
@@ -160,12 +134,9 @@ function RemoteProjectForm({
               onOpen(rememberRemoteProject(machine.environmentId, project).key),
           });
         })}
-        className="popover-backdrop absolute left-1/2 top-[16%] flex max-h-[70vh] w-[min(480px,calc(100vw-24px))] -translate-x-1/2 flex-col gap-3 rounded-lg border border-content/10 p-4 shadow-xl backdrop-blur-xl"
+        className="flex min-h-0 max-h-[70vh] flex-col gap-3 p-4"
       >
         <div className="flex flex-col gap-1">
-          <h2 className="desktop-pane-heading text-[13px] font-medium leading-tight text-content">
-            {uiT("Open folder on a machine")}
-          </h2>
           <p className="text-[12px] leading-snug text-content/55">
             {uiT(
               "Sessions in this project run on that machine, using its checkout and its Codex or Claude Code sign-in. They keep running when you close OmniCode here.",
@@ -299,8 +270,7 @@ function RemoteProjectForm({
           </>
         )}
       </form>
-    </div>,
-    document.body,
+    </Modal>
   );
 }
 

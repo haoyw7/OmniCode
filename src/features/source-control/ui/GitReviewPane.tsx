@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useMutation, useMutationState } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
@@ -463,7 +465,7 @@ export function GitReviewPane({
       }}
     >
       <span className="flex-1">{label}</span>
-      <Check className={`size-3.5 ${checked ? "" : "invisible"}`} />
+      <Check className={cn("size-3.5", checked ? "" : "invisible")} />
     </DropdownMenuItem>
   );
 
@@ -540,7 +542,7 @@ export function GitReviewPane({
                 menuClassName="review-file-search"
               />
               {rail ? (
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   title={railExpanded ? t("Hide source control") : t("Show source control")}
                   aria-label={railExpanded ? t("Hide source control") : t("Show source control")}
@@ -550,11 +552,11 @@ export function GitReviewPane({
                   className={toolbarButton}
                 >
                   <ListBullet className="size-3.5" />
-                </button>
+                </Button>
               ) : null}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     className={toolbarButton}
                     title={t("Review options")}
@@ -562,7 +564,7 @@ export function GitReviewPane({
                     data-review-options
                   >
                     <MoreVertical className="size-3.5" />
-                  </button>
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" aria-label={t("Review options")}>
                   {rail ? (

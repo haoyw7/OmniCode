@@ -1561,45 +1561,6 @@ header[data-tauri-drag-region] button {
   cursor: pointer;
 }
 
-/* Settings slider: accent-filled track up to the value, dark round thumb. */
-.settings-slider {
-  appearance: none;
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(
-    to right,
-    var(--color-accent) var(--slider-fill, 0%),
-    color-mix(in srgb, var(--color-content) 15%, transparent)
-      var(--slider-fill, 0%)
-  );
-  outline: none;
-}
-
-.settings-slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: var(--color-content);
-  box-shadow: 0 0 0 2px var(--color-card);
-  cursor: pointer;
-  transition: transform var(--motion-feedback-duration) var(--motion-ease-out);
-}
-
-.settings-slider:not(:disabled):active::-webkit-slider-thumb {
-  transform: scale(1.1);
-}
-
-.settings-slider:focus-visible::-webkit-slider-thumb {
-  box-shadow:
-    0 0 0 2px var(--color-card),
-    0 0 0 4px color-mix(in srgb, var(--color-accent) 45%, transparent);
-}
-
-.settings-slider:disabled::-webkit-slider-thumb {
-  cursor: not-allowed;
-}
-
 /* New split panes; same motion as the linked panel's slide. */
 
 [data-pane-enter="right"] {

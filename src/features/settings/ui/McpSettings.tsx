@@ -1,3 +1,7 @@
+import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
+import { cn } from "../../../shared/lib/cn";
+import { Input } from "../../../shared/ui/forms/Input";
+import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { useMutation } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -91,14 +95,14 @@ function McpPicker<T extends string>({
   return (
     <div ref={anchor} className="relative min-w-0">
       <span className="text-xs text-content/65">{label}</span>
-      <button
+      <Button variant="ghost" size="content"
         ref={trigger}
         type="button"
         aria-label={`${label}: ${selected?.label ?? value}`}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="mt-1 flex h-8 w-full items-center gap-2 rounded-md border border-content/10 bg-content/5 px-2 text-left text-[12px] text-content outline-none hover:border-content/20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+        className="mt-1 flex h-8 w-full items-center gap-2 rounded-md border border-content/10 bg-content/5 px-2 text-left text-[12px] text-content outline-none hover:border-content/20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent justify-start"
       >
         {selected?.icon}
         <span className="min-w-0 flex-1 truncate">
@@ -107,7 +111,7 @@ function McpPicker<T extends string>({
         <DisclosureChevron expanded={open} direction="down"
           className="size-3.5 shrink-0 text-content/50"
         />
-      </button>
+      </Button>
       <Popover
         open={open}
         anchor={anchor}
@@ -145,7 +149,7 @@ function McpPicker<T extends string>({
         className="overflow-y-auto overscroll-contain p-1"
       >
         {options.map((option) => (
-          <button
+          <Button data-menu-row="single" variant="ghost" size="content"
             key={option.value}
             type="button"
             role="option"
@@ -155,14 +159,14 @@ function McpPicker<T extends string>({
               setOpen(false);
               trigger.current?.focus();
             }}
-            className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] focus-visible:outline-2 focus-visible:outline-accent ${value === option.value ? "bg-selection text-content" : "text-content hover:bg-content/3"}`}
+            className={cn("flex w-full items-center gap-2 rounded-lg text-left text-[12px] focus-visible:outline-2 focus-visible:outline-accent justify-start", value === option.value ? "bg-selection text-content" : "text-content hover:bg-content/3")}
           >
             {option.icon}
             <span className="min-w-0 flex-1 truncate">{option.label}</span>
             {value === option.value ? (
               <Check className="size-3.5 shrink-0" />
             ) : null}
-          </button>
+          </Button>
         ))}
       </Popover>
     </div>
@@ -248,7 +252,7 @@ function AddServerModal({
           <span className="text-content/40">
             {uiT("(optional for an mcpServers block)")}
           </span>
-          <input data-ui="input"
+          <Input data-ui="input"
             {...form.register("name")}
             aria-invalid={!!form.formState.errors.name}
             className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 text-sm text-content outline-none placeholder:text-content/35 focus:border-input-border-hover"
@@ -258,7 +262,7 @@ function AddServerModal({
         </label>
         <label className="block text-xs text-content/65">
           {uiT("JSON configuration")}
-          <textarea data-ui="textarea"
+          <Textarea data-ui="textarea"
             {...form.register("config")}
             aria-invalid={!!form.formState.errors.config}
             rows={7}
@@ -408,7 +412,7 @@ function McpConnections({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             onClick={() => void refresh()}
             disabled={loading || busy !== null}
@@ -416,8 +420,8 @@ function McpConnections({
           >
             <RefreshCw className="size-3.5" />
             {uiT("Refresh")}
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="content"
             type="button"
             aria-label={
               showAllProviders
@@ -431,18 +435,18 @@ function McpConnections({
                 : uiT("Showing available providers")
             }
             onClick={() => setShowAllProviders(!showAllProviders)}
-            className={`grid size-7 place-items-center rounded-md border border-content/10 hover:bg-content/3 ${showAllProviders ? "bg-selection text-content" : "text-content/55"}`}
+            className={cn("grid size-7 place-items-center rounded-md border border-content/10 hover:bg-content/3", showAllProviders ? "bg-selection text-content" : "text-content/55")}
           >
             <ListFilter className="size-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="content"
             type="button"
             aria-label={uiT("Add MCP server")}
             onClick={() => setAddOpen(true)}
             className="grid size-7 place-items-center rounded-md border border-stroke hover:bg-content/3"
           >
             <Plus className="size-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
       <div
@@ -451,12 +455,12 @@ function McpConnections({
         aria-label={uiT("Filter MCP servers by provider")}
       >
         {(["all", ...filterProviders] as const).map((provider) => (
-          <button
+          <Button variant="ghost" size="content"
             key={provider}
             type="button"
             aria-pressed={filter === provider}
             onClick={() => setFilter(provider)}
-            className={`inline-flex min-w-0 items-center gap-1.5 rounded-[5px] px-2.5 py-1 ${filter === provider ? "bg-selection text-content" : "text-content/50 hover:text-content"}`}
+            className={cn("inline-flex min-w-0 items-center gap-1.5 rounded-[5px] px-2.5 py-1", filter === provider ? "bg-selection text-content" : "text-content/50 hover:text-content")}
           >
             {provider === "all" ? (
               <Globe className="size-3.5" />
@@ -470,7 +474,7 @@ function McpConnections({
                 : servers.filter((server) => server.provider === provider)
                     .length}
             </span>
-          </button>
+          </Button>
         ))}
       </div>
       {error ? (
@@ -514,7 +518,7 @@ function McpConnections({
                     <ProviderIcon provider={server.provider} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <button
+                    <Button variant="ghost" size="content"
                       type="button"
                       disabled={!inspectable}
                       aria-expanded={inspectable ? open : undefined}
@@ -532,7 +536,7 @@ function McpConnections({
                           return next;
                         })
                       }
-                      className="-mx-1 flex max-w-full items-center gap-1 rounded px-1 text-left text-[13px] font-medium text-content enabled:hover:bg-content/3 focus-visible:outline-2 focus-visible:outline-accent"
+                      className="-mx-1 flex max-w-full items-center gap-1 rounded px-1 text-left text-[13px] font-medium text-content enabled:hover:bg-content/3 focus-visible:outline-2 focus-visible:outline-accent justify-start"
                     >
                       <span className="truncate">{server.name}</span>
                       {inspectable ? (
@@ -540,7 +544,7 @@ function McpConnections({
                           className="size-3.5 shrink-0 text-content/45"
                         />
                       ) : null}
-                    </button>
+                    </Button>
                     <div className="mt-1 text-[12px] leading-relaxed text-content/45">
                       {MCP_PROVIDER_LABELS[server.provider]} · {server.scope} ·{" "}
                       {server.transport || "MCP"} ·{" "}
@@ -575,50 +579,50 @@ function McpConnections({
                         server.transport &&
                         !["stdio", "local", "ws"].includes(server.transport)
                   ) ? (
-                    <button
+                    <Button variant="ghost" size="content"
                       type="button"
                       disabled={busy !== null}
                       onClick={() => void login(server)}
                       className="rounded-md border border-stroke px-2 py-1 text-xs hover:bg-content/3 disabled:opacity-50"
                     >
                       {uiT("Sign in")}
-                    </button>
+                    </Button>
                   ) : null}
                   {server.provider === "claude" ? (
                     <>
                       {!server.configPath ? (
                         <label className="text-xs text-content/55">
                           {uiT("Scope")}{" "}
-                          <select data-ui="select"
-                            aria-label={uiT("Scope to remove {value0} from", {
+                          <SearchableSelect searchable={false}
+                            label={uiT("Scope to remove {value0} from", {
                               value0: String(server.name),
                             })}
                             value={removeScopes[server.name] ?? "local"}
-                            onChange={(event) =>
+                            onChange={(value) =>
                               setRemoveScopes((current) => ({
                                 ...current,
-                                [server.name]: event.target.value as Scope,
+                                [server.name]: value as Scope,
                               }))
                             }
-                            className="rounded border border-stroke bg-background-base px-1 py-1 text-content"
-                          >
-                            <option value="local">{uiT("Local")}</option>
-                            <option value="project">{uiT("Project")}</option>
-                            <option value="user">{uiT("User")}</option>
-                          </select>
+                            options={[
+                              { value: "local", label: uiT("Local") },
+                              { value: "project", label: uiT("Project") },
+                              { value: "user", label: uiT("User") },
+                            ]}
+                          />
                         </label>
                       ) : null}
-                      <button
+                      <Button variant="ghost" size="content"
                         type="button"
                         disabled={busy !== null}
                         onClick={() => void remove(server)}
                         className="rounded-md border border-stroke px-2 py-1 text-xs hover:bg-content/3 disabled:opacity-50"
                       >
                         {uiT("Remove")}
-                      </button>
+                      </Button>
                     </>
                   ) : (
-                    <button
+                    <Button variant="ghost" size="content"
                       type="button"
                       onClick={() =>
                         void revealPath(server.configPath).catch((cause) =>
@@ -628,7 +632,7 @@ function McpConnections({
                       className="rounded-md border border-stroke px-2 py-1 text-xs hover:bg-content/3"
                     >
                       {uiT("Show config")}
-                    </button>
+                    </Button>
                   )}
                 </div>
                 {inspectable ? (

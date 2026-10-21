@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { fitToolLayout } from "../model/fitToolLayout";
 import { fitPaneWidths, paneMinimumWidths, paneWidthBounds } from "../model/paneWidths";
 import { beginPaneResize, isPaneResizing, onPaneResizeSettled } from "../../../shared/lib/paneResize";
@@ -822,7 +824,7 @@ function PaneTreeComponent({
         data-chat-tiles={sessionLeaves.length > 1 ? "" : undefined}
         data-surface-mode={unified ? "unified" : "split"}
         data-pane-cards={paneCards ? "" : undefined}
-        className={`relative min-h-0 min-w-0 flex-1 ${surfaceGrid ? "animated-collapse-size grid" : ""} ${paneCards ? "pane-card-gutter" : ""}`}
+        className={cn("relative min-h-0 min-w-0 flex-1", surfaceGrid ? "animated-collapse-size grid" : "", paneCards ? "pane-card-gutter" : "")}
         style={gridStyle ? { ...gridStyle, gridTemplateRows: undefined, gridTemplateColumns: undefined } : undefined}
       >
         {leaves.map((leaf) => {
@@ -1270,9 +1272,7 @@ function Sash({
       aria-valuemax={100}
       aria-valuenow={Math.round(boundary * 100)}
       aria-hidden={!visible || undefined}
-      className={`absolute z-10 ${
-        row ? "w-px" : "h-px"
-      } ${visible ? "" : "pointer-events-none"}`}
+      className={cn("absolute z-10", row ? "w-px" : "h-px", visible ? "" : "pointer-events-none")}
       style={sashStyle(sash)}
     >
       <ResizeHandle
@@ -1375,7 +1375,7 @@ function CardMaximizeButton({
   const { t } = useTranslation();
   const label = maximized ? t("Restore") : t("Maximize");
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       data-card-maximize
       data-tauri-drag-region="false"
@@ -1384,12 +1384,10 @@ function CardMaximizeButton({
       title={label}
       onPointerDown={(event) => event.stopPropagation()}
       onClick={onToggle}
-      className={`mr-1 grid size-7 shrink-0 self-center place-items-center rounded-md hover:bg-content/3 hover:text-content ${
-        maximized ? "bg-content/8 text-content" : "text-content/55"
-      }`}
+      className={cn("mr-1 grid size-7 shrink-0 self-center place-items-center rounded-md hover:bg-content/3 hover:text-content", maximized ? "bg-content/8 text-content" : "text-content/55")}
     >
       <Maximize2 className="size-3.5" />
-    </button>
+    </Button>
   );
 }
 

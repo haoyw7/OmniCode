@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import type { ReactNode } from "react";
 import claude from "../../../assets/providers/claude.svg";
 import deepseek from "../../../assets/providers/deepseek.svg";
@@ -53,7 +54,7 @@ function MonoIcon({
       viewBox={viewBox}
       fill="currentColor"
       aria-hidden
-      className={`block ${className}`}
+      className={cn("block", className)}
     >
       {children}
     </svg>
@@ -89,10 +90,10 @@ export function HarnessIcon({
     return (
       <span
         aria-hidden
-        className={`grid place-items-center ${className}`}
+        className={cn("grid place-items-center", className)}
       >
         <span
-          className={`block bg-current ${harness === "hermes" ? "size-[72%]" : "size-full"}`}
+          className={cn("block bg-current", harness === "hermes" ? "size-[72%]" : "size-full")}
           style={{
             maskImage: `url("${icon}")`,
             maskPosition: "center",
@@ -141,7 +142,7 @@ export function HarnessIcon({
       src={HARNESS_ICONS[harness]}
       alt=""
       draggable={false}
-      className={`block object-contain ${className}`}
+      className={cn("block object-contain", className)}
     />
   );
 }

@@ -1,3 +1,6 @@
+import { cn } from "../../../../shared/lib/cn";
+import { Input } from "../../../../shared/ui/forms/Input";
+import { Button } from "../../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import {
   useCallback,
@@ -356,13 +359,11 @@ export function FilePreviewSearch({
           onKeyDown={onKeyDown}
         >
           <div
-            className={`flex h-[26px] min-w-0 flex-1 items-center rounded-md border bg-content/[0.06] px-2 ${
-              (query && total === 0) || result.invalid
+            className={cn("flex h-[26px] min-w-0 flex-1 items-center rounded-md border bg-content/[0.06] px-2", (query && total === 0) || result.invalid
                 ? "border-red-400/55"
-                : "border-content/10"
-            }`}
+                : "border-content/10")}
           >
-            <input data-ui="input"
+            <Input variant="inline"
               ref={inputRef}
               type="text"
               value={query}
@@ -377,11 +378,9 @@ export function FilePreviewSearch({
             />
             <span
               aria-live="polite"
-              className={`w-[13ch] shrink-0 overflow-hidden pl-2 text-right font-mono text-[11px] tabular-nums text-ellipsis whitespace-nowrap ${
-                (query && total === 0) || result.invalid
+              className={cn("w-[13ch] shrink-0 overflow-hidden pl-2 text-right font-mono text-[11px] tabular-nums text-ellipsis whitespace-nowrap", (query && total === 0) || result.invalid
                   ? "text-red-400"
-                  : "text-content/45"
-              }`}
+                  : "text-content/45")}
             >
               {count}
             </span>
@@ -453,19 +452,17 @@ function FindToggle({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="icon-sm"
       type="button"
       title={title}
       aria-label={title.slice(0, title.lastIndexOf(" ("))}
       aria-pressed={pressed}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
-      className={`grid size-6 shrink-0 place-items-center rounded-md font-mono text-[11px] font-semibold hover:bg-content/6 hover:text-content ${
-        pressed ? "bg-accent/25 text-content" : "text-content/60"
-      }`}
+      className={cn("grid size-6 shrink-0 place-items-center rounded-md font-mono text-[11px] font-semibold hover:bg-content/6 hover:text-content", pressed ? "bg-accent/25 text-content" : "text-content/60")}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -483,7 +480,7 @@ function FindButton({
   children: ReactNode;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="icon-sm"
       type="button"
       title={title}
       aria-label={label}
@@ -493,7 +490,7 @@ function FindButton({
       className="grid size-6 shrink-0 place-items-center rounded-md text-content/60 hover:bg-content/6 hover:text-content disabled:opacity-35"
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

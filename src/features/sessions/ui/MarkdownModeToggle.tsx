@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useState, type ReactNode } from "react";
 
@@ -63,7 +64,7 @@ function ModeTab({
   onSelect: () => void;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       role="tab"
       aria-selected={selected}
@@ -71,7 +72,7 @@ function ModeTab({
       onClick={onSelect}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 

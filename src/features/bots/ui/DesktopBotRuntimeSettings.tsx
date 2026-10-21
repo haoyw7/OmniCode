@@ -99,11 +99,11 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
           <div className="desktop-bot-row-block">
             <div className="desktop-bot-row">
               <span className="desktop-bot-row-title">{t("Working directory")}</span>
-              <button type="button" className="desktop-bot-runtime-directory" aria-label={t("Choose working directory")} aria-expanded={browsing} title={draft.workingDirectory || undefined} onClick={() => setBrowsing(value => !value)}>
+              <Button variant="ghost" size="content" type="button" className="desktop-bot-runtime-directory" aria-label={t("Choose working directory")} aria-expanded={browsing} title={draft.workingDirectory || undefined} onClick={() => setBrowsing(value => !value)}>
                 <Folder size={14} aria-hidden="true" />
                 <span data-empty={!draft.workingDirectory || undefined}>{draft.workingDirectory ? basename(draft.workingDirectory) : t("Use a separate directory for each thread")}</span>
                 <ChevronDown size={14} aria-hidden="true" />
-              </button>
+              </Button>
               {draft.workingDirectory && <IconButton size="sm" label={t("Clear working directory")} onClick={() => update({ workingDirectory: "" })}><X /></IconButton>}
             </div>
             <AnimatedCollapse expanded={browsing}><div className="desktop-bot-runtime-browser">
@@ -131,11 +131,11 @@ function RuntimeSettings({ bot, rpc, onSaved, delegationSupported = false }: Pro
         </div>
       </section>}
       <div className="desktop-bot-row-group"><section className="assistant-settings-section" data-open={toolsOpen}>
-        <button type="button" className="assistant-settings-disclosure" aria-expanded={toolsOpen} onClick={() => setToolsOpen(value => !value)}>
+        <Button variant="ghost" size="content" type="button" className="assistant-settings-disclosure" aria-expanded={toolsOpen} onClick={() => setToolsOpen(value => !value)}>
           <span className="assistant-settings-disclosure-title">{t("Host tools")}</span>
           <span className="assistant-settings-summary">{draft.custom ? `${draft.actions.length}/${actions.length}` : t("All")}</span>
           <ChevronDown size={16} aria-hidden="true" />
-        </button>
+        </Button>
         <AnimatedCollapse expanded={toolsOpen}><div className="desktop-bot-tool-options">
           <p>{t("These choices restrict Host control actions. Provider tools and user MCP servers keep their own permissions.")}</p>
           {switchRow(t("All permitted Host actions"), !draft.custom, all => update({ custom: !all }))}

@@ -89,12 +89,14 @@ it("pastes an image into a portable file while retaining its thumbnail", async (
       },
       preventDefault,
     } as never);
-    await new Promise((resolve) => setTimeout(resolve, 30));
   });
   expect(preventDefault).toHaveBeenCalled();
-  expect(api.files[0]).toMatchObject({
-    path: "/tmp/pasted.png",
-    previewUrl: "blob:preview",
+  await vi.waitFor(async () => {
+    await act(async () => {});
+    expect(api.files[0]).toMatchObject({
+      path: "/tmp/pasted.png",
+      previewUrl: "blob:preview",
+    });
   });
   act(() => api.clear());
   expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:preview");

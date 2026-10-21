@@ -1,3 +1,5 @@
+import { Input } from "../../../shared/ui/forms/Input";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,7 +45,7 @@ export function LinkSessionWorkItemDialog({
           <span className="font-medium text-content/80">
             {uiT("Issue or pull request URL")}
           </span>
-          <input data-ui="input"
+          <Input data-ui="input"
             autoFocus
             type="url"
             {...form.register("url")}
@@ -51,9 +53,7 @@ export function LinkSessionWorkItemDialog({
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "linked-work-item-error" : undefined}
             placeholder="https://github.com/owner/repo/pull/123"
-            className={`h-9 rounded-md border bg-content/5 px-2.5 text-[13px] text-content outline-none placeholder:text-content/30 focus:border-content/30 ${
-              error ? "border-red-400/60" : "border-content/10"
-            }`}
+            className={cn("h-9 rounded-md border bg-content/5 px-2.5 text-[13px] text-content outline-none placeholder:text-content/30 focus:border-content/30", error ? "border-red-400/60" : "border-content/10")}
           />
           {error ? (
 <FieldError id="linked-work-item-error" errors={[error]} />

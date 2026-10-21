@@ -313,7 +313,7 @@ it("opens custom timing from the duration submenu for all projects", async () =>
     )!.set!.call(input, "12:00");
     input!.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  act(() => button("Mute until then").click());
+  await act(async () => button("Mute until then").click());
   expect(loadNotificationPreferences()).toEqual({
     "local:/repos/work": {
       disabled: [],

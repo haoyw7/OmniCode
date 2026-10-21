@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { motion } from "motion/react";
 import { panelTransition, immediateTransition, duration } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
@@ -58,7 +59,7 @@ export function AstraWelcome({ onDone }: { onDone: () => void }) {
       </div>
       {SPARKLES.map((style, index) => (
         <span
-          className={`astra-sparkle${index % 6 === 0 ? " astra-sparkle-cross" : ""}`}
+          className={cn("astra-sparkle", index % 6 === 0 ? " astra-sparkle-cross" : "")}
           style={style}
           key={index}
         />

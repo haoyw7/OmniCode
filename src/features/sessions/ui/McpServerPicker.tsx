@@ -1,3 +1,6 @@
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Search, Settings } from "../../../shared/ui/icons";
@@ -85,7 +88,7 @@ export function McpServerPicker({
     >
       <div className="flex items-center gap-2 border-b border-content/10 px-3 py-2">
         <Search className="size-3.5 shrink-0 text-content/45" />
-        <input
+        <Input variant="inline"
           ref={search}
           role="combobox"
           aria-controls={listboxId}
@@ -120,7 +123,7 @@ export function McpServerPicker({
           className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/40"
           placeholder={uiT("Search MCP servers…")}
         />
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           aria-label={uiT("Close MCP picker")}
           title={uiT("Back to the conversation (Esc)")}
@@ -128,7 +131,7 @@ export function McpServerPicker({
           className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
         >
           <ChevronDown className="size-4" />
-        </button>
+        </Button>
       </div>
       <div
         ref={lockOverscroll}
@@ -155,7 +158,7 @@ export function McpServerPicker({
           servers.map((server, index) => {
             const available = server.availability === "available";
             return (
-              <button
+              <Button data-menu-row="description" variant="ghost" size="content"
                 key={`${server.provider}:${server.scope}:${server.configPath}:${server.name}`}
                 id={`${listboxId}-option-${index}`}
                 ref={available && active === index ? activeOption : undefined}
@@ -171,7 +174,7 @@ export function McpServerPicker({
                   if (available) setActive(index);
                 }}
                 onClick={() => onPick(server)}
-                className={`flex h-11 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent ${available ? (active === index ? "bg-selection text-content" : "text-content hover:bg-content/3") : "cursor-default text-content/40"}`}
+                className={cn("flex w-full items-center gap-2 rounded-md text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent justify-start", available ? (active === index ? "bg-selection text-content" : "text-content hover:bg-content/3") : "cursor-default text-content/40")}
               >
                 <HarnessIcon
                   harness={
@@ -190,7 +193,7 @@ export function McpServerPicker({
                   </span>
                 </span>
                 <span
-                  className={`max-w-[40%] shrink-0 truncate text-[11px] ${server.availability === "authentication" ? "text-amber-400" : "text-content/45"}`}
+                  className={cn("max-w-[40%] shrink-0 truncate text-[11px]", server.availability === "authentication" ? "text-amber-400" : "text-content/45")}
                 >
                   {server.availability === "authentication"
                     ? uiT("Needs authentication")
@@ -198,19 +201,19 @@ export function McpServerPicker({
                       ? uiT(server.detail)
                       : uiT("Available")}
                 </span>
-              </button>
+              </Button>
             );
           })
         )}
       </div>
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         onClick={onManage}
-        className="flex w-full items-center gap-2 border-t border-content/10 px-3 py-2 text-left text-[12px] text-content/65 hover:bg-content/3 hover:text-content"
+        className="flex w-full items-center gap-2 border-t border-content/10 px-3 py-2 text-left text-[12px] text-content/65 hover:bg-content/3 hover:text-content justify-start"
       >
         <Settings className="size-3.5" />
         {uiT("Manage MCP Servers…")}
-      </button>
+      </Button>
     </div>
   );
 }

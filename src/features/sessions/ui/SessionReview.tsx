@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronDown, ChevronRight, FileDiff } from "../../../shared/ui/icons";
 import { useEffect, useState } from "react";
@@ -164,14 +165,14 @@ export function SessionReview({
       title={error}
     >
       <span className="flex-1">{uiT("Couldn’t load session changes")}</span>
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         disabled={loading}
         onClick={refresh}
         className="rounded-md px-2 py-1 hover:bg-content/5 disabled:opacity-35"
       >
         {uiT("Retry")}
-      </button>
+      </Button>
     </div>
   ) : null;
   if (files.length === 0) {
@@ -246,7 +247,7 @@ export function SessionReview({
             {!historical && (
               <>
                 {attributed ? (
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     title={
                       busy
@@ -272,9 +273,9 @@ export function SessionReview({
                     className="h-7 rounded-md px-2.5 text-[11px] text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-35"
                   >
                     {uiT("Undo")}
-                  </button>
+                  </Button>
                 ) : null}
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   title={
                     busy
@@ -288,10 +289,10 @@ export function SessionReview({
                   className="h-7 rounded-md px-2.5 text-[11px] text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-35"
                 >
                   {uiT("Keep")}
-                </button>
+                </Button>
               </>
             )}
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               title={uiT("Review changes")}
               data-session-review-border
@@ -299,7 +300,7 @@ export function SessionReview({
               className="h-7 rounded-md border border-content/12 bg-content/8 px-2.5 text-[11px] font-medium text-content/75 hover:bg-content/12 hover:text-content"
             >
               {uiT("Review")}
-            </button>
+            </Button>
           </div>
         </div>
         {!attributed ? (
@@ -316,12 +317,12 @@ export function SessionReview({
           </AnimatedCollapse>
         </div>
         {primary.length > 3 ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             aria-expanded={expanded}
             data-session-review-border
             onClick={() => setExpanded((open) => !open)}
-            className="flex h-8 w-full items-center gap-1.5 border-t border-stroke px-3 text-left text-[11px] text-content/45 hover:bg-content/3 hover:text-content/70"
+            className="flex h-8 w-full items-center gap-1.5 border-t border-stroke px-3 text-left text-[11px] text-content/45 hover:bg-content/3 hover:text-content/70 justify-start"
           >
             {expanded ? (
               <ChevronDown className="size-3.5" />
@@ -335,18 +336,18 @@ export function SessionReview({
                     count: String(hiddenFileCount),
                   })}
             </span>
-          </button>
+          </Button>
         ) : null}
         {secondary.length > 0 ? (
           <>
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               aria-expanded={othersExpanded}
               data-session-review-border
               data-session-review-others
               title={externalHint}
               onClick={() => setOthersExpanded((open) => !open)}
-              className="flex h-8 w-full min-w-0 items-center gap-1.5 border-t border-stroke px-3 text-left text-[11px] text-content/45 hover:bg-content/3 hover:text-content/70"
+              className="flex h-8 w-full min-w-0 items-center gap-1.5 border-t border-stroke px-3 text-left text-[11px] text-content/45 hover:bg-content/3 hover:text-content/70 justify-start"
             >
               {othersExpanded ? (
                 <ChevronDown className="size-3.5 shrink-0" />
@@ -359,7 +360,7 @@ export function SessionReview({
                 })}
               </span>
               <DiffCounts file={sumChanges(secondary)} />
-            </button>
+            </Button>
             <AnimatedCollapse expanded={othersExpanded}>
               {() => (
                 <div className="scrollbar-none max-h-64 overflow-y-auto pb-1">
@@ -391,18 +392,18 @@ function FileRow({
 }) {
   const name = basename(file.relative);
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={file.relative}
       onClick={() => onOpenDiff(file.path, { sessionId, cwd })}
-      className="flex h-8 w-full min-w-0 items-center gap-2 px-3 text-left text-content/65 hover:bg-content/3 hover:text-content"
+      className="flex h-8 w-full min-w-0 items-center gap-2 px-3 text-left text-content/65 hover:bg-content/3 hover:text-content justify-start"
     >
       <FileTypeIcon name={name} isDir={false} size={15} />
       <span className="min-w-0 flex-1 truncate font-mono text-[12px]">
         {file.relative}
       </span>
       <DiffCounts file={file} />
-    </button>
+    </Button>
   );
 }
 

@@ -203,8 +203,7 @@ it("selects a draft workspace without opening the creation dialog", async () => 
   )[0]!;
   expect(settings.textContent).toContain("Worktree settings");
   expect(settings.parentElement?.className).toContain("border-t");
-  expect(settings.parentElement?.className).toContain("h-9");
-  expect(settings.className).toContain("h-full");
+  expect(settings.getAttribute("data-menu-row")).toBe("single");
   expect(settings.parentElement?.className).not.toContain("mt-1");
   expect(settings.parentElement?.className).not.toContain("pt-1");
   await act(async () => settings.click());
@@ -224,14 +223,14 @@ it("toggles composer worktree controls with the effective base and retains the r
   }));
   await act(async () => render("current"));
   const regular = container.querySelector(".composer-workspace-mode-trigger");
-  const checkbox = container.querySelector<HTMLInputElement>(".composer-worktree-checkbox-input")!;
-  expect(checkbox.checked).toBe(false);
+  const checkbox = container.querySelector<HTMLButtonElement>('.composer-worktree-checkbox [data-ui="checkbox"]')!;
+  expect(checkbox.getAttribute("aria-checked")).toBe("false");
   expect(checkbox.disabled).toBe(false);
   expect(container.querySelector(".composer-worktree-base")).toBeNull();
   await act(async () => checkbox.click());
   expect(onModeChange).toHaveBeenLastCalledWith("worktree", "release");
   await act(async () => render("worktree"));
-  expect(checkbox.checked).toBe(true);
+  expect(checkbox.getAttribute("aria-checked")).toBe("true");
   expect(container.querySelector(".composer-workspace-mode-trigger")).toBe(regular);
   expect(container.querySelector('.composer-worktree-base [aria-label="Create worktree from release"]')).not.toBeNull();
   await act(async () => checkbox.click());
@@ -255,7 +254,7 @@ it("uses local main for both draft worktree controls while another branch is cur
     cwd: "/composer-main-base", mode: "current", composerControls: true,
     onModeChange, onBaseChange: vi.fn(),
   })));
-  await act(async () => container.querySelector<HTMLInputElement>(".composer-worktree-checkbox-input")!.click());
+  await act(async () => container.querySelector<HTMLButtonElement>('.composer-worktree-checkbox [data-ui="checkbox"]')!.click());
   expect(onModeChange).toHaveBeenNthCalledWith(1, "worktree", "main");
   await act(async () => container.querySelector<HTMLButtonElement>(".composer-worktree-menu-trigger")!.click());
   await act(async () => button("New worktree").click());
@@ -278,7 +277,7 @@ it("falls back to the current branch when no local main exists", async () => {
     cwd: "/composer-current-base", mode: "current", composerControls: true,
     onModeChange, onBaseChange: vi.fn(),
   })));
-  await act(async () => container.querySelector<HTMLInputElement>(".composer-worktree-checkbox-input")!.click());
+  await act(async () => container.querySelector<HTMLButtonElement>('.composer-worktree-checkbox [data-ui="checkbox"]')!.click());
   expect(onModeChange).toHaveBeenCalledWith("worktree", "feature/current");
 });
 
@@ -290,7 +289,7 @@ it("waits for the first branch list before switching a draft HEAD base to a work
     onModeChange, onBaseChange: vi.fn(),
   }));
   await act(async () => render());
-  const checkbox = container.querySelector<HTMLInputElement>(".composer-worktree-checkbox-input")!;
+  const checkbox = container.querySelector<HTMLButtonElement>('.composer-worktree-checkbox [data-ui="checkbox"]')!;
   const icon = container.querySelector<HTMLButtonElement>(".composer-worktree-menu-trigger")!;
   const regular = container.querySelector<HTMLButtonElement>(".composer-workspace-mode-trigger")!;
   expect(checkbox.disabled).toBe(true);
@@ -325,7 +324,7 @@ it("disables composer worktree controls while unavailable or creating", async ()
     enabled, creating, onModeChange, onBaseChange: vi.fn(),
   }));
   const checkDisabled = async () => {
-    const checkbox = container.querySelector<HTMLInputElement>(".composer-worktree-checkbox-input")!;
+    const checkbox = container.querySelector<HTMLButtonElement>('.composer-worktree-checkbox [data-ui="checkbox"]')!;
     const icon = container.querySelector<HTMLButtonElement>(".composer-worktree-menu-trigger")!;
     expect(checkbox.disabled).toBe(true);
     expect(icon.disabled).toBe(true);
@@ -697,7 +696,7 @@ it.each([
     expect(branchTrigger.getAttribute("aria-expanded")).toBe("true");
 
     await act(async () =>
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })),
+      document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
     );
     const restored = [...container.querySelectorAll<HTMLButtonElement>("button")]
       .find(node => !node.closest("[inert]"))!;
@@ -720,7 +719,7 @@ it("retains the branch picker inert during exit and removes it when the owning s
   await act(async () => completeMotionAnimation(document.body));
   const branch = activeElements<HTMLElement>('[data-branch-picker]')[0]!;
   expect(branch).toBeDefined();
-  await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })));
+  await act(async () => document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   expect(onClose).toHaveBeenCalledOnce();
   expect(branch.isConnected).toBe(true);
   expect(branch.inert).toBe(true);
@@ -756,12 +755,12 @@ it("caps the picker height without forcing short lists to fill it", async () => 
   );
   const menu = document.querySelector<HTMLElement>('[role="dialog"]')!;
   expect(menu.style.height).toBe("");
-  expect(menu.style.maxHeight).toBe("398px");
+  expect(menu.style.maxHeight).toBe("calc(min(400px, var(--radix-popover-content-available-height)) - 2px)");
   expect(menu.textContent).toContain("Loading working copies");
   expect(listWorktrees).toHaveBeenCalledTimes(1);
   await act(async () => request.resolve(result()));
   expect(menu.style.height).toBe("");
-  expect(menu.style.maxHeight).toBe("398px");
+  expect(menu.style.maxHeight).toBe("calc(min(400px, var(--radix-popover-content-available-height)) - 2px)");
   expect(menu.querySelector('[role="listbox"]')?.className).toContain(
     "overflow-y-auto",
   );
@@ -1170,10 +1169,10 @@ it("offers to keep or delete the last session's worktree", async () => {
       }),
     ),
   );
-  const checkbox = document.querySelector<HTMLInputElement>(
-    'input[type="checkbox"]',
+  const checkbox = document.querySelector<HTMLButtonElement>(
+    '[role="checkbox"]',
   )!;
-  expect(checkbox.checked).toBe(false);
+  expect(checkbox.getAttribute("aria-checked")).toBe("false");
   await act(async () => button("Delete session").click());
   expect(onClose).toHaveBeenLastCalledWith({
     confirmed: true,

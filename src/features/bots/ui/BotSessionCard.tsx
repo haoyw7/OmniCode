@@ -106,7 +106,7 @@ export function BotSessionCard({
       </div>
       {message.error && <p>{message.error}</p>}
       {failure && <p role="alert">{t(failure)}</p>}
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         aria-label={mobile ? `${t(opening ? "Opening…" : "Open session")}: ${title}` : undefined}
         aria-busy={opening || undefined}
@@ -117,7 +117,7 @@ export function BotSessionCard({
         {opening ? (
           <Spinner className={mobile ? "size-[18px] shrink-0" : "size-3.5 shrink-0"} aria-hidden="true" />
         ) : <ChevronRight size={mobile ? 18 : 14} aria-hidden="true" />}
-      </button>
+      </Button>
     </article>
   );
 }

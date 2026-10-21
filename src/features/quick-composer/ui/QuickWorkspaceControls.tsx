@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -149,7 +150,7 @@ export function QuickWorkspaceControls({
     value.mode === "worktree" ? uiT("New worktree") : uiT("Current checkout");
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         disabled={disabled}
         aria-label={uiT("Workspace {value0}", { value0: String(label) })}
@@ -164,7 +165,7 @@ export function QuickWorkspaceControls({
       >
         <Icon className="size-3.5 shrink-0" />
         <span className="truncate">{label}</span>
-      </button>
+      </Button>
       <GitPickerTrigger
         label={
           value.mode === "worktree"

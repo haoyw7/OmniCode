@@ -1,4 +1,6 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Check, ChevronDown, ChevronRight, X } from "../../../shared/ui/icons";
 import {
@@ -241,17 +243,15 @@ export function CwdPicker({
   const moreIndex = rows.findIndex((row) => row.kind === "more");
   const openFolderIndex = rows.findIndex((row) => row.kind === "open-folder");
   const rowClass = (highlighted: boolean) =>
-    `flex h-8 w-full items-center justify-between gap-3 px-2.5 text-left ${
-      highlighted ? "bg-selection text-content" : "text-content/80 hover:bg-content/3"
-    }`;
+    cn("flex w-full items-center justify-between text-left", highlighted && "bg-selection");
 
   return (
     <div
       ref={root}
-      className={`relative flex h-full min-w-0${className ? ` ${className}` : ""}`}
+      className={cn("relative flex h-full min-w-0", className)}
     >
       {clearable ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           title={uiT("Clear project")}
           aria-label={uiT("Clear project")}
@@ -265,9 +265,9 @@ export function CwdPicker({
           className="cwd-picker-clear flex shrink-0 items-center justify-center text-content/50 hover:text-content"
         >
           <X aria-hidden="true" className="size-3.5" />
-        </button>
+        </Button>
       ) : null}
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         title={cwd}
         data-clearable={clearable ? "" : undefined}
@@ -288,12 +288,8 @@ export function CwdPicker({
         onKeyDown={onKeyDown}
         className={
           buttonClassName
-            ? `${buttonClassName} ${
-                open ? "bg-selection text-content" : "hover:bg-content/3"
-              } disabled:opacity-40`
-            : `flex min-w-0 items-center gap-1.5 ${
-                open ? "text-content" : "text-content/50 hover:text-content"
-              } disabled:opacity-40`
+            ? cn(buttonClassName, open ? "bg-selection text-content" : "hover:bg-content/3", "disabled:opacity-40")
+            : cn("flex min-w-0 items-center gap-1.5", open ? "text-content" : "text-content/50 hover:text-content", "disabled:opacity-40")
         }
       >
         {children ?? (
@@ -305,18 +301,16 @@ export function CwdPicker({
                 className={shortLabel ? "cwd-picker-project-icon size-3.5 shrink-0" : undefined}
               />
             )}
-            <span className={`${shortLabel ? "cwd-picker-full-label " : ""}truncate font-mono text-[12px]`}>{label}</span>
+            <span className={cn(shortLabel ? "cwd-picker-full-label " : "", "truncate font-mono text-[12px]")}>{label}</span>
             {shortLabel ? <span data-file-label className="cwd-picker-short-label hidden truncate">{shortLabel}</span> : null}
           </>
         )}
         {chevron ? (
           <ChevronDown
-            className={`size-3 shrink-0 text-content/50 ${
-              open ? "rotate-180" : ""
-            }`}
+            className={cn("size-3 shrink-0 text-content/50", open ? "rotate-180" : "")}
           />
         ) : null}
-      </button>
+      </Button>
       <PresenceBoundary propagate>{open ? (
         <MenuPanel
           anchor={root}
@@ -339,7 +333,7 @@ export function CwdPicker({
           >
             {offerNone ? (
               <>
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   role="menuitemradio"
                   aria-checked={!inProject}
@@ -355,7 +349,7 @@ export function CwdPicker({
                   <MenuHover />
                   <span data-menu-title className="text-[13px]">{uiT("No folder")}</span>
                   {!inProject ? <Check className="size-3.5 shrink-0 text-accent" /> : null}
-                </button>
+                </Button>
                 <div role="separator" className="my-1 h-px bg-stroke" />
               </>
             ) : null}
@@ -374,7 +368,7 @@ export function CwdPicker({
                   const current =
                     mode === "switch" && inProject && sameProjectPath(item.path, cwd);
                   return (
-                    <button
+                    <Button variant="ghost" size="content"
                       key={item.path}
                       ref={active === index ? activeRef : undefined}
                       type="button"
@@ -395,13 +389,13 @@ export function CwdPicker({
                         {renderProjectLabel?.(item.path) ?? basename(item.path)}
                       </span>
                       {current ? <Check className="size-3.5 shrink-0 text-accent" /> : null}
-                    </button>
+                    </Button>
                   );
                 })}
               </>
             ) : null}
             {hasMore ? (
-              <button
+              <Button variant="ghost" size="content"
                 ref={moreRef}
                 type="button"
                 role="menuitem"
@@ -425,12 +419,12 @@ export function CwdPicker({
                 <ChevronRight
                   className="size-3.5 shrink-0"
                 />
-              </button>
+              </Button>
             ) : null}
           </div>
           {openFolder ? (
             <div className="shrink-0 border-t border-stroke py-1">
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 role="menuitem"
                 data-highlighted={active === openFolderIndex || undefined}
@@ -444,7 +438,7 @@ export function CwdPicker({
               >
                 <MenuHover />
                 <span data-menu-title className="text-[13px]">{uiT("Open folder…")}</span>
-              </button>
+              </Button>
             </div>
           ) : null}
           {menuFooter ? (
@@ -477,20 +471,20 @@ export function CwdPicker({
           onMouseLeave={scheduleCloseMore}
         >
           {overflowRecents.map((item) => (
-            <button
+            <Button variant="ghost" size="content"
               key={item.path}
               type="button"
               role="menuitem"
               title={item.path}
               onMouseDown={(e) => e.stopPropagation()}
               onClick={() => pick({ kind: "recent", path: item.path })}
-              className="flex h-8 w-full items-center justify-between gap-3 px-2.5 text-left text-content/80 hover:bg-content/3 hover:text-content"
+              className="flex w-full items-center justify-between text-left"
             >
               <MenuHover />
               <span data-menu-title className="min-w-0 truncate text-[13px]">
                 {renderProjectLabel?.(item.path) ?? basename(item.path)}
               </span>
-            </button>
+            </Button>
           ))}
         </MenuPanel>
       ) : null}</PresenceBoundary>

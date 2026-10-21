@@ -1,3 +1,6 @@
+import { cn } from "../../../shared/lib/cn";
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
@@ -282,7 +285,7 @@ export function SkillsPage({
           className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-none"
         >
           <div
-            className={`mx-auto w-full max-w-5xl py-8 ${previewOpen ? "px-4" : "px-8"}`}
+            className={cn("mx-auto w-full max-w-5xl py-8", previewOpen ? "px-4" : "px-8")}
           >
             {header}
             <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
@@ -299,7 +302,7 @@ export function SkillsPage({
                 </span>
                 <label className="flex h-7 w-52 min-w-0 flex-1 items-center gap-2 rounded-md border border-content/10 px-2 text-content/45 focus-within:border-content/20">
                   <Search className="size-3.5 shrink-0" />
-                  <input
+                  <Input variant="inline"
                     ref={filterInput}
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
@@ -310,7 +313,7 @@ export function SkillsPage({
                     className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
                   />
                 </label>
-                <button
+                <Button variant="ghost" size="icon-sm"
                   type="button"
                   aria-label={uiT("Refresh skills")}
                   title={uiT("Rescan skill folders")}
@@ -319,20 +322,18 @@ export function SkillsPage({
                     invalidateSkills();
                     window.dispatchEvent(new Event(SKILLS_CHANGE_EVENT));
                   }}
-                  className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content"
                 >
                   <RefreshCw className="size-3.5" />
-                </button>
+                </Button>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <button
+                <Button variant="secondary" size="sm"
                   type="button"
                   aria-label={
                     adding ? uiT("Close skill form") : uiT("Add skill")
                   }
                   ref={addSkillButton}
                   disabled={busy}
-                  className="rounded-md border border-content/10 px-2.5 py-1 text-[12px] text-content/70 hover:bg-content/6 disabled:opacity-40"
                   onClick={() => {
                     setAdding((value) => !value);
                     createMutation.reset();
@@ -340,7 +341,7 @@ export function SkillsPage({
                   title={uiT("Create a starter SKILL.md you can edit")}
                 >
                   {adding ? uiT("Close") : uiT("Add skill")}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -393,14 +394,12 @@ export function SkillsPage({
                     return (
                       <div
                         key={skill.path}
-                        className={`border-b border-content/5 px-3 py-2 last:border-b-0 ${previewOpen && previewSkill?.path === skill.path ? "bg-content/5" : ""} ${
-                          disabled ? "opacity-50" : ""
-                        }`}
+                        className={cn("border-b border-content/5 px-3 py-2 last:border-b-0", previewOpen && previewSkill?.path === skill.path ? "bg-content/5" : "", disabled ? "opacity-50" : "")}
                       >
                         <div className="flex items-center gap-2">
-                          <button
+                          <Button variant="ghost" size="content"
                             type="button"
-                            className="mr-auto min-w-0 truncate rounded text-left font-sans text-[12px] text-content hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                            className="mr-auto block min-w-0 shrink truncate rounded text-left font-sans text-[12px] text-content hover:underline"
                             title={uiT("Preview {value0}", {
                               value0: String(skill.name),
                             })}
@@ -410,7 +409,7 @@ export function SkillsPage({
                             onClick={() => onPreview(skill, "name")}
                           >
                             {skill.name}
-                          </button>
+                          </Button>
                           <span className="shrink-0 rounded-full bg-content/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-content/60">
                             {skill.scope === "user"
                               ? uiT("Personal")
@@ -445,7 +444,7 @@ export function SkillsPage({
                           >
                             {skill.path}
                           </p>
-                          <button
+                          <Button variant="ghost" size="icon-xs"
                             type="button"
                             aria-label={uiT("Preview skill {value0}", {
                               value0: String(skill.name),
@@ -455,25 +454,23 @@ export function SkillsPage({
                             aria-controls={previewOpen ? previewId : undefined}
                             aria-expanded={previewOpen && previewSkill?.path === skill.path}
                             onClick={() => onPreview(skill, "icon")}
-                            className="grid size-5 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                           >
                             <Eye
                               className="size-3"
                               aria-hidden="true"
                             />
-                          </button>
-                          <button
+                          </Button>
+                          <Button variant="ghost" size="icon-xs"
                             type="button"
                             aria-label={uiT("Copy path of {value0}", {
                               value0: String(skill.name),
                             })}
                             title={uiT("Copy path")}
                             onClick={() => onCopyPath(skill.path)}
-                            className="grid size-5 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
                           >
                             <Copy className="size-3" />
-                          </button>
-                          <button
+                          </Button>
+                          <Button variant="ghost" size="icon-xs"
                             type="button"
                             aria-label={uiT(
                               "Reveal {value0} in file explorer",
@@ -481,10 +478,9 @@ export function SkillsPage({
                             )}
                             title={uiT("Reveal in file manager")}
                             onClick={() => onReveal(skill.path)}
-                            className="grid size-5 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
                           >
                             <FolderOpen className="size-3" />
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     );
@@ -517,16 +513,15 @@ export function SkillsPage({
                 <h2 className="desktop-pane-heading min-w-0 flex-1 break-words text-[16px] font-semibold text-content">
                   {previewSkill.name}
                 </h2>
-                <button
+                <Button variant="ghost" size="icon-sm"
                   ref={closePreview}
                   type="button"
                   aria-label={uiT("Close skill preview")}
                   title={uiT("Close preview (Escape)")}
                   onClick={() => setPreviewOpen(false)}
-                  className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   <X className="size-3.5" />
-                </button>
+                </Button>
               </header>
               <div className="shrink-0 space-y-3 border-b border-stroke px-4 pt-1 pb-3">
                 <p className="select-text break-all text-[11px] text-content/50">

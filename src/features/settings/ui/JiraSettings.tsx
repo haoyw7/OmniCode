@@ -1,3 +1,5 @@
+import { Checkbox } from "../../../shared/ui/forms/Checkbox";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -124,7 +126,7 @@ export function JiraSettings() {
               className="flex flex-col gap-1 text-[12px] text-content/65"
             >
               {field.label}
-              <input data-ui="input"
+              <Input data-ui="input"
                 aria-label={field.label}
                 type={field.type}
                 {...form.register(field.name)}
@@ -145,7 +147,7 @@ export function JiraSettings() {
             >
               {busy ? uiT("Connecting") : uiT("Connect")}
             </Button>
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               onClick={() =>
                 void openUrl(
@@ -155,7 +157,7 @@ export function JiraSettings() {
               className="text-[12px] text-content/65 hover:text-content"
             >
               {uiT("Create API token")}
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -185,11 +187,10 @@ export function JiraSettings() {
               key={project.id}
               className="flex items-center gap-2 text-[13px] text-content"
             >
-              <input data-ui="checkbox"
-                type="checkbox"
+              <Checkbox
                 checked={!hiddenIds.includes(project.id)}
                 disabled={busy}
-                onChange={() => {
+                onCheckedChange={() => {
                   const next = hiddenIds.includes(project.id)
                     ? hiddenIds.filter((id) => id !== project.id)
                     : [...hiddenIds, project.id];

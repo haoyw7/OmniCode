@@ -197,10 +197,6 @@ it("discovers recent projects and focuses the project requested by a quick actio
       }),
     ),
   );
-  expect(
-    checkbox("Agent finished for newwork").getAttribute("aria-checked") ===
-      "true",
-  ).toBe(true);
   const target = checkbox("Agent finished for newprivate").closest("fieldset");
   expect(document.activeElement).toBe(target);
   expect(categoriesButton("newprivate").getAttribute("aria-expanded")).toBe(
@@ -209,6 +205,8 @@ it("discovers recent projects and focuses the project requested by a quick actio
   expect(categoriesButton("newwork").getAttribute("aria-expanded")).toBe(
     "false",
   );
+  act(() => categoriesButton("newwork").click());
+  expect(checkbox("Agent finished for newwork").getAttribute("aria-checked")).toBe("true");
 });
 
 it("keeps projects collapsed until opened and preserves choices when switching projects", async () => {
@@ -223,16 +221,16 @@ it("keeps projects collapsed until opened and preserves choices when switching p
   const workPanel = document.getElementById(
     work.getAttribute("aria-controls")!,
   )!;
-  expect(personalPanel.hidden).toBe(true);
-  expect(workPanel.hidden).toBe(true);
+  expect(personalPanel.childElementCount).toBe(0);
+  expect(workPanel.childElementCount).toBe(0);
 
   act(() => personal.click());
-  expect(personalPanel.hidden).toBe(false);
+  expect(personalPanel.querySelector('[data-fold-state="opening"]')).not.toBeNull();
   act(() => checkbox("Issues and Linear tasks for me/private").click());
   expect(personal.textContent).toContain("4 of 5 enabled");
   act(() => work.click());
-  expect(personalPanel.hidden).toBe(true);
-  expect(workPanel.hidden).toBe(false);
+  expect(personalPanel.querySelector<HTMLElement>('[data-fold-state="closing"]')?.inert).toBe(true);
+  expect(workPanel.querySelector('[data-fold-state="opening"]')).not.toBeNull();
   act(() => personal.click());
   expect(
     checkbox("Issues and Linear tasks for me/private").getAttribute(
@@ -240,8 +238,10 @@ it("keeps projects collapsed until opened and preserves choices when switching p
     ) === "true",
   ).toBe(false);
   act(() => personal.click());
-  expect(personalPanel.hidden).toBe(true);
-  expect(workPanel.hidden).toBe(true);
+  expect(personalPanel.querySelector<HTMLElement>('[data-fold-state="closing"]')?.inert).toBe(true);
+  await act(async () => finishMotion());
+  expect(personalPanel.childElementCount).toBe(0);
+  expect(workPanel.childElementCount).toBe(0);
 });
 
 it("mutes several selected projects without changing another project's notifications", async () => {
@@ -306,9 +306,7 @@ it.each(["manual", "expiry"])(
     await act(async () =>
       root.render(createElement(ProjectNotificationSettings, { cwd: "" })),
     );
-    const project = checkbox("Issues and Linear tasks for me/private").closest(
-      "fieldset",
-    )!;
+    const project = categoriesButton("me/private").closest("fieldset")!;
     act(() => categoriesButton("me/private").click());
     expect(categoriesButton("me/private").textContent).toContain(
       "All notifications paused",
@@ -361,9 +359,7 @@ it("dismisses the mute menu and custom date picker without changing preferences"
   await act(async () =>
     root.render(createElement(ProjectNotificationSettings, { cwd: "" })),
   );
-  const project = checkbox("Issues and Linear tasks for me/private").closest(
-    "fieldset",
-  )!;
+  const project = categoriesButton("me/private").closest("fieldset")!;
   const trigger = project.querySelector<HTMLButtonElement>(
     '[aria-label="Mute notifications"]',
   )!;
@@ -371,8 +367,8 @@ it("dismisses the mute menu and custom date picker without changing preferences"
   expect(trigger.getAttribute("aria-expanded")).toBe("true");
   const menu = document.querySelector('[role="menu"]')!;
   act(() =>
-    window.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    document.activeElement!.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
     ),
   );
   await finishClosing(menu);

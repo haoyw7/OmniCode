@@ -1,3 +1,8 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { Input } from "../../../shared/ui/forms/Input";
+import { cn } from "../../../shared/lib/cn";
+import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { MenuHover } from "../../../shared/ui/MenuHover";
@@ -197,7 +202,7 @@ function AssignmentModel({
   };
   return (
     <div className="relative min-w-0">
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         ref={anchor}
         aria-label={uiT("Model for {value0}", { value0: String(task.title) })}
@@ -217,7 +222,7 @@ function AssignmentModel({
           {HARNESS_TITLE[task.harness]}
         </span>
         <ChevronDown className="size-3 shrink-0" />
-      </button>
+      </Button>
       <PresenceBoundary propagate>{open && (
         <Popover
           anchor={anchor}
@@ -236,7 +241,7 @@ function AssignmentModel({
         >
           <label className="flex shrink-0 items-center gap-2 border-b border-stroke px-3 py-2.5 text-content/50">
             <Search className="size-3.5 shrink-0" />
-            <input
+            <Input variant="inline"
               ref={search}
               type="text"
               aria-label={uiT("Search assignment models")}
@@ -260,11 +265,13 @@ function AssignmentModel({
             className="min-h-0 flex-1 overflow-y-auto overscroll-none p-1"
           >
             {matches.map((choice, index) => (
-              <button
+              <Button variant="ghost" size="content"
                 key={`${choice.harness}:${choice.model}`}
                 ref={index === active ? setActiveRow : undefined}
                 type="button"
                 role="option"
+                data-menu-row="description"
+                data-highlighted={index === active}
                 aria-selected={choice === selected}
                 aria-haspopup={
                   effortForChoice(choice)?.options.length ? "menu" : undefined
@@ -283,9 +290,7 @@ function AssignmentModel({
                   setActive(index);
                   openEffortOrPick(choice);
                 }}
-                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ${
-                  index === active ? "bg-selection" : ""
-                }`}
+                className={cn("flex w-full items-center justify-start text-left", index === active ? "bg-selection" : "")}
               >
                 <HarnessIcon
                   harness={choice.harness}
@@ -310,7 +315,7 @@ function AssignmentModel({
                     className="size-3.5 shrink-0 text-content/40"
                   />
                 ) : null}
-              </button>
+              </Button>
             ))}
             {!matches.length && (
               <p className="px-2 py-3 text-[12px] text-content/45">
@@ -345,7 +350,7 @@ function AssignmentModel({
             const highlighted = index === effortActive;
             const selectedOption = option.value === selectedEffortValue;
             return (
-              <button
+              <Button variant="ghost" size="content"
                 key={option.value}
                 type="button"
                 role="menuitemradio"
@@ -355,9 +360,7 @@ function AssignmentModel({
                 onClick={() =>
                   pick(activeChoice, settingsFor(activeChoice, option.value))
                 }
-                className={`flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] text-content ${
-                  highlighted ? "bg-selection" : "hover:bg-content/3"
-                }`}
+                className={cn("flex w-full items-center justify-start text-left", highlighted ? "bg-selection" : "hover:bg-content/3")}
               >
                 <MenuHover />
                 <span className="min-w-0 flex-1 truncate">{option.label}</span>
@@ -367,7 +370,7 @@ function AssignmentModel({
                     strokeWidth={2}
                   />
                 ) : null}
-              </button>
+              </Button>
             );
           })}
         </Popover>
@@ -383,7 +386,7 @@ function WorkerHelp() {
   const anchor = useRef<HTMLButtonElement>(null);
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         ref={anchor}
         aria-label={uiT("What parallel workers means")}
@@ -396,7 +399,7 @@ function WorkerHelp() {
         className="grid size-4 shrink-0 place-items-center rounded-full text-content/35 hover:text-content/70"
       >
         <CircleHelp className="size-3.5" />
-      </button>
+      </Button>
       <PresenceBoundary propagate>{(hovered || open) && (
         <Popover
           anchor={anchor}
@@ -404,7 +407,7 @@ function WorkerHelp() {
           align="start"
           width={250}
           onDismiss={() => setOpen(false)}
-          className={`px-2.5 py-2 ${open ? "" : "pointer-events-none"}`}
+          className={cn("px-2.5 py-2", open ? "" : "pointer-events-none")}
         >
           <div className="text-[12px] leading-4 text-content">
             {uiT("How many workers run at once")}
@@ -440,14 +443,14 @@ function InstructionsField({
     if (ref.current) resizeComposer(ref.current);
   }, [value]);
   return (
-    <textarea
+    <Textarea variant="editor"
       ref={(el) => {
         ref.current = el;
         lockOverscroll(el);
       }}
       rows={1}
       aria-label={label}
-      className={`${className} max-h-40 resize-none overscroll-none`}
+      className={cn(className, "max-h-40 resize-none overscroll-none")}
       value={value}
       onChange={(event) => onChange(event.target.value)}
     />
@@ -491,7 +494,6 @@ export function OrchestrationPreview({
     proposal.status === "ready" && !run && !pending && !busy && !!actions;
   const planning = proposal.status === "planning";
   const starting = pending || proposal.status === "starting";
-  const visible = showAll ? proposal.tasks : proposal.tasks.slice(0, 3);
   const perform = async (fn: () => Promise<void>) => {
     setError(undefined);
     try {
@@ -509,8 +511,6 @@ export function OrchestrationPreview({
       ),
     });
   };
-  const secondary =
-    "flex h-7 items-center gap-1.5 rounded-md px-2.5 text-[11px] text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-35";
   const field =
     "w-full rounded-md border border-content/12 bg-background-base/40 px-2 py-1.5 text-[12px] leading-5 text-content outline-none placeholder:text-content/35 focus:border-content/30";
   const fieldLabel = "mb-1 block text-[11px] leading-tight text-content/45";
@@ -554,23 +554,21 @@ export function OrchestrationPreview({
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-0.5">
           {error && editable && actions?.reload && (
-            <button className={secondary} onClick={() => {
+            <Button variant="secondary" size="sm" onClick={() => {
               actions.reload?.(proposal.leadId, block.id);
               setError(undefined);
-            }}>{uiT("Reload proposal")}</button>
+            }}>{uiT("Reload proposal")}</Button>
           )}
           {!run && proposal.status === "invalid" && (
-            <button
-              className={secondary}
+            <Button variant="secondary" size="sm"
               disabled={busy || !actions}
               onClick={() => actions?.retry(proposal.leadId, block.id)}
             >
               {uiT("Try again")}
-            </button>
+            </Button>
           )}
           {!run && ["ready", "starting"].includes(proposal.status) && (
-            <button
-              className="flex h-7 items-center gap-1.5 rounded-md bg-content px-2.5 text-[11px] font-medium text-background-base hover:bg-content/80 disabled:opacity-40"
+            <Button variant="primary" size="sm"
               disabled={!editable}
               onClick={() =>
                 void perform(() => actions!.confirm(proposal.leadId, block.id))
@@ -578,11 +576,10 @@ export function OrchestrationPreview({
             >
               <Play className="size-3" />
               {starting ? uiT("Starting…") : uiT("Confirm & start")}
-            </button>
+            </Button>
           )}
           {run && (
-            <button
-              className={secondary}
+            <Button variant="secondary" size="sm"
               onClick={() =>
                 actions?.openAgents?.(
                   run.tasks.map((task) => ({
@@ -595,20 +592,20 @@ export function OrchestrationPreview({
               }
             >
               {uiT("View agents")}
-            </button>
+            </Button>
           )}
           {run?.status === "paused" && actions && (
-            <button className={secondary}
+            <Button variant="secondary" size="sm"
               disabled={pending || !!runtime.resumeBlocker(proposal.leadId) || runtime.resumeLeadBusy(proposal.leadId)}
               onClick={() => void perform(() => runtime.resume(proposal.leadId))}>
               <Play className="size-3" />{uiT("Resume")}
-            </button>
+            </Button>
           )}
           {run && ["active", "paused"].includes(run.status) && actions && (
-            <button className={secondary} disabled={pending}
+            <Button variant="secondary" size="sm" disabled={pending}
               onClick={() => void perform(() => runtime.stop(proposal.leadId))}>
               {uiT("Stop")}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -629,8 +626,7 @@ export function OrchestrationPreview({
       )}
       {!!proposal.tasks.length && (
         <ul className="border-t border-stroke py-1">
-          {visible.map((task) => {
-            const index = proposal.tasks.indexOf(task);
+          {proposal.tasks.map((task, index) => {
             const open = expanded.includes(task.id);
             const taskChoice = proposal.settings.choices.find(
               (choice) =>
@@ -643,8 +639,9 @@ export function OrchestrationPreview({
                 : undefined;
             return (
               <li key={task.id}>
+                <AnimatedCollapse expanded={index < 3 || showAll}>{() => (<>
                 <div className="flex min-h-9 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-3 py-1 hover:bg-content/3">
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     aria-label={uiT("Details for {value0}", {
                       value0: String(task.title),
@@ -657,7 +654,7 @@ export function OrchestrationPreview({
                           : [...prev, task.id],
                       )
                     }
-                    className="flex min-w-0 flex-1 items-center gap-2 py-1 text-left text-content/65 hover:text-content"
+                    className="flex min-w-0 flex-1 items-center justify-start gap-2 py-1 text-left text-content/65 hover:text-content"
                   >
                     {open ? (
                       <ChevronDown className="size-3.5 shrink-0" />
@@ -667,7 +664,7 @@ export function OrchestrationPreview({
                     <span className="truncate text-[12px]" title={task.title}>
                       {task.title}
                     </span>
-                  </button>
+                  </Button>
                   <div className="max-w-[60%] min-w-0">
                     {editable ? (
                       <AssignmentModel
@@ -698,13 +695,13 @@ export function OrchestrationPreview({
                     )}
                   </div>
                 </div>
-                {open && (
+                <AnimatedCollapse expanded={open}>{() => (
                   <div className="space-y-2.5 px-3 pb-3 pl-8 text-[11px] leading-4 text-content/45">
                     {editable ? (
                       <>
                         <label className="block">
                           <span className={fieldLabel}>{uiT("Task")}</span>
-                          <input data-ui="input"
+                          <Input data-ui="input"
                             aria-label={uiT("Title for task {value0}", {
                               value0: String(index + 1),
                             })}
@@ -747,18 +744,19 @@ export function OrchestrationPreview({
                       </p>
                     )}
                   </div>
-                )}
+                )}</AnimatedCollapse>
+                </>)}</AnimatedCollapse>
               </li>
             );
           })}
         </ul>
       )}
       {proposal.tasks.length > 3 && (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           aria-expanded={showAll}
           onClick={() => setShowAll(!showAll)}
-          className="flex h-8 w-full items-center gap-1.5 border-t border-stroke px-3 text-left text-[11px] text-content/45 hover:bg-content/3 hover:text-content/70"
+          className="flex h-8 w-full items-center justify-start gap-1.5 border-t border-stroke px-3 text-left text-[11px] text-content/45 hover:bg-content/3 hover:text-content/70"
         >
           {showAll ? (
             <ChevronDown className="size-3.5" />
@@ -770,7 +768,7 @@ export function OrchestrationPreview({
             : uiT(proposal.tasks.length === 4 ? "Show {count} more task" : "Show {count} more tasks", {
                 count: String(proposal.tasks.length - 3),
               })}
-        </button>
+        </Button>
       )}
       {(error || proposal.error) && (
         <p role="alert" className="px-3 py-2 text-[12px] text-red-400">
@@ -789,11 +787,12 @@ export function OrchestrationPreview({
                   className="flex items-center gap-0.5 rounded-md bg-content/5 p-0.5"
                 >
                   {[1, 2, 3, 4].map((number) => (
-                    <button
+                    <Button variant="ghost" size="content"
                       key={number}
                       type="button"
                       role="radio"
                       aria-checked={proposal.settings.maxWorkers === number}
+                      data-active={proposal.settings.maxWorkers === number || undefined}
                       onClick={() =>
                         actions?.update(proposal.leadId, block.id, {
                           ...proposal,
@@ -803,14 +802,12 @@ export function OrchestrationPreview({
                           },
                         })
                       }
-                      className={`grid size-5 place-items-center rounded-[5px] text-[11px] leading-none tabular-nums ${
-                        proposal.settings.maxWorkers === number
+                      className={cn("grid size-5 place-items-center rounded-[5px] text-[11px] leading-none tabular-nums", proposal.settings.maxWorkers === number
                           ? "bg-selection-hover font-medium text-content"
-                          : "text-content/45 hover:bg-content/5 hover:text-content"
-                      }`}
+                          : "text-content/45 hover:bg-content/5 hover:text-content")}
                     >
                       {number}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </>

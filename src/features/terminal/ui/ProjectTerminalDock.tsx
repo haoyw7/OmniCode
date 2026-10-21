@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
@@ -336,7 +337,7 @@ export function ProjectTerminalDock({
       <div
         data-focused={focused}
         data-dock-side={dock.side}
-        className={`project-terminal-card pane-card ${moving ? "opacity-40" : ""}`}
+        className={cn("project-terminal-card pane-card", moving ? "opacity-40" : "")}
       >
         <SurfaceTabs
           files={dock.pane.files}

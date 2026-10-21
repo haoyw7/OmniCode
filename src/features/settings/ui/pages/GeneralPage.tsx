@@ -387,7 +387,7 @@ function NotificationsBlocked() {
     <span className="flex items-center gap-2 text-[12px] text-content/45">
       {uiT("Permission needed")}
       {IS_MAC || IS_WIN ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           onClick={() => {
             void openNotificationSettings().catch(() => {});
@@ -395,7 +395,7 @@ function NotificationsBlocked() {
           className="rounded-md border border-content/10 px-2 py-1 text-content/70 hover:bg-content/6 hover:text-content"
         >
           {uiT("Open System Settings")}
-        </button>
+        </Button>
       ) : null}
     </span>
   );

@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { quickComposerKeys, quickGitPopupQuery } from "../model/quickComposerQueries";
@@ -161,13 +162,13 @@ export function QuickGitPopupPicker({
             ? uiT("Couldn’t load branches for this project.")
             : uiT("Loading branches…")}
         </p>
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           className="rounded-md px-2 py-1 text-content/70 hover:bg-content/6"
           onClick={() => finish()}
         >
           {uiT("Close")}
-        </button>
+        </Button>
       </div>
     );
   if (request.kind === "branch")

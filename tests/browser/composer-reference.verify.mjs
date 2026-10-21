@@ -156,7 +156,7 @@ async function verifyModeRetention(page) {
 
 async function verifyWorktreeControl(composer) {
   const field = await composer.locator('textarea').elementHandle();
-  const checkbox = composer.locator('.composer-worktree-checkbox input');
+  const checkbox = composer.locator('.composer-worktree-checkbox [data-ui="checkbox"]');
   await checkbox.check();
   await expect(checkbox).toBeChecked();
   await expect(composer.locator('.composer-worktree-base')).toBeVisible();

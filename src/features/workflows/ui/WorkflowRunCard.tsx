@@ -86,7 +86,7 @@ export function WorkflowRunCard({ block, parent: session }: { block: Block; pare
           ) : null}
           {app ? (
             <div className="flex flex-col gap-2 border-t border-border pt-2">
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 aria-expanded={configuring}
                 className="flex w-fit items-center gap-1 text-ui-sm text-foreground-subtle hover:text-foreground"
@@ -94,7 +94,7 @@ export function WorkflowRunCard({ block, parent: session }: { block: Block; pare
               >
                 <RotatingIcon icon={ChevronRight} angle={configuring ? motionGeometry.disclosureAngle : 0} className="size-3.5" aria-hidden="true" />
                 {t("Adjust configuration")}
-              </button>
+              </Button>
               <AnimatedCollapse expanded={configuring} motion="height">
                 {() => (
                   <WorkflowRunSettingsForm

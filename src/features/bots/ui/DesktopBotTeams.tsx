@@ -1,3 +1,4 @@
+import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,7 +28,7 @@ export function DesktopBotTeams({ teams, bots, rpc, onSaved }: Props) {
   return <section className="desktop-bot-directory" aria-label={t("Teams")}>
     <header><h2>{t("Teams")}</h2><Button variant="secondary" type="button" onClick={() => open("new")}>{t("New team")}</Button></header>
     <div className="desktop-bot-directory-body">
-      <div className="desktop-bot-directory-list">{teams.map(team => <button type="button" key={team.id} aria-pressed={selected === team.id} onClick={() => open(team.id)}><strong>{team.name}</strong><small>{team.archivedAt ? t("Archived") : `${team.memberBotIds.length} ${t("Members")}`}</small></button>)}{!teams.length && <p>{t("No teams yet")}</p>}</div>
+      <div className="desktop-bot-directory-list">{teams.map(team => <Button variant="ghost" size="content" type="button" key={team.id} aria-pressed={selected === team.id} onClick={() => open(team.id)}><strong>{team.name}</strong><small>{team.archivedAt ? t("Archived") : `${team.memberBotIds.length} ${t("Members")}`}</small></Button>)}{!teams.length && <p>{t("No teams yet")}</p>}</div>
       <div className="desktop-bot-directory-editors">{visited.map(id => {
         const value = teams.find(team => team.id === id), active = selected === id;
         if (id !== "new" && !value) return null;
@@ -82,7 +83,7 @@ function TeamEditor({ team, bots, rpc, onSaved }: { team?: BotTeam; bots: BotVie
     <fieldset disabled={busy || !!team?.archivedAt}>
       <label>{t("Team name")}<Input aria-label={t("Team name")} {...form.register("name")} aria-invalid={!!form.formState.errors.name} maxLength={100} /></label>
       <DesktopBotMembers bots={bots} ids={members} onChange={ids => { setMembers(ids); if (!ids.includes(chief)) setChief(""); }} />
-      <label>{t("Chief of Staff")}<select data-ui="select" aria-label={t("Chief of Staff")} value={chief} aria-invalid={!!form.formState.errors.chief} onChange={event => setChief(event.target.value)}><option value="">{t("No Chief")}</option>{members.map(id => <option key={id} value={id}>{bots.find(bot => bot.id === id)?.name ?? t("Unavailable Bot")}</option>)}</select></label>
+      <label>{t("Chief of Staff")}<SearchableSelect label={t("Chief of Staff")} value={chief} onChange={setChief} disabled={busy || !!team?.archivedAt} options={[{ value: "", label: t("No Chief") }, ...members.map(id => ({ value: id, label: bots.find(bot => bot.id === id)?.name ?? t("Unavailable Bot") }))]} /></label>
       <small>{t("Each team has at most one Chief. Its calls still follow each Bot's permissions.")}</small>
     </fieldset>
     <FieldError errors={[form.formState.errors.name, form.formState.errors.chief]} />

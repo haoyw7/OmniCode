@@ -1,3 +1,6 @@
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
@@ -183,7 +186,7 @@ export function WorktreePicker({
         >
           <label className="flex shrink-0 items-center gap-2 border-b border-stroke px-3 py-2">
             <Search className="size-3.5 text-content/40" />
-            <input
+            <Input variant="inline"
               ref={search}
               aria-label={uiT("Search working copies")}
               placeholder={uiT("Search working copies…")}
@@ -236,7 +239,7 @@ export function WorktreePicker({
               </div>
             )}
             {rows.map((tree, index) => (
-              <button
+              <Button data-menu-row="description" variant="ghost" size="content"
                 key={tree.path}
                 ref={index === active ? activeOption : undefined}
                 type="button"
@@ -249,7 +252,7 @@ export function WorktreePicker({
                 onMouseEnter={() => setActivePath(tree.path)}
                 onClick={() => void select(tree)}
                 title={tree.path}
-                className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left disabled:opacity-40 ${active === index ? "bg-selection" : "hover:bg-content/3"}`}
+                className={cn("flex w-full items-center gap-2 rounded-md text-left disabled:opacity-40 justify-start", active === index ? "bg-selection" : "hover:bg-content/3")}
               >
                 {tree.isMain ? (
                   <GitBranch className="size-3.5 shrink-0 text-content/50" />
@@ -272,7 +275,7 @@ export function WorktreePicker({
                   pathKey(tree.path) === pathKey(executionCwd) && (
                     <Check className="size-3.5" />
                   )}
-              </button>
+              </Button>
             ))}
             {data && !rows.length && (
               <p className="p-2 text-[12px] text-content/45">
@@ -286,43 +289,43 @@ export function WorktreePicker({
             )}
           </div>
           <div className="shrink-0 border-t border-stroke p-1 text-[12px]">
-            <button
+            <Button data-menu-row="single" variant="ghost" size="content"
               type="button"
               disabled={busy}
               onClick={() => {
                 setOpen(false);
                 setCreating(true);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left hover:bg-content/5"
+              className="flex w-full items-center gap-2 rounded-md text-left hover:bg-content/5 justify-start"
             >
               <Plus className="size-3.5" />
               {uiT("Create worktree…")}
-            </button>
-            <button
+            </Button>
+            <Button data-menu-row="single" variant="ghost" size="content"
               type="button"
               disabled={busy || worktreeRemoved}
               onClick={() => {
                 setOpen(false);
                 setBranchPicker(true);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-content/55 hover:bg-content/5 disabled:opacity-40"
+              className="flex w-full items-center gap-2 rounded-md text-left text-content/55 hover:bg-content/5 disabled:opacity-40 justify-start"
             >
               <GitBranch className="size-3.5" />
               {uiT("Switch branch in this working copy…")}
-            </button>
+            </Button>
             {onManage && (
-              <button
+              <Button data-menu-row="single" variant="ghost" size="content"
                 type="button"
                 disabled={busy}
                 onClick={() => {
                   dismiss();
                   onManage();
                 }}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-content/55 hover:bg-content/5"
+                className="flex w-full items-center gap-2 rounded-md text-left text-content/55 hover:bg-content/5 justify-start"
               >
                 <Settings className="size-3.5" />
                 {uiT("Manage worktrees…")}
-              </button>
+              </Button>
             )}
           </div>
         </Popover>

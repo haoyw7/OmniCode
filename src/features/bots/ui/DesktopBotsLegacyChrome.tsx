@@ -1,3 +1,4 @@
+import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -317,7 +318,7 @@ export function DesktopBotsComposer({
             />}
           />
         </AnimatedCollapse>
-        <textarea data-ui="textarea"
+        <Textarea variant="editor"
           rows={1}
           aria-label={t("Message assistant")}
           placeholder={placeholder ?? t("Ask your assistant…")}

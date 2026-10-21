@@ -1,6 +1,7 @@
 import { animate as animateValue, cancelFrame, frame, type AnimationPlaybackControls } from "motion/react";
 import { popTransition } from "../motion/tokens";
 import {
+  useCallback,
   useLayoutEffect,
   useRef,
   type MouseEvent,
@@ -82,14 +83,14 @@ export function useImageZoom(src: string, visible: boolean, onSwipe?: (direction
       y: Math.max(-maxY, Math.min(maxY, next.y)),
     };
   };
-  const paint = () => {
+  const paint = useCallback(() => {
     const image = imageRef.current;
     if (!image) return;
     const { x, y, scale } = current.current;
     image.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
     image.style.cursor =
       scale > 1 ? (pointers.current.size ? "grabbing" : "grab") : "zoom-in";
-  };
+  }, []);
   const schedule = () => frame.render(paint);
   const stopMotion = () => {
     animation.current?.stop();

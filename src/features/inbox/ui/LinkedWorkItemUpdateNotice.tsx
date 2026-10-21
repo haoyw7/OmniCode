@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { AnimatePresence, motion, useIsPresent, type HTMLMotionProps } from "motion/react";
 import { immediateTransition, popAnimate, popExit, popInitial, popTransition } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
@@ -158,7 +159,7 @@ export function LinkedWorkItemUpdateNotice({
               {uiT("GitHub activity")}
             </span>
           </div>
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Dismiss")}
             aria-label={uiT("Dismiss updates for {value0} {value1}", {
@@ -169,17 +170,17 @@ export function LinkedWorkItemUpdateNotice({
             className="grid size-6 shrink-0 place-items-center rounded-md text-content/40 hover:bg-content/6 hover:text-content"
           >
             <X className="size-3" strokeWidth={2} />
-          </button>
+          </Button>
         </div>
 
         <div className="relative z-[1] px-3 py-2.5">
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             onClick={() => {
               onAcknowledge();
               void openUrl(card.url);
             }}
-            className="block w-full text-left"
+            className="block w-full text-left justify-start"
           >
             <span className="block text-[11px] text-content/50">
               {kindLabel} #{card.number} · {card.repo}
@@ -187,7 +188,7 @@ export function LinkedWorkItemUpdateNotice({
             <span className="mt-0.5 block truncate text-[13px] font-medium hover:underline">
               {card.title}
             </span>
-          </button>
+          </Button>
           <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-content/55">
             <span>{linkedWorkItemUpdateSummary(card)}</span>
           </div>
@@ -196,7 +197,7 @@ export function LinkedWorkItemUpdateNotice({
         {card.entries.length > 0 ? (
           <div className="relative z-[1] max-h-52 overflow-y-auto border-t border-stroke divide-y divide-stroke">
             {card.entries.slice(0, 3).map((entry) => (
-              <button
+              <Button variant="ghost" size="content"
                 key={`${entry.kind}:${entry.id}`}
                 type="button"
                 disabled={!entry.url}
@@ -206,7 +207,7 @@ export function LinkedWorkItemUpdateNotice({
                     void openUrl(entry.url);
                   }
                 }}
-                className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-content/3 disabled:cursor-default disabled:hover:bg-transparent"
+                className="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-content/3 disabled:cursor-default disabled:hover:bg-transparent justify-start"
               >
                 <span className="mt-0.5 text-content/45">
                   <ActivityIcon entry={entry} />
@@ -229,7 +230,7 @@ export function LinkedWorkItemUpdateNotice({
                     {entry.text || uiT("No message")}
                   </span>
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
         ) : null}
@@ -252,7 +253,7 @@ export function LinkedWorkItemUpdateNotice({
               </span>
             </div>
             <div className="mt-2 flex items-center gap-1.5">
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 title={uiT("Archive session")}
                 disabled={Boolean(cleanupAction) || !onArchiveSession}
@@ -267,8 +268,8 @@ export function LinkedWorkItemUpdateNotice({
                 <span className="min-w-0 truncate whitespace-nowrap">
                   {uiT("Archive session")}
                 </span>
-              </button>
-              <button
+              </Button>
+              <Button variant="ghost" size="content"
                 type="button"
                 title={uiT("Delete session")}
                 disabled={Boolean(cleanupAction) || !onDeleteSession}
@@ -283,13 +284,13 @@ export function LinkedWorkItemUpdateNotice({
                 <span className="min-w-0 truncate whitespace-nowrap">
                   {uiT("Delete…")}
                 </span>
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
 
         <div className="relative z-[1] flex min-w-0 items-center gap-1.5 border-t border-stroke px-3 py-2.5 text-[11px]">
-          <button
+          <Button variant="primary" size="content"
             type="button"
             title={agentLabel}
             className="min-w-0 flex-1 truncate whitespace-nowrap rounded-md bg-content px-2 py-1 font-medium text-background-base hover:bg-content/90"
@@ -299,15 +300,15 @@ export function LinkedWorkItemUpdateNotice({
             }}
           >
             {agentLabel}
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="content"
             type="button"
             title={openLabel}
             className="min-w-0 flex-1 truncate whitespace-nowrap rounded-md bg-content/10 px-2 py-1 font-medium hover:bg-content/15"
             onClick={openActivity}
           >
             {openLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </NoticeFrame>

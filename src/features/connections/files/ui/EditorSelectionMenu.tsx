@@ -1,3 +1,4 @@
+import { Button } from "../../../../shared/ui/forms/Button";
 import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { useEffect, useRef } from "react";
@@ -49,21 +50,20 @@ export function EditorSelectionMenu({
       aria-label={uiT("Selected code actions")}
       className="p-1"
     >
-      <button
+      <Button variant="ghost" size="sm"
         type="button"
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => {
           requestAddToChat(formatEditorSelectionReference(selection), "plain");
           onDismiss();
         }}
-        className="flex h-7 items-center gap-1.5 rounded-lg px-2 font-sans text-[13px] leading-none text-content outline-none ring-accent/40 hover:bg-content/3 focus-visible:ring-2"
       >
         <MessageSquarePlus
           aria-hidden="true"
           className="size-3.5"
         />
         {uiT("Add to chat")}
-      </button>
+      </Button>
     </Popover>
     ) : null}</PresenceBoundary>
   );

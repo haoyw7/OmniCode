@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { RotatingIcon } from "../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../shared/motion/tokens";
 // Adapted from ZCode (Apache-2.0).
@@ -115,7 +117,7 @@ export const GitReviewChangeCard = memo(function GitReviewChangeCard({
   return (
     <section data-review-file={file.relative} className="min-w-0">
       <header className="review-file-header sticky top-0 z-10">
-        <button
+        <Button variant="ghost" size="content"
           ref={menuRef}
           type="button"
           aria-expanded={expanded}
@@ -140,7 +142,7 @@ export const GitReviewChangeCard = memo(function GitReviewChangeCard({
             setMenu({ x: rect.left + 12, y: rect.bottom });
           }}
           title={file.relative}
-          className={`review-file-toggle flex h-8 w-full min-w-0 items-center gap-0.5 px-2 text-left transition-colors focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none ${focused ? "ring-1 ring-inset ring-accent/30" : ""}`}
+          className={cn("review-file-toggle flex h-8 w-full min-w-0 items-center gap-0.5 px-2 text-left transition-colors focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent motion-reduce:transition-none justify-start", focused ? "ring-1 ring-inset ring-accent/30" : "")}
         >
           {loading || preparing ? (
             <Spinner className="review-file-chevron size-4 shrink-0" aria-hidden="true" />
@@ -164,7 +166,7 @@ export const GitReviewChangeCard = memo(function GitReviewChangeCard({
               </span>
             </span>
           </span>
-        </button>
+        </Button>
       </header>
       <Popover
         open={menu !== null && visible}
@@ -284,18 +286,18 @@ function MenuItem({
   children: string;
 }) {
   return (
-    <button
+    <Button data-menu-row="single" variant="ghost" size="content"
       type="button"
       role="menuitem"
       disabled={disabled}
       title={children}
       onClick={onClick}
-      className="flex min-h-7 w-full items-center gap-2 rounded-md px-2 py-1 text-left text-ui-base text-content outline-none hover:bg-menu-hover focus-visible:bg-menu-hover disabled:opacity-40"
+      className="flex w-full items-center gap-2 rounded-md text-left text-ui-base text-content outline-none hover:bg-menu-hover focus-visible:bg-menu-hover disabled:opacity-40 justify-start"
     >
       <MenuHover />
       {icon}
       <span data-menu-title>{children}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -349,7 +351,7 @@ export function ReviewIconButton({
   children: ReactNode;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={title}
       aria-label={title}
@@ -359,6 +361,6 @@ export function ReviewIconButton({
       className="grid size-6 shrink-0 place-items-center rounded text-content/45 hover:bg-content/6 hover:text-content disabled:opacity-40"
     >
       {children}
-    </button>
+    </Button>
   );
 }

@@ -1,3 +1,6 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
 import { MenuPanel } from "../../../shared/ui/primitives/MenuPanel";
 import { motion } from "motion/react";
 import { panelTransition, immediateTransition, motionGeometry } from "../../../shared/motion/tokens";
@@ -168,7 +171,7 @@ function EffortTileShimmer() {
           return (
             <span
               key={index}
-              className={`codex-effort-tile${filled ? " codex-effort-tile--filled" : ""}`}
+              className={cn("codex-effort-tile", filled ? " codex-effort-tile--filled" : "")}
               style={{ "--tile-distance": distance } as React.CSSProperties}
             />
           );
@@ -742,7 +745,7 @@ export function ModelPicker({
 
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         ref={button}
         type="button"
         data-model-picker-trigger
@@ -767,11 +770,9 @@ export function ModelPicker({
           openRecentMenu();
         }}
         onClick={() => togglePicker()}
-        className={`flex h-6.5 max-w-40 items-center gap-1 rounded-md px-1.5 ${
-          open
+        className={cn("flex h-6.5 max-w-40 items-center gap-1 rounded-md px-1.5", open
             ? "bg-selection text-content"
-            : "bg-selection text-content hover:bg-selection-hover"
-        }`}
+            : "bg-selection text-content hover:bg-selection-hover")}
       >
         <HarnessIcon harness={current.harness} className="size-4 shrink-0" />
         <span className="model-picker-name model-picker-trigger-text min-w-0 truncate text-[11px]">
@@ -786,10 +787,10 @@ export function ModelPicker({
           <Spinner className="size-3 shrink-0 text-content/50" aria-label={uiT("Loading models…")} />
         ) : (
           <ChevronDown
-            className={`size-3 shrink-0 text-content/50 ${open ? "rotate-180" : ""}`}
+            className={cn("size-3 shrink-0 text-content/50", open ? "rotate-180" : "")}
           />
         )}
-      </button>
+      </Button>
 
       {hideSettings ? (
         <ModelFlyout
@@ -829,7 +830,7 @@ export function ModelPicker({
                 const highlighted = index === active;
                 if (entry.kind === "model") {
                   return (
-                    <button
+                    <Button variant="ghost" size="content"
                       ref={entryAnchor("model")}
                       key="model"
                       type="button"
@@ -844,11 +845,9 @@ export function ModelPicker({
                         setActive(index);
                         showEntrySubmenu(entry);
                       }}
-                      className={`relative isolate flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[14px] leading-5 ${
-                        highlighted
+                      className={cn("relative isolate flex w-full items-center gap-2 rounded-lg text-left text-[14px] justify-start", highlighted
                           ? "bg-selection text-content"
-                          : "text-content hover:bg-content/3"
-                      }`}
+                          : "text-content hover:bg-content/3")}
                     >
                       <MenuHover />
                       <span data-menu-title className="min-w-0 flex-1">{uiT("Model")}</span>
@@ -860,7 +859,7 @@ export function ModelPicker({
                         <span className="min-w-0 truncate">{current.name}</span>
                       </span>
                       <ChevronRight data-menu-arrow className="size-4 shrink-0 text-content/45" />
-                    </button>
+                    </Button>
                   );
                 }
 
@@ -868,7 +867,7 @@ export function ModelPicker({
                 const value = settingValue(setting, values);
                 const isToggle = setting.kind === "toggle";
                 return (
-                  <button
+                  <Button variant="ghost" size="content"
                     ref={entryAnchor(`setting:${setting.id}`)}
                     key={setting.id}
                     type="button"
@@ -889,11 +888,9 @@ export function ModelPicker({
                         showEntrySubmenu(entry);
                       }
                     }}
-                    className={`relative isolate flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[14px] leading-5 ${
-                      highlighted
+                    className={cn("relative isolate flex w-full items-center gap-2 rounded-lg text-left text-[14px] justify-start", highlighted
                         ? "bg-selection text-content"
-                        : "text-content hover:bg-content/3"
-                    }`}
+                        : "text-content hover:bg-content/3")}
                   >
                     <MenuHover />
                     <span data-menu-title className="min-w-0 flex-1">
@@ -902,9 +899,7 @@ export function ModelPicker({
                     {isToggle ? (
                       <span
                         aria-hidden="true"
-                        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-                          value === "true" ? "bg-content/35" : "bg-content/15"
-                        }`}
+                        className={cn("relative h-5 w-9 shrink-0 rounded-full transition-colors", value === "true" ? "bg-content/35" : "bg-content/15")}
                       >
                         <motion.span initial={false} animate={{ x: value === "true" ? motionGeometry.toggleTravel : 0 }} transition={reducedMotionQuery().matches ? immediateTransition : panelTransition} className="absolute left-0.5 top-0.5 size-4 rounded-full bg-content shadow-sm" />
                       </span>
@@ -916,7 +911,7 @@ export function ModelPicker({
                         <ChevronRight data-menu-arrow className="size-4 shrink-0 text-content/45" />
                       </>
                     )}
-                  </button>
+                  </Button>
                 );
               })}
         </MenuPanel>
@@ -964,7 +959,7 @@ export function ModelPicker({
                     option.value,
                   );
                   return (
-                    <button
+                    <Button variant="ghost" size="content"
                       key={option.value}
                       type="button"
                       role="menuitemradio"
@@ -974,11 +969,9 @@ export function ModelPicker({
                       onMouseDown={(event) => event.preventDefault()}
                       onMouseEnter={() => navigateSetting(index)}
                       onClick={() => setSetting(submenu.setting, option.value)}
-                      className={`relative isolate flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[14px] leading-5 ${
-                        highlighted
+                      className={cn("relative isolate flex w-full items-center gap-2 rounded-lg text-left text-[14px] justify-start", highlighted
                           ? "bg-selection text-content"
-                          : "text-content hover:bg-content/3"
-                      } ${tileTone ? "codex-effort-option" : ""}`}
+                          : "text-content hover:bg-content/3", tileTone ? "codex-effort-option" : "")}
                       data-effort-tone={tileTone}
                     >
                       <MenuHover />
@@ -993,7 +986,7 @@ export function ModelPicker({
                           strokeWidth={2}
                         />
                       ) : null}
-                    </button>
+                    </Button>
                   );
                 })}
               </>
@@ -1024,7 +1017,7 @@ export function ModelPicker({
           const highlighted = index === recentActive;
           const disabled = !source.available(item.harness);
           return (
-            <button
+            <Button variant="ghost" size="content"
               key={item.id}
               id={`${recentMenuId}-${index}`}
               type="button"
@@ -1039,13 +1032,11 @@ export function ModelPicker({
               onMouseDown={(event) => event.preventDefault()}
               onMouseEnter={() => setRecentActive(index)}
               onClick={() => pickModel(item)}
-              className={`relative isolate flex min-h-[50px] w-full items-center gap-2 rounded-lg px-2.5 pb-[7px] pt-1.5 text-left disabled:cursor-not-allowed ${
-                disabled
+              className={cn("relative isolate flex w-full items-center gap-2 rounded-lg text-left disabled:cursor-not-allowed justify-start", disabled
                   ? "text-content/30"
                   : highlighted
                     ? "bg-selection text-content"
-                    : "text-content hover:bg-content/3"
-              }`}
+                    : "text-content hover:bg-content/3")}
             >
               <MenuHover />
               <HarnessIcon harness={item.harness} className="size-4 shrink-0" />
@@ -1065,7 +1056,7 @@ export function ModelPicker({
                   strokeWidth={2}
                 />
               ) : null}
-            </button>
+            </Button>
           );
         })}
       </MenuPanel>
@@ -1148,7 +1139,7 @@ function TogglePill({
   const { t: uiT } = useTranslation();
   const on = settingValue(setting, values) === "true";
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={`${uiT(setting.label)}: ${on ? "On" : "Off"}`}
       aria-label={`${uiT(setting.label)}: ${on ? "On" : "Off"}`}
@@ -1162,11 +1153,11 @@ function TogglePill({
       className="flex h-6.5 max-w-28 items-center gap-1 rounded-md bg-selection px-1.5 text-content hover:bg-selection-hover"
     >
       <span
-        className={`min-w-0 truncate text-[11px] ${on ? "" : "text-content/50"}`}
+        className={cn("min-w-0 truncate text-[11px]", on ? "" : "text-content/50")}
       >
         {uiT(setting.label)}
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -1225,7 +1216,7 @@ function SelectPill({
 
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         ref={button}
         type="button"
         title={`${label}: ${valueLabel}`}
@@ -1236,11 +1227,9 @@ function SelectPill({
         data-composer-control={appearance}
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => (open ? dismiss(true) : openPicker())}
-        className={`flex h-6.5 max-w-28 items-center gap-1 rounded-md px-1.5 ${
-          open
+        className={cn("flex h-6.5 max-w-28 items-center gap-1 rounded-md px-1.5", open
             ? "bg-selection text-content"
-            : "bg-selection text-content hover:bg-selection-hover"
-        }`}
+            : "bg-selection text-content hover:bg-selection-hover")}
       >
         {isEffortSetting(setting) ? (
           <Gauge className="size-3.5 shrink-0" />
@@ -1249,7 +1238,7 @@ function SelectPill({
         ) : null}
         <span className="min-w-0 truncate text-[11px]">{valueLabel}</span>
         <RotatingIcon icon={ChevronDown} angle={open ? motionGeometry.flipAngle : 0} className="size-3 shrink-0 text-content/50" />
-      </button>
+      </Button>
 
       <MenuPanel
         open={open}
@@ -1311,7 +1300,7 @@ function SelectPill({
                   option.value,
                 );
                 return (
-                  <button
+                  <Button variant="ghost" size="content"
                     key={option.value}
                     id={`${menuId}-${index}`}
                     type="button"
@@ -1322,9 +1311,7 @@ function SelectPill({
                     onMouseDown={(event) => event.preventDefault()}
                     onMouseEnter={() => setActive(index)}
                     onClick={() => pick(menuSetting, option.value)}
-                    className={`relative isolate flex min-h-8 w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[14px] leading-5 text-content ${
-                      highlighted ? "bg-selection" : "hover:bg-content/3"
-                    } ${tileTone ? "codex-effort-option" : ""}`}
+                    className={cn("relative isolate flex w-full items-center gap-2 rounded-lg text-left text-[14px] text-content justify-start", highlighted ? "bg-selection" : "hover:bg-content/3", tileTone ? "codex-effort-option" : "")}
                     data-effort-tone={tileTone}
                   >
                     <MenuHover />
@@ -1339,7 +1326,7 @@ function SelectPill({
                         strokeWidth={2}
                       />
                     ) : null}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -1525,7 +1512,7 @@ function ModelBrowser({
 
       <label className="flex shrink-0 items-center gap-2 border-b border-stroke px-3 py-2 text-content/50">
         <Search className="size-3.5 shrink-0" />
-        <input
+        <Input variant="inline"
           ref={searchRef}
           type="text"
           value={query}
@@ -1633,17 +1620,15 @@ function ModelBrowser({
                     data-menu-row="single"
                     data-highlighted={highlighted || undefined}
                     data-disabled={disabled || undefined}
-                    className={`group relative isolate flex min-h-8 items-center gap-2 rounded-lg px-2.5 py-1.5 ${
-                      disabled
+                    className={cn("group relative isolate flex items-center gap-2 rounded-lg", disabled
                         ? "text-content/30"
                         : highlighted
                           ? "bg-selection text-content"
-                          : "text-content hover:bg-content/3"
-                    }`}
+                          : "text-content hover:bg-content/3")}
                     onMouseEnter={() => onActive(index)}
                   >
                     <MenuHover />
-                    <button
+                    <Button data-menu-row="single" variant="ghost" size="content"
                       ref={index === active ? activeRef : undefined}
                       type="button"
                       role="option"
@@ -1658,13 +1643,9 @@ function ModelBrowser({
                       }
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => onPick(item)}
-                      className={`flex min-w-0 flex-1 items-center gap-2 p-0 text-left text-[14px] leading-5 disabled:cursor-not-allowed ${
-                        // Scrolling a group's first row into view also
-                        // reveals its label instead of clipping it.
-                        group.showLabel && position === 0
+                      className={cn("flex min-w-0 flex-1 items-center gap-2 text-left text-[14px] disabled:cursor-not-allowed justify-start", group.showLabel && position === 0
                           ? "scroll-mt-9"
-                          : ""
-                      }`}
+                          : "")}
                     >
                       {tab === "favorites" ? (
                         <HarnessIcon
@@ -1675,8 +1656,8 @@ function ModelBrowser({
                       <span data-menu-title className="min-w-0 flex-1 truncate">
                         {item.name}
                       </span>
-                    </button>
-                    <button
+                    </Button>
+                    <Button variant="ghost" size="content"
                       type="button"
                       data-menu-accessory
                       title={
@@ -1694,17 +1675,15 @@ function ModelBrowser({
                         event.stopPropagation();
                         onToggleFavorite(item.id);
                       }}
-                      className={`grid size-5 shrink-0 place-items-center rounded-md transition-opacity ${
-                        favorited
+                      className={cn("grid size-5 shrink-0 place-items-center rounded-md transition-opacity", favorited
                           ? "text-content/60"
-                          : "text-content/35 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                      }`}
+                          : "text-content/35 opacity-0 group-hover:opacity-100 focus:opacity-100")}
                     >
                       <Star
                         className="size-3.5"
                         fill={favorited ? "currentColor" : "none"}
                       />
-                    </button>
+                    </Button>
                     {selected ? (
                       <span
                         aria-hidden="true"
@@ -1745,7 +1724,7 @@ function ProviderTabButton({
   // Tabs switch on click only: the strip sits between the search field and
   // the list, so hover-switching would fire whenever the pointer crosses it.
   return (
-    <button
+    <Button variant="ghost" size="content"
       ref={ref}
       type="button"
       role="tab"
@@ -1757,6 +1736,6 @@ function ProviderTabButton({
       className="surface-tab grid size-7 shrink-0 place-items-center"
     >
       <span className="shrink-0">{children}</span>
-    </button>
+    </Button>
   );
 }

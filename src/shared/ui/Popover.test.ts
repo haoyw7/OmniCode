@@ -49,23 +49,28 @@ function NestedSurface() {
     : null;
 }
 
-it("repositions and flips a retained flyout when its anchor moves before reopening", () => {
+it("repositions and flips a retained flyout when its anchor moves before reopening", async () => {
   let left = 100;
   vi.spyOn(anchor, "getBoundingClientRect").mockImplementation(() => new DOMRect(left, 200, 20, 24));
   const anchorRef = { current: anchor };
-  const render = (open: boolean) => act(() => root.render(createElement(Popover, {
+  vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(window.innerWidth);
+  vi.spyOn(document.documentElement, "clientHeight", "get").mockReturnValue(window.innerHeight);
+  vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+    return this.hasAttribute("data-radix-popper-content-wrapper") ? 240 : 0;
+  });
+  const render = (open: boolean) => act(async () => root.render(createElement(Popover, {
     open, anchor: anchorRef, side: "right", width: 240, gap: 4, "data-flyout": "",
   }, "Choices")));
-  render(true);
+  await render(true);
   const flyout = document.querySelector<HTMLElement>("[data-flyout]")!;
   expect(flyout.dataset.popoverSide).toBe("right");
-  render(false);
+  await render(false);
   act(() => vi.advanceTimersByTime(70));
   left = window.innerWidth - 100;
-  render(true);
+  await render(true);
   expect(document.querySelector("[data-flyout]")).toBe(flyout);
   expect(flyout.dataset.popoverSide).toBe("left");
-  expect(flyout.parentElement?.style.left).toBe(`${left - 244}px`);
+  expect(flyout.closest<HTMLElement>("[data-radix-popper-content-wrapper]")?.style.transform).toContain(`${left - 244}px`);
 });
 
 describe.each([false, true])(

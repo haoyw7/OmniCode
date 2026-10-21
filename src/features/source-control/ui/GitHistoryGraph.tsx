@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { gitHistoryQuery, gitCommitStatsQuery, installGitQueryInvalidation, isGitCwd } from "../model/gitQueries";
@@ -90,12 +92,12 @@ export function GitHistoryGraph({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <div className="git-panel-header git-history-header flex items-center">
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           onClick={onToggleExpanded}
           aria-expanded={expanded}
           aria-label={expanded ? uiT("Collapse graph") : uiT("Expand graph")}
-          className="flex min-w-0 flex-1 items-center gap-1 text-left"
+          className="flex min-w-0 flex-1 items-center gap-1 text-left justify-start"
         >
           <span className="grid size-5 shrink-0 place-items-center">
             {expanded ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
@@ -103,7 +105,7 @@ export function GitHistoryGraph({
           <span className="min-w-0 truncate">
             {uiT("Commit history")}
           </span>
-        </button>
+        </Button>
         <IconButton
           ref={expandButton}
           size="xs"
@@ -188,7 +190,7 @@ function HistoryRow({
   const { data: stats } = useQuery({ ...gitCommitStatsQuery(cwd, commit.sha), enabled: hover.open }, queryClient);
   return (
     <li className="min-w-0 overflow-visible" style={{ height: GRAPH_ROW_PX }}>
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         ref={hover.anchorRef}
         {...hover.triggerProps}
@@ -199,13 +201,9 @@ function HistoryRow({
         }}
         onDoubleClick={() => onOpen(true)}
         aria-pressed={active}
-        className={`git-history-item flex h-[22px] min-w-0 w-full items-stretch overflow-visible pr-2 text-left ${
-          row.kind === "HEAD" ? "is-head" : ""
-        } ${
-          active
+        className={cn("git-history-item flex h-[22px] min-w-0 w-full items-stretch overflow-visible pr-2 text-left justify-start", row.kind === "HEAD" ? "is-head" : "", active
             ? "is-selected bg-selection text-content"
-            : "text-content hover:bg-content/3"
-        }`}
+            : "text-content hover:bg-content/3")}
       >
         <svg
           aria-hidden
@@ -237,9 +235,7 @@ function HistoryRow({
         </svg>
         <span className="ml-1 flex min-w-0 flex-1 items-center overflow-hidden">
           <span
-            className={`min-w-0 shrink truncate text-[12px] leading-[22px] ${
-              row.kind === "HEAD" ? "font-semibold" : ""
-            }`}
+            className={cn("min-w-0 shrink truncate text-[12px] leading-[22px]", row.kind === "HEAD" ? "font-semibold" : "")}
           >
             {commit.subject || commit.shortSha}
           </span>
@@ -253,7 +249,7 @@ function HistoryRow({
           ) : null}
         </span>
         {badge ? <RefPill refInfo={badge} /> : null}
-      </button>
+      </Button>
       <HoverSummary hover={hover}>
         <CommitSummary commit={commit} stats={stats} />
       </HoverSummary>
@@ -387,9 +383,7 @@ function RefPill({ refInfo }: { refInfo: GraphRef }) {
   const local = refInfo.kind === "local";
   return (
     <span
-      className={`ml-1 flex min-h-3.5 min-w-0 max-w-[6.5rem] shrink-0 self-center items-center gap-0.5 rounded-full px-1.5 text-[10px] leading-label ${
-        refInfo.color ? "" : "bg-content/10 text-content/55"
-      }`}
+      className={cn("ml-1 flex min-h-3.5 min-w-0 max-w-[6.5rem] shrink-0 self-center items-center gap-0.5 rounded-full px-1.5 text-[10px] leading-label", refInfo.color ? "" : "bg-content/10 text-content/55")}
       style={
         refInfo.color
           ? {

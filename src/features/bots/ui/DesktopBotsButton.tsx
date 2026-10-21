@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useQueries } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { botPanelKey } from "../model/botPanelQueries";
@@ -146,7 +148,7 @@ export function DesktopBotsButton({
     ? t("{name}, {count} unread messages", { name, count: unread.length })
     : name;
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       data-open-assistant
       data-tauri-drag-region="false"
@@ -157,7 +159,7 @@ export function DesktopBotsButton({
         if (latest?.scope) selectBotThread(latest.environmentId, latest.scope);
         onOpen(latest?.machineId);
       }}
-      className={`mx-1 flex h-7 min-w-0 max-w-sm items-center gap-1.5 rounded-lg px-2 text-ui-sm transition-colors ${active ? "bg-selection text-content" : "text-foreground-subtle hover:bg-surface-hover hover:text-content"}`}
+      className={cn("mx-1 flex h-7 min-w-0 max-w-sm items-center gap-1.5 rounded-lg px-2 text-ui-sm transition-colors", active ? "bg-selection text-content" : "text-foreground-subtle hover:bg-surface-hover hover:text-content")}
     >
       <Bot className="size-4 shrink-0" />
       <span className="shrink-0">{name}</span>
@@ -170,6 +172,6 @@ export function DesktopBotsButton({
           {unread.length > 99 ? "99+" : unread.length}
         </span>
       ) : null}
-    </button>
+    </Button>
   );
 }

@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import type { ReactNode } from "react";
 
 export type ConnectionState = "online" | "offline" | "error" | "checking";
@@ -25,7 +26,7 @@ export function ConnectionStatusIcon({
       <span
         role="img"
         aria-label={label}
-        className={`absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2 ring-card transition-colors ${DOT[state]}`}
+        className={cn("absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2 ring-card transition-colors", DOT[state])}
       />
     </span>
   );

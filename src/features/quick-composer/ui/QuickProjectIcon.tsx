@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { useEffect, useState } from "react";
 import { projectKey, projectName } from "../../../shared/lib/paths";
 import { projectLogoSrc } from "../../projects/model/projectLogos";
@@ -44,7 +45,7 @@ export function QuickProjectIcon({
       <img
         src={src}
         alt=""
-        className={`rounded-sm object-cover ${className ?? ""}`}
+        className={cn("rounded-sm object-cover", className ?? "")}
         onError={() => setFailed(true)}
       />
     );

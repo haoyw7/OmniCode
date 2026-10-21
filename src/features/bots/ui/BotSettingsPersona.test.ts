@@ -102,7 +102,10 @@ it("omits personality fields for Hosts that do not support them", async () => {
 
 const dialogButton = (text: string) => [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find(button => button.textContent === text)!;
 const openPermissions = async () => {
-  await act(async () => node.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')!.click());
+  await act(async () => {
+    const trigger = node.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"]')!;
+    trigger.focus(); trigger.click();
+  });
 };
 
 it("omits the inspector personality card and cancels permission edits without losing an earlier model change", async () => {
@@ -114,7 +117,7 @@ it("omits the inspector personality card and cancels permission edits without lo
   expect(node.textContent).not.toContain("Personality and tone");
   expect(node.querySelector('[data-section="identity"]')).toBeNull();
   await openPermissions();
-  act(() => document.querySelector<HTMLInputElement>('[role="dialog"] input[type="checkbox"]')!.click());
+  act(() => document.querySelector<HTMLInputElement>('[role="dialog"] [role="checkbox"]')!.click());
   await act(async () => dialogButton("Cancel").click());
   expect(document.querySelector('[role="dialog"]')).toBeNull();
   expect(document.activeElement).toBe(node.querySelector('button[aria-haspopup="dialog"]'));
@@ -125,11 +128,11 @@ it("omits the inspector personality card and cancels permission edits without lo
 it("applies a permission dialog draft without submitting the surrounding settings form", async () => {
   const save = render({ mobile: false, presentation: "inspector" });
   await openPermissions();
-  act(() => document.querySelector<HTMLInputElement>('[role="dialog"] input[type="checkbox"]')!.click());
+  act(() => document.querySelector<HTMLInputElement>('[role="dialog"] [role="checkbox"]')!.click());
   await act(async () => dialogButton("Apply").click());
   expect(save).not.toHaveBeenCalled();
   await openPermissions();
-  expect(document.querySelector<HTMLInputElement>('[role="dialog"] input[type="checkbox"]')!.checked).toBe(false);
+  expect(document.querySelector<HTMLInputElement>('[role="dialog"] [role="checkbox"]')!.getAttribute("aria-checked")).toBe("false");
   await act(async () => dialogButton("Cancel").click());
   await submit();
   expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ policy: expect.objectContaining({ permissions: expect.objectContaining({ "catalog.read": false }) }) }));
@@ -139,11 +142,11 @@ it("discards an open dialog when its retained settings surface is hidden", async
   const props = { value: null, catalog, projects: [], busy: false, presentation: "inspector" as const, onSave: vi.fn(async () => {}) };
   const show = async (visible: boolean) => act(async () => root.render(createElement(SurfaceVisibilityContext.Provider, { value: visible }, createElement(BotSettings, props))));
   await show(true); await openPermissions();
-  act(() => document.querySelector<HTMLInputElement>('[role="dialog"] input[type="checkbox"]')!.click());
+  act(() => document.querySelector<HTMLInputElement>('[role="dialog"] [role="checkbox"]')!.click());
   await show(false);
   expect(document.querySelector('[role="dialog"]')).toBeNull();
   await show(true);
   expect(document.querySelector('[role="dialog"]')).toBeNull();
   await openPermissions();
-  expect(document.querySelector<HTMLInputElement>('[role="dialog"] input[type="checkbox"]')!.checked).toBe(true);
+  expect(document.querySelector<HTMLInputElement>('[role="dialog"] [role="checkbox"]')!.getAttribute("aria-checked")).toBe("true");
 });

@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { useAnimationActivity } from "../../../shared/hooks/useAnimationActivity";
 import "./TerminalSpinner.css";
 
@@ -15,7 +16,7 @@ export function TerminalSpinner({
   const activityRef = useAnimationActivity(changeActivity);
 
   return (
-    <span ref={activityRef} aria-hidden className={`terminal-spinner ${className}`}>
+    <span ref={activityRef} aria-hidden className={cn("terminal-spinner", className)}>
       <span className="terminal-spinner-window">
         <span className="terminal-spinner-strip">
           {FRAMES.map((frame) => <span key={frame}>{frame}</span>)}

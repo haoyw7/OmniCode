@@ -1,3 +1,4 @@
+import { Button } from "../../shared/ui/forms/Button";
 import { MotionConfig } from "motion/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../../shared/lib/queryClient";
@@ -97,7 +98,7 @@ async function boot() {
       <div className="flex h-screen flex-col items-center justify-center gap-3 p-6 text-content">
         <p>{translate("Could not connect to shared conversations.")}</p>
         <pre className="max-w-full whitespace-pre-wrap text-ui-sm">{String(error)}</pre>
-        <button onClick={() => void boot()}>{translate("Retry")}</button>
+        <Button variant="ghost" size="content" onClick={() => void boot()}>{translate("Retry")}</Button>
       </div>,
     );
   }

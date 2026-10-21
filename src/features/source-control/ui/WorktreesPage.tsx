@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useMemo, useState } from "react";
@@ -95,7 +97,7 @@ export function WorktreesPage({
             setDeleting(undefined);
           }}
         />
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           disabled={!data}
           onClick={() => setCreating(true)}
@@ -103,7 +105,7 @@ export function WorktreesPage({
         >
           <Plus className="size-3" />
           {uiT("Create worktree")}
-        </button>
+        </Button>
       </div>
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 flex-1 text-[12px] text-content/50">
@@ -111,7 +113,7 @@ export function WorktreesPage({
             "Sessions can share a worktree. Deleting one keeps its sessions by default and discards uncommitted changes. Its branch and commits are kept.",
           )}
         </p>
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           title={
             loadError
@@ -123,11 +125,11 @@ export function WorktreesPage({
           aria-label={uiT("Refresh worktrees")}
           disabled={!project}
           onClick={refresh}
-          className={`flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-content/8 px-2 text-[11px] hover:bg-content/12 disabled:opacity-40 active:scale-[0.97] ${loadError ? "text-red-400" : "text-content/65"}`}
+          className={cn("flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-content/8 px-2 text-[11px] hover:bg-content/12 disabled:opacity-40 active:scale-[0.97]", loadError ? "text-red-400" : "text-content/65")}
         >
           <RefreshCw className="size-3.5" />
           <span>{uiT("Refresh")}</span>
-        </button>
+        </Button>
       </div>
       {error && (
         <p role="alert" className="break-words text-[12px] text-red-400">
@@ -226,7 +228,7 @@ export function WorktreesPage({
                     {tree.locked && <span>{uiT("Locked")}</span>}
                   </p>
                 </div>
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   disabled={tree.missing}
                   aria-label={uiT("Reveal {value0}", {
@@ -239,8 +241,8 @@ export function WorktreesPage({
                   className="rounded-md p-1.5 text-content/40 hover:bg-content/5 hover:text-content disabled:opacity-30"
                 >
                   <FolderOpen className="size-4" />
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" size="content"
                   type="button"
                   disabled={!!blocked || refreshingAfterFailure || !!loadError}
                   aria-label={uiT("Delete {value0}", {
@@ -254,7 +256,7 @@ export function WorktreesPage({
                   className="rounded-md p-1.5 text-content/40 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-25"
                 >
                   <Trash2 className="size-4" />
-                </button>
+                </Button>
               </div>
             );
           })}

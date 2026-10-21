@@ -1,3 +1,4 @@
+import { Input } from "../../../../shared/ui/forms/Input";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -138,7 +139,7 @@ export function GitlabSettings() {
         ) : (
           <form noValidate onSubmit={onSave} className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
-              <input
+              <Input variant="inline"
                 type="url"
                 {...form.register("url")}
                 aria-invalid={!!form.formState.errors.url}
@@ -150,7 +151,7 @@ export function GitlabSettings() {
               />
             </label>
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
-              <input
+              <Input variant="inline"
                 type="password"
                 {...form.register("token")}
                 aria-invalid={!!form.formState.errors.token}
@@ -239,7 +240,7 @@ export function AzureDevOpsSettings() {
         ) : (
           <form noValidate onSubmit={onSave} className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
-              <input
+              <Input variant="inline"
                 type="url"
                 {...form.register("url")}
                 aria-invalid={!!form.formState.errors.url}
@@ -251,7 +252,7 @@ export function AzureDevOpsSettings() {
               />
             </label>
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
-              <input
+              <Input variant="inline"
                 type="password"
                 {...form.register("token")}
                 aria-invalid={!!form.formState.errors.token}
@@ -342,7 +343,7 @@ export function LinearSettings() {
         ) : (
           <form noValidate onSubmit={onSave} className="flex max-w-full flex-wrap items-center gap-2">
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
-              <input
+              <Input variant="inline"
                 type="password"
                 {...form.register("token")}
                 aria-invalid={!!form.formState.errors.token}
@@ -380,11 +381,11 @@ export function LinearSettings() {
             {teams.map((team) => {
               const checked = !hiddenTeamIds.includes(team.id);
               return (
-                <button
+                <Button variant="ghost" size="content"
                   key={team.id}
                   type="button"
                   onClick={() => toggleTeam(team.id)}
-                  className="flex h-7 items-center gap-2 rounded-md px-2 text-left text-[13px] text-content hover:bg-content/3"
+                  className="flex h-7 items-center gap-2 rounded-md px-2 text-left text-[13px] text-content hover:bg-content/3 justify-start"
                 >
                   <span className="min-w-0 flex-1 truncate">
                     {team.name}
@@ -395,7 +396,7 @@ export function LinearSettings() {
                   {checked ? (
                     <Check className="size-3.5 shrink-0" strokeWidth={2.25} />
                   ) : null}
-                </button>
+                </Button>
               );
             })}
           </div>

@@ -1,3 +1,5 @@
+import { Button } from "../../../../shared/ui/forms/Button";
+import { cn } from "../../../../shared/lib/cn";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../../shared/lib/queryClient";
@@ -32,7 +34,7 @@ export function SaveNoteButton({
 
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         data-ui="response-action"
         type="button"
         disabled={pending}
@@ -58,7 +60,7 @@ export function SaveNoteButton({
         ) : (
           <FilePlusCorner className="size-3.5" />
         )}
-      </button>
+      </Button>
       {error && (
         <span role="alert" className="max-w-xs text-xs text-content/70">
           {uiT("Could not save note. ")}
@@ -78,7 +80,7 @@ export function EditLastTurnButton({
 }) {
   const label = editing ? "Cancel edit" : "Edit and resend";
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={label}
       aria-label={label}
@@ -87,13 +89,11 @@ export function EditLastTurnButton({
         event.stopPropagation();
         onEdit();
       }}
-      className={`rounded-md p-1 transition-[background-color,color] duration-150 focus-visible:ring-1 focus-visible:ring-accent ${
-        editing
+      className={cn("rounded-md p-1 transition-[background-color,color] duration-150 focus-visible:ring-1 focus-visible:ring-accent", editing
           ? "edit-last-turn-button"
-          : "text-content/40 hover:bg-content/5 hover:text-content/70"
-      }`}
+          : "text-content/40 hover:bg-content/5 hover:text-content/70")}
     >
       <Pencil className="size-3.5" />
-    </button>
+    </Button>
   );
 }

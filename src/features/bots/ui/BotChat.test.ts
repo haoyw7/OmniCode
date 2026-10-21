@@ -339,10 +339,10 @@ it("defaults to all permissions and animates permission disclosure in both direc
   act(() => button.click());
   expect(fold()?.getAttribute("data-fold-state")).toBe("opening");
   const checks = [
-    ...node.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
+    ...node.querySelectorAll<HTMLInputElement>('[role="checkbox"]'),
   ];
   expect(checks).toHaveLength(20);
-  expect(checks.every((input) => input.checked)).toBe(true);
+  expect(checks.every((input) => input.getAttribute("aria-checked") === "true")).toBe(true);
   act(() =>
     node
       .querySelector("form")!

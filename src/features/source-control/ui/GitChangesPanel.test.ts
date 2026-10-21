@@ -305,7 +305,7 @@ async function showTree() {
   let collapsed: HTMLButtonElement | null;
   while (
     (collapsed = container.querySelector<HTMLButtonElement>(
-      'button[title][aria-expanded="false"]',
+      '.git-file-section button[title][aria-expanded="false"]',
     ))
   ) {
     const folder = collapsed;

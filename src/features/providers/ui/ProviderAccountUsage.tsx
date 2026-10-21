@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { motion } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
@@ -48,22 +50,22 @@ export function AccountStatusLabel({
   const fit = wrap ? "min-w-0 break-words" : "min-w-0 truncate";
   return (
     <span
-      className={`inline-flex min-w-0 gap-1.5 ${wrap ? "items-baseline" : "items-center"} ${className}`}
+      className={cn("inline-flex min-w-0 gap-1.5", wrap ? "items-baseline" : "items-center", className)}
       title={
         status.detail ? `${status.label} · ${status.detail}` : status.label
       }
     >
       <span
-        className={`size-1.5 shrink-0 rounded-full ${wrap ? "translate-y-[-1px]" : ""} ${STATUS_DOT[status.tone]}`}
+        className={cn("size-1.5 shrink-0 rounded-full", wrap ? "translate-y-[-1px]" : "", STATUS_DOT[status.tone])}
         aria-hidden
       />
       <span
-        className={`${status.tone === "unknown" ? fit : "shrink-0"} ${STATUS_TEXT[status.tone]}`}
+        className={cn(status.tone === "unknown" ? fit : "shrink-0", STATUS_TEXT[status.tone])}
       >
         {status.label}
       </span>
       {status.detail ? (
-        <span className={`${fit} text-content/40`}>
+        <span className={cn(fit, "text-content/40")}>
           {status.detail}
         </span>
       ) : null}
@@ -74,18 +76,17 @@ export function AccountStatusLabel({
 export function AccountUsageRefresh({ usage }: { usage: AccountUsage }) {
   const { t: uiT } = useTranslation();
   return (
-    <button
+    <Button variant="ghost" size="icon-sm"
       type="button"
       disabled={usage.refreshing}
       onClick={usage.refresh}
       aria-label={uiT("Refresh usage limits")}
       title={uiT("Refresh usage limits")}
-      className="grid size-7 place-items-center rounded-md text-content/40 transition-transform duration-150 hover:bg-content/6 hover:text-content active:scale-[0.96] disabled:opacity-40"
     >
       <RefreshCw
-        className={`size-3.5 ${usage.refreshing ? "animate-spin" : ""}`}
+        className={cn("size-3.5", usage.refreshing ? "animate-spin" : "")}
       />
-    </button>
+    </Button>
   );
 }
 
@@ -144,7 +145,7 @@ export function UsageMeter({
           {uiT(title)} · <span className="tabular-nums">{uiT(reset)}</span>
         </span>
         <span
-          className={`shrink-0 tabular-nums ${full ? "font-medium text-red-400" : "text-content/60"}`}
+          className={cn("shrink-0 tabular-nums", full ? "font-medium text-red-400" : "text-content/60")}
         >
           {showRemaining
             ? uiT("{value0} left", {
@@ -167,7 +168,7 @@ export function UsageMeter({
         aria-valuenow={Math.round(shown)}
       >
         <motion.span initial={false}
-          className={`block h-full rounded-full ${barClass(pct)}`}
+          className={cn("block h-full rounded-full", barClass(pct))}
           animate={{ width: `${shown}%` }} transition={reduced ? immediateTransition : panelTransition}
         />
       </div>

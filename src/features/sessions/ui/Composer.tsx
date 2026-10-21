@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { MenuPanel } from "../../../shared/ui/primitives/MenuPanel";
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
 import { MessageInput } from "../../../shared/ui/messaging/MessageInput";
@@ -2256,7 +2258,7 @@ export function Composer({
       </div>
       <div className="composer-model-controls ml-auto flex min-w-0 items-center gap-1">
         {resendEdited ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Stop editing last message")}
             aria-label={uiT("Stop editing last message")}
@@ -2266,7 +2268,7 @@ export function Composer({
           >
             <X className="size-3" strokeWidth={1.8} />
             <span>{uiT("Cancel edit")}</span>
-          </button>
+          </Button>
         ) : null}
         {modelControlElements}
       </div>
@@ -2278,7 +2280,7 @@ export function Composer({
       data-composer
       data-composer-layout={compact ? "compact" : "desktop"}
       data-native-readonly={readOnlyReason ? "true" : undefined}
-      className={`relative shrink-0 ${shell || compact ? "" : "p-1.5 pt-0"}`}
+      className={cn("relative shrink-0", shell || compact ? "" : "p-1.5 pt-0")}
       onMouseDown={disabled ? undefined : onFocus}
       onKeyDownCapture={disabled ? undefined : onComposerKeyDown}
     >
@@ -2420,18 +2422,16 @@ export function Composer({
         ) : null}
         <div
           ref={surfaceWidthRef}
-          className={`composer-surface ${hideTopBar ? "" : "composer-surface-with-workspace"}`}
+          className={cn("composer-surface", hideTopBar ? "" : "composer-surface-with-workspace")}
         >
           <MessageInput
             ref={boxRef}
             data-composer-box
             data-composer-editing={resendEdited ? "" : undefined}
             data-composer-file-drag={fileDrag || undefined}
-            className={`z-10 border bg-content/3 backdrop-blur-sm ${
-              resendEdited
+            className={cn("z-10 border bg-content/3 backdrop-blur-sm", resendEdited
                 ? "edit-last-turn-composer rounded-lg"
-                : "rounded-lg border-content/10 has-focus:border-content/20"
-            } ${fileDrag ? "border-accent/60" : ""}`}
+                : "rounded-lg border-content/10 has-focus:border-content/20", fileDrag ? "border-accent/60" : "")}
           >
             {compact ? workspaceBar : null}
             {fileDrag ? (
@@ -2479,9 +2479,7 @@ export function Composer({
                 ref={highlightRef}
                 aria-hidden
                 style={{ textIndent: modeIndent }}
-                className={`composer-highlight pointer-events-none absolute inset-0 max-h-40 overflow-hidden whitespace-pre-wrap wrap-break-word px-3 text-sm leading-5.5 text-content font-sans ${
-                  shell ? "py-4" : "py-3"
-                }`}
+                className={cn("composer-highlight pointer-events-none absolute inset-0 max-h-40 overflow-hidden whitespace-pre-wrap wrap-break-word px-3 text-sm leading-5.5 text-content font-sans", shell ? "py-4" : "py-3")}
               >
                 <ComposerHighlight
                   text={draft}
@@ -2520,9 +2518,7 @@ export function Composer({
                 }
                 aria-label={inputAriaLabel}
                 disabled={disabled}
-                className={`composer-field scrollbar-none relative max-h-40 w-full resize-none overflow-x-hidden whitespace-pre-wrap wrap-break-word bg-transparent px-3 text-sm leading-5.5 outline-none placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap font-sans ${
-                  shell ? "py-4" : "py-3"
-                }`}
+                className={cn("composer-field scrollbar-none relative max-h-40 w-full resize-none overflow-x-hidden whitespace-pre-wrap wrap-break-word bg-transparent px-3 text-sm leading-5.5 outline-none placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap font-sans", shell ? "py-4" : "py-3")}
                 onFocus={onFocus}
                 onKeyDown={onKeyDown}
                 onPaste={onPaste}
@@ -2580,7 +2576,7 @@ export function Composer({
                   <p className="px-2 pb-1 pt-0.5 text-[10px] font-medium uppercase tracking-wide text-content/40">
                     {uiT("Add to message")}
                   </p>
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     data-menu-row="description"
                     disabled={!attachmentsSupported}
@@ -2589,7 +2585,7 @@ export function Composer({
                       setPlusOpen(false);
                       attachFromPicker();
                     }}
-                    className="relative isolate flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left text-content hover:bg-content/6 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="relative isolate flex w-full items-start gap-2.5 rounded-lg text-left text-content hover:bg-content/6 disabled:cursor-not-allowed disabled:opacity-40 justify-start"
                   >
                     <MenuHover />
                     <FilePlus className="mt-0.5 size-4 shrink-0" />
@@ -2607,10 +2603,10 @@ export function Composer({
                               })}
                       </span>
                     </span>
-                  </button>
+                  </Button>
                   {!remote ? (
                     <>
-                      <button
+                      <Button variant="ghost" size="content"
                         type="button"
                         data-menu-row="single"
                         onMouseDown={(event) => event.preventDefault()}
@@ -2623,10 +2619,10 @@ export function Composer({
                           {uiT(notesEnabled ? "Files and notes" : "Files")}
                         </span>
                         <span className="ml-auto text-content/45">@</span>
-                      </button>
+                      </Button>
                       {!hostManaged ? (
                         <>
-                          <button
+                          <Button variant="ghost" size="content"
                             type="button"
                             data-menu-row="single"
                             onMouseDown={(event) => event.preventDefault()}
@@ -2637,8 +2633,8 @@ export function Composer({
                             <Terminal className="size-4 shrink-0" />
                             <span data-menu-title>{uiT("Skills and commands")}</span>
                             <span className="ml-auto text-content/45">/</span>
-                          </button>
-                          <button
+                          </Button>
+                          <Button variant="ghost" size="content"
                             type="button"
                             data-menu-row="single"
                             onMouseDown={(event) => event.preventDefault()}
@@ -2652,7 +2648,7 @@ export function Composer({
                             <MenuHover />
                             <Link className="size-4 shrink-0" />
                             <span data-menu-title>{uiT("MCP servers")}</span>
-                          </button>
+                          </Button>
                         </>
                       ) : null}
                       <div
@@ -2662,7 +2658,7 @@ export function Composer({
                     </>
                   ) : null}
                   {!hostManaged || hostFeatures?.plan ? (
-                    <button
+                    <Button variant="ghost" size="content"
                       type="button"
                       data-menu-row="description"
                       aria-pressed={planActive}
@@ -2676,7 +2672,7 @@ export function Composer({
                         setPlusOpen(false);
                         ref.current?.focus();
                       }}
-                      className="relative isolate flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left text-content hover:bg-content/6"
+                      className="relative isolate flex w-full items-start gap-2.5 rounded-lg text-left text-content hover:bg-content/6 justify-start"
                     >
                       <MenuHover />
                       <AiIdea className="mt-0.5 size-4 shrink-0 text-yellow-300/80" />
@@ -2691,10 +2687,10 @@ export function Composer({
                       {planActive ? (
                         <Check data-menu-check className="mt-0.5 size-3.5 shrink-0 text-accent" />
                       ) : null}
-                    </button>
+                    </Button>
                   ) : null}
                   {!hostManaged ? (
-                    <button
+                    <Button variant="ghost" size="content"
                       type="button"
                       data-menu-row="description"
                       aria-pressed={operatorActive}
@@ -2710,7 +2706,7 @@ export function Composer({
                         setPlusOpen(false);
                         ref.current?.focus();
                       }}
-                      className="relative isolate flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left text-content hover:bg-content/6"
+                      className="relative isolate flex w-full items-start gap-2.5 rounded-lg text-left text-content hover:bg-content/6 justify-start"
                     >
                       <MenuHover />
                       <CursorMagicSelection className="mt-0.5 size-4 shrink-0 text-sky-300/80" />
@@ -2725,12 +2721,12 @@ export function Composer({
                       {operatorActive ? (
                         <Check data-menu-check className="mt-0.5 size-3.5 shrink-0 text-sky-300/80" />
                       ) : null}
-                    </button>
+                    </Button>
                   ) : null}
                   {orchestrationAvailable &&
                     (!hostManaged || hostFeatures?.orchestration) &&
                     !hideTopBar && (
-                      <button
+                      <Button variant="ghost" size="content"
                         type="button"
                         data-menu-row="description"
                         aria-pressed={orchestrationActive}
@@ -2746,7 +2742,7 @@ export function Composer({
                           setPlusOpen(false);
                           ref.current?.focus();
                         }}
-                        className="relative isolate flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left text-content hover:bg-content/6"
+                        className="relative isolate flex w-full items-start gap-2.5 rounded-lg text-left text-content hover:bg-content/6 justify-start"
                       >
                         <MenuHover />
                         <Share className="mt-0.5 size-4 shrink-0 text-fuchsia-300/65" />
@@ -2766,10 +2762,10 @@ export function Composer({
                         {orchestrationActive && (
                           <Check data-menu-check className="mt-0.5 size-3.5 shrink-0 text-fuchsia-300/80" />
                         )}
-                      </button>
+                      </Button>
                     )}
                   {canSaveDraft && onSaveDraft ? (
-                    <button
+                    <Button variant="ghost" size="content"
                       type="button"
                       data-menu-row="description"
                       aria-pressed={draftActive}
@@ -2783,7 +2779,7 @@ export function Composer({
                         setPlusOpen(false);
                         ref.current?.focus();
                       }}
-                      className="relative isolate flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left text-content hover:bg-content/6"
+                      className="relative isolate flex w-full items-start gap-2.5 rounded-lg text-left text-content hover:bg-content/6 justify-start"
                     >
                       <MenuHover />
                       <CircleDashed className="mt-0.5 size-4 shrink-0 text-content/60" />
@@ -2798,7 +2794,7 @@ export function Composer({
                       {draftActive ? (
                         <Check data-menu-check className="mt-0.5 size-3.5 shrink-0 text-accent" />
                       ) : null}
-                    </button>
+                    </Button>
                   ) : null}
                 </MenuPanel>
               </div>

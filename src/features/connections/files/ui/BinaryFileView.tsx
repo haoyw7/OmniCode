@@ -1,3 +1,4 @@
+import { Button } from "../../../../shared/ui/forms/Button";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient, invalidateAfterChange } from "../../../../shared/lib/queryClient";
 import { errorMessage } from "../../../../shared/lib/errorMessage";
@@ -228,14 +229,14 @@ function ImageView({
         >
           <Minus className="size-3" />
         </ZoomButton>
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           title={uiT("Fit to window")}
           onClick={() => setZoom("fit")}
           className="w-11 rounded text-center tabular-nums hover:text-content"
         >
           {zoom === "fit" ? uiT("Fit") : `${Math.round(zoom * 100)}%`}
-        </button>
+        </Button>
         <ZoomButton
           label={uiT("Zoom in")}
           onClick={() =>
@@ -277,15 +278,14 @@ function ZoomButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="icon-xs"
       type="button"
       title={label}
       aria-label={label}
       onClick={onClick}
-      className="grid size-5 place-items-center rounded hover:bg-content/6 hover:text-content"
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -342,13 +342,12 @@ function CardButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
+    <Button variant="secondary" size="sm"
       type="button"
       onClick={onClick}
-      className="flex h-7 items-center gap-1.5 rounded-md bg-content/10 px-2.5 text-[12px] text-content hover:bg-content/15"
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

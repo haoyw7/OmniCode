@@ -1,3 +1,4 @@
+import { Input } from "../../../shared/ui/forms/Input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,16 +38,18 @@ export function SessionRenamePopover({
     >
       <form
         className="p-2"
-        onSubmit={form.handleSubmit(async ({ title: next }) => {
-          if (form.formState.isSubmitting) return;
-          try {
-            if (next && next !== title) await actions.rename(sessionId, next);
-            onClose();
-            anchor.focus();
-          } catch (cause) { toast.error(cause instanceof Error ? cause.message : String(cause)); }
-        })}
+        onSubmit={(event) => {
+          if (form.formState.isSubmitting) { event.preventDefault(); return; }
+          void form.handleSubmit(async ({ title: next }) => {
+            try {
+              if (next && next !== title) await actions.rename(sessionId, next);
+              onClose();
+              anchor.focus();
+            } catch (cause) { toast.error(cause instanceof Error ? cause.message : String(cause)); }
+          })(event);
+        }}
       >
-        <input data-ui="input"
+        <Input data-ui="input"
           autoFocus
           aria-label={t("Rename")}
           {...form.register("title")}

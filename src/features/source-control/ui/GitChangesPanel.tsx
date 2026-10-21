@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { toast } from "sonner";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
@@ -259,7 +260,7 @@ export const GitChangesPanel = memo(function GitChangesPanel({
         {index?.branch ? (
           <div
             ref={branchMenuRef}
-            className={`relative flex min-w-0 items-center gap-1 ${branchControl ? "ml-auto shrink-0" : "flex-1"}`}
+            className={cn("relative flex min-w-0 items-center gap-1", branchControl ? "ml-auto shrink-0" : "flex-1")}
           >
             <span className="flex min-w-0 flex-1 items-center gap-1">
               {!branchControl ? <><GitBranch className="size-3 shrink-0" />
@@ -297,7 +298,7 @@ export const GitChangesPanel = memo(function GitChangesPanel({
                 data-menu-density="compact"
               >
                 <div data-menu-gutter>
-                  <button
+                  <Button data-menu-row="single" variant="ghost" size="content"
                     type="button"
                     role="menuitem"
                     disabled={busy !== null || !canPull}
@@ -309,7 +310,7 @@ export const GitChangesPanel = memo(function GitChangesPanel({
                           )
                     }
                     onClick={() => void pull()}
-                    className="flex h-7 w-full items-center gap-2 px-3 text-left text-[12px] text-content hover:bg-content/6 disabled:opacity-40"
+                    className="flex w-full items-center gap-2 text-left text-[12px] text-content hover:bg-content/6 disabled:opacity-40 justify-start"
                   >
                     <MenuHover />
                     {busy === "pull" ? (
@@ -318,7 +319,7 @@ export const GitChangesPanel = memo(function GitChangesPanel({
                       <RefreshCw className="size-3.5" />
                     )}
                     <span data-menu-title>{busy === "pull" ? uiT("Pulling…") : uiT("Pull")}</span>
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : null}
@@ -771,7 +772,7 @@ function ChangedFiles({
 
   return (
     <aside
-      className={`flex min-h-0 min-w-0 flex-col ${fill ? "flex-1" : "shrink-0"}`}
+      className={cn("flex min-h-0 min-w-0 flex-col", fill ? "flex-1" : "shrink-0")}
     >
       <AnimatedCollapse expanded={composerExpanded} keepMounted className="shrink-0">
         <div id={composerId} className="git-commit-composer border-b border-stroke p-2">
@@ -877,33 +878,33 @@ function ChangedFiles({
                     data-menu-density="compact"
                   >
                     <div data-menu-gutter>
-                      <button
+                      <Button data-menu-row="single" variant="ghost" size="content"
                         type="button"
                         role="menuitem"
                         disabled={!canCommitPush}
                         onClick={() => void commit(true)}
-                        className="flex h-7 w-full items-center px-3 text-left text-[12px] text-content hover:bg-content/6 disabled:opacity-40"
+                        className="flex w-full items-center text-left text-[12px] text-content hover:bg-content/6 disabled:opacity-40 justify-start"
                       >
                         <MenuHover />
                         <span data-menu-title>{uiT("Commit & Push")}</span>
-                      </button>
-                      <button
+                      </Button>
+                      <Button data-menu-row="single" variant="ghost" size="content"
                         type="button"
                         role="menuitem"
                         disabled={!canCommitPushPr}
                         onClick={() => void commit(true, true)}
-                        className="flex h-7 w-full items-center px-3 text-left text-[12px] text-content hover:bg-content/6 disabled:opacity-40"
+                        className="flex w-full items-center text-left text-[12px] text-content hover:bg-content/6 disabled:opacity-40 justify-start"
                       >
                         <MenuHover />
                         <span data-menu-title>{uiT("Commit, Push & Create PR")}</span>
-                      </button>
+                      </Button>
                       <div role="separator" className="my-1 border-t border-content/10" />
-                      <button
+                      <Button data-menu-row="single" variant="ghost" size="content"
                         type="button"
                         role="menuitemcheckbox"
                         aria-checked={amend}
                         onClick={() => void toggleAmend()}
-                        className="flex h-7 w-full items-center justify-between gap-2 px-3 text-left text-[12px] text-content hover:bg-content/6"
+                        className="flex w-full items-center justify-between gap-2 text-left text-[12px] text-content hover:bg-content/6"
                       >
                         <MenuHover />
                         <span data-menu-title>{uiT("Amend Last Commit")}</span>
@@ -912,7 +913,7 @@ function ChangedFiles({
                             <Check className="size-3.5" strokeWidth={2} />
                           ) : null}
                         </span>
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ) : null}
@@ -1129,7 +1130,7 @@ function GitSyncActions({
           className="min-w-0 flex-1"
         >
           <RefreshCw
-            className={`size-3.5 shrink-0 ${syncing ? "animate-spin" : ""}`}
+            className={cn("size-3.5 shrink-0", syncing ? "animate-spin" : "")}
           />
           <span className="min-w-0 truncate">{uiT("Sync Changes")}</span>
           {behind > 0 ? (
@@ -1206,7 +1207,7 @@ export function FileSection({
   return (
     <div className="git-file-section">
       <div className="git-panel-header git-file-section-header flex items-center">
-        <button
+        <Button variant="ghost" size="content"
           ref={toggleRef}
           type="button"
           aria-expanded={open}
@@ -1216,7 +1217,7 @@ export function FileSection({
             if (open && childrenRef.current?.contains(document.activeElement)) toggleRef.current?.focus();
             onToggle();
           }}
-          className="flex min-w-0 flex-1 items-center gap-1 text-left"
+          className="flex min-w-0 flex-1 items-center gap-1 text-left justify-start"
         >
           <span className="grid size-5 shrink-0 place-items-center">
             {open ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
@@ -1227,7 +1228,7 @@ export function FileSection({
           <span className="git-file-count ml-1 grid h-4 min-w-4 shrink-0 place-items-center rounded px-1 text-ui-xs tabular-nums">
             {count}
           </span>
-        </button>
+        </Button>
         <IconButton size="xs" disabled={!visible}
           label={view === "tree" ? uiT("View as List") : uiT("View as Tree")}
           onClick={onToggleView}
@@ -1395,14 +1396,14 @@ function ChangeDirRow({
         style={{ paddingLeft: 8 + depth * 12 }}
         className="group flex h-7 w-full items-center gap-1 pr-2 leading-none text-content hover:bg-content/3"
       >
-        <button
+        <Button variant="ghost" size="content"
           ref={toggleRef}
           type="button"
           title={dir.path}
           aria-expanded={open}
           disabled={!visible}
           onClick={toggle}
-          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+          className="flex min-w-0 flex-1 items-center gap-1.5 text-left justify-start"
         >
           <span className="grid size-4 shrink-0 place-items-center text-content/50">
             {open ? (
@@ -1414,7 +1415,7 @@ function ChangeDirRow({
           <span data-file-label className="min-w-0 flex-1 truncate text-[13px] leading-label font-medium">
             {dir.name}
           </span>
-        </button>
+        </Button>
         <div className="hidden shrink-0 items-center group-focus-within:flex group-hover:flex">
           <IconButton size="xs"
             label={uiT(
@@ -1439,9 +1440,7 @@ function ChangeDirRow({
           </IconButton>
         </div>
         <span
-          className={`grid w-3.5 shrink-0 place-items-center ${
-            dir.status ? statusColor(dir.status) : "text-content/40"
-          }`}
+          className={cn("grid w-3.5 shrink-0 place-items-center", dir.status ? statusColor(dir.status) : "text-content/40")}
           aria-hidden
         >
           <span className="size-1.5 rounded-full bg-current" />
@@ -1550,15 +1549,11 @@ function ChangeRow({
       <div
         data-git-change-row={tree ? "tree" : "list"}
         style={tree ? { paddingLeft: 8 + depth * 12 } : undefined}
-        className={`group flex h-7 w-full items-center gap-1 pr-2 leading-none ${
-          tree ? "" : "pl-2"
-        } ${
-          active
+        className={cn("group flex h-7 w-full items-center gap-1 pr-2 leading-none", tree ? "" : "pl-2", active
             ? "bg-selection text-content"
-            : "text-content hover:bg-content/3"
-        }`}
+            : "text-content hover:bg-content/3")}
       >
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           title={file.relative}
           onClick={() => {
@@ -1567,18 +1562,16 @@ function ChangeRow({
           onDoubleClick={() => {
             if (canOpen) onOpenFile(file.path, kind, true);
           }}
-          className="flex h-full min-w-0 flex-1 items-center gap-0.75 text-left"
+          className="flex h-full min-w-0 flex-1 items-center gap-0.75 text-left justify-start"
         >
           {tree ? <span className="size-4 shrink-0" /> : null}
           <FileTypeIcon name={name} isDir={false} size={12} />
           <span data-file-label className="git-change-label min-w-0 flex-1 leading-label">
             <span className="git-change-name block truncate text-[13px] font-medium">{name}</span>
           </span>
-        </button>
+        </Button>
         <div
-          className={` shrink-0 items-center ${
-            active ? "flex" : "hidden group-focus-within:flex group-hover:flex"
-          }`}
+          className={cn("shrink-0 items-center", active ? "flex" : "hidden group-focus-within:flex group-hover:flex")}
         >
           {kind === "unstaged" ? (
             <IconButton size="xs"
@@ -1614,7 +1607,7 @@ function ChangeRow({
           </span>
         ) : null}
         <span
-          className={`w-3.5 shrink-0 text-right font-mono text-[11px] font-semibold ${statusColor(file.status)}`}
+          className={cn("w-3.5 shrink-0 text-right font-mono text-[11px] font-semibold", statusColor(file.status))}
         >
           {statusLetter(file.status)}
         </span>

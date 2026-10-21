@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   CheckCircle,
@@ -108,7 +110,7 @@ export function InboxCard({
   });
 
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={item.title}
       aria-current={active ? "true" : undefined}
@@ -116,11 +118,9 @@ export function InboxCard({
         item,
       )}: ${item.title}${attentionLabel ? `, ${attentionLabel}` : ""}${unseen ? ", new" : ""}${relatedSessionCount > 0 ? `, ${relatedSessionCount} related ${relatedSessionCount === 1 ? "thread" : "threads"}` : ""}`}
       onClick={onSelect}
-      className={`flex w-full flex-col rounded-md border px-2.5 py-2 text-left ${
-        active
+      className={cn("flex w-full flex-col items-stretch rounded-md border px-2.5 py-2 text-left justify-start", active
           ? "border-transparent bg-selection text-content"
-          : "border-transparent text-content/80 hover:bg-content/3 hover:text-content"
-      }`}
+          : "border-transparent text-content/80 hover:bg-content/3 hover:text-content")}
     >
       <span className="flex items-center gap-2">
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -129,7 +129,7 @@ export function InboxCard({
             className="size-3.5 shrink-0"
           />
           <status.Icon
-            className={`size-3 shrink-0 ${status.className}`}
+            className={cn("size-3 shrink-0", status.className)}
             strokeWidth={1.75}
           />
           <span className="min-w-0 truncate text-[11px] text-content/50">
@@ -193,7 +193,7 @@ export function InboxCard({
           </span>
         ) : null}
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -207,9 +207,7 @@ export function InboxLabel({
   const color = labelColor(label.color);
   return (
     <span
-      className={`inline-flex min-w-0 items-center gap-1 rounded px-1.5 py-px text-content/50 bg-content/8 ${
-        compact ? "max-w-20 text-[10px]" : "text-[11px]"
-      }`}
+      className={cn("inline-flex min-w-0 items-center gap-1 rounded px-1.5 py-px text-content/50 bg-content/8", compact ? "max-w-20 text-[10px]" : "text-[11px]")}
     >
       {color ? (
         <span

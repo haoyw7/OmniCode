@@ -1,3 +1,4 @@
+import { Button } from "../../../../shared/ui/forms/Button";
 import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { memo, useMemo, useState } from "react";
 import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
@@ -95,14 +96,14 @@ export const WorkflowRunArtifactsSection = memo(function WorkflowRunArtifactsSec
       data-artifacts-open={expanded ? "true" : "false"}
       data-testid={TID_WORKFLOW_ARTIFACTS_SECTION}
     >
-      <button
+      <Button variant="ghost" size="content"
         aria-expanded={expanded}
         aria-label={intl.formatMessage({
           id: expanded
             ? "chat.toolCall.workflow.run.artifacts.collapse"
             : "chat.toolCall.workflow.run.artifacts.expand",
         })}
-        className="flex h-9 w-full items-center gap-2 px-3 text-left outline-none transition-colors hover:bg-surface focus-visible:ring-2 focus-visible:ring-ring/40"
+        className="flex h-9 w-full items-center justify-start gap-2 px-3 text-left"
         data-testid={TID_WORKFLOW_ARTIFACTS_TOGGLE}
         onClick={() => setExpanded((previous) => !previous)}
         type="button"
@@ -127,7 +128,7 @@ export const WorkflowRunArtifactsSection = memo(function WorkflowRunArtifactsSec
           </span>
         ) : null}
         <DisclosureChevron expanded={expanded} className="ml-auto size-3.5 shrink-0 text-foreground-subtlest" />
-      </button>
+      </Button>
       <AnimatedCollapse expanded={expanded} motion="height">{() => primary !== undefined ? (
         // `@container/wf-artifacts`：交付物行的框按这个容器的宽度选 160 × 100 或 136 × 85。
         <div

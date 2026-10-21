@@ -18,7 +18,7 @@ const room = (id = "room-1"): BotRoom => ({ id, name: id, memberIds: ["Alpha", "
 const team = (): BotTeam => ({ id: "team-1", name: "Core team", memberBotIds: ["Alpha", "Beta"], chiefBotId: "Alpha", revision: 1, createdAt: 1, updatedAt: 1 });
 const button = (text: string) => [...node.querySelectorAll<HTMLButtonElement>("button")].find(value => value.textContent === text)!;
 function input(field: HTMLInputElement | HTMLTextAreaElement, value: string) { Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), "value")!.set!.call(field, value); field.dispatchEvent(new Event("input", { bubbles: true })); }
-const choice = (label: string) => [...node.querySelectorAll<HTMLLabelElement>("label")].find(value => value.textContent === label)!.querySelector<HTMLInputElement>("input")!;
+const choice = (label: string) => [...node.querySelectorAll<HTMLLabelElement>("label")].find(value => value.textContent === label)!.querySelector<HTMLButtonElement>('[role="checkbox"]')!;
 async function flush() { await act(async () => { for (let i = 0; i < 30; i++) await Promise.resolve(); }); }
 beforeEach(() => { vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); setUiLanguage("en"); vi.useFakeTimers(); localStorage.clear(); vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener() {}, removeEventListener() {} }))); node = document.createElement("div"); document.body.append(node); root = createRoot(node); });
 afterEach(() => { act(() => root.unmount()); node.remove(); vi.useRealTimers(); vi.unstubAllGlobals(); });
@@ -39,20 +39,22 @@ it("creates a Team only on save and preserves a competing Chief edit until expli
   expect(rpc.mock.calls.find(([method]) => method === "botTeams.create")?.[1].patch).toMatchObject({ name: "Draft team", memberBotIds: ["Alpha"], chiefBotId: null });
   act(() => [...node.querySelectorAll<HTMLButtonElement>(".desktop-bot-directory-list button")].find(value => value.textContent?.startsWith("Core team"))!.click());
   const editor = node.querySelector<HTMLElement>('.desktop-bot-directory-editors > div:not([hidden])')!;
-  const chief = editor.querySelector<HTMLSelectElement>('[aria-label="Chief of Staff"]')!;
-  act(() => { chief.value = "Beta"; chief.dispatchEvent(new Event("change", { bubbles: true })); });
+  const chief = editor.querySelector<HTMLButtonElement>('[aria-label^="Chief of Staff:"]')!;
+  await act(async () => chief.click());
+  await act(async () => [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(option => option.textContent === "Beta")!.click());
   act(() => editor.querySelector<HTMLButtonElement>('button[type="submit"]')!.click()); await flush();
-  expect(chief.value).toBe("Beta"); expect(editor.textContent).toContain("Team changed elsewhere");
+  expect(chief.textContent).toContain("Beta"); expect(editor.textContent).toContain("Team changed elsewhere");
   expect(rpc.mock.calls.find(([method]) => method === "botTeams.configure")?.[1]).toMatchObject({ teamId: "team-1", expectedRevision: 1, patch: { chiefBotId: "Beta" } });
   act(() => [...editor.querySelectorAll<HTMLButtonElement>("button")].find(value => value.textContent === "Reload saved configuration")!.click()); await flush();
-  expect(chief.value).toBe("Beta"); expect(editor.querySelector('[role="alert"]')).toBeNull();
+  expect(chief.textContent).toContain("Beta"); expect(editor.querySelector('[role="alert"]')).toBeNull();
 });
 
 it("saves a Room's ordered member draft with a stable retry command", async () => {
   let first = true;
   const rpc = vi.fn(async (_method: string, params: Record<string, any>) => { if (first) { first = false; throw new Error("Connection lost"); } return { ...room(), name: params.name, memberIds: params.memberIds }; });
   act(() => root.render(createElement(DesktopRoomEditor, { bots, rpc: rpc as never, onSaved: async () => {} })));
-  act(() => { input(node.querySelector<HTMLInputElement>('[aria-label="Room name"]')!, "Planning"); choice("Alpha").click(); choice("Beta").click(); });
+  act(() => { input(node.querySelector<HTMLInputElement>('[aria-label="Room name"]')!, "Planning"); });
+  act(() => choice("Alpha").click()); act(() => { choice("Beta").click(); });
   act(() => node.querySelector<HTMLButtonElement>('[aria-label="Move up: Beta"]')!.click());
   expect(rpc).not.toHaveBeenCalled();
   expect(node.querySelector<HTMLInputElement>('[aria-label="Room name"]')!.value).toBe("Planning");

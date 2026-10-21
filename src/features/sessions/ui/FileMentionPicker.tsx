@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { StickyNote } from "../../../shared/ui/icons";
 import { useEffect, useRef, type MouseEvent as ReactMouseEvent } from "react";
@@ -101,7 +103,7 @@ export function FileMentionPicker({
                   .filter((pos) => pos >= nameOffset)
                   .map((pos) => pos - nameOffset);
             return (
-              <button
+              <Button data-menu-row="single" variant="ghost" size="content"
                 key={file.path}
                 ref={highlighted ? activeRef : undefined}
                 type="button"
@@ -110,9 +112,7 @@ export function FileMentionPicker({
                 onMouseDown={(e) => e.preventDefault()}
                 onMouseEnter={() => onRowEnter(index)}
                 onClick={() => onPick(file)}
-                className={`flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] leading-none ${
-                  highlighted ? "bg-selection text-content" : "text-content"
-                }`}
+                className={cn("flex w-full items-center gap-2 rounded-md text-left text-[13px] justify-start", highlighted ? "bg-selection text-content" : "text-content")}
               >
                 <span className="shrink-0">
                   {isNoteMentionPath(file.path) ? (
@@ -127,9 +127,7 @@ export function FileMentionPicker({
                 </span>
                 <span
                   data-file-label={!note || undefined}
-                  className={`min-w-0 flex-1 truncate ${
-                    highlighted ? "text-mention" : ""
-                  }`}
+                  className={cn("min-w-0 flex-1 truncate", highlighted ? "text-mention" : "")}
                 >
                   <MatchText
                     text={file.name}
@@ -151,7 +149,7 @@ export function FileMentionPicker({
                     />
                   </span>
                 ) : null}
-              </button>
+              </Button>
             );
           })}
         </div>

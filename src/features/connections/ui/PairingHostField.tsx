@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -98,16 +100,15 @@ export function PairingHostField({
             searchable={false}
           />
         </div>
-        <button
+        <Button variant="ghost" size="icon"
           type="button"
           onClick={detect}
           disabled={checking}
           aria-label={t("Check again")}
           title={t("Check again")}
-          className="grid size-8 shrink-0 place-items-center rounded-lg text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-foreground disabled:opacity-40"
         >
-          <RefreshCw className={`size-4 ${checking ? "animate-spin" : ""}`} />
-        </button>
+          <RefreshCw className={cn("size-4", checking ? "animate-spin" : "")} />
+        </Button>
       </div>
       {status ? (
         <p role={error || (current && !current.reachable) ? "alert" : undefined} className="text-ui-caption leading-5 text-foreground-subtle">

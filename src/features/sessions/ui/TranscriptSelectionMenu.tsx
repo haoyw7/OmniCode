@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { FilePlusCorner, MessageSquarePlus } from "../../../shared/ui/icons";
@@ -96,7 +97,7 @@ function SelectionAction({
   const [error, setError] = useState<string | null>(null);
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         disabled={pending}
         onMouseDown={(event) => event.preventDefault()}
@@ -118,7 +119,7 @@ function SelectionAction({
       >
         {children}
         {label}
-      </button>
+      </Button>
       {error && (
         <span
           role="alert"

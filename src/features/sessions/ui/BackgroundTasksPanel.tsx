@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { motion, useIsPresent } from "motion/react";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -25,17 +26,17 @@ export function BackgroundTasksSummary({ tasks, onOpen, onStop }: {
   const finished = tasks.length - running.length;
   return <div data-background-summary>
     {running.slice(0, 3).map((task) => <div key={task.id} className="background-task-row">
-      <button type="button" className="background-task-open" onClick={() => onOpen(task.id)} title={task.title}>
+      <Button variant="ghost" size="content" type="button" className="background-task-open" onClick={() => onOpen(task.id)} title={task.title}>
         <Terminal className="size-3.5 shrink-0 text-content/50" />
         <span className="min-w-0 flex-1 truncate">{task.title}</span>
         <TaskElapsed task={task} />
-      </button>
+      </Button>
       {task.taskId && onStop ? <StopTaskButton taskId={task.taskId} onStop={onStop} /> : null}
     </div>)}
-    {finished || running.length > 3 ? <button type="button" className="background-task-open" onClick={() => onOpen()}>
+    {finished || running.length > 3 ? <Button variant="ghost" size="content" type="button" className="background-task-open" onClick={() => onOpen()}>
       <Check className="size-3.5 shrink-0 text-content/50" />
       {finished ? t("{count} finished", { count: finished }) : t("{count} running", { count: running.length })}
-    </button> : null}
+    </Button> : null}
   </div>;
 }
 
@@ -91,16 +92,16 @@ export function BackgroundTasksPanel({ tasks, initialTaskId, onClose, onClear, o
         {running.map(row)}
       </section> : null}
       {finished.length ? <section>
-        <button type="button" className="background-tasks-section-title flex items-center gap-1.5" aria-expanded={finishedOpen}
+        <Button variant="ghost" size="content" type="button" className="background-tasks-section-title flex items-center gap-1.5" aria-expanded={finishedOpen}
           onClick={() => setFinishedOpen((value) => !value)}>
           {t("Finished {count}", { count: finished.length })}<DisclosureChevron expanded={finishedOpen} className="size-3" />
-        </button>
+        </Button>
         <AnimatedCollapse expanded={finishedOpen}>
           {finished.slice(0, limit).map(row)}
-          {finished.length > 10 ? <button type="button" className="background-task-open text-content/50"
+          {finished.length > 10 ? <Button variant="ghost" size="content" type="button" className="background-task-open text-content/50"
             onClick={() => setLimit((value) => value < finished.length ? value + 10 : 10)}>
             {t(limit < finished.length ? "Show more" : "Show fewer")}
-          </button> : null}
+          </Button> : null}
         </AnimatedCollapse>
       </section> : null}
       {!tasks.length ? <p className="p-3 text-content/50">{t("No background tasks")}</p> : null}
@@ -116,13 +117,13 @@ function TaskRow({ task, expanded, onToggle, onStop }: {
   const stateLabel = t(task.state === "running" ? "Running" : task.state === "failed" ? "Failed" : task.state === "stopped" ? "Stopped" : "Completed");
   return <div data-background-task={task.id}>
     <div className="background-task-row">
-      <button type="button" className="background-task-open" aria-expanded={expanded} aria-controls={detailsId} onClick={onToggle} title={task.title}>
+      <Button variant="ghost" size="content" type="button" className="background-task-open" aria-expanded={expanded} aria-controls={detailsId} onClick={onToggle} title={task.title}>
         {task.state === "failed" ? <CircleAlert className="size-3.5 shrink-0 text-red-400" aria-label={stateLabel} /> : null}
         <span className="min-w-0 flex-1 truncate">{task.title}</span>
         <span className="sr-only">{stateLabel}</span>
         <TaskElapsed task={task} />
         <DisclosureChevron expanded={expanded} className="size-3.5 shrink-0 text-content/45" />
-      </button>
+      </Button>
       {task.state === "running" && task.taskId && onStop ? <StopTaskButton taskId={task.taskId} onStop={onStop} /> : null}
     </div>
     <AnimatedCollapse expanded={expanded}>

@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { AttachmentList } from "../../sessions/ui/AttachmentList";
 import { AttachmentChip } from "../../sessions/ui/AttachmentChip";
 import type { HostModelCatalog, RemoteAttachment } from "../../connections/model/protocol";
@@ -86,7 +88,7 @@ const BotMessageRow = memo(function BotMessageRow({
   const wrapCard = (content: ReactNode) =>
     mobile ? (
       <div
-        className={`assistant-message-row assistant-message-row-${message.kind}`}
+        className={cn("assistant-message-row", `assistant-message-row-${message.kind}`)}
       >
         {content}
         {time}
@@ -133,7 +135,7 @@ const BotMessageRow = memo(function BotMessageRow({
             ) : (
               <div className="assistant-input-actions">
                 {(["allow", "deny"] as const).map((decision) => (
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     key={decision}
                     className={
@@ -143,7 +145,7 @@ const BotMessageRow = memo(function BotMessageRow({
                     onClick={() => onRespond(message, { decision })}
                   >
                     {t(decision === "allow" ? "Allow" : "Deny")}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -155,7 +157,7 @@ const BotMessageRow = memo(function BotMessageRow({
           data-message-id={botsLayout ? message.id : undefined}
           data-connected={connected || undefined}
           data-connect-next={connectNext || undefined}
-          className={`assistant-message-row assistant-message-row-${message.kind}`}
+          className={cn("assistant-message-row", `assistant-message-row-${message.kind}`)}
           data-reply-id={
             mobile && message.kind === "assistant" ? message.id : undefined
           }
@@ -186,7 +188,7 @@ const BotMessageRow = memo(function BotMessageRow({
             (mobile && message.kind === "user")
               ? bindReply(message.text, message.kind === "assistant")
               : {})}
-            className={`assistant-message assistant-message-${message.kind}`}
+            className={cn("assistant-message", `assistant-message-${message.kind}`)}
             data-streaming={
               (message.kind === "assistant" && message.streaming) || undefined
             }

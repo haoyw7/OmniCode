@@ -6,6 +6,7 @@ import { listDir, type FsEntry } from "../../../../platform/tauri/fs";
 import { applyReducedMotion } from "../../../../shared/lib/reducedMotion";
 import { FileBreadcrumb } from "./FileBreadcrumb";
 import { saveExpanded, saveSelected } from "../model/fileTree";
+import { queryClient } from "../../../../shared/lib/queryClient";
 
 vi.mock("../../../../platform/tauri/fs", async original => ({ ...await original<typeof import("../../../../platform/tauri/fs")>(), listDir: vi.fn() }));
 vi.mock("../model/fileTree", () => ({
@@ -29,6 +30,7 @@ async function render(path = "/repo/src/a.ts") {
   await act(async () => root.render(createElement(FileBreadcrumb, { path, cwd: "/repo", onOpenFile: openFile })));
 }
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
   applyReducedMotion("on");
@@ -42,6 +44,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
   await act(async () => root.unmount());
+  queryClient.clear();
   container.remove();
   vi.unstubAllGlobals();
 });

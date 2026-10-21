@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useLayoutEffect, useRef } from "react";
 import { useMutation, useMutationState, useQuery } from "@tanstack/react-query";
@@ -198,23 +199,21 @@ export function HarnessUpdateNotice({
               : uiT("Harness updates available")}
           </span>
           {pending.length > 1 ? (
-            <button
+            <Button variant="ghost" size="sm"
               type="button"
-              className="rounded-md px-2 py-1 text-[11px] font-medium text-content/70 hover:bg-content/6 hover:text-content"
               onClick={() => start(pending)}
             >
               {uiT("Update all")}
-            </button>
+            </Button>
           ) : null}
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             aria-label={uiT("Dismiss harness updates")}
             disabled={busy}
-            className="grid size-6 shrink-0 place-items-center rounded-md text-content/40 hover:bg-content/6 hover:text-content disabled:opacity-40 disabled:hover:bg-transparent"
             onClick={dismiss}
           >
             <X className="size-3" strokeWidth={2} />
-          </button>
+          </Button>
         </div>
         <div className="divide-y divide-stroke">
           {updates.map((update) => (
@@ -265,10 +264,9 @@ function HarnessUpdateRow({
             <span className="shrink-0 font-mono text-[11px] text-content/50">
               {update.installed} → {update.latest}
             </span>
-            <button
+            <Button variant="secondary" size="sm"
               type="button"
               disabled={state.status === "updating"}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-content/10 px-2 py-1 text-[11px] font-medium hover:bg-content/15 disabled:opacity-60 disabled:hover:bg-content/10"
               onClick={onUpdate}
             >
               {state.status === "updating" ? (
@@ -281,7 +279,7 @@ function HarnessUpdateRow({
               ) : (
                 uiT("Update")
               )}
-            </button>
+            </Button>
           </>
         )}
       </div>

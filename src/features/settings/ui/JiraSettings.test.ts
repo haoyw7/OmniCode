@@ -93,12 +93,12 @@ it("connects Jira, synchronizes project filters, and disconnects", async () => {
   expect(email.getAttribute("aria-label")).toBe("Reveal email");
   expect(container.querySelector('input[type="password"]')).toBeNull();
   const project = container.querySelector<HTMLInputElement>(
-    'input[type="checkbox"]',
+    '[role="checkbox"]',
   )!;
-  expect(project.checked).toBe(true);
+  expect(project.getAttribute("aria-checked")).toBe("true");
   await act(async () => project.click());
   expect(loadHiddenJiraProjectIds()).toEqual(["10000"]);
-  expect(project.checked).toBe(false);
+  expect(container.querySelector('[role="checkbox"]')?.getAttribute("aria-checked")).toBe("false");
   const disconnect = [...container.querySelectorAll("button")].find(
     (button) => button.textContent === "Disconnect",
   )!;

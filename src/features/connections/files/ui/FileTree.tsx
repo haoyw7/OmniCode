@@ -1,3 +1,6 @@
+import { Button } from "../../../../shared/ui/forms/Button";
+import { cn } from "../../../../shared/lib/cn";
+import { Input } from "../../../../shared/ui/forms/Input";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../../shared/lib/queryClient";
 import { errorMessage } from "../../../../shared/lib/errorMessage";
@@ -1018,10 +1021,11 @@ export const FileTree = memo(function FileTree({
 
   const rootRow = (
     <div className="flex h-7 shrink-0 items-center">
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         data-explorer-root
         role={navigationOnly ? "treeitem" : undefined}
+        data-active={dragOverPath === cwd || (navigationOnly && selectedPath === cwd) || undefined}
         aria-level={navigationOnly ? 1 : undefined}
         aria-selected={navigationOnly ? selectedPath === cwd : undefined}
         aria-expanded={rootOpen}
@@ -1040,9 +1044,7 @@ export const FileTree = memo(function FileTree({
             e.clientY,
           );
         }}
-        className={`flex min-w-0 flex-1 items-center gap-1 h-full rounded-lg pl-2 text-left outline-none focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-accent/40 hover:bg-surface-hover ${
-          dragOverPath === cwd || (navigationOnly && selectedPath === cwd) ? "bg-selection" : ""
-        }`}
+        className={cn("flex min-w-0 flex-1 items-center justify-start gap-1 h-full rounded-lg pl-2 text-left outline-none focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-accent/40 hover:bg-surface-hover", dragOverPath === cwd || (navigationOnly && selectedPath === cwd) ? "bg-selection" : "")}
       >
         <span className="grid size-4 shrink-0 place-items-center text-content/50">
           {rootLoading ? (
@@ -1054,7 +1056,7 @@ export const FileTree = memo(function FileTree({
         <span className={navigationOnly ? "min-w-0 truncate text-ui-base text-content" : "min-w-0 truncate text-[11px] font-semibold tracking-[0.08em] text-content/50 uppercase"}>
           {name}
         </span>
-      </button>
+      </Button>
     </div>
   );
 
@@ -1189,21 +1191,20 @@ function HeaderIcon({
   children: ReactNode;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={label}
       aria-label={label}
+      data-active={active || undefined}
       aria-pressed={active || undefined}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className={`flex h-6 min-w-0 flex-1 items-center justify-center self-center rounded-md ${
-        active
+      className={cn("flex h-6 min-w-0 flex-1 items-center justify-center self-center rounded-md", active
           ? "bg-selection text-content"
-          : "text-content/50 hover:bg-content/3 hover:text-content"
-      }`}
+          : "text-content/50 hover:bg-content/3 hover:text-content")}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -1315,9 +1316,10 @@ function TreeNode({ entry, depth }: { entry: FsEntry; depth: number }) {
           onCancel={onRenameCancel}
         />
       ) : (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           role="treeitem"
+          data-active={selected || dragOverPath === entry.path || undefined}
           title={entry.path}
           aria-selected={selected}
           aria-level={depth + 1}
@@ -1334,13 +1336,9 @@ function TreeNode({ entry, depth }: { entry: FsEntry; depth: number }) {
           }}
           onContextMenu={(e) => onItemContextMenu(entry, e)}
           style={{ paddingLeft: 8 + depth * 12 }}
-          className={`flex h-7 w-full cursor-default items-center gap-1 rounded-lg pr-2 text-left text-ui-base outline-none focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-accent/40 leading-none data-[explorer-dragging]:opacity-50 ${
-            selected
+          className={cn("flex h-7 w-full cursor-default items-center justify-start gap-1 rounded-lg pr-2 text-left text-ui-base outline-none focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-accent/40 leading-none data-[explorer-dragging]:opacity-50", selected
               ? "bg-selection text-content"
-              : "text-content hover:bg-surface-hover"
-          } ${cutPath === entry.path ? "opacity-50" : ""} ${
-            dragOverPath === entry.path ? "bg-selection" : ""
-          }`}
+              : "text-content hover:bg-surface-hover", cutPath === entry.path ? "opacity-50" : "", dragOverPath === entry.path ? "bg-selection" : "")}
         >
           <span className="grid size-4 shrink-0 place-items-center text-content/50">
             {loading ? (
@@ -1358,13 +1356,11 @@ function TreeNode({ entry, depth }: { entry: FsEntry; depth: number }) {
           ) : null}
           <span
             data-file-label
-            className={`min-w-0 truncate leading-label ${
-              entry.ignored ? "italic text-content/50" : (gitColor ?? "")
-            }`}
+            className={cn("min-w-0 truncate leading-label", entry.ignored ? "italic text-content/50" : (gitColor ?? ""))}
           >
             {entry.name}
           </span>
-        </button>
+        </Button>
       )}
       {entry.isDir ? (
         <AnimatedCollapse expanded={open && children !== null}>
@@ -1462,7 +1458,7 @@ export function NameRow({
             <FileTypeIcon name={leaf} isDir={false} />
           </span>
         ) : null}
-        <input
+        <Input variant="inline"
           ref={inputRef}
           value={value}
           data-file-label
@@ -1554,9 +1550,7 @@ function NameIssueView({
   const error = Boolean(fallback) || !issue || issue.severity === "error";
   return (
     <p
-      className={`pr-2 pb-1 text-[12px] leading-4 ${
-        error ? "text-red-400" : "text-amber-400"
-      }`}
+      className={cn("pr-2 pb-1 text-[12px] leading-4", error ? "text-red-400" : "text-amber-400")}
       style={{ paddingLeft: 28 + depth * 12 }}
     >
       {body}

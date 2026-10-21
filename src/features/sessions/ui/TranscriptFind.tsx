@@ -1,3 +1,6 @@
+import { cn } from "../../../shared/lib/cn";
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   useEffect,
@@ -105,7 +108,7 @@ export function TranscriptFind({
 
   return (
     <div
-      className={`pointer-events-none absolute inset-x-3 top-2 z-40 flex ${side === "left" ? "justify-start" : "justify-end"}`}
+      className={cn("pointer-events-none absolute inset-x-3 top-2 z-40 flex", side === "left" ? "justify-start" : "justify-end")}
     >
       <div
         role="search"
@@ -115,7 +118,7 @@ export function TranscriptFind({
         <Search
           className="ml-1 size-3.5 shrink-0 text-content/50"
         />
-        <input
+        <Input variant="inline"
           ref={input}
           type="text"
           value={query}
@@ -184,7 +187,7 @@ function FindButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={label}
       aria-label={label}
@@ -193,6 +196,6 @@ function FindButton({
       className="grid size-6 place-items-center rounded text-content/55 hover:bg-content/6 hover:text-content disabled:opacity-30"
     >
       {children}
-    </button>
+    </Button>
   );
 }

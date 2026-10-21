@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { translate as translateUi } from "../../../shared/i18n/language";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -415,7 +417,7 @@ export function SurfaceTabs({
                 });
               }}
             >
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 role="tab"
                 data-closable
@@ -451,13 +453,11 @@ export function SurfaceTabs({
                 <span
                   data-file-label={(isFilesystemTab(file) && !changes) || undefined}
                   data-code-label={!!commit || undefined}
-                  className={`min-w-0 flex-1 truncate ${file.preview ? "italic" : ""} ${
-                    errors
+                  className={cn("min-w-0 flex-1 truncate", file.preview ? "italic" : "", errors
                       ? active
                         ? "text-red-400"
                         : "text-red-400/75 group-hover:text-red-400"
-                      : ""
-                  }`}
+                      : "")}
                 >
                   {label}
                 </span>
@@ -468,8 +468,8 @@ export function SurfaceTabs({
                     aria-label={uiT("Unsaved changes")}
                   />
                 ) : null}
-              </button>
-              <button
+              </Button>
+              <Button variant="ghost" size="content"
                 type="button"
                 title={uiT("Close {value0}", { value0: String(label) })}
                 aria-label={uiT("Close {value0}", { value0: String(label) })}
@@ -482,7 +482,7 @@ export function SurfaceTabs({
                 className="absolute right-1 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded text-content/50 hover:bg-content/6 hover:text-content"
               >
                 <X className="size-3" />
-              </button>
+              </Button>
             </div>
           );
           return closing || opening ? (

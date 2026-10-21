@@ -1,3 +1,6 @@
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useForm, useWatch, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -142,11 +145,6 @@ type Props = {
   ) => void | Promise<void>;
   onOpenSession: (sessionId: string) => void | Promise<void>;
 };
-
-const ACTION =
-  "inline-flex items-center gap-1.5 rounded-md px-3 text-[12px] disabled:cursor-default disabled:opacity-40";
-const ACTION_FILLED = `${ACTION} h-6.5 bg-content font-medium text-background-base hover:bg-content/80`;
-const ACTION_OUTLINE = `${ACTION} h-7 border border-content/15 text-content/80 hover:border-content/30 hover:bg-content/6 hover:text-content`;
 
 const EMPTY_AUTOMATIONS: Automation[] = [];
 
@@ -345,7 +343,7 @@ function AutomationsContent({
           <label className="relative flex h-7 min-w-0 flex-1 items-center">
             <Search className="pointer-events-none absolute left-2 size-3 shrink-0 text-content/40" />
             <span className="sr-only">{uiT("Filter automations")}</span>
-            <input
+            <Input variant="inline"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={uiT("Filter automations")}
@@ -354,15 +352,14 @@ function AutomationsContent({
               className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] outline-none placeholder:text-content/40"
             />
           </label>
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             title={uiT("New automation")}
             aria-label={uiT("New automation")}
             onClick={beginCreate}
-            className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content"
           >
             <Plus className="size-3.5" />
-          </button>
+          </Button>
         </div>
         <div
           ref={listLock}
@@ -498,13 +495,11 @@ function AutomationCard({
   const model = resolveModel(automation.harness, automation.model);
   return (
     <div
-      className={`group relative rounded-md border ${
-        active
+      className={cn("group relative rounded-md border", active
           ? "border-transparent bg-selection"
-          : "border-transparent hover:bg-content/3"
-      }`}
+          : "border-transparent hover:bg-content/3")}
     >
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         aria-current={active ? "true" : undefined}
         aria-label={uiT("Open {value0}", { value0: String(automation.name) })}
@@ -556,7 +551,7 @@ function AutomationCard({
             <span className="min-w-0 truncate">{model.name}</span>
           </span>
         </span>
-      </button>
+      </Button>
       <span className="absolute right-2.5 top-2 flex">
         <Switch
           aria-label={`${automation.enabled ? "Pause" : "Enable"} ${automation.name}`}
@@ -598,26 +593,25 @@ function AutomationPicker({
           {AUTOMATION_TEMPLATE_CATEGORIES.map((option) => {
             const selected = option.id === category;
             return (
-              <button
+              <Button variant="ghost" size="content"
                 key={option.id}
                 type="button"
                 onClick={() => setCategory(option.id)}
-                className={`h-7 rounded-full px-3 text-[12px] font-medium ${
-                  selected
+                aria-pressed={selected}
+                className={cn("h-7 rounded-full px-3 text-[12px] font-medium", selected
                     ? "bg-content text-background-base"
-                    : "text-content/55 hover:bg-content/5 hover:text-content"
-                }`}
+                    : "text-content/55 hover:bg-content/5 hover:text-content")}
               >
                 {uiT(option.label)}
-              </button>
+              </Button>
             );
           })}
         </div>
         <div className="automation-template-grid mt-4 grid grid-cols-1 gap-3">
-          <button
+          <Button variant="secondary" size="content"
             type="button"
             onClick={onBlank}
-            className="flex min-h-37 flex-col rounded-xl border border-dashed border-content/15 p-4 text-left hover:border-content/25 hover:bg-content/3"
+            className="flex min-h-37 flex-col items-stretch justify-start rounded-xl border border-dashed p-4 text-left"
           >
             <div className="flex gap-3">
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-content/8 text-content/70">
@@ -632,15 +626,15 @@ function AutomationPicker({
                 </span>
               </span>
             </div>
-          </button>
+          </Button>
           {templates.map((template) => {
             const Icon = TEMPLATE_ICONS[template.icon];
             return (
-              <button
+              <Button variant="secondary" size="content"
                 key={template.id}
                 type="button"
                 onClick={() => onPick(template)}
-                className="flex min-h-37 flex-col rounded-xl border border-content/10 p-4 text-left hover:border-content/16 hover:bg-content/3"
+                className="flex min-h-37 flex-col items-stretch justify-start rounded-xl border p-4 text-left"
               >
                 <div className="flex gap-3">
                   <span className="grid size-9 shrink-0 place-items-center rounded-full bg-content/8 text-content/70">
@@ -664,7 +658,7 @@ function AutomationPicker({
                     {template.triggerLabel}
                   </span>
                 </span>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -690,7 +684,7 @@ function RunRow({
   const sessionId = run.sessionId;
   return (
     <li>
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         disabled={!sessionId}
         title={
@@ -702,9 +696,7 @@ function RunRow({
           if (!sessionId) return;
           void onOpenSession(sessionId);
         }}
-        className={`${RUN_GRID} h-11 w-full text-left text-[13px] disabled:opacity-100 ${
-          sessionId ? "cursor-pointer hover:bg-content/3" : "cursor-default"
-        }`}
+        className={cn(RUN_GRID, "h-11 w-full text-left text-[13px] disabled:opacity-100", sessionId ? "cursor-pointer hover:bg-content/3" : "cursor-default")}
       >
         <span className="flex min-w-0 items-center gap-2 text-content">
           <TriggerMark
@@ -722,7 +714,7 @@ function RunRow({
         <span className="text-right tabular-nums text-content/55">
           {formatAutomationRunDuration(run)}
         </span>
-      </button>
+      </Button>
     </li>
   );
 }
@@ -731,7 +723,7 @@ function RunStatusPill({ status }: { status: AutomationRun["status"] }) {
   const running = status === "running";
   return (
     <span
-      className={`inline-flex h-5 max-w-full items-center gap-1 rounded-full px-2 text-[11px] font-medium ${runStatusTone(status)}`}
+      className={cn("inline-flex h-5 max-w-full items-center gap-1 rounded-full px-2 text-[11px] font-medium", runStatusTone(status))}
     >
       {running ? (
         <Spinner className="size-2.5 shrink-0" />
@@ -902,7 +894,7 @@ function AutomationEditor({
           <header className="flex flex-col gap-2.5">
             <FieldError errors={[errors?.name, errors?.cwd, errors?.model]} />
             <div className="flex items-start gap-6">
-              <input
+              <Input variant="inline"
                 autoFocus
                 aria-label={uiT("Automation name")}
                 aria-invalid={!!errors?.name}
@@ -913,20 +905,18 @@ function AutomationEditor({
               />
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                 {!draft.id || dirty ? (
-                  <button
+                  <Button variant="secondary" size="sm"
                     type="button"
                     onClick={onClose}
-                    className={ACTION_OUTLINE}
                   >
                     {draft.id ? uiT("Reset") : uiT("Cancel")}
-                  </button>
+                  </Button>
                 ) : null}
                 {onRun ? (
-                  <button
+                  <Button variant="secondary" size="sm"
                     type="button"
                     onClick={onRun}
                     disabled={running}
-                    className={ACTION_OUTLINE}
                   >
                     {running ? (
                       <Spinner className="size-3.5" />
@@ -934,18 +924,17 @@ function AutomationEditor({
                       <Play className="size-3.5" />
                     )}
                     {uiT("Run now")}
-                  </button>
+                  </Button>
                 ) : null}
-                <button
+                <Button variant="primary" size="sm"
                   type="submit"
                   disabled={!valid || saving || (!!draft.id && !dirty)}
-                  className={ACTION_FILLED}
                 >
                   {saving ? (
                     <Spinner className="size-3.5" />
                   ) : null}
                   {draft.id ? uiT("Save") : uiT("Create")}
-                </button>
+                </Button>
               </div>
             </div>
             <div className="flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap text-[12px] text-content/50">
@@ -979,7 +968,7 @@ function AutomationEditor({
                     aria-hidden
                     className="h-3 w-px shrink-0 bg-content/15"
                   />
-                  <button
+                  <Button variant="ghost" size="icon-sm"
                     ref={menuButton}
                     type="button"
                     title={uiT("Automation actions")}
@@ -987,14 +976,9 @@ function AutomationEditor({
                     aria-haspopup="menu"
                     aria-expanded={menuOpen}
                     onClick={() => setMenuOpen((open) => !open)}
-                    className={`grid size-6.5 shrink-0 place-items-center rounded-md ${
-                      menuOpen
-                        ? "bg-selection text-content"
-                        : "text-content/50 hover:bg-content/3 hover:text-content"
-                    }`}
                   >
                     <MoreHorizontal className="size-3.5" />
-                  </button>
+                  </Button>
                   <PresenceBoundary propagate>{menuOpen ? (
                     <Popover
                       anchor={menuButton}
@@ -1005,10 +989,13 @@ function AutomationEditor({
                       constrainHeight={false}
                       role="menu"
                       aria-label={uiT("Automation actions")}
-                      onDismiss={() => setMenuOpen(false)}
+                      onDismiss={(reason) => {
+                        setMenuOpen(false);
+                        if (reason === "escape") menuButton.current?.focus({ preventScroll: true });
+                      }}
                       className="p-1"
                     >
-                      <button
+                      <Button variant="ghost" size="content"
                         type="button"
                         role="menuitem"
                         data-variant="destructive"
@@ -1016,12 +1003,12 @@ function AutomationEditor({
                           setMenuOpen(false);
                           onDelete();
                         }}
-                        className="flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] text-red-300/90 hover:bg-red-500/15"
+                        className="w-full justify-start text-left"
                       >
                         <MenuHover />
                         <Trash2 className="size-3.5" />
                         {uiT("Delete automation")}
-                      </button>
+                      </Button>
                     </Popover>
                   ) : null}</PresenceBoundary>
                 </>
@@ -1096,7 +1083,7 @@ function AutomationEditor({
                 {draft.triggers.length > 0 ? (
                   <div className="border-t border-content/8" />
                 ) : null}
-                <button
+                <Button variant="ghost" size="content"
                   ref={triggerButton}
                   type="button"
                   aria-haspopup="menu"
@@ -1107,13 +1094,11 @@ function AutomationEditor({
                     setTriggerCategory(null);
                     setTriggerOpen((open) => !open);
                   }}
-                  className={`flex h-12 w-full items-center gap-2 px-3 text-left text-[13px] text-content/55 transition-colors duration-150 ease-out hover:bg-content/4 hover:text-content disabled:pointer-events-none disabled:opacity-40 ${
-                    draft.triggers.length > 0 ? "rounded-b-md" : "rounded-md"
-                  }`}
+                  className={cn("flex h-12 w-full items-center justify-start gap-2 px-3 text-left text-[13px] text-content/55", draft.triggers.length > 0 ? "rounded-b-md" : "rounded-md")}
                 >
                   <Plus className="size-3.5" />
                   {uiT("Add Trigger")}
-                </button>
+                </Button>
               </div>
               <PresenceBoundary propagate>{triggerOpen ? (
                 <Popover
@@ -1126,16 +1111,17 @@ function AutomationEditor({
                   aria-label={uiT("Choose automation trigger")}
                   layer={LAYER.popover}
                   ignore="[data-trigger-submenu]"
-                  onDismiss={() => {
+                  onDismiss={(reason) => {
                     setTriggerCategory(null);
                     setTriggerOpen(false);
+                    if (reason === "escape") triggerButton.current?.focus({ preventScroll: true });
                   }}
                   className="overflow-hidden"
                 >
                   <label className="flex h-11 items-center gap-2.5 border-b border-stroke px-3 text-content/45 focus-within:text-content/70">
                     <Search className="size-3.5 shrink-0" />
                     <span className="sr-only">{uiT("Search triggers")}</span>
-                    <input
+                    <Input variant="inline"
                       autoFocus
                       value={triggerQuery}
                       onChange={(event) => setTriggerQuery(event.target.value)}
@@ -1147,7 +1133,7 @@ function AutomationEditor({
                     {triggerCategories.map((option) => {
                       const ready = triggerReady(option.value);
                       return (
-                        <button
+                        <Button variant="ghost" size="content"
                           key={option.value}
                           ref={(node) => {
                             if (node)
@@ -1180,13 +1166,11 @@ function AutomationEditor({
                             if (!ready) return;
                             setTriggerCategory(option.value);
                           }}
-                          className={`flex h-9 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] ${
-                            !ready
+                          className={cn("w-full justify-start text-left", !ready
                               ? "cursor-default text-content/35"
                               : triggerCategory === option.value
                                 ? "bg-selection text-content"
-                                : "text-content/70 hover:bg-content/3 hover:text-content"
-                          }`}
+                                : "text-content/70 hover:bg-content/3 hover:text-content")}
                         >
                           <MenuHover />
                           <TriggerMark
@@ -1203,7 +1187,7 @@ function AutomationEditor({
                               {uiT("Not connected")}
                             </span>
                           )}
-                        </button>
+                        </Button>
                       );
                     })}
                     {triggerCategories.length === 0 ? (
@@ -1236,21 +1220,24 @@ function AutomationEditor({
                   layer={LAYER.submenu}
                   data-trigger-submenu
                   onDismiss={(reason) => {
-                    if (reason === "escape") setTriggerCategory(null);
+                    if (reason === "escape") {
+                      triggerCategoryAnchors.current[triggerCategory]?.focus({ preventScroll: true });
+                      setTriggerCategory(null);
+                    }
                   }}
                   className="overflow-y-auto p-1"
                 >
                   {TRIGGER_EVENTS[triggerCategory].map((event) => (
-                    <button
+                    <Button variant="ghost" size="content"
                       key={event.value}
                       type="button"
                       role="menuitem"
                       onClick={() => selectTrigger(triggerCategory, event)}
-                      className="flex h-9 w-full items-center rounded-lg px-2 text-left text-[13px] text-content/75 hover:bg-content/3 hover:text-content"
+                      className="w-full justify-start text-left"
                     >
                       <MenuHover />
                       {uiT(event.label)}
-                    </button>
+                    </Button>
                   ))}
                 </Popover>
               ) : null}</PresenceBoundary>
@@ -1397,7 +1384,7 @@ function AutomationEditor({
             <SectionTitle>{uiT("Run history")}</SectionTitle>
             {runs.length > 0 ? (
               <div className="mt-3 overflow-hidden rounded-md border border-content/10">
-                <div className={`${RUN_GRID} h-10 text-[11px] text-content/40`}>
+                <div className={cn(RUN_GRID, "h-10 text-[11px] text-content/40")}>
                   <span>{uiT("Trigger")}</span>
                   <span>{uiT("Triggered")}</span>
                   <span>{uiT("Status")}</span>
@@ -1521,7 +1508,7 @@ function PageTab({
   onSelect: () => void;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       id={id}
       type="button"
       role="tab"
@@ -1531,7 +1518,7 @@ function PageTab({
       className="surface-tab relative flex h-7.5 items-center px-2 text-[12px] leading-none"
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -1694,14 +1681,14 @@ function TriggerRow({
           />
         )}
       </div>
-      <button
+      <Button variant="ghost" size="icon-sm"
         type="button"
         aria-label={uiT("Remove trigger")}
         onClick={onRemove}
-        className="grid size-7 shrink-0 place-items-center rounded-md text-content/35 opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-content/5 hover:text-content focus-visible:opacity-100"
+        className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
       >
         <X className="size-3.5" />
-      </button>
+      </Button>
     </div>
   );
 }

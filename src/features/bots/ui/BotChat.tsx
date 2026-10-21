@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
 import { botPanelKey, botRpcQuery } from "../model/botPanelQueries";
@@ -842,7 +844,7 @@ export function BotChat({
         busy={assistant?.lifecycle === "running"} scope={hostKey} />}
       <section
         ref={chat}
-        className={`assistant-chat bg-background-base text-content${botsLayout ? " desktop-bots-workspace animated-collapse-size" : ""}`}
+        className={cn("assistant-chat bg-background-base text-content", botsLayout ? " desktop-bots-workspace animated-collapse-size" : "")}
         aria-label={t(botsLayout ? "Bots" : "Assistant")}
         data-layout={mobile ? "mobile" : "desktop"}
         data-bot-details={botsLayout ? settingsShown : undefined}
@@ -882,7 +884,7 @@ export function BotChat({
           <div className="assistant-availability" role="alert">
             <p>{t(connectError)}</p>
             <div className="assistant-availability-actions">
-              <button data-ui="button" data-variant="primary"
+              <Button variant="primary" size="sm" data-ui="button"
                 type="button"
                 className="assistant-primary"
                 onClick={() => { void descriptorRead.refetch().then(async ({ data }) => {
@@ -893,11 +895,11 @@ export function BotChat({
                 }); }}
               >
                 {t("Retry")}
-              </button>
+              </Button>
               {onClose && (
-                <button type="button" onClick={onClose}>
+                <Button variant="ghost" size="content" type="button" onClick={onClose}>
                   {t("Close")}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -912,7 +914,7 @@ export function BotChat({
           </div>
         ) : (
           <div
-            className={`assistant-body${botsLayout ? " animated-collapse-size" : ""}`}
+            className={cn("assistant-body", botsLayout ? " animated-collapse-size" : "")}
             data-bot-details={botsLayout ? settingsShown : undefined}
             data-bot-setup={botsLayout && !assistant || undefined}
             onTransitionEnd={event => {
@@ -1019,7 +1021,7 @@ export function BotChat({
                 {botsLayout && heading}
                 <Controls {...controls} />
                 {botsLayout && <AnimatedCollapse expanded={awayFromBottom && newMessages.length > 0} className="desktop-bots-new-messages">
-                  <div><button type="button" onClick={jumpToLatest}><ArrowUp size={14} />{t("{count} new messages", { count: retainedNewCount.current })}</button><button type="button" aria-label={t("Dismiss")} onClick={() => setReadThrough(latestRevision)}><X size={13} /></button></div>
+                  <div><Button variant="ghost" size="content" type="button" onClick={jumpToLatest}><ArrowUp size={14} />{t("{count} new messages", { count: retainedNewCount.current })}</Button><Button variant="ghost" size="content" type="button" aria-label={t("Dismiss")} onClick={() => setReadThrough(latestRevision)}><X size={13} /></Button></div>
                 </AnimatedCollapse>}
                 <div
                   ref={log}
@@ -1118,7 +1120,7 @@ export function BotChat({
                     )}
                 </div>
                 {mobile && (
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     className="mobile-assistant-reply-backdrop"
                     data-active={replying}

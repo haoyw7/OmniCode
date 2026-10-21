@@ -1,3 +1,6 @@
+import { Input } from "../../../../shared/ui/forms/Input";
+import { cn } from "../../../../shared/lib/cn";
+import { Button } from "../../../../shared/ui/forms/Button";
 import { usePreferenceState } from "../../model/usePreferenceState";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
@@ -160,7 +163,7 @@ function ShortcutEditor({
   return (
     <div className="relative w-40 shrink-0">
       <div className="flex items-center gap-0.5">
-        <input data-ui="input"
+        <Input data-ui="input"
           type="text"
           readOnly
           aria-label={uiT("Change {value0} shortcut", { value0: String(name) })}
@@ -172,16 +175,12 @@ function ShortcutEditor({
           onFocus={beginRecording}
           onClick={beginRecording}
           onBlur={() => setRecording(false)}
-          className={`h-6 w-28 shrink-0 truncate rounded-md border bg-transparent px-1.5 py-0 font-mono text-[11px] leading-none outline-none focus:border-input-border-hover ${
-            busy ? "opacity-50" : ""
-          } ${
-            display === null
+          className={cn("h-6 w-28 shrink-0 truncate rounded-md border bg-transparent px-1.5 py-0 font-mono text-[11px] leading-none outline-none focus:border-input-border-hover", busy ? "opacity-50" : "", display === null
               ? "border-dashed border-content/15 text-content/35"
-              : "border-content/15 text-content/80 hover:bg-content/6"
-          }`}
+              : "border-content/15 text-content/80 hover:bg-content/6")}
         />
         {resetVisible ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             aria-label={uiT("Reset {value0} shortcut", {
               value0: String(name),
@@ -191,7 +190,7 @@ function ShortcutEditor({
             className="rounded-md px-1 py-1 text-content/35 hover:bg-content/6 hover:text-content disabled:opacity-50"
           >
             <RotateCcw className="size-3.5" />
-          </button>
+          </Button>
         ) : null}
       </div>
       {recording ? (
@@ -316,7 +315,7 @@ export function KeybindingsPage() {
           </span>
           <label className="flex h-7 w-44 shrink-0 items-center gap-2 rounded-md border border-content/10 px-2 text-content/45 focus-within:border-content/20">
             <Search className="size-3.5 shrink-0" />
-            <input
+            <Input variant="inline"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={uiT("Filter")}
@@ -348,7 +347,7 @@ export function KeybindingsPage() {
               className="flex h-11 items-center border-b border-content/5 px-4 text-[12px] last:border-b-0"
             >
               <span
-                className={`min-w-0 flex-1 truncate ${disabled ? "text-content/45" : ""}`}
+                className={cn("min-w-0 flex-1 truncate", disabled ? "text-content/45" : "")}
               >
                 {uiT(row.command)}
               </span>

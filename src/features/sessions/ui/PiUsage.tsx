@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { piUsageQuery } from "../../providers/model/piUsageQueries";
@@ -72,7 +74,7 @@ function PiProviderUsage({
         now={now}
         presentation={piUsagePresentation(provider)}
       />
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         aria-label={uiT("Refresh Pi usage")}
         title={uiT("Refresh Pi usage")}
@@ -81,10 +83,10 @@ function PiProviderUsage({
         className="grid size-6 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-accent"
       >
         <RefreshCw
-          className={`size-2.5 ${fetching ? "motion-safe:animate-spin" : ""}`}
+          className={cn("size-2.5", fetching ? "motion-safe:animate-spin" : "")}
           aria-hidden
         />
-      </button>
+      </Button>
     </>
   );
   return render ? render(controls, limits) : controls;

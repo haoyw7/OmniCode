@@ -1,3 +1,5 @@
+import { Button } from "../../../../shared/ui/forms/Button";
+import { cn } from "../../../../shared/lib/cn";
 import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
 import {
   useEffect,
@@ -203,13 +205,13 @@ export function ExplorerMenu({
     const highlighted = index === (inSubmenu ? submenuActive : active);
     const hasSubmenu = !!item.submenu?.length;
     return (
-      <button
+      <Button variant="ghost" size="content"
         key={item.id}
         id={`${menuId}-${inSubmenu ? "sub-" : ""}${index}`}
         data-menu-index={index}
         data-menu-row={item.description ? "description" : "single"}
         data-highlighted={highlighted || undefined}
-        data-variant={item.danger ? "destructive" : undefined}
+        data-variant={item.danger ? "destructive" : "ghost"}
         type="button"
         role={item.checked == null ? "menuitem" : "menuitemcheckbox"}
         aria-checked={item.checked}
@@ -248,17 +250,7 @@ export function ExplorerMenu({
             onPick(item.id);
           }
         }}
-        className={`flex ${item.description ? "py-1.5" : "h-7"} w-full items-center gap-3 rounded-lg px-2 text-left text-[13px] leading-none ${
-          item.disabled
-            ? "text-content/30"
-            : item.danger
-              ? highlighted
-                ? "bg-red-500/20 text-red-300"
-                : "text-red-300/90 hover:bg-red-500/15"
-              : highlighted
-                ? "bg-selection text-content"
-                : "text-content hover:bg-content/3"
-        }`}
+        className={cn("flex w-full items-center justify-start text-left", highlighted && "bg-selection")}
       >
         <MenuHover />
         {item.icon ? (
@@ -277,7 +269,7 @@ export function ExplorerMenu({
         {item.checked ? <Check data-menu-check className="size-3.5 shrink-0" strokeWidth={2.25} /> : null}
         {item.shortcut ? <span className="shrink-0 text-[11px] text-content/40">{item.shortcut}</span> : null}
         {hasSubmenu ? <ChevronRight data-menu-arrow className="size-3.5 shrink-0 text-content/50" /> : null}
-      </button>
+      </Button>
     );
   };
 

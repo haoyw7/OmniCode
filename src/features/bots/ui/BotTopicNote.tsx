@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { botTopicQuery } from "../model/botQueries";
@@ -30,7 +31,7 @@ export function BotTopicNote({
           <p className="text-[12px] text-content/50">{note.source.name} · {t("Read only")}</p>
           <h2 className="desktop-pane-heading break-words text-lg font-semibold">{note.name}</h2>
         </div>
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           aria-label={t("Refresh notes")}
           title={t("Refresh notes")}
@@ -39,14 +40,14 @@ export function BotTopicNote({
           className="grid size-9 shrink-0 place-items-center rounded-md hover:bg-content/6 disabled:opacity-40"
         >
           <RefreshCw className="size-4" />
-        </button>
+        </Button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-4" data-mobile-page-scroll>
         {loading ? (
           <Spinner className="size-5" role="status" aria-label={t("Loading notes…")} />
         ) : error ? (
           <p role="alert" className="text-sm text-content/60">
-            {error} <button type="button" disabled={!active} onClick={() => void query.refetch()}>{t("Retry")}</button>
+            {error} <Button variant="ghost" size="content" type="button" disabled={!active} onClick={() => void query.refetch()}>{t("Retry")}</Button>
           </p>
         ) : doc ? (
           <AgentMarkdown text={doc.text} hardBreaks />

@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,7 +59,7 @@ export function DiffCommentComposer({
           >
             {location}
           </span>
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Cancel comment")}
             aria-label={uiT("Cancel comment")}
@@ -65,9 +67,9 @@ export function DiffCommentComposer({
             className="grid size-5 shrink-0 place-items-center rounded text-content/45 hover:bg-content/6 hover:text-content"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </div>
-        <textarea data-ui="textarea"
+        <Textarea data-ui="textarea"
           autoFocus
           rows={3}
           {...form.register("comment")}
@@ -91,14 +93,14 @@ export function DiffCommentComposer({
             {MOD}
             {uiT("↩ to add")}
           </span>
-          <button
+          <Button variant="primary" size="sm"
             type="submit"
             disabled={!comment.trim()}
-            className="inline-flex h-7 items-center gap-1.5 rounded-md bg-content px-2.5 text-[12px] font-medium text-background-base hover:opacity-80 disabled:cursor-default disabled:opacity-40"
+            className="gap-1.5"
           >
             <MessageSquarePlus className="size-3.5" />
             {uiT("Add to chat")}
-          </button>
+          </Button>
         </div>
       </form>
     </Popover>

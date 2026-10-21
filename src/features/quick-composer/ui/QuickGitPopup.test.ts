@@ -170,7 +170,7 @@ it("selects an existing working copy for the upcoming session", async () => {
 it("dismisses with Escape without changing the selection", async () => {
   await render("branch");
   await act(async () =>
-    window.dispatchEvent(
+    document.activeElement!.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     ),
   );

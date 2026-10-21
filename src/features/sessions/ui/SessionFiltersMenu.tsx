@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Check } from "../../../shared/ui/icons";
 import { type ReactNode } from "react";
@@ -129,16 +130,16 @@ export function SessionFiltersMenu({
       {hasActiveSessionFilters(filters) ? (
         <>
           <div role="separator" className="my-1 h-px bg-content/10" />
-          <button
+          <Button data-menu-row="single" variant="ghost" size="content"
             type="button"
             role="menuitem"
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onChange(DEFAULT_SESSION_SIDEBAR_FILTERS)}
-            className="flex h-7 w-full items-center rounded-lg px-2 text-left text-[13px] leading-none text-content/70 hover:bg-content/3 hover:text-content"
+            className="flex w-full items-center rounded-lg text-left text-[13px] text-content/70 hover:bg-content/3 hover:text-content justify-start"
           >
             <MenuHover />
             {uiT("Clear filters")}
-          </button>
+          </Button>
         </>
       ) : null}
     </Popover>
@@ -165,13 +166,13 @@ function FilterItem({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button data-menu-row="single" variant="ghost" size="content"
       type="button"
       role="menuitemcheckbox"
       aria-checked={checked}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
-      className="flex h-7 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] leading-none text-content hover:bg-content/3"
+      className="flex w-full items-center gap-2 rounded-lg text-left text-[13px] text-content hover:bg-content/3 justify-start"
     >
       <MenuHover />
       {icon}
@@ -179,6 +180,6 @@ function FilterItem({
       {checked ? (
         <Check className="size-3.5 shrink-0" strokeWidth={2.25} />
       ) : null}
-    </button>
+    </Button>
   );
 }

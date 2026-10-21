@@ -264,12 +264,12 @@ describe("image zoom gestures", () => {
     act(() => dialog.querySelector<HTMLButtonElement>('[aria-label="Next image"]')!.click());
     expect(image.getAttribute("src")).toBe("blob:second");
     expect(view()).toEqual({ scale: 1, x: 0, y: 0 });
-    act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight" })));
+    act(() => document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
     expect(image.getAttribute("src")).toBe("blob:third");
     expect(dialog.querySelector<HTMLButtonElement>('[aria-label="Next image"]')!.disabled).toBe(true);
-    act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight" })));
+    act(() => document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true })));
     expect(image.getAttribute("src")).toBe("blob:third");
-    act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft" })));
+    act(() => document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true })));
     expect(image.getAttribute("src")).toBe("blob:second");
   });
 

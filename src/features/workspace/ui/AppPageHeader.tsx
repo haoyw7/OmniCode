@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { createContext, useContext, type ReactNode } from "react";
 import { ArrowLeft, type IconComponent } from "../../../shared/ui/icons";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -21,7 +22,7 @@ export function AppPageHeader({
   const header = (
     <div data-app-page-header className="desktop-toolbar flex h-10 shrink-0 select-none items-center gap-2 border-b border-stroke px-3 text-[13px]">
       {onBack ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           data-tauri-drag-region="false"
           aria-label={t("Back to chat")}
@@ -30,7 +31,7 @@ export function AppPageHeader({
           className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content"
         >
           <ArrowLeft className="size-3.5" />
-        </button>
+        </Button>
       ) : null}
       <Icon className="size-3.5 shrink-0 text-content/45" />
       <span className="min-w-0 truncate text-content">{title}</span>

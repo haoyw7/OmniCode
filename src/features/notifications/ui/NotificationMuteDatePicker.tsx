@@ -78,13 +78,13 @@ export function NotificationMuteDatePicker({
       />
       <FieldError errors={[form.formState.errors.value]} />
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-stroke pt-2.5">
-        <button
+        <Button variant="ghost" size="sm"
           type="button"
           onClick={onCancel}
           className="rounded px-2 py-1.5 text-xs text-content/50 hover:bg-content/3 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
         >
           {uiT("Cancel")}
-        </button>
+        </Button>
         <Button variant="primary"
           type="submit"
           disabled={!projectIds.length || form.formState.isSubmitting}

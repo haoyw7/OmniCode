@@ -813,9 +813,7 @@ describe("Composer question focus", () => {
     )!;
     expect(list.querySelectorAll('[role="option"]')).toHaveLength(6);
     expect(list.classList.contains("max-h-[min(184px,45vh)]")).toBe(true);
-    expect(
-      list.querySelector('[role="option"]')?.classList.contains("h-11"),
-    ).toBe(true);
+    expect(list.querySelector('[role="option"]')?.getAttribute("data-menu-row")).toBe("description");
     expect(container.querySelector("[data-mcp-picker]")?.className).toContain(
       "bg-content/5",
     );
@@ -1774,10 +1772,11 @@ describe("Composer question focus", () => {
         ],
       },
     });
-    await act(async () => {
-      container.querySelector("textarea")!.dispatchEvent(paste);
-      await new Promise((resolve) => setTimeout(resolve, 20));
-    });
+    await act(async () => container.querySelector("textarea")!.dispatchEvent(paste));
+    for (let attempt = 0; attempt < 100 && !container.querySelector('[aria-label="Remove owned.png"]'); attempt++) {
+      await act(async () => { await new Promise(resolve => setTimeout(resolve, 10)); });
+    }
+    expect(container.querySelector('[aria-label="Remove owned.png"]')).not.toBeNull();
 
     await act(async () =>
       container

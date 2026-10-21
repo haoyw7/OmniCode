@@ -312,7 +312,7 @@
     .assistant-habit-add,
     .assistant-habit-editor-actions > button
   ):focus-visible,
-.assistant-chip > input:focus-visible + span {
+.assistant-chip > :is([data-ui="radio"], [data-ui="checkbox"]):focus-visible ~ span {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
@@ -1212,7 +1212,7 @@
   min-width: 0;
   cursor: pointer;
 }
-.assistant-chip > input {
+.assistant-chip > :is([data-ui="radio"], [data-ui="checkbox"]) {
   position: absolute;
   opacity: 0;
   inset: 0;
@@ -1231,7 +1231,7 @@
   transition:
     background 140ms ease, border-color 140ms ease;
 }
-.assistant-chip > input:checked + span {
+.assistant-chip > :is([data-ui="radio"]:checked, [data-ui="checkbox"][data-state="checked"]) ~ span {
   border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
   background: color-mix(in srgb, var(--color-accent) 16%, transparent);
 }

@@ -27,7 +27,7 @@ export function DesktopBotRooms({ rooms, bots, rpc, onSaved, onOpenRoom }: Props
   return <section className="desktop-bot-directory" aria-label={t("Rooms")}>
     <header><h2>{t("Rooms")}</h2><Button variant="secondary" type="button" onClick={() => open("new")}>{t("New room")}</Button></header>
     <div className="desktop-bot-directory-body"><div className="desktop-bot-directory-list">
-      {rooms.map(room => <button type="button" key={room.id} aria-pressed={selected === room.id} onClick={() => open(room.id)}><strong>{room.name}</strong><small>{room.archivedAt ? t("Archived") : `${room.memberIds.length} ${t("Members")}`}</small></button>)}{!rooms.length && <p>{t("No rooms yet")}</p>}
+      {rooms.map(room => <Button variant="ghost" size="content" type="button" key={room.id} aria-pressed={selected === room.id} onClick={() => open(room.id)}><strong>{room.name}</strong><small>{room.archivedAt ? t("Archived") : `${room.memberIds.length} ${t("Members")}`}</small></Button>)}{!rooms.length && <p>{t("No rooms yet")}</p>}
     </div><div className="desktop-bot-directory-editors">{visited.map(id => {
       const room = rooms.find(room => room.id === id), active = selected === id;
       if (id !== "new" && !room) return null;

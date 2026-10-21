@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
@@ -40,7 +42,7 @@ export function McpServerDetails({
   }, [read.data]);
 
   const reload = (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       onClick={() => void read.refetch()}
       disabled={state.kind === "loading"}
@@ -48,7 +50,7 @@ export function McpServerDetails({
     >
       <RefreshCw className="size-3" />
       {uiT("Reload")}
-    </button>
+    </Button>
   );
 
   if (state.kind === "loading") {
@@ -117,17 +119,17 @@ export function McpServerDetails({
           className="inline-flex gap-0.5 rounded-md border border-content/10 p-0.5 text-[12px]"
         >
           {tabs.map((entry) => (
-            <button
+            <Button variant="ghost" size="content"
               key={entry.id}
               type="button"
               role="tab"
               aria-selected={tab === entry.id}
               onClick={() => setTab(entry.id)}
-              className={`rounded-[5px] px-2.5 py-1 ${tab === entry.id ? "bg-selection text-content" : "text-content/50 hover:text-content"}`}
+              className={cn("rounded-[5px] px-2.5 py-1", tab === entry.id ? "bg-selection text-content" : "text-content/50 hover:text-content")}
             >
               {entry.label}{" "}
               <span className="opacity-60">{entry.count ?? "–"}</span>
-            </button>
+            </Button>
           ))}
         </div>
         <span className="min-w-0 flex-1 truncate text-[11px] text-content/40">
@@ -194,12 +196,12 @@ function ItemShell({
   const expandable = Boolean(children) || (description?.length ?? 0) > 120;
   return (
     <div className="border-b border-content/5 last:border-b-0">
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         aria-expanded={expandable ? open : undefined}
         disabled={!expandable}
         onClick={() => setOpen(!open)}
-        className="flex w-full items-start gap-2 px-3 py-2 text-left enabled:hover:bg-content/[0.03]"
+        className="flex w-full items-start gap-2 px-3 py-2 text-left enabled:hover:bg-content/[0.03] justify-start"
       >
         <span className="mt-0.5 text-content/45">{icon}</span>
         <span className="min-w-0 flex-1">
@@ -224,7 +226,7 @@ function ItemShell({
             className="mt-0.5 size-3.5 shrink-0 text-content/40"
           />
         ) : null}
-      </button>
+      </Button>
       {expandable ? (
         <AnimatedCollapse expanded={open} motion="height">
           {() => (

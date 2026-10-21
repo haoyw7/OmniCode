@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -68,20 +70,20 @@ export function PlanActions({ text }: { text: string }) {
   return (
     <>
       {saveText ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
-          className={`plan-card-action ${iconButton}`}
+          className={cn("plan-card-action", iconButton)}
           title={uiT("Download")}
           aria-label={uiT("Download")}
           disabled={!text.trim()}
           onClick={() => void saveText(planFileName(text), text).catch(() => undefined)}
         >
           <Download className="size-4" />
-        </button>
+        </Button>
       ) : null}
-      <button
+      <Button variant="ghost" size="content"
         type="button"
-        className={`plan-card-action ${iconButton}`}
+        className={cn("plan-card-action", iconButton)}
         title={uiT(copied ? "Copied" : "Copy")}
         aria-label={uiT(copied ? "Copied" : "Copy")}
         disabled={!text.trim()}
@@ -90,7 +92,7 @@ export function PlanActions({ text }: { text: string }) {
         }
       >
         {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-      </button>
+      </Button>
     </>
   );
 }
@@ -147,18 +149,16 @@ export function PlanPreview({
         <div className="ml-auto flex items-center gap-0.5">
           {showBuild ? (
             <div className="mr-1 flex items-center font-sans">
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 title={uiT("Build this plan")}
                 disabled={busy}
-                className={`flex h-6 shrink-0 items-center gap-1 bg-content px-2 font-sans text-[11px] text-background-base hover:bg-content/90 disabled:cursor-not-allowed disabled:opacity-40 ${
-                  harness ? "rounded-l-md" : "rounded-md"
-                }`}
+                className={cn("flex h-6 shrink-0 items-center gap-1 bg-content px-2 font-sans text-[11px] text-background-base hover:bg-content/90 disabled:cursor-not-allowed disabled:opacity-40", harness ? "rounded-l-md" : "rounded-md")}
                 onClick={() => onBuild()}
               >
                 <Play className="size-3" />
                 {uiT("Build")}
-              </button>
+              </Button>
               {harness ? (
                 <BuildTargetButton
                   from={harness}
@@ -172,21 +172,21 @@ export function PlanPreview({
           ) : null}
           <PlanActions text={text} />
           {onOpen && paneButton ? (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
-              className={`plan-card-action ${iconButton}`}
+              className={cn("plan-card-action", iconButton)}
               title={uiT("Open plan in pane")}
               aria-label={uiT("Open plan in pane")}
               onClick={onOpen}
             >
               <PanelRight className="size-4" />
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>
       <div
         ref={body}
-        className={`plan-card-body relative max-h-[220px] overflow-hidden px-4 pb-3 ${onOpen ? "cursor-pointer" : ""}`}
+        className={cn("plan-card-body relative max-h-[220px] overflow-hidden px-4 pb-3", onOpen ? "cursor-pointer" : "")}
         onClick={(event) => {
           if (!onOpen) return;
           if ((event.target as HTMLElement).closest("a,button,summary")) return;
@@ -256,7 +256,7 @@ export function PlanDecision({
             {uiT("Skip")}
           </Button>
           {onCollapse ? (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               aria-label={uiT("Collapse question")}
               title={uiT("Collapse question")}
@@ -265,7 +265,7 @@ export function PlanDecision({
               onClick={onCollapse}
             >
               <ChevronDown className="size-3.5" aria-hidden="true" />
-            </button>
+            </Button>
           ) : null}
         </div>
         <div className="mt-2 min-h-0" data-question-body>
@@ -280,12 +280,12 @@ export function PlanDecision({
             role="group"
             data-question-options
           >
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               disabled={busy}
               onClick={() => onImplement()}
               data-question-option
-              className="flex w-full items-start gap-2 rounded-md border border-content/10 px-2 py-1.5 text-left hover:bg-content/3 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent disabled:opacity-40"
+              className="flex w-full items-start gap-2 rounded-md border border-content/10 px-2 py-1.5 text-left hover:bg-content/3 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent disabled:opacity-40 justify-start"
             >
               <span
                 className="min-w-0 flex-1 text-[12px] text-content"
@@ -293,8 +293,8 @@ export function PlanDecision({
               >
                 {uiT("Yes, implement this plan")}
               </span>
-            </button>
-            <input data-ui="input"
+            </Button>
+            <Input data-ui="input"
               {...form.register("feedback")}
               aria-invalid={!!form.formState.errors.feedback}
               placeholder={uiT("No, describe what to change")}

@@ -117,7 +117,7 @@ it("returns to the environment menu with Escape and can reopen WSL", async () =>
   const trigger = await open();
   const wsl = option("WSL");
   await act(async () => wsl.click());
-  await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await act(async () => document.activeElement?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   await act(async () => new Promise(resolve => setTimeout(resolve, 10)));
   expect(trigger.getAttribute("aria-expanded")).toBe("true");
   expect(wsl.getAttribute("aria-expanded")).toBe("false");

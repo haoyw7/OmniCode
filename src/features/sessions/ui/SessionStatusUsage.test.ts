@@ -1,3 +1,4 @@
+import { queryClient } from "../../../shared/lib/queryClient";
 // @vitest-environment happy-dom
 import { act, createElement, createRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -64,6 +65,7 @@ const quota = (usedPercent: number) => ({
 });
 
 beforeEach(() => {
+  queryClient.clear();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
   setUiLanguage("en");
@@ -147,6 +149,7 @@ beforeEach(() => {
 
 afterEach(() => {
   act(() => root.unmount());
+  queryClient.clear();
   container.remove();
   localStorage.clear();
   configureSharedHost(undefined, []);
@@ -265,7 +268,7 @@ it("shows the conversation's usage in its status card and keeps refresh and deta
   expect(usageDetails()?.textContent).toContain("Left account");
   expect(usageDetails()?.textContent).toContain("17% used");
   expect(usageDetails()?.textContent).not.toContain("44%");
-  act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })));
+  act(() => document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   await finishExits();
   expect(usageDetails()).toBeNull();
   expect(usageRow()).not.toBeNull();
@@ -293,7 +296,7 @@ it("uses the owning harness and reports disconnected/removed accounts without an
   expect(usageChip().getAttribute("aria-label")).toContain("Claude Code");
   expect(usageRow().textContent).toContain("not connected");
   act(() =>
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })),
+    document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
   );
   sessions[0] = {
     ...sessions[0],

@@ -1,3 +1,4 @@
+import { cn } from "../../../../shared/lib/cn";
 import { AssistantStatus } from "../../../../shared/ui/messaging/AssistantStatus";
 import { AnimatePresence, motion } from "motion/react";
 import { msgTransition, immediateTransition } from "../../../../shared/motion/tokens";
@@ -41,7 +42,7 @@ export function InitialThinking({
   const { t: uiT } = useTranslation();
   return (
     <div
-      className={`flex min-w-0 items-center gap-1.5 pt-3 pb-1 font-sans text-sm text-content/50 ${embedded ? "" : "px-4 @md:px-6"}`}
+      className={cn("flex min-w-0 items-center gap-1.5 pt-3 pb-1 font-sans text-sm text-content/50", embedded ? "" : "px-4 @md:px-6")}
     >
       <ActivityPhaseIcon kind="think" />
       {live ? (

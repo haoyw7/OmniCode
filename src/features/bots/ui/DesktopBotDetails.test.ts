@@ -156,7 +156,7 @@ it("previews Omi choices in a dialog, cancels drafts and saves the selected shap
   const save = vi.fn().mockResolvedValue(undefined);
   act(() => root.render(createElement(BotIdentitySettings, { bot: bot(), busy: false, avatarSupported: true, onSave: save })));
   const trigger = node.querySelector<HTMLButtonElement>('[aria-label="Edit avatar"]')!;
-  act(() => trigger.click()); await flush();
+  act(() => { trigger.focus(); trigger.click(); }); await flush();
   expect(document.querySelector('[role="dialog"]')).not.toBeNull();
   expect(document.activeElement?.getAttribute("type")).toBe("radio");
   act(() => avatarOption("Triangle").click());
@@ -166,7 +166,7 @@ it("previews Omi choices in a dialog, cancels drafts and saves the selected shap
   expect(document.activeElement).toBe(trigger);
   expect(trigger.getAttribute("aria-expanded")).toBe("false");
   expect(save).not.toHaveBeenCalled();
-  act(() => trigger.click()); await flush();
+  act(() => { trigger.focus(); trigger.click(); }); await flush();
   act(() => { avatarOption("Square").click(); });
   act(() => { avatarOption("Joyful").click(); });
   act(() => { avatarOption("Filled").click(); });

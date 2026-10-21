@@ -87,12 +87,13 @@ describe("SkillPromptField", () => {
 
   it("opens the shared picker for slash input and inserts a keyboard selection", async () => {
     const field = type("/rev");
+    await act(async () => {});
 
     const picker = document.querySelector<HTMLElement>("[data-skill-picker]");
-    const frame = picker?.parentElement?.parentElement;
+    const frame = picker?.closest<HTMLElement>("[data-radix-popper-content-wrapper]");
     expect(picker).not.toBeNull();
     expect(frame?.style.position).toBe("fixed");
-    expect(frame?.style.width).toBe("300px");
+    expect(picker?.closest<HTMLElement>(".popover-frame")?.style.width).toBe("300px");
     expect(document.body.textContent).toContain("/review");
     expect(document.body.textContent).not.toContain(
       "Review the current changes",

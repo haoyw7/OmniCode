@@ -2,6 +2,7 @@
 import { act, createElement, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { startMotionClock, stopMotionClock, finishMotion } from "../../../../tests/helpers/sharedMotionClock";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async (command: string) => command === "git_branches"
@@ -76,6 +77,7 @@ const emptyRuns: OrchestrationRun[] = [];
 let container: HTMLDivElement;
 let root: Root;
 beforeEach(() => {
+  startMotionClock();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
   vi.mocked(orchestrator.resumeBlocker).mockReturnValue(undefined);
@@ -125,6 +127,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   act(() => root.unmount());
+  stopMotionClock();
   container.remove();
   resetHarnessModelOverlays();
   vi.unstubAllGlobals();
@@ -847,9 +850,20 @@ describe("orchestration composer and card", () => {
         .map((entry) => entry.getAttribute("data-orchestration-agent"));
     await click(row("one"));
     await click(row("three"));
+    await act(async () => finishMotion());
     expect(openIds()).toEqual(["one", "three"]);
+    const detail = container.querySelector('[data-orchestration-agent="one"] .space-y-2')!;
     // Collapsing one leaves the other where it was.
     await click(row("one"));
+    expect(openIds()).toEqual(["three"]);
+    expect(detail.isConnected).toBe(true);
+    expect(detail.closest("[inert]")).not.toBeNull();
+    await click(row("one"));
+    expect(container.querySelector('[data-orchestration-agent="one"] .space-y-2')).toBe(detail);
+    expect(detail.closest("[inert]")).toBeNull();
+    await click(row("one"));
+    await act(async () => finishMotion());
+    expect(detail.isConnected).toBe(false);
     expect(openIds()).toEqual(["three"]);
   });
 

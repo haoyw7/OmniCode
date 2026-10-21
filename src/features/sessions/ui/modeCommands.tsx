@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   AiIdea,
@@ -133,7 +135,7 @@ export function ModeCommandText({
       <span className="relative">
         <span className="text-transparent">{"/"}</span>
         <mode.style.Icon
-          className={`absolute top-1/2 -translate-y-1/2 ${iconClassName}`}
+          className={cn("absolute top-1/2 -translate-y-1/2", iconClassName)}
           style={{ left: `-${indent}` }}
         />
       </span>
@@ -156,17 +158,17 @@ export function ModeCommandPill({
   if (!style?.pill) return null;
   const { Icon, pill } = style;
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={uiT("Turn off {value0}", { value0: String(uiT(pill.title)) })}
       aria-label={uiT("Turn off {value0}", { value0: String(uiT(pill.title)) })}
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClear}
-      className={`flex h-6.5 shrink-0 items-center gap-1 rounded-md px-1.5 text-[11px] ${pill.className}`}
+      className={cn("flex h-6.5 shrink-0 items-center gap-1 rounded-md px-1.5 text-[11px]", pill.className)}
     >
       <Icon className="size-3.5" />
       <span className="composer-mode-shimmer">{uiT(pill.label)}</span>
       <X className="size-3" />
-    </button>
+    </Button>
   );
 }

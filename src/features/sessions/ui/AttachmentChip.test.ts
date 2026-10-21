@@ -78,17 +78,17 @@ describe("AttachmentChip image preview", () => {
     expect(dialog.querySelector<HTMLButtonElement>('[aria-label="Previous image"]')!.disabled).toBe(true);
   });
 
-  it("opens the image full screen and closes it with Escape", () => {
+  it("opens the image full screen and closes it with Escape", async () => {
     render();
     const trigger = container.querySelector<HTMLButtonElement>(
       '[aria-label="Open diagram.png full screen"]',
     )!;
 
     act(() => trigger.focus());
-    act(() => trigger.click());
+    await act(async () => trigger.click());
 
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
-    expect(dialog?.getAttribute("aria-label")).toBe(
+    expect(document.getElementById(dialog!.getAttribute("aria-labelledby")!)?.textContent).toBe(
       "Image preview: diagram.png",
     );
     expect(dialog?.querySelector("img")?.getAttribute("src")).toBe(
@@ -100,12 +100,13 @@ describe("AttachmentChip image preview", () => {
     );
 
     act(() =>
-      window.dispatchEvent(
+      document.activeElement!.dispatchEvent(
         new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
       ),
     );
 
-    act(() => document.querySelectorAll('[role="dialog"][aria-hidden="true"]').forEach(completeMotionAnimation));
+    await act(async () => completeMotionAnimation(document.body));
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
     expect(document.querySelector('[role="dialog"]')).toBeNull();
     expect(document.activeElement).toBe(trigger);
   });

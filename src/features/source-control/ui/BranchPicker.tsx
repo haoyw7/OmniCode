@@ -1,3 +1,6 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
+import { cn } from "../../../shared/lib/cn";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import type { PopoverAnchor } from "../../../shared/ui/Popover";
@@ -335,12 +338,12 @@ export function BranchPicker({
       data-create-blank={!createRow.name || undefined}
       className="branch-menu-create shrink-0 border-t border-stroke p-1 px-1.5"
     >
-      <button
+      <Button data-menu-row="single" variant="ghost" size="content"
         type="button"
         disabled={busy}
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => pick(createRow)}
-        className="flex h-7.5 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] text-content/75 hover:bg-content/5 hover:text-content disabled:opacity-60"
+        className="flex w-full items-center gap-2.5 rounded-lg text-left text-[13px] text-content/75 hover:bg-content/5 hover:text-content disabled:opacity-60 justify-start"
       >
         <Plus className="size-4 shrink-0" />
         <span className="min-w-0 truncate">
@@ -350,7 +353,7 @@ export function BranchPicker({
               })
             : uiT("New branch")}
         </span>
-      </button>
+      </Button>
     </div>
   ) : null;
 
@@ -448,7 +451,7 @@ export function BranchPicker({
       >
         <label className="branch-menu-search flex shrink-0 items-center gap-2 border-b border-stroke px-3 py-2.5 text-content/50">
           <Search className="size-3.5 shrink-0" />
-          <input
+          <Input variant="inline"
             ref={search}
             type="text"
             value={query}
@@ -543,7 +546,7 @@ function BranchList({
         const highlighted = index === active;
         const selected = row.branch.current;
         return (
-          <button
+          <Button data-menu-row="single" variant="ghost" size="content"
             key={`${row.branch.remote ?? "local"}:${row.branch.name}`}
             ref={highlighted ? activeRef : undefined}
             type="button"
@@ -557,11 +560,9 @@ function BranchList({
               onActive(index);
             }}
             onClick={() => onPick(row)}
-            className={`branch-menu-option flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] disabled:opacity-60 ${
-              highlighted || selected
+            className={cn("branch-menu-option flex w-full items-center gap-2 rounded-lg text-left text-[13px] disabled:opacity-60 justify-start", highlighted || selected
                 ? "bg-selection text-content"
-                : "text-content hover:bg-content/3"
-            }`}
+                : "text-content hover:bg-content/3")}
           >
             {selected ? (
               <Check className="branch-menu-check size-3.5 shrink-0" />
@@ -570,7 +571,7 @@ function BranchList({
             )}
             <span
               data-code-label
-              className={`branch-menu-name min-w-0 flex-1 truncate ${selected ? "font-medium" : ""}`}
+              className={cn("branch-menu-name min-w-0 flex-1 truncate", selected ? "font-medium" : "")}
             >
               {row.branch.name}
             </span>
@@ -579,7 +580,7 @@ function BranchList({
                 {row.branch.remote}
               </span>
             ) : null}
-          </button>
+          </Button>
         );
       })}
     </div>

@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -42,7 +44,6 @@ import { InboxDescriptionSummary, InboxPrChangesGlance } from "./InboxPrOverview
 import { InboxPrChecks, PrChecksTab } from "./InboxPrChecks";
 import { type InboxProjectOption, InboxProjectPicker } from "./InboxProjectPicker";
 import { InboxLabel, inboxStatusMark } from "./InboxCard";
-import { ACTION_FILLED, ACTION_GHOST, ACTION_OUTLINE, ACTION_PANEL_HEADER } from "./inboxActions";
 import { GithubPrActions } from "./GithubPrActions";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
@@ -60,7 +61,7 @@ function InboxDetailTab({
   onSelect: () => void;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       role="tab"
       aria-selected={selected}
@@ -73,7 +74,7 @@ function InboxDetailTab({
           {count}
         </span>
       ) : null}
-    </button>
+    </Button>
   );
 }
 
@@ -279,9 +280,7 @@ export function InboxDetail({
     <div
       data-inbox-detail-identity
       data-inbox-detail-fixed-header={panel ? "" : undefined}
-      className={`flex min-w-0 items-center gap-2 text-[12px] text-content/50 ${
-        panel ? "h-9 shrink-0 border-b border-stroke px-4 pr-[34px]" : ""
-      }`}
+      className={cn("flex min-w-0 items-center gap-2 text-[12px] text-content/50", panel ? "h-9 shrink-0 border-b border-stroke px-4 pr-[34px]" : "")}
     >
       <InboxProviderMark
         provider={item.provider}
@@ -296,7 +295,7 @@ export function InboxDetail({
       </span>
       <span className="shrink-0 tabular-nums">{inboxItemRef(item)}</span>
       <span
-        className={`flex shrink-0 items-center gap-1 ${statusMark.className}`}
+        className={cn("flex shrink-0 items-center gap-1", statusMark.className)}
       >
         <statusMark.Icon className="size-3.5" strokeWidth={1.75} />
         {status}
@@ -306,19 +305,19 @@ export function InboxDetail({
       ) : null}
       {source ? <span className="min-w-0 truncate">{source}</span> : null}
       {panel ? (
-        <button
+        <Button
           type="button"
           title={item.url ? externalActionLabel : uiT("No link available")}
           aria-label={externalActionLabel}
           disabled={!item.url}
           onClick={() => void openUrl(item.url)}
-          className={`${ACTION_PANEL_HEADER} ml-auto shrink-0 disabled:opacity-40`}
+          variant="ghost" size="md" className={cn("ml-auto shrink-0 disabled:opacity-40")}
         >
           <ExternalLink className="size-3.5" />
           <span className="@max-[420px]/linked:hidden">
             {externalActionLabel}
           </span>
-        </button>
+        </Button>
       ) : null}
     </div>
   );
@@ -337,22 +336,16 @@ export function InboxDetail({
       >
         <div
           data-inbox-detail-header
-          className={`relative border-b border-stroke ${
-            panel ? "" : "z-10 shrink-0"
-          }`}
+          className={cn("relative border-b border-stroke", panel ? "" : "z-10 shrink-0")}
         >
           <div
-            className={`mx-auto flex w-full max-w-5xl flex-col ${
-              panel ? "gap-2 px-4 pt-4" : "gap-2.5 px-8 pt-5"
-            } ${isPr ? "" : panel ? "pb-4" : "pb-5"}`}
+            className={cn("mx-auto flex w-full max-w-5xl flex-col", panel ? "gap-2 px-4 pt-4" : "gap-2.5 px-8 pt-5", isPr ? "" : panel ? "pb-4" : "pb-5")}
           >
-            <header className={`flex flex-col ${panel ? "gap-2" : "gap-2.5"}`}>
+            <header className={cn("flex flex-col", panel ? "gap-2" : "gap-2.5")}>
               {panel ? null : identityRow}
               <h1
                 title={item.title}
-                className={`line-clamp-2 font-semibold leading-tight text-content ${
-                  panel ? "text-[18px]" : "text-[20px]"
-                }`}
+                className={cn("line-clamp-2 font-semibold leading-tight text-content", panel ? "text-[18px]" : "text-[20px]")}
               >
                 {item.title}
               </h1>
@@ -448,7 +441,7 @@ export function InboxDetail({
                       session.harness,
                     );
                     return (
-                      <button
+                      <Button variant="ghost" size="content"
                         key={session.id}
                         type="button"
                         title={uiT("Open thread: {value0}", {
@@ -463,7 +456,7 @@ export function InboxDetail({
                             {uiT("Archived")}
                           </span>
                         ) : null}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -471,7 +464,7 @@ export function InboxDetail({
               <div className="flex flex-wrap items-center gap-2 pt-0.5">
                 {onStart && item.kind !== "pr" ? (
                   <>
-                    <button
+                    <Button
                       type="button"
                       disabled={
                         starting ||
@@ -488,10 +481,10 @@ export function InboxDetail({
                           : item;
                         startMutation.mutate({ target: next, body: tracker ? details?.body : undefined });
                       }}
-                      className={`${ACTION_FILLED} disabled:cursor-default disabled:opacity-40`}
+                      variant="primary" size="md" className={cn("disabled:cursor-default disabled:opacity-40")}
                     >
                       {starting ? uiT("Sending...") : uiT("Send to agent")}
-                    </button>
+                    </Button>
                     {chooseStartProject ? (
                       <InboxProjectPicker
                         projects={projects}
@@ -510,28 +503,28 @@ export function InboxDetail({
                   />
                 ) : null}
                 {onDiscuss ? (
-                  <button
+                  <Button
                     type="button"
                     onClick={onDiscuss}
-                    className={ACTION_OUTLINE}
+                    variant="secondary" size="md"
                   >
                     <MessageSquare className="size-3.5" />{" "}
                     {uiT("Ask")}
-                  </button>
+                  </Button>
                 ) : null}
                 {panel ? null : (
-                  <button
+                  <Button
                     type="button"
                     title={
                       item.url ? externalActionLabel : uiT("No link available")
                     }
                     disabled={!item.url}
                     onClick={() => void openUrl(item.url)}
-                    className={`${ACTION_GHOST} disabled:opacity-40`}
+                    variant="ghost" size="md" className={cn("disabled:opacity-40")}
                   >
                     <ExternalLink className="size-3.5" />
                     {externalActionLabel}
-                  </button>
+                  </Button>
                 )}
               </div>
               {startError ? (
@@ -577,30 +570,26 @@ export function InboxDetail({
                     aria-label={uiT("Diff context")}
                     className="ml-auto flex items-center self-center rounded-md border border-content/10 bg-content/[0.03] p-0.5"
                   >
-                    <button
+                    <Button variant="ghost" size="content"
                       type="button"
                       aria-pressed={diffMode === "hunks"}
                       onClick={() => setDiffMode("hunks")}
-                      className={`rounded px-2.5 py-1 text-[11px] leading-none ${
-                        diffMode === "hunks"
+                      className={cn("rounded px-2.5 py-1 text-[11px] leading-none", diffMode === "hunks"
                           ? "bg-selection text-content"
-                          : "text-content/45 hover:text-content/70"
-                      }`}
+                          : "text-content/45 hover:text-content/70")}
                     >
                       {uiT("Hunks")}
-                    </button>
-                    <button
+                    </Button>
+                    <Button variant="ghost" size="content"
                       type="button"
                       aria-pressed={diffMode === "full"}
                       onClick={() => setDiffMode("full")}
-                      className={`rounded px-2.5 py-1 text-[11px] leading-none ${
-                        diffMode === "full"
+                      className={cn("rounded px-2.5 py-1 text-[11px] leading-none", diffMode === "full"
                           ? "bg-selection text-content"
-                          : "text-content/45 hover:text-content/70"
-                      }`}
+                          : "text-content/45 hover:text-content/70")}
                     >
                       {uiT("Full file")}
-                    </button>
+                    </Button>
                   </div>
                 ) : null}
               </div>
@@ -617,9 +606,7 @@ export function InboxDetail({
           }
         >
           <div
-            className={`mx-auto flex w-full max-w-5xl flex-col ${
-              panel ? "gap-6 px-4 py-5" : "gap-5 px-8 py-5"
-            }`}
+            className={cn("mx-auto flex w-full max-w-5xl flex-col", panel ? "gap-6 px-4 py-5" : "gap-5 px-8 py-5")}
           >
             {item.labels.length > 0 ? (
               <div className="flex flex-wrap gap-1">
@@ -754,7 +741,7 @@ function CopyBranchNameButton({ branch }: { branch: string }) {
   }, [branch]);
 
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={copied ? uiT("Copied") : uiT("Copy branch name")}
       aria-label={copied ? uiT("Copied") : uiT("Copy branch name")}
@@ -776,7 +763,7 @@ function CopyBranchNameButton({ branch }: { branch: string }) {
       ) : (
         <Copy className="size-3" />
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -799,7 +786,7 @@ function InboxPerson({
   }, [avatarUrl]);
 
   return (
-    <span className={`inline-flex min-w-0 items-center gap-1.5 ${className}`}>
+    <span className={cn("inline-flex min-w-0 items-center gap-1.5", className)}>
       {avatarUrl && !failed ? (
         <img
           src={avatarUrl}

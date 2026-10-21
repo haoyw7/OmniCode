@@ -1,3 +1,4 @@
+import { cn } from "../../../../../shared/lib/cn";
 import { Fragment, useMemo, useState } from "react";
 import { shellOutputDiffLines } from "../../../model/shellOutputDiff";
 import { useLivePhaseScroll } from "../useLivePhaseScroll";
@@ -29,12 +30,10 @@ export function ToolOutput({
     <div
       ref={setScroller}
       data-tool-output=""
-      className={`${shell ? "zen-shell-output" : "zen-detail-panel"} max-h-60 overflow-auto`}
+      className={cn(shell ? "zen-shell-output" : "zen-detail-panel", "max-h-60 overflow-auto")}
     >
       <pre
-        className={`whitespace-pre-wrap break-words ${
-          failed ? "text-red-400/80" : ""
-        }`}
+        className={cn("whitespace-pre-wrap break-words", failed ? "text-red-400/80" : "")}
       >
         {lines && diff
           ? lines.map((line, index) => (

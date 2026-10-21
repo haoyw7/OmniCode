@@ -280,9 +280,9 @@ describe("InboxDetail layout", () => {
     expect(markup).toContain("text-[18px]");
     expect(markup).not.toContain("Related thread");
     expect(markup).not.toContain("Review OmniCode Pull Request");
-    expect(reviewButton).toContain("h-6.5");
-    expect(reviewButton).toContain("hover:bg-content/6");
-    expect(reviewButton).not.toContain("h-6.5 bg-content/10");
+    expect(reviewButton).toContain('data-size="md"');
+    expect(reviewButton).toContain('data-variant="ghost"');
+
     expect(fixedHeader).toContain("pr-[34px]");
   });
 

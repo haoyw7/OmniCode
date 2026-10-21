@@ -58,17 +58,17 @@ describe("project background dialog", () => {
     await act(async () => root.render(createElement(ProjectBackgroundDialog, {
       project: "/work/alpha", name: "Alpha", onClose: vi.fn(),
     })));
-    const sliders = document.querySelectorAll<HTMLInputElement>('input[type="range"]');
+    const sliders = document.querySelectorAll<HTMLElement>('[role="slider"]');
     expect(sliders).toHaveLength(1);
     expect(sliders[0].getAttribute("aria-label")).toBe("Background image strength");
-    expect(sliders[0].value).toBe("30");
+    expect(sliders[0].getAttribute("aria-valuenow")).toBe("30");
     expect(document.querySelector('[aria-label="Show project background on"]')).toBeNull();
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(sliders[0], "60");
-      sliders[0].dispatchEvent(new Event("input", { bubbles: true }));
+      sliders[0].focus();
+      sliders[0].dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
     });
     expect(loadProjectChatBackgroundSettings("/work/alpha")).toEqual({
-      path: "/backgrounds/alpha.png", opacity: 0.6, effect: "none",
+      path: "/backgrounds/alpha.png", opacity: 0.31, effect: "none",
     });
   });
 
@@ -94,7 +94,7 @@ describe("project background dialog", () => {
       ),
     );
     const dialog = document.querySelector<HTMLElement>(
-      '[role="dialog"][aria-modal="true"]',
+      '[role="dialog"]',
     )!;
     expect(dialog.className).toContain("max-h-[calc(100dvh-32px)]");
     expect(dialog.parentElement?.className).toContain("top-1/2");

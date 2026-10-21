@@ -1,3 +1,6 @@
+import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useState } from "react";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
@@ -69,13 +72,11 @@ export function LiveAgentsPreview({
   if (agents.length < minimumAgents) return null;
 
   const extra = agents.length - LIVE_AGENT_CAP;
-  const visible =
-    expanded || extra <= 0 ? agents : agents.slice(0, LIVE_AGENT_CAP);
 
   return (
     <section
       aria-label={uiT("Working agents")}
-      className={`shrink-0 px-2 ${bottomSpacing ? "pb-2" : ""}`}
+      className={cn("shrink-0 px-2", bottomSpacing ? "pb-2" : "")}
       data-live-agents-preview="full"
     >
       <span className="sr-only" aria-live="polite" aria-atomic="true">
@@ -95,14 +96,12 @@ export function LiveAgentsPreview({
           </span>
         </div>
         <div
-          ref={expanded ? lockList : undefined}
-          className={`flex flex-col gap-px px-1 ${
-            extra > 0 ? "" : "pb-1"
-          } ${expanded ? "max-h-[45vh] overflow-y-auto overscroll-none" : ""}`}
+          ref={lockList}
+          className={cn("flex flex-col gap-px px-1", extra > 0 ? "" : "pb-1", extra > 0 ? "max-h-[45vh] overflow-y-auto overscroll-none" : "")}
         >
-          {visible.map((agent) => (
+          {agents.map((agent, index) => (
+            <AnimatedCollapse key={agent.id} expanded={index < LIVE_AGENT_CAP || expanded}>
             <LiveAgentCard
-              key={agent.id}
               agent={agent}
               now={now}
               selected={agent.id === activeSessionId}
@@ -112,10 +111,11 @@ export function LiveAgentsPreview({
               groupCustomColors={groupCustomColors}
               groupMascots={groupMascots}
             />
+            </AnimatedCollapse>
           ))}
         </div>
         {extra > 0 ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             aria-expanded={expanded}
             onClick={() => setExpanded((open) => !open)}
@@ -129,7 +129,7 @@ export function LiveAgentsPreview({
             {expanded
               ? uiT("Show less")
               : uiT("{value0} more", { value0: String(extra) })}
-          </button>
+          </Button>
         ) : null}
       </div>
     </section>
@@ -177,7 +177,7 @@ function LiveAgentCard({
     .join("\n");
 
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={title}
       aria-label={[agent.title, project, activity, elapsed]
@@ -186,9 +186,7 @@ function LiveAgentCard({
       aria-current={selected ? "true" : undefined}
       data-live-agent-card={agent.id}
       onClick={() => onSelect?.(agent.id)}
-      className={`relative flex w-full flex-col rounded-md px-2 py-1.5 text-left ${
-        selected ? "bg-selection" : "hover:bg-content/5"
-      }`}
+      className={cn("relative flex w-full flex-col rounded-md px-2 py-1.5 text-left justify-start items-stretch", selected ? "bg-selection" : "hover:bg-content/5")}
     >
       <span className="flex min-w-0 items-center gap-2">
         <ProjectMascot
@@ -209,13 +207,11 @@ function LiveAgentCard({
         )}
       </span>
       <span
-        className={`mt-1 flex min-w-0 items-center gap-1.5 pl-4 text-[11px] leading-tight ${
-          agent.needsApproval
+        className={cn("mt-1 flex min-w-0 items-center gap-1.5 pl-4 text-[11px] leading-tight", agent.needsApproval
             ? "text-amber-400"
             : agent.done
               ? "text-emerald-400"
-              : "text-content/50"
-        }`}
+              : "text-content/50")}
       >
         {agent.needsApproval ? (
           <CircleAlert className="size-3 shrink-0" />
@@ -233,6 +229,6 @@ function LiveAgentCard({
           <span className="shrink-0 tabular-nums">{elapsed}</span>
         ) : null}
       </span>
-    </button>
+    </Button>
   );
 }

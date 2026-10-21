@@ -1,3 +1,6 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
+import { cn } from "../../../shared/lib/cn";
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -130,7 +133,7 @@ export function ProjectSearch({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="desktop-toolbar flex shrink-0 items-center gap-1 border-b border-stroke px-1.5 py-1">
-        <button
+        <Button variant="ghost" size="icon-sm"
           type="button"
           onClick={onClose}
           title={uiT("Back to files")}
@@ -138,14 +141,14 @@ export function ProjectSearch({
           className="grid size-7 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/6 hover:text-content"
         >
           <ChevronLeft className="size-4" />
-        </button>
+        </Button>
         <span className="min-w-0 flex-1 truncate text-[12px] text-content/55">
           {uiT("Search in files")}
         </span>
       </div>
       <div className="shrink-0 space-y-2 border-b border-stroke p-2">
         <div className="flex items-center gap-1 rounded-md border border-content/10 bg-content/5 px-2 pr-1">
-          <input
+          <Input variant="inline"
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -177,7 +180,7 @@ export function ProjectSearch({
             <Regex className="size-3.5" />
           </Toggle>
         </div>
-        <input data-ui="input"
+        <Input data-ui="input"
           value={include}
           onChange={(event) => setInclude(event.target.value)}
           placeholder={uiT("files to include")}
@@ -185,7 +188,7 @@ export function ProjectSearch({
           spellCheck={false}
           className="w-full rounded-md border border-content/10 bg-content/5 px-2 py-1.5 text-[11px] text-content outline-none placeholder:text-content/35"
         />
-        <input data-ui="input"
+        <Input data-ui="input"
           value={exclude}
           onChange={(event) => setExclude(event.target.value)}
           placeholder={uiT("files to exclude")}
@@ -241,11 +244,11 @@ export function ProjectSearch({
             <ul>
               {group.matches.map((match) => (
                 <li key={`${match.path}:${match.line}:${match.column}`}>
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     onClick={() => openMatch(match)}
                     onDoubleClick={() => openMatch(match, true)}
-                    className="flex w-full items-start gap-2 px-2 py-1 text-left hover:bg-content/3"
+                className="flex w-full items-start justify-start gap-2 px-2 py-1 text-left"
                   >
                     <span className="w-7 shrink-0 pt-px text-right font-mono text-[11px] text-content/35 tabular-nums">
                       {match.line}
@@ -258,7 +261,7 @@ export function ProjectSearch({
                         regex={regex}
                       />
                     </span>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -281,20 +284,18 @@ function Toggle({
   children: ReactNode;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="icon-sm"
       type="button"
       title={label}
       aria-label={label}
       aria-pressed={active}
       onClick={onClick}
-      className={`grid size-6 place-items-center rounded-sm ${
-        active
+      className={cn("grid size-6 place-items-center rounded-sm", active
           ? "bg-selection-hover text-content"
-          : "text-content/40 hover:bg-content/6 hover:text-content/70"
-      }`}
+          : "text-content/40 hover:bg-content/6 hover:text-content/70")}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 

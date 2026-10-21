@@ -2,23 +2,24 @@ import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  FolderOpen,
-  FolderPlus,
-  MessageSquare,
-  Search,
-  Zap,
-} from "../../../shared/ui/icons";
+import { FolderOpen, FolderPlus, Search, Zap } from "../../../shared/ui/icons";
 import {
   useEffect,
   useMemo,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
+import {
+  Command,
+  CommandDialog,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../../../shared/ui/primitives/Command";
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import {
   projectFilesQuery,
   rankProjectFiles,
@@ -70,6 +71,7 @@ type Props = {
   /** Effective shortcut labels, read when the palette renders. */
   commandShortcut?: (id: string) => string | null;
   sessions?: SessionRow[];
+  renderSessionIcon?: (harness: SessionRow["harness"]) => ReactNode;
   recents?: RecentProject[];
   currentProject?: string | null;
   onOpenFile: OpenFileFn;
@@ -103,6 +105,7 @@ export function QuickOpen({
   commands = [],
   commandShortcut,
   sessions = [],
+  renderSessionIcon,
   recents = [],
   currentProject = null,
   onOpenFile,
@@ -115,14 +118,20 @@ export function QuickOpen({
 }: Props) {
   const { t: uiT } = useTranslation();
   const search = useRef<HTMLInputElement>(null);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
   // Focus goes back where it was before a command runs, so editor commands
   // act on the editor the palette was opened from.
   const previousFocus = useRef<Element | null>(null);
+  const commandScheduled = useRef(false);
   const [query, setQuery] = useState(initialQuery);
-  const [active, setActive] = useState(0);
-  const filesQuery = useQuery({ ...projectFilesQuery(cwd), staleTime: 0, enabled: open && looksLikeProject(cwd) }, queryClient);
+  const [active, setActive] = useState("");
+  const filesQuery = useQuery(
+    {
+      ...projectFilesQuery(cwd),
+      staleTime: 0,
+      enabled: open && looksLikeProject(cwd),
+    },
+    queryClient,
+  );
   const files = filesQuery.data ?? [];
   const loading = open && looksLikeProject(cwd) && filesQuery.isPending;
   const error = errorMessage(filesQuery.error) ?? null;
@@ -187,39 +196,21 @@ export function QuickOpen({
     sessionsAvailable,
     uiT,
   ]);
-  const optionCount = items.length;
+  const activeValue = items.some((item) => item.key === active)
+    ? active
+    : (items[0]?.key ?? "");
 
   useEffect(() => {
     if (!open) return;
-    previousFocus.current = document.activeElement;
+    commandScheduled.current = false;
     setQuery(initialQuery);
-    setActive(0);
+    setActive("");
   }, [open, cwd, initialQuery]);
-
-  useEffect(() => {
-    setActive((index) =>
-      optionCount === 0 ? 0 : Math.min(index, optionCount - 1),
-    );
-  }, [optionCount]);
 
   useEffect(() => {
     if (!open) return;
     search.current?.focus();
   }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      e.stopPropagation();
-      onCloseRef.current();
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [open]);
-
-  if (!open) return null;
 
   const restoreFocus = () => {
     const target = previousFocus.current;
@@ -237,9 +228,12 @@ export function QuickOpen({
     } else if (item.kind === "command") {
       const id = item.command.id;
       rememberCommand(id);
+      commandScheduled.current = true;
       onClose();
-      restoreFocus();
-      requestAnimationFrame(() => onRunCommand(id));
+      requestAnimationFrame(() => {
+        restoreFocus();
+        onRunCommand(id);
+      });
     } else if (item.kind === "session") {
       onOpenSession?.(item.hit.sessionId);
       onClose();
@@ -257,30 +251,15 @@ export function QuickOpen({
 
   const setMode = (next: QuickOpenMode) => {
     setQuery((current) => quickOpenQueryFor(next, current));
-    setActive(0);
+    setActive("");
     search.current?.focus();
   };
 
   const onSearchKey = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
+    if (e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && onSearchEverywhere) {
       e.preventDefault();
-      if (optionCount === 0) return;
-      setActive((index) => (index + 1) % optionCount);
-      return;
-    }
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      if (optionCount === 0) return;
-      setActive((index) => (index - 1 + optionCount) % optionCount);
-      return;
-    }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      if ((e.metaKey || e.ctrlKey) && onSearchEverywhere) {
-        choose({ kind: "search-everywhere", key: "search-everywhere" });
-        return;
-      }
-      choose(items[active]);
+      choose({ kind: "search-everywhere", key: "search-everywhere" });
       return;
     }
     if (e.key === "Tab") e.preventDefault();
@@ -298,45 +277,58 @@ export function QuickOpen({
   const dialogLabel = uiT(DIALOG_LABELS[mode]);
   const highlightQuery = Boolean(modeQuery.trim());
 
-  return createPortal(
-    <div data-window-modal className="fixed inset-0" style={{ zIndex: LAYER.dialog }}>
-      <div
-        data-window-modal-backdrop
-        className="modal-backdrop absolute inset-0 bg-black/40"
-        onMouseDown={onClose}
-      />
-      <div
-        role="dialog"
-        data-window-modal-panel
-        aria-label={dialogLabel}
-        data-file-picker
-        data-quick-open-mode={mode}
-        onMouseDown={(e) => e.stopPropagation()}
-        className="quick-open-panel popover-backdrop absolute left-1/2 top-[max(24px,calc(50%-310px))] flex w-[min(760px,calc(100vw-48px))] -translate-x-1/2 flex-col overflow-hidden rounded-xl border border-content/10 shadow-2xl backdrop-blur-xl"
+  return (
+    <CommandDialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+      title={dialogLabel}
+      contentProps={{
+        "data-file-picker": true,
+        "data-quick-open-mode": mode,
+        "aria-label": dialogLabel,
+        onOpenAutoFocus: (event) => {
+          event.preventDefault();
+          previousFocus.current = document.activeElement;
+          search.current?.focus();
+        },
+        onCloseAutoFocus: (event) => {
+          event.preventDefault();
+          if (!commandScheduled.current) restoreFocus();
+        },
+        onMouseDown: (e) => e.stopPropagation(),
+        style: { zIndex: LAYER.dialog },
+      }}
+      className="quick-open-panel popover-backdrop top-[max(24px,calc(50%-310px))] flex w-[min(760px,calc(100vw-48px))] translate-y-0 flex-col gap-0 overflow-hidden rounded-xl p-0"
+    >
+      <Command
+        shouldFilter={false}
+        loop
+        value={activeValue}
+        onValueChange={setActive}
+        label={dialogLabel}
       >
         <div className="pb-1.5">
-          <label className="flex items-center gap-2.5 border-b border-stroke px-3.5 py-3.5 text-content/50">
-            <Search className="size-4 shrink-0" />
-            <input
-              ref={search}
-              type="text"
-              value={query}
-              placeholder={uiT(
-                "Search files (type > for commands, # for sessions, @ for projects)",
-              )}
-              aria-label={dialogLabel}
-              spellCheck={false}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              className="min-w-0 flex-1 bg-transparent text-[14px] text-content outline-none placeholder:text-content/40"
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setActive(0);
-              }}
-              onKeyDown={onSearchKey}
-            />
-          </label>
+          <CommandInput
+            ref={search}
+            wrapperClassName="gap-2.5 px-3.5 py-3.5 text-content/50"
+            value={query}
+            placeholder={uiT(
+              "Search files (type > for commands, # for sessions, @ for projects)",
+            )}
+            aria-label={dialogLabel}
+            spellCheck={false}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            className="min-w-0 flex-1 bg-transparent text-[14px] text-content outline-none placeholder:text-content/40"
+            onValueChange={(next) => {
+              setQuery(next);
+              setActive("");
+            }}
+            onKeyDown={onSearchKey}
+          />
           <div
             role="tablist"
             aria-label={uiT("Quick open modes")}
@@ -347,7 +339,8 @@ export function QuickOpen({
                 (entry !== "sessions" || sessionsAvailable) &&
                 (entry !== "projects" || projectsAvailable),
             ).map(({ mode: entry, label, prefix }) => (
-              <button
+              <Button
+                variant="ghost"
                 key={entry}
                 type="button"
                 role="tab"
@@ -360,7 +353,7 @@ export function QuickOpen({
                 {prefix ? (
                   <span className="font-mono text-content/40">{prefix}</span>
                 ) : null}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -369,34 +362,30 @@ export function QuickOpen({
             {uiT(empty)}
           </p>
         ) : null}
-        {items.length > 0 ? (
-          <OptionList
-            label={uiT(
-              mode === "files"
-                ? "Files"
-                : mode === "commands"
-                  ? "Commands"
-                  : mode === "sessions"
-                    ? "Sessions"
-                    : "Projects",
-            )}
-            items={items}
-            active={active}
-            onActive={setActive}
-            onChoose={choose}
-            render={(item) =>
-              renderItem(item, {
-                query: modeQuery,
-                highlight: highlightQuery,
-                shortcut: commandShortcut,
-                t: uiT,
-              })
-            }
-          />
-        ) : null}
-      </div>
-    </div>,
-    document.body,
+        <OptionList
+          label={uiT(
+            mode === "files"
+              ? "Files"
+              : mode === "commands"
+                ? "Commands"
+                : mode === "sessions"
+                  ? "Sessions"
+                  : "Projects",
+          )}
+          items={items}
+          onChoose={choose}
+          render={(item) =>
+            renderItem(item, {
+              query: modeQuery,
+              highlight: highlightQuery,
+              shortcut: commandShortcut,
+                sessionIcon: renderSessionIcon,
+              t: uiT,
+            })
+          }
+        />
+      </Command>
+    </CommandDialog>
   );
 }
 
@@ -442,11 +431,13 @@ function renderItem(
     query,
     highlight,
     shortcut,
+    sessionIcon,
     t,
   }: {
     query: string;
     highlight: boolean;
     shortcut?: (id: string) => string | null;
+    sessionIcon?: (harness: SessionRow["harness"]) => ReactNode;
     t: (text: string, values?: TranslationValues) => string;
   },
 ): ReactNode {
@@ -504,9 +495,7 @@ function renderItem(
   if (item.kind === "session") {
     return (
       <>
-        <MessageSquare
-          className="size-4 shrink-0 text-content/50"
-        />
+        <span className="grid size-4 shrink-0 place-items-center">{sessionIcon?.(item.hit.harness)}</span>
         <span className="min-w-0 flex-1 truncate">
           <MatchText
             text={item.hit.title}
@@ -523,9 +512,7 @@ function renderItem(
   if (item.kind === "project") {
     return (
       <>
-        <FolderOpen
-          className="size-4 shrink-0 text-content/50"
-        />
+        <FolderOpen className="size-4 shrink-0 text-content/50" />
         <span className="shrink-0 truncate">
           <MatchText
             text={item.hit.name}
@@ -542,9 +529,7 @@ function renderItem(
   if (item.kind === "open-project") {
     return (
       <>
-        <FolderPlus
-          className="size-4 shrink-0 text-content/50"
-        />
+        <FolderPlus className="size-4 shrink-0 text-content/50" />
         <span className="min-w-0 flex-1 truncate">{t("Open Project…")}</span>
       </>
     );
@@ -567,80 +552,39 @@ function renderItem(
 function OptionList({
   label,
   items,
-  active,
-  onActive,
   onChoose,
   render,
 }: {
   label: string;
   items: Item[];
-  active: number;
-  onActive: (index: number) => void;
   onChoose: (item: Item) => void;
   render: (item: Item) => ReactNode;
 }) {
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
-  const activeRef = useRef<HTMLButtonElement>(null);
-  // Rows under a still pointer must not steal the selection while the list
-  // scrolls under keyboard navigation.
-  const pointer = useRef({ x: Number.NaN, y: Number.NaN, allow: false });
-  const fromPointer = useRef(false);
-
-  useEffect(() => {
-    pointer.current.allow = false;
-  }, [items]);
-
-  useEffect(() => {
-    if (fromPointer.current) {
-      fromPointer.current = false;
-      return;
-    }
-    pointer.current.allow = false;
-    activeRef.current?.scrollIntoView({ block: "nearest" });
-  }, [active]);
-
-  const onListMouseMove = (e: ReactMouseEvent<HTMLDivElement>) => {
-    if (e.clientX === pointer.current.x && e.clientY === pointer.current.y) {
-      return;
-    }
-    pointer.current = { x: e.clientX, y: e.clientY, allow: true };
-  };
-
-  const onRowEnter = (index: number) => {
-    if (!pointer.current.allow) return;
-    fromPointer.current = true;
-    onActive(index);
-  };
 
   return (
-    <div
+    <CommandList
       ref={lockOverscroll}
-      role="listbox"
-      aria-label={label}
-      onMouseMove={onListMouseMove}
+      label={label}
       className="max-h-[min(520px,60vh)] overflow-y-auto overscroll-none px-1.5 pb-1.5"
     >
-      {items.map((item, index) => {
-        const highlighted = index === active;
+      {items.map((item) => {
         return (
-          <button
+          <CommandItem
             key={item.key}
-            ref={highlighted ? activeRef : undefined}
-            type="button"
-            role="option"
-            aria-selected={highlighted}
+            value={item.key}
             data-quick-open-item={item.kind}
             onMouseDown={(e) => e.preventDefault()}
-            onMouseEnter={() => onRowEnter(index)}
-            onClick={() => onChoose(item)}
-            className={`flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-sm leading-none ${
-              highlighted ? "bg-selection text-content" : "text-content"
-            } ${item.kind === "search-everywhere" ? "mt-1" : ""}`}
+            onSelect={() => onChoose(item)}
+            className={cn(
+              "h-8 w-full text-sm leading-none",
+              item.kind === "search-everywhere" && "mt-1",
+            )}
           >
             {render(item)}
-          </button>
+          </CommandItem>
         );
       })}
-    </div>
+    </CommandList>
   );
 }

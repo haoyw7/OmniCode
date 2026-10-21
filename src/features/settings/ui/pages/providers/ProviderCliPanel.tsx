@@ -1,3 +1,4 @@
+import { cn } from "../../../../../shared/lib/cn";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../../../shared/lib/queryClient";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
@@ -75,9 +76,7 @@ export function ProviderCliPanel({
   return (
     <div id={id} className="px-4 pb-3">
       <div
-        className={`rounded-lg border px-3 py-2.5 text-ui-caption leading-5 text-foreground-subtle ${
-          kind === "uninstall" ? "border-destructive/30" : "border-border"
-        }`}
+        className={cn("rounded-lg border px-3 py-2.5 text-ui-caption leading-5 text-foreground-subtle", kind === "uninstall" ? "border-destructive/30" : "border-border")}
       >
         <p>{summary}</p>
         {code && !(kind === "uninstall" && plan?.uninstallBlocker) ? (

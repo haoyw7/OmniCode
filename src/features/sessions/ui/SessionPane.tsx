@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -932,9 +934,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
       {renderHeader ? renderHeader(session) : inSplit ? (
         <div
           data-session-pane-header
-          className={`flex h-9 shrink-0 touch-none items-center gap-1.5 border-b border-stroke px-2 select-none ${
-            onPaneDragStart ? "cursor-grab active:cursor-grabbing" : ""
-          }`}
+          className={cn("flex h-9 shrink-0 touch-none items-center gap-1.5 border-b border-stroke px-2 select-none", onPaneDragStart ? "cursor-grab active:cursor-grabbing" : "")}
           onPointerDown={(event) => {
             if (event.button !== 0 || !onPaneDragStart) return;
             if (
@@ -952,7 +952,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
             />
           ) : null}
           <span
-            className={`size-2 shrink-0 rounded-full ${focused ? "bg-accent" : "bg-transparent"}`}
+            className={cn("size-2 shrink-0 rounded-full", focused ? "bg-accent" : "bg-transparent")}
           />
           <span
             className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-content"
@@ -961,7 +961,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
             <span className="truncate">{title}</span>
             <SessionWorktreeIcon session={session} />
           </span>
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={closePaneLabel}
             aria-label={uiT("Close pane")}
@@ -975,7 +975,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
             }}
           >
             <X className="size-3" strokeWidth={1.75} />
-          </button>
+          </Button>
         </div>
       ) : null}
       <div className="desktop-conversation-body relative flex min-h-0 min-w-0 flex-1 flex-col">

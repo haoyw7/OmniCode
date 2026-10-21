@@ -1,3 +1,4 @@
+import { Button } from "../../../../shared/ui/forms/Button";
 import { createPortal } from "react-dom";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { LAYER } from "../../../../shared/lib/layers";
@@ -20,14 +21,14 @@ export function FileActionError({
       style={{ zIndex: LAYER.toast }}
     >
       <span className="min-w-0 break-words">{message}</span>
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         aria-label={uiT("Dismiss file action error")}
         className="shrink-0 text-content/60 hover:text-content"
         onClick={onDismiss}
       >
         {uiT("Dismiss")}
-      </button>
+      </Button>
     </div>,
     document.body,
   );

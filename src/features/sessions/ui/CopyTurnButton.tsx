@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Check, Copy } from "../../../shared/ui/icons";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -31,7 +32,7 @@ export function CopyTurnButton({
 
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         data-ui="response-action"
         type="button"
         disabled={pending}
@@ -63,7 +64,7 @@ export function CopyTurnButton({
         ) : (
           <Copy className="size-3.5" />
         )}
-      </button>
+      </Button>
       {error && (
         <span role="alert" className="max-w-xs text-xs text-content/70">
           {uiT("Copy failed. ")}

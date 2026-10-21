@@ -156,10 +156,10 @@ function ApprovalToastCard({
       className="approval-toast pointer-events-auto relative overflow-hidden rounded-xl border border-content/20 border-dashed bg-content/10 shadow-xl backdrop-blur-xl"
       role="status"
     >
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         onClick={openSession}
-        className="flex w-full flex-col gap-2 py-3 pl-3.5 pr-9 text-left hover:bg-content/3"
+        className="flex w-full flex-col gap-2 py-3 pl-3.5 pr-9 text-left hover:bg-content/3 justify-start items-stretch"
       >
         <span className="flex items-center gap-2">
           <HarnessIcon harness={session.harness} className="size-4 shrink-0" />
@@ -177,8 +177,8 @@ function ApprovalToastCard({
           {label}
         </span>
         <span className="text-[11px] text-content/40">{harness}</span>
-      </button>
-      <button
+      </Button>
+      <Button variant="ghost" size="content"
         type="button"
         aria-label={uiT("Close")}
         title={uiT("Close")}
@@ -186,7 +186,7 @@ function ApprovalToastCard({
         className="absolute right-1.5 top-2 rounded p-1 text-content/50 hover:bg-content/6 hover:text-content"
       >
         <X className="size-3.5" />
-      </button>
+      </Button>
       {notice.kind === "question" ? null : (
         <div className="flex gap-2 border-t border-stroke px-3.5 py-2.5">
           <Button variant="primary"

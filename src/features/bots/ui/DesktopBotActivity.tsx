@@ -37,12 +37,12 @@ function Run({ run }: { run: BotRun }) {
   const { t } = useTranslation(), [expanded, setExpanded] = useState(false);
   const date = new Date(run.startedAt ?? run.createdAt);
   return <li className="desktop-bot-row-block" data-status={run.status}>
-    <button type="button" className="desktop-bot-row desktop-bot-run-heading" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>
+    <Button variant="ghost" size="content" type="button" className="desktop-bot-row desktop-bot-run-heading" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>
       {run.config && <HarnessIcon harness={run.config.harness} className="size-4 shrink-0" />}
       <span className="desktop-bot-row-title">{t(statuses[run.status])}{run.config && <small>{run.config.model}</small>}</span>
       <time className="desktop-bot-row-meta" dateTime={date.toISOString()}>{date.toLocaleString()}</time>
       <ChevronDown size={14} aria-hidden="true" />
-    </button>
+    </Button>
     {run.error && <p className="desktop-bot-row-detail" role="alert">{t(run.error)}</p>}
     <AnimatedCollapse expanded={expanded}><dl className="desktop-bot-row-detail">
       {run.endedAt && <><dt>{t("Finished")}</dt><dd>{new Date(run.endedAt).toLocaleString()}</dd></>}

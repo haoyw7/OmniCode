@@ -1,3 +1,4 @@
+import { cn } from "../../../../shared/lib/cn";
 // ============================================================
 // WorkflowRunSidePane 的分区子组件（状态头 / 终态结果区）
 // ============================================================
@@ -47,17 +48,17 @@ function SubagentModelSegment({
     );
   }
   return (
-    <button
+    <Button variant="ghost" size="content"
       aria-expanded={configureOpen}
       aria-haspopup="dialog"
-      className={`${className ?? ""} cursor-pointer rounded-sm text-left underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/40`}
+      className={cn("cursor-pointer justify-start rounded-sm text-left underline-offset-2 hover:underline", className)}
       data-testid="workflow-run-subagent-model"
       onClick={(event) => onConfigureFrom(event.currentTarget)}
       title={title}
       type="button"
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -263,8 +264,8 @@ export const WorkflowRunStatusHeader = memo(function WorkflowRunStatusHeader({
           </span>
         </div>
       ) : (
-        <button
-          className="mt-1.5 flex min-w-0 cursor-pointer items-baseline gap-2 rounded-md text-left text-ui-xs text-foreground-subtle outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40"
+        <Button variant="ghost" size="content"
+          className="mt-1.5 flex min-w-0 cursor-pointer items-baseline justify-start gap-2 rounded-md text-left text-ui-xs"
           data-testid="workflow-run-superseded-by"
           onClick={onOpenSuccessor}
           type="button"
@@ -276,7 +277,7 @@ export const WorkflowRunStatusHeader = memo(function WorkflowRunStatusHeader({
             {supersededBy}
           </span>
           <ArrowUpRightIcon aria-hidden className="size-3 shrink-0 self-center" />
-        </button>
+        </Button>
       )}
 
       {summaryParts !== undefined ? (

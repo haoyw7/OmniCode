@@ -21,7 +21,7 @@
 .assistant-chat.desktop-bots-workspace .desktop-bot-members legend { margin-bottom: 8px; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-member-options { display: grid; gap: 7px; max-height: 180px; overflow: auto; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-member-options label { display: flex; align-items: start; gap: 7px; overflow-wrap: anywhere; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-member-options input { margin-top: 3px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-member-options [data-ui="checkbox"] { margin-top: 3px; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-members ol { display: grid; gap: 6px; padding: 0; list-style-position: inside; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-members li { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-members li > span { flex: 1; min-width: 50px; overflow-wrap: anywhere; }

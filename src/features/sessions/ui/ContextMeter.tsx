@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useRef, useState } from "react";
@@ -52,7 +54,7 @@ export function ContextMeter({
       onMouseLeave={() => setHovered(false)}
     >
       {onCompact ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           title={uiT("Context usage")}
           aria-label={uiT("{value0}, {value1}. Open context actions", {
@@ -64,7 +66,7 @@ export function ContextMeter({
           className="-m-1 grid rounded-sm p-1 outline-none focus-visible:ring-1 focus-visible:ring-accent"
         >
           <MeterRing ratio={ratio} />
-        </button>
+        </Button>
       ) : (
         <MeterRing ratio={ratio} label={`${headline}, ${detail}`} />
       )}
@@ -74,12 +76,12 @@ export function ContextMeter({
           side="top"
           align="end"
           onDismiss={onCompact ? () => setOpen(false) : undefined}
-          className={`w-max px-2.5 py-1.5 ${actionsOpen ? "" : "pointer-events-none"}`}
+          className={cn("w-max px-2.5 py-1.5", actionsOpen ? "" : "pointer-events-none")}
         >
           <div className="text-[12px] leading-4 text-content">{headline}</div>
           <div className="text-[11px] leading-4 text-content/50">{detail}</div>
           {actionsOpen ? (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               disabled={compactDisabled}
               title={
@@ -94,7 +96,7 @@ export function ContextMeter({
               className="mt-1.5 w-full rounded-md bg-content/10 px-2 py-1 text-[11px] text-content hover:bg-content/15 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {uiT("Compact now")}
-            </button>
+            </Button>
           ) : null}
         </Popover>
       ) : null}</PresenceBoundary>

@@ -1,3 +1,6 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
+import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -87,12 +90,6 @@ export function OrchestrationSidebarAgents({
   const done = summary.tasks.filter(
     (task) => task.status === "completed",
   ).length;
-  const action =
-    "rounded px-1.5 py-0.5 text-[11px] text-content/55 hover:bg-content/6 hover:text-content disabled:opacity-35";
-  // Sits inside an already-lit row, so it needs its own surface to read as a
-  // button rather than as another line of text.
-  const solidAction =
-    "rounded bg-content/15 px-1.5 py-0.5 text-[11px] text-content/75 hover:bg-content/25 hover:text-content disabled:opacity-35";
   return (
     <div className="relative mt-1.5">
       <div className="mb-0.5 px-0.5 flex items-center justify-between text-[11px] text-content/45">
@@ -135,9 +132,9 @@ export function OrchestrationSidebarAgents({
               key={task.sessionId}
               data-orchestration-agent={task.sessionId}
               // Expanding lights the whole row, header and detail together.
-              className={`rounded-md ${open ? "bg-selection" : ""}`}
+              className={cn("rounded-md", open ? "bg-selection" : "")}
             >
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 title={`${task.title} · ${HARNESS_TITLE[task.harness]} · ${model} · ${label}`}
                 aria-label={uiT("Agent details: {value0}", {
@@ -146,9 +143,7 @@ export function OrchestrationSidebarAgents({
                 aria-expanded={open}
                 onClick={() => toggle(task.sessionId, open)}
                 // Named, because the whole session card is already a `group`.
-                className={`group/agent flex w-full min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-left ${
-                  open ? "" : "hover:bg-content/6"
-                }`}
+                className={cn("group/agent flex w-full min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-left", open ? "" : "hover:bg-content/6")}
               >
                 {/* One slot: the chevron stands in for the harness mark
                     whenever this row is open or under the pointer. */}
@@ -171,8 +166,7 @@ export function OrchestrationSidebarAgents({
                   {task.title}
                 </span>
                 <span
-                  className={`flex shrink-0 items-center gap-1 text-[11px] ${
-                    task.needsInput ||
+                  className={cn("flex shrink-0 items-center gap-1 text-[11px]", task.needsInput ||
                     task.status === "failed" ||
                     task.status === "blocked" ||
                     task.status === "interrupted"
@@ -181,8 +175,7 @@ export function OrchestrationSidebarAgents({
                         ? "text-accent"
                         : task.status === "completed"
                           ? "text-emerald-400"
-                          : "text-content/45"
-                  }`}
+                          : "text-content/45")}
                 >
                   {task.needsInput ||
                   task.status === "failed" ||
@@ -196,9 +189,9 @@ export function OrchestrationSidebarAgents({
                   ) : null}
                   <span>{label}</span>
                 </span>
-              </button>
+              </Button>
               {/* Indented to the title's column: the icon slot and its gap. */}
-              {open && (
+              <AnimatedCollapse expanded={open}>{() => (
                 <div className="space-y-2 pb-3 pl-6.5 pr-2">
                   <p
                     className="flex min-w-0 items-center gap-1.5 text-[11px] text-content/45"
@@ -215,10 +208,10 @@ export function OrchestrationSidebarAgents({
                   )}
                   <div className="flex flex-wrap items-center gap-1">
                     {workers.openDetails && (
-                      <button
+                      <Button
                         type="button"
                         title={uiT("Open this agent beside the orchestrator")}
-                        className={solidAction}
+                        variant="secondary" size="xs"
                         onClick={() =>
                           workers.openDetails?.({
                             sessionId: task.sessionId,
@@ -229,12 +222,12 @@ export function OrchestrationSidebarAgents({
                         }
                       >
                         {uiT("See details")}
-                      </button>
+                      </Button>
                     )}
                     {actions && live && ["queued", "running"].includes(live.status) && (
-                      <button
+                      <Button
                         type="button"
-                        className={solidAction}
+                        variant="secondary" size="xs"
                         disabled={pending}
                         onClick={() =>
                           void perform(() =>
@@ -243,11 +236,11 @@ export function OrchestrationSidebarAgents({
                         }
                       >
                         {uiT("Cancel task")}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
-              )}
+              )}</AnimatedCollapse>
             </div>
           );
         })}
@@ -280,18 +273,18 @@ export function OrchestrationSidebarAgents({
           )}
           <div className="-mr-1.5 flex items-center justify-end gap-1">
             {resumeBlocker && actions && (
-              <button
+              <Button
                 type="button"
-                className={action}
+                variant="ghost" size="xs"
                 disabled={pending}
                 onClick={() => actions.open(resumeBlocker.id)}
               >
                 {uiT("Open blocker")}
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               type="button"
-              className={action}
+              variant="ghost" size="xs"
               disabled={pending || stopping || leadBusy || !!resumeBlocker}
               title={
                 stopping
@@ -313,7 +306,7 @@ export function OrchestrationSidebarAgents({
               }
             >
               {uiT("Resume")}
-            </button>
+            </Button>
           </div>
         </div>
       )}

@@ -144,7 +144,7 @@ export function BotImSettings({
       className="assistant-settings-section assistant-im-section"
       data-open={open}
     >
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         className="assistant-settings-disclosure"
         aria-expanded={open}
@@ -155,7 +155,7 @@ export function BotImSettings({
         </span>
         <small className="assistant-settings-summary">{summary}</small>
         <ChevronDown size={18} aria-hidden="true" />
-      </button>
+      </Button>
       <AnimatedCollapse expanded={open}>
         {!supported ? (
           <p className="assistant-im-hint">

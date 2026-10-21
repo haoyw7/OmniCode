@@ -154,13 +154,13 @@ export function ArchivePage({
                 harness={session.harness}
                 className="size-3.5 shrink-0"
               />
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 onClick={() => onOpenSession(session.id)}
-                className="min-w-0 flex-1 truncate text-left text-[13px] hover:text-content"
+                className="min-w-0 flex-1 truncate text-left text-[13px] hover:text-content justify-start"
               >
                 {sessionDisplayTitle(session.title, session.harness)}
-              </button>
+              </Button>
               <span className="shrink-0 text-[11px] text-content/35 tabular-nums">
                 {formatDate(session.updatedAt)}
               </span>

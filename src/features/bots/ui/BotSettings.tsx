@@ -1,3 +1,7 @@
+import { cn } from "../../../shared/lib/cn";
+import { Textarea } from "../../../shared/ui/forms/Textarea";
+import { Checkbox } from "../../../shared/ui/forms/Checkbox";
+import { Radio } from "../../../shared/ui/forms/Radio";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -204,7 +208,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className={`assistant-settings-section${card ? " desktop-bot-setting-group" : ""}`} data-section={kind}>
+    <section className={cn("assistant-settings-section", card ? " desktop-bot-setting-group" : "")} data-section={kind}>
       <header>
         <h3>{title}</h3>
       </header>
@@ -252,7 +256,7 @@ function CollapsibleSection({
   </section>;
   return (
     <section className="assistant-settings-section" data-open={open}>
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         className="assistant-settings-disclosure"
         aria-expanded={open}
@@ -263,7 +267,7 @@ function CollapsibleSection({
           <small className="assistant-settings-summary">{summary}</small>
         )}
         <ChevronDown size={18} aria-hidden="true" />
-      </button>
+      </Button>
       <AnimatedCollapse expanded={open} ready={ready}>{children}</AnimatedCollapse>
     </section>
   );
@@ -279,7 +283,7 @@ function Disclosure({
   onToggle: () => void;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       className="assistant-settings-disclosure"
       aria-expanded={open}
@@ -287,7 +291,7 @@ function Disclosure({
     >
       <span className="assistant-settings-disclosure-title">{label}</span>
       <ChevronDown size={18} aria-hidden="true" />
-    </button>
+    </Button>
   );
 }
 
@@ -745,10 +749,10 @@ export function BotSettings({
                 {t("Allow the assistant to work for me")}
                 <Switch checked={count > 0} onCheckedChange={checked => setPermissions(group.keys, checked)} />
               </label>
-              <button type="button" className="assistant-link-button" aria-expanded={sessionOptionsOpen} onClick={() => setSessionOptionsOpen(open => !open)}>{t("More options")}</button>
+              <Button variant="ghost" size="content" type="button" className="assistant-link-button" aria-expanded={sessionOptionsOpen} onClick={() => setSessionOptionsOpen(open => !open)}>{t("More options")}</Button>
               <AnimatedCollapse expanded={sessionOptionsOpen}>
                 <div className="assistant-check-grid">{group.keys.map(key => <label className="assistant-check" key={key}>
-                  <input data-ui="checkbox" type="checkbox" checked={policy.permissions[key]} onChange={e => setPermissions([key], e.target.checked)} />
+                  <Checkbox data-ui="checkbox"  checked={policy.permissions[key]} onCheckedChange={(checked) => setPermissions([key], (checked === true))} />
                   {t(key === "sessions.create" ? "Start work" : labels[key])}
                 </label>)}</div>
               </AnimatedCollapse>
@@ -761,21 +765,21 @@ export function BotSettings({
                 <small className="assistant-settings-group-count">
                   {count}/{group.keys.length}
                 </small>
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   className="assistant-link-button"
                   onClick={() => setPermissions(group.keys, !all)}
                 >
                   {t(all ? "Clear" : "Select all")}
-                </button>
+                </Button>
               </div>
               <div className="assistant-check-grid">
                 {group.keys.map((key) => (
                   <label className="assistant-check" key={key}>
-                    <input data-ui="checkbox"
-                      type="checkbox"
+                    <Checkbox data-ui="checkbox"
+
                       checked={policy.permissions[key]}
-                      onChange={(e) => setPermissions([key], e.target.checked)}
+                      onCheckedChange={(checked) => setPermissions([key], (checked === true))}
                     />
                     {t(labels[key])}
                   </label>
@@ -789,14 +793,14 @@ export function BotSettings({
             {t("Project access")}
           </div>
           <label className="assistant-check">
-            <input data-ui="checkbox"
-              type="checkbox"
+            <Checkbox data-ui="checkbox"
+
               checked={policy.allowedProjects === "all"}
-              onChange={(e) =>
+              onCheckedChange={(checked) =>
                 patch({
                   policy: {
                     ...policy,
-                    allowedProjects: e.target.checked ? "all" : [],
+                    allowedProjects: (checked === true) ? "all" : [],
                   },
                 })
               }
@@ -812,14 +816,14 @@ export function BotSettings({
                     : policy.allowedProjects;
                 return (
                   <label className="assistant-chip" key={project.id}>
-                    <input data-ui="checkbox"
-                      type="checkbox"
+                    <Checkbox data-ui="checkbox"
+
                       checked={current.includes(project.id)}
-                      onChange={(e) =>
+                      onCheckedChange={(checked) =>
                         patch({
                           policy: {
                             ...policy,
-                            allowedProjects: e.target.checked
+                            allowedProjects: (checked === true)
                               ? [...current, project.id]
                               : current.filter((p) => p !== project.id),
                           },
@@ -853,12 +857,12 @@ export function BotSettings({
         <div className="assistant-settings-group">
           {(["user", "event", "schedule"] as const).map((key) => (
             <label className="assistant-check" key={key}>
-              <input data-ui="checkbox"
-                type="checkbox"
+              <Checkbox data-ui="checkbox"
+
                 checked={triggers[key]}
-                onChange={(e) =>
+                onCheckedChange={(checked) =>
                   patch({
-                    triggers: { ...triggers, [key]: e.target.checked },
+                    triggers: { ...triggers, [key]: (checked === true) },
                   })
                 }
               />
@@ -876,8 +880,8 @@ export function BotSettings({
               <div className="assistant-chips" role="radiogroup">
                 {INTERVAL_PRESETS.map((preset) => (
                   <label className="assistant-chip" key={preset.minutes}>
-                    <input
-                      type="radio"
+                    <Radio
+
                       name="assistant-interval-preset"
                       checked={schedule.intervalMinutes === preset.minutes}
                       onChange={() => {
@@ -954,7 +958,7 @@ export function BotSettings({
             )}
             <label>
               {t("Scheduled check prompt")}
-              <textarea data-ui="textarea"
+              <Textarea data-ui="textarea"
                 value={schedule.prompt}
                 onChange={(e) =>
                   patch({
@@ -979,14 +983,14 @@ export function BotSettings({
                       </time>
                       <span title={reminder.prompt}>{reminder.prompt}</span>
                       {onCancelReminder && (
-                        <button
+                        <Button variant="ghost" size="content"
                           type="button"
                           className="assistant-link-button"
                           disabled={busy}
                           onClick={() => void onCancelReminder(reminder.id)}
                         >
                           {t("Cancel")}
-                        </button>
+                        </Button>
                       )}
                     </li>
                   ))}
@@ -1002,22 +1006,22 @@ export function BotSettings({
                 {t("Conversation events")}
               </div>
               <label className="assistant-check">
-                <input data-ui="checkbox"
-                  type="checkbox"
+                <Checkbox data-ui="checkbox"
+
                   checked={watch.enabled}
-                  onChange={(e) => patchWatch(i, { enabled: e.target.checked })}
+                  onCheckedChange={(checked) => patchWatch(i, { enabled: (checked === true) })}
                 />
                 {t("Follow these events")}
               </label>
               <div className="assistant-chips">
                 {EVENT_KINDS.map((kind) => (
                   <label className="assistant-chip" key={kind}>
-                    <input data-ui="checkbox"
-                      type="checkbox"
+                    <Checkbox data-ui="checkbox"
+
                       checked={watch.eventKinds.includes(kind)}
-                      onChange={(e) =>
+                      onCheckedChange={(checked) =>
                         patchWatch(i, {
-                          eventKinds: e.target.checked
+                          eventKinds: (checked === true)
                             ? [...watch.eventKinds, kind]
                             : watch.eventKinds.filter((k) => k !== kind),
                         })
@@ -1032,17 +1036,17 @@ export function BotSettings({
                   {t("Watch projects")}
                 </span>
                 <label className="assistant-check">
-                  <input data-ui="checkbox"
-                    type="checkbox"
+                  <Checkbox data-ui="checkbox"
+
                     checked={!pickingProjects.has(watch.id)}
-                    onChange={(e) => {
+                    onCheckedChange={(checked) => {
                       setPickingProjects((current) => {
                         const next = new Set(current);
-                        if (e.target.checked) next.delete(watch.id);
+                        if ((checked === true)) next.delete(watch.id);
                         else next.add(watch.id);
                         return next;
                       });
-                      if (e.target.checked) patchWatch(i, { projectIds: [] });
+                      if ((checked === true)) patchWatch(i, { projectIds: [] });
                     }}
                   />
                   {t("All allowed projects")}
@@ -1051,12 +1055,12 @@ export function BotSettings({
                   <div className="assistant-chips">
                     {projects.map((project) => (
                       <label className="assistant-chip" key={project.id}>
-                        <input data-ui="checkbox"
-                          type="checkbox"
+                        <Checkbox data-ui="checkbox"
+
                           checked={watch.projectIds.includes(project.id)}
-                          onChange={(e) =>
+                          onCheckedChange={(checked) =>
                             patchWatch(i, {
-                              projectIds: e.target.checked
+                              projectIds: (checked === true)
                                 ? [...watch.projectIds, project.id]
                                 : watch.projectIds.filter(
                                     (id) => id !== project.id,
@@ -1075,7 +1079,7 @@ export function BotSettings({
               </div>
               <label>
                 {t("Follow-up prompt")}
-                <textarea data-ui="textarea"
+                <Textarea data-ui="textarea"
                   value={watch.prompt}
                   onChange={(e) => patchWatch(i, { prompt: e.target.value })}
                 />
@@ -1183,8 +1187,8 @@ export function BotSettings({
             >
               {BOT_PERSONA_PRESETS.map((preset) => (
                 <label className="assistant-chip" key={preset}>
-                  <input
-                    type="radio"
+                  <Radio
+
                     name="assistant-persona"
                     checked={persona.preset === preset}
                     onChange={() =>
@@ -1199,7 +1203,7 @@ export function BotSettings({
           </div>
           <label>
             {t("Personality and tone")}
-            <textarea data-ui="textarea"
+            <Textarea data-ui="textarea"
               value={persona.style}
               maxLength={4000}
               aria-invalid={!!errors.persona || undefined}
@@ -1316,13 +1320,13 @@ export function BotSettings({
               <div className="assistant-field-notice" role="alert">
                 <span>{t(catalogError ?? "Could not load models.")}</span>
                 {onRetryCatalog && (
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     className="assistant-link-button"
                     onClick={onRetryCatalog}
                   >
                     {t("Retry")}
-                  </button>
+                  </Button>
                 )}
               </div>
             ) : catalogState === "ready" && !harnesses.length ? (
@@ -1549,14 +1553,14 @@ export function WatchedSessions({
         </span>
         {onFollowScope && (
           <div className="assistant-watch-bulk-actions">
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               disabled={policy.followedProjects === "all"}
               onClick={() => onFollowScope("all", sessions ?? [])}
             >
               {t("Follow all conversations")}
-            </button>
-            <button
+            </Button>
+            <Button variant="ghost" size="content"
               type="button"
               disabled={!projects.length}
               aria-expanded={projectPickerOpen}
@@ -1571,7 +1575,7 @@ export function WatchedSessions({
               }}
             >
               {t("Follow by project")}
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -1592,7 +1596,7 @@ export function WatchedSessions({
                 <small>
                   {t("{count} selected", { count: selectedProjects.length })}
                 </small>
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   className="assistant-link-button"
                   disabled={!pickerProjects.length}
@@ -1606,7 +1610,7 @@ export function WatchedSessions({
                   }}
                 >
                   {t(allPickerSelected ? "Clear" : "Select all")}
-                </button>
+                </Button>
               </div>
               <div
                 className="assistant-watch-project-list"
@@ -1615,12 +1619,12 @@ export function WatchedSessions({
               >
                 {pickerProjects.map((project) => (
                   <label key={project.id} className="assistant-watch-project">
-                    <input data-ui="checkbox"
-                      type="checkbox"
+                    <Checkbox data-ui="checkbox"
+
                       checked={selectedProjects.includes(project.id)}
-                      onChange={(event) =>
+                      onCheckedChange={(checked) =>
                         setSelectedProjects((current) =>
-                          event.target.checked
+                          (checked === true)
                             ? [...current, project.id]
                             : current.filter((id) => id !== project.id),
                         )
@@ -1645,7 +1649,7 @@ export function WatchedSessions({
                   </small>
                 )}
               </div>
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 disabled={
                   !selectedProjects.length ||
@@ -1658,7 +1662,7 @@ export function WatchedSessions({
                 }}
               >
                 {t("Follow selected projects")}
-              </button>
+              </Button>
             </div>
           </AnimatedCollapse>
           {policy.followedProjects === "all" ||
@@ -1673,13 +1677,13 @@ export function WatchedSessions({
                         .join(", "),
                     })}
               </small>
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 className="assistant-link-button"
                 onClick={() => onFollowScope([], sessions ?? [])}
               >
                 {t("Remove scope follow")}
-              </button>
+              </Button>
             </div>
           ) : null}
         </>
@@ -1700,13 +1704,13 @@ export function WatchedSessions({
       {failed ? (
         <small role="alert">
           {t("Unable to load conversations.")}{" "}
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             className="assistant-link-button"
             onClick={() => setRetry((v) => v + 1)}
           >
             {t("Retry")}
-          </button>
+          </Button>
         </small>
       ) : loadSessions && sessions === undefined ? (
         <small>{t("Loading conversations…")}</small>
@@ -1735,7 +1739,7 @@ export function WatchedSessions({
               session.projectId,
               session.id,
             ) && <small>{t("Configured permissions")}</small>}
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               title={t("Remove")}
               aria-label={t("Remove {title} from watched conversations", {
@@ -1744,11 +1748,11 @@ export function WatchedSessions({
               onClick={() => onRemove(session.id)}
             >
               <X size={14} aria-hidden="true" />
-            </button>
+            </Button>
           </div>
         ))}
         {matches.length > visible.length && (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             className="assistant-watched-more"
             onClick={() => setLimit((n) => n + WATCHED_PAGE)}
@@ -1756,7 +1760,7 @@ export function WatchedSessions({
             {t("Show more ({count} remaining)", {
               count: matches.length - visible.length,
             })}
-          </button>
+          </Button>
         )}
       </div>
       </>}

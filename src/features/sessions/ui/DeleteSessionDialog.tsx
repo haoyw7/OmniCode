@@ -1,3 +1,4 @@
+import { Checkbox } from "../../../shared/ui/forms/Checkbox";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useState } from "react";
 import { prettyCwd } from "../../../shared/lib/paths";
@@ -32,10 +33,10 @@ export function DeleteSessionDialog({
           {uiT("” will be permanently deleted.")}
         </p>
         <label className="flex items-start gap-2">
-          <input data-ui="checkbox"
-            type="checkbox"
+          <Checkbox data-ui="checkbox"
+
             checked={deleteWorktree}
-            onChange={(e) => setDeleteWorktree(e.target.checked)}
+            onCheckedChange={(checked) => setDeleteWorktree((checked === true))}
             className="mt-0.5 accent-accent"
           />
           <span>

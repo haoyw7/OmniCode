@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useContext, useEffect, useState } from "react";
@@ -48,7 +49,7 @@ export function GeneratedImage({ image, attachment }: { image: GeneratedImageMet
   const alt = image.alt || image.name;
   return (
     <div className="min-w-0 px-4 pb-3 pt-3">
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         aria-label={uiT("Open {value0} full screen", {
           value0: String(image.name),
@@ -64,7 +65,7 @@ export function GeneratedImage({ image, attachment }: { image: GeneratedImageMet
           draggable={false}
           className="max-h-[min(70vh,640px)] max-w-full object-contain"
         />
-      </button>
+      </Button>
       <div className="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-content/45">
         <span className="truncate">{image.name}</span>
         <span>{formatFileSize(size)}</span>

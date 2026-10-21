@@ -1,3 +1,6 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { Switch } from "../../../shared/ui/forms/Switch";
@@ -83,8 +86,6 @@ function Card({
   );
 }
 
-const pillClass =
-  "shrink-0 rounded-lg bg-content/6 px-3 py-1.5 text-[13px] text-content hover:bg-content/10 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-content/6";
 
 /** Settings → Import: keep imported conversations synced and import new ones per app. */
 export function NativeSessionsPanel({
@@ -219,14 +220,14 @@ export function NativeSessionsPanel({
                 : t("Available after your first import")}
             </p>
           </div>
-          <button
+          <Button
             type="button"
-            className={pillClass}
+            variant="secondary" size="sm"
             disabled={!importedCount || state.busy}
             onClick={() => void syncImported()}
           >
             {t("Sync now")}
-          </button>
+          </Button>
         </div>
       </Card>
 
@@ -239,26 +240,26 @@ export function NativeSessionsPanel({
         action={
           <div className="flex items-center gap-1.5">
             {bulk ? (
-              <button
+              <Button
                 type="button"
-                className={pillClass}
+                variant="secondary" size="sm"
                 onClick={() => {
                   if (bulkRun.current) bulkRun.current.cancelled = true;
                 }}
               >
                 {t("Importing {done}/{total} · Stop", bulk)}
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 type="button"
-                className={pillClass}
+                variant="secondary" size="sm"
                 disabled={!desktop || state.busy || !notImported}
                 onClick={() => void importAll(state.files)}
               >
                 {t("Import all ({count})", { count: notImported })}
-              </button>
+              </Button>
             )}
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               aria-label={t("Rescan")}
               title={t("Rescan")}
@@ -269,9 +270,9 @@ export function NativeSessionsPanel({
               className="grid size-7 place-items-center rounded-md text-content/50 hover:bg-content/5 hover:text-content disabled:opacity-40"
             >
               <RefreshCw
-                className={`size-3.5 ${state.busy ? "animate-spin motion-reduce:animate-none" : ""}`}
+                className={cn("size-3.5", state.busy ? "animate-spin motion-reduce:animate-none" : "")}
               />
-            </button>
+            </Button>
           </div>
         }
       >
@@ -318,23 +319,23 @@ export function NativeSessionsPanel({
                         : t("No conversations found")}
                   </p>
                 </div>
-                <button
+                <Button
                   type="button"
                   aria-expanded={expanded}
-                  className={pillClass}
+                  variant="secondary" size="sm"
                   disabled={!files.length}
                   onClick={() => toggle(provider)}
                 >
                   {expanded ? t("Done") : t("Import")}
-                </button>
+                </Button>
               </div>
               <AnimatedCollapse expanded={expanded}>
                 <div className="px-4 pb-3">
                   {fresh ? (
                     <div className="mb-2 flex justify-end">
-                      <button
+                      <Button
                         type="button"
-                        className={pillClass}
+                        variant="secondary" size="sm"
                         disabled={!!bulk || state.busy}
                         onClick={() => void importAll(files)}
                       >
@@ -342,13 +343,13 @@ export function NativeSessionsPanel({
                           app: nativeProviderLabel(provider),
                           count: fresh,
                         })}
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
                   {files.length > 8 ? (
                     <label className="mb-2 flex items-center gap-2 rounded-lg border border-content/10 px-2.5 py-1.5 text-[13px]">
                       <Search className="size-3.5 text-content/40" />
-                      <input
+                      <Input variant="inline"
                         aria-label={t("Search native sessions")}
                         placeholder={t(
                           "Search by title, project or session ID",
@@ -388,9 +389,9 @@ export function NativeSessionsPanel({
                               {file.cwd} · {relative(file.modifiedAt, language)}
                             </div>
                           </div>
-                          <button
+                          <Button
                             type="button"
-                            className={pillClass}
+                            variant="secondary" size="sm"
                             disabled={!!pending || !!bulk}
                             onClick={() => void importFile(file)}
                           >
@@ -399,7 +400,7 @@ export function NativeSessionsPanel({
                               : bound
                                 ? t("Open")
                                 : t("Import")}
-                          </button>
+                          </Button>
                         </div>
                       );
                     })}
@@ -410,7 +411,7 @@ export function NativeSessionsPanel({
                     ) : null}
                   </div>
                   {matches.length > shown ? (
-                    <button
+                    <Button variant="ghost" size="content"
                       type="button"
                       onClick={() => setShown((value) => value + PAGE)}
                       className="mt-1.5 rounded-md px-2 py-1 text-[12px] text-content/50 hover:bg-content/3 hover:text-content"
@@ -418,7 +419,7 @@ export function NativeSessionsPanel({
                       {t("Show more ({count})", {
                         count: matches.length - shown,
                       })}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               </AnimatedCollapse>

@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -27,7 +29,6 @@ import { type RecentProject } from "../../projects/model/recents";
 import { type LinkedWorkItem } from "../../sessions/model/session";
 import { type CiRepairProps, InboxDetail } from "./InboxDetail";
 import { inboxProjectOptions } from "./InboxProjectPicker";
-import { ACTION_OUTLINE } from "./inboxActions";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 
@@ -128,9 +129,7 @@ export function LinkedWorkItemPanel({
       aria-hidden={!visible}
       inert={!visible || undefined}
       data-linked-work-item-panel
-      className={`relative min-h-0 max-w-full shrink-0 flex-col text-content max-[950px]:absolute max-[950px]:inset-y-0 max-[950px]:right-0 max-[950px]:z-30 max-[950px]:shadow-2xl ${
-        lifetime.foldState === "closed" ? "hidden" : "flex"
-      }`}
+      className={cn("relative min-h-0 max-w-full shrink-0 flex-col text-content max-[950px]:absolute max-[950px]:inset-y-0 max-[950px]:right-0 max-[950px]:z-30 max-[950px]:shadow-2xl", lifetime.foldState === "closed" ? "hidden" : "flex")}
     >
       <ResizeHandle
         edge="left"
@@ -142,9 +141,7 @@ export function LinkedWorkItemPanel({
         onDoubleClick={resize.onDoubleClick}
       />
       <div
-        className={`flex min-h-0 min-w-0 flex-1 flex-col ${
-          opening ? "overflow-hidden" : ""
-        }`}
+        className={cn("flex min-h-0 min-w-0 flex-1 flex-col", opening ? "overflow-hidden" : "")}
       >
         <motion.div
           initial={opening && !reduced ? { x: `${motionGeometry.linkedPanelPercent}%` } : false}
@@ -192,14 +189,14 @@ export function LinkedWorkItemPanel({
                 <p role="alert" className="max-w-sm text-[12px] text-content/55">
                   {error}
                 </p>
-                <button
+                <Button
                   type="button"
                   onClick={() => void openUrl(target.url)}
-                  className={ACTION_OUTLINE}
+                  variant="secondary" size="md"
                 >
                   <ExternalLink className="size-3.5" />
                   {uiT("Open on GitHub")}
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="flex h-full items-center justify-center text-content/40">

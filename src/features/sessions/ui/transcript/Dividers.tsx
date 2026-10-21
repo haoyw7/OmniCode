@@ -1,3 +1,6 @@
+import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
+import { cn } from "../../../../shared/lib/cn";
+import { Button } from "../../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { useLayoutEffect, useRef, useState } from "react";
 import { TerminalSpinner } from "../TerminalSpinner";
@@ -119,7 +122,7 @@ export function InterjectionDivider({ block }: { block: Block }) {
         >
           <span>{label}</span>
           {severityText ? (
-            <span className={`text-[11px] ${severityClass}`}>
+            <span className={cn("text-[11px]", severityClass)}>
               {severityText}
             </span>
           ) : null}
@@ -128,21 +131,23 @@ export function InterjectionDivider({ block }: { block: Block }) {
       </div>
       {block.text ? (
         <div className="mt-2 px-2">
+          <AnimatedCollapse expanded animateContentResize>
           <pre
             ref={textRef}
-            className={`${INTERJECTION_BODY} ${expanded ? "" : "line-clamp-2"}`}
+            className={cn(INTERJECTION_BODY, expanded ? "" : "line-clamp-2")}
           >
             {block.text}
           </pre>
+          </AnimatedCollapse>
           {overflows ? (
-            <button
+            <Button data-session-disclosure variant="ghost" size="content"
               type="button"
               aria-expanded={expanded}
               onClick={() => setExpanded((value) => !value)}
               className="mt-1 py-1 font-sans text-xs text-content/55 hover:text-content"
             >
               {expanded ? uiT("Show less") : uiT("Show more")}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

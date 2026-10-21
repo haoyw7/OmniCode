@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { CircleDot, GitPullRequest, X } from "../../../shared/ui/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -32,7 +33,7 @@ export function InboxMiniCard({ card, onDismiss }: Props) {
   return (
     <div className="px-3 pt-2">
       <div className="relative rounded-md border border-content/10 bg-content/6 px-2.5 py-2 pr-8">
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           title={uiT("Open in {value0}", { value0: String(providerLabel) })}
           aria-label={uiT("Open {value0} {value1} in {value2}", {
@@ -44,7 +45,7 @@ export function InboxMiniCard({ card, onDismiss }: Props) {
           onClick={() => {
             if (card.url) void openUrl(card.url);
           }}
-          className="flex w-full flex-col text-left disabled:cursor-default"
+          className="flex w-full flex-col items-stretch text-left disabled:cursor-default justify-start"
         >
           <span className="flex min-w-0 items-center gap-1.5">
             <InboxProviderMark
@@ -77,9 +78,9 @@ export function InboxMiniCard({ card, onDismiss }: Props) {
               </span>
             ) : null}
           </span>
-        </button>
+        </Button>
         {onDismiss ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Remove")}
             aria-label={uiT("Remove {value0} {value1}", {
@@ -90,7 +91,7 @@ export function InboxMiniCard({ card, onDismiss }: Props) {
             className="absolute right-1.5 top-1.5 grid size-5 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
           >
             <X className="size-3" strokeWidth={2} />
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>

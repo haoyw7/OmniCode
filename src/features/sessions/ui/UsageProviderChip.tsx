@@ -1,3 +1,6 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -312,7 +315,7 @@ export function UsageProviderChip({
           {canManageAccounts ? (
             <div className="pointer-events-none relative mb-3 flex h-8 w-full items-center gap-1.5 rounded-lg bg-content/[0.045] px-2.5 text-[11px] ring-1 ring-inset ring-content/[0.06]">
               {/* Keep account switching separate from email revelation. */}
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 className="pointer-events-auto absolute inset-0 rounded-lg hover:bg-content/[0.05] focus-visible:outline-2 focus-visible:outline-accent"
                 aria-label={uiT("Switch {value0} account", {
@@ -387,7 +390,7 @@ export function UsageProviderChip({
   const harnessIcon = <HarnessIcon harness={iconHarness} className="size-3 shrink-0" />;
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         ref={trigger}
         type="button"
         data-ui="session-usage-trigger"
@@ -429,7 +432,7 @@ export function UsageProviderChip({
             ))}
           </span>
         )}
-      </button>
+      </Button>
       <Popover
         open={open}
         onExitComplete={resetPopup}
@@ -444,7 +447,7 @@ export function UsageProviderChip({
         role="dialog"
         aria-label={detailsLabel}
         tabIndex={-1}
-        className={`overflow-y-auto text-content ${panelPadding}`}
+        className={cn("overflow-y-auto text-content", panelPadding)}
       >
         {panel}
       </Popover>
@@ -462,9 +465,9 @@ function AccountSwitchRow({
   const { t: uiT } = useTranslation();
   return (
     <div className="px-2.5 pt-2.5">
-      <button
+      <Button variant="ghost" size="content"
       type="button"
-      className="flex h-8 w-full items-center gap-2 rounded-lg bg-content/[0.045] px-2.5 text-left text-[11px] ring-1 ring-inset ring-content/[0.06] hover:bg-content/[0.08]"
+      className="flex h-8 w-full items-center gap-2 rounded-lg bg-content/[0.045] px-2.5 text-left text-[11px] ring-1 ring-inset ring-content/[0.06] hover:bg-content/[0.08] justify-start"
       aria-label={uiT("Switch account from {value0}", {
         value0: String(accountLabel),
       })}
@@ -476,7 +479,7 @@ function AccountSwitchRow({
         className="size-3 shrink-0 text-content/35"
         aria-hidden
       />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -509,14 +512,14 @@ function ProviderAccountPicker({
   return (
     <div>
       <div className="flex h-7 items-center gap-1">
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           className="grid size-6 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content"
           aria-label={uiT("Back to usage")}
           onClick={onBack}
         >
           <ArrowLeft className="size-3.5" aria-hidden />
-        </button>
+        </Button>
         <h2 className="desktop-pane-heading text-[13px] font-medium">
           {providerLabel} {uiT("accounts")}
         </h2>
@@ -538,14 +541,12 @@ function ProviderAccountPicker({
           return (
             <div
               key={account.id}
-              className={`pointer-events-none relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-[11px] ring-1 ring-inset transition-colors ${
-                selected
+              className={cn("pointer-events-none relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-[11px] ring-1 ring-inset transition-colors", selected
                   ? "bg-accent/10 text-content ring-accent/20"
-                  : "bg-content/[0.035] text-content/70 ring-content/[0.06]"
-              }`}
+                  : "bg-content/[0.035] text-content/70 ring-content/[0.06]")}
             >
               {/* A sibling target keeps the email button out of the selection button. */}
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 aria-pressed={selected}
                 aria-label={account.label}
@@ -604,24 +605,24 @@ function ProviderAccountPicker({
           );
         })}
       </div>
-      <button
+      <Button variant="ghost" size="content"
       type="button"
-      className="mt-2 flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-left text-[11px] text-content/55 hover:bg-content/[0.07] hover:text-content"
+      className="mt-2 flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-left text-[11px] text-content/55 hover:bg-content/[0.07] hover:text-content justify-start"
       onClick={onAdd}
     >
       <Plus className="size-3.5" aria-hidden />
       {uiT("Add account")}
-      </button>
+      </Button>
       {onManage ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
-          className="mt-0.5 flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-left text-[11px] text-content/45 hover:bg-content/[0.07] hover:text-content"
+          className="mt-0.5 flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-left text-[11px] text-content/45 hover:bg-content/[0.07] hover:text-content justify-start"
           onClick={() => {
             onManage();
           }}
         >
           {uiT("Manage accounts…")}
-        </button>
+        </Button>
       ) : null}
     </div>
   );
@@ -644,14 +645,12 @@ function SwitchSuggestion({
   return (
     <section
       data-usage-switch-suggestion
-      className={`mb-2.5 flex items-center gap-2 rounded-lg px-2.5 py-1.5 ring-1 ring-inset ${
-        exhausted
+      className={cn("mb-2.5 flex items-center gap-2 rounded-lg px-2.5 py-1.5 ring-1 ring-inset", exhausted
           ? "bg-red-500/[0.07] ring-red-500/15"
-          : "bg-amber-400/10 ring-amber-400/20"
-      }`}
+          : "bg-amber-400/10 ring-amber-400/20")}
     >
       <span
-        className={`size-1.5 shrink-0 rounded-full ${exhausted ? "bg-red-500" : "bg-amber-500"}`}
+        className={cn("size-1.5 shrink-0 rounded-full", exhausted ? "bg-red-500" : "bg-amber-500")}
         aria-hidden
       />
       <p className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] leading-4">
@@ -665,13 +664,13 @@ function SwitchSuggestion({
           className="shrink-0 text-[10px]"
         />
       </p>
-      <button
+      <Button variant="primary" size="content"
       type="button"
       className="h-6 shrink-0 rounded-md bg-content px-2.5 text-[11px] font-medium text-background-base transition-transform duration-150 hover:bg-content/85 active:scale-[0.97]"
       onClick={onSwitch}
     >
       {uiT("Switch")}
-      </button>
+      </Button>
     </section>
   );
 }
@@ -708,7 +707,7 @@ function AddProviderAccount({
   return (
     <form noValidate onSubmit={submit}>
       <div className="flex h-7 items-center gap-1">
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           className="grid size-6 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content disabled:opacity-40"
           aria-label={uiT("Back to accounts")}
@@ -716,7 +715,7 @@ function AddProviderAccount({
           onClick={onBack}
         >
           <ArrowLeft className="size-3.5" aria-hidden />
-        </button>
+        </Button>
         <h2 className="desktop-pane-heading text-[13px] font-medium">
           {uiT("Add ")}
           {providerLabel} {uiT("account")}
@@ -729,7 +728,7 @@ function AddProviderAccount({
       </p>
       <label className="mt-3 block text-[10px] font-medium text-content/55">
         {uiT("Account name")}
-        <input data-ui="input"
+        <Input data-ui="input"
           autoFocus
           type="text"
           maxLength={48}
@@ -740,7 +739,7 @@ function AddProviderAccount({
           className="mt-1.5 h-8 w-full rounded-lg border border-content/10 bg-content/[0.04] px-2.5 text-[11px] text-content outline-none placeholder:text-content/25 focus:border-input-border-hover disabled:opacity-55"
         />
       </label>
-      <button
+      <Button variant="primary" size="content"
       type="submit"
       className="mt-3 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-content px-3 text-[11px] font-medium text-background-base hover:bg-content/85 disabled:cursor-default disabled:opacity-45"
       disabled={running || form.formState.isSubmitting || !label.trim()}
@@ -749,7 +748,7 @@ function AddProviderAccount({
         <RefreshCw className="size-3.5 animate-spin" aria-hidden />
       ) : null}
       {running ? uiT("Waiting for browser…") : uiT("Sign in and add account")}
-      </button>
+      </Button>
       <FieldError errors={[form.formState.errors.label]} />
       {error ? (
         <p className="mt-2 text-[10px] leading-4 text-red-500" role="status">
@@ -793,7 +792,7 @@ function UsageWindowSummary({ entry, now, icon }: { entry: UsageWindowEntry; now
         aria-valuenow={Math.round(remaining)}
         className="h-1 min-w-0 overflow-hidden rounded-full bg-content/10"
       >
-        <span className={`block h-full rounded-full ${barClass(pct)}`} style={{ width: `${remaining}%` }} />
+        <span className={cn("block h-full rounded-full", barClass(pct))} style={{ width: `${remaining}%` }} />
       </span>
       <span className="text-content/60">
         {uiT("{value0} left", { value0: formatUsagePercent(remaining) })}
@@ -860,7 +859,7 @@ function UsageWindowRow({
         aria-valuenow={Math.round(shown)}
       >
         <span
-          className={`block h-full rounded-full ${barClass(pct)}`}
+          className={cn("block h-full rounded-full", barClass(pct))}
           style={{ width: `${shown}%` }}
         />
       </div>
@@ -1056,24 +1055,22 @@ function BankedResetRow({
           </span>
         ) : isResetOutcome(action) || action === "error" ? (
           <span
-            className={`shrink-0 text-[10px] ${
-              action === "reset"
+            className={cn("shrink-0 text-[10px]", action === "reset"
                 ? "text-emerald-700 dark:text-emerald-300"
-                : "text-content/50"
-            }`}
+                : "text-content/50")}
             role="status"
           >
             {action === "error" ? error : resetOutcomeLabel(action)}
           </span>
         ) : canUse && action !== "confirming" ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             className="h-6 shrink-0 rounded-md bg-content/[0.07] px-2.5 text-[10px] font-medium text-content/70 ring-1 ring-inset ring-content/[0.08] transition-[background-color,color,transform] duration-150 ease-out hover:bg-content/[0.11] hover:text-content active:scale-[0.97] disabled:pointer-events-none disabled:opacity-35"
             disabled={disabled}
             onClick={onConfirm}
           >
             {uiT("Use reset")}
-          </button>
+          </Button>
         ) : null}
       </div>
       {action === "confirming" ? (
@@ -1082,20 +1079,20 @@ function BankedResetRow({
             {uiT("Spend this reset now?")}
           </p>
           <div className="flex shrink-0 gap-1">
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               className="h-6 rounded-md px-2 text-[10px] text-content/50 hover:bg-content/6 hover:text-content"
               onClick={onCancel}
             >
               {uiT("Cancel")}
-            </button>
-            <button
+            </Button>
+            <Button variant="primary" size="content"
               type="button"
               className="h-6 rounded-md bg-content px-2.5 text-[10px] font-medium text-background-base transition-transform duration-150 ease-out active:scale-[0.97]"
               onClick={onUse}
             >
               {uiT("Confirm")}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

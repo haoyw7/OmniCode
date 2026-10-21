@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
@@ -61,7 +62,7 @@ export function DesktopBotsWorkspace(props: Props) {
     ? Promise.resolve(descriptor as never) : props.rpc(method, params), [props.rpc, descriptor]);
   const { t } = useTranslation();
   if (failure && !descriptor) return <div className="assistant-availability" role="alert">
-    <p>{t(failure)}</p><button type="button" onClick={() => void descriptorQuery.refetch()}>{t("Retry")}</button>
+    <p>{t(failure)}</p><Button variant="ghost" size="content" type="button" onClick={() => void descriptorQuery.refetch()}>{t("Retry")}</Button>
   </div>;
   if (!descriptor) return <div className="assistant-availability assistant-loading" role="status">
     <Spinner className="size-5" /><span>{t("Connecting…")}</span>
@@ -273,7 +274,7 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
     requestAnimationFrame(() => workspace.current?.querySelector<HTMLButtonElement>('.desktop-bots-thread-surface:not([aria-hidden]) .desktop-bots-archive-entry')?.focus());
   };
   return <div ref={workspace} className="desktop-bots-host">
-    {(error || connectionError || collaborationError) && <div className="desktop-bots-error" role="alert">{t(error ?? connectionError ?? collaborationError!)}<button type="button" onClick={() => { setError(undefined); setDismissedAt(Date.now()); }} aria-label={t("Dismiss")}><X size={14} /></button></div>}
+    {(error || connectionError || collaborationError) && <div className="desktop-bots-error" role="alert">{t(error ?? connectionError ?? collaborationError!)}<Button variant="ghost" size="content" type="button" onClick={() => { setError(undefined); setDismissedAt(Date.now()); }} aria-label={t("Dismiss")}><X size={14} /></Button></div>}
     {visited.map((scope) => {
       const thread = snapshot?.threads.find((thread) => thread.id === scope.threadId && thread.botId === scope.botId);
       const bot = snapshot?.bots.find((bot) => bot.id === scope.botId);
@@ -318,7 +319,7 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
           {managementPanel ? null : showArchive ? <BotArchive snapshot={snapshot} busy={busy} onRestore={restore} onClose={closeArchive} /> : recipientShown ? null : <div className="desktop-bots-empty">
             <Bot size={30} aria-hidden="true" />
             <h2>{t(snapshot ? "No bots yet" : "Loading…")}</h2>
-            {snapshot && <button type="button" onClick={() => setRecipientOpen(true)}>{t("Create bot")}</button>}
+            {snapshot && <Button variant="ghost" size="content" type="button" onClick={() => setRecipientOpen(true)}>{t("Create bot")}</Button>}
           </div>}
         </section>
       </SurfaceVisibilityContext.Provider>
@@ -397,11 +398,11 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
               event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setMenu({ botId: bot.id, x: rect.left + 20, y: rect.bottom, open: true });
             }
           }}>
-            <button type="button" className="desktop-bots-contact-main" onClick={() => onSelectBot(bot)} aria-label={unread ? t("{bot}, {count} unread messages", { bot: bot.name, count: unread }) : bot.name} title={bot.name} aria-current={isSelected(bot) || undefined}>
+            <Button variant="ghost" size="content" type="button" className="desktop-bots-contact-main" onClick={() => onSelectBot(bot)} aria-label={unread ? t("{bot}, {count} unread messages", { bot: bot.name, count: unread }) : bot.name} title={bot.name} aria-current={isSelected(bot) || undefined}>
               <BotAvatar bot={bot} size={36} />
               <span className="desktop-bots-contact-copy"><span className="desktop-bots-contact-title"><strong>{bot.name}</strong>{chief && <small className="desktop-bots-chief" title={t("Chief of Staff")}>{t("Chief")}</small>}<time dateTime={new Date(at).toISOString()}>{new Date(at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</time></span><span className="desktop-bots-preview">{newest && "text" in newest ? newest.text.replace(/\s+/g, " ").trim() || t("Attachments") : threads[0]?.title || t("Main thread")}</span></span>
               {unread > 0 && <span className="desktop-bots-unread" aria-hidden="true" />}
-            </button>
+            </Button>
           </div>
         </div>;
   };
@@ -422,29 +423,29 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
     </AnimatedCollapse>
     <AnimatedCollapse expanded={pinnedBots.length > 0} className="desktop-bots-pinned-collapse">
       <div className="desktop-bots-section-label"><Pin size={12} aria-hidden="true" /><span>{t("Pinned bots")}</span><small>{pinnedBots.length || retainedPinned.current.length}</small></div>
-      <div className="desktop-bots-pinned" aria-label={t("Pinned bots")}>{(pinnedBots.length ? pinnedBots : retainedPinned.current).map(bot => { const unread = unreadFor(bot); return <button type="button" key={bot.id} onClick={() => onSelectBot(bot)} aria-label={unread ? t("{bot}, {count} unread messages", { bot: bot.name, count: unread }) : bot.name} title={bot.name} aria-current={isSelected(bot) || undefined}
+      <div className="desktop-bots-pinned" aria-label={t("Pinned bots")}>{(pinnedBots.length ? pinnedBots : retainedPinned.current).map(bot => { const unread = unreadFor(bot); return <Button variant="ghost" size="content" type="button" key={bot.id} onClick={() => onSelectBot(bot)} aria-label={unread ? t("{bot}, {count} unread messages", { bot: bot.name, count: unread }) : bot.name} title={bot.name} aria-current={isSelected(bot) || undefined}
         onContextMenu={event => { event.preventDefault(); if (visible) setMenu({ botId: bot.id, x: event.clientX, y: event.clientY, open: true }); }}
         onKeyDown={event => {
           if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
             event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setMenu({ botId: bot.id, x: rect.left + 20, y: rect.bottom, open: true });
           }
-        }}><BotAvatar bot={bot} size={expanded ? 40 : 36} />{unread > 0 && <span className="desktop-bots-unread" aria-hidden="true" />}<span>{bot.name}</span></button>; })}</div>
+        }}><BotAvatar bot={bot} size={expanded ? 40 : 36} />{unread > 0 && <span className="desktop-bots-unread" aria-hidden="true" />}<span>{bot.name}</span></Button>; })}</div>
     </AnimatedCollapse>
     <div className="desktop-bots-contacts">
-      <AnimatedCollapse expanded={draftOpen}><button type="button" className="desktop-bots-draft-row" aria-current="page" onClick={onNewBot}><Plus size={20} /><span>{t("New")}</span></button></AnimatedCollapse>
-      {matchingRooms.length > 0 && <div className="desktop-bots-room-nav"><div className="desktop-bots-section-label"><span>{t("Rooms")}</span><small>{matchingRooms.length}</small></div>{matchingRooms.map(room => <button type="button" key={room.id} aria-label={room.name} title={room.name} aria-current={roomSelection === room.id ? "page" : undefined} onClick={() => onOpenRoom(room.id)}><MessageSquare size={16} /><span>{room.name}</span></button>)}</div>}
+      <AnimatedCollapse expanded={draftOpen}><Button variant="ghost" size="content" type="button" className="desktop-bots-draft-row" aria-current="page" onClick={onNewBot}><Plus size={20} /><span>{t("New")}</span></Button></AnimatedCollapse>
+      {matchingRooms.length > 0 && <div className="desktop-bots-room-nav"><div className="desktop-bots-section-label"><span>{t("Rooms")}</span><small>{matchingRooms.length}</small></div>{matchingRooms.map(room => <Button variant="ghost" size="content" type="button" key={room.id} aria-label={room.name} title={room.name} aria-current={roomSelection === room.id ? "page" : undefined} onClick={() => onOpenRoom(room.id)}><MessageSquare size={16} /><span>{room.name}</span></Button>)}</div>}
       {groups.filter(group => !search || group.bots.length > 0).map(group => <div className="desktop-bots-team-group" key={group.id}>
-        {group.team ? <button type="button" className="desktop-bots-team-heading" aria-label={group.team.name} title={group.team.name} aria-expanded={!!search || !foldedTeams.has(group.id)} disabled={!!search} onClick={() => setFoldedTeams(current => { const next = new Set(current); if (next.has(group.id)) next.delete(group.id); else next.add(group.id); return next; })}><ChevronRight size={13} /><span>{group.team.name}</span><small>{group.bots.length}</small></button>
+        {group.team ? <Button variant="ghost" size="content" type="button" className="desktop-bots-team-heading" aria-label={group.team.name} title={group.team.name} aria-expanded={!!search || !foldedTeams.has(group.id)} disabled={!!search} onClick={() => setFoldedTeams(current => { const next = new Set(current); if (next.has(group.id)) next.delete(group.id); else next.add(group.id); return next; })}><ChevronRight size={13} /><span>{group.team.name}</span><small>{group.bots.length}</small></Button>
           : group.bots.length > 0 && <div className="desktop-bots-section-label"><span>{t(activeTeams.length ? "Other bots" : "Bots")}</span><small>{group.bots.length}</small></div>}
         <AnimatedCollapse expanded={!expanded || !!search || !foldedTeams.has(group.id)}>{group.bots.map(bot => renderBot(bot, group.team?.chiefBotId === bot.id))}</AnimatedCollapse>
       </div>)}
-      {search && !bots.length && !pinnedBots.length && !matchingRooms.length && <div className="desktop-bots-no-results" role="status"><Search size={22} aria-hidden="true" /><p>{t(roomsSupported ? "No matching conversations" : "No matching bots")}</p><button type="button" onClick={clearSearch}>{t("Clear")}</button></div>}
+      {search && !bots.length && !pinnedBots.length && !matchingRooms.length && <div className="desktop-bots-no-results" role="status"><Search size={22} aria-hidden="true" /><p>{t(roomsSupported ? "No matching conversations" : "No matching bots")}</p><Button variant="ghost" size="content" type="button" onClick={clearSearch}>{t("Clear")}</Button></div>}
     </div>
     {(teamsSupported || roomsSupported) && <div className="desktop-bots-collaboration-nav">
-      {teamsSupported && <button type="button" aria-label={t("Manage teams")} title={t("Manage teams")} onClick={() => onManage("teams")}><Bot size={16} /><span>{t("Teams")}</span></button>}
-      {roomsSupported && <button type="button" aria-label={t("Manage rooms")} title={t("Manage rooms")} onClick={() => onManage("rooms")}><MessageSquare size={16} /><span>{t("Rooms")}</span></button>}
+      {teamsSupported && <Button variant="ghost" size="content" type="button" aria-label={t("Manage teams")} title={t("Manage teams")} onClick={() => onManage("teams")}><Bot size={16} /><span>{t("Teams")}</span></Button>}
+      {roomsSupported && <Button variant="ghost" size="content" type="button" aria-label={t("Manage rooms")} title={t("Manage rooms")} onClick={() => onManage("rooms")}><MessageSquare size={16} /><span>{t("Rooms")}</span></Button>}
     </div>}
-    <button type="button" className="desktop-bots-archive-entry" onClick={onArchive} aria-label={t("Archived bots and threads")} title={t("Archived bots and threads")} aria-current={archiveOpen ? "page" : undefined}><Archive size={16} /><span>{t("Archived bots and threads")}</span></button>
+    <Button variant="ghost" size="content" type="button" className="desktop-bots-archive-entry" onClick={onArchive} aria-label={t("Archived bots and threads")} title={t("Archived bots and threads")} aria-current={archiveOpen ? "page" : undefined}><Archive size={16} /><span>{t("Archived bots and threads")}</span></Button>
     <ResizeHandle edge="right" dragging={resize.dragging} aria-label={t("Resize sidebar")} tabIndex={0}
       aria-valuemin={240} aria-valuemax={400} aria-valuenow={navigationWidth}
       onPointerDown={resize.onPointerDown} onDoubleClick={resize.onDoubleClick}
@@ -467,18 +468,18 @@ function BotArchive({ snapshot, busy, onRestore, onClose }: {
   useEffect(() => { heading.current?.focus(); }, []);
   const groups = snapshot?.bots.filter((bot) => bot.archivedAt || snapshot.threads.some((thread) => thread.botId === bot.id && thread.archivedAt)) ?? [];
   return <section className="desktop-bots-archive" aria-label={t("Archived bots and threads")} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); onClose(); } }}>
-    <header><h2 ref={heading} tabIndex={-1}>{t("Archived bots and threads")}</h2><button type="button" onClick={onClose} aria-label={t("Close")}><X size={16} /></button></header>
+    <header><h2 ref={heading} tabIndex={-1}>{t("Archived bots and threads")}</h2><Button variant="ghost" size="content" type="button" onClick={onClose} aria-label={t("Close")}><X size={16} /></Button></header>
     <div className="desktop-bots-archive-list">
       {!groups.length && <p>{t("No archived bots or threads")}</p>}
       {groups.map((bot) => <section key={bot.id} className="desktop-bots-archive-group">
         <header><BotAvatar bot={bot} size={36} /><strong>{bot.name}</strong>
-          {bot.archivedAt && <button type="button" disabled={busy} onClick={() => void onRestore(bot)} aria-label={`${t("Restore bot")}: ${bot.name}`}>{t("Restore bot")}</button>}
+          {bot.archivedAt && <Button variant="ghost" size="content" type="button" disabled={busy} onClick={() => void onRestore(bot)} aria-label={`${t("Restore bot")}: ${bot.name}`}>{t("Restore bot")}</Button>}
         </header>
         {snapshot!.threads.filter((thread) => thread.botId === bot.id && (bot.archivedAt || thread.archivedAt)).map((thread) => {
           const harness = thread.modelOverride?.harness ?? bot.harness;
           const title = sessionDisplayTitle(thread.title, harness).trim() || t("Main thread");
           return <div key={thread.id} className="desktop-bots-archive-thread"><HarnessIcon harness={harness} className="size-4 shrink-0" /><span title={title}>{title}</span>
-            {thread.archivedAt && <button type="button" disabled={busy || !!bot.archivedAt} title={bot.archivedAt ? t("Restore the bot before restoring its threads") : undefined} aria-label={`${t("Restore thread")}: ${title}`} onClick={() => void onRestore(bot, thread)}>{t("Restore thread")}</button>}
+            {thread.archivedAt && <Button variant="ghost" size="content" type="button" disabled={busy || !!bot.archivedAt} title={bot.archivedAt ? t("Restore the bot before restoring its threads") : undefined} aria-label={`${t("Restore thread")}: ${title}`} onClick={() => void onRestore(bot, thread)}>{t("Restore thread")}</Button>}
           </div>;
         })}
       </section>)}

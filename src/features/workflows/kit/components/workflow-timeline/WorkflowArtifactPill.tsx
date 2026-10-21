@@ -1,3 +1,4 @@
+import { Button } from "../../../../../shared/ui/forms/Button";
 import { motion as motionElement } from "motion/react";
 import { workflowEntry } from "./workflow-motion.js";
 import type { ReactNode } from "react";
@@ -84,7 +85,7 @@ export function WorkflowArtifactPill({
   // 通知摘要复用 Read 链接语法，避免工具行中出现厚重的产物药丸。
   if (variant === "link")
     return (
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         disabled={!openable}
         onClick={openable ? () => onOpen(artifact.id) : undefined}
@@ -100,7 +101,7 @@ export function WorkflowArtifactPill({
         {showVersion ? (
           <span data-testid="workflow-run-artifact-version">{versionLabel}</span>
         ) : null}
-      </button>
+      </Button>
     );
   return (
     <motionElement.button {...workflowEntry(enterDelayMs)}

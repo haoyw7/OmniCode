@@ -7,6 +7,7 @@ import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
 import { AppViewDialog } from "./AppViewDialog";
+import { Dialog, DialogContent, DialogTitle } from "../../../shared/ui/primitives/Dialog";
 
 vi.mock("motion/react", async (original) => {
   const actual = await original<typeof import("motion/react")>();
@@ -27,8 +28,8 @@ beforeEach(() => {
   trigger.focus();
   root = createRoot(container);
 });
-afterEach(() => {
-  act(() => root.unmount());
+afterEach(async () => {
+  await act(async () => { root.unmount(); await new Promise(resolve => setTimeout(resolve, 0)); });
   container.remove();
   trigger.remove();
   vi.restoreAllMocks();
@@ -62,6 +63,7 @@ it("keeps the exiting dialog mounted but noninteractive, then restores focus", a
   act(() => dialog.querySelector(".modal-backdrop")?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })));
   expect(onClose).not.toHaveBeenCalled();
   await act(async () => completeMotionAnimation(document.body));
+  await act(async () => new Promise(resolve => setTimeout(resolve, 0)));
   expect(document.querySelector("[data-app-view-dialog]")).toBeNull();
   expect(document.activeElement).toBe(trigger);
 });
@@ -72,7 +74,7 @@ function tab(element: HTMLElement, shiftKey = false) {
   return event;
 }
 
-it("wraps both Tab boundaries while excluding unavailable controls and leaves Escape to the view", async () => {
+it("wraps both Tab boundaries while excluding unavailable controls and dismisses on Escape", async () => {
   const onClose = vi.fn();
   await act(async () => root.render(createElement(AppViewDialog, {
     title: "Settings",
@@ -83,8 +85,8 @@ it("wraps both Tab boundaries while excluding unavailable controls and leaves Es
       createElement("button", { disabled: true }, "Disabled"),
       createElement("button", { hidden: true }, "Hidden"),
       createElement("button", { style: { display: "none" } }, "Not displayed"),
-      createElement("div", { inert: true }, createElement("button", null, "Inert")),
-      createElement("div", { "aria-hidden": true }, createElement("button", null, "Excluded")),
+      createElement("div", { inert: true }, createElement("button", { tabIndex: -1 }, "Inert")),
+      createElement("div", { "aria-hidden": true }, createElement("button", { tabIndex: -1 }, "Excluded")),
       createElement("button", { tabIndex: -1 }, "Programmatic only"),
     ),
   })));
@@ -97,8 +99,8 @@ it("wraps both Tab boundaries while excluding unavailable controls and leaves Es
   expect(tab(close).defaultPrevented).toBe(false);
   const escape = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
   act(() => close.dispatchEvent(escape));
-  expect(escape.defaultPrevented).toBe(false);
-  expect(onClose).not.toHaveBeenCalled();
+  expect(escape.defaultPrevented).toBe(true);
+  expect(onClose).toHaveBeenCalledOnce();
 });
 
 it("respects a control's prevented Tab and a newer nested dialog's focus ownership", async () => {
@@ -121,16 +123,18 @@ it("respects a control's prevented Tab and a newer nested dialog's focus ownersh
     await act(async () => root.render(createElement(AppViewDialog, {
       title: "Settings",
       onClose: vi.fn(),
-      children: createPortal(createElement("div", { role: "dialog", "aria-modal": true },
-        createElement("button", { "data-nested-control": true }, "Nested")), nested),
+      children: createPortal(createElement(Dialog, { open: true },
+        createElement(DialogContent, { showCloseButton: false, "aria-describedby": undefined },
+          createElement(DialogTitle, null, "Nested dialog"),
+          createElement("button", { "data-nested-control": true }, "Nested"))), nested),
     })));
-    const child = nested.querySelector<HTMLButtonElement>("[data-nested-control]")!;
+    const child = document.querySelector<HTMLButtonElement>("[data-nested-control]")!;
     child.focus();
-    expect(tab(child).defaultPrevented).toBe(false);
+    expect(tab(child).defaultPrevented).toBe(true);
     expect(document.activeElement).toBe(child);
     const close = document.querySelector<HTMLButtonElement>('[aria-label="Close"]')!;
     close.focus();
-    expect(tab(close, true).defaultPrevented).toBe(false);
+    expect(document.activeElement).toBe(child);
   } finally {
     nested.remove();
   }

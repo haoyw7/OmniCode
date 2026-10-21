@@ -1,3 +1,6 @@
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
@@ -243,7 +246,7 @@ export function TabGroupMenu({
             <div role="separator" className="my-1 h-px bg-content/10" />
           </>
         ) : null}
-        <input data-ui="input"
+        <Input data-ui="input"
           ref={input}
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -254,7 +257,7 @@ export function TabGroupMenu({
 
         {logoProject ? (
           <div className="mb-2 flex items-center gap-2 px-0.5">
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               title={
                 logoPath ? uiT("Change project logo") : uiT("Add project logo")
@@ -284,7 +287,7 @@ export function TabGroupMenu({
                 fallback={ImagePlus}
                 fallbackStrokeWidth={1.75}
               />
-            </button>
+            </Button>
             <div className="min-w-0 flex-1">
               <p className="text-[11px] text-content/50">
                 {uiT("Project logo")}
@@ -296,7 +299,7 @@ export function TabGroupMenu({
               </p>
             </div>
             {logoPath ? (
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 title={uiT("Remove project logo")}
                 aria-label={uiT("Remove project logo")}
@@ -309,7 +312,7 @@ export function TabGroupMenu({
                 className="grid size-7 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/6 hover:text-content"
               >
                 <Trash2 className="size-3.5" />
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : null}
@@ -449,21 +452,19 @@ function MascotSwatch({
 }) {
   const { t: uiT } = useTranslation();
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={title}
       aria-label={uiT("Mascot {value0}", { value0: String(title) })}
       aria-pressed={selected}
       onMouseDown={(e) => e.preventDefault()}
       onClick={onPick}
-      className={`grid size-5 shrink-0 place-items-center rounded-md ${
-        selected
+      className={cn("grid size-5 shrink-0 place-items-center rounded-md", selected
           ? "bg-selection-hover ring-1 ring-content/50"
-          : "hover:bg-content/5"
-      }`}
+          : "hover:bg-content/5")}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -481,11 +482,11 @@ function MenuRow({
 }) {
   const Icon = item.icon;
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       role="menuitem"
       data-menu-row={item.description ? "description" : "single"}
-      data-variant={item.danger ? "destructive" : undefined}
+      data-variant={item.danger ? "destructive" : "ghost"}
       disabled={item.disabled}
       aria-haspopup={item.submenu ? "menu" : undefined}
       aria-expanded={item.submenu ? expanded : undefined}
@@ -500,19 +501,13 @@ function MenuRow({
           onPick(e.currentTarget);
         }
       }}
-      className={`flex min-h-8 w-full items-center gap-2.5 rounded-lg px-2 text-left text-[13px] leading-none ${
-        item.disabled
-          ? "text-content/30"
-          : item.danger
-            ? "text-red-300/90 hover:bg-red-500/15"
-            : "text-content hover:bg-content/3"
-      }`}
+      className="flex w-full items-center justify-start text-left"
     >
       <MenuHover />
       <Icon className="size-3.5 shrink-0 text-content/55" />
       <span
         data-menu-title
-        className={`min-w-0 flex-1 leading-label ${item.description ? "py-2" : "truncate"}`}
+        className={cn("min-w-0 flex-1 leading-label", item.description ? "py-2" : "truncate")}
       >
         {item.label}
         {item.description ? (
@@ -532,6 +527,6 @@ function MenuRow({
           {item.shortcut}
         </span>
       ) : null}
-    </button>
+    </Button>
   );
 }

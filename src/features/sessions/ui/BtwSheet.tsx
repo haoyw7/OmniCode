@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { animate, type AnimationPlaybackControlsWithThen } from "motion/react";
 import { panelTransition } from "../../../shared/motion/tokens";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -660,7 +662,7 @@ export function BtwSheet({
                     data-selected={selected}
                     className="surface-tab flex h-7 max-w-[15rem] shrink-0 items-center"
                   >
-                    <button
+                    <Button variant="ghost" size="content"
                       type="button"
                       role="tab"
                       aria-selected={selected}
@@ -671,12 +673,12 @@ export function BtwSheet({
                       {tab.status ? (
                         <span
                           aria-hidden
-                          className={`size-1.5 shrink-0 rounded-full ${statusClass(tab.status)}`}
+                          className={cn("size-1.5 shrink-0 rounded-full", statusClass(tab.status))}
                         />
                       ) : null}
                       <span className="truncate">{label}</span>
-                    </button>
-                    <button
+                    </Button>
+                    <Button variant="ghost" size="content"
                       type="button"
                       aria-label={
                         tab.thread
@@ -688,13 +690,13 @@ export function BtwSheet({
                       className="mr-1 grid size-5 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
                     >
                       <X className="size-3" />
-                    </button>
+                    </Button>
                   </div>
                 );
               })}
             </div>
             {btw.canStartDraft ? (
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 aria-label={uiT("New side question")}
                 title={uiT("New side question")}
@@ -702,9 +704,9 @@ export function BtwSheet({
                 className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
               >
                 <Plus className="size-3.5" />
-              </button>
+              </Button>
             ) : null}
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               aria-label={uiT("Back to the conversation")}
               title={uiT("Back to the conversation (Esc)")}
@@ -712,7 +714,7 @@ export function BtwSheet({
               className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
             >
               <ChevronDown className="size-4" />
-            </button>
+            </Button>
           </div>
 
           <div className="btw-sheet-body min-h-0 flex-1">
@@ -744,14 +746,14 @@ export function BtwSheet({
                       })}
                   </div>
                 </div>
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   onClick={btw.retry}
                   className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-red-100/80 transition-colors hover:bg-red-200/10 hover:text-red-50 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-200/60"
                 >
                   <RefreshCw className="size-3" />
                   {uiT("Retry")}
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}

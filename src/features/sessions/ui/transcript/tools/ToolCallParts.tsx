@@ -1,3 +1,4 @@
+import { cn } from "../../../../../shared/lib/cn";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import {
@@ -50,7 +51,7 @@ export function ToolKindIcon({
     <Icon
       aria-hidden="true"
       strokeWidth={1.75}
-      className={`size-3.5 shrink-0 ${state === "rejected" ? "text-red-400" : "text-content/45"} ${live && state === "pending" ? "zen-thinking-pulse" : ""}`}
+      className={cn("size-3.5 shrink-0", state === "rejected" ? "text-red-400" : "text-content/45", live && state === "pending" ? "zen-thinking-pulse" : "")}
     />
   );
 }
@@ -87,7 +88,7 @@ export function ToolOpenRow({
       tabIndex={0}
       aria-label={uiT("Show tool details: {value0}", { value0: label })}
       data-tool-open-row=""
-      className={`group ${className} cursor-pointer`}
+      className={cn("group", className, "cursor-pointer")}
       onClick={() => onOpen(block)}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
@@ -128,9 +129,7 @@ export function ToolCallSummary({
   if (!action || !target) {
     return (
       <span
-        className={`min-w-0 flex-1 truncate font-mono text-ui-caption ${
-          failed ? "text-red-400" : chip ? "text-content/65" : "text-content/80"
-        }`}
+        className={cn("min-w-0 flex-1 truncate font-mono text-ui-caption", failed ? "text-red-400" : chip ? "text-content/65" : "text-content/80")}
         title={label}
       >
         {label}
@@ -151,19 +150,17 @@ export function ToolCallSummary({
 
   return (
     <span className="flex min-w-0 flex-1 items-center gap-1.5 font-mono text-ui-caption">
-      <span className={`shrink-0 font-sans text-sm ${actionTone}`}>
+      <span className={cn("shrink-0 font-sans text-sm", actionTone)}>
         {action}
       </span>
       {isFile ? (
         canOpen ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             aria-label={uiT("Open {value0}", { value0: String(target) })}
-            className={`-my-px flex min-w-0 cursor-pointer items-center gap-1 rounded px-1 py-px leading-[1.2] text-left hover:text-sky-300 ${
-              chip
-                ? `max-w-full bg-content/6 hover:bg-content/10 ${targetTone}`
-                : `flex-1 hover:underline ${targetTone}`
-            }`}
+            className={cn("-my-px flex min-w-0 cursor-pointer items-center gap-1 rounded px-1 py-px leading-[1.2] text-left hover:text-sky-300 justify-start", chip
+                ? cn("max-w-full bg-content/6 hover:bg-content/10", targetTone)
+                : cn("flex-1 hover:underline", targetTone))}
             title={target}
             onClick={(event) => {
               event.stopPropagation();
@@ -172,14 +169,12 @@ export function ToolCallSummary({
           >
             <FileTypeIcon name={fileName} isDir={action === "List"} size="1cap" />
             <span className="min-w-0 truncate">{target}</span>
-          </button>
+          </Button>
         ) : (
           <span
-            className={`flex min-w-0 items-center gap-1 rounded px-1 py-px leading-[1.2] ${
-              chip
-                ? `max-w-full bg-content/6 ${targetTone}`
-                : `flex-1 ${targetTone}`
-            }`}
+            className={cn("flex min-w-0 items-center gap-1 rounded px-1 py-px leading-[1.2]", chip
+                ? cn("max-w-full bg-content/6", targetTone)
+                : cn("flex-1", targetTone))}
             title={target}
           >
             <FileTypeIcon name={fileName} isDir={action === "List"} size="1cap" />
@@ -188,7 +183,7 @@ export function ToolCallSummary({
         )
       ) : (
         <span
-          className={`flex min-w-0 flex-1 items-center gap-1.5 pl-1 ${targetTone}`}
+          className={cn("flex min-w-0 flex-1 items-center gap-1.5 pl-1", targetTone)}
           title={target}
         >
           <span className="min-w-0 truncate">{target}</span>

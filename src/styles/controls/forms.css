@@ -43,6 +43,9 @@ html[data-skin] :is([data-slot="checkbox-checked-icon"], [data-slot="checkbox-in
 }
 
 html[data-skin] [data-ui="button"] {
+  transition: background-color var(--desktop-feedback) var(--desktop-popup-ease), color var(--desktop-feedback) var(--desktop-popup-ease), border-color var(--desktop-feedback) var(--desktop-popup-ease);
+}
+html[data-skin] [data-ui="button"]:not([data-size="content"]) {
   --button-height: var(--desktop-button-height);
   --button-padding: var(--desktop-button-padding);
   display: inline-flex;
@@ -57,7 +60,6 @@ html[data-skin] [data-ui="button"] {
   font-size: var(--text-desktop-ui);
   line-height: var(--text-body-sm--line-height);
   font-weight: var(--font-weight-semibold);
-  transition: background-color var(--desktop-feedback) var(--desktop-popup-ease), color var(--desktop-feedback) var(--desktop-popup-ease), border-color var(--desktop-feedback) var(--desktop-popup-ease);
 }
 html[data-skin] :is([data-ui="button"][data-size="sm"], [data-ui="button"][data-size="xs"]) {
   --button-height: var(--desktop-button-small-height);
@@ -68,7 +70,7 @@ html[data-skin] :is([data-ui="button"][data-size="sm"], [data-ui="button"][data-
   font-feature-settings: "salt" on;
 }
 html[data-skin] [data-ui="button"]:enabled:active { scale: none; }
-html[data-skin] [data-ui="button"][data-treatment="content"]:not([data-size^="icon"]) { padding-inline: var(--button-padding); }
+html[data-skin] [data-ui="button"][data-treatment="content"]:not([data-size^="icon"], [data-size="content"]) { padding-inline: var(--button-padding); }
 html[data-skin] [data-ui="button"][data-size^="icon"] svg { width: 20px; height: 20px; }
 html[data-skin] [data-ui="button"][data-size="icon-xs"] svg { width: 12px; height: 12px; }
 html[data-skin] [data-ui="button"][data-size="icon-sm"] svg { width: 20px; height: 20px; }
@@ -122,7 +124,13 @@ html[data-skin] [data-ui="button"]:is([data-variant="secondary"], [data-variant=
 html[data-skin] [data-ui="button"][data-variant="secondary"]:not(:disabled, [aria-disabled="true"]):hover {
   background: var(--cds-fill-ghost-selected);
 }
+html[data-skin] [data-ui="button"][data-size="content"]:is([data-variant="ghost"], [data-variant="secondary"]):not(:disabled, [aria-disabled="true"]):active {
+  background: var(--cds-fill-ghost-selected);
+}
 html[data-skin] :is([data-ui="button"]:is([data-variant="secondary"], [data-variant="ghost"])):is([aria-expanded="true"], [aria-pressed="true"], [data-active="true"]):not(:disabled, [aria-disabled="true"]) {
+  background: var(--cds-fill-ghost-selected);
+}
+html[data-skin] [data-ui="button"][data-size="content"]:is([aria-current="true"], [role="option"][aria-selected="true"], [role="tab"][aria-selected="true"], [role="radio"][aria-checked="true"]) {
   background: var(--cds-fill-ghost-selected);
 }
 html[data-skin] [data-ui="button"][data-variant="primary"] {
@@ -146,7 +154,7 @@ html[data-skin] :is([data-ui="button"], [data-ui="icon-button"]):is(:disabled, [
 }
 
 /* Fields opt in by component identity, never by utility classes. */
-html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-slot="select-trigger"], [data-ui="input-group"]) {
+html[data-skin] :is([data-ui="input"]:not([data-variant="inline"]), [data-ui="textarea"]:not([data-variant="editor"]), [data-ui="select"], [data-slot="select-trigger"], [data-ui="input-group"]) {
   min-height: var(--desktop-field-height);
   height: auto;
   border-radius: var(--desktop-radius-field);
@@ -157,9 +165,9 @@ html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"],
   transition: border-color var(--desktop-feedback) var(--desktop-popup-ease), background-color var(--desktop-feedback) var(--desktop-popup-ease);
 }
 html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-ui="input-group"], [data-slot="select-trigger"]):not(.font-mono, [data-code-label]) { font-family: var(--font-sans); }
-html[data-skin] [data-ui="input"][data-size="lg"] { min-height: var(--desktop-field-large-height); padding-block: 9px; }
-html[data-skin] [data-ui="textarea"] { min-height: 132px; padding: 16px; border-width: .5px; border-color: var(--color-stroke); }
-html[data-skin] [data-ui="textarea"][data-size="sm"] { min-height: 64px; padding: 8px 12px; }
+html[data-skin] [data-ui="input"][data-size="lg"]:not([data-variant="inline"]) { min-height: var(--desktop-field-large-height); padding-block: 9px; }
+html[data-skin] [data-ui="textarea"]:not([data-variant="editor"]) { min-height: 132px; padding: 16px; border-width: .5px; border-color: var(--color-stroke); }
+html[data-skin] [data-ui="textarea"][data-size="sm"]:not([data-variant="editor"]) { min-height: 64px; padding: 8px 12px; }
 html[data-skin] .desktop-field-leading-icon,
 html[data-skin] [data-ui="input"].desktop-field-leading-icon { padding-inline-start: 36px; }
 html[data-skin] [data-ui="input"].desktop-field-trailing-icon { padding-inline-end: 36px; }
@@ -185,6 +193,10 @@ html[data-skin] [data-ui="input-group"][data-slot="input-group"] { padding: 0; }
 html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-slot="select-trigger"]):focus-visible:not([aria-invalid="true"]) {
   border-color: var(--color-input-border-hover);
   box-shadow: none;
+}
+html[data-skin] :is([data-ui="input"][data-variant="inline"], [data-ui="textarea"][data-variant="editor"]):focus-visible {
+  outline: 1px solid var(--color-input-border-hover);
+  outline-offset: 2px;
 }
 html[data-skin] [data-ui="input-group"]:has(:focus-visible):not(:has([aria-invalid="true"])) {
   border-color: var(--color-input-border-hover);
@@ -257,7 +269,7 @@ html[data-skin] [data-ui="checkbox"][data-size="lg"] { --desktop-checkbox-size: 
 html[data-skin] [data-ui="button"][data-variant="danger"]:is(:disabled, [aria-disabled="true"]) { opacity: .6; }
 
 
-html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-desktop-select-trigger="field"], [data-slot="select-trigger"][data-variant="input"]) {
+html[data-skin] :is([data-ui="input"]:not([data-variant="inline"]), [data-ui="textarea"]:not([data-variant="editor"]), [data-ui="select"], [data-desktop-select-trigger="field"], [data-slot="select-trigger"][data-variant="input"]) {
   background-color: var(--desktop-control-surface);
   color: var(--desktop-control-ink);
   border-color: var(--desktop-control-border);

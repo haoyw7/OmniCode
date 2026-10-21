@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useId, useRef, useState } from "react";
 import {
@@ -31,7 +33,7 @@ export function QuickPermissionIcon({
   const Icon = ICONS[mode];
   return (
     <Icon
-      className={`${className ?? ""} ${mode === "full-access" ? "text-amber-400/90" : ""}`}
+      className={cn(className ?? "", mode === "full-access" ? "text-amber-400/90" : "")}
     />
   );
 }
@@ -84,11 +86,13 @@ export function QuickPermissions({
       }}
     >
       {RUNTIME_MODES.map((mode, index) => (
-        <button
+        <Button variant="ghost" size="content"
           key={mode}
           id={`${id}-${index}`}
           type="button"
           role="option"
+          data-menu-row="description"
+          data-active={active === index || undefined}
           tabIndex={-1}
           aria-selected={value === mode}
           onMouseDown={(event) => {
@@ -97,7 +101,7 @@ export function QuickPermissions({
           }}
           onMouseEnter={() => setActive(index)}
           onClick={() => pick(mode)}
-          className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left ${active === index ? "bg-selection-emphasis text-content" : "text-content/75 hover:bg-selection-hover"}`}
+          className="flex w-full items-center justify-start text-left"
         >
           <QuickPermissionIcon mode={mode} className="size-4 shrink-0" />
           <span className="min-w-0 flex-1">
@@ -111,7 +115,7 @@ export function QuickPermissions({
           {value === mode ? (
             <Check className="size-3.5 shrink-0 text-accent" />
           ) : null}
-        </button>
+        </Button>
       ))}
     </div>
   );

@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,9 +30,6 @@ type ConnectionsTab = "control" | "ssh";
 const DEVICE_REFRESH_MS = 10_000;
 const PAIRING_REFRESH_MS = 1_000;
 
-const pill =
-  "h-7 rounded-full px-3 text-ui-base font-medium transition-colors disabled:opacity-40";
-
 /** Settings → Connections: devices controlling this computer, and SSH machines. */
 export function ConnectionsPage({ revealed }: { revealed?: string | null }) {
   const { t } = useTranslation();
@@ -50,20 +49,16 @@ export function ConnectionsPage({ revealed }: { revealed?: string | null }) {
     <div className="flex flex-col gap-8">
       <div role="tablist" aria-label={t("Connections")} className="flex gap-1">
         {tabs.map((option) => (
-          <button
+          <Button variant="ghost" size="sm"
             key={option.value}
             type="button"
             role="tab"
             aria-selected={tab === option.value}
             onClick={() => setTab(option.value)}
-            className={`${pill} ${
-              tab === option.value
-                ? "bg-selection text-foreground"
-                : "text-foreground-subtle hover:bg-surface-hover hover:text-foreground"
-            }`}
+            data-active={tab === option.value || undefined}
           >
             {option.label}
-          </button>
+          </Button>
         ))}
       </div>
       {tab === "control" ? <ControlThisComputer /> : <ConnectionsSettings />}
@@ -129,24 +124,23 @@ function ControlThisComputer() {
         <h2 className="desktop-pane-heading min-w-0 flex-1 text-ui-lg font-semibold text-foreground">
           {t("Devices that can control this computer")}
         </h2>
-        <button
+        <Button variant="ghost" size="icon-sm"
           type="button"
           aria-label={t("Refresh")}
           title={t("Refresh")}
           disabled={!machineId || loading}
           onClick={() => { revokeMutation.reset(); void refresh(); }}
-          className="grid size-7 place-items-center rounded-full text-foreground-subtle hover:bg-surface-hover hover:text-foreground disabled:opacity-40"
         >
-          <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
-        </button>
-        <button
+          <RefreshCw className={cn("size-4", loading ? "animate-spin" : "")} />
+        </Button>
+        <Button size="sm"
           type="button"
           disabled={!machineId}
           onClick={() => setAdding(true)}
-          className={`${pill} bg-foreground text-background hover:opacity-85`}
+          variant="primary"
         >
           {t("Add")}
-        </button>
+        </Button>
       </div>
       <div className="desktop-card overflow-hidden rounded-xl border border-border panel-card">
         {!machineId ? (
@@ -193,32 +187,31 @@ function ControlThisComputer() {
               </div>
               {confirming === device.id ? (
                 <div className="flex shrink-0 items-center gap-1">
-                  <button
+                  <Button variant="ghost" size="sm"
                     type="button"
                     disabled={!!revoking}
                     onClick={() => setConfirming(undefined)}
-                    className={`${pill} text-foreground-subtle hover:bg-surface-hover hover:text-foreground`}
                   >
                     {t("Cancel")}
-                  </button>
-                  <button
+                  </Button>
+                  <Button size="sm"
                     type="button"
                     disabled={!!revoking}
                     onClick={() => void revoke(device)}
-                    className={`${pill} bg-red-500/10 text-red-500 hover:bg-red-500/15`}
+                    variant="danger"
                   >
                     {revoking === device.id ? t("Revoking…") : t("Confirm revoke")}
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button
+                <Button size="sm"
                   type="button"
                   disabled={!!revoking}
                   onClick={() => setConfirming(device.id)}
-                  className={`${pill} shrink-0 bg-selection text-foreground hover:bg-selection-hover`}
+                  variant="secondary"
                 >
                   {t("Revoke access")}
-                </button>
+                </Button>
               )}
             </div>
             );
@@ -288,8 +281,6 @@ function AddDeviceDialog({
     }
   }, [issued, pairingQuery.data, issueMutation.reset, onAdded]);
 
-  const input =
-    "w-full rounded-lg border border-border bg-transparent px-3 py-2 text-ui-base outline-none focus:border-content/35";
   return (
     <Modal
       title={t("Add device")}
@@ -334,16 +325,16 @@ function AddDeviceDialog({
             <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
               <span className="text-ui-caption text-foreground-subtle">{t("Pairing code")}</span>
               <code className="select-all font-mono text-[22px] font-semibold tracking-[0.12em] text-foreground">{token}</code>
-              <button
+              <Button size="sm"
                 type="button"
                 onClick={() => {
                   void navigator.clipboard?.writeText(token).then(() => setCopied(true));
                 }}
-                className={`${pill} flex items-center gap-1.5 bg-selection text-foreground hover:bg-selection-hover`}
+                variant="secondary"
               >
                 {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
                 {t(copied ? "Copied" : "Copy")}
-              </button>
+              </Button>
             </div>
           </div>
           {error ? <p role="alert" className="break-words text-ui-caption text-red-400">{error}</p> : null}
@@ -363,11 +354,10 @@ function AddDeviceDialog({
         >
           <label className="flex flex-col gap-1.5 text-ui-caption text-foreground-subtle">
             {t("Device name")}
-            <input data-ui="input"
+            <Input data-ui="input"
               autoFocus
               maxLength={80}
               disabled={busy}
-              className={input}
               {...form.register("name")}
               aria-invalid={!!form.formState.errors.name}
               placeholder={t("e.g. My phone")}

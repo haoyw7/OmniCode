@@ -1,3 +1,6 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Slider } from "../../../shared/ui/forms/Slider";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -132,7 +135,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
       <div className="flex flex-col gap-5 p-4">
         <div>
           <div
-            className={`overflow-hidden rounded-xl border border-content/10 ${previewEffect === "gradient-blur" ? "bg-background-base" : "bg-content/5"}`}
+            className={cn("overflow-hidden rounded-xl border border-content/10", previewEffect === "gradient-blur" ? "bg-background-base" : "bg-content/5")}
           >
             {previewSrc ? (
               previewEffect === "gradient-blur" ? (
@@ -162,17 +165,17 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
               </div>
             )}
           </div>
-          <button
+          <Button variant="secondary" size="sm"
             type="button"
             onClick={() => void choose()}
             disabled={busy}
-            className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-content/10 px-2.5 py-1.5 text-[12px] text-content/70 hover:bg-content/6 hover:text-content disabled:opacity-40"
+            className="mt-2 w-full"
           >
             {busy ? (
               <Spinner className="size-3.5" aria-hidden />
             ) : null}
             {path ? uiT("Change image") : uiT("Choose image")}
-          </button>
+          </Button>
           <p className="mt-1.5 text-[11px] leading-relaxed text-content/45">
             {path
               ? uiT(
@@ -220,15 +223,14 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
 
         <ProjectBackgroundRow label={uiT("Background image strength")}>
           <div className="flex w-56 items-center gap-3">
-            <input
-              type="range"
+            <Slider
               min={Math.round(CHAT_BACKGROUND_OPACITY_MIN * 100)}
               max={Math.round(CHAT_BACKGROUND_OPACITY_MAX * 100)}
-              value={Math.round(opacity * 100)}
+              value={[Math.round(opacity * 100)]}
               aria-label={uiT("Background image strength")}
-              className="sidebar-opacity-slider min-w-0 flex-1"
-              onChange={(event) =>
-                updateOpacity(Number(event.target.value))
+              className="min-w-0 flex-1"
+              onValueChange={([value]) =>
+                updateOpacity(value)
               }
             />
             <span className="w-10 shrink-0 text-right text-[12px] tabular-nums text-content">
@@ -238,14 +240,14 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
         </ProjectBackgroundRow>
 
         {path ? (
-          <button
+          <Button variant="danger" size="sm"
             type="button"
             onClick={() => void removeImage()}
             disabled={busy}
-            className="w-full rounded-md border border-content/10 px-2.5 py-1.5 text-[12px] text-red-400 hover:border-red-400/40 hover:bg-red-400/10 disabled:opacity-40"
+            className="w-full"
           >
             {uiT("Remove background image")}
-          </button>
+          </Button>
         ) : null}
       </div>
     </Modal>

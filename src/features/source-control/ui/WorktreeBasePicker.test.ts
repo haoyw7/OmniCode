@@ -108,7 +108,7 @@ it("opens the desktop base picker at its selected branch after popover placement
   expect(selected.textContent).toBe("origin/main");
   expect(selected.getAttribute("aria-selected")).toBe("true");
   expect(menu().parentElement!.style.width).toBe("320px");
-  expect(menu().parentElement!.style.maxHeight).toBe("360px");
+  expect(menu().parentElement!.style.maxHeight).toBe("min(360px, var(--radix-popover-content-available-height))");
   expect(input().placeholder).toBe("Search branches…");
   expect(input().getAttribute("aria-label")).toBe("Search base branches");
   expect(scroll).not.toHaveBeenCalled();
@@ -157,7 +157,7 @@ it("preserves the mobile base picker dimensions, search, and initial keyboard ro
   const scroll = vi.spyOn(HTMLElement.prototype, "scrollIntoView");
   render();
   expect(menu().parentElement!.style.width).toBe("280px");
-  expect(menu().parentElement!.style.maxHeight).toBe("280px");
+  expect(menu().parentElement!.style.maxHeight).toBe("min(280px, var(--radix-popover-content-available-height))");
   expect(input().placeholder).toBe("Search base branches…");
   expect(highlighted().textContent).toBe("feature/0");
   await frame();

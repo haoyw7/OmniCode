@@ -1,3 +1,6 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   buildCiRepairRequest,
@@ -74,9 +77,6 @@ export function CheckRepairForm({
     ? repair.sessions.find((session) => session.id === sessionId)?.title ||
       "Untitled chat"
     : "New project chat";
-  useEffect(() => {
-    searchRef.current?.focus();
-  }, []);
   useEffect(() => {
     setActive(0);
   }, [query]);
@@ -187,18 +187,18 @@ export function CheckRepairForm({
             · PR #{repair.number}
           </p>
         </div>
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           aria-label={uiT("Close fix picker")}
           onClick={() => dismiss()}
           className="grid size-6 shrink-0 place-items-center rounded-md text-content/40 hover:bg-content/6 hover:text-content"
         >
           <X className="size-3.5" />
-        </button>
+        </Button>
       </div>
       <label className="mx-1.5 flex h-9 shrink-0 items-center gap-2 rounded-md bg-content/5 px-2.5 text-content/40 focus-within:text-content/65">
         <Search className="size-3.5 shrink-0" />
-        <input
+        <Input variant="inline" autoFocus
           ref={searchRef}
           value={query}
           disabled={busy}
@@ -239,7 +239,7 @@ export function CheckRepairForm({
           const selected = sessionId === session.id;
           const Icon = session.id ? MessageSquare : Plus;
           return (
-            <button
+            <Button data-menu-row="single" variant="ghost" size="content"
               key={session.id}
               id={`${listId}-${index}`}
               type="button"
@@ -251,7 +251,7 @@ export function CheckRepairForm({
               onMouseEnter={() => setActive(index)}
               onFocus={() => setActive(index)}
               onClick={() => setSessionId(session.id)}
-              className={`flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[12px] disabled:opacity-50 ${index === active ? "bg-selection text-content" : "text-content/70 hover:bg-content/3 hover:text-content"}`}
+              className={cn("flex w-full items-center gap-2.5 rounded-lg text-left text-[12px] disabled:opacity-50 justify-start", index === active ? "bg-selection text-content" : "text-content/70 hover:bg-content/3 hover:text-content")}
             >
               <Icon
                 className="size-3.5 shrink-0 text-content/50"
@@ -267,7 +267,7 @@ export function CheckRepairForm({
                   className="size-3.5 shrink-0 text-content/75"
                 />
               ) : null}
-            </button>
+            </Button>
           );
         })}
         {choices.length === 1 && query.trim() ? (
@@ -299,7 +299,7 @@ export function CheckRepairForm({
           </p>
           <p className="text-content/35">{uiT("CI details included")}</p>
         </div>
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           disabled={busy || blocked}
           onClick={() => void start()}
@@ -312,7 +312,7 @@ export function CheckRepairForm({
           {!busy ? (
             <ChevronRight className="size-3" />
           ) : null}
-        </button>
+        </Button>
       </div>
     </Popover>
   );

@@ -1,3 +1,5 @@
+import { cn } from "../../../../../shared/lib/cn";
+import { Button } from "../../../../../shared/ui/forms/Button";
 import { DisclosureChevron } from "../../../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { localizeChildExitError } from "../../../../../integrations/harness/core/childErrors";
@@ -59,7 +61,7 @@ export function ActivityInterjectionRow({ block }: { block: Block }) {
     <span className="min-w-0 flex-1 truncate font-sans text-sm">
       <span className="text-content/55">{chrome.label}</span>
       {chrome.severityText ? (
-        <span className={`text-[11px] ${chrome.severityClass}`}>
+        <span className={cn("text-[11px]", chrome.severityClass)}>
           {" "}
           {chrome.severityText}
         </span>
@@ -87,7 +89,7 @@ export function ActivityInterjectionRow({ block }: { block: Block }) {
 
   return (
     <div className="flex min-w-0 flex-col">
-      <button
+      <Button data-session-disclosure variant="ghost" size="content"
         type="button"
         aria-expanded={open}
         aria-label={
@@ -96,11 +98,11 @@ export function ActivityInterjectionRow({ block }: { block: Block }) {
             : `${chrome.label}: ${summary}`
         }
         onClick={() => setOpen((value) => !value)}
-        className="group flex min-w-0 items-center gap-1.5 py-1 text-left"
+        className="group flex min-w-0 items-center gap-1.5 py-1 text-left justify-start"
       >
         <ActivityPhaseIcon kind="note" />
         {label}
-      </button>
+      </Button>
       <AnimatedCollapse expanded={open}>
         <div className="min-w-0 pb-2">
           <pre className={INTERJECTION_BODY}>{block.text}</pre>
@@ -187,7 +189,7 @@ export function ActivityThinkingRow({
 
   return (
     <div className="flex min-w-0 flex-col">
-      <button
+      <Button data-session-disclosure variant="ghost" size="content"
         type="button"
         aria-expanded={open}
         aria-label={
@@ -196,7 +198,7 @@ export function ActivityThinkingRow({
             : uiT("Show thinking: {value0}", { value0: String(text) })
         }
         onClick={() => setOpen((value) => !value)}
-        className="group flex min-w-0 items-center gap-1.5 py-1 text-left"
+        className="group flex min-w-0 items-center gap-1.5 py-1 text-left justify-start"
       >
         {icon}
         <span
@@ -205,7 +207,7 @@ export function ActivityThinkingRow({
           {content}
         </span>
         <DisclosureChevron expanded={open} className="size-3.5 shrink-0" />
-      </button>
+      </Button>
       <AnimatedCollapse expanded={open}>
         {() => (
           <div
@@ -261,7 +263,7 @@ export function ActivityNoteRow({
 
   return (
     <div className="flex min-w-0 flex-col">
-      <button
+      <Button data-session-disclosure variant="ghost" size="content"
         type="button"
         aria-expanded={open}
         aria-label={
@@ -270,13 +272,13 @@ export function ActivityNoteRow({
             : uiT("Agent said: {value0}", { value0: String(text) })
         }
         onClick={() => setOpen((value) => !value)}
-        className="group flex min-w-0 items-center gap-1.5 py-1 text-left"
+        className="group flex min-w-0 items-center gap-1.5 py-1 text-left justify-start"
       >
         {icon}
         <span className="min-w-0 flex-1 truncate font-sans text-sm text-content/70 transition-colors duration-200 group-hover:text-content">
           {text}
         </span>
-      </button>
+      </Button>
       <AnimatedCollapse expanded={open}>
         {() => (
           <div className="min-w-0 pb-2">

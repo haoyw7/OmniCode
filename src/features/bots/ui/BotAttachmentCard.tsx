@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { toast } from "sonner";
@@ -27,11 +28,11 @@ export function BotAttachmentCard({ file, onOpen, read }: { file: RemoteAttachme
   const error = downloadMutation.error && botErrorMessage(downloadMutation.error);
   const download = () => { if (!busy && visible) downloadMutation.mutate({ read, file }); };
   return <div className="desktop-bot-file-card">
-    <button type="button" className="desktop-bot-file-open" onClick={onOpen ?? (() => void download())} disabled={busy || !visible} aria-label={t("Open {value0}", { value0: file.name })}>
+    <Button variant="ghost" size="content" type="button" className="desktop-bot-file-open" onClick={onOpen ?? (() => void download())} disabled={busy || !visible} aria-label={t("Open {value0}", { value0: file.name })}>
       <span className="desktop-bot-file-icon"><FileTypeIcon name={file.name} isDir={false} size={24} /></span>
       <span><strong data-file-label>{file.name}</strong><small>{formatFileSize(file.size)}</small></span>
-    </button>
-    <button data-ui="icon-button" type="button" className="assistant-icon-button" aria-label={t("Download {name}", { name: file.name })} disabled={busy || !visible} onClick={() => void download()}>{busy ? <Loader2 size={17} /> : <Download size={17} />}</button>
+    </Button>
+    <Button variant="ghost" size="icon-sm" type="button" className="assistant-icon-button" aria-label={t("Download {name}", { name: file.name })} disabled={busy || !visible} onClick={() => void download()}>{busy ? <Loader2 size={17} /> : <Download size={17} />}</Button>
     {error && <small role="alert">{t(error)}</small>}
   </div>;
 }

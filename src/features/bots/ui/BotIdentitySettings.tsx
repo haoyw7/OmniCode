@@ -49,12 +49,12 @@ export function BotIdentitySettings({ bot, busy: externalBusy, onSave, avatarSup
     catch (cause) { toast.error(cause instanceof Error ? cause.message : String(cause)); }
   })}>
     {avatarSupported ? <>
-      <button ref={trigger} type="button" className="desktop-bot-avatar-trigger" aria-label={t("Edit avatar")} aria-haspopup="dialog" aria-expanded={editingAvatar} disabled={busy}
+      <Button variant="ghost" size="content" ref={trigger} type="button" className="desktop-bot-avatar-trigger" aria-label={t("Edit avatar")} aria-haspopup="dialog" aria-expanded={editingAvatar} disabled={busy}
         onClick={() => setEditingAvatar(true)}>
         <BotAvatar bot={{ id: bot.id, avatar }} size={40} />
         <span className="desktop-bot-avatar-edit-overlay" aria-hidden="true"><Pencil size={14} /></span>
         <span className="desktop-bot-avatar-edit-hint" aria-hidden="true">{t("Edit avatar")}</span>
-      </button>
+      </Button>
       <PresenceBoundary>{editingAvatar && visible ? <AvatarDialog bot={bot} name={name.trim() || bot.name} avatar={avatar} busy={busy} onCancel={closeEditor} onSave={saveAvatar} /> : null}</PresenceBoundary>
     </> : <BotAvatar bot={{ id: bot.id, avatar }} size={40} />}
     <div className="desktop-bot-identity-text">
@@ -84,12 +84,11 @@ function AvatarDialog({ bot, name, avatar, busy, onCancel, onSave }: {
   const saving = mutation.isPending;
   const choices = useRef<HTMLDivElement>(null);
   // Start on the current choice so arrow keys move within the selected group.
-  useEffect(() => { choices.current?.querySelector<HTMLInputElement>('input[type="radio"]:checked')?.focus(); }, []);
   const disabled = busy || saving;
   const save = form.handleSubmit(({ avatar }) => {
     if (!disabled) mutation.mutate(avatar);
   });
-  return <Modal title={t("Edit avatar")} minimalHeader fitViewport size="lg" className="desktop-bot-avatar-dialog" onClose={onCancel}>
+  return <Modal onOpenAutoFocus={event => { event.preventDefault(); choices.current?.querySelector<HTMLInputElement>('input[type="radio"]:checked')?.focus(); }} title={t("Edit avatar")} minimalHeader fitViewport size="lg" className="desktop-bot-avatar-dialog" onClose={onCancel}>
     <form noValidate onSubmit={event => { event.stopPropagation(); void save(event); }} className="desktop-bot-avatar-dialog-body">
       <div ref={choices} role="group" aria-label={t("Edit avatar")} className="desktop-bot-avatar-dialog-choices">
         <h2 aria-hidden="true">{t("Edit avatar")}</h2>
@@ -101,7 +100,7 @@ function AvatarDialog({ bot, name, avatar, busy, onCancel, onSave }: {
           setTab(avatarTabs[next].id);
           event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
         }}>
-          {avatarTabs.map(item => <button key={item.id} id={`${id}-${item.id}-tab`} type="button" role="tab" aria-selected={tab === item.id} aria-controls={`${id}-${item.id}-panel`} tabIndex={tab === item.id ? 0 : -1} onClick={() => setTab(item.id)}>{t(item.label)}</button>)}
+          {avatarTabs.map(item => <Button variant="ghost" size="content" key={item.id} id={`${id}-${item.id}-tab`} type="button" role="tab" aria-selected={tab === item.id} aria-controls={`${id}-${item.id}-panel`} tabIndex={tab === item.id ? 0 : -1} onClick={() => setTab(item.id)}>{t(item.label)}</Button>)}
         </div>
         <div id={`${id}-bot-panel`} role="tabpanel" aria-labelledby={`${id}-bot-tab`} hidden={tab !== "bot"} className="desktop-bot-avatar-tab-panel">
           <BotAvatarPicker value={decodeBotAvatar(draft) ?? botAvatarAppearance(bot.id)} disabled={disabled} onChange={value => setDraft(encodeBotAvatar(value))} />

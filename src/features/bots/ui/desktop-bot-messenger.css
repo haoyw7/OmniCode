@@ -185,9 +185,9 @@ html[data-skin] .assistant-chat.desktop-bots-workspace [data-ui="icon-button"].a
 .assistant-chat.desktop-bots-workspace .desktop-bot-recipient-dropdown { position: relative; flex-shrink: 0; margin: 8px 13px 0; width: min(560px, calc(100% - 26px)); z-index: 4; border-radius: 14px; box-shadow: 0 8px 24px var(--color-stroke); background: var(--color-background-base); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-recipient-menu { border: .5px solid var(--color-stroke); border-radius: 14px; padding: 8px; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-recipient-menu [role="listbox"] { max-height: min(420px, 55vh); overflow-y: auto; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-recipient-menu [role="option"] { display: flex; align-items: center; gap: 14px; text-align: start; width: 100%; padding: 10px 12px; border-radius: 12px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-recipient-menu [role="option"] { display: flex; align-items: center; justify-content: start; text-align: start; width: 100%; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-recipient-menu [role="option"][aria-selected="true"] { background: var(--color-surface-hover); }
-.assistant-chat.desktop-bots-workspace .desktop-bot-recipient-create { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--color-stroke); border-radius: 14px; }
+.assistant-chat.desktop-bots-workspace .desktop-bot-recipient-create { display: grid; place-items: center; width: 16px; height: 16px; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-recipient-menu footer { display: flex; justify-content: flex-end; gap: 18px; border-top: 1px solid var(--color-stroke); padding: 12px 10px 4px; font-size: var(--text-ui-xs); color: var(--color-foreground-subtle); }
 .assistant-chat.desktop-bots-workspace .desktop-bot-recipient-space { flex: 1; }
 .assistant-chat.desktop-bots-workspace .desktop-bot-recipient-error { margin: 12px 24px; padding: 12px; border: 1px solid var(--color-stroke); border-radius: 12px; }
@@ -242,7 +242,6 @@ html[data-skin] .assistant-chat.desktop-bots-workspace [data-ui="icon-button"].a
 .assistant-chat.desktop-bots-workspace .desktop-bots-pinned button:hover { background: var(--bots-hover); }
 .assistant-chat.desktop-bots-workspace .desktop-bots-pinned button > .desktop-bots-unread { position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--color-accent); }
 .assistant-chat.desktop-bots-workspace .desktop-bots-inspector .assistant-settings { font-size: 13px; line-height: 18px; }
-.assistant-chat.desktop-bots-workspace .desktop-bot-recipient-menu [role="option"] { min-height: 54px; padding: 8px; gap: 8px; border-radius: 10px; }
 /* Own the portal explicitly; do not change other ExplorerMenu surfaces. */
 [data-menu-owner="bots-navigation"] { border-radius: 12px; font-size: 13px; line-height: 18px; }
 /* Bot memory is a desktop-only modal. S042–46, retains shared focus handling. */

@@ -1,3 +1,4 @@
+import { cn } from "../../../../../shared/lib/cn";
 import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
@@ -310,7 +311,7 @@ function ChatBackgroundCard({
         <div className="overflow-hidden rounded-lg border border-content/10">
           {hasImage ? (
             <div
-              className={`relative h-36 ${appearance.newThreadBackgroundEffect === "gradient-blur" ? "bg-background-base" : ""}`}
+              className={cn("relative h-36", appearance.newThreadBackgroundEffect === "gradient-blur" ? "bg-background-base" : "")}
             >
               {appearance.newThreadBackgroundEffect === "gradient-blur" ? (
                 <GradientBlurBackground
@@ -332,7 +333,7 @@ function ChatBackgroundCard({
               </span>
             </div>
           ) : (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               onClick={() => void appearance.onChooseChatBackground()}
               disabled={busy}
@@ -344,7 +345,7 @@ function ChatBackgroundCard({
                 <ImagePlus className="size-5" aria-hidden />
               )}
               <span className="text-[12px]">{uiT("Choose an image")}</span>
-            </button>
+            </Button>
           )}
         </div>
         {hasImage ? (

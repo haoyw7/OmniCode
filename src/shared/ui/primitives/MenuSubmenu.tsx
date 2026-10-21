@@ -5,12 +5,17 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type ReactElement,
   type ComponentProps,
 } from "react";
 import type { PopoverAnchor } from "../Popover";
 import { PresenceBoundary } from "../PresenceBoundary";
 import { MenuHover } from "../MenuHover";
 import { ChevronRight } from "../icons";
+import { DropdownMenu } from "radix-ui";
+import { Button } from "../forms/Button";
+import { cn } from "../../lib/cn";
+import { MenuSubmenuContext } from "./MenuSubmenuContext";
 
 const SUBMENU_CLOSE_MS = 150;
 
@@ -30,6 +35,7 @@ export function MenuSubmenu({
   onFinish,
   triggerProps,
   triggerContent,
+  renderTrigger,
 }: {
   label: string;
   value?: ReactNode;
@@ -42,6 +48,7 @@ export function MenuSubmenu({
     "data-highlighted"?: boolean;
   };
   triggerContent?: ReactNode;
+  renderTrigger?: (trigger: ReactElement) => ReactElement;
 }) {
   const [picker, setPicker] = useState(false);
   const row = useRef<HTMLButtonElement>(null);
@@ -112,9 +119,8 @@ export function MenuSubmenu({
     },
     [onHold],
   );
-  return (
-    <>
-      <button
+  const trigger = (
+      <Button
         {...triggerProps}
         ref={(element) => {
           row.current = element;
@@ -125,7 +131,6 @@ export function MenuSubmenu({
         type="button"
         role={triggerProps?.role ?? "menuitem"}
         data-ui={triggerProps?.["data-ui"] ?? "menu-submenu-trigger"}
-        aria-haspopup="dialog"
         aria-expanded={picker}
         disabled={disabled}
         aria-label={
@@ -136,7 +141,7 @@ export function MenuSubmenu({
           picker || triggerProps?.["data-highlighted"] || undefined
         }
         onMouseDown={(event) => event.preventDefault()}
-        onPointerDown={(event) => event.stopPropagation()}
+        onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); }}
         onMouseEnter={(event) => {
           triggerProps?.onMouseEnter?.(event);
           if (!disabled) setPicker(true);
@@ -153,8 +158,9 @@ export function MenuSubmenu({
         }}
         className={
           triggerProps?.className ??
-          `flex h-8 w-full items-center gap-3 px-2.5 text-left text-content/80 disabled:opacity-40 ${picker ? "bg-selection text-content" : "hover:bg-content/3"}`
+          cn("flex w-full items-center text-left text-content/80 disabled:opacity-40", picker ? "bg-selection text-content" : "hover:bg-content/3")
         }
+        variant="ghost"
       >
         {triggerContent ?? (
           <>
@@ -171,7 +177,12 @@ export function MenuSubmenu({
             />
           </>
         )}
-      </button>
+      </Button>
+  );
+  return (
+    <DropdownMenu.Root open={picker && !disabled} onOpenChange={setPicker} modal={false}>
+      <DropdownMenu.Trigger asChild>{renderTrigger ? renderTrigger(trigger) : trigger}</DropdownMenu.Trigger>
+      <MenuSubmenuContext.Provider value={{ anchor: row }}>
       <PresenceBoundary>
         {picker && !disabled ? (
           <Fragment key="picker">
@@ -179,6 +190,7 @@ export function MenuSubmenu({
           </Fragment>
         ) : null}
       </PresenceBoundary>
-    </>
+      </MenuSubmenuContext.Provider>
+    </DropdownMenu.Root>
   );
 }

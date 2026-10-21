@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -175,7 +177,7 @@ function DesktopMessageQueue({
                   : "Queue paused because you interrupted",
               )}
             </span>
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               disabled={blocked || !view.canResume}
               onClick={view.resumeQueue}
@@ -183,7 +185,7 @@ function DesktopMessageQueue({
             >
               <Play className="size-3.5" />
               {t("Resume")}
-            </button>
+            </Button>
           </div>
         )}
         {view.error && (
@@ -197,10 +199,10 @@ function DesktopMessageQueue({
               key={message.id}
               ref={(node) => sorting.setItemRef(message.id, node)}
               data-queue-id={message.id}
-              className={`relative flex min-h-6 items-center gap-2 text-[12px] data-[dragging=true]:z-10 data-[dragging=true]:bg-content/6 ${index > 0 ? "border-t border-stroke" : ""}`}
+              className={cn("relative flex min-h-6 items-center gap-2 text-[12px] data-[dragging=true]:z-10 data-[dragging=true]:bg-content/6", index > 0 ? "border-t border-stroke" : "")}
             >
               {onReorder && messages.length > 1 ? (
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   title={t("Drag to reorder queued message")}
                   aria-label={t("Drag to reorder queued message")}
@@ -228,7 +230,7 @@ function DesktopMessageQueue({
                   className="grid size-6 shrink-0 touch-none cursor-grab place-items-center rounded-md hover:bg-content/6 hover:text-content active:cursor-grabbing disabled:cursor-default disabled:opacity-30"
                 >
                   <GripVertical className="size-3.5" />
-                </button>
+                </Button>
               ) : (
                 <ListEnd className="size-3.5 shrink-0" />
               )}
@@ -253,7 +255,7 @@ function DesktopMessageQueue({
                     count: message.attachments.length,
                   })}
               </span>
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 disabled={blocked || !!message.blocked || !view.canSteer}
                 onClick={() => view.steerMessage(message.id)}
@@ -261,8 +263,8 @@ function DesktopMessageQueue({
               >
                 <CornerDownRight className="size-3.5" />
                 {t("Steer")}
-              </button>
-              <button
+              </Button>
+              <Button variant="ghost" size="content"
                 type="button"
                 title={t("Edit queued message")}
                 aria-label={t("Edit queued message")}
@@ -271,8 +273,8 @@ function DesktopMessageQueue({
                 className="grid size-6 shrink-0 place-items-center rounded-md hover:bg-content/6 hover:text-content"
               >
                 <Pencil className="size-3.5" />
-              </button>
-              <button
+              </Button>
+              <Button variant="ghost" size="content"
                 type="button"
                 title={t("Remove queued message")}
                 aria-label={t("Remove queued message")}
@@ -281,7 +283,7 @@ function DesktopMessageQueue({
                 className="grid size-6 shrink-0 place-items-center rounded-md hover:bg-content/6 hover:text-content"
               >
                 <Trash2 className="size-3.5" />
-              </button>
+              </Button>
             </div>
           ))}
         </div>

@@ -1,3 +1,7 @@
+import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Textarea } from "../../../shared/ui/forms/Textarea";
+import { cn } from "../../../shared/lib/cn";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -297,7 +301,7 @@ export function InboxCommentForm({
             {uiT("Replying to ")}
             {replyTo.author || uiT("comment")}
           </span>
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Cancel reply")}
             aria-label={uiT("Cancel reply")}
@@ -305,11 +309,11 @@ export function InboxCommentForm({
             className="grid size-5 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content"
           >
             <X className="size-3" />
-          </button>
+          </Button>
         </div>
       ) : null}
       <div className="rounded-md border border-content/10 bg-content/5 focus-within:border-content/20">
-        <textarea
+        <Textarea variant="editor"
           {...form.register("body")}
           ref={(node) => { form.register("body").ref(node); field.current = node; }}
           aria-invalid={!!form.formState.errors.body}
@@ -324,17 +328,17 @@ export function InboxCommentForm({
           className="max-h-40 w-full resize-none overflow-y-auto bg-transparent px-3 py-2 text-[13px] leading-5 text-content outline-none placeholder:text-content/35 disabled:opacity-40"
         />
         <div className="flex items-center justify-end px-2 pb-2">
-          <button
+          <Button
             type="submit"
             disabled={!canPost}
-            className="inline-flex h-7 items-center rounded-md bg-content px-3 text-[12px] text-background-base hover:bg-content/80 disabled:cursor-default disabled:opacity-40"
+            variant="primary" size="md"
           >
             {posting
               ? uiT("Posting...")
               : replyTo
                 ? uiT("Reply")
                 : uiT("Comment")}
-          </button>
+          </Button>
         </div>
       </div>
       <FieldError errors={[form.formState.errors.body]} />
@@ -391,9 +395,7 @@ function InboxComment({
   const inner = (
     <>
       <header
-        className={`flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-content/50 ${
-          nested ? "" : timeline ? "min-h-9 px-3 py-1.5" : "px-3 py-2"
-        } ${!nested && (hasBody || hasReplies) ? "border-b border-stroke" : ""}`}
+        className={cn("flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-content/50", nested ? "" : timeline ? "min-h-9 px-3 py-1.5" : "px-3 py-2", !nested && (hasBody || hasReplies) ? "border-b border-stroke" : "")}
       >
         <InboxCommentPerson
           avatar={!timeline}
@@ -411,7 +413,7 @@ function InboxComment({
           >
             <span aria-hidden>·</span>
             {comment.url && part === time ? (
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 title={
                   provider === "linear"
@@ -428,7 +430,7 @@ function InboxComment({
                 className="hover:text-content"
               >
                 {part}
-              </button>
+              </Button>
             ) : (
               <span
                 className={
@@ -449,7 +451,7 @@ function InboxComment({
         {canReply ? (
           <span className="flex items-center gap-2">
             <span aria-hidden>·</span>
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               onClick={() =>
                 onReply({
@@ -461,7 +463,7 @@ function InboxComment({
               className="hover:text-content"
             >
               {uiT("Reply")}
-            </button>
+            </Button>
           </span>
         ) : null}
       </header>
@@ -491,7 +493,7 @@ function InboxComment({
           {comment.replies.map((reply, index) => (
             <div
               key={reply.id}
-              className={`py-2.5 ${index > 0 ? "border-t border-stroke" : ""}`}
+              className={cn("py-2.5", index > 0 ? "border-t border-stroke" : "")}
             >
               <InboxComment
                 comment={reply}
@@ -540,6 +542,7 @@ function CollapsibleBody({ children }: { children: ReactNode }) {
   const clamped = overflows && !expanded;
   return (
     <>
+      <AnimatedCollapse expanded animateContentResize>
       <div
         style={clamped ? { maxHeight: CLAMPED_BODY_PX } : undefined}
         className={
@@ -550,15 +553,16 @@ function CollapsibleBody({ children }: { children: ReactNode }) {
       >
         <div ref={inner}>{children}</div>
       </div>
+      </AnimatedCollapse>
       {overflows ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           aria-expanded={expanded}
           onClick={() => setExpanded((current) => !current)}
           className="mt-1.5 text-[12px] text-content/50 hover:text-content"
         >
           {expanded ? uiT("Show less") : uiT("Show more")}
-        </button>
+        </Button>
       ) : null}
     </>
   );
@@ -596,7 +600,7 @@ function TimelineStop({
       <TimelineRail first={first} last={last} lead={card ? "h-2" : "h-0"}>
         {node}
       </TimelineRail>
-      <div className={`min-w-0 flex-1 ${last ? "" : TIMELINE_GAP}`}>
+      <div className={cn("min-w-0 flex-1", last ? "" : TIMELINE_GAP)}>
         {children}
       </div>
     </li>
@@ -621,7 +625,7 @@ function TimelineRail({
   return (
     <div aria-hidden className="flex w-5 shrink-0 flex-col items-center">
       <span
-        className={`w-px shrink-0 ${lead} ${first ? "" : "bg-content/10"}`}
+        className={cn("w-px shrink-0", lead, first ? "" : "bg-content/10")}
       />
       <div className="flex size-5 shrink-0 items-center justify-center">
         {children}
@@ -672,13 +676,11 @@ function InboxTimelineComment({
         last={last}
         node={
           <Icon
-            className={`size-4 ${
-              state === "APPROVED"
+            className={cn("size-4", state === "APPROVED"
                 ? "text-emerald-400/90"
                 : state === "CHANGES_REQUESTED"
                   ? "text-rose-400/90"
-                  : "text-content/45"
-            }`}
+                  : "text-content/45")}
           />
         }
       >
@@ -801,13 +803,13 @@ function InboxCommitStop({
         <span className="size-2 shrink-0 rounded-full border-[1.5px] border-content/35" />
         {last ? null : <span className="w-px flex-1 bg-content/10" />}
       </div>
-      <div className={`min-w-0 flex-1 ${last ? "" : TIMELINE_GAP}`}>
-        <button
+      <div className={cn("min-w-0 flex-1", last ? "" : TIMELINE_GAP)}>
+        <Button variant="ghost" size="content"
           type="button"
           title={commit.url ? uiT("Open commit") : commit.messageHeadline}
           disabled={!commit.url}
           onClick={() => void openUrl(commit.url)}
-          className="group flex h-5 w-full min-w-0 items-center gap-3 text-left text-[12px]"
+          className="group flex h-5 w-full min-w-0 items-center gap-3 text-left text-[12px] justify-start"
         >
           <span className="min-w-0 flex-1 truncate text-content/70 group-hover:text-content group-disabled:text-content/70">
             {commit.messageHeadline}
@@ -815,7 +817,7 @@ function InboxCommitStop({
           <span className="shrink-0 font-mono text-[11px] text-content/35 group-hover:text-content/60">
             {commit.oid.slice(0, 7)}
           </span>
-        </button>
+        </Button>
       </div>
     </li>
   );

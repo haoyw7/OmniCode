@@ -1,3 +1,4 @@
+import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -138,7 +139,7 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
         </p>
       </div>}
       <label className="desktop-bots-memory-editor-label"><span><span data-file-label>{path}</span>{dirty ? ` • ${t("Unsaved changes")}` : ""}</span>
-        <textarea data-ui="textarea" aria-label={t("File contents")} value={draft.text} disabled={draft.busy} spellCheck={false}
+        <Textarea data-ui="textarea" aria-label={t("File contents")} value={draft.text} disabled={draft.busy} spellCheck={false}
           onChange={(event) => drafts.draft(botId, path, (value) => ({ ...value!, text: event.target.value, error: undefined }))} />
       </label>
       {draft.error && <p className="desktop-bots-memory-error" role="alert">{t(draft.error)}</p>}
@@ -146,7 +147,7 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
         <div className="desktop-bots-memory-conflict" role="alert">
           <p>{t("This file changed elsewhere. Your draft is preserved.")}</p>
           {draft.latest ? <>
-            <label>{t("Latest saved version")}<textarea data-ui="textarea" readOnly aria-label={t("Latest saved version")} value={draft.latest.text} /></label>
+            <label>{t("Latest saved version")}<Textarea data-ui="textarea" readOnly aria-label={t("Latest saved version")} value={draft.latest.text} /></label>
             <div className="desktop-bots-memory-actions">
               <Button size="sm" variant="secondary" type="button" onClick={() => drafts.draft(botId, path, (value) => ({ base: value!.latest!, text: value!.latest!.text }))}>{t("Use latest version")}</Button>
               <Button size="sm" variant="secondary" type="button" onClick={() => drafts.draft(botId, path, (value) => ({ base: value!.latest!, text: value!.text }))}>{t("Keep draft over latest")}</Button>
@@ -159,9 +160,9 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
         <Button size="sm" variant={dirty ? "primary" : "secondary"} type="button" disabled={!dirty || draft.busy || draft.conflict} onClick={() => void mutate()}>{t(draft.busy ? "Saving…" : "Save file")}</Button>
       </div>
       <div className="desktop-bot-row-group"><section className="assistant-settings-section" data-open={historyOpen}>
-        <button type="button" className="assistant-settings-disclosure" aria-expanded={historyOpen} onClick={() => setHistoryOpen((value) => !value)}>
+        <Button variant="ghost" size="content" type="button" className="assistant-settings-disclosure" aria-expanded={historyOpen} onClick={() => setHistoryOpen((value) => !value)}>
           <span className="assistant-settings-disclosure-title">{t("Change history")}</span><ChevronDown size={16} aria-hidden="true" />
-        </button>
+        </Button>
         <AnimatedCollapse expanded={historyOpen}><div className="desktop-bots-memory-history">
             {historyError && <p role="alert">{t(historyError)} <Button size="sm" variant="secondary" type="button" onClick={() => void loadHistory()}>{t("Retry")}</Button></p>}
             {history?.length === 0 && <p>{t("No file changes yet")}</p>}

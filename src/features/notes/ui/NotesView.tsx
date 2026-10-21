@@ -1,3 +1,7 @@
+import { Input } from "../../../shared/ui/forms/Input";
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
+import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { queryClient } from "../../../shared/lib/queryClient";
@@ -252,7 +256,7 @@ export function NotesView({
       <div className="desktop-toolbar flex h-9 shrink-0 items-center gap-1 border-b border-stroke px-2">
         <div className="relative flex h-7 min-w-0 flex-1 items-center">
           <Search className="pointer-events-none absolute left-2 size-3 shrink-0 opacity-50" />
-          <input
+          <Input variant="inline"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={uiT("Filter notes")}
@@ -262,30 +266,28 @@ export function NotesView({
             className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] text-content outline-none placeholder:text-content/40"
           />
         </div>
-        <button
+        <Button variant="ghost" size="icon-sm"
           type="button"
           title={uiT("Refresh notes")}
           aria-label={uiT("Refresh notes")}
           disabled={loading || topics.loading}
           onClick={() => { void refresh(); topics.refresh(); }}
-          className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content disabled:opacity-40"
         >
           <RefreshCw className="size-3.5" />
-        </button>
-        <button
+        </Button>
+        <Button variant="ghost" size="icon-sm"
           type="button"
           title={uiT("New note")}
           aria-label={uiT("New note")}
           disabled={creating}
           onClick={() => void onCreate()}
-          className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content disabled:opacity-40"
         >
           {creating ? (
             <Spinner className="size-3.5" />
           ) : (
             <Plus className="size-3.5" />
           )}
-        </button>
+        </Button>
       </div>
       <div
         ref={listLock}
@@ -328,7 +330,7 @@ export function NotesView({
             {topics.loading && <p role="status" className="px-2.5 py-2 text-[12px] text-content/50">{uiT("Loading notes…")}</p>}
             {topics.errors.map(({ source, error }) => (
               <p key={source.key} role="alert" className="px-2.5 py-2 text-[12px] text-content/50">
-                {source.name}: {error} <button type="button" onClick={topics.refresh}>{uiT("Retry")}</button>
+                {source.name}: {error} <Button variant="ghost" size="content" type="button" onClick={topics.refresh}>{uiT("Retry")}</Button>
               </p>
             ))}
             {!topics.loading && !topics.errors.length && !visibleTopics.length && (
@@ -337,16 +339,16 @@ export function NotesView({
             <ul className="flex flex-col gap-0.5">
               {visibleTopics.map((note) => (
                 <li key={note.key}>
-                  <button
+                  <Button variant="ghost" size="content"
                     type="button"
                     data-assistant-topic
                     aria-current={selectedTopic?.key === note.key ? "true" : undefined}
                     onClick={() => setSelectedTopicKey(note.key)}
-                    className={`flex w-full flex-col rounded-md px-2.5 py-2 text-left hover:bg-content/3 ${selectedTopic?.key === note.key ? "bg-selection" : ""}`}
+                    className={cn("flex w-full flex-col items-stretch rounded-md px-2.5 py-2 text-left hover:bg-content/3", selectedTopic?.key === note.key ? "bg-selection" : "")}
                   >
                     <span className="text-[11px] text-content/50">{note.source.name}</span>
                     <span className="line-clamp-1 text-[13px] font-semibold">{note.name}</span>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -440,7 +442,7 @@ function NoteDetailTab({
   onSelect: () => void;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       role="tab"
       aria-selected={selected}
@@ -448,7 +450,7 @@ function NoteDetailTab({
       className="surface-tab relative flex h-7.5 items-center px-2 text-[12px] leading-none"
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -470,16 +472,14 @@ function NoteCard({
   const time = formatRelativeTime(new Date(note.updatedAt).toISOString());
   const hint = [note.title, project].filter(Boolean).join(" · ");
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={hint}
       aria-current={active ? "true" : undefined}
       onClick={onSelect}
-      className={`flex w-full flex-col rounded-md border px-2.5 py-2 text-left ${
-        active
+      className={cn("flex w-full flex-col items-stretch rounded-md border px-2.5 py-2 text-left", active
           ? "border-transparent bg-selection text-content"
-          : "border-transparent text-content/80 hover:bg-content/3 hover:text-content"
-      }`}
+          : "border-transparent text-content/80 hover:bg-content/3 hover:text-content")}
     >
       <span className="flex items-center gap-2">
         {project && note.sourceCwd ? (
@@ -526,7 +526,7 @@ function NoteCard({
           ) : null}
         </span>
       ) : null}
-    </button>
+    </Button>
   );
 }
 
@@ -878,7 +878,7 @@ function NoteEditor({
               }}
             />
           </div>
-          <input data-ui="input"
+          <Input variant="inline"
             ref={titleFieldRef}
             value={title}
             onChange={(event) => {
@@ -913,15 +913,14 @@ function NoteEditor({
             }}
           />
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <button
+            <Button variant="primary" size="sm"
               type="button"
               disabled={!canAddToChat}
               onClick={() => onAddToChat(draft)}
-              className="inline-flex items-center gap-1 rounded-md bg-content px-3 h-6.5 text-[12px] text-background-base hover:bg-content/80 disabled:cursor-default disabled:opacity-40"
             >
               {uiT("Add to chat")}
-            </button>
-            <button
+            </Button>
+            <Button variant="ghost" size="sm"
               type="button"
               onClick={() => {
                 skipSave.current = true;
@@ -933,7 +932,7 @@ function NoteEditor({
             >
               <Trash2 className="size-3.5" />
               {uiT("Delete")}
-            </button>
+            </Button>
           </div>
           {saveError ? (
             <div
@@ -944,7 +943,7 @@ function NoteEditor({
                 {uiT("Could not save note: ")}
                 {saveError}
               </span>
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 onClick={() => {
                   setSaveError(null);
@@ -953,7 +952,7 @@ function NoteEditor({
                 className="shrink-0 underline hover:no-underline"
               >
                 {uiT("Retry")}
-              </button>
+              </Button>
             </div>
           ) : null}
         </header>
@@ -976,9 +975,7 @@ function NoteEditor({
         <div
           ref={dropZoneRef}
           aria-busy={imageBusy}
-          className={`relative min-h-[448px] rounded-lg border transition-colors ${
-            imageDrag ? "border-accent/60 bg-accent/5" : "border-transparent"
-          }`}
+          className={cn("relative min-h-[448px] rounded-lg border transition-colors", imageDrag ? "border-accent/60 bg-accent/5" : "border-transparent")}
           onDragOver={(event: ReactDragEvent<HTMLDivElement>) => {
             if (!hasDroppedFiles(event.dataTransfer)) return;
             event.preventDefault();
@@ -1074,7 +1071,7 @@ function NoteSource({
         className="pointer-events-none absolute inset-y-0 w-px bg-content/10"
         style={{ left: gutterWidth }}
       />
-      <textarea
+      <Textarea variant="editor"
         ref={textareaRef}
         value={value}
         autoFocus={autoFocus}
@@ -1116,7 +1113,7 @@ function NoteTagsEditor({
           className="inline-flex h-6 max-w-48 items-center gap-1 rounded-md bg-content/8 pl-2 pr-1 text-[11px] text-content/70"
         >
           <span className="truncate">#{tag}</span>
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Remove #{value0}", { value0: String(tag) })}
             aria-label={uiT("Remove #{value0}", { value0: String(tag) })}
@@ -1124,11 +1121,11 @@ function NoteTagsEditor({
             className="grid size-4 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
           >
             <X className="size-2.5" />
-          </button>
+          </Button>
         </span>
       ))}
       {tags.length < MAX_NOTE_TAGS ? (
-        <input data-ui="input"
+        <Input variant="inline"
           value={value}
           onChange={(event) => {
             const next = event.target.value;

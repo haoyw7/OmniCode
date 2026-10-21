@@ -202,12 +202,10 @@ describe("AgentTranscript collapsed work", () => {
       },
     ]);
     expect(markup).toContain("Fix 1 failed CI check for acme/web PR #42.");
-    expect(markup).toMatch(/<details\b[^>]*>/);
-    expect(markup).not.toMatch(/<details\b[^>]*\bopen[\s=>]/);
+    expect(markup).toMatch(/<button[^>]*aria-expanded="false"[^>]*>/);
+    expect(markup).not.toContain("CI instructions and failure details");
     expect(markup).toContain("CI context</span>");
-    expect(markup).toContain(
-      "Checked commit: abc123\n\nRun tests: expected &lt;main&gt;, received &lt;script&gt;",
-    );
+    expect(markup).not.toContain("Checked commit: abc123");
   });
 
   it("hides provider authentication errors handled by the sign-in modal", () => {
@@ -614,8 +612,8 @@ describe("AgentTranscript collapsed work", () => {
     // it — not one flat dump of every step it took.
     expect(markup).toContain("Reading the diff first.");
     expect(markup).toContain("Show the steps for Reading the diff first.");
-    // An open row holds its wash, so the panel reads as hanging off it.
-    expect(markup).toContain("hover:bg-content/5 bg-content/8");
+    // Disclosure state is carried by the chevron and ARIA, without a selected fill.
+    expect(markup).toContain('data-session-disclosure="true"');
     // The panel opens straight onto its phases. A scroll window of its own
     // here would nest one 17.5rem scroller inside the window each phase
     // already keeps, and the inner one could never reach its last row.

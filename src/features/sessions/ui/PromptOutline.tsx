@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { motion } from "motion/react";
 import { motionGeometry, panelTransition, immediateTransition, outlineRippleStep } from "../../../shared/motion/tokens";
@@ -282,7 +283,7 @@ export function PromptOutline({
         const lit =
           hoverIndex >= 0 ? index === hoverIndex : prompt.id === activeId;
         return (
-          <button
+          <Button variant="ghost" size="content"
             key={prompt.id}
             type="button"
             data-prompt-bar={prompt.id}
@@ -313,7 +314,7 @@ export function PromptOutline({
               style={{ height: BAR_HEIGHT_PX }}
               className="rounded-full bg-content"
             />
-          </button>
+          </Button>
         );
       })}
       <PresenceBoundary propagate>{open && preview && hoverIndex >= 0 ? (

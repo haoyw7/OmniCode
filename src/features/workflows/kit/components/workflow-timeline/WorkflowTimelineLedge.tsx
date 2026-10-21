@@ -1,3 +1,4 @@
+import { Button } from "../../../../../shared/ui/forms/Button";
 import { Scrollbar } from "../../../../../shared/ui/Scrollbar";
 import { workflowEntry } from "./workflow-motion.js";
 import { motion as motionElement } from "motion/react";
@@ -137,7 +138,7 @@ export function WorkflowLedge({
             width={LEDGE_PITCH - LEDGE_LAMP}
           />
         ) : null}
-        <button
+        <Button variant="ghost" size="content"
           aria-label={label}
           className="wf-ledge-lamp relative flex shrink-0 cursor-pointer items-center justify-center rounded-full outline-none before:absolute before:-inset-1 before:content-[''] focus-visible:ring-2 focus-visible:ring-ring/40"
           data-station-index={index}
@@ -152,7 +153,7 @@ export function WorkflowLedge({
             className={cn(stationLampClass(station.status), "wf-land")}
             data-lamp={station.status ?? "pending"}
           />
-        </button>
+        </Button>
       </span>
     );
   });

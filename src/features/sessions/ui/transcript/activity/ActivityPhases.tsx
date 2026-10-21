@@ -1,3 +1,5 @@
+import { cn } from "../../../../../shared/lib/cn";
+import { Button } from "../../../../../shared/ui/forms/Button";
 import { DisclosureChevron } from "../../../../../shared/ui/DisclosureChevron";
 import { animate, motion, useMotionValue } from "motion/react";
 import { duration, msgTransition, immediateTransition } from "../../../../../shared/motion/tokens";
@@ -97,7 +99,7 @@ export const ActivityPhases = memo(function ActivityPhases({
 
   return (
     <div
-      className={`desktop-activity-phases flex min-w-0 flex-col gap-1 ${padded ? "px-4 @md:px-6" : ""}`}
+      className={cn("desktop-activity-phases flex min-w-0 flex-col gap-1", padded ? "px-4 @md:px-6" : "")}
     >
       {phases.map((phase, index) => (
         <ActivityPhaseGroup
@@ -240,7 +242,7 @@ function ActivityPhaseGroup({
   const diff = sheet ? workDiffStats(phase.steps) : undefined;
   return (
     <div className="flex min-w-0 flex-col">
-      <button
+      <Button data-session-disclosure variant="ghost" size="content"
         type="button"
         aria-expanded={sheet ? undefined : open}
         aria-haspopup={sheet ? "dialog" : undefined}
@@ -252,7 +254,7 @@ function ActivityPhaseGroup({
               : uiT("Show the steps for {value0}", { value0: String(title) })
         }
         onClick={() => (sheet ? openActivity!(phase.steps) : setOverride(!open))}
-        className="group group/activity-disclosure flex w-full min-w-0 items-center gap-1.5 py-1 text-left"
+        className="group group/activity-disclosure flex w-full min-w-0 items-center gap-1.5 py-1 text-left justify-start"
         data-activity-sheet={sheet || undefined}
       >
         {/*
@@ -263,7 +265,7 @@ function ActivityPhaseGroup({
         <span className="relative flex size-3.5 shrink-0 items-center justify-center">
           {omniCodePhase ? (
             <OmniCodeMark
-              className={`size-3.5 ${sheet ? "" : "group-hover/activity-disclosure:opacity-0 group-focus-visible/activity-disclosure:opacity-0"}`}
+              className={cn("size-3.5", sheet ? "" : "group-hover/activity-disclosure:opacity-0 group-focus-visible/activity-disclosure:opacity-0")}
             />
           ) : (
             <ActivityPhaseIcon
@@ -289,7 +291,7 @@ function ActivityPhaseGroup({
         {sheet && (
           <ChevronRight className="size-3.5 shrink-0 text-foreground-subtlest" />
         )}
-      </button>
+      </Button>
       <div className="zen-phase-body" data-open={open}>
         <AnimatedCollapse expanded={open}>
           {() => (
@@ -460,7 +462,7 @@ export function SubagentStack({
   onOpenDiff?: (path: string) => void;
 }) {
   return (
-    <div className={`flex min-w-0 flex-col ${embedded ? "" : "px-4 @md:px-6"}`}>
+    <div className={cn("flex min-w-0 flex-col", embedded ? "" : "px-4 @md:px-6")}>
       {blocks.map((block) => (
         <SubagentRow
           key={block.id}
@@ -564,11 +566,9 @@ function SubagentPanel({
         </Shimmer>
       ) : (
         <span
-          className={`min-w-0 flex-1 truncate font-sans text-sm transition-colors duration-200 ${
-            state === "rejected"
+          className={cn("min-w-0 flex-1 truncate font-sans text-sm transition-colors duration-200", state === "rejected"
               ? "text-red-400"
-              : "text-content/75 group-hover:text-content"
-          }`}
+              : "text-content/75 group-hover:text-content")}
         >
           {name}
         </span>
@@ -607,7 +607,7 @@ function SubagentPanel({
 
   return (
     <div className="flex min-w-0 flex-col">
-      <button
+      <Button data-session-disclosure variant="ghost" size="content"
         type="button"
         aria-expanded={openAgent ? undefined : open}
         aria-label={
@@ -617,16 +617,12 @@ function SubagentPanel({
         }
         title={brief}
         onClick={openAgent ? () => openAgent(block) : onToggle}
-        // An open row keeps the wash it lit up under the cursor, so the panel
-        // below reads as hanging off it rather than off the transcript.
-        className={`group -mx-1.5 flex w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors duration-200 hover:bg-content/5 ${
-          open ? "bg-content/8" : ""
-        }`}
+        className="group -mx-1.5 flex w-full min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors duration-200 justify-start"
       >
         <SubagentMascot name={name} state={state} active={active} />
         {label}
         <DisclosureChevron expanded={open} className="size-3.5 shrink-0" />
-      </button>
+      </Button>
       <div className="zen-phase-body" data-open={open}>
         <AnimatedCollapse expanded={!openAgent && open}>
           {() => (

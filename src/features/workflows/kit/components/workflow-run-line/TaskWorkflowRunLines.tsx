@@ -1,3 +1,4 @@
+import { Button } from "../../../../../shared/ui/forms/Button";
 // 侧栏任务行标题下的工作流运行行：
 // Workflow 图标 + 迷你轨道灯 + 当前 phase 名。一眼看懂「这个会话在跑工作流、跑到哪一站」，
 // 别的都不画：没有光晕、没有行进虚线、没有问题 chip（升级问答由主代理作答，不是用户）、
@@ -210,7 +211,7 @@ export function TaskWorkflowRunLines({
           </>
         );
         const lineClassName = cn(
-          "flex min-w-0 max-w-full items-center gap-1.5 rounded-md text-foreground-subtle",
+          "flex min-w-0 max-w-full items-center justify-start gap-1.5 rounded-md text-foreground-subtle",
           compact ? "h-6 text-ui-sm" : "h-5 text-ui-sm",
           interactive && "-ml-1 px-1 hover:bg-surface-hover hover:text-foreground",
         );
@@ -222,7 +223,7 @@ export function TaskWorkflowRunLines({
         };
         const line =
           interactive && session !== undefined && openRun !== null ? (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               {...lineProps}
               aria-label={ariaLabel}
@@ -241,7 +242,7 @@ export function TaskWorkflowRunLines({
               }}
             >
               {content}
-            </button>
+            </Button>
           ) : (
             <span {...lineProps} aria-label={ariaLabel}>
               {content}

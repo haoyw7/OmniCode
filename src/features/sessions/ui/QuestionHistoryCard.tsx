@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { RotatingIcon } from "../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../shared/motion/tokens";
 import { useContext, useState } from "react";
@@ -71,9 +73,7 @@ export function QuestionHistoryCard({
                 {item.prompt}
               </p>
               <p
-                className={`mt-0.5 whitespace-pre-wrap break-words text-[14px] leading-5 ${
-                  labels.length ? "font-medium text-content" : "text-content/45"
-                }`}
+                className={cn("mt-0.5 whitespace-pre-wrap break-words text-[14px] leading-5", labels.length ? "font-medium text-content" : "text-content/45")}
               >
                 {labels.length ? labels.join("\n") : t("Not answered")}
               </p>
@@ -87,29 +87,25 @@ export function QuestionHistoryCard({
       className="question-history m-0 w-fit min-w-0 max-w-[80%] overflow-hidden rounded-xl border border-content/10 bg-content/[0.025] text-left font-sans"
       data-question-history={blockId}
     >
-      <button
+      <Button variant="ghost" size="content"
         type="button"
-        className="flex min-h-11 w-full items-start gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-content/3 motion-reduce:transition-none"
+        className="flex min-h-11 w-full items-start gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-content/3 motion-reduce:transition-none justify-start"
         aria-expanded={sheet ? undefined : open}
         aria-haspopup={sheet ? "dialog" : undefined}
         onClick={() => sheet ? openQuestion?.(blockId) : setOpen((value) => !value)}
       >
         <span
-          className={`mt-px grid size-6 shrink-0 place-items-center rounded-full ${
-            answered
+          className={cn("mt-px grid size-6 shrink-0 place-items-center rounded-full", answered
               ? "bg-emerald-500/10 text-emerald-500"
               : answerable
                 ? "bg-accent/10 text-accent"
-                : "bg-content/[0.06] text-content/50"
-          }`}
+                : "bg-content/[0.06] text-content/50")}
         >
           <Icon className="size-3.5" />
         </span>
         <span className="min-w-0 flex-1">
           <span
-            className={`block text-[11px] leading-4 ${
-              answerable ? "font-medium text-accent" : "text-content/45"
-            }`}
+            className={cn("block text-[11px] leading-4", answerable ? "font-medium text-accent" : "text-content/45")}
           >
             {answerable ? t("Answer question") : status}
           </span>
@@ -128,7 +124,7 @@ export function QuestionHistoryCard({
         ) : (
           <RotatingIcon icon={ChevronDown} angle={open ? motionGeometry.flipAngle : 0} className="mt-1 size-3.5 shrink-0 text-content/40" />
         )}
-      </button>
+      </Button>
       <AnimatedCollapse expanded={open && !sheet}>
         {canAnswer && !sheet ? (
           <QuestionHistoryForm

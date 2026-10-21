@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { errorMessage } from "../../../shared/lib/errorMessage";
@@ -27,9 +28,9 @@ export function BotWorkerDetails({
       <header>
         <strong>{snapshot?.session.title ?? t("Worker details")}</strong>
         <span>{t("Read only")}</span>
-        <button type="button" onClick={onClose}>
+        <Button variant="ghost" size="content" type="button" onClick={onClose}>
           {t("Close")}
-        </button>
+        </Button>
       </header>
       {error && <p role="alert">{t(error)}</p>}
       {snapshot && (

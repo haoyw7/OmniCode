@@ -1,3 +1,6 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useEffect, useMemo, useState } from "react";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { autoAnimateOptions } from "../../../shared/motion/tokens";
@@ -142,49 +145,48 @@ export function ProjectsPage({
           role="tablist"
           aria-label={t("Projects")}
         >
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             role="tab"
             aria-selected={!archived}
             onClick={() => setArchived(false)}
           >
             {t("Your projects")}
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="content"
             type="button"
             role="tab"
             aria-selected={archived}
             onClick={() => setArchived(true)}
           >
             {t("Archived")}
-          </button>
+          </Button>
         </div>
         <div className="desktop-collection-filters">
           <label className="desktop-collection-search">
             <Search />
-            <input
+            <Input variant="inline"
               aria-label={t("Search projects")}
               placeholder={t("Search projects")}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-          <select
-            aria-label={t("Sort projects")}
+          <SearchableSelect
+            label={t("Sort projects")}
             value={sort}
-            onChange={(event) => setSort(event.target.value)}
-          >
-            <option value="recent">{t("Recently opened")}</option>
-            <option value="name">{t("Name")}</option>
-          </select>
-          <button
+            onChange={setSort}
+            searchable={false}
+            options={[{ value: "recent", label: t("Recently opened") }, { value: "name", label: t("Name") }]}
+          />
+          <Button variant="ghost" size="content"
             type="button"
             className="desktop-collection-create"
             onClick={mode === "code" ? onOpen : onNewChat}
           >
             <Plus />
             {t(mode === "code" ? "Open project" : "New chat")}
-          </button>
+          </Button>
         </div>
       </div>
       <div className="desktop-project-grid" ref={grid}>
@@ -197,7 +199,7 @@ export function ProjectsPage({
                 : Folder;
           return (
             <article className="desktop-project-card" key={project.path}>
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 className="desktop-project-open"
                 onClick={() =>
@@ -218,8 +220,8 @@ export function ProjectsPage({
                 <span data-file-label className="desktop-project-path" title={project.path}>
                   {prettyCwd(project.path)}
                 </span>
-              </button>
-              <button
+              </Button>
+              <Button variant="ghost" size="content"
                 type="button"
                 className="desktop-project-more"
                 data-menu-trigger="project"
@@ -230,7 +232,7 @@ export function ProjectsPage({
               >
                 <MenuHover />
                 <MoreHorizontal />
-              </button>
+              </Button>
             </article>
           );
         })}
@@ -256,7 +258,7 @@ export function ProjectsPage({
         onDismiss={() => setMenu(undefined)}
       >
         <div className="desktop-project-menu" role="menu">
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             role="menuitem"
             onClick={() => {
@@ -267,8 +269,8 @@ export function ProjectsPage({
             <MenuHover />
             <Pin />
             <span data-menu-title>{t(menu && pinned(menu.path) ? "Unpin" : "Pin")}</span>
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="content"
             type="button"
             role="menuitem"
             onClick={() => {
@@ -279,7 +281,7 @@ export function ProjectsPage({
             <MenuHover />
             <Archive />
             <span data-menu-title>{t(archived ? "Restore" : "Archive")}</span>
-          </button>
+          </Button>
         </div>
       </Popover>
     </section>

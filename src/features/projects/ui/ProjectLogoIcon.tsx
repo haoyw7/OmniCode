@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { Folder, type IconComponent } from "../../../shared/ui/icons";
 import { useEffect, useState } from "react";
 import { projectLogoSrc } from "../model/projectLogos";
@@ -36,7 +37,7 @@ export function ProjectLogoIcon({
         key={`${path ?? ""}:${revision}`}
         src={src}
         alt=""
-        className={`rounded-sm object-cover ${className} ${imageClassName ?? ""}`}
+        className={cn("rounded-sm object-cover", className, imageClassName ?? "")}
       />
     );
   }

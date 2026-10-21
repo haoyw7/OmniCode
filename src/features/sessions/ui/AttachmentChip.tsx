@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useState } from "react";
@@ -41,17 +43,15 @@ export function AttachmentChip({ attachment, onRemove, tile = false, onOpen, pre
   return (
     <>
       <div
-        className={`group relative flex min-w-0 items-center gap-1.5 rounded-md ${
-          image
+        className={cn("group relative flex min-w-0 items-center gap-1.5 rounded-md", image
             ? "attachment-chip-image"
             : fileTile
               ? "attachment-chip-file"
-              : `bg-content/10 py-0.5 pl-1 ${onRemove ? "pr-4" : "pr-1"}`
-        }`}
+              : cn("bg-content/10 py-0.5 pl-1", onRemove ? "pr-4" : "pr-1"))}
         title={attachment.path ?? attachment.name}
       >
         {image ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             aria-label={uiT("Open {value0} full screen", {
               value0: String(attachment.name),
@@ -72,9 +72,9 @@ export function AttachmentChip({ attachment, onRemove, tile = false, onOpen, pre
               draggable={false}
               className="attachment-chip-thumbnail size-9 rounded-lg object-cover"
             />
-          </button>
+          </Button>
         ) : fileTile ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             disabled={!onOpen}
             aria-label={onOpen ? openLabel : attachment.name}
@@ -96,7 +96,7 @@ export function AttachmentChip({ attachment, onRemove, tile = false, onOpen, pre
               <span data-file-label className="attachment-chip-card-name">{attachment.name}</span>
               <span className="attachment-chip-card-type">{typeLabel}</span>
             </span>
-          </button>
+          </Button>
         ) : (
           <>
             <span className="grid size-5 shrink-0 place-items-center">
@@ -112,7 +112,7 @@ export function AttachmentChip({ attachment, onRemove, tile = false, onOpen, pre
           </>
         )}
         {onRemove ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Remove")}
             aria-label={uiT("Remove {value0}", {
@@ -125,7 +125,7 @@ export function AttachmentChip({ attachment, onRemove, tile = false, onOpen, pre
             className="attachment-chip-remove absolute -right-1 -top-1 grid size-5 shrink-0 place-items-center rounded-full bg-content/20 text-content/70 opacity-100 shadow-sm backdrop-blur-sm hover:bg-content/15 hover:text-content"
           >
             <X className="size-3" strokeWidth={2} />
-          </button>
+          </Button>
         ) : null}
       </div>
       <PresenceBoundary>{image && previewOpen ? (

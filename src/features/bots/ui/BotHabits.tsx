@@ -1,3 +1,7 @@
+import { Radio } from "../../../shared/ui/forms/Radio";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
+import { Textarea } from "../../../shared/ui/forms/Textarea";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -194,7 +198,7 @@ export function BotHabits({
                 )}
               </div>
               <div className="assistant-habit-actions">
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   className="assistant-link-button"
                   disabled={busy}
@@ -203,8 +207,8 @@ export function BotHabits({
                   }
                 >
                   {t("Run now")}
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" size="content"
                   type="button"
                   className="assistant-link-button"
                   disabled={busy}
@@ -217,8 +221,8 @@ export function BotHabits({
                   }
                 >
                   {t(habit.enabled ? "Pause" : "Resume")}
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" size="content"
                   type="button"
                   className="assistant-link-button"
                   disabled={busy}
@@ -232,8 +236,8 @@ export function BotHabits({
                   }
                 >
                   {t("Edit")}
-                </button>
-                <button
+                </Button>
+                <Button variant="ghost" size="content"
                   type="button"
                   className="assistant-link-button"
                   disabled={busy}
@@ -243,27 +247,27 @@ export function BotHabits({
                   }}
                 >
                   {t("Delete")}
-                </button>
+                </Button>
               </div>
             </li>
           ))}
         </ul>
       )}
       <AnimatedCollapse expanded={!draft}>
-        <button data-ui="button" data-variant="secondary"
+        <Button variant="secondary" size="sm" data-ui="button"
           type="button"
           className="assistant-habit-add"
           disabled={busy || !!draft}
           onClick={() => open(newDraft())}
         >
           {t("Add habit")}
-        </button>
+        </Button>
       </AnimatedCollapse>
       <AnimatedCollapse expanded={!!draft}>
         <div className="assistant-habit-editor" inert={!draft}>
           <label>
             {t("Name")}
-            <input data-ui="input"
+            <Input data-ui="input"
               value={shown.name}
               aria-invalid={!!form.formState.errors.name}
               maxLength={80}
@@ -274,7 +278,7 @@ export function BotHabits({
           </label>
           <label>
             {t("What to do")}
-            <textarea data-ui="textarea"
+            <Textarea data-ui="textarea"
               value={shown.prompt}
               aria-invalid={!!form.formState.errors.prompt}
               maxLength={4000}
@@ -288,8 +292,8 @@ export function BotHabits({
             <div className="assistant-chips" role="radiogroup">
               {KINDS.map(({ kind, label }) => (
                 <label className="assistant-chip" key={kind}>
-                  <input
-                    type="radio"
+                  <Radio
+
                     name="assistant-habit-kind"
                     checked={shown.schedule.scheduleKind === kind}
                     disabled={busy}
@@ -300,14 +304,14 @@ export function BotHabits({
               ))}
             </div>
           </div>
-          {shown.schedule.scheduleKind === "weekly" && (
+          <AnimatedCollapse expanded={shown.schedule.scheduleKind === "weekly"}>
             <div className="assistant-field">
               <span className="assistant-field-label">{t("Day")}</span>
               <div className="assistant-chips" role="radiogroup">
                 {WEEKDAYS.map((day, index) => (
                   <label className="assistant-chip" key={day}>
-                    <input
-                      type="radio"
+                    <Radio
+
                       name="assistant-habit-day"
                       checked={shown.schedule.dayOfWeek === index}
                       disabled={busy}
@@ -318,11 +322,11 @@ export function BotHabits({
                 ))}
               </div>
             </div>
-          )}
+          </AnimatedCollapse>
           {shown.schedule.scheduleKind === "hourly" ? (
             <label>
               {t("Minute")}
-              <input data-ui="input"
+              <Input data-ui="input"
                 type="number"
                 min={0}
                 max={59}
@@ -340,7 +344,7 @@ export function BotHabits({
           ) : (
             <label>
               {t("Time")}
-              <input data-ui="input"
+              <Input data-ui="input"
                 type="time"
                 value={shown.schedule.time}
                 aria-invalid={!!form.formState.errors.schedule?.time}
@@ -355,21 +359,21 @@ export function BotHabits({
           <FieldError errors={[form.formState.errors.name, form.formState.errors.prompt, form.formState.errors.schedule?.time]} />
           <small>{t("Times are in {zone}.", { zone: timeZone })}</small>
           <div className="assistant-habit-editor-actions">
-            <button data-ui="button" data-variant="secondary"
+            <Button variant="secondary" size="sm" data-ui="button"
               type="button"
               disabled={pending}
               onClick={() => setEditing(false)}
             >
               {t("Cancel")}
-            </button>
-            <button data-ui="button" data-variant="primary"
+            </Button>
+            <Button variant="primary" size="sm" data-ui="button"
               type="button"
               className="assistant-primary"
               disabled={busy || !shown.name.trim() || !shown.prompt.trim()}
               onClick={() => void save()}
             >
               {t(shown.id ? "Save habit" : "Add habit")}
-            </button>
+            </Button>
           </div>
         </div>
       </AnimatedCollapse>

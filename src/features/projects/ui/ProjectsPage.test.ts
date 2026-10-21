@@ -87,6 +87,18 @@ it("uses normalized project names for Windows cards, search and live rename upda
   expect(cards()).toHaveLength(1);
 });
 
+it("sorts projects by name through the shared picker", async () => {
+  props.recents = [{ path: "/work/Zeta", openedAt: 3 }, { path: "/work/Alpha", openedAt: 2 }];
+  props.cwd = "/work/Zeta";
+  await act(async () => render());
+  expect(cards()[0].querySelector(".desktop-project-path")?.getAttribute("title")).toBe("/work/Zeta");
+  await click(container.querySelector('[aria-label^="Sort projects"]'));
+  const option = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(node => node.textContent === "Name")!;
+  await act(async () => option.click());
+  await act(async () => finishMotion());
+  expect(cards()[0].querySelector(".desktop-project-path")?.getAttribute("title")).toBe("/work/Alpha");
+});
+
 it("refreshes pin badges and menu state immediately without a Host preference event", async () => {
   await act(async () => render());
   await click(card(A).querySelector(".desktop-project-more"));

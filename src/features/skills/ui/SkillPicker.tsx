@@ -1,3 +1,6 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -77,15 +80,15 @@ export function SkillPicker({
             onPick={onPick}
           />
           {showCreate ? (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={onStartCreate}
-              className="flex w-full items-center gap-2 border-t border-stroke px-2.5 py-2 text-left text-[12px] text-content/70 hover:bg-content/6 hover:text-content"
+              className="flex w-full items-center justify-start gap-2 border-t border-stroke px-2.5 py-2 text-left text-[12px] text-content/70 hover:bg-content/6 hover:text-content"
             >
               <Plus className="size-3.5 shrink-0" />
               {uiT("New skill")}
-            </button>
+            </Button>
           ) : null}
         </>
       )}
@@ -156,23 +159,22 @@ function SkillList({
       role="listbox"
       aria-label={uiT("Commands and skills")}
       onMouseMove={onListMouseMove}
-      className={`${compact ? "max-h-48" : "max-h-[min(240px,40vh)]"} overflow-y-auto overscroll-none px-1 py-1`}
+      className={cn(compact ? "max-h-48" : "max-h-[min(240px,40vh)]", "overflow-y-auto overscroll-none px-1 py-1")}
     >
       {skills.map((skill, index) => {
         const highlighted = index === active;
         return (
-          <button
+          <Button variant="ghost" size="content"
             key={`${skill.kind}:${skill.source}:${skill.invocation}`}
             ref={highlighted ? activeRef : undefined}
             type="button"
             role="option"
+            data-menu-row={compact ? "" : "description"}
             aria-selected={highlighted}
             onMouseDown={(e) => e.preventDefault()}
             onMouseEnter={() => onRowEnter(index)}
             onClick={() => onPick(skill)}
-            className={`flex w-full rounded-md px-2 text-left ${
-              compact ? "h-8 items-center" : "flex-col gap-0.5 py-1.5"
-            } ${highlighted ? "bg-content/10 text-content" : "text-content"}`}
+            className={cn("flex w-full justify-start text-left", compact ? "items-center" : "flex-col items-stretch", highlighted && "bg-selection")}
           >
             <span className="flex min-w-0 w-full items-baseline gap-2">
               <span className="truncate text-[13px]">/{skill.invocation}</span>
@@ -195,7 +197,7 @@ function SkillList({
                     .join(" · ")}
               </span>
             ) : null}
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -260,7 +262,7 @@ export function CreateSkillForm({
       <p className="mb-2 text-[11px] text-content/50">
         {uiT("Writes a starter SKILL.md you can edit.")}
       </p>
-      <input
+      <Input
         {...form.register("name")}
         ref={(node) => { form.register("name").ref(node); input.current = node; }}
         aria-invalid={!!form.formState.errors.name}
@@ -268,7 +270,7 @@ export function CreateSkillForm({
         placeholder="skill-name"
         aria-label={uiT("Skill name")}
         disabled={busy}
-        className={`mb-2 w-full rounded-md bg-content/10 px-2 py-1.5 text-[13px] text-content outline-none placeholder:text-content/40 ${monospace ? "font-mono" : "font-sans"}`}
+        className={cn("mb-2", monospace ? "font-mono" : "font-sans")}
       />
       <div className="mb-2 flex gap-1">
         <ScopeButton
@@ -290,21 +292,19 @@ export function CreateSkillForm({
       </div>
       <FieldError errors={[form.formState.errors.name, error ? { message: error } : undefined]} />
       <div className="flex items-center justify-end gap-1">
-        <button
+        <Button variant="ghost" size="sm"
           type="button"
           disabled={busy}
           onClick={onCancel}
-          className="rounded-md px-2 py-1 text-[12px] text-content/50 hover:bg-content/6 hover:text-content"
         >
           {uiT("Cancel")}
-        </button>
-        <button
+        </Button>
+        <Button variant="primary" size="sm"
           type="submit"
           disabled={!valid || busy}
-          className="rounded-md bg-content/20 px-2 py-1 text-[12px] text-content disabled:opacity-40"
         >
           {busy ? uiT("Creating…") : uiT("Create")}
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -326,23 +326,20 @@ function ScopeButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`flex min-w-0 flex-1 flex-col rounded-md px-2 py-1.5 text-left ${
-        selected
-          ? "bg-selection-emphasis text-content"
-          : "bg-selection text-content/70"
-      } disabled:opacity-40`}
+      aria-pressed={selected}
+      className="flex min-w-0 flex-1 flex-col items-stretch rounded-md px-2 py-1.5 text-left"
     >
       <span className="text-[12px]">{label}</span>
       <span
-        className={`truncate text-[10px] text-content/40 ${monospace ? "font-mono" : "font-sans"}`}
+        className={cn("truncate text-[10px] text-content/40", monospace ? "font-mono" : "font-sans")}
       >
         {hint}
       </span>
-    </button>
+    </Button>
   );
 }
 

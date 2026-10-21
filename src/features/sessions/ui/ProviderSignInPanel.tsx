@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import type { HarnessId } from "../model/session";
 import { HARNESS_TITLE } from "../model/session";
@@ -47,7 +48,7 @@ export function ProviderSignInPanel({
               value0: String(title),
             })}
       </p>
-      <button
+      <Button variant="primary" size="content"
         type="button"
         autoFocus={autoFocus}
         className="mt-4 inline-flex h-8 items-center  gap-1.5 rounded-lg bg-content px-3.5 text-[12px] font-medium text-background-base transition-transform duration-150 ease-out hover:bg-content/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98] disabled:cursor-default disabled:opacity-55 text-center"
@@ -64,7 +65,7 @@ export function ProviderSignInPanel({
           : complete
             ? (completeActionLabel ?? uiT("Signed in"))
             : uiT("Sign in to {value0}", { value0: String(title) })}
-      </button>
+      </Button>
       {state === "error" && error ? (
         <p
           className="mt-2.5 max-w-60 text-[10px] leading-4 text-red-500"

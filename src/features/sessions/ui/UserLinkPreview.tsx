@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { githubLinkItemQuery, githubLinkDetailsQuery } from "../model/linkPreviewQueries";
@@ -192,11 +193,9 @@ function GithubWorkItemPreview({
           value3: String(itemTitle ? `: ${itemTitle}` : ""),
         })}
         aria-describedby={open ? tooltipId : undefined}
-        className={`group mx-px inline-flex max-w-full items-center gap-1 rounded-md border-0 bg-transparent p-0 text-content/70 no-underline shadow-none outline-none transition-[color,transform] duration-[140ms] ease-[var(--motion-ease-out)] hover:text-content focus-visible:ring-2 focus-visible:ring-accent/60 active:scale-[0.98] motion-reduce:transition-none pb-px ${
-          compact
+        className={cn("group mx-px inline-flex max-w-full items-center gap-1 rounded-md border-0 bg-transparent p-0 text-content/70 no-underline shadow-none outline-none transition-[color,transform] duration-[140ms] ease-[var(--motion-ease-out)] hover:text-content focus-visible:ring-2 focus-visible:ring-accent/60 active:scale-[0.98] motion-reduce:transition-none pb-px", compact
             ? "align-middle text-xs leading-4"
-            : "align-[-0.25em] text-[11px] leading-4"
-        }`}
+            : "align-[-0.25em] text-[11px] leading-4")}
         onMouseEnter={showAfterDelay}
         onMouseLeave={hideAfterDelay}
         onFocus={showNow}
@@ -207,15 +206,11 @@ function GithubWorkItemPreview({
         }}
       >
         <span
-          className={` inline-flex shrink-0 items-center font-medium ${
-            compact
+          className={cn("inline-flex shrink-0 items-center font-medium", compact
               ? "h-[18px] gap-0.5 rounded-[6px] px-1.5"
-              : "h-5 gap-1 rounded-[5px] px-1.5"
-          } ${
-            workItem.kind === "pr"
+              : "h-5 gap-1 rounded-[5px] px-1.5", workItem.kind === "pr"
               ? "bg-violet-400/10 text-violet-400/90"
-              : "bg-emerald-400/10 text-emerald-400/90"
-          }`}
+              : "bg-emerald-400/10 text-emerald-400/90")}
         >
           {workItem.kind === "pr" ? (
             <GitPullRequest
@@ -283,7 +278,7 @@ function GithubWorkItemCard({
     <div className="min-w-0 text-left">
       <div className="flex min-w-0 items-center gap-2 text-[11px]">
         <status.Icon
-          className={`size-4 shrink-0 ${status.className}`}
+          className={cn("size-4 shrink-0", status.className)}
           aria-hidden="true"
         />
         <span className="min-w-0 truncate font-medium text-content/65">
@@ -294,7 +289,7 @@ function GithubWorkItemCard({
           #{parsed.number}
         </span>
         <span
-          className={`ml-auto shrink-0 rounded-full bg-content/[0.07] px-2 py-0.5 font-medium ${status.className}`}
+          className={cn("ml-auto shrink-0 rounded-full bg-content/[0.07] px-2 py-0.5 font-medium", status.className)}
         >
           {status.label}
         </span>

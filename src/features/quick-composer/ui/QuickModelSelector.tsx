@@ -1,6 +1,9 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
+import { Slider } from "../../../shared/ui/forms/Slider";
+import { cn } from "../../../shared/lib/cn";
 import { usePreferenceState } from "../../settings/model/usePreferenceState";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import "./QuickModelSelector.css";
 import {
   useEffect,
   useId,
@@ -187,7 +190,7 @@ export function QuickModelSelector({
         {tabs.map((id, index) => {
           const title = id === "favorites" ? "Favorites" : HARNESS_TITLE[id];
           return (
-            <button
+            <Button variant="ghost" size="content"
               key={id}
               type="button"
               role="tab"
@@ -221,14 +224,14 @@ export function QuickModelSelector({
               ) : (
                 <HarnessIcon harness={id} className="size-4" />
               )}
-            </button>
+            </Button>
           );
         })}
       </nav>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <label className="flex h-10 shrink-0 items-center gap-2 border-b border-stroke px-4 text-content/40">
           <Search className="size-3.5 shrink-0" />
-          <input
+          <Input variant="inline"
             ref={searchRef}
             value={query}
             onChange={(event) => {
@@ -286,10 +289,11 @@ export function QuickModelSelector({
                   <div
                     key={`${item.harness}:${item.id}`}
                     data-index={index}
-                    className={`flex h-8 items-center rounded-lg ${index === active ? "bg-selection-emphasis" : "hover:bg-selection-hover"}`}
+                    data-menu-row="single"
+                    className={cn("flex items-center rounded-lg", index === active ? "bg-selection-emphasis" : "hover:bg-selection-hover")}
                     onMouseEnter={() => setActive(index)}
                   >
-                    <button
+                    <Button variant="ghost" size="content"
                       id={`${listId}-${index}`}
                       type="button"
                       role="option"
@@ -298,7 +302,7 @@ export function QuickModelSelector({
                       disabled={!enabled(item)}
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => pick(item)}
-                      className="flex min-w-0 flex-1 items-center gap-2 px-2 text-left text-[13px] text-content disabled:opacity-35"
+                      className="flex min-w-0 flex-1 items-center justify-start gap-2 text-left"
                     >
                       {visibleTab === "favorites" ? (
                         <HarnessIcon
@@ -315,8 +319,8 @@ export function QuickModelSelector({
                       {item.id === model.id ? (
                         <Check className="ml-auto size-3.5 shrink-0 text-accent" />
                       ) : null}
-                    </button>
-                    <button
+                    </Button>
+                    <Button variant="ghost" size="icon-xs"
                       type="button"
                       title={
                         favorites.includes(item.id)
@@ -339,7 +343,6 @@ export function QuickModelSelector({
                         setFavorites(next);
                         saveFavoriteModels(next);
                       }}
-                      className="grid size-8 shrink-0 place-items-center text-content/35 hover:text-content"
                     >
                       <Star
                         className="size-3.5"
@@ -347,7 +350,7 @@ export function QuickModelSelector({
                           favorites.includes(item.id) ? "currentColor" : "none"
                         }
                       />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -366,7 +369,7 @@ export function QuickModelSelector({
           <div className="shrink-0 border-t border-stroke px-4 pb-3 pt-2">
             <div className="mb-1 grid grid-cols-[28px_1fr_28px] items-center">
               {canToggleFast ? (
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   aria-label={uiT("Fast mode")}
                   aria-pressed={fastEnabled}
@@ -378,20 +381,20 @@ export function QuickModelSelector({
                   onClick={() =>
                     changeSetting(fast.id, fastEnabled ? fastOff : fastOn)
                   }
-                  className={`grid size-7 place-items-center rounded-md transition-colors ${fastEnabled ? "bg-amber-400/20 text-amber-400 hover:bg-amber-400/30" : "text-content/40 hover:bg-selection-hover hover:text-content"}`}
+                  className={cn("grid size-7 place-items-center rounded-md transition-colors", fastEnabled ? "bg-amber-400/20 text-amber-400 hover:bg-amber-400/30" : "text-content/40 hover:bg-selection-hover hover:text-content")}
                 >
                   <Zap
                     className="size-4"
                     fill={fastEnabled ? "currentColor" : "none"}
                   />
-                </button>
+                </Button>
               ) : (
                 <span />
               )}
               <span className="text-center text-[13px] font-medium text-accent">
                 {effort.options[effortIndex]?.label}
               </span>
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 aria-label={uiT("Reset to saved defaults")}
                 title={uiT("Reset to saved defaults")}
@@ -399,47 +402,18 @@ export function QuickModelSelector({
                 className="grid size-7 place-items-center rounded-md text-content/40 hover:bg-selection-hover hover:text-content"
               >
                 <RotateCcw className="size-4" />
-              </button>
+              </Button>
             </div>
-            <div className="relative h-6">
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-1/2 h-3 -translate-y-1/2 rounded-full"
-                style={{
-                  background: `linear-gradient(to right, var(--color-accent) ${(effortIndex / Math.max(1, effort.options.length - 1)) * 100}%, color-mix(in srgb, var(--color-content) 15%, transparent) 0%)`,
-                }}
-              />
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-2.5 top-1/2"
-              >
-                {effort.options.map((option, index) => (
-                  <span
-                    key={option.value}
-                    className={`absolute size-1 -translate-x-1/2 -translate-y-1/2 rounded-full ${index <= effortIndex ? "bg-white/45" : "bg-content/25"}`}
-                    style={{
-                      left: `${(index / Math.max(1, effort.options.length - 1)) * 100}%`,
-                    }}
-                  />
-                ))}
-              </div>
-              <input
-                type="range"
-                aria-label={effort.label}
-                min={0}
-                max={effort.options.length - 1}
-                step={1}
-                value={effortIndex}
-                aria-valuetext={effort.options[effortIndex]?.label}
-                onChange={(event) =>
-                  changeSetting(
-                    effort.id,
-                    effort.options[Number(event.target.value)].value,
-                  )
-                }
-                className="quick-reasoning-slider relative z-10 block h-6 w-full"
-              />
-            </div>
+            <Slider
+              aria-label={effort.label}
+              aria-valuetext={effort.options[effortIndex]?.label}
+              min={0}
+              max={effort.options.length - 1}
+              step={1}
+              value={[effortIndex]}
+              onValueChange={([index]) => changeSetting(effort.id, effort.options[index].value)}
+              className="h-6"
+            />
           </div>
         ) : null}
       </div>

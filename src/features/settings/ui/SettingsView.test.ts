@@ -573,15 +573,13 @@ describe("settings pages", () => {
     expect(container.querySelector('[aria-label="Show background on"]')).toBeNull();
     expect(container.querySelector('[aria-label="Empty chat background visibility"]')).toBeNull();
     expect(container.querySelector('[aria-label="Session background visibility"]')).toBeNull();
-    const strength = strengthRow.querySelector<HTMLInputElement>('input[type="range"]')!;
-    expect(strength.value).toBe("35");
+    const strength = strengthRow.querySelector<HTMLElement>('[role="slider"]')!;
+    expect(strength.getAttribute("aria-valuenow")).toBe("35");
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(strength, "60");
-      strength.dispatchEvent(new Event("input", { bubbles: true }));
-      strength.dispatchEvent(new KeyboardEvent("keyup", { key: "ArrowRight", bubbles: true }));
+      strength.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
     });
-    expect(document.documentElement.style.getPropertyValue("--chat-background-opacity")).toBe("0.6");
-    expect(localStorage.getItem("omnicode.chatBackgroundOpacity")).toBe("0.6");
+    expect(document.documentElement.style.getPropertyValue("--chat-background-opacity")).toBe("0.36");
+    expect(localStorage.getItem("omnicode.chatBackgroundOpacity")).toBe("0.36");
     expect(localStorage.getItem("omnicode.chatBackgroundEmptyOpacity")).toBeNull();
     expect(localStorage.getItem("omnicode.chatBackgroundSessionOpacity")).toBeNull();
 

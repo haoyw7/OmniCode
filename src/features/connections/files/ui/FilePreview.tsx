@@ -1,3 +1,5 @@
+import { Button } from "../../../../shared/ui/forms/Button";
+import { cn } from "../../../../shared/lib/cn";
 import { RotatingIcon } from "../../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../../shared/motion/tokens";
 import { useId, useMemo, useState } from "react";
@@ -108,9 +110,9 @@ export function FilePreview({
   if (variant === "list") {
     return (
       <section className="file-preview-list min-w-0 border-y border-content/10">
-        <button
+        <Button variant="ghost" size="content"
           type="button"
-          className="flex min-h-11 w-full items-center gap-3 bg-content/3 px-4 py-2 text-left"
+          className="flex min-h-11 w-full items-center justify-start gap-3 bg-content/3 px-4 py-2 text-left"
           aria-expanded={expanded}
           aria-controls={contentId}
           title={path}
@@ -129,7 +131,7 @@ export function FilePreview({
             </span>
           </span>
           <StatusIcon status={status} />
-        </button>
+        </Button>
         <AnimatedCollapse
           expanded={expanded}
           motion="height"
@@ -168,14 +170,14 @@ export function FilePreview({
       <div className="flex items-center gap-2 px-2.5 py-2">
         <FileTypeIcon name={fileName || "file"} isDir={false} />
         {filePath && onOpenFile ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
-            className="min-w-0 flex-1 truncate text-left font-mono text-[12px] font-medium text-content/85 hover:text-sky-300 hover:underline"
+            className="block min-w-0 flex-1 truncate text-left font-mono text-[12px] font-medium text-content/85 hover:text-sky-300 hover:underline"
             title={path}
             onClick={() => onOpenFile(filePath)}
           >
             {label}
-          </button>
+          </Button>
         ) : (
           <span
             className="min-w-0 flex-1 truncate font-mono text-[12px] font-medium text-content/85"
@@ -254,9 +256,9 @@ function PreviewLine({
 
   return (
     <div
-      className={`relative flex items-baseline ${scrollable ? "w-max min-w-full" : ""} ${bg}`}
+      className={cn("relative flex items-baseline", scrollable ? "w-max min-w-full" : "", bg)}
     >
-      <span className={`absolute inset-y-0 left-0 w-0.5 ${bar}`} />
+      <span className={cn("absolute inset-y-0 left-0 w-0.5", bar)} />
       <span
         className={
           list
@@ -268,13 +270,13 @@ function PreviewLine({
       </span>
       {showGutter ? (
         <span
-          className={`w-3 shrink-0 text-center font-mono text-[10px] font-bold ${markColor}`}
+          className={cn("w-3 shrink-0 text-center font-mono text-[10px] font-bold", markColor)}
         >
           {mark}
         </span>
       ) : null}
       <span
-        className={`min-w-0 flex-1 pr-2 font-mono ${list ? "pl-3 text-[13px] leading-6 text-content/90" : "text-[11px] leading-4.5"} ${scrollable ? "whitespace-pre" : "truncate"}`}
+        className={cn("min-w-0 flex-1 pr-2 font-mono", list ? "pl-3 text-[13px] leading-6 text-content/90" : "text-[11px] leading-4.5", scrollable ? "whitespace-pre" : "truncate")}
       >
         {list
           ? line.text || " "
@@ -302,7 +304,7 @@ function highlight(text: string, dimmed: boolean) {
     trimmed.startsWith("///") ||
     trimmed.startsWith("#")
   ) {
-    return <span className={`text-content/45 ${dim}`}>{text}</span>;
+    return <span className={cn("text-content/45", dim)}>{text}</span>;
   }
 
   const parts: { text: string; color: string }[] = [];
@@ -325,7 +327,7 @@ function highlight(text: string, dimmed: boolean) {
   if (last < text.length) parts.push({ text: text.slice(last), color: "" });
 
   return (
-    <span className={`text-content/80 ${dim}`}>
+    <span className={cn("text-content/80", dim)}>
       {parts.map((part, index) =>
         part.color ? (
           <span key={index} className={part.color}>

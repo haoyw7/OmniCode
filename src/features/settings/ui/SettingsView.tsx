@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { AnimatePresence, animate } from "motion/react";
 import { panelTransition } from "../../../shared/motion/tokens";
@@ -241,14 +243,14 @@ export function SettingsView({
         </div>
         <div className="flex shrink-0 items-center gap-1.5 pr-2">
           {section === "appearance" ? (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               onClick={() => appearance.current?.restoreDefaults()}
               className="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[12px] text-content/50 hover:bg-content/6 hover:text-content"
             >
               <RotateCcw className="size-3.5" />
               {uiT("Restore defaults")}
-            </button>
+            </Button>
           ) : null}
           <SettingsSearch onReveal={onReveal} />
         </div>
@@ -431,7 +433,7 @@ function SettingsSearch({
           </p>
         ) : (
           results.map((result, index) => (
-            <button
+            <Button data-menu-row="single" variant="ghost" size="content"
               key={`${result.section}:${result.settingId ?? "*"}`}
               type="button"
               role="option"
@@ -439,15 +441,13 @@ function SettingsSearch({
               onMouseDown={(event) => event.preventDefault()}
               onMouseEnter={() => setActive(index)}
               onClick={() => go(result)}
-              className={`flex min-h-7 w-full items-center gap-2 rounded-md px-2 py-1 text-left text-ui-base text-foreground ${
-                index === active ? "bg-menu-hover" : ""
-              }`}
+              className={cn("flex w-full items-center gap-2 rounded-md text-left text-ui-base text-foreground justify-start", index === active ? "bg-menu-hover" : "")}
             >
               <span className="min-w-0 flex-1 truncate">{result.label}</span>
               <span className="shrink-0 text-ui-sm text-foreground-subtlest">
                 {result.settingId ? result.sectionLabel : uiT("Page")}
               </span>
-            </button>
+            </Button>
           ))
         )}
       </Popover>

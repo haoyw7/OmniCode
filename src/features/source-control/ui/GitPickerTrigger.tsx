@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useContext } from "react";
 import { NativePopupHost } from "../../../shared/ui/NativePopupHost";
@@ -27,11 +29,11 @@ export function GitPickerTrigger({
   if (host) return null;
   const Icon = worktree ? FolderTree : GitBranch;
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       {...props}
-      data-ui="git-picker-trigger"
-      className={`-ml-1.5 flex h-6 min-w-0 max-w-64 items-center gap-1.5 rounded-md px-1.5 text-[12px] text-content/55 hover:bg-content/5 hover:text-content aria-expanded:bg-content/8 aria-expanded:text-content disabled:hover:bg-transparent disabled:hover:text-content/55 active:scale-[0.97] ${dimWhenDisabled ? "disabled:opacity-40" : ""}`}
+      data-git-picker-trigger=""
+      className={cn("-ml-1.5 flex h-6 min-w-0 max-w-64 items-center gap-1.5 rounded-md px-1.5 text-[12px] text-content/55 hover:bg-content/5 hover:text-content aria-expanded:bg-content/8 aria-expanded:text-content disabled:hover:bg-transparent disabled:hover:text-content/55 active:scale-[0.97]", dimWhenDisabled ? "disabled:opacity-40" : "")}
     >
       <Icon className="size-3.5 shrink-0" />
       <span data-code-label className="relative min-w-0 flex-1 truncate">
@@ -50,6 +52,6 @@ export function GitPickerTrigger({
           {uiT("Worktree")}
         </span>
       )}
-    </button>
+    </Button>
   );
 }

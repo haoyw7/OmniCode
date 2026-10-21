@@ -1,4 +1,7 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
+import { cn } from "../../../shared/lib/cn";
 import { RotatingIcon } from "../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../shared/motion/tokens";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -231,11 +234,9 @@ export function SearchableProjectPicker({
   return (
     <div
       ref={pickerRef}
-      className={`relative flex h-full min-w-0 items-center${
-        className ? ` ${className}` : ""
-      }`}
+      className={cn("relative flex h-full min-w-0 items-center", className ? cn(className) : "")}
     >
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         title={inProject ? cwd : undefined}
         aria-label={
@@ -258,22 +259,21 @@ export function SearchableProjectPicker({
           event.preventDefault();
           openPicker();
         }}
-        className={`flex min-w-0 items-center rounded-md text-[12px] leading-label ${
+        className={cn("flex min-w-0 items-center rounded-md text-[12px] leading-label",
           compact && !showLabel
             ? "size-8 justify-center p-0"
-            : `${compact ? "h-8" : "h-6.5"} gap-1.5 px-2`
-        } ${
+            : cn(compact ? "h-8" : "h-6.5", "gap-1.5 px-2"),
           open
             ? "bg-selection text-content"
             : appearance === "filled"
               ? "bg-content/10 text-content hover:bg-content/[0.14]"
               : "text-content/50 hover:bg-content/3 hover:text-content"
-        }${buttonClassName ? ` ${buttonClassName}` : ""}`}
+        , buttonClassName)}
       >
         {!inProject ? null : logoPath ? (
           <ProjectLogoIcon
             path={logoPath}
-            className={`${compact ? "size-4" : "size-3.5"} shrink-0 rounded-sm`}
+            className={cn(compact ? "size-4" : "size-3.5", "shrink-0 rounded-sm")}
             imageClassName={compact ? "size-4" : "size-3.5"}
           />
         ) : (
@@ -281,7 +281,7 @@ export function SearchableProjectPicker({
             project={seed}
             color={color}
             name={resolveTabGroupMascot(key, groupMascots)}
-            className={`${compact ? "size-3.5" : "size-3"} shrink-0`}
+            className={cn(compact ? "size-3.5" : "size-3", "shrink-0")}
             active={busy}
           />
         )}
@@ -293,7 +293,7 @@ export function SearchableProjectPicker({
             <RotatingIcon icon={ChevronDown} angle={open ? motionGeometry.flipAngle : 0} className="size-3 shrink-0 text-content/45" aria-hidden="true" />
           </>
         )}
-      </button>
+      </Button>
       <PresenceBoundary propagate>{open ? (
         <Popover
           anchor={pickerRef}
@@ -312,7 +312,7 @@ export function SearchableProjectPicker({
           <label className="flex min-h-8 shrink-0 items-center gap-2 border-b border-stroke px-3 py-1 text-content/45 focus-within:text-content/70">
             <Search className="size-4 shrink-0" />
             <span className="sr-only">{uiT("Search projects")}</span>
-            <input
+            <Input variant="inline"
               ref={searchRef}
               value={query}
               onChange={(event) => {
@@ -331,13 +331,14 @@ export function SearchableProjectPicker({
               filteredProjects.map((item, index) => {
                 if (!item.path)
                   return (
-                    <button
+                    <Button variant="ghost" size="content"
                       key="all-projects"
                       type="button"
                       data-menu-row="single"
                       onMouseEnter={() => setActive(index)}
                       onClick={() => pickProject("")}
-                      className={`flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] font-medium ${active === index ? "bg-selection text-content" : "text-content/75 hover:bg-content/3 hover:text-content"}`}
+                      data-highlighted={active === index || undefined}
+                      className="flex w-full items-center justify-start text-left"
                     >
                       <span className="grid size-4 shrink-0 place-items-center">
                         {!inProject ? (
@@ -345,7 +346,7 @@ export function SearchableProjectPicker({
                         ) : null}
                       </span>
                       <span>{uiT("All projects")}</span>
-                    </button>
+                    </Button>
                   );
                 const current = sameProjectPath(item.path, cwd);
                 const itemKey = projectKey(item.path);
@@ -363,7 +364,7 @@ export function SearchableProjectPicker({
                   itemSeed,
                 );
                 return (
-                  <button
+                  <Button variant="ghost" size="content"
                     key={item.path}
                     type="button"
                     data-menu-row="single"
@@ -384,11 +385,8 @@ export function SearchableProjectPicker({
                           }
                         : undefined
                     }
-                    className={`flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left ${
-                      active === index
-                        ? "bg-selection text-content"
-                        : "text-content/75 hover:bg-content/3 hover:text-content"
-                    }`}
+                    data-highlighted={active === index || undefined}
+                    className="flex w-full items-center justify-start text-left"
                   >
                     <span className="grid size-4 shrink-0 place-items-center">
                       {current ? (
@@ -414,7 +412,7 @@ export function SearchableProjectPicker({
                     <span className="min-w-0 max-w-28 flex-1 truncate font-mono text-[11px] text-content/40">
                       {prettyParent(item.path)}
                     </span>
-                  </button>
+                  </Button>
                 );
               })
             ) : (
@@ -425,18 +423,18 @@ export function SearchableProjectPicker({
           </div>
           {onOpenProject ? (
             <div className="shrink-0 border-t border-stroke p-1">
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 data-menu-row="single"
                 onClick={() => {
                   closePicker();
                   onOpenProject();
                 }}
-                className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] text-content/75 hover:bg-content/5 hover:text-content"
+              className="flex w-full items-center justify-start text-left"
               >
                 <Plus className="size-4 shrink-0" />
                 <span>{uiT("New project")}</span>
-              </button>
+              </Button>
             </div>
           ) : null}
         </Popover>

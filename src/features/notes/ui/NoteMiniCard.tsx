@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { File, X } from "../../../shared/ui/icons";
 import { useState } from "react";
@@ -38,9 +40,7 @@ export function NoteMiniCard({ card, onDismiss, embedded = false }: Props) {
 
   const inner = (
     <div
-      className={`relative rounded-md border border-content/10 bg-content/6 px-2.5 py-2 ${
-        onDismiss ? "pr-8" : ""
-      }`}
+      className={cn("relative rounded-md border border-content/10 bg-content/6 px-2.5 py-2", onDismiss ? "pr-8" : "")}
     >
       <div className="flex w-full flex-col text-left">
         <span className="flex min-w-0 items-center gap-1.5">
@@ -76,17 +76,17 @@ export function NoteMiniCard({ card, onDismiss, embedded = false }: Props) {
         ) : null}
       </div>
       {onDismiss ? (
-        <button
+        <Button variant="ghost" size="icon-xs"
           type="button"
           title={uiT("Remove")}
           aria-label={uiT("Remove note {value0}", {
             value0: String(card.title || "Untitled"),
           })}
           onClick={onDismiss}
-          className="absolute right-1.5 top-1.5 grid size-5 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
+          className="absolute right-1.5 top-1.5"
         >
           <X className="size-3" strokeWidth={2} />
-        </button>
+        </Button>
       ) : null}
     </div>
   );

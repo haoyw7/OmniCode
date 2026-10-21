@@ -267,9 +267,11 @@ describe("quick open command mode", () => {
 
 describe("quick open session and project modes", () => {
   it("lists the current project's sessions first and opens one", () => {
-    const callbacks = renderPalette("#");
+    const renderSessionIcon = vi.fn((harness: string) => createElement("span", { "data-session-icon": harness }));
+    const callbacks = renderPalette("#", { renderSessionIcon });
     expect(callbacks.dialog.getAttribute("aria-label")).toBe("Go to Session");
     const rows = options(callbacks.dialog);
+    expect(rows[0].querySelector("[data-session-icon]")?.getAttribute("data-session-icon")).toBe("codex");
     expect(rows.slice(0, -1).map((row) => row.textContent)).toEqual([
       "Refactor parserrepo",
       "Fix login bugother",

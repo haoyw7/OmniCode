@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
 import { remoteSessionKeys, remoteSessionCatalogQuery, remoteSnapshotQuery, remoteSessionReadQuery, rememberSessionSnapshot, remoteCommandMutation } from "../model/remoteSessionQueries";
@@ -225,7 +226,7 @@ export function RemoteSession({
               : uiT("Connecting to the machine…"))}
         </p>
         {project && loaded ? (
-          <button
+          <Button variant="secondary" size="sm"
             type="button"
             className="rounded-lg bg-selection px-3 py-1.5 text-[12px] hover:bg-selection-hover"
             onClick={() =>
@@ -233,7 +234,7 @@ export function RemoteSession({
             }
           >
             {uiT("Manage machines")}
-          </button>
+          </Button>
         ) : null}
       </div>
       </>

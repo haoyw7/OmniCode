@@ -35,6 +35,7 @@ beforeEach(() => {
     "ResizeObserver",
     class {
       observe() {}
+      unobserve() {}
       disconnect() {}
     },
   );
@@ -59,7 +60,7 @@ async function input(field: HTMLInputElement, value: string) {
 }
 async function save() {
   await act(async () => {
-    container.querySelector<HTMLButtonElement>("fieldset button")!.click();
+    container.querySelector<HTMLButtonElement>('fieldset button[type="submit"]')!.click();
   });
 }
 
@@ -176,7 +177,7 @@ it("opens search results and shows the connection test progress and result", asy
       }),
   );
   const test =
-    container.querySelectorAll<HTMLButtonElement>("fieldset button")[1];
+    [...container.querySelectorAll<HTMLButtonElement>("fieldset button")].find(button => button.textContent === "Test connection")!;
   await act(async () => test.click());
   expect(remoteRequest).toHaveBeenLastCalledWith("local", "titleModel.test");
   expect(test.textContent).toBe("Testing connection…");

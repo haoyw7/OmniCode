@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { MenuPanel } from "../../../shared/ui/primitives/MenuPanel";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronDown, IconArtworkContext, type IconProps } from "../../../shared/ui/icons";
@@ -110,7 +112,7 @@ export function AccessPicker({
 
   return (
     <div ref={root} className="relative">
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         data-access-picker-trigger
         title={`${uiT(RUNTIME_MODE_HINT[value])}${busy ? uiT(" Changes apply to the next turn.") : ""}`}
@@ -125,23 +127,21 @@ export function AccessPicker({
           }
           setOpen(true);
         }}
-        className={`flex h-6.5 max-w-52 items-center gap-1 rounded-md px-1.5 ${
-          open
+        className={cn("flex h-6.5 max-w-52 items-center gap-1 rounded-md px-1.5", open
             ? "bg-selection text-content"
-            : "bg-selection text-content hover:bg-selection-hover"
-        }`}
+            : "bg-selection text-content hover:bg-selection-hover")}
       >
         <AccessModeIcon
           mode={value}
-          className={`size-3.5 shrink-0 ${value === "full-access" ? "text-amber-400/90" : ""}`}
+          className={cn("size-3.5 shrink-0", value === "full-access" ? "text-amber-400/90" : "")}
         />
         <span className="min-w-0 truncate text-[11px]">
           {uiT(RUNTIME_MODE_LABEL[value])}
         </span>
         <ChevronDown
-          className={`size-3 shrink-0 text-content/50 ${open ? "rotate-180" : ""}`}
+          className={cn("size-3 shrink-0 text-content/50", open ? "rotate-180" : "")}
         />
-      </button>
+      </Button>
       <MenuPanel
         appearance={appearance}
         open={open}
@@ -162,7 +162,7 @@ export function AccessPicker({
           const selected = mode === value;
           const highlighted = index === active;
           return (
-            <button
+            <Button variant="ghost" size="content"
               key={mode}
               type="button"
               role="option"
@@ -172,19 +172,17 @@ export function AccessPicker({
               onMouseDown={(e) => e.preventDefault()}
               onMouseEnter={() => setActive(index)}
               onClick={() => pick(mode)}
-              className={`relative isolate flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left ${
-                highlighted || selected
+              className={cn("relative isolate flex w-full items-start gap-2.5 rounded-lg text-left justify-start", highlighted || selected
                   ? "bg-selection text-content"
-                  : "text-content hover:bg-content/3"
-              }`}
+                  : "text-content hover:bg-content/3")}
             >
               <MenuHover />
               <AccessModeIcon
                 mode={mode}
-                className={`mt-0.5 size-3.5 shrink-0 ${mode === "full-access" ? "text-amber-400/90" : "text-content/70"}`}
+                className={cn("mt-0.5 size-3.5 shrink-0", mode === "full-access" ? "text-amber-400/90" : "text-content/70")}
               />
               <span className="min-w-0">
-                <span data-menu-title className={`block text-[13px] leading-5 ${appearance === "composer" ? "font-normal" : "font-medium"}`}>
+                <span data-menu-title className={cn("block text-[13px] leading-5", appearance === "composer" ? "font-normal" : "font-medium")}>
                   {uiT(RUNTIME_MODE_LABEL[mode])}
                 </span>
                 {appearance !== "composer" ? (
@@ -193,7 +191,7 @@ export function AccessPicker({
                   </span>
                 ) : null}
               </span>
-            </button>
+            </Button>
           );
         })}
         {busy ? (

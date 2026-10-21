@@ -79,7 +79,7 @@ it("opens the desktop list at the current branch and keeps creation in the scrol
   expect(scroller.contains(create)).toBe(true);
   expect(scroller.contains(search)).toBe(false);
   expect(picker.parentElement!.style.width).toBe("320px");
-  expect(picker.parentElement!.style.maxHeight).toBe("360px");
+  expect(picker.parentElement!.style.maxHeight).toBe("min(360px, var(--radix-popover-content-available-height))");
   const calls = vi.mocked(gitCheckout).mock.calls.length;
   await act(async () =>
     search.dispatchEvent(

@@ -167,6 +167,11 @@ html[data-skin] [data-session-status] [data-status-card] {
   background: var(--desktop-panel-card);
 }
 
+/* Transcript disclosures and prompt navigation use their own visual feedback. */
+html[data-skin] [data-ui="button"][data-variant="ghost"]:is([data-session-disclosure], [data-prompt-bar]):not(:disabled, [aria-disabled="true"]):is(:hover, :active, [aria-expanded="true"], [aria-current="true"]) {
+  background: transparent;
+}
+
 .background-tasks-compact,
 [data-background-tasks-panel] {
   position: absolute;
@@ -974,9 +979,9 @@ html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-wo
   font-size: 13px;
   line-height: 1.4;
 }
-html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox input { --desktop-checkbox-size: 16px; --desktop-checkbox-radius: 4px; margin: 0; }
-html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox input:disabled { opacity: 1; }
-html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox:has(input:disabled) { opacity: .5; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox [data-ui="checkbox"] { --desktop-checkbox-size: 16px; --desktop-checkbox-radius: 4px; margin: 0; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox [data-ui="checkbox"]:disabled { opacity: 1; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox:has([data-ui="checkbox"]:disabled) { opacity: .5; }
 html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls .composer-current-branch > div > button,
 html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls .composer-worktree-base > button { border-radius: 6px 0 0 6px; border-right: 0; box-shadow: none; }
 /* Each half has a rounded hover fill inside the continuous outer border. */
@@ -995,7 +1000,7 @@ html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-gi
   pointer-events: none;
 }
 html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls :is(.composer-current-branch > div > button, .composer-worktree-base > button):not(:disabled):is(:hover, :focus-visible)::before,
-html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox:has(input:enabled):is(:hover, :has(input:focus-visible))::before { opacity: 1; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox:has([data-ui="checkbox"]:enabled):is(:hover, :has([data-ui="checkbox"]:focus-visible))::before { opacity: 1; }
 html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-menu-trigger {
   display: grid;
   order: 2;

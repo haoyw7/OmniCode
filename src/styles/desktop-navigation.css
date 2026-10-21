@@ -306,15 +306,6 @@ html[data-skin][data-desktop-mode] .desktop-collection-search input {
   outline: none;
   font-size: 14px;
 }
-html[data-skin][data-desktop-mode] .desktop-collection-filters select {
-  width: auto;
-  min-height: 32px;
-  padding: 4px 8px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 8px;
-  background: var(--color-card);
-  font-size: 13px;
-}
 html[data-skin][data-desktop-mode] .desktop-project-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

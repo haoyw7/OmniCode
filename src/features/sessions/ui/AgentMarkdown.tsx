@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { noteImageQuery } from "../model/transcriptImageQueries";
@@ -330,7 +331,7 @@ function MarkdownLink({
   return (
     <a
       href={href}
-      className={`font-medium text-[var(--link-color)] underline decoration-dotted underline-offset-4 hover:decoration-solid ${className ?? ""}`}
+      className={cn("font-medium text-[var(--link-color)] underline decoration-dotted underline-offset-4 hover:decoration-solid", className ?? "")}
       {...props}
       dir={dir ?? "auto"}
       onClick={(event) => {
@@ -387,9 +388,7 @@ function MarkdownCode({
       <code
         {...props}
         dir="ltr"
-        className={`inline-flex items-baseline gap-1 rounded-md bg-content/8 px-1.5 py-px leading-[1.2] max-w-full [overflow-wrap:anywhere] align-baseline font-mono text-[0.8em] text-content ${
-          open ? "cursor-pointer hover:text-sky-300 hover:underline" : ""
-        } ${className ?? ""}`}
+        className={cn("inline-flex items-baseline gap-1 rounded-md bg-content/8 px-1.5 py-px leading-[1.2] max-w-full [overflow-wrap:anywhere] align-baseline font-mono text-[0.8em] text-content", open ? "cursor-pointer hover:text-sky-300 hover:underline" : "", className ?? "")}
         role={open ? "link" : undefined}
         tabIndex={open ? 0 : undefined}
         onClick={open}
@@ -539,7 +538,7 @@ function CodeWrapButton({
 }) {
   const { t: uiT } = useTranslation();
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={uiT("Wrap lines")}
       aria-label={uiT("Wrap lines")}
@@ -553,7 +552,7 @@ function CodeWrapButton({
         <path d="m11.5 13-2 2 2 2" />
         <path d="M4 15h3" />
       </svg>
-    </button>
+    </Button>
   );
 }
 
@@ -572,11 +571,11 @@ function CodeCopyButton({ code }: { code: string }) {
   }, [code]);
 
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={copied ? uiT("Copied") : uiT("Copy code")}
       aria-label={copied ? uiT("Copied") : uiT("Copy code")}
-      className={`markdown-code-copy ${copied ? "is-copied" : ""}`}
+      className={cn("markdown-code-copy", copied ? "is-copied" : "")}
       onClick={() => {
         void copyText(code.replace(/\r?\n$/, "")).then(
           () => {
@@ -601,7 +600,7 @@ function CodeCopyButton({ code }: { code: string }) {
           d="M4.5 10.5 8.2 14 15.5 6.5"
         />
       </svg>
-    </button>
+    </Button>
   );
 }
 
@@ -801,7 +800,7 @@ export const AgentMarkdown = memo(function AgentMarkdown({
           <MarkdownFadeContext.Provider value={fade}>
             <Streamdown
               BlockComponent={DirectionalBlock}
-              className={`agent-markdown min-w-0 font-sans text-ui-base leading-[1.75] tracking-wide ${className ?? ""}`}
+              className={cn("agent-markdown min-w-0 font-sans text-ui-base leading-[1.75] tracking-wide", className ?? "")}
               components={MARKDOWN_COMPONENTS}
               controls={false}
               dir="auto"
@@ -1081,7 +1080,7 @@ function MarkdownCodePath({
     file.navigation ??
     (startLine && startLine > 0 ? { line: startLine } : undefined);
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       className="markdown-code-path markdown-code-path-link"
       title={file.path}
@@ -1091,7 +1090,7 @@ function MarkdownCodePath({
       }
     >
       {path}
-    </button>
+    </Button>
   );
 }
 

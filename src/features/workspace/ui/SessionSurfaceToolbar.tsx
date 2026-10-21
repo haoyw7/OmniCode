@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
@@ -72,7 +74,7 @@ export function SessionSurfaceActions({
   return (
     <div className="flex shrink-0 items-stretch">
       {onModeChange ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           data-surface-mode-toggle
           data-tauri-drag-region="false"
@@ -86,7 +88,7 @@ export function SessionSurfaceActions({
           ) : (
             <PanelRight className="size-4" />
           )}
-        </button>
+        </Button>
       ) : null}
       {windowControls}
     </div>
@@ -172,7 +174,7 @@ export function SessionSurfaceToolbar({
             {/* Shrinks before the strip scrolls: the title truncates and the
                 close button stays at the visible right edge. */}
             <div className="relative flex h-full min-w-20 max-w-56 shrink items-center">
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 role="tab"
                 data-tauri-drag-region="false"
@@ -186,7 +188,7 @@ export function SessionSurfaceToolbar({
                     ? (event) => setRenameAnchor(event.currentTarget)
                     : undefined
                 }
-                className={`surface-tab flex h-7 min-w-0 flex-1 items-center gap-1.5 self-center px-2 text-ui-caption ${onClosePane ? "pr-7" : ""}`}
+                className={cn("surface-tab flex h-7 min-w-0 flex-1 items-center gap-1.5 self-center px-2 text-ui-caption", onClosePane ? "pr-7" : "")}
               >
                 {/* The focus dot badges the icon instead of taking a slot,
                     so unfocused tabs keep the title next to the icon. */}
@@ -201,9 +203,9 @@ export function SessionSurfaceToolbar({
                 </span>
                 <span className="truncate">{title || t("Chat")}</span>
                 <SessionWorktreeIcon session={session} />
-              </button>
+              </Button>
               {onClosePane ? (
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   data-no-drag
                   data-tauri-drag-region="false"
@@ -219,7 +221,7 @@ export function SessionSurfaceToolbar({
                   className="absolute right-1 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded text-content/50 hover:bg-content/6 hover:text-content"
                 >
                   <X className="size-3" />
-                </button>
+                </Button>
               ) : null}
             </div>
           </>
@@ -304,17 +306,13 @@ function SessionToolToggles({ session }: { session: Session }) {
   if (!actions) return null;
   const filesOpen = !!actions.filesSessionIds?.has(session.id);
   const terminalOpen = !!actions.terminalSessionIds?.has(session.id);
-  const button = (active: boolean) =>
-    `mr-1 grid size-7.5 shrink-0 self-center place-items-center rounded-md hover:bg-content/3 hover:text-content ${
-      active ? "bg-content/8 text-content" : "text-content/60"
-    }`;
   return (
     <IconArtworkContext.Provider value={sessionToolIconArtwork}>
       <div className="flex shrink-0 items-stretch">
         {/* Account usage stays accessible before the first message. */}
         {session.blocks.length || hasSessionUsage(usageSessionFor(session)) ? (
           <>
-            <button
+            <Button variant="ghost" size="icon-sm"
               type="button"
               data-session-tool-toggle="status"
               data-tauri-drag-region="false"
@@ -324,15 +322,15 @@ function SessionToolToggles({ session }: { session: Session }) {
               onPointerDown={(event) => event.stopPropagation()}
               onMouseDown={(event) => event.stopPropagation()}
               onClick={() => saveStatusCardsVisible(!statusVisible)}
-              className={button(statusVisible)}
+              className="mr-1 self-center"
             >
               <SquareMenu className="size-4" />
-            </button>
+            </Button>
             <span aria-hidden="true" className="mr-1 h-4 w-px shrink-0 self-center bg-content/12" />
           </>
         ) : null}
         {actions.terminalAvailable ? (
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             data-session-tool-toggle="terminal"
             data-tauri-drag-region="false"
@@ -340,13 +338,13 @@ function SessionToolToggles({ session }: { session: Session }) {
             aria-pressed={terminalOpen}
             title={t("Terminal")}
             onClick={() => actions.toggleTerminal(session.id)}
-            className={button(terminalOpen)}
+            className="mr-1 self-center"
           >
             <Terminal className="size-4" />
-          </button>
+          </Button>
         ) : null}
         {actions.toggleFiles && session.cwd && session.cwd !== "~" ? (
-          <button
+          <Button variant="ghost" size="icon-sm"
             type="button"
             data-session-tool-toggle="files"
             data-tauri-drag-region="false"
@@ -356,10 +354,10 @@ function SessionToolToggles({ session }: { session: Session }) {
             onPointerDown={(event) => event.stopPropagation()}
             onMouseDown={(event) => event.stopPropagation()}
             onClick={() => actions.toggleFiles?.(session.id)}
-            className={button(filesOpen)}
+            className="mr-1 self-center"
           >
             <Folder className="size-4" />
-          </button>
+          </Button>
         ) : null}
       </div>
     </IconArtworkContext.Provider>

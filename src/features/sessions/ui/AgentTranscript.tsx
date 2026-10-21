@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import type { SessionExecutionState } from "../model/session";
 import "./AgentTranscript.css";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -647,13 +649,13 @@ function AgentTranscriptComponent({
       <div className="desktop-transcript-content mx-auto flex w-full min-w-0 max-w-4xl flex-col gap-1 overflow-x-clip wrap-anywhere pb-8">
         {firstVisibleTurn > 0 ? (
           <div className="flex justify-center px-4 @md:px-6 py-3">
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               className="rounded-md bg-content/8 px-2.5 py-1.5 font-sans text-[12px] text-content/60 hover:bg-content/12 hover:text-content"
               onClick={loadEarlier}
             >
               {uiT("Load earlier messages")}
-            </button>
+            </Button>
           </div>
         ) : null}
         {visibleTurns.map((turn, turnIndex) => {
@@ -903,13 +905,9 @@ function AgentTranscriptComponent({
               key={turn[0].id}
               data-transcript-turn={turnId}
               data-latest-assistant-turn={firstVisibleTurn + turnIndex === latestAssistantTurn || undefined}
-              className={`transcript-turn flex min-w-0 flex-col${
-                isLastTurn ? " transcript-turn-live" : ""
-              }${
-                promptAnchor && anchorTurn && isLastTurn && userBlock
+              className={cn("transcript-turn flex min-w-0 flex-col", isLastTurn ? " transcript-turn-live" : "", promptAnchor && anchorTurn && isLastTurn && userBlock
                   ? " transcript-turn-anchor"
-                  : ""
-              }`}
+                  : "")}
             >
               {/* Keep the waiting fold line in the same keyed list when the
                   first output arrives, so its DOM and motion stay mounted. */}
@@ -929,19 +927,12 @@ function AgentTranscriptComponent({
                             data-transcript-search-current={
                               isCurrentItem(entry) || undefined
                             }
-                            className={`flow-root pb-1 last:pb-0 pl-5 zen-fold-rail ${
-                              offset === foldWork.length - 1
+                            className={cn("flow-root pb-1 last:pb-0 pl-5 zen-fold-rail", offset === foldWork.length - 1
                                 ? "zen-fold-tail"
-                                : ""
-                            }${
-                              // Prose the trail holds is the agent talking
-                              // while it works; the marker lets it read as
-                              // process, not result.
-                              entry.type === "block" &&
+                                : "", entry.type === "block" &&
                               isProseBlock(entry.block)
                                 ? " zen-fold-prose"
-                                : ""
-                            }`}
+                                : "")}
                           >
                             {renderItem(entry, index)}
                           </div>

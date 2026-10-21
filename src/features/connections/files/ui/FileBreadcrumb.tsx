@@ -1,3 +1,4 @@
+import { cn } from "../../../../shared/lib/cn";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { Button } from "../../../../shared/ui/forms/Button";
@@ -81,7 +82,7 @@ function BreadcrumbSegment({ segment, current, hidden, onOpenFile }: {
   const selected = current ? target.selected : directory;
   const label = hidden ? t("Hidden folders") : segment.label;
   useEffect(() => { if (!visible) setOpen(false); }, [visible]);
-  return <div className={`desktop-file-breadcrumb-segment${current ? " desktop-file-breadcrumb-current" : ""}`}>
+  return <div className={cn("desktop-file-breadcrumb-segment", current && "desktop-file-breadcrumb-current")}>
     <Button
       ref={trigger}
       variant="ghost"

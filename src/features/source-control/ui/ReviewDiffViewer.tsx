@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { observeNativeScrollbarEdges } from "../../../shared/ui/nativeScrollbarEdges";
 import scrollbarCSS from "../../../shared/ui/scrollbar.css?raw";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
@@ -253,7 +254,7 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
         lineAnnotations={annotations}
         renderAnnotation={({ metadata }) => (
           <div className="review-stage-hunk flex items-center px-2 py-1">
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               disabled={busy || !visible}
               className="flex items-center gap-1 rounded px-1.5 py-0.5 font-sans text-[11px] text-content/60 hover:bg-content/6 disabled:opacity-40"
@@ -261,11 +262,11 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
             >
               <Plus className="size-3" />
               {t("Stage hunk")}
-            </button>
+            </Button>
           </div>
         )}
         renderGutterUtility={(getHoveredLine) => (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={t("Comment on line")}
             aria-label={t("Comment on line")}
@@ -287,7 +288,7 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
             }}
           >
             <Plus className="size-3.5" strokeWidth={2.5} />
-          </button>
+          </Button>
         )}
       />
       </ScrollContainer>

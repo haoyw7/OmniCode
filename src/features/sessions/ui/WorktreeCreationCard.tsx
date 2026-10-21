@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { RotatingIcon } from "../../../shared/ui/RotatingIcon";
 import { motionGeometry } from "../../../shared/motion/tokens";
 import { useState } from "react";
@@ -44,7 +45,7 @@ export function WorktreeCreationCard({ creation }: { creation: WorktreeCreation 
 
   return (
     <div className="min-w-0">
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         aria-expanded={logOpen}
         onClick={() => setToggle({ id: creation.id, open: !logOpen })}
@@ -58,7 +59,7 @@ export function WorktreeCreationCard({ creation }: { creation: WorktreeCreation 
           <Check className="size-3.5 shrink-0" />
         ) : null}
         <RotatingIcon icon={ChevronRight} angle={logOpen ? motionGeometry.disclosureAngle : 0} className="size-3 shrink-0 text-content/40" />
-      </button>
+      </Button>
       <AnimatedCollapse expanded={logOpen}>
         <div className="mt-1 rounded-lg border border-content/10 bg-content/3 px-3 py-2 font-mono text-[11px] leading-5 text-content/60">
           {creation.log.map((line, index) => (

@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ArrowUp, CircleStop, CornerDownLeft } from "../../../shared/ui/icons";
 import { type ReactNode } from "react";
@@ -16,7 +18,7 @@ export function ToolButton({
   children: ReactNode;
 }) {
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       title={label}
       aria-label={label}
@@ -25,14 +27,12 @@ export function ToolButton({
       aria-haspopup="menu"
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
-      className={`composer-plus grid size-6.5 shrink-0 place-items-center rounded-md ${
-        active
+      className={cn("composer-plus grid size-6.5 shrink-0 place-items-center rounded-md", active
           ? "bg-selection-emphasis text-content"
-          : "bg-selection text-content/50 hover:bg-selection-hover hover:text-content"
-      } disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-content/50`}
+          : "bg-selection text-content/50 hover:bg-selection-hover hover:text-content", "disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-content/50")}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -57,7 +57,7 @@ export function ComposerAction({
   const sendIcon = <><ArrowUp className="composer-send-arrow size-3.5" strokeWidth={2.25} /><CornerDownLeft className="composer-send-return hidden size-3.5" strokeWidth={1.5} /></>;
   if (disabled) {
     return (
-      <button
+      <Button variant="primary" size="content"
         type="button"
         title={label}
         aria-label={label}
@@ -65,12 +65,12 @@ export function ComposerAction({
         className="composer-send primary-action grid size-6.5 place-items-center rounded-md disabled:cursor-default"
       >
         {sendIcon}
-      </button>
+      </Button>
     );
   }
   if (busy) {
     return hasValue && allowBusySubmit ? (
-      <button
+      <Button variant="primary" size="content"
         type="button"
         title={label}
         aria-label={label}
@@ -78,9 +78,9 @@ export function ComposerAction({
         className="composer-send primary-action grid size-6.5 place-items-center rounded-md"
       >
         {sendIcon}
-      </button>
+      </Button>
     ) : (
-      <button
+      <Button variant="primary" size="content"
         type="button"
         title={uiT("Stop")}
         aria-label={uiT("Stop")}
@@ -88,12 +88,12 @@ export function ComposerAction({
         className="composer-stop grid size-6.5 place-items-center rounded-md bg-white text-black hover:bg-white/90"
       >
         <CircleStop className="size-4 [&_rect]:fill-current" />
-      </button>
+      </Button>
     );
   }
 
   return (
-    <button
+    <Button variant="primary" size="content"
       type="button"
       title={label}
       aria-label={label}
@@ -102,6 +102,6 @@ export function ComposerAction({
       className="composer-send primary-action grid size-6.5 place-items-center rounded-md disabled:cursor-default"
     >
       {sendIcon}
-    </button>
+    </Button>
   );
 }

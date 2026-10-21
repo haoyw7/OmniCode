@@ -1,3 +1,4 @@
+import { Input } from "../../../../../shared/ui/forms/Input";
 import { useWatch } from "react-hook-form";
 import { FieldError } from "../../../../../shared/ui/primitives/Field";
 import { useContext, useEffect, useRef, useState, type FormEvent } from "react";
@@ -464,7 +465,7 @@ function ProviderAccountEditor({
       >
         <label className="h-full min-w-0 flex-1">
           <span className="sr-only">{uiT("Account name")}</span>
-          <input
+          <Input variant="inline"
             autoFocus
             type="text"
             maxLength={48}
@@ -500,7 +501,7 @@ function ProviderAccountEditor({
       <FieldError errors={[form.formState.errors.label]} />
       {!editor.importCurrent && <label className="mt-2 block">
         <span className="text-[11px] text-content/60">{uiT("Data Home (optional)")}</span>
-        <input data-ui="input"
+        <Input data-ui="input"
           type="text"
           {...form.register("dataHome", { onChange: () => form.setValue("homeEdited", true) })}
           aria-invalid={!!form.formState.errors.dataHome}

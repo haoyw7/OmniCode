@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,7 +42,7 @@ function Consequence({
 }) {
   return (
     <li className="flex items-start gap-2.5">
-      <Icon className={`mt-px size-3.5 shrink-0 ${TONE[tone]}`} />
+      <Icon className={cn("mt-px size-3.5 shrink-0", TONE[tone])} />
       <span className="min-w-0 flex-1">{children}</span>
     </li>
   );

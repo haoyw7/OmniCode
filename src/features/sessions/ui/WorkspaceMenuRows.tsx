@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import type { ReactNode } from "react";
 import { MenuSubmenu, type MenuSubmenuHandlers } from "../../../shared/ui/primitives/MenuSubmenu";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -46,9 +47,7 @@ export function WorkspaceMenuRows({
           data-workspace-menu-worktree
           aria-disabled={worktreeDisabled || undefined}
           title={worktreeName}
-          className={`flex h-8 w-full items-center gap-3 px-2.5 text-content/80 ${
-            worktreeDisabled ? "opacity-40" : ""
-          }`}
+          className={cn("flex w-full items-center gap-3 text-content/80", worktreeDisabled ? "opacity-40" : "")}
           onMouseDown={(event) => event.preventDefault()}
         >
           <MenuHover />

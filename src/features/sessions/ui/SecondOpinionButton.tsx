@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -390,7 +392,7 @@ export function SecondOpinionButton({
 
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         data-ui="response-action"
         ref={button}
         type="button"
@@ -401,11 +403,9 @@ export function SecondOpinionButton({
         disabled={disabled}
         className={
           triggerClassName ??
-          `rounded-md p-1 disabled:pointer-events-none disabled:opacity-40 ${
-            open
+          cn("rounded-md p-1 disabled:pointer-events-none disabled:opacity-40", open
               ? "bg-content/8 text-content/70"
-              : "text-content/40 hover:bg-content/5 hover:text-content/70"
-          }`
+              : "text-content/40 hover:bg-content/5 hover:text-content/70")
         }
         onClick={() => {
           if (disabled) return;
@@ -413,7 +413,7 @@ export function SecondOpinionButton({
         }}
       >
         <Icon className="size-3.5" />
-      </button>
+      </Button>
       <PresenceBoundary propagate>{open ? (
         <>
           <Popover
@@ -446,7 +446,7 @@ export function SecondOpinionButton({
                 const highlighted = index === active;
                 const available = isHarnessAvailable(harness);
                 return (
-                  <button
+                  <Button data-menu-row="single" variant="ghost" size="content"
                     key={harness}
                     ref={highlighted ? setActiveRow : undefined}
                     data-provider-index={index}
@@ -468,13 +468,11 @@ export function SecondOpinionButton({
                       setActive(index);
                       if (modelsFor(harness).length > 0) setMenuLevel("models");
                     }}
-                    className={`flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] leading-none ${
-                      !available && probed
+                    className={cn("flex w-full items-center gap-2 rounded-lg text-left text-[13px] justify-start", !available && probed
                         ? "text-content/30"
                         : highlighted
                           ? "bg-selection text-content"
-                          : "text-content hover:bg-content/3"
-                    }`}
+                          : "text-content hover:bg-content/3")}
                   >
                     <MenuHover />
                     <HarnessIcon harness={harness} className="size-3.5" />
@@ -486,7 +484,7 @@ export function SecondOpinionButton({
                         className="size-3.5 shrink-0 text-content/40"
                       />
                     ) : null}
-                  </button>
+                  </Button>
                 );
               })
             )}
@@ -518,7 +516,7 @@ export function SecondOpinionButton({
               {models.map((model, index) => {
                 const highlighted = index === modelActive;
                 return (
-                  <button
+                  <Button data-menu-row="single" variant="ghost" size="content"
                     key={model.id}
                     ref={highlighted ? setActiveModelRow : undefined}
                     data-model-index={index}
@@ -544,11 +542,9 @@ export function SecondOpinionButton({
                       setModelActive(index);
                       openEffortOrPick(model);
                     }}
-                    className={`flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] leading-none ${
-                      highlighted
+                    className={cn("flex w-full items-center gap-2 rounded-lg text-left text-[13px] justify-start", highlighted
                         ? "bg-selection text-content"
-                        : "text-content hover:bg-content/3"
-                    }`}
+                        : "text-content hover:bg-content/3")}
                   >
                     <MenuHover />
                     <span data-menu-title className="min-w-0 flex-1 truncate">
@@ -565,7 +561,7 @@ export function SecondOpinionButton({
                         className="size-3.5 shrink-0 text-content/40"
                       />
                     ) : null}
-                  </button>
+                  </Button>
                 );
               })}
             </Popover>
@@ -591,7 +587,7 @@ export function SecondOpinionButton({
                 const highlighted = index === effortActive;
                 const selected = option.value === selectedEffortValue;
                 return (
-                  <button
+                  <Button data-menu-row="single" variant="ghost" size="content"
                     key={option.value}
                     type="button"
                     role="menuitemradio"
@@ -600,9 +596,7 @@ export function SecondOpinionButton({
                     onMouseDown={(event) => event.preventDefault()}
                     onMouseEnter={() => setEffortActive(index)}
                     onClick={() => pick(activeModel, option.value)}
-                    className={`flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] text-content ${
-                      highlighted ? "bg-selection" : "hover:bg-content/3"
-                    }`}
+                    className={cn("flex w-full items-center gap-2 rounded-lg text-left text-[13px] text-content justify-start", highlighted ? "bg-selection" : "hover:bg-content/3")}
                   >
                     <MenuHover />
                     <span data-menu-title className="min-w-0 flex-1 truncate">
@@ -614,7 +608,7 @@ export function SecondOpinionButton({
                         strokeWidth={2}
                       />
                     ) : null}
-                  </button>
+                  </Button>
                 );
               })}
             </Popover>

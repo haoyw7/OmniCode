@@ -132,7 +132,7 @@ it("follows multiple project scopes or all conversations and keeps individual re
             row.querySelector(".assistant-watch-project-name > span")
               ?.textContent === name,
         )!
-        .querySelector("input")!
+        .querySelector<HTMLButtonElement>('[role="checkbox"]')!
         .click(),
     );
   await act(async () => button("关注所选项目").click());

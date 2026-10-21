@@ -1,3 +1,5 @@
+import { cn } from "../../../../shared/lib/cn";
+import { Button } from "../../../../shared/ui/forms/Button";
 import { Omi } from "../../../../shared/ui/branding/Omi";
 import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
@@ -20,7 +22,7 @@ import { omniCodeToolCall, type OmniCodeToolCall } from "../../model/omnicodeToo
 
 
 export function OmniCodeMark({ className = "size-4" }: { className?: string }) {
-  return <Omi compact className={`shrink-0 ${className}`} />;
+  return <Omi compact className={cn("shrink-0", className)} />;
 }
 
 /** OmniCode commands read like the other activity rows; failures expose their output. */
@@ -50,12 +52,12 @@ export function OmniCodeCallRow({
     <>
       <OmniCodeMark className="size-3.5" />
       <span
-        className={`shrink-0 font-sans text-sm ${state === "rejected" ? "text-red-400" : "text-foreground-subtlest"}`}
+        className={cn("shrink-0 font-sans text-sm", state === "rejected" ? "text-red-400" : "text-foreground-subtlest")}
       >
         {verb}
       </span>
       <span
-        className={`flex min-w-0 max-w-full items-center gap-1 rounded bg-content/6 px-1 font-mono text-ui-caption ${state === "rejected" ? "text-red-400" : "text-content/70"}`}
+        className={cn("flex min-w-0 max-w-full items-center gap-1 rounded bg-content/6 px-1 font-mono text-ui-caption", state === "rejected" ? "text-red-400" : "text-content/70")}
         title={command}
       >
         <span className="min-w-0 truncate">{command}</span>
@@ -69,7 +71,7 @@ export function OmniCodeCallRow({
   return (
     <div data-omnicode-tool-call={call.action} className="min-w-0">
       {hasError ? (
-        <button
+        <Button data-session-disclosure variant="ghost" size="content"
           type="button"
           aria-expanded={errorOpen}
           aria-label={
@@ -82,10 +84,10 @@ export function OmniCodeCallRow({
                 })
           }
           onClick={() => setErrorOpen((value) => !value)}
-          className="flex w-full min-w-0 items-center gap-1.5 py-1 text-left"
+          className="flex w-full min-w-0 items-center gap-1.5 py-1 text-left justify-start"
         >
           {summary}
-        </button>
+        </Button>
       ) : (
         <div className="flex min-w-0 items-center gap-1.5 py-1">{summary}</div>
       )}

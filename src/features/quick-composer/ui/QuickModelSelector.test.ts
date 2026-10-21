@@ -110,15 +110,12 @@ it("browses one provider at a time and selects a model without closing settings"
 });
 
 it("updates effort inline and closes with Escape", () => {
-  const slider = container.querySelector<HTMLInputElement>(
-    'input[type="range"]',
+  const slider = container.querySelector<HTMLElement>(
+    '[role="slider"]',
   )!;
   act(() => {
-    Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value",
-    )!.set!.call(slider, "1");
-    slider.dispatchEvent(new Event("input", { bubbles: true }));
+    slider.focus();
+    slider.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
   });
   expect(onSettingsChange).toHaveBeenCalledWith({ effort: "high" });
   act(() =>

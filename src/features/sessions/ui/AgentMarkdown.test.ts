@@ -158,7 +158,7 @@ describe("AgentMarkdown code fence highlighting", () => {
       createElement(AgentMarkdown, { text: "```ts\nconst x = 1;\n```" }),
     );
     expect(markup).toMatch(
-      /<button[^>]*aria-pressed="false"[^>]*class="markdown-code-wrap"/,
+      /<button(?=[^>]*aria-pressed="false")(?=[^>]*class="[^"]*markdown-code-wrap)[^>]*>/,
     );
     expect(markup).not.toContain("data-wrap");
   });

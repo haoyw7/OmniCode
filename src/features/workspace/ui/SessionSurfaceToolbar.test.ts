@@ -1,4 +1,9 @@
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
+vi.mock("motion/react", async (original) => {
+  const actual = await original<typeof import("motion/react")>();
+  const { motionTestDriver } = await import("../../../../tests/helpers/motionDriver");
+  return { ...actual, ...motionTestDriver(actual, true) };
+});
 import { configureSharedHost } from "../../connections/model/remoteProjects";
 import { rememberRemoteSession } from "../../connections/model/connections";
 import { delegateDesktopSession } from "../../bots/model/delegateDesktopSession";
@@ -120,6 +125,7 @@ async function open(id = "left") {
       .querySelector<HTMLButtonElement>(`[data-session-overflow-menu="${id}"]`)!
       .click(),
   );
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
   return document.querySelector<HTMLElement>('[role="menu"]')!;
 }
 
@@ -209,7 +215,7 @@ it("renames, splits and archives the owning pane while another pane is focused",
     )!.set!.call(input, "Renamed left");
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
-  act(() =>
+  await act(async () =>
     input
       .closest("form")!
       .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
@@ -238,10 +244,14 @@ it("opens downward at the end, supports keyboard selection, Escape and outside d
   vi.spyOn(trigger, "getBoundingClientRect").mockReturnValue(
     new DOMRect(700, 12, 30, 30),
   );
+  vi.spyOn(document.documentElement, "clientWidth", "get").mockReturnValue(window.innerWidth);
+  vi.spyOn(document.documentElement, "clientHeight", "get").mockReturnValue(window.innerHeight);
+  vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+    return this.hasAttribute("data-radix-popper-content-wrapper") ? 280 : 0;
+  });
   const menu = await open();
   expect(menu.dataset.popoverSide).toBe("bottom");
-  expect(menu.parentElement?.style.left).toBe("450px");
-  expect(menu.parentElement?.style.top).toBe("46px");
+  expect(menu.closest<HTMLElement>("[data-radix-popper-content-wrapper]")?.style.transform).toBe("translate(450px, 46px)");
   expect(menu.querySelectorAll('[role="separator"]')).toHaveLength(1);
   expect(
     [...menu.querySelectorAll('[role="menuitem"]')].every(
@@ -261,17 +271,19 @@ it("opens downward at the end, supports keyboard selection, Escape and outside d
   expect(actions.splitRight).toHaveBeenCalledExactlyOnceWith("left");
   await open();
   act(() =>
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })),
+    document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
   );
   await finishExits();
   expect(document.querySelector('[role="menu"]')).toBeNull();
   expect(document.activeElement).toBe(trigger);
   await open();
-  act(() =>
+  act(() => {
     document.body.dispatchEvent(
       new PointerEvent("pointerdown", { bubbles: true }),
-    ),
-  );
+    );
+    document.body.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    document.body.click();
+  });
   await finishExits();
   expect(document.querySelector('[role="menu"]')).toBeNull();
 });

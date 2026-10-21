@@ -456,7 +456,8 @@ describe("model picker", () => {
       '[role="tab"][aria-label="Grok Build"]',
     )!;
     expect(grokTab.className).toContain("surface-tab");
-    expect(grokTab.className).not.toContain("transition");
+    expect(grokTab.className).toContain("transition-colors");
+    expect(grokTab.className).not.toContain("transition-all");
     press(grokTab);
     expect(grokTab.getAttribute("aria-selected")).toBe("true");
     expect(

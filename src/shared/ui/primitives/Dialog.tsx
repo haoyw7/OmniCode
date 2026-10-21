@@ -9,6 +9,9 @@ import {
 } from "../../motion/tokens";
 import { useMotionPreference } from "../../motion/useMotionPreference";
 import { SurfaceAppearance } from "../SurfaceAppearance";
+import { NativePopupHost } from "../NativePopupHost";
+import { useSurfaceVisibility } from "../SurfaceVisibility";
+import { useTranslation } from "../../i18n/useTranslation";
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 
@@ -91,6 +94,8 @@ function DialogContent({
   showCloseButton = true,
   showOverlay = true,
   overlayClassName,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
@@ -100,11 +105,16 @@ function DialogContent({
   const open = React.useContext(DialogMotionContext);
   const reduced = useMotionPreference();
   const appearance = React.useContext(SurfaceAppearance);
+  const host = React.useContext(NativePopupHost);
+  const visible = useSurfaceVisibility();
+  const previousFocus = React.useRef<Element | null>(null);
+  const { t } = useTranslation();
+  if (!visible) return null;
   const presence = (
-    <AnimatePresence>
+    <AnimatePresence propagate>
       {open && (
         <React.Fragment key="dialog">
-          {showOverlay ? (
+          {showOverlay && !host ? (
             <DialogOverlay
               key="overlay"
               className={overlayClassName}
@@ -116,12 +126,27 @@ function DialogContent({
               forceMount
               asChild
               data-slot="dialog-content"
+              data-window-modal-panel
               data-modal-context={appearance}
+              onOpenAutoFocus={(event) => {
+                previousFocus.current = document.activeElement;
+                onOpenAutoFocus?.(event);
+              }}
+              onCloseAutoFocus={(event) => {
+                onCloseAutoFocus?.(event);
+                if (event.defaultPrevented) return;
+                const previous = previousFocus.current;
+                if (previous instanceof HTMLElement && previous.isConnected && !previous.closest('[inert], [aria-hidden="true"]')) {
+                  event.preventDefault();
+                  previous.focus({ preventScroll: true });
+                }
+              }}
               className={cn(
                 // Electron 自绘标题栏下，弹窗可能会落进窗口顶部的 drag 区域。
                 // 如果不把弹窗内容整体标成 no-drag，右上角关闭按钮这类交互会被窗口拖拽命中吞掉。
                 "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-popover-border bg-popover p-4 text-ui-base/relaxed text-foreground shadow-md  outline-none       [app-region:no-drag]",
                 className,
+                host && "relative top-auto left-auto max-w-none translate-none",
               )}
               {...props}
             >
@@ -131,7 +156,9 @@ function DialogContent({
                 exit={popExit}
                 transition={reduced ? immediateTransition : popTransition}
               >
-                {children}
+                <div data-slot="dialog-body" className="contents" onKeyDown={(event) => { if (event.defaultPrevented) event.stopPropagation(); }}>
+                  {children}
+                </div>
                 {showCloseButton && (
                   <DialogPrimitive.Close data-slot="dialog-close" asChild>
                     <Button
@@ -141,7 +168,7 @@ function DialogContent({
                       size="icon-sm"
                     >
                       <XIcon />
-                      <span className="sr-only">Close</span>
+                      <span className="sr-only">{t("Close")}</span>
                     </Button>
                   </DialogPrimitive.Close>
                 )}
@@ -152,7 +179,7 @@ function DialogContent({
       )}
     </AnimatePresence>
   );
-  return <DialogPortal forceMount>{presence}</DialogPortal>;
+  return <DialogPortal forceMount container={host ?? undefined}>{presence}</DialogPortal>;
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -173,6 +200,7 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       data-slot="dialog-footer"
@@ -186,7 +214,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant="secondary">Close</Button>
+          <Button variant="secondary">{t("Close")}</Button>
         </DialogPrimitive.Close>
       )}
     </div>

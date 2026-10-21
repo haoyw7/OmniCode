@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
@@ -112,7 +114,7 @@ export function SidebarWorktreeSwitcher({
     onPick: () => void,
     path: string,
   ) => (
-    <button
+    <Button data-menu-row="single" variant="ghost" size="content"
       key={key}
       type="button"
       role="option"
@@ -121,7 +123,7 @@ export function SidebarWorktreeSwitcher({
         onPick();
         setOpen(false);
       }}
-      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-content/3"
+      className="flex w-full items-center gap-2 rounded-md text-left hover:bg-content/3 justify-start"
     >
       {icon}
       <span className="min-w-0 flex-1">
@@ -132,12 +134,12 @@ export function SidebarWorktreeSwitcher({
       </span>
       <OpenTabs stats={tabStats?.get(pathKey(path))} />
       {selected ? <Check className="size-3.5 shrink-0" /> : null}
-    </button>
+    </Button>
   );
 
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
         ref={anchor}
         type="button"
         data-tauri-drag-region="false"
@@ -156,7 +158,7 @@ export function SidebarWorktreeSwitcher({
           if (!open) void refresh();
           setOpen(!open);
         }}
-        className={`flex min-w-0 max-w-full items-center rounded-md leading-tight hover:bg-content/5 aria-expanded:bg-content/8 ${iconOnly ? "size-6 shrink-0 justify-center text-content/60 hover:text-content" : compact ? "h-8 gap-1.5 px-1.5 text-[12px] text-content/60 hover:text-content" : "-ml-1.5 h-6.5 gap-2 px-1.5 text-sm font-medium"}`}
+        className={cn("flex min-w-0 max-w-full items-center rounded-md leading-tight hover:bg-content/5 aria-expanded:bg-content/8", iconOnly ? "size-6 shrink-0 justify-center text-content/60 hover:text-content" : compact ? "h-8 gap-1.5 px-1.5 text-[12px] text-content/60 hover:text-content" : "-ml-1.5 h-6.5 gap-2 px-1.5 text-sm font-medium")}
       >
         {iconOnly ? (
           !pending ? (
@@ -177,7 +179,7 @@ export function SidebarWorktreeSwitcher({
         ) : (
           <ChevronsUpDown className="size-3.5 shrink-0 text-content/45" />
         )}
-      </button>
+      </Button>
       <Popover
         open={open}
         anchor={anchor}

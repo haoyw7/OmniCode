@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
@@ -14,7 +16,6 @@ import {
 import { useRef, useState } from "react";
 import { Popover } from "../../../shared/ui/Popover";
 import { githubPrAction, type GithubPrAction, type InboxItem } from "../model/githubTasks";
-import { ACTION_OUTLINE } from "./inboxActions";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 
@@ -182,7 +183,7 @@ export function GithubPrActions({
   const confirmCopy = confirmation
     ? githubPrActionCopy(confirmation.action, baseRef, headRef)
     : null;
-  const stateButton = `${ACTION_OUTLINE} ${PR_ACTION_PRESS} disabled:cursor-default disabled:opacity-40`;
+
 
   return (
     <>
@@ -191,13 +192,13 @@ export function GithubPrActions({
           ref={mergeGroup}
           role="group"
           aria-label={uiT("Merge pull request")}
-          className="inline-flex h-7 overflow-hidden rounded-md bg-content text-background-base"
+          className="inline-flex h-7 overflow-hidden rounded-md"
         >
-          <button
+          <Button variant="primary" size="content"
             type="button"
             disabled={busy}
             onClick={(event) => askToRun(mergeAction, event.currentTarget)}
-            className={`inline-flex items-center gap-1.5 px-3 text-[12px] font-medium hover:bg-background-base/10 disabled:cursor-default disabled:opacity-40 ${PR_ACTION_PRESS}`}
+            className={cn("inline-flex items-center gap-1.5 px-3 text-[12px] font-medium hover:bg-background-base/10 disabled:cursor-default disabled:opacity-40", PR_ACTION_PRESS)}
           >
             <GitMerge className="size-3.5" />
             {selectedMerge?.action === "merge"
@@ -205,8 +206,8 @@ export function GithubPrActions({
               : selectedMerge
                 ? uiT(selectedMerge.label)
                 : undefined}
-          </button>
-          <button
+          </Button>
+          <Button variant="primary" size="content"
             type="button"
             title={uiT("Merge options")}
             aria-label={uiT("Merge options")}
@@ -214,55 +215,55 @@ export function GithubPrActions({
             aria-expanded={mergeMenuOpen}
             disabled={busy}
             onClick={() => setMergeMenuOpen((open) => !open)}
-            className={`grid w-7 place-items-center border-l border-background-base/20 hover:bg-background-base/10 disabled:cursor-default disabled:opacity-40 ${PR_ACTION_PRESS}`}
+            className={cn("grid w-7 place-items-center border-l border-background-base/20 hover:bg-background-base/10 disabled:cursor-default disabled:opacity-40", PR_ACTION_PRESS)}
           >
             <ChevronDown className="size-3" />
-          </button>
+          </Button>
         </div>
       ) : null}
       {state === "open" && item.draft ? (
-        <button
+        <Button
           type="button"
           disabled={busy}
           onClick={(event) => askToRun("ready", event.currentTarget)}
-          className={stateButton}
+          variant="secondary" size="md"
         >
           <GitPullRequest className="size-3.5" />
           {uiT("Ready for review")}
-        </button>
+        </Button>
       ) : null}
       {state === "open" && !item.draft ? (
-        <button
+        <Button
           type="button"
           disabled={busy}
           onClick={(event) => askToRun("draft", event.currentTarget)}
-          className={stateButton}
+          variant="secondary" size="md"
         >
           <GitPullRequestDraft className="size-3.5" />
           {uiT("Convert to draft")}
-        </button>
+        </Button>
       ) : null}
       {state === "open" ? (
-        <button
+        <Button
           type="button"
           disabled={busy}
           onClick={(event) => askToRun("close", event.currentTarget)}
-          className={`${stateButton} hover:text-rose-400`}
+          variant="secondary" size="md" className={cn("hover:text-rose-400")}
         >
           <GitPullRequestClosed className="size-3.5" />
           {uiT("Close pull request")}
-        </button>
+        </Button>
       ) : null}
       {state === "closed" ? (
-        <button
+        <Button
           type="button"
           disabled={busy}
           onClick={(event) => askToRun("reopen", event.currentTarget)}
-          className={stateButton}
+          variant="secondary" size="md"
         >
           <GitPullRequest className="size-3.5" />
           {uiT("Reopen pull request")}
-        </button>
+        </Button>
       ) : null}
       {notice ? (
         <span role="status" className="text-[11px] text-content/55">
@@ -282,7 +283,7 @@ export function GithubPrActions({
           className="p-1"
         >
           {GITHUB_PR_MERGE_OPTIONS.map((option) => (
-            <button
+            <Button data-menu-row="description" variant="ghost" size="content"
               key={option.action}
               type="button"
               role="menuitemradio"
@@ -292,20 +293,16 @@ export function GithubPrActions({
                 setMergeAction(option.action);
                 setMergeMenuOpen(false);
               }}
-              className={`flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left hover:bg-content/5 ${
-                option.action === mergeAction
+              className={cn("flex w-full items-start gap-2 rounded-lg text-left hover:bg-content/5 justify-start", option.action === mergeAction
                   ? "bg-selection text-content"
-                  : "text-content/75"
-              }`}
+                  : "text-content/75")}
             >
               <MenuHover />
               <span
                 aria-hidden
-                className={`mt-1 size-1.5 shrink-0 rounded-full ${
-                  option.action === mergeAction
+                className={cn("mt-1 size-1.5 shrink-0 rounded-full", option.action === mergeAction
                     ? "bg-emerald-400"
-                    : "bg-content/20"
-                }`}
+                    : "bg-content/20")}
               />
               <span className="min-w-0">
                 <span className="block text-[12px] font-medium leading-tight">
@@ -315,7 +312,7 @@ export function GithubPrActions({
                   {option.description}
                 </span>
               </span>
-            </button>
+            </Button>
           ))}
         </Popover>
       ) : null}</PresenceBoundary>
@@ -348,33 +345,19 @@ export function GithubPrActions({
             </p>
           ) : null}
           <div className="mt-3 flex justify-end gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={dismissConfirmation}
-              className={`h-7 rounded-md px-3 text-[12px] text-content/65 hover:bg-content/5 hover:text-content disabled:cursor-default disabled:opacity-40 ${PR_ACTION_PRESS}`}
+            <Button variant="secondary" size="md"
+              type="button" disabled={busy} onClick={dismissConfirmation}
             >
               {uiT("Cancel")}
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void runAction()}
-              className={`inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-[12px] font-medium disabled:cursor-default disabled:opacity-60 ${
-                confirmation.action === "close"
-                  ? "bg-rose-500/20 text-rose-700 hover:bg-rose-500/30 dark:text-rose-300"
-                  : confirmation.action === "merge" ||
-                      confirmation.action === "squash" ||
-                      confirmation.action === "rebase"
-                    ? "bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/30 dark:text-emerald-300"
-                    : "bg-content text-background-base hover:bg-content/80"
-              } ${PR_ACTION_PRESS}`}
+            </Button>
+            <Button variant={confirmation.action === "close" ? "danger" : "primary"} size="md"
+              type="button" disabled={busy} onClick={() => void runAction()}
             >
               {busy ? (
                 <Spinner className="size-3.5" />
               ) : null}
               {busy ? confirmCopy.progress : confirmCopy.confirm}
-            </button>
+            </Button>
           </div>
         </Popover>
       ) : null}</PresenceBoundary>

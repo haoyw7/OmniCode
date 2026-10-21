@@ -38,6 +38,7 @@ import {
 commandShortcutLabel,paletteCommands
 } from "./commands/registry";
 import { QuickOpen } from "../features/search/ui/QuickOpen";
+import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
 import {
 DeleteSessionDialog
 } from "../features/sessions/ui/DeleteSessionDialog";
@@ -664,6 +665,7 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
 
               {paletteOpen ? (
                 <QuickOpen
+                  renderSessionIcon={(harness) => <HarnessIcon harness={harness} className="size-4" />}
                   key={paletteToken}
                   open
                   cwd={filesCwd}

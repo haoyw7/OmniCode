@@ -55,6 +55,9 @@ import {
   type SessionSummary,
 } from "../../sessions/data/sessionStore";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
+import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
+import { cn } from "../../../shared/lib/cn";
 
 const SCOPES: { id: SearchScope; label: string }[] = [
   { id: "all", label: "All" },
@@ -270,7 +273,7 @@ export function SearchView({
       <div className="desktop-toolbar flex h-10 shrink-0 select-none items-center border-b border-stroke">
         <label className="flex min-w-0 flex-1 items-center gap-2 px-3 text-content/50">
           <Search className="size-3.5 shrink-0" />
-          <input
+          <Input
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -281,7 +284,7 @@ export function SearchView({
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none select-text placeholder:text-content/40"
+            className="min-w-0 flex-1 border-0 bg-transparent px-0 text-[13px] text-content select-text placeholder:text-content/40"
           />
           {loading ? (
             <Spinner className="size-3.5 shrink-0 text-content/35" />
@@ -293,19 +296,19 @@ export function SearchView({
         {SCOPES.map((item) => {
           const selected = scope === item.id;
           return (
-            <button
+            <Button variant="ghost"
               key={item.id}
               type="button"
               aria-pressed={selected}
               onClick={() => setScope(item.id)}
-              className={`rounded-md px-2 py-1 text-[12px] ${
+              className={cn("rounded-md px-2 py-1 text-[12px]",
                 selected
                   ? "bg-selection text-content"
                   : "text-content/50 hover:bg-content/3 hover:text-content"
-              }`}
+              )}
             >
               {uiT(item.label)}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -439,7 +442,7 @@ function ResultList({
         const highlighted = index === active;
         const row = rowCopy(hit, query);
         return (
-          <button
+          <Button variant="ghost"
             key={hit.id}
             ref={highlighted ? activeRef : undefined}
             type="button"
@@ -448,9 +451,9 @@ function ResultList({
             onMouseDown={(event) => event.preventDefault()}
             onMouseEnter={() => onRowEnter(index)}
             onClick={() => onOpen(hit)}
-            className={`flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] leading-none ${
+            className={cn("flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-[13px] leading-none",
               highlighted ? "bg-selection text-content" : "text-content"
-            }`}
+            )}
           >
             <span className="grid size-4 shrink-0 place-items-center">
               {row.icon}
@@ -461,7 +464,7 @@ function ResultList({
                 {row.meta}
               </span>
             ) : null}
-          </button>
+          </Button>
         );
       })}
     </div>

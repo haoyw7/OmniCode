@@ -87,9 +87,9 @@ function Delegation({ value, scope, rpc, names, onRefresh, onOpenThread }: {
   const source = names[value.source.botId] ?? value.source.botId, target = names[value.target.botId] ?? value.target.botId;
   const other = matches(value.source, scope) ? value.target : value.source;
   return <article className="desktop-bot-delegation-card" data-status={value.status}>
-    <button type="button" className="desktop-bot-delegation-heading" aria-expanded={expanded} onClick={() => setExpanded(current => !current)}>
+    <Button variant="ghost" size="content" type="button" className="desktop-bot-delegation-heading" aria-expanded={expanded} onClick={() => setExpanded(current => !current)}>
       <Bot size={16} aria-hidden="true" /><strong>{source} → {target}</strong><span>{t(labels[value.status])}</span><ChevronRight size={14} aria-hidden="true" />
-    </button>
+    </Button>
     {value.result && <p className="desktop-bot-delegation-preview">{value.result.slice(0, 200)}</p>}
     <AnimatedCollapse expanded={expanded}><div className="desktop-bot-delegation-body">
       <h4>{t("Delegation request")}</h4><p className="desktop-bot-delegation-text">{value.prompt}</p>

@@ -1,3 +1,7 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { Checkbox } from "../../../shared/ui/forms/Checkbox";
+import { cn } from "../../../shared/lib/cn";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import type { PopoverAnchor } from "../../../shared/ui/Popover";
@@ -154,13 +158,11 @@ export function WorkspacePicker({
       ) : null}
       {composerControls ? (
         <label className="composer-worktree-checkbox hidden items-center gap-1">
-          <input data-ui="checkbox"
-            type="checkbox"
-            className="composer-worktree-checkbox-input"
+          <Checkbox
             checked={mode === "worktree"}
             disabled={!enabled || !baseReady || !resolvedBase || creating}
-            onChange={(event) => {
-              const next = event.currentTarget.checked ? "worktree" : "current";
+            onCheckedChange={(checked) => {
+              const next = checked === true ? "worktree" : "current";
               onModeChange(next, next === "worktree" ? effectiveBase : undefined);
             }}
           />
@@ -331,7 +333,7 @@ function WorkspaceModePicker({
   return (
     <div ref={anchor} className="composer-workspace-mode-menu relative flex min-w-0 shrink-0">
       {!host ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           disabled={!enabled}
           title={
@@ -352,10 +354,10 @@ function WorkspaceModePicker({
         >
           <Icon className="size-3.5 shrink-0" />
           <span className="truncate">{label}</span>
-        </button>
+        </Button>
       ) : null}
       {!host && composerControls ? (
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           disabled={!enabled || creating}
           title={uiT("Workspace")}
@@ -367,7 +369,7 @@ function WorkspaceModePicker({
           className="composer-worktree-menu-trigger hidden items-center justify-center rounded-md text-content/55 hover:bg-content/5 hover:text-content aria-expanded:bg-content/8 aria-expanded:text-content disabled:opacity-40 disabled:hover:bg-transparent"
         >
           <FolderPlus className="size-3.5 shrink-0" />
-        </button>
+        </Button>
       ) : null}
       <PresenceBoundary propagate>{open ? (
         <MenuPanel
@@ -396,7 +398,7 @@ function WorkspaceModePicker({
               ["worktree", "New worktree", FolderTree],
             ] as const
           ).map(([value, text, RowIcon]) => (
-            <button
+            <Button variant="ghost" size="content"
               key={value}
               type="button"
               data-menu-row="single"
@@ -408,18 +410,16 @@ function WorkspaceModePicker({
                 onChange(value);
                 dismiss();
               }}
-              className={`flex h-9 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] hover:bg-content/5 disabled:opacity-40 ${
-                mode === value ? "bg-selection text-content" : "text-content/80"
-              }`}
+              className={cn("flex w-full items-center justify-start text-left", mode === value ? "bg-selection text-content" : "text-content/80")}
             >
               <MenuHover />
               <RowIcon className="size-4 shrink-0 text-content/55" />
               <span data-menu-title className="flex-1">{text}</span>
               {mode === value ? <Check className="size-3.5" /> : null}
-            </button>
+            </Button>
           ))}
           {onSelectWorktree ? (
-            <button
+            <Button variant="ghost" size="content"
               ref={worktreeAnchor}
               type="button"
               data-menu-row="single"
@@ -441,19 +441,17 @@ function WorkspaceModePicker({
                   closeWorktreeMenu();
                 }
               }}
-              className={`flex h-9 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] text-content/80 hover:bg-content/5 hover:text-content ${
-                worktreeMenu ? "bg-selection text-content" : ""
-              }`}
+              className={cn("flex w-full items-center justify-start text-left", worktreeMenu ? "bg-selection text-content" : "")}
             >
               <MenuHover />
               <FolderTree className="size-4 shrink-0 text-content/55" />
               <span data-menu-title className="flex-1">{uiT("Existing worktree…")}</span>
               <ChevronRight data-menu-arrow className="size-3.5 shrink-0 text-content/45" />
-            </button>
+            </Button>
           ) : null}
           {onOpenSettings ? (
-            <div className="h-9 border-t border-stroke">
-              <button
+            <div className="border-t border-stroke">
+              <Button variant="ghost" size="content"
                 type="button"
                 data-menu-row="single"
                 title={uiT("Open worktree settings")}
@@ -464,14 +462,14 @@ function WorkspaceModePicker({
                   setOpen(false);
                   onOpenSettings();
                 }}
-                className="flex h-full w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] text-content/65 hover:bg-content/5 hover:text-content active:scale-[0.98]"
+                className="flex w-full items-center justify-start text-left"
               >
                 <MenuHover />
                 <Settings
                   className="size-4 shrink-0 text-content/45"
                 />
                 <span data-menu-title className="flex-1">{uiT("Worktree settings")}</span>
-              </button>
+              </Button>
             </div>
           ) : null}
         </MenuPanel>
@@ -506,7 +504,7 @@ function WorkspaceModePicker({
           ) : null}
           <div className="min-h-0 overflow-y-auto">
             {worktrees.map((tree) => (
-              <button
+              <Button variant="ghost" size="content"
                 key={tree.path}
                 type="button"
                 role="menuitem"
@@ -515,7 +513,7 @@ function WorkspaceModePicker({
                 disabled={!!busyPath}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => void selectWorktree(tree)}
-                className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-content/80 hover:bg-content/5 hover:text-content disabled:opacity-40"
+                className="flex w-full items-center justify-start text-left"
               >
                 <MenuHover />
                 {busyPath === tree.path ? (
@@ -534,7 +532,7 @@ function WorkspaceModePicker({
                     {prettyCwd(tree.path)}
                   </span>
                 </span>
-              </button>
+              </Button>
             ))}
             {data && worktrees.length === 0 ? (
               <p className="px-2 py-3 text-[12px] text-content/50">
@@ -665,7 +663,7 @@ export function WorktreeBasePicker({
         const selectedRow = ref === selected;
         const highlighted = index === active;
         return (
-          <button
+          <Button variant="ghost" size="content"
             key={ref}
             ref={highlighted ? activeOption : undefined}
             type="button"
@@ -681,11 +679,9 @@ export function WorktreeBasePicker({
               onChange(ref);
               dismiss();
             }}
-            className={`branch-menu-option flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] hover:bg-content/5 ${
-              highlighted || selectedRow
+            className={cn("branch-menu-option flex w-full items-center justify-start text-left", highlighted || selectedRow
                 ? "bg-selection text-content"
-                : "text-content/80"
-            }`}
+                : "text-content/80")}
           >
             {selectedRow ? (
               <Check className="branch-menu-check size-3.5 shrink-0" />
@@ -693,11 +689,11 @@ export function WorktreeBasePicker({
               <GitBranch className="branch-menu-icon size-3.5 shrink-0 text-content/45" />
             )}
             <span
-              className={`branch-menu-name min-w-0 flex-1 truncate ${selectedRow ? "font-medium" : ""}`}
+              className={cn("branch-menu-name min-w-0 flex-1 truncate", selectedRow ? "font-medium" : "")}
             >
               {ref}
             </span>
-          </button>
+          </Button>
         );
       })}
       {rows.length === 0 ? (
@@ -711,7 +707,7 @@ export function WorktreeBasePicker({
   return (
     <div
       ref={anchor}
-      className={`relative flex min-w-0 shrink-0${className ? ` ${className}` : ""}`}
+      className={cn("relative flex min-w-0 shrink-0", className ? cn(className) : "")}
     >
       {!menuAnchor ? <GitPickerTrigger
         disabled={!enabled}
@@ -753,7 +749,7 @@ export function WorktreeBasePicker({
           >
             <label className="branch-menu-search flex shrink-0 items-center gap-2 border-b border-stroke px-2 py-2.5 text-content/50">
               <Search className="size-3.5 shrink-0" />
-              <input
+              <Input variant="inline"
                 ref={search}
                 value={query}
                 placeholder={

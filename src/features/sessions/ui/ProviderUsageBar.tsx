@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { errorMessage } from "../../../shared/lib/errorMessage";
@@ -244,7 +246,7 @@ export function ProviderUsageBar({
           project={project}
         />
       ) : null}
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         className="grid size-7 shrink-0 place-items-center rounded-lg text-content/40 hover:bg-content/6 hover:text-content disabled:opacity-50"
         aria-label={uiT("Refresh usage")}
@@ -253,10 +255,10 @@ export function ProviderUsageBar({
         onClick={() => void refresh()}
       >
         <RefreshCw
-          className={`size-2.5 ${refreshing ? "motion-safe:animate-spin" : ""}`}
+          className={cn("size-2.5", refreshing ? "motion-safe:animate-spin" : "")}
           aria-hidden
         />
-      </button>
+      </Button>
     </>,
     wantClaude ? claude : wantCodex ? codex : opencode,
   );
@@ -320,7 +322,7 @@ function SessionChip({
 
   return (
     <>
-      <button
+      <Button variant="ghost" size="content"
       ref={trigger}
       type="button"
       className="flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
@@ -341,7 +343,7 @@ function SessionChip({
           {uiT("sign in")}
         </span>
       ) : null}
-      </button>
+      </Button>
       <Popover
         open={open}
         anchor={trigger}

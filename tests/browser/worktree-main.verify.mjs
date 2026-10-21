@@ -41,7 +41,7 @@ for (const engine of [chromium, webkit]) {
     const input = root.locator('textarea');
     await input.fill('Keep this unsent draft. 中文草稿');
     await input.evaluate(element => { window.fixtureOriginalField = element; });
-    const check = root.locator('.composer-worktree-checkbox input');
+    const check = root.locator('.composer-worktree-checkbox [data-ui="checkbox"]');
     await check.check();
     await expect.poll(() => page.evaluate(() => window.desktopFixture.getSession().worktreeBase)).toBe('main');
     const base = root.locator('.composer-worktree-base > button');

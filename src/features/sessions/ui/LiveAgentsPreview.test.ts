@@ -1,3 +1,9 @@
+import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
+vi.mock("motion/react", async (original) => {
+  const actual = await original<typeof import("motion/react")>();
+  const { motionTestDriver } = await import("../../../../tests/helpers/motionDriver");
+  return { ...actual, ...motionTestDriver(actual, true) };
+});
 // @vitest-environment happy-dom
 import { act, createElement, type ComponentProps } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -51,7 +57,7 @@ afterEach(() => {
 });
 
 describe("LiveAgentsPreview", () => {
-  it("keeps the incoming activity order and the global four-agent cap", () => {
+  it("keeps the incoming activity order and the global four-agent cap", async () => {
     render({
       agents: [
         agent("a-1", "/repo/a"),
@@ -87,6 +93,16 @@ describe("LiveAgentsPreview", () => {
     expect(container.querySelectorAll("[data-live-agent-card]")).toHaveLength(
       5,
     );
+    const last = container.querySelector<HTMLElement>('[data-live-agent-card="c-1"]')!;
+    act(() => more.click());
+    expect(last.closest<HTMLElement>(".zen-fold-item")?.inert).toBe(true);
+    expect(last.isConnected).toBe(true);
+    act(() => more.click());
+    expect(last.closest<HTMLElement>(".zen-fold-item")?.inert).toBe(false);
+    act(() => more.click());
+    await act(async () => completeMotionAnimation(container));
+    expect(last.isConnected).toBe(false);
+    expect(container.querySelectorAll("[data-live-agent-card]")).toHaveLength(4);
   });
 
   it("selects an agent from the activity list", () => {

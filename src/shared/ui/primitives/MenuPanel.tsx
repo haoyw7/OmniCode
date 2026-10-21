@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { LAYER } from "../../lib/layers";
+import { cn } from "../../lib/cn";
 import { Popover } from "../Popover";
 import {
   SurfaceVisibilityContext,
@@ -110,7 +111,7 @@ export function MenuPanel({
         .filter(Boolean)
         .join(",")}
       dismissOnEscape={dismissOnEscape && childCount === 0}
-      className={`${inset ? "composer-popover " : ""}${appearance === "composer" ? "composer-menu-panel font-sans " : ""}${className ?? ""}`}
+      className={cn(inset && "composer-popover", appearance === "composer" && "composer-menu-panel font-sans", className)}
       inert={!expanded || !visible || props.inert}
       aria-hidden={!expanded || !visible || props["aria-hidden"]}
       autoFocus={expanded && autoFocus}

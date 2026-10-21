@@ -15,10 +15,6 @@ html:has([data-window-chrome]) [data-window-lightbox] {
 }
 
 html[data-skin] .app-view-dialog {
-  inset: 0;
-  width: min(1024px, calc(100% - 32px));
-  height: min(800px, calc(100% - 32px));
-  margin: auto;
   border: 0;
   border-radius: var(--desktop-radius-dialog);
   background: transparent;
@@ -26,13 +22,13 @@ html[data-skin] .app-view-dialog {
   box-shadow: var(--shadow-panel);
 }
 
-html[data-skin] [data-app-view-dialog] > .modal-backdrop,
+html[data-skin] .app-view-dialog-backdrop,
 html[data-skin] [data-window-chrome-backdrop] {
   background: var(--color-backdrop);
   backdrop-filter: none;
 }
 
-html[data-skin] .app-view-dialog > .popover-backdrop {
+html[data-skin] .app-view-dialog > [data-slot="dialog-body"] > .popover-backdrop {
   background: color-mix(in srgb, var(--color-card) calc(var(--panel-opacity) * var(--popover-opacity) * 100%), transparent);
 }
 
@@ -392,12 +388,12 @@ html[data-skin] [data-git-changes-panel] .git-panel-header {
   line-height: var(--text-body-xs--line-height);
   font-weight: var(--font-weight-medium);
 }
-html[data-skin] [data-git-changes-panel] .git-panel-header [data-ui="git-picker-trigger"] {
+html[data-skin] [data-git-changes-panel] .git-panel-header [data-git-picker-trigger] {
   color: inherit;
   font-size: inherit;
   font-weight: inherit;
 }
-html[data-skin] [data-git-changes-panel] .git-panel-header [data-ui="git-picker-trigger"]:enabled:hover {
+html[data-skin] [data-git-changes-panel] .git-panel-header [data-git-picker-trigger]:enabled:hover {
   color: var(--color-ink);
 }
 html[data-skin] [data-git-changes-panel] .git-commit-composer {

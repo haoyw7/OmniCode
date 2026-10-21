@@ -189,6 +189,8 @@ it("restores focus on Escape, reverses closing, and dismisses outside without st
   act(() => {
     outside.focus();
     outside.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    outside.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    outside.click();
   });
   expect(trigger().getAttribute("aria-expanded")).toBe("false");
   expect(document.activeElement).toBe(outside);

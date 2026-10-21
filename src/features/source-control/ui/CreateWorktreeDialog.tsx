@@ -1,3 +1,4 @@
+import { Input } from "../../../shared/ui/forms/Input";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -144,7 +145,7 @@ export function CreateWorktreeDialog({
               layer={LAYER.dialogPopover}
             />
           ) : (
-            <input data-ui="input"
+            <Input data-ui="input"
               data-code-label
               {...form.register("name")}
               ref={(node) => { form.register("name").ref(node); input.current = node; }}

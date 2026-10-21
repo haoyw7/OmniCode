@@ -1,3 +1,6 @@
+import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useId, useState, useSyncExternalStore } from "react";
@@ -255,7 +258,7 @@ function StatusIcon({ state }: { state: RepairState }) {
   return (
     <Icon
       aria-hidden="true"
-      className={`size-3.5 shrink-0 ${color} ${["repairing", "refreshing", "pending"].includes(state) ? "animate-spin motion-reduce:animate-none" : ""}`}
+      className={cn("size-3.5 shrink-0", color, ["repairing", "refreshing", "pending"].includes(state) ? "animate-spin motion-reduce:animate-none" : "")}
     />
   );
 }
@@ -268,7 +271,7 @@ export function CheckRepairStatus({ item }: { item: RepairItem }) {
       data-repair-status
       role="status"
       title={uiT(status.summary)}
-      className={`inline-flex shrink-0 items-center gap-1.5 text-[11px] font-medium ${status.color}`}
+      className={cn("inline-flex shrink-0 items-center gap-1.5 text-[11px] font-medium", status.color)}
     >
       <StatusIcon state={item.state} />
       {uiT(status.label)}
@@ -322,7 +325,7 @@ function RepairCard({
   return (
     <div className="overflow-hidden rounded-lg border border-stroke bg-content/[0.02]">
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5">
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           aria-label={uiT("Repair details for {value0}", {
             value0: String(label),
@@ -330,7 +333,7 @@ function RepairCard({
           aria-expanded={expanded}
           aria-controls={detailsId}
           onClick={() => setExpanded(!expanded)}
-          className="flex min-w-0 flex-1 items-center gap-2.5 rounded text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50"
+          className="flex min-w-0 flex-1 items-center gap-2.5 rounded text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50 justify-start"
         >
           <StatusIcon state={lead} />
           <span className="min-w-0 flex-1">
@@ -374,28 +377,28 @@ function RepairCard({
             aria-hidden="true"
             className="size-3 shrink-0 text-content/40"
           />
-        </button>
+        </Button>
         {canShowCheck ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             onClick={() => onShowCheck?.(single.check)}
             className="shrink-0 rounded-md px-2 py-1.5 text-[11px] text-content/70 hover:bg-selection hover:text-content focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50"
           >
             {uiT("Show check")}
-          </button>
+          </Button>
         ) : null}
         {repair.onOpenSession ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             onClick={() => void repair.onOpenSession?.(group.sessionId)}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-stroke px-2.5 py-1.5 text-[11px] text-content/70 hover:bg-selection hover:text-content focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50"
           >
             <MessageSquare aria-hidden="true" className="size-3.5" />
             {uiT("Open conversation")}
-          </button>
+          </Button>
         ) : null}
       </div>
-      {expanded ? (
+      <AnimatedCollapse expanded={expanded}>
         <div
           id={detailsId}
           className="space-y-2 border-t border-stroke px-3 py-2.5 text-[11px] text-content/55"
@@ -420,7 +423,7 @@ function RepairCard({
             . Results appear in the checks below.
           </p>
         </div>
-      ) : null}
+      </AnimatedCollapse>
     </div>
   );
 }

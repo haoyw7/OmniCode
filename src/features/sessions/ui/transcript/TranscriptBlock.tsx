@@ -1,3 +1,4 @@
+import { cn } from "../../../../shared/lib/cn";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { localizeChildExitError } from "../../../../integrations/harness/core/childErrors";
 import {
@@ -208,7 +209,7 @@ export const TranscriptBlock = memo(function TranscriptBlock({
         : undefined;
     if (harness && issue) {
       return (
-        <div className={`${embedded ? "" : "px-4 @md:px-6"} py-2`}>
+        <div className={cn(embedded ? "" : "px-4 @md:px-6", "py-2")}>
           <SessionAccessNotice
             harness={harness}
             issue={issue}
@@ -224,9 +225,9 @@ export const TranscriptBlock = memo(function TranscriptBlock({
         <div
           data-transcript-notice={block.notice}
           role={isError ? "alert" : "status"}
-          className={`${embedded ? "" : "px-4 @md:px-6"} py-2`}
+          className={cn(embedded ? "" : "px-4 @md:px-6", "py-2")}
         >
-          <div className={`flex items-center gap-2 font-medium ${isError ? "text-danger" : "text-warning"}`}>
+          <div className={cn("flex items-center gap-2 font-medium", isError ? "text-danger" : "text-warning")}>
             <Icon className="size-4 shrink-0" aria-hidden="true" />
             <span>{uiT(isError ? "Error" : "Warning")}</span>
           </div>
@@ -237,7 +238,7 @@ export const TranscriptBlock = memo(function TranscriptBlock({
       );
     }
     return (
-      <div className={`${embedded ? "" : "px-4 @md:px-6"} py-2 text-content/50`}>
+      <div className={cn(embedded ? "" : "px-4 @md:px-6", "py-2 text-content/50")}>
         <pre className="min-w-0 whitespace-pre-wrap break-words">
           {localizeOrchestrationMessage(localizeChildExitError(block.text, uiT), uiT)}
         </pre>
@@ -251,7 +252,7 @@ export const TranscriptBlock = memo(function TranscriptBlock({
     <div
       data-selectable-agent-response={block.streaming ? undefined : block.id}
       data-assistant-message
-      className={`min-w-0 pb-1 text-content ${embedded ? "" : "px-4 @md:px-6"} ${underLine ? "pt-1" : "pt-3"}`}
+      className={cn("min-w-0 pb-1 text-content", embedded ? "" : "px-4 @md:px-6", underLine ? "pt-1" : "pt-3")}
     >
       <AgentMarkdown
         text={block.text}

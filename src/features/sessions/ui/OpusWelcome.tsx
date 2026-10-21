@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { motion } from "motion/react";
 import { panelTransition, immediateTransition, duration } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
@@ -137,7 +138,7 @@ export function OpusWelcome({ onDone }: { onDone: () => void }) {
         >
           {MOTES.map((style, index) => (
             <span
-              className={`opus-mote${index % 5 === 0 ? " opus-mote-ring" : ""}`}
+              className={cn("opus-mote", index % 5 === 0 ? " opus-mote-ring" : "")}
               style={style}
               key={index}
             />
@@ -158,7 +159,7 @@ export function OpusWelcome({ onDone }: { onDone: () => void }) {
             ))}
             {scene.notes.map(({ style, stemDown }, index) => (
               <span
-                className={`opus-note${stemDown ? " opus-note-stem-down" : ""}`}
+                className={cn("opus-note", stemDown ? " opus-note-stem-down" : "")}
                 style={style}
                 key={index}
               >

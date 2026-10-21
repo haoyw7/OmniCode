@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect, type HTMLAttributes, type ReactNode } from "react";
 import { autoAnimateOptions } from "../../../shared/motion/tokens";
@@ -10,7 +11,7 @@ export function AttachmentList<T extends Attachment>({ attachments, onRemove, re
 }) {
   const [list, enable] = useAutoAnimate<HTMLDivElement>(autoAnimateOptions);
   useEffect(() => enable(animated), [animated, enable]);
-  return <div {...props} ref={animated ? list : undefined} style={style} className={`${animated ? "attachment-list-animated" : ""}${props.className ? ` ${props.className}` : ""}`}>
+  return <div {...props} ref={animated ? list : undefined} style={style} className={cn(animated ? "attachment-list-animated" : "", props.className ? cn(props.className) : "")}>
     {attachments.map(file => <div key={file.id} className={animated ? "attachment-presence" : undefined} data-attachment-id={file.id}>
       {renderAttachment ? renderAttachment(file) : <AttachmentChip attachment={file} onRemove={onRemove ? () => onRemove(file.id) : undefined} />}
     </div>)}

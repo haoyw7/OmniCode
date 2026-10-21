@@ -117,10 +117,10 @@ async function open() {
 it("uses the Settings dialog shell and drags from its header without stealing button or table interaction", async () => {
   await open();
   const shell = document.querySelector<HTMLElement>("[data-app-view-dialog]")!;
-  const dialog = shell.querySelector('[role="dialog"]')!;
-  expect(shell.style.top).toBe("42px");
+  const dialog = shell;
+  expect(shell.style.top).toBe("calc(50% + 21px)");
   await act(async () => saveMenuBarVisible(true));
-  expect(shell.style.top).toBe("36px");
+  expect(shell.style.top).toBe("calc(50% + 18px)");
   const header = dialog.querySelector('[data-window-drag-region="deep"]')!;
   const press = (target: Element) => {
     const event = new MouseEvent("mousedown", {
@@ -150,6 +150,7 @@ it("uses the Settings dialog shell and drags from its header without stealing bu
   expect(refreshTrees).toHaveBeenCalledOnce();
   await act(async () => button("Close").click());
   await act(async () => completeMotionAnimation(document.body));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
   expect(document.querySelector('[role="dialog"]')).toBeNull();
 });
 
@@ -174,6 +175,7 @@ it("opens the complete graph from a collapsed sidebar, localizes labels, and ope
   );
   expect(onOpenCommit).toHaveBeenCalledExactlyOnceWith(commit, true);
   await act(async () => completeMotionAnimation(document.body));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
   expect(document.querySelector('[role="dialog"]')).toBeNull();
   expect(document.activeElement).toBe(button("打开 Git 图谱"));
 });
@@ -221,16 +223,18 @@ it("ignores an older refresh response and dismisses on Escape or repository chan
     commit.subject,
   );
   await act(async () =>
-    window.dispatchEvent(
+    document.activeElement!.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     ),
   );
   await act(async () => completeMotionAnimation(document.body));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
   expect(document.querySelector('[role="dialog"]')).toBeNull();
   expect(document.activeElement).toBe(button("Open Git graph"));
   await act(async () => button("Open Git graph").click());
   await render("/another-repo");
   await act(async () => completeMotionAnimation(document.body));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
   expect(document.querySelector('[role="dialog"]')).toBeNull();
   await render("/repo", false);
   expect(button("Open Git graph").disabled).toBe(true);

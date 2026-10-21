@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { Button } from "../../../shared/ui/forms/Button";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
@@ -110,7 +111,7 @@ export function PrChecksTab({
   const failClass =
     mark.className.split(" ").find((entry) => entry.startsWith("text-")) ?? "";
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       role="tab"
       aria-selected={selected}
@@ -121,15 +122,15 @@ export function PrChecksTab({
     >
       <span className="leading-none">{uiT("Checks")}</span>
       <mark.Icon
-        className={`size-3.5 shrink-0 ${mark.className}`}
+        className={cn("size-3.5 shrink-0", mark.className)}
         strokeWidth={1.75}
       />
       {overall.kind === "fail" ? (
-        <span className={`tabular-nums leading-none ${failClass}`}>
+        <span className={cn("tabular-nums leading-none", failClass)}>
           {overall.failed}
         </span>
       ) : null}
-    </button>
+    </Button>
   );
 }
 
@@ -252,7 +253,7 @@ function PrCheckRow({
   const body = (
     <>
       <span className="grid h-7 w-5 shrink-0 place-items-center">
-        <mark.Icon className={`size-4 ${mark.className}`} strokeWidth={1.75} />
+        <mark.Icon className={cn("size-4", mark.className)} strokeWidth={1.75} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="flex min-w-0 items-baseline gap-2.5">
@@ -292,24 +293,24 @@ function PrCheckRow({
     <li
       ref={rowRef}
       tabIndex={-1}
-      className={`min-w-0 rounded-xl outline-none ${expanded ? "bg-content/[0.02]" : ""}`}
+      className={cn("min-w-0 rounded-xl outline-none", expanded ? "bg-content/[0.02]" : "")}
     >
       <div className="group/check flex min-w-0 items-center gap-2 rounded-xl px-2 py-2 hover:bg-content/[0.02] @max-[420px]/checks:gap-1">
         {expandable ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             aria-label={uiT("{value0} details", { value0: String(check.name) })}
             aria-expanded={expanded}
             aria-controls={detailsId}
             onClick={() => setExpanded(!expanded)}
-            className={`${className} min-w-0 flex-1 focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50`}
+            className={cn(className, "min-w-0 flex-1 focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50")}
           >
             {body}
-          </button>
+          </Button>
         ) : linked ? (
           // The desktop WebView cannot rely on target=_blank, so rows open
           // through the same opener as every other external link.
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={title}
             aria-label={title}
@@ -317,18 +318,18 @@ function PrCheckRow({
             className={className}
           >
             {body}
-          </button>
+          </Button>
         ) : (
           <div title={title} className={className}>
             {body}
           </div>
         )}
-        <span className={`shrink-0 text-left ${wideStatus ? "w-24" : "w-14"}`}>
+        <span className={cn("shrink-0 text-left", wideStatus ? "w-24" : "w-14")}>
           {repairItem ? (
             <CheckRepairStatus item={repairItem} />
           ) : (
             <span
-              className={`text-[11px] ${mark.className.replace("animate-spin", "")}`}
+              className={cn("text-[11px]", mark.className.replace("animate-spin", ""))}
             >
               {status}
             </span>
@@ -338,7 +339,7 @@ function PrCheckRow({
           {duration}
         </span>
         {onFix ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             ref={fixRef}
             onClick={(event) => onFix(event.currentTarget)}
@@ -352,12 +353,12 @@ function PrCheckRow({
             className="grid size-7 shrink-0 place-items-center rounded-lg bg-content/[0.03] text-content/65 hover:bg-selection hover:text-content focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50"
           >
             <Sparkles className="size-3.5" />
-          </button>
+          </Button>
         ) : (
           <span className="size-7 shrink-0" aria-hidden="true" />
         )}
         {expandable ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             aria-label={uiT("{value0} {value1} details", {
               value0: String(expanded ? "Collapse" : "Expand"),
@@ -371,22 +372,22 @@ function PrCheckRow({
             <DisclosureChevron expanded={expanded}
               className="size-3"
             />
-          </button>
+          </Button>
         ) : (
           <span className="size-7 shrink-0" aria-hidden="true" />
         )}
         {linked ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("View full log on GitHub")}
             aria-label={uiT("View {value0} on GitHub", {
               value0: String(check.name),
             })}
             onClick={() => void openUrl(url)}
-            className={`${REFRESH_BUTTON} opacity-60 group-hover/check:opacity-100 focus-visible:opacity-100`}
+            className={cn(REFRESH_BUTTON, "opacity-60 group-hover/check:opacity-100 focus-visible:opacity-100")}
           >
             <ExternalLink className="size-3" />
-          </button>
+          </Button>
         ) : (
           <span className="size-6 shrink-0" aria-hidden="true" />
         )}
@@ -409,13 +410,13 @@ function PrCheckRow({
             <div role="alert" className="space-y-2 text-content/60">
               <p>{uiT("Could not load job details.")}</p>
               <p className="break-words text-[11px]">{error}</p>
-              <button
+              <Button variant="ghost" size="content"
                 type="button"
                 onClick={() => { void detailsQuery.refetch(); }}
                 className="rounded px-2 py-1 hover:bg-content/3"
               >
                 {uiT("Retry details")}
-              </button>
+              </Button>
             </div>
           ) : null}
           {details ? (
@@ -430,13 +431,13 @@ function PrCheckRow({
               ) : null}
               {details.steps.length ? (
                 <div>
-                  <button type="button" aria-expanded={stepsOpen} aria-controls={stepsId} aria-label={uiT("View run steps")} onClick={() => setStepsOpen(value => !value)} className="flex w-full items-center gap-1 text-[11px] text-content/50 hover:text-content focus-visible:outline focus-visible:outline-1 active:bg-content/5">
+                  <Button variant="ghost" size="content" type="button" aria-expanded={stepsOpen} aria-controls={stepsId} aria-label={uiT("View run steps")} onClick={() => setStepsOpen(value => !value)} className="flex w-full items-center gap-1 text-[11px] text-content/50 hover:text-content focus-visible:outline focus-visible:outline-1 active:bg-content/5">
                     <DisclosureChevron expanded={stepsOpen} className="size-3" />
                     {uiT("View run steps")}
                     <span className="ml-auto pl-2 text-right text-[10px] text-content/35 @max-[420px]/checks:hidden">
                       {describeCheckCounts(countChecks(details.steps))}
                     </span>
-                  </button>
+                  </Button>
                   <AnimatedCollapse expanded ready={stepsOpen} keepMounted>
                   <ol
                     id={stepsId}
@@ -450,10 +451,10 @@ function PrCheckRow({
                       return (
                         <li
                           key={index}
-                          className={`flex items-center gap-2 rounded px-2 py-1 ${step.state === "fail" ? "bg-rose-400/5" : ""}`}
+                          className={cn("flex items-center gap-2 rounded px-2 py-1", step.state === "fail" ? "bg-rose-400/5" : "")}
                         >
                           <stepMark.Icon
-                            className={`size-4 shrink-0 ${stepMark.className}`}
+                            className={cn("size-4 shrink-0", stepMark.className)}
                             strokeWidth={1.75}
                           />
                           <span className="min-w-0 flex-1 break-words text-content/80">
@@ -561,7 +562,7 @@ export function InboxPrChecks({
         <p role="alert" className="text-[13px] text-content/50">
           {error}
         </p>
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           title={uiT("Retry loading checks")}
           aria-label={uiT("Retry loading checks")}
@@ -570,7 +571,7 @@ export function InboxPrChecks({
         >
           <RefreshCw className="size-3.5" />
           {uiT("Retry")}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -649,7 +650,7 @@ export function InboxPrChecks({
               </span>
             </Button>
           ) : null}
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Refresh checks")}
             aria-label={uiT("Refresh checks")}
@@ -662,7 +663,7 @@ export function InboxPrChecks({
             ) : (
               <RefreshCw className="size-3.5" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
       {repair ? (
@@ -713,7 +714,7 @@ export function InboxPrChecks({
                 ["all", "All checks", rows.length],
               ] as const
             ).map(([value, label, count]) => (
-              <button
+              <Button variant="ghost" size="content"
                 key={value}
                 type="button"
                 aria-label={`${label}: ${count}`}
@@ -724,11 +725,11 @@ export function InboxPrChecks({
                   setShowOthers(false);
                   setSelection(null);
                 }}
-                className={`inline-flex items-center gap-2 rounded-md px-2.5 py-1 text-[12px] disabled:opacity-40 ${activeFilter === value ? "bg-selection text-content shadow-sm" : "text-content/50 hover:text-content"}`}
+                className={cn("inline-flex items-center gap-2 rounded-md px-2.5 py-1 text-[12px] disabled:opacity-40", activeFilter === value ? "bg-selection text-content shadow-sm" : "text-content/50 hover:text-content")}
               >
                 {label}
                 <span className="tabular-nums text-content/40">{count}</span>
-              </button>
+              </Button>
             ))}
           </div>
           <span className="text-[10px] text-content/40 @max-[420px]/checks:hidden">
@@ -819,11 +820,11 @@ export function InboxPrChecks({
             ) : null,
           )}
           {activeFilter === "attention" && counts.pass + counts.skipping > 0 ? (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               aria-expanded={showOthers}
               onClick={() => setShowOthers(!showOthers)}
-              className="mt-3 flex items-center gap-2 border-t border-stroke px-2 pt-4 text-left text-[11px] text-content/50 hover:text-content"
+              className="mt-3 flex items-center gap-2 border-t border-stroke px-2 pt-4 text-left text-[11px] text-content/50 hover:text-content justify-start"
             >
               <DisclosureChevron expanded={showOthers}
                 className="size-3"
@@ -833,7 +834,7 @@ export function InboxPrChecks({
                 pass: counts.pass,
                 skipping: counts.skipping,
               })}
-            </button>
+            </Button>
           ) : null}
         </>
       )}

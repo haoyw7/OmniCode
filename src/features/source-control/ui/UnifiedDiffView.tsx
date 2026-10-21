@@ -1,3 +1,6 @@
+import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
@@ -216,12 +219,12 @@ export function UnifiedDiffView({
       }
     >
       <div
-        className={`flex h-8 shrink-0 items-center gap-3 border-b border-stroke px-3 text-[12px]`}
+        className="flex h-8 shrink-0 items-center gap-3 border-b border-stroke px-3 text-[12px]"
       >
         <span className="text-content/70">{fileLabel}</span>
         <DiffCounts additions={additions} deletions={deletions} />
         <span className="ml-auto flex items-center gap-0.5">
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Expand all files")}
             aria-label={uiT("Expand all files")}
@@ -229,8 +232,8 @@ export function UnifiedDiffView({
             className="grid size-7 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content"
           >
             <UnfoldVertical className="size-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Collapse all files")}
             aria-label={uiT("Collapse all files")}
@@ -239,7 +242,7 @@ export function UnifiedDiffView({
             className="grid size-7 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content disabled:opacity-40"
           >
             <FoldVertical className="size-3.5" />
-          </button>
+          </Button>
         </span>
       </div>
       <div
@@ -384,24 +387,18 @@ const FileSection = memo(function FileSection({
     <section
       ref={setSection}
       data-diff-file={file.path}
-      className={`${
-        fileLayout === "cards"
+      className={cn(fileLayout === "cards"
           ? "overflow-hidden rounded-md border border-content/10"
-          : ""
-      } ${focused ? "bg-content/[0.03]" : ""}`}
+          : "", focused ? "bg-content/[0.03]" : "")}
     >
       <header
-        className={`${
-          fileLayout === "stacked" ? "sticky top-0 z-30 backdrop-blur-xl" : ""
-        } flex items-center gap-2 bg-content/2 px-3 py-1.5 ${
-          fileLayout === "stacked" || expanded ? "border-b border-stroke" : ""
-        }`}
+        className={cn(fileLayout === "stacked" ? "sticky top-0 z-30 backdrop-blur-xl" : "", "flex items-center gap-2 bg-content/2 px-3 py-1.5", fileLayout === "stacked" || expanded ? "border-b border-stroke" : "")}
       >
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           aria-expanded={expanded}
           onClick={() => onToggle(file.id)}
-          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+          className="flex min-w-0 flex-1 items-center gap-2 text-left justify-start"
         >
           <Chevron
             className="size-3.5 shrink-0 text-content/45"
@@ -414,7 +411,7 @@ const FileSection = memo(function FileSection({
             {file.label}
           </span>
           <DiffCounts additions={file.additions} deletions={file.deletions} />
-        </button>
+        </Button>
         {file.canDiscard && onDiscardFile ? (
           <IconButton
             size="xs"
@@ -426,7 +423,7 @@ const FileSection = memo(function FileSection({
           </IconButton>
         ) : null}
         {file.canStage && onStageFile ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Stage file")}
             aria-label={uiT("Stage file")}
@@ -435,10 +432,10 @@ const FileSection = memo(function FileSection({
             className="grid size-4 place-items-center rounded-[3px] bg-content text-background-base hover:opacity-80 disabled:opacity-40"
           >
             <Check className="size-2.5" strokeWidth={2.5} />
-          </button>
+          </Button>
         ) : null}
       </header>
-      {expanded ? (
+      <AnimatedCollapse expanded={expanded}>
         <FileBody
           file={file}
           reveals={reveals}
@@ -454,7 +451,7 @@ const FileSection = memo(function FileSection({
           }}
           onStageHunk={onStageHunk}
         />
-      ) : null}
+      </AnimatedCollapse>
     </section>
   );
 }, equalFileSectionProps);
@@ -886,7 +883,7 @@ function FoldBar({
       className="flex items-center gap-1 bg-content/8 px-2"
       style={{ height: UNIFIED_FOLD_PX }}
     >
-      <button
+      <Button variant="ghost" size="content"
         type="button"
         title={uiT("Expand upward")}
         aria-label={uiT("Expand unmodified lines upward")}
@@ -894,8 +891,8 @@ function FoldBar({
         className="grid size-5 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
       >
         <ChevronUp className="size-3" strokeWidth={2} />
-      </button>
-      <button
+      </Button>
+      <Button variant="ghost" size="content"
         type="button"
         title={uiT("Expand downward")}
         aria-label={uiT("Expand unmodified lines downward")}
@@ -903,15 +900,15 @@ function FoldBar({
         className="grid size-5 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
       >
         <ChevronDown className="size-3" strokeWidth={2} />
-      </button>
-      <button
+      </Button>
+      <Button variant="ghost" size="content"
         type="button"
         onClick={() => onReveal("all")}
-        className="min-w-0 flex-1 py-1 text-left font-mono text-[11px] text-content/45 hover:text-content/70"
+        className="min-w-0 flex-1 py-1 text-left font-mono text-[11px] text-content/45 hover:text-content/70 justify-start"
       >
         {hidden} {uiT("unmodified ")}
         {hidden === 1 ? uiT("line") : uiT("lines")}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -966,48 +963,44 @@ const DiffLineRow = memo(function DiffLineRow({
   if (lane === "gutter") {
     return (
       <div
-        className={`relative flex items-center ${row}`}
+        className={cn("relative flex items-center", row)}
         style={{ height: UNIFIED_LINE_PX }}
       >
         {gutterTint ? (
           <span
-            className={`pointer-events-none absolute inset-0 ${gutterTint}`}
+            className={cn("pointer-events-none absolute inset-0", gutterTint)}
           />
         ) : null}
         <span
-          className={`relative block w-full pr-2 text-right font-mono text-[11px] leading-none tabular-nums ${gutterText}`}
+          className={cn("relative block w-full pr-2 text-right font-mono text-[11px] leading-none tabular-nums", gutterText)}
         >
           {number ?? ""}
         </span>
         {onComment ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={`Comment on line ${number ?? ""}`.trim()}
             aria-label={`Comment on line ${number ?? ""}`.trim()}
             onClick={(event) =>
               onComment(event.currentTarget.getBoundingClientRect())
             }
-            className={`absolute top-0.5 left-0.5 z-10 grid size-4 place-items-center rounded-[3px] bg-content text-background-base outline-none transition-opacity hover:opacity-80 focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent/50 ${
-              hovered || commenting
+            className={cn("absolute top-0.5 left-0.5 z-10 grid size-4 place-items-center rounded-[3px] bg-content text-background-base outline-none transition-opacity hover:opacity-80 focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent/50", hovered || commenting
                 ? "opacity-100"
-                : "pointer-events-none opacity-0"
-            }`}
+                : "pointer-events-none opacity-0")}
           >
             <MessageSquarePlus className="size-2.5" strokeWidth={2} />
-          </button>
+          </Button>
         ) : null}
         {onStage ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Stage hunk")}
             aria-label={uiT("Stage hunk")}
             onClick={onStage}
-            className={`absolute top-0.5 left-full z-10 ml-0.5 grid size-4 place-items-center rounded-[3px] bg-white text-[11px] font-bold text-black ${
-              hovered ? "opacity-100" : "pointer-events-none opacity-0"
-            }`}
+            className={cn("absolute top-0.5 left-full z-10 ml-0.5 grid size-4 place-items-center rounded-[3px] bg-white text-[11px] font-bold text-black", hovered ? "opacity-100" : "pointer-events-none opacity-0")}
           >
             +
-          </button>
+          </Button>
         ) : null}
       </div>
     );
@@ -1015,13 +1008,11 @@ const DiffLineRow = memo(function DiffLineRow({
 
   return (
     <div
-      className={`flex items-center ${row}`}
+      className={cn("flex items-center", row)}
       style={{ height: UNIFIED_LINE_PX }}
     >
       <span
-        className={`whitespace-pre px-3 font-mono text-[12px] leading-none text-content/80 ${
-          line.kind === "context" ? "opacity-70" : ""
-        }`}
+        className={cn("whitespace-pre px-3 font-mono text-[12px] leading-none text-content/80", line.kind === "context" ? "opacity-70" : "")}
       >
         {renderLineText(line, tokens)}
       </span>

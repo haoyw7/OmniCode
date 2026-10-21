@@ -1,3 +1,5 @@
+import { cn } from "../../../shared/lib/cn";
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronRight, Replace, X } from "../../../shared/ui/icons";
 import { HARNESS_TITLE, type HarnessId } from "../model/session";
@@ -25,9 +27,7 @@ export function HandoffMiniCard({ card, onDismiss }: Props) {
   return (
     <div className="px-3 pt-2">
       <div
-        className={`relative rounded-md border border-content/10 bg-content/6 px-2.5 py-2 ${
-          onDismiss ? "pr-8" : ""
-        }`}
+        className={cn("relative rounded-md border border-content/10 bg-content/6 px-2.5 py-2", onDismiss ? "pr-8" : "")}
       >
         <div className="flex w-full flex-col text-left">
           <span className="flex min-w-0 items-center gap-1.5">
@@ -59,7 +59,7 @@ export function HandoffMiniCard({ card, onDismiss }: Props) {
           ) : null}
         </div>
         {onDismiss ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Remove")}
             aria-label={uiT("Remove handoff")}
@@ -67,7 +67,7 @@ export function HandoffMiniCard({ card, onDismiss }: Props) {
             className="absolute right-1.5 top-1.5 grid size-5 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
           >
             <X className="size-3" strokeWidth={2} />
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>

@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useState, type ReactNode } from "react";
 import { useDeepseekAccount } from "../../providers/model/deepseekAccount";
 import type { ProviderRateLimits } from "../../providers/model/rateLimits";
@@ -38,7 +40,7 @@ export function DeepseekUsage({ project, render }: {
         <span className="min-w-0 flex-1 truncate" title={profile?.name || t("DeepSeek account")}>
           {profile?.name || t("DeepSeek account")}
         </span>
-        <button
+        <Button variant="ghost" size="content"
           type="button"
           className="grid size-7 shrink-0 place-items-center rounded-lg text-content/40 hover:bg-content/6 hover:text-content disabled:opacity-50"
           aria-label={t("Refresh usage")}
@@ -46,8 +48,8 @@ export function DeepseekUsage({ project, render }: {
           disabled={loading}
           onClick={() => setRefreshKey(key => key + 1)}
         >
-          <RefreshCw className={`size-2.5 ${loading ? "motion-safe:animate-spin" : ""}`} aria-hidden />
-        </button>
+          <RefreshCw className={cn("size-2.5", loading ? "motion-safe:animate-spin" : "")} aria-hidden />
+        </Button>
       </div>
       {profile?.contact ? <div className="mb-1 min-w-0 truncate">
         {profile.contact.includes("@")

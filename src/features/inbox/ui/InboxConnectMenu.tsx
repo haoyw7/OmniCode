@@ -1,3 +1,4 @@
+import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   INBOX_SOURCE_LABELS,
@@ -36,7 +37,7 @@ export function InboxConnectMenu({
         {uiT("Not connected")}
       </div>
       {sources.map((source) => (
-        <button
+        <Button data-menu-row="single" variant="ghost" size="content"
           key={source}
           type="button"
           role="menuitem"
@@ -45,7 +46,7 @@ export function InboxConnectMenu({
             onClose();
             onConnect(source);
           }}
-          className="flex h-7 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] leading-5 text-content hover:bg-content/3"
+          className="flex w-full items-center gap-2 rounded-lg text-left text-[13px] text-content hover:bg-content/3 justify-start"
         >
           <MenuHover />
           <InboxProviderMark
@@ -56,7 +57,7 @@ export function InboxConnectMenu({
             {uiT("Connect ")}
             {INBOX_SOURCE_LABELS[source]}
           </span>
-        </button>
+        </Button>
       ))}
     </Popover>
   );

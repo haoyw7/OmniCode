@@ -1,3 +1,5 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
 import { useInfiniteQuery, useIsFetching } from "@tanstack/react-query";
 import { queryClient, invalidateAfterChange } from "../../../shared/lib/queryClient";
 import {
@@ -141,7 +143,7 @@ export function GitGraphDialog({
           >
             {prettyCwd(cwd)}
           </span>
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             onClick={() => void refresh()}
             disabled={loading || refreshing}
@@ -150,9 +152,9 @@ export function GitGraphDialog({
             className="grid size-7 shrink-0 place-items-center rounded-lg text-content/55 hover:bg-content/3 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-hover disabled:opacity-50"
           >
             <RefreshCw
-              className={`size-3.5 ${loading || refreshing ? "motion-safe:animate-spin" : ""}`}
+              className={cn("size-3.5", loading || refreshing ? "motion-safe:animate-spin" : "")}
             />
-          </button>
+          </Button>
         </header>
         {error || worktrees.error ? (
           <p
@@ -214,7 +216,7 @@ export function GitGraphDialog({
                   <tr
                     key={commit.sha}
                     onClick={() => onOpenCommit(commit)}
-                    className={`git-history-item cursor-pointer ${commit.head ? "is-head" : ""} ${selected ? "is-selected bg-selection" : commit.head ? "bg-content/5" : "hover:bg-content/5"}`}
+                    className={cn("git-history-item cursor-pointer", commit.head ? "is-head" : "", selected ? "is-selected bg-selection" : commit.head ? "bg-content/5" : "hover:bg-content/5")}
                     style={{ height: ROW_HEIGHT }}
                   >
                     <td className="border-r border-stroke p-0 align-middle">
@@ -287,16 +289,16 @@ export function GitGraphDialog({
                             </span>
                           </span>
                         ))}
-                        <button
+                        <Button variant="ghost" size="content"
                           type="button"
                           data-code-label
                           title={[commit.subject, commit.body]
                             .filter(Boolean)
                             .join("\n\n")}
-                          className="min-w-20 flex-1 truncate rounded py-2 text-left text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-hover"
+                          className="min-w-20 flex-1 truncate rounded py-2 text-left text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-hover justify-start"
                         >
                           {commit.subject || commit.shortSha}
-                        </button>
+                        </Button>
                       </div>
                     </td>
                     <td className="truncate px-3 py-0 tabular-nums text-content/50">
@@ -341,14 +343,14 @@ export function GitGraphDialog({
             </p>
           ) : null}
           {hasMore ? (
-            <button
+            <Button variant="ghost" size="content"
               type="button"
               onClick={() => void loadMore()}
               disabled={loading || loadingMore}
               className="h-10 w-full text-center text-ui-sm text-content/45 hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-border-hover disabled:opacity-50"
             >
               {loadingMore ? t("Loading…") : t("Load more commits")}
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>

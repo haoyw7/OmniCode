@@ -1,3 +1,4 @@
+import { Input } from "../../../shared/ui/forms/Input";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { Button } from "../../../shared/ui/forms/Button";
 import { motion as motionElement } from "motion/react";
@@ -47,13 +48,13 @@ export function DesktopBotsNavigation({ hostName, assistant, messages, onSelect 
       </header>
       <label className="desktop-bots-search">
         <Search size={15} aria-hidden="true" />
-        <input data-ui="input" value={query} onChange={(event) => setQuery(event.target.value)}
+        <Input variant="inline" value={query} onChange={(event) => setQuery(event.target.value)}
           placeholder={t("Search bots")} aria-label={t("Search bots")} />
       </label>
       <div className="desktop-bots-contacts">
         {matches ? <>
           <div className="desktop-bots-contact" data-selected="true">
-            <button type="button" className="desktop-bots-contact-main" onClick={onSelect}
+            <Button variant="ghost" size="content" type="button" className="desktop-bots-contact-main" onClick={onSelect}
               aria-label={name} aria-current="true" title={`${name}: ${preview}`}>
               <span className="desktop-bots-avatar" aria-hidden="true">
                 <Bot size={20} />
@@ -68,22 +69,22 @@ export function DesktopBotsNavigation({ hostName, assistant, messages, onSelect 
                 </span>
                 <span className="desktop-bots-preview">{preview}</span>
               </span>
-            </button>
-            {assistant && <button type="button" className="desktop-bots-thread-toggle"
+            </Button>
+            {assistant && <Button variant="ghost" size="content" type="button" className="desktop-bots-thread-toggle"
               aria-label={t(expanded ? "Hide threads" : "Show threads")}
               aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
               <ChevronRight size={14} aria-hidden="true" />
-            </button>}
+            </Button>}
           </div>
           <AnimatedCollapse expanded={expanded && !!assistant}>
-            <button type="button" className="desktop-bots-thread" aria-current="page" aria-label={t("Main thread")} title={t("Main thread")} onClick={onSelect}>
+            <Button variant="ghost" size="content" type="button" className="desktop-bots-thread" aria-current="page" aria-label={t("Main thread")} title={t("Main thread")} onClick={onSelect}>
               {assistant?.harness && <HarnessIcon harness={assistant.harness} className="size-3.5 shrink-0" />}
               <span>{assistant?.harness ? sessionDisplayTitle(t("Main thread"), assistant.harness) : t("Main thread")}</span>
-            </button>
+            </Button>
           </AnimatedCollapse>
         </> : <div className="desktop-bots-no-results">
           <p>{t("No matching bots")}</p>
-          <button type="button" onClick={() => setQuery("")}>{t("Clear")}</button>
+          <Button variant="ghost" size="content" type="button" onClick={() => setQuery("")}>{t("Clear")}</Button>
         </div>}
       </div>
     </nav>

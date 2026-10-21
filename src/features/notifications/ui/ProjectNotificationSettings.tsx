@@ -5,6 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronRight, Folder, Search, X } from "../../../shared/ui/icons";
 import { NotificationMuteControl } from "./NotificationMuteControl";
 import { Button } from "../../../shared/ui/forms/Button";
+import { Input } from "../../../shared/ui/forms/Input";
+import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { cn } from "../../../shared/lib/cn";
 import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
@@ -162,9 +165,9 @@ export function ProjectNotificationSettings({
         ) : null}
       </div>
       <div
-        className={`overflow-hidden rounded-xl border bg-content/3 transition-colors ${
+        className={cn("overflow-hidden rounded-xl border bg-content/3 transition-colors",
           highlighted ? "border-accent/60" : "border-content/10"
-        }`}
+        )}
       >
         {error ? (
           <p role="alert" className="px-4 py-3.5 text-[12px] text-red-400">
@@ -187,7 +190,7 @@ export function ProjectNotificationSettings({
               <label className="flex h-10 items-center gap-2.5 border-b border-content/5 px-4 text-content/45 focus-within:text-content/70">
                 <Search className="size-4 shrink-0" />
                 <span className="sr-only">{uiT("Search projects")}</span>
-                <input
+                <Input
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -198,17 +201,17 @@ export function ProjectNotificationSettings({
                     }
                   }}
                   placeholder={uiT("Search projects...")}
-                  className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35 [&::-webkit-search-cancel-button]:hidden"
+                  className="min-w-0 flex-1 border-0 bg-transparent px-0 text-[13px] text-content placeholder:text-content/35 [&::-webkit-search-cancel-button]:hidden"
                 />
                 {query ? (
-                  <button
+                  <Button variant="ghost" size="icon-xs"
                     type="button"
                     aria-label={uiT("Clear")}
                     onClick={() => setQuery("")}
                     className="grid size-5 shrink-0 place-items-center rounded text-content/40 hover:bg-content/5 hover:text-content/70"
                   >
                     <X className="size-3.5" aria-hidden="true" />
-                  </button>
+                  </Button>
                 ) : null}
                 <span className="shrink-0 text-[12px] tabular-nums text-content/35">
                   {needle
@@ -321,7 +324,7 @@ export function ProjectNotificationSettings({
                             }
                           />
                         ) : null}
-                        <button
+                        <Button variant="ghost"
                           type="button"
                           aria-label={uiT(
                             "Notification categories for {value0}",
@@ -382,10 +385,10 @@ export function ProjectNotificationSettings({
                             </p>
                           </div>
                           <ChevronRight
-                            className={`size-3.5 shrink-0 text-content/40 ${isExpanded ? "rotate-90" : ""}`}
+                            className={cn("size-3.5 shrink-0 text-content/40", isExpanded && "rotate-90")}
                             aria-hidden="true"
                           />
-                        </button>
+                        </Button>
                       </div>
                       <div className="ml-auto max-w-full">
                         <NotificationMuteControl projectIds={[project.id]} />
@@ -393,9 +396,9 @@ export function ProjectNotificationSettings({
                     </div>
                     <div
                       id={panelId}
-                      hidden={!isExpanded}
-                      className="border-t border-content/5 px-4"
                     >
+                    <AnimatedCollapse expanded={isExpanded}>
+                    <div className="border-t border-content/5 px-4">
                       <div
                         className={
                           selecting
@@ -432,6 +435,8 @@ export function ProjectNotificationSettings({
                           </label>
                         ))}
                       </div>
+                    </div>
+                    </AnimatedCollapse>
                     </div>
                   </fieldset>
                 );

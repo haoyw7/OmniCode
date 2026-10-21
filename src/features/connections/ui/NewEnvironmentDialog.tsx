@@ -278,12 +278,12 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
           </div>
         </div>
         <div className="rounded-lg border border-border">
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             aria-expanded={variablesOpen}
             aria-controls={`${id}-variables`}
             onClick={() => setVariablesOpen((open) => !open)}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-left transition-colors hover:bg-surface-hover"
+            className="flex w-full items-center justify-start gap-3 rounded-lg px-3 py-1.5 text-left transition-colors hover:bg-surface-hover"
           >
             <span className="min-w-0 flex-1">
               <span className="block text-ui-base font-medium text-foreground">{t("Environment variables")}</span>
@@ -292,7 +292,7 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
               </span>
             </span>
             <DisclosureChevron expanded={variablesOpen} className="size-4 shrink-0 text-foreground-subtle" />
-          </button>
+          </Button>
           <AnimatedCollapse expanded={variablesOpen}>
             <div id={`${id}-variables`} className="flex flex-col gap-1.5 px-3 pb-3">
               <Textarea

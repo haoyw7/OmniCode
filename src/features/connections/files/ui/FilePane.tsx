@@ -1,3 +1,6 @@
+import { Button } from "../../../../shared/ui/forms/Button";
+import { cn } from "../../../../shared/lib/cn";
+import { Textarea } from "../../../../shared/ui/forms/Textarea";
 import { FileExplorerFrame } from "./FileExplorerFrame";
 import { IconButton } from "../../../../shared/ui/forms/IconButton";
 import type { OpenFileFn } from "../../../search/model/search";
@@ -415,17 +418,15 @@ function PlanSurface({
         }
         actions={
           <div className="flex items-center font-sans">
-            <button
+            <Button variant="primary" size="sm"
               type="button"
               disabled={buildDisabled}
               onClick={() => onBuildPlan(plan.sessionId, block.id)}
-              className={`flex h-6 items-center gap-1.5 bg-content px-2.5 font-sans text-[11px] font-medium text-background-base hover:bg-content/90 disabled:cursor-not-allowed disabled:opacity-40 ${
-                session ? "rounded-l-md" : "rounded-md"
-              }`}
+              className={cn("flex h-6 items-center gap-1.5 bg-content px-2.5 font-sans text-[11px] font-medium text-background-base hover:bg-content/90 disabled:cursor-not-allowed disabled:opacity-40", session ? "rounded-l-md" : "rounded-md")}
             >
               <Play className="size-3" />
               {buildLabel}
-            </button>
+            </Button>
             {session && !remote ? (
               <BuildTargetButton
                 from={session.harness}
@@ -440,7 +441,7 @@ function PlanSurface({
           </div>
         }
         source={
-          <textarea
+          <Textarea variant="editor"
             aria-label={uiT("Plan markdown")}
             spellCheck={false}
             value={block.text}

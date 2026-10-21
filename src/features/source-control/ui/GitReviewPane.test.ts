@@ -662,7 +662,7 @@ it("opens file actions from the keyboard without expanding and restores focus on
   );
   expect(document.activeElement?.textContent).toBe("Reveal in file manager");
   await act(async () =>
-    window.dispatchEvent(
+    document.activeElement!.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     ),
   );
@@ -714,7 +714,7 @@ it("renders a fixed commit with the shared diff, preserves folding on refresh, a
   expect(gitFileDiff).not.toHaveBeenCalled();
   await openFileMenu(0);
   expect(document.querySelector('[role="menu"]')?.textContent).not.toMatch(/Stage|Unstage|Discard/);
-  await act(async () => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })));
+  await act(async () => document.activeElement!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   await menu("Collapse all files");
   await settle();
   await menu("Refresh");

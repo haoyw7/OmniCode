@@ -132,7 +132,7 @@ for (const engine of [chromium, webkit]) {
     await expect(draft).toBeFocused();
 
     // Worktree base dropdown shares the geometry and retains remote references.
-    await root.locator('.composer-worktree-checkbox input').check();
+    await root.locator('.composer-worktree-checkbox [data-ui="checkbox"]').check();
     const base = root.locator('.composer-worktree-base > button');
     await expect(base).toHaveText('main');
     await base.click();

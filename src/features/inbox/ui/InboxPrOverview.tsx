@@ -1,3 +1,5 @@
+import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { Button } from "../../../shared/ui/forms/Button";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useMemo, useState } from "react";
@@ -87,9 +89,11 @@ export function InboxDescriptionSummary({
       data-inbox-description
       className="flex flex-col gap-2 rounded-lg border border-stroke bg-content/[0.02] px-3.5 py-3"
     >
-      {expanded ? (
-        <AgentMarkdown text={body} cwd={cwd} allowRemoteMedia />
-      ) : excerpt.text ? (
+      <AnimatedCollapse expanded={expanded}>
+        {() => <AgentMarkdown text={body} cwd={cwd} allowRemoteMedia />}
+      </AnimatedCollapse>
+      <AnimatedCollapse expanded={!expanded}>
+        {excerpt.text ? (
         <p className="line-clamp-4 whitespace-pre-line text-[13px] leading-relaxed text-content/75">
           {excerpt.text}
         </p>
@@ -98,7 +102,8 @@ export function InboxDescriptionSummary({
           {uiT("Description is media only")}
         </p>
       )}
-      <button
+      </AnimatedCollapse>
+      <Button variant="ghost" size="content"
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((current) => !current)}
@@ -114,7 +119,7 @@ export function InboxDescriptionSummary({
             {excerpt.images === 1 ? uiT("image") : uiT("images")}
           </span>
         ) : null}
-      </button>
+      </Button>
     </section>
   );
 }
@@ -161,7 +166,7 @@ export function InboxPrChangesGlance({
           <Spinner className="size-3 text-content/35" />
         ) : null}
         {files.length > 0 ? (
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             onClick={() => onOpenFile()}
             className="ml-auto inline-flex items-center gap-0.5 hover:text-content"
@@ -170,7 +175,7 @@ export function InboxPrChangesGlance({
               ? uiT("View all {value0}", { value0: String(files.length) })
               : uiT("View diff")}
             <ChevronRight className="size-3.5" />
-          </button>
+          </Button>
         ) : null}
       </div>
       {error && !diff ? (
@@ -191,11 +196,11 @@ export function InboxPrChangesGlance({
                 key={file.path}
                 className="border-b border-stroke last:border-b-0"
               >
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   title={file.path}
                   onClick={() => onOpenFile(file.path)}
-                  className="flex w-full min-w-0 items-center gap-2 bg-content/2 px-3 py-1.5 text-left hover:bg-content/3"
+                  className="flex w-full min-w-0 items-center gap-2 bg-content/2 px-3 py-1.5 text-left hover:bg-content/3 justify-start"
                 >
                   <FileTypeIcon name={name} isDir={false} size={16} />
                   <span className="flex min-w-0 flex-1 font-mono text-[12px]">
@@ -227,7 +232,7 @@ export function InboxPrChangesGlance({
                       </span>
                     ) : null}
                   </span>
-                </button>
+                </Button>
               </li>
             );
           })}

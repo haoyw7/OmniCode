@@ -1,5 +1,7 @@
+import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
+import { cn } from "../../../../shared/lib/cn";
 import { Button } from "../../../../shared/ui/forms/Button";
-import { DetailsChevron } from "../../../../shared/ui/DetailsChevron";
+import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { timestampTitle } from "../timestampTitle";
 import { AttachmentList } from "../AttachmentList";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
@@ -63,6 +65,7 @@ export function UserMessageBlock({
     finally { setOpeningBot(false); }
   };
   const sentAt = block.sentAt ?? block.startedAt;
+  const [ciExpanded, setCiExpanded] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [overflows, setOverflows] = useState(false);
   const textRef = useRef<HTMLElement>(null);
@@ -146,12 +149,12 @@ export function UserMessageBlock({
         {block.origin?.kind === "assistant" && (
           <div className="mb-1 px-3 text-xs text-content/60" data-assistant-origin={block.origin.assistantId}>
             {openBot ? (
-              <button type="button"
+              <Button variant="ghost" size="content" type="button"
                 className="inline-flex items-center gap-1.5 rounded hover:text-content hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-content/40 disabled:opacity-50"
                 disabled={!visible || openingBot} aria-busy={openingBot || undefined} onClick={() => void openOrigin()}>
                 <Bot className="size-3.5" aria-hidden="true" />
                 <span>{uiT("From {value0}", { value0: block.origin.assistantName || uiT("Assistant") })}</span>
-              </button>
+              </Button>
             ) : (
               <span className="inline-flex items-center gap-1.5">
                 <Bot className="size-3.5" aria-hidden="true" />
@@ -164,7 +167,7 @@ export function UserMessageBlock({
         {mediaAttachments.length ? (
           <AttachmentList
             attachments={mediaAttachments}
-            className={`user-message-media flex max-w-[min(100%,36rem)] flex-wrap justify-end gap-1.5 ${hasBubble ? "mb-1.5" : ""}`}
+            className={cn("user-message-media flex max-w-[min(100%,36rem)] flex-wrap justify-end gap-1.5", hasBubble ? "mb-1.5" : "")}
             renderAttachment={(file) => (
               <AttachmentChip
                 key={file.id}
@@ -185,18 +188,14 @@ export function UserMessageBlock({
           data-bubble-layout={layout}
           data-draft={block.draft ? "true" : undefined}
           data-omnicode={omnicode ? "true" : undefined}
-          className={`user-message-bubble relative w-fit min-w-0 px-3 py-2 font-sans text-content transition-[background-color] duration-200 ${
-            layout === "chat" ? "max-w-[min(100%,36rem)]" : "max-w-full"
-          } ${
-            block.draft
+          className={cn("user-message-bubble relative w-fit min-w-0 px-3 py-2 font-sans text-content transition-[background-color] duration-200", layout === "chat" ? "max-w-[min(100%,36rem)]" : "max-w-full", block.draft
               ? "border border-dashed border-content/30 bg-content/4"
-              : "bg-content/10"
-          } ${editing ? "edit-last-turn-bubble" : ""}`}
+              : "bg-content/10", editing ? "edit-last-turn-bubble" : "")}
           style={{ zIndex: stickyIndex }}
         >
           {bubbleAttachments.length ? (
             <div
-              className={`flex flex-wrap gap-1.5 ${text || card || note ? "mb-2" : ""}`}
+              className={cn("flex flex-wrap gap-1.5", text || card || note ? "mb-2" : "")}
             >
               {bubbleAttachments.map((file) => (
                 <AttachmentChip key={file.id} attachment={file} />
@@ -226,35 +225,38 @@ export function UserMessageBlock({
               {messageLink.afterText}
             </div>
           ) : displayText ? (
+            <AnimatedCollapse expanded animateContentResize>
             <pre
               data-selectable-agent-response={block.id}
               ref={(element) => {
                 textRef.current = element;
               }}
-              className={`min-w-0 whitespace-pre-wrap break-words font-sans text-sm ${expanded ? "" : "line-clamp-4"}`}
+              className={cn("min-w-0 whitespace-pre-wrap break-words font-sans text-sm", expanded ? "" : "line-clamp-4")}
             >
               {displayText}
             </pre>
+            </AnimatedCollapse>
           ) : null}
           {overflows ? (
-            <button
+            <Button data-session-disclosure variant="ghost" size="content"
               type="button"
               aria-expanded={expanded}
-              className="mt-1 rounded px-1 py-0.5 text-xs text-content/60 hover:bg-content/5 hover:text-content"
+              className="mt-1 rounded px-1 py-0.5 text-xs text-content/60 hover:text-content"
               onClick={toggle}
             >
               {expanded ? uiT("Show less") : uiT("Show more")}
-            </button>
+            </Button>
           ) : null}
           {block.ciContext ? (
-            <details
+            <div
               className="group/ci mt-2 min-w-0 border-t border-content/10 pt-2"
               onClick={(event) => event.stopPropagation()}
             >
-              <summary className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded text-xs text-content/50 transition-colors hover:text-content/80 focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/40 [&::-webkit-details-marker]:hidden">
-                <DetailsChevron className="size-3 shrink-0" />
+              <Button data-session-disclosure variant="ghost" size="content" aria-expanded={ciExpanded} onClick={() => setCiExpanded(value => !value)} className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded text-xs text-content/50 transition-colors hover:text-content/80 focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/40 [&::-webkit-details-marker]:hidden">
+                <DisclosureChevron expanded={ciExpanded} className="size-3 shrink-0" />
                 <span>{uiT("CI context")}</span>
-              </summary>
+              </Button>
+              <AnimatedCollapse expanded={ciExpanded}>
               <p className="mt-2 text-xs text-content/50">
                 {uiT(
                   "CI instructions and failure details included with this request.",
@@ -263,7 +265,8 @@ export function UserMessageBlock({
               <pre className="mt-2 max-h-72 min-w-0 overflow-auto overscroll-contain rounded-md bg-content/5 p-2.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-words text-content/70">
                 {block.ciContext}
               </pre>
-            </details>
+            </AnimatedCollapse>
+            </div>
           ) : null}
           {block.draft ? (
             <div className="mt-2 flex items-center justify-between gap-4 border-t border-dashed border-content/20 pt-2">
@@ -272,7 +275,7 @@ export function UserMessageBlock({
                 {uiT("Draft")}
               </span>
               <span className="flex items-center gap-1">
-                <button
+                <Button variant="ghost" size="content"
                   type="button"
                   title={uiT("Remove draft")}
                   aria-label={uiT("Remove draft")}
@@ -281,7 +284,7 @@ export function UserMessageBlock({
                 >
                   <Trash2 className="size-3.5" />
                   {uiT("Remove")}
-                </button>
+                </Button>
                 <Button variant="primary"
                   type="button"
                   title={uiT("Send draft")}

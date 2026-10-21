@@ -1,3 +1,6 @@
+import { Button } from "../../../shared/ui/forms/Button";
+import { cn } from "../../../shared/lib/cn";
+import { Input } from "../../../shared/ui/forms/Input";
 import { useQuery } from "@tanstack/react-query";
 import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
 import { inboxKeys, inboxConnectionsQuery, inboxListQuery, linkedWorkItemQuery, linearTeamsQuery, jiraProjectsQuery, updateInboxItem } from "../model/inboxQueries";
@@ -127,7 +130,7 @@ function InboxSourceTab({
 }) {
   const label = INBOX_SOURCE_LABELS[source];
   return (
-    <button
+    <Button variant="ghost" size="content"
       type="button"
       role="tab"
       aria-selected={selected}
@@ -141,7 +144,7 @@ function InboxSourceTab({
         />
         <span className="leading-none">{label}</span>
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -547,7 +550,7 @@ export function InboxView({
           </div>
         ) : null}
         {connectableSources.length > 0 ? (
-          <button
+          <Button variant="ghost" size="content"
             ref={connectButtonRef}
             type="button"
             aria-label={uiT("Connect an inbox source")}
@@ -555,22 +558,20 @@ export function InboxView({
             aria-expanded={connectMenuOpen}
             title={uiT("Connect an inbox source")}
             onClick={() => setConnectMenuOpen((open) => !open)}
-            className={`flex h-6 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-[12px] leading-none ${
-              connectMenuOpen
+            className={cn("flex h-6 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-[12px] leading-none", connectMenuOpen
                 ? "bg-selection text-content"
-                : "text-content/40 hover:bg-content/3 hover:text-content"
-            }`}
+                : "text-content/40 hover:bg-content/3 hover:text-content")}
           >
             <Plus className="size-3.5 shrink-0" />
             <span className="min-w-0 truncate leading-normal">{uiT("Add connection")}</span>
-          </button>
+          </Button>
         ) : null}
       </div>
       {noSourcesConnected ? null : (
         <div className="desktop-toolbar flex h-9 shrink-0 items-center gap-1 border-b border-stroke px-2">
           <div className="relative flex h-7 min-w-0 flex-1 items-center">
             <Search className="pointer-events-none absolute left-2 size-3 shrink-0 opacity-50" />
-            <input
+            <Input variant="inline"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder={uiT("Filter inbox")}
@@ -580,20 +581,18 @@ export function InboxView({
               className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] text-content outline-none placeholder:text-content/40"
             />
           </div>
-          <button
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Filter inbox")}
             aria-label={uiT("Filter inbox")}
             aria-expanded={!!filterMenu}
             aria-haspopup="menu"
             onClick={onFilterButtonClick}
-            className={`grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content ${
-              filterMenu || filtersActive ? "bg-selection text-content" : ""
-            }`}
+            className={cn("grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content", filterMenu || filtersActive ? "bg-selection text-content" : "")}
           >
             <ListFilter className="size-3" />
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="content"
             type="button"
             title={uiT("Mark all as read")}
             aria-label={uiT("Mark all as read")}
@@ -608,8 +607,8 @@ export function InboxView({
             className="grid size-6 shrink-0 place-items-center rounded-md text-content/45 hover:bg-content/6 hover:text-content disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-content/45"
           >
             <CheckCheck className="size-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button variant="ghost" size="content"
             type="button"
             aria-label={uiT("Refresh")}
             onClick={refreshInbox}
@@ -620,7 +619,7 @@ export function InboxView({
             ) : (
               <RefreshCw className="size-3.5" />
             )}
-          </button>
+          </Button>
         </div>
       )}
       {readStatusError ? (

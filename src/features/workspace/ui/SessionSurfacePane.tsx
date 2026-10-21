@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { motion } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
@@ -51,7 +52,7 @@ export function SessionSurfacePane({
       data-fold-state={grid ? foldState : undefined}
       aria-hidden={!interactive}
       inert={!interactive || floating || undefined}
-      className={`${grid ? "relative" : "absolute"} flex min-h-0 min-w-0 flex-col overflow-hidden ${!expanded && foldState === "closed" ? "invisible" : ""} ${dragging && !floating ? "opacity-40" : ""}`}
+      className={cn(grid ? "relative" : "absolute", "flex min-h-0 min-w-0 flex-col overflow-hidden", !expanded && foldState === "closed" ? "invisible" : "", dragging && !floating ? "opacity-40" : "")}
       style={style}
       onScroll={onScroll}
     >

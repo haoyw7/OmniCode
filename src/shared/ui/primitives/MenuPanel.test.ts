@@ -52,24 +52,24 @@ function render(open: boolean, visible = true) {
 
 it("retains the closing surface, disables interaction and nested portals, then unmounts", () => {
   render(true);
-  const menu = container.querySelector<HTMLElement>("[data-menu]")!;
-  expect(container.querySelector("[data-nested-portal]")).not.toBeNull();
+  const menu = document.body.querySelector<HTMLElement>("[data-menu]")!;
+  expect(document.body.querySelector("[data-nested-portal]")).not.toBeNull();
   render(false);
   expect(menu.inert).toBe(true);
   expect(menu.getAttribute("aria-hidden")).toBe("true");
   expect(menu.textContent).toBe("Action");
-  expect(container.querySelector("[data-nested-portal]")).toBeNull();
+  expect(document.body.querySelector("[data-nested-portal]")).toBeNull();
   act(() => vi.advanceTimersByTime(duration.pop * 1000));
-  expect(container.querySelector("[data-menu]")).toBeNull();
+  expect(document.body.querySelector("[data-menu]")).toBeNull();
 });
 
 it("reverses closing on the same surface and cancels the pending unmount", () => {
   render(true);
-  const menu = container.querySelector("[data-menu]");
+  const menu = document.body.querySelector("[data-menu]");
   render(false);
   act(() => vi.advanceTimersByTime(70));
   render(true);
-  expect(container.querySelector("[data-menu]")).toBe(menu);
+  expect(document.body.querySelector("[data-menu]")).toBe(menu);
   expect(menu?.hasAttribute("inert")).toBe(false);
   act(() => vi.advanceTimersByTime(duration.pop * 1000));
   expect(menu?.getAttribute("aria-hidden")).not.toBe("true");
@@ -81,10 +81,10 @@ it("closes immediately with reduced motion and removes portals in a hidden surfa
   } as MediaQueryList);
   render(true);
   render(false);
-  expect(container.querySelector("[data-menu]")).toBeNull();
+  expect(document.body.querySelector("[data-menu]")).toBeNull();
   render(true);
   render(true, false);
-  expect(container.querySelector("[data-menu]")).toBeNull();
+  expect(document.body.querySelector("[data-menu]")).toBeNull();
 });
 
 it("preserves styling and animates the closing lifetime for other picker consumers", () => {
@@ -103,8 +103,8 @@ it("preserves styling and animates the closing lifetime for other picker consume
       ),
     ),
   );
-  expect(container.querySelector(".existing-menu")).not.toBeNull();
-  expect(container.querySelector(".composer-popover")).toBeNull();
+  expect(document.body.querySelector(".existing-menu")).not.toBeNull();
+  expect(document.body.querySelector(".composer-popover")).toBeNull();
   act(() =>
     root.render(
       createElement(
@@ -114,9 +114,9 @@ it("preserves styling and animates the closing lifetime for other picker consume
       ),
     ),
   );
-  expect(container.querySelector<HTMLElement>("[data-menu]")?.inert).toBe(true);
-  act(() => completeMotionAnimation(container));
-  expect(container.querySelector("[data-menu]")).toBeNull();
+  expect(document.body.querySelector<HTMLElement>("[data-menu]")?.inert).toBe(true);
+  act(() => completeMotionAnimation(document.body));
+  expect(document.body.querySelector("[data-menu]")).toBeNull();
 });
 
 it("dismisses only the nested menu on Escape and restores its row focus", () => {
@@ -133,21 +133,18 @@ it("dismisses only the nested menu on Escape and restores its row focus", () => 
     );
   }
   act(() => root.render(createElement(NestedMenus)));
-  const child = container.querySelector<HTMLElement>("[data-child]")!;
-  const parent = child.parentElement!.closest('[data-ui="menu-panel"]')!;
+  const child = document.body.querySelector<HTMLElement>("[data-child]")!;
+  const parent = document.querySelector('[data-ui="menu-panel"]')!;
   expect(child.dataset.menuTree).toBe(parent.getAttribute("data-menu-tree"));
-  act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  act(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   expect(dismissParent).not.toHaveBeenCalled();
   expect(document.activeElement?.textContent).toBe("Branch");
   expect(child.inert).toBe(true);
-  act(() => completeMotionAnimation(container));
-  act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  act(() => completeMotionAnimation(document.body));
+  act(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   expect(dismissParent).toHaveBeenCalledOnce();
 });
 
-vi.mock("react-dom", async (importOriginal) => ({
-  ...await importOriginal<typeof import("react-dom")>(), createPortal: (children: ReactNode) => children,
-}));
 vi.mock("motion/react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("motion/react")>();
   const { motionTestDriver } = await import("../../../../tests/helpers/motionDriver");
