@@ -53,7 +53,7 @@ html[data-skin] {
   --color-omi-rose: #df9eb8;
   --color-omi-green: #9dc58a;
 }
-html[data-skin]:not(.theme-light) {
+html[data-skin].theme-dark {
   --color-bot-send: #ffffff;
   --color-bot-send-ink: #20231e;
 }
@@ -73,7 +73,7 @@ html[data-skin][data-desktop-mode] .app-shell-root {
   background: var(--desktop-window-ground, var(--color-app));
 }
 
-html[data-skin][data-desktop-mode].has-native-glass:not(.theme-light) {
+html[data-skin][data-desktop-mode].has-native-glass.theme-dark {
   --desktop-window-ground: color-mix(in srgb, var(--color-app) calc(var(--window-opacity) * 100%), transparent);
 }
 
@@ -138,7 +138,7 @@ html[data-skin].theme-light [data-session-review-shell] [data-session-review-bor
   60% { opacity: 0.25; }
 }
 
-html[data-skin][data-skin]:not(.theme-light) {
+html[data-skin][data-skin].theme-dark {
   --scrollbar-thumb-color: rgb(240 239 236 / 40%);
   --scrollbar-thumb-hover-color: rgb(240 239 236 / 60%);
   /* Native scrollbar buttons cannot use CSS masks; keep their SVG ink here. */

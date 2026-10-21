@@ -24,6 +24,7 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import { InboxFiltersMenu, INBOX_FILTER_MENU_WIDTH } from "./InboxFiltersMenu";
+import { useInboxQueryState } from "../model/useInboxQueryState";
 import { InboxConnectMenu } from "./InboxConnectMenu";
 import { InboxProviderMark } from "./InboxProviderMark";
 import { useDragResize } from "../../../shared/hooks/useDragResize";
@@ -42,13 +43,9 @@ import {
   hasActiveInboxFilters,
   linearProjectOptions,
   inboxFetchState,
-  loadInboxFilters,
-  loadInboxSource,
   pruneInboxFilters,
-  saveInboxFilters,
   resolveInboxSource,
   saveInboxConnections,
-  saveInboxSource,
   visibleInboxSources,
   INBOX_SOURCE_LABELS,
   isTrackerSource,
@@ -80,12 +77,10 @@ import { LIST_PAGE_SIZE, listWindowSize } from "../../../shared/lib/listWindow";
 import {
   LINEAR_CHANGE_EVENT,
   loadHiddenLinearTeamIds,
-  saveHiddenLinearTeamIds,
 } from "../model/linear";
 import {
   JIRA_CHANGE_EVENT,
   loadHiddenJiraProjectIds,
-  saveHiddenJiraProjectIds,
 } from "../model/jira";
 import {
   GITLAB_CHANGE_EVENT,
@@ -203,30 +198,25 @@ export function InboxView({
   const [groupColors] = useState(loadTabGroupColors);
   const [groupCustomColors] = useState(loadTabGroupCustomColors);
 
-  const [searchInput, setSearchInput] = useState("");
+  const {
+    filters, setFilters, source: requestedSource, setSource, searchInput, setSearchInput,
+    linearHiddenTeamIds, setLinearHiddenTeamIds, jiraHiddenProjectIds, setJiraHiddenProjectIds,
+  } = useInboxQueryState();
   const [readStatusError, setReadStatusError] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
   const targetSelectionKey = target ? linkedWorkItemInboxKey(target) : null;
   const [selectedKey, setSelectedKey] = useState<string | null>(
     targetSelectionKey,
   );
-  const [filters, setFilters] = useState(loadInboxFilters);
   const connectionsQuery = useQuery(inboxConnectionsQuery(), queryClient);
   const connections = connectionsQuery.data;
 
-  const [source, setSource] = useState(() =>
-    resolveInboxSource(loadInboxSource(), connections),
-  );
+  const [targetSource, setTargetSource] = useState<InboxSource | null>(target ? "github" : null);
+  const source = resolveInboxSource(targetSource ?? requestedSource, connections);
   const [connectMenuOpen, setConnectMenuOpen] = useState(false);
   const connectButtonRef = useRef<HTMLButtonElement | null>(null);
   const [filterMenu, setFilterMenu] = useState<{ x: number; y: number } | null>(
     null,
-  );
-  const [linearHiddenTeamIds, setLinearHiddenTeamIds] = useState(
-    loadHiddenLinearTeamIds,
-  );
-  const [jiraHiddenProjectIds, setJiraHiddenProjectIds] = useState(
-    loadHiddenJiraProjectIds,
   );
 
   const projects = useMemo(
@@ -301,8 +291,8 @@ export function InboxView({
   });
 
   useEffect(() => {
+    setTargetSource(target ? "github" : null);
     if (!target) return;
-    setSource("github");
     setSearchInput("");
   }, [target]);
 
@@ -365,20 +355,11 @@ export function InboxView({
 
   // The initial source is resolved against cached status, so storage can still
   // name a provider this view has already fallen back from.
-  useEffect(() => {
-    saveInboxSource(source);
-    // Mount only: the temporary switch to GitHub for a linked target must not
-    // be persisted.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Disconnecting can pull the tab out from under the current selection.
   useEffect(() => {
-    const next = resolveInboxSource(source, connections);
-    if (next === source) return;
-    setSource(next);
-    saveInboxSource(next);
-  }, [connections, source]);
+    // A linked item's temporary source must not replace the user's URL/default.
+    if (targetSource === null && source !== requestedSource) void setSource(source);
+  }, [source, requestedSource, targetSource, setSource]);
 
   const visibleSources = visibleInboxSources(connections);
   const connectableSources = connectableInboxSources(connections);
@@ -506,12 +487,11 @@ export function InboxView({
       projects.map((project) => project.path),
     );
     setFilters(pruned);
-    saveInboxFilters(pruned);
   };
 
   const onSourceChange = (next: InboxSource) => {
+    setTargetSource(null);
     setSource(next);
-    saveInboxSource(next);
   };
 
   const onFilterButtonClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
@@ -738,8 +718,8 @@ export function InboxView({
       source={source}
       filters={activeFilters}
       onChange={onFiltersChange}
-      onLinearTeamsChange={saveHiddenLinearTeamIds}
-      onJiraProjectsChange={saveHiddenJiraProjectIds}
+      onLinearTeamsChange={setLinearHiddenTeamIds}
+      onJiraProjectsChange={setJiraHiddenProjectIds}
       onClose={() => setFilterMenu(null)}
     />
   ) : null;

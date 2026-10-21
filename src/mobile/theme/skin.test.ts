@@ -3,6 +3,9 @@ import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act } from "react";
+import type { Root } from "react-dom/client";
+import { createRoot } from "../../../tests/helpers/themeRoot";
 import {
   MOBILE_SKINS,
   MOBILE_SKIN_INFO,
@@ -54,22 +57,37 @@ describe("mobile skin preference", () => {
 });
 
 describe("applying a skin", () => {
-  it("sets the skin, the shared light class and the browser theme color", () => {
-    expect(applyMobileSkin("atelier", "dark")).toBe("atelier");
+  let reactRoot: Root;
+  let container: HTMLDivElement;
+  beforeEach(async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    document.documentElement.dataset.mobileSkin = "midnight";
+    container = document.createElement("div");
+    document.body.append(container);
+    reactRoot = createRoot(container, true);
+    await act(async () => reactRoot.render(null));
+  });
+  afterEach(() => {
+    act(() => reactRoot.unmount());
+    container.remove();
+    vi.unstubAllGlobals();
+  });
+  it("sets the skin, the shared light class and the browser theme color", async () => {
+    await act(async () => { expect(applyMobileSkin("atelier", "dark")).toBe("atelier"); });
     const root = document.documentElement;
     expect(root.dataset.mobileSkin).toBe("atelier");
     expect(root.classList.contains("theme-light")).toBe(true);
     expect(document.querySelector('meta[name="theme-color"]')!.getAttribute("content")).toBe("#f5f1eb");
-    applyMobileSkin("auto", "dark");
+    await act(async () => { applyMobileSkin("auto", "dark"); });
     expect(root.dataset.mobileSkin).toBe("midnight");
     expect(root.classList.contains("theme-light")).toBe(false);
   });
 
-  it("matches native status bar icons to the skin", () => {
+  it("matches native status bar icons to the skin", async () => {
     vi.spyOn(Capacitor, "isNativePlatform").mockReturnValue(true);
-    applyMobileSkin("meadow", "dark");
+    await act(async () => { applyMobileSkin("meadow", "dark"); });
     expect(StatusBar.setStyle).toHaveBeenLastCalledWith({ style: Style.Light });
-    applyMobileSkin("graphite", "light");
+    await act(async () => { applyMobileSkin("graphite", "light"); });
     expect(StatusBar.setStyle).toHaveBeenLastCalledWith({ style: Style.Dark });
   });
 });

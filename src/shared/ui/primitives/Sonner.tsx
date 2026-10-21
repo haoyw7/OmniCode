@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { Toaster as Sonner, toast, type ToasterProps } from "sonner";
-import { useColorScheme } from "../../hooks/useColorScheme";
+import { useTheme } from "next-themes";
 import { translate } from "../../i18n/language";
 import { LAYER } from "../../lib/layers";
 import { CircleAlert, CircleCheck, Info, LoaderCircle, TriangleAlert, X } from "../icons";
@@ -10,10 +10,10 @@ import { CircleAlert, CircleCheck, Info, LoaderCircle, TriangleAlert, X } from "
  * `toast` from `sonner` directly. Colors follow the active skin variables.
  */
 export function Toaster(props: ToasterProps) {
-  const scheme = useColorScheme();
+  const { forcedTheme, resolvedTheme } = useTheme();
   return (
     <Sonner
-      theme={scheme}
+      theme={(forcedTheme ?? resolvedTheme) === "light" ? "light" : "dark"}
       position="top-center"
       offset={{ top: 52 }}
       mobileOffset={{ top: 10 }}

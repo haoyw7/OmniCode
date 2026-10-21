@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/queryRoot";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { InboxView } from "./InboxView";
@@ -27,6 +29,7 @@ vi.mock("@tauri-apps/api/window", () => ({
 let root: Root;
 let container: HTMLDivElement;
 beforeEach(() => {
+  queryClient.clear();
   vi.mocked(invoke).mockRejectedValue(new Error("No native bridge"));
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
@@ -38,6 +41,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   act(() => root.unmount());
+  queryClient.clear();
   container.remove();
   localStorage.clear();
   vi.useRealTimers();

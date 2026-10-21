@@ -2,14 +2,11 @@
   "version": 1,
   "rules": {
     "shared-upward": [
-      "src/shared/hooks/useColorScheme.ts -> src/features/settings/model/appearance.ts",
       "src/shared/i18n/language.ts -> src/features/settings/model/sharedPreferences.ts",
       "src/shared/i18n/languageSync.ts -> src/platform/tauri/platform.ts",
       "src/shared/lib/dragPoint.ts -> src/platform/tauri/platform.ts",
       "src/shared/lib/format.ts -> src/platform/tauri/fs.ts",
-      "src/shared/lib/paths.ts -> src/platform/tauri/platform.ts",
-      "src/shared/theme/desktopAppearance.ts -> src/features/settings/model/sharedPreferences.ts",
-      "src/shared/theme/desktopSkin.ts -> src/features/settings/model/sharedPreferences.ts"
+      "src/shared/lib/paths.ts -> src/platform/tauri/platform.ts"
     ],
     "platform-upward": [
       "src/platform/tauri/clipboard.ts -> src/features/sessions/model/attachments.ts",

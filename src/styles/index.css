@@ -17,7 +17,7 @@
 @source "../../node_modules/@streamdown/code/dist/*.js";
 @source "../../node_modules/@streamdown/mermaid/dist/*.js";
 
-@custom-variant dark (&:where(html:not(.theme-light), html:not(.theme-light) *));
+@custom-variant dark (&:where(html.theme-dark, html.theme-dark *));
 /* shadcn's Radix state variants, used by the ported ZCode switch. */
 @custom-variant data-checked (&:where([data-state="checked"], [data-checked]:not([data-checked="false"])));
 @custom-variant data-unchecked (&:where([data-state="unchecked"], [data-unchecked]:not([data-unchecked="false"])));
@@ -292,9 +292,9 @@ body {
 
 /* Tint-less transparent rather than `transparent`, which browsers interpolate
    through black and would dim the page on the way in and out of glass. */
-html.has-native-glass:not(.theme-light),
-html.has-native-glass:not(.theme-light) body,
-html.has-native-glass:not(.theme-light) #root {
+html.has-native-glass.theme-dark,
+html.has-native-glass.theme-dark body,
+html.has-native-glass.theme-dark #root {
   background: color-mix(in srgb, var(--color-background-base) 0%, transparent);
 }
 
@@ -512,9 +512,9 @@ html.has-native-glass:not(.theme-light) #root {
 
 /* Window opacity scales every surface; listed before .sidebar-glass so the
    activity bar, which is both, keeps the sidebar treatment. */
-html.has-native-glass:not(.theme-light) .shell-chrome,
-html.has-native-glass:not(.theme-light):not(.glass-body) .body-glass,
-html.has-native-glass:not(.theme-light) .pane-card-gutter {
+html.has-native-glass.theme-dark .shell-chrome,
+html.has-native-glass.theme-dark:not(.glass-body) .body-glass,
+html.has-native-glass.theme-dark .pane-card-gutter {
   background: color-mix(
     in srgb,
     var(--color-window) calc(var(--window-opacity) * 100%),
@@ -522,14 +522,14 @@ html.has-native-glass:not(.theme-light) .pane-card-gutter {
   );
 }
 
-html.has-native-glass:not(.theme-light) .sidebar-glass {
+html.has-native-glass.theme-dark .sidebar-glass {
   background: hsl(
     var(--theme-hue) var(--theme-saturation) var(--background-lightness) /
       calc(var(--sidebar-opacity) * var(--window-opacity))
   );
 }
 
-html.has-native-glass:not(.theme-light) .pane-card {
+html.has-native-glass.theme-dark .pane-card {
   background: color-mix(
     in srgb,
     var(--color-background-base) calc(var(--window-opacity) * 100%),
@@ -612,7 +612,7 @@ html.chat-background-window.has-chat-background.chat-background-effect-ready
   opacity: 1;
 }
 
-html.has-native-glass:not(.theme-light).chat-background-window.has-chat-background.chat-background-effect-ready
+html.has-native-glass.theme-dark.chat-background-window.has-chat-background.chat-background-effect-ready
   .window-chat-background {
   opacity: var(--window-opacity);
 }
@@ -650,7 +650,7 @@ html.chat-background-window
   );
 }
 
-:root.has-native-glass:not(.theme-light).chat-background-window.has-chat-background.chat-background-effect-ready
+:root.has-native-glass.theme-dark.chat-background-window.has-chat-background.chat-background-effect-ready
   :is(.sidebar-glass, [data-desktop-sidebar]) {
   background: color-mix(
     in srgb,
@@ -683,7 +683,7 @@ html.chat-background-window
   }
 }
 
-html.has-native-glass.glass-body:not(.theme-light) .body-glass {
+html.has-native-glass.glass-body.theme-dark .body-glass {
   background: color-mix(
     in srgb,
     var(--color-background-base)

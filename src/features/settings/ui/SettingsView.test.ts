@@ -2,7 +2,9 @@ import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver"
 import { configureSharedHost } from "../../connections/model/remoteProjects";
 // @vitest-environment happy-dom
 import { act, createElement, type ComponentProps } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/themeRoot";
+import { queryClient } from "../../../shared/lib/queryClient";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { ask } from "@tauri-apps/plugin-dialog";
@@ -209,6 +211,7 @@ function mockAccountHost(options: {
 }
 
 beforeEach(() => {
+  queryClient.clear();
   windowMock.nativeDesktop = false;
   windowMock.startDragging.mockClear();
   vi.mocked(loginHarness).mockReset().mockResolvedValue(undefined);
@@ -226,6 +229,7 @@ beforeEach(() => {
 
 afterEach(async () => {
   await act(async () => root.unmount());
+  queryClient.clear();
   container.remove();
   clearCachedRateLimits();
   localStorage.clear();

@@ -13,6 +13,6 @@
 @source "../../../node_modules/@streamdown/code/dist/*.js";
 @source "../../../node_modules/@streamdown/mermaid/dist/*.js";
 
-@custom-variant dark (&:where(html:not(.theme-light), html:not(.theme-light) *));
+@custom-variant dark (&:where(html.theme-dark, html.theme-dark *));
 @custom-variant data-checked (&:where([data-state="checked"], [data-checked]:not([data-checked="false"])));
 @custom-variant data-unchecked (&:where([data-state="unchecked"], [data-unchecked]:not([data-unchecked="false"])));

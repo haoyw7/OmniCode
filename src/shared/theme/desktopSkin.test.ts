@@ -55,7 +55,7 @@ describe("desktop skin preference", () => {
     expect(loadDesktopSkin()).toBe("auto");
   });
 
-  it("stamps data-skin and follows the skin's scheme", () => {
+  it("stamps data-skin without owning the next-themes class or color-scheme", () => {
     const classNames = new Set<string>(["theme-light"]);
     const dataset: { skin?: string; desktopVisual?: string } = {};
     const style: { colorScheme: string } = { colorScheme: "" };
@@ -79,10 +79,10 @@ describe("desktop skin preference", () => {
     expect(dataset.skin).toBe("meadow");
     expect(dataset.desktopVisual).toBe("claude-measured-v1");
     expect(classNames.has("theme-light")).toBe(true);
-    expect(style.colorScheme).toBe("light");
+    expect(style.colorScheme).toBe("");
 
     expect(applyDesktopSkin("classic")).toBe("light");
     expect(dataset.skin).toBe("daylight");
-    expect(style.colorScheme).toBe("light");
+    expect(style.colorScheme).toBe("");
   });
 });

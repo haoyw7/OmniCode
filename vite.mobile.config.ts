@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import fontScale from "./scripts/postcss-font-scale.mjs";
 import { excludeEvaluationVite } from "./scripts/production-inputs.mjs";
+import { themeBootstrapPlugin } from "./scripts/theme-bootstrap.mjs";
 import { resolve } from "node:path";
 import { renameSync } from "node:fs";
 
@@ -81,6 +82,7 @@ export default defineConfig({
   cacheDir: "node_modules/.vite-mobile",
   plugins: [
     excludeEvaluationVite(),
+    themeBootstrapPlugin(true),
     react(),
     tailwindcss(),
     hostProxy(),

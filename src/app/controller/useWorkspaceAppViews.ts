@@ -17,11 +17,10 @@ import { type Session } from "../../features/sessions/model/session";
 import {
   loadFileTabMode,
   loadNotesEnabled,
-  loadSettingsSection,
-  saveSettingsSection,
   type SettingsSectionId,
 } from "../../features/settings/model/settings";
 import type { SettingsAnchor } from "../../features/settings/ui/SettingsView";
+import { useSettingsSection } from "../../features/settings/model/useSettingsSection";
 import {
   findSurfacePane,
   focusedFileTab,
@@ -94,8 +93,7 @@ export function useWorkspaceAppViews(options: Options) {
     setComposerFocused(true);
   }, []);
   const showWorkspace = useCallback(() => setAppPage(null), []);
-  const [settingsSection, setSettingsSection] =
-    useState<SettingsSectionId>(loadSettingsSection);
+  const [settingsSection, setSettingsSection] = useSettingsSection();
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(
     null,
   );
@@ -243,13 +241,12 @@ export function useWorkspaceAppViews(options: Options) {
     (section?: SettingsSectionId, anchor?: SettingsAnchor) => {
       if (section) {
         setSettingsSection(section);
-        saveSettingsSection(section);
       }
       setSettingsAnchor(anchor ?? null);
       setNotificationProjectPath(null);
       openAppView("settings");
     },
-    [openAppView],
+    [openAppView, setSettingsSection],
   );
 
   const onOpenSettings = useCallback(() => openSettings(), [openSettings]);
@@ -300,8 +297,7 @@ export function useWorkspaceAppViews(options: Options) {
 
   const onSelectSettingsSection = useCallback((section: SettingsSectionId) => {
     setSettingsSection(section);
-    saveSettingsSection(section);
-  }, []);
+  }, [setSettingsSection]);
 
   const [assistantMachineId, setAssistantMachineId] = useState<string>();
   const onOpenAssistant = useCallback(

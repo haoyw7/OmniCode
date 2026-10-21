@@ -1,7 +1,8 @@
 import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver";
 // @vitest-environment happy-dom
 import { act, createElement, useEffect, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/queryRoot";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   gitDiffFiles,
@@ -273,6 +274,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
+  window.history.replaceState(null, "", "/");
   observers.clear();
   vi.stubGlobal("ResizeObserver", TestResizeObserver);
   vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(800);

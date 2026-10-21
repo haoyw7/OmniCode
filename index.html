@@ -31,21 +31,8 @@
             var o = Math.max(0.15, Math.min(1, Number(opacity) || 0.85));
             root.style.setProperty("--sidebar-opacity", String(o));
           }
-          var scheme = localStorage.getItem("omnicode.desktopColorScheme");
-          var skin = localStorage.getItem("omnicode.desktopSkin");
-          var skinSchemes = { ripple: "dark", midnight: "dark", atelier: "light", foundry: "dark", lagoon: "light", graphite: "dark", linen: "light", dusk: "dark", black: "dark", daylight: "light", meadow: "light" };
-          var namedSkin = Object.prototype.hasOwnProperty.call(skinSchemes, skin);
-          if (scheme === null) {
-            scheme = namedSkin
-              ? skinSchemes[skin]
-              : skin && skin !== "auto" && skin !== "classic" ? "dark" : localStorage.getItem("omnicode.colorScheme");
-          }
-          var light = namedSkin ? skinSchemes[skin] === "light" : scheme === "light" || scheme === "system" && window.matchMedia("(prefers-color-scheme: light)").matches;
-          root.classList.toggle("theme-light", light);
-          root.dataset.skin = namedSkin ? skin : light ? "daylight" : "ripple";
-          root.dataset.desktopVisual = "claude-measured-v1";
+          // The injected next-themes bootstrap has already set class and skin.
           root.dataset.desktopMode = localStorage.getItem("omnicode.desktopMode") === "chat" ? "chat" : "code";
-          root.style.colorScheme = light ? "light" : "dark";
           var bodyGlass = localStorage.getItem("omnicode.bodyGlass");
           if (bodyGlass == null || bodyGlass === "1" || bodyGlass === "true") {
             root.classList.add("glass-body");
@@ -77,6 +64,7 @@
       }
 
       /* Match --color-app in desktop-theme.css before the stylesheet loads. */
+      html[data-skin="ripple"] { --color-background-base: #071018; }
       html[data-skin="midnight"] { --color-background-base: #242423; }
       html[data-skin="daylight"] { --color-background-base: #f9f9f7; }
       html[data-skin="foundry"] { --color-background-base: #100e0b; }

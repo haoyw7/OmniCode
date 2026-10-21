@@ -1,4 +1,6 @@
 import { supportsProjectTerminal } from "../../features/terminal/model/terminalAvailability";
+import { useQuickOpenMode } from "../../features/search/model/useQuickOpenMode";
+import { parseQuickOpenQuery } from "../../features/search/model/quickOpen";
 import { forkSession } from "../../features/sessions/model/forkSession";
 import { useStore } from "zustand";
 import { createWorkspaceUiStore } from "../model/workspaceUiStore";
@@ -3591,11 +3593,13 @@ export function useWorkspaceController({
   }, []);
 
   /** Quick Open: files by default, `>` commands, `#` sessions, `@` projects. */
+  const [, setPaletteMode] = useQuickOpenMode();
   const openPalette = useCallback((query: string) => {
+    void setPaletteMode(parseQuickOpenQuery(query).mode);
     setPaletteQuery(query);
     setPaletteToken((token) => token + 1);
     setPaletteOpen(true);
-  }, []);
+  }, [setPaletteMode]);
   const onGoToFile = useCallback(() => openPalette(""), [openPalette]);
   const onOpenCommandPalette = useCallback(
     () => openPalette(">"),

@@ -1,6 +1,9 @@
 import { Button } from "../../shared/ui/forms/Button";
 import { MotionConfig } from "motion/react";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { NuqsAdapter } from "nuqs/adapters/react";
+import { AppearanceThemeProvider } from "../settings/model/AppearanceThemeProvider";
+import { DESKTOP_THEME_STORAGE_KEY } from "../../shared/theme/themeConfig";
 import { queryClient } from "../../shared/lib/queryClient";
 import { observeNativeScrollbarEdges } from "../../shared/ui/nativeScrollbarEdges";
 import { defaultTransition } from "../../shared/motion/tokens";
@@ -86,10 +89,14 @@ async function boot() {
     root.render(
       <React.StrictMode>
         <QueryClientProvider client={queryClient}>
-          <MotionConfig reducedMotion="user" transition={defaultTransition}>
-            <QuickWindow />
-            <Toaster />
-          </MotionConfig>
+          <NuqsAdapter>
+            <AppearanceThemeProvider storageKey={DESKTOP_THEME_STORAGE_KEY}>
+              <MotionConfig reducedMotion="user" transition={defaultTransition}>
+                <QuickWindow />
+                <Toaster />
+              </MotionConfig>
+            </AppearanceThemeProvider>
+          </NuqsAdapter>
         </QueryClientProvider>
       </React.StrictMode>,
     );

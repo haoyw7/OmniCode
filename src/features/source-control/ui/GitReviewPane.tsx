@@ -62,6 +62,7 @@ import {
 import { ReviewViewOptionsContext } from "./ReviewViewOptionsContext";
 import { useProjectWorktrees } from "../hooks/useProjectWorktrees";
 import { useReviewSource } from "../model/useReviewSource";
+import { useReviewTab } from "../model/useReviewTab";
 import {
   estimateReviewBodyHeight,
   reviewCommit,
@@ -142,7 +143,7 @@ export function GitReviewPane({
     [cwd, worktrees],
   );
   const gitAvailable = !!worktrees?.worktrees.length;
-  const [selectedSource, setSource] = useState<ReviewSource>(initialSource);
+  const [selectedSource, setSource] = useReviewTab(cwd, sessionId, turnId, initialSource);
   // Reviews of a checkout carry source control beside the diffs: commit,
   // sync, the changed files and history. Commit tabs stay diff-only, and a
   // session review shows it only where there is Git to act on.
@@ -325,7 +326,7 @@ export function GitReviewPane({
   const showSource = useCallback((next: ReviewSource) => {
     setSource(next);
     setActionError(undefined);
-  }, []);
+  }, [setSource]);
   const openRailFile = useCallback((path: string, kind: GitFileDiffKind) => {
     showSource(kind);
     setJump((current) => ({ path, seq: (current?.seq ?? 0) + 1 }));

@@ -2,10 +2,11 @@ import { completeMotionAnimation } from "../../../../tests/helpers/motionDriver"
 // @vitest-environment happy-dom
 import { act, createElement } from "react";
 import { queryClient } from "../../../shared/lib/queryClient";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/queryRoot";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { InboxView } from "./InboxView";
-import { saveInboxConnections } from "../model/inboxFilters";
+import { loadInboxSource, saveInboxConnections, saveInboxSource } from "../model/inboxFilters";
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn().mockRejectedValue(new Error("No native bridge")),
@@ -59,6 +60,17 @@ it("only leaves Inbox on Escape while its workspace pane is active", async () =>
     ),
   );
   expect(onClose).toHaveBeenCalledOnce();
+});
+
+it("keeps a linked item's temporary GitHub source out of the saved filter", async () => {
+  saveInboxSource("linear");
+  saveInboxConnections({ github: true, linear: true, jira: false, gitlab: false, azuredevops: false });
+  await act(async () => root.render(createElement(InboxView, {
+    cwd: "/repo", recents: [],
+    target: { kind: "issue", repo: "owner/repo", number: 1, url: "https://github.com/owner/repo/issues/1" },
+    onAsk: async () => "", onAskRestart: async () => "", onAskMount: () => {}, onOpenIntegrations: () => {},
+  })));
+  expect(loadInboxSource()).toBe("linear");
 });
 
 it("dismisses the connection menu before returning to chat on Escape", async () => {

@@ -1,7 +1,8 @@
 import { startMotionClock, stopMotionClock, finishMotion } from "../../tests/helpers/sharedMotionClock";
 // @vitest-environment happy-dom
 import { act, createElement, Fragment, StrictMode, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
+import { createRoot } from "../../tests/helpers/queryRoot";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import type { SessionPaneProps } from "../features/sessions/ui/SessionPane";

@@ -578,12 +578,6 @@ export function useMobileAppController() {
 
   useEffect(() => {
     applyMobileSkin(skin, theme);
-    // Only the automatic skin follows the device appearance.
-    if (skin !== "auto" || theme !== "system") return;
-    const media = window.matchMedia("(prefers-color-scheme: light)");
-    const onChange = () => applyMobileSkin(skin, theme);
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
   }, [skin, theme]);
 
   useEffect(() => {

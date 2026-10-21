@@ -2,6 +2,7 @@ import { animate, type AnimationPlaybackControlsWithThen } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { prefersReducedMotion } from "../../../shared/lib/reducedMotion";
 import { DESKTOP_SCHEME_KEY, isDesktopDocument, loadDesktopTheme } from "../../../shared/theme/desktopAppearance";
+import { setTheme } from "../../../shared/theme/themeBridge";
 import { activePreferenceStore } from "./sharedPreferences";
 import { parsePreferenceAsset, preferenceAssetUrl, PREFERENCE_ASSET_READY } from "./preferenceAssets";
 import { preferenceStorage } from "./sharedPreferences";
@@ -17,7 +18,6 @@ import {
 import {
   applyDesktopSkin,
   DESKTOP_SKIN_INFO,
-  DESKTOP_SKIN_KEY,
   isDesktopSkinId,
   loadDesktopSkin,
   type DesktopSkinPreference,
@@ -362,7 +362,6 @@ export function initAppearance() {
   applyThemeTint(loadThemeHue(), loadThemeSaturation());
   applyThemeDarkLightness(loadThemeDarkLightness());
   applyThemePreference(loadThemePreference());
-  watchSystemColorScheme();
   applySidebarOpacity(loadSidebarOpacity());
   applyPopoverOpacity(loadPopoverOpacity());
   applyWindowOpacity(loadWindowOpacity());
@@ -421,9 +420,17 @@ export function applyThemePreference(
   skin: DesktopSkinPreference = loadDesktopSkin(),
 ): ColorScheme {
   const next = resolveColorScheme(value);
-  document.documentElement.classList.toggle("theme-light", next === "light");
-  // Named desktop palettes own their scheme; mobile owns its palette.
-  const scheme = applyDesktopSkin(skin) ?? next;
+  const forcedTheme = isDesktopDocument() && isDesktopSkinId(skin)
+    ? DESKTOP_SKIN_INFO[skin].scheme
+    : undefined;
+  setTheme(value, forcedTheme);
+  return forcedTheme ?? next;
+}
+
+/** Called once next-themes has applied the effective scheme to the document. */
+export function onColorSchemeApplied(scheme: ColorScheme) {
+  document.querySelector("style[data-theme-boot]")?.remove();
+  applyDesktopSkin(loadDesktopSkin());
   if (nativeGlassReady) syncNativeGlass(scheme);
   window.dispatchEvent(
     new CustomEvent<ColorScheme>(SCHEME_CHANGE_EVENT, { detail: scheme }),
@@ -435,7 +442,6 @@ export function applyThemePreference(
   ) {
     renderChatBackground(backgroundPath);
   }
-  return scheme;
 }
 
 /** The page colour the native window sits behind while glass is off. */
@@ -521,23 +527,6 @@ export function syncNativeGlass(scheme: ColorScheme) {
 export function activateWindowAppearance() {
   nativeGlassReady = true;
   syncNativeGlass(isLightScheme() ? "light" : "dark");
-}
-
-/** Keeps the "system" preference in sync when the OS flips appearance. */
-let watchingSystemScheme = false;
-export function watchSystemColorScheme() {
-  if (watchingSystemScheme) return;
-  const query = systemQuery();
-  if (!query) return;
-  watchingSystemScheme = true;
-  window.addEventListener("storage", (event) => {
-    if (isDesktopDocument() && (event.key === DESKTOP_SCHEME_KEY || event.key === DESKTOP_SKIN_KEY || event.key === null))
-      applyThemePreference(loadThemePreference());
-  });
-  query.addEventListener("change", () => {
-    const preference = loadThemePreference();
-    if (preference === "system") applyThemePreference(preference);
-  });
 }
 
 export function loadSidebarOpacity(): number {

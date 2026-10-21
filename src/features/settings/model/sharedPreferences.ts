@@ -206,7 +206,9 @@ export function adoptDeviceLocalPreferences(store: SharedPreferenceStore, resolv
 }
 function announcePreferenceChange(keys: string[]) {
   if (typeof window === "undefined") return;
-  for (const key of keys) window.dispatchEvent(new StorageEvent("storage", { key }));
+  // Consumers such as next-themes use newValue directly. Omitting it looks
+  // like a deletion and can overwrite an adopted device preference with default.
+  for (const key of keys) window.dispatchEvent(new StorageEvent("storage", { key, newValue: preferenceStorage.getItem(key) }));
   window.dispatchEvent(new CustomEvent(SHARED_PREFERENCES_CHANGED, { detail: keys }));
 }
 /** Explicit adapter, never a monkey-patch of browser storage. Non-preference caches stay local. */

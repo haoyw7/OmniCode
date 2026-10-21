@@ -1,5 +1,8 @@
 import { observeNativeScrollbarEdges } from "./shared/ui/nativeScrollbarEdges";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { NuqsAdapter } from "nuqs/adapters/react";
+import { AppearanceThemeProvider } from "./features/settings/model/AppearanceThemeProvider";
+import { DESKTOP_THEME_STORAGE_KEY } from "./shared/theme/themeConfig";
 import { queryClient } from "./shared/lib/queryClient";
 import { animate, MotionConfig } from "motion/react";
 import { defaultTransition, immediateTransition } from "./shared/motion/tokens";
@@ -99,13 +102,17 @@ function BootGate({ children }: { children: React.ReactNode }) {
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
-      <MotionConfig reducedMotion="user" transition={defaultTransition}>
-        {children}
-        <div style={{ position: "fixed", bottom: 8, right: 8, zIndex: 10000, maxWidth: "70vw" }}><SharedStateStatus /></div>
-        <WindowResizeHandles />
-        <WindowResizeObserver />
-        <Toaster />
-      </MotionConfig>
+      <NuqsAdapter>
+        <AppearanceThemeProvider storageKey={DESKTOP_THEME_STORAGE_KEY}>
+          <MotionConfig reducedMotion="user" transition={defaultTransition}>
+            {children}
+            <div style={{ position: "fixed", bottom: 8, right: 8, zIndex: 10000, maxWidth: "70vw" }}><SharedStateStatus /></div>
+            <WindowResizeHandles />
+            <WindowResizeObserver />
+            <Toaster />
+          </MotionConfig>
+        </AppearanceThemeProvider>
+      </NuqsAdapter>
     </QueryClientProvider>
   );
 }

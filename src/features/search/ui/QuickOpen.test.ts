@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import { queryClient } from "../../../shared/lib/queryClient";
 import { act, createElement } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
+import { createRoot } from "../../../../tests/helpers/queryRoot";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { projectFiles, remoteFiles, listProjectFiles, rankProjectFiles } =
@@ -64,6 +65,7 @@ let container: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
+  window.history.replaceState(null, "", "/");
   queryClient.clear();
   queryClient.setQueryData(projectFileKeys.cwd("/repo"), projectFiles);
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

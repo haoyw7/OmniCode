@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { applyThemePreference, loadThemePreference, saveThemePreference } from "../../features/settings/model/appearance";
+import { loadThemePreference, resolveColorScheme, saveThemePreference } from "../../features/settings/model/appearance";
 import { DESKTOP_APPEARANCE_BACKUP_KEY, DESKTOP_SCHEME_KEY, LEGACY_SKIN_SCHEMES } from "./desktopAppearance";
+import { DESKTOP_SKIN_INFO, loadDesktopSkin, resolveDesktopSkin } from "./desktopSkin";
+import { themeBootstrap } from "../../../scripts/theme-bootstrap.mjs";
 
 beforeEach(() => {
   localStorage.clear();
@@ -24,8 +26,7 @@ describe("desktop appearance migration", () => {
     saveThemePreference("system");
     expect(loadThemePreference()).toBe("system");
     expect(localStorage.getItem(DESKTOP_APPEARANCE_BACKUP_KEY)).toBe(backup);
-    applyThemePreference(scheme);
-    expect(document.documentElement.dataset.skin).toBe(skin);
+    expect(loadDesktopSkin()).toBe(skin);
   });
 
   it.each(["classic", "auto"])("preserves %s mode and font/scale preferences", skin => {
@@ -66,17 +67,21 @@ describe("desktop appearance migration", () => {
 
   it("boot palette agrees with runtime migration for every legacy input", () => {
     const boot = readFileSync("index.html", "utf8").match(/<script>([\s\S]*?)<\/script>/)![1];
+    const themeBoot = themeBootstrap();
     for (const skin of [...Object.keys(LEGACY_SKIN_SCHEMES), "classic", "auto", "invalid"]) {
       for (const scheme of ["light", "dark", "system", "invalid"]) {
         for (const migrated of [false, true]) {
           localStorage.clear();
+          delete document.documentElement.dataset.skin;
           localStorage.setItem("omnicode.desktopSkin", skin);
           localStorage.setItem("omnicode.colorScheme", scheme);
           if (migrated) localStorage.setItem(DESKTOP_SCHEME_KEY, scheme);
+          new Function(themeBoot)();
           new Function(boot)();
           const first = document.documentElement.dataset.skin;
-          applyThemePreference(loadThemePreference());
-          expect(document.documentElement.dataset.skin, `${skin}/${scheme}`).toBe(first);
+          const runtime = resolveDesktopSkin(loadDesktopSkin(), resolveColorScheme(loadThemePreference()) === "light");
+          expect(runtime, `${skin}/${scheme}`).toBe(first);
+          expect(document.documentElement.classList.contains(`theme-${DESKTOP_SKIN_INFO[runtime].scheme}`)).toBe(true);
         }
       }
     }

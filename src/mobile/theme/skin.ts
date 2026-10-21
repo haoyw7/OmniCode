@@ -1,10 +1,8 @@
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { devicePreferences } from "../../shared/lib/persistedPreferences";
-import {
-  applyThemePreference,
-  type ThemePreference,
-} from "../../features/settings/model/appearance";
+import { setTheme } from "../../shared/theme/themeBridge";
+import type { ThemePreference } from "../../shared/theme/themeConfig";
 
 /** Order matches the Settings picker: dark skins, then light ones. */
 export const MOBILE_SKINS = [
@@ -103,10 +101,17 @@ export function applyMobileSkin(
   systemLight?: boolean,
 ): MobileSkin {
   const skin = resolveMobileSkin(preference, theme, systemLight);
+  setTheme(theme, preference === "auto" ? undefined : MOBILE_SKIN_INFO[skin].scheme);
+  paintMobileSkin(skin);
+  return skin;
+}
+
+export function paintMobileSkin(skin: MobileSkin) {
   const info = MOBILE_SKIN_INFO[skin];
   const root = document.documentElement;
   root.dataset.mobileSkin = skin;
-  applyThemePreference(info.scheme);
+  delete root.dataset.skin;
+  delete root.dataset.desktopVisual;
   document
     .querySelector('meta[name="theme-color"]')
     ?.setAttribute("content", info.app);
@@ -114,5 +119,4 @@ export function applyMobileSkin(
     void StatusBar.setStyle({
       style: info.scheme === "light" ? Style.Light : Style.Dark,
     }).catch(() => {});
-  return skin;
 }

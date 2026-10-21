@@ -1,5 +1,8 @@
 import "./browserCrypto";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { NuqsAdapter } from "nuqs/adapters/react";
+import { AppearanceThemeProvider } from "../features/settings/model/AppearanceThemeProvider";
+import { MOBILE_THEME_STORAGE_KEY, type ColorScheme } from "../shared/theme/themeConfig";
 import { queryClient } from "../shared/lib/queryClient";
 import { createRoot } from "react-dom/client";
 import { MotionConfig } from "motion/react";
@@ -26,7 +29,7 @@ import { initSounds } from "../features/settings/model/sounds";
 import { initTypography } from "../features/settings/model/typography";
 import { subscribeSharedPreferences } from "../features/settings/model/sharedPreferences";
 import { parsePreferenceAsset } from "../features/settings/model/preferenceAssets";
-import { applyMobileSkin, loadMobileSkin } from "./theme/skin";
+import { applyMobileSkin, loadMobileSkin, paintMobileSkin, resolveMobileSkin, MOBILE_SKIN_KEY } from "./theme/skin";
 import "./theme/index.css";
 import "./styles/index.css";
 import "./motion.css";
@@ -35,7 +38,9 @@ refreshUiLanguage();
 installKeyboardMotion();
 applyGlassSettings(readGlassSettings());
 applyAccentColor(loadAccentColor());
-applyMobileSkin(loadMobileSkin(), loadThemePreference());
+const syncMobileTheme = () => { applyMobileSkin(loadMobileSkin(), loadThemePreference()); };
+const applyMobilePalette = (scheme: ColorScheme) => paintMobileSkin(resolveMobileSkin(loadMobileSkin(), scheme));
+syncMobileTheme();
 initSounds();
 initTypography();
 const applyBackground = () => {
@@ -45,6 +50,7 @@ const applyBackground = () => {
 };
 applyBackground();
 subscribeSharedPreferences(() => {
+  syncMobileTheme();
   refreshUiLanguage();
   initTypography();
   initSounds();
@@ -63,7 +69,11 @@ createRoot(document.getElementById("root")!, {
   },
 }).render(
   <QueryClientProvider client={queryClient}>
-    <MotionConfig reducedMotion="user" transition={defaultTransition}><MobileApp /></MotionConfig>
+    <NuqsAdapter>
+      <AppearanceThemeProvider storageKey={MOBILE_THEME_STORAGE_KEY} skinStorageKey={MOBILE_SKIN_KEY} syncPreference={syncMobileTheme} applySkin={applyMobilePalette}>
+        <MotionConfig reducedMotion="user" transition={defaultTransition}><MobileApp /></MotionConfig>
+      </AppearanceThemeProvider>
+    </NuqsAdapter>
   </QueryClientProvider>,
 );
 

@@ -1,4 +1,4 @@
-import { preferenceStorage } from "../../features/settings/model/sharedPreferences";
+import { devicePreferences } from "../lib/persistedPreferences";
 
 /** Settings order matches mobile: dark palettes followed by light palettes. */
 export const DESKTOP_SKIN_IDS = [
@@ -65,7 +65,7 @@ export function resolveDesktopSkin(
 
 export function loadDesktopSkin(): DesktopSkinPreference {
   try {
-    return normalizeDesktopSkin(preferenceStorage.getItem(DESKTOP_SKIN_KEY));
+    return normalizeDesktopSkin(devicePreferences.getItem(DESKTOP_SKIN_KEY));
   } catch {
     return DESKTOP_SKIN_DEFAULT;
   }
@@ -73,7 +73,7 @@ export function loadDesktopSkin(): DesktopSkinPreference {
 
 export function saveDesktopSkin(value: DesktopSkinPreference) {
   try {
-    preferenceStorage.setItem(DESKTOP_SKIN_KEY, normalizeDesktopSkin(value));
+    devicePreferences.setItem(DESKTOP_SKIN_KEY, normalizeDesktopSkin(value));
   } catch {
     // Storage can be unavailable; the skin still applies for this run.
   }
@@ -93,7 +93,6 @@ export function applyDesktopSkin(
   if (root.dataset.mobileSkin !== undefined) {
     delete root.dataset.skin;
     delete root.dataset.desktopVisual;
-    root.style.colorScheme = "";
     return null;
   }
   const light = root.classList.contains("theme-light");
@@ -101,7 +100,5 @@ export function applyDesktopSkin(
   const scheme = DESKTOP_SKIN_INFO[skin].scheme;
   root.dataset.skin = skin;
   root.dataset.desktopVisual = "claude-measured-v1";
-  root.classList.toggle("theme-light", scheme === "light");
-  root.style.colorScheme = scheme;
   return scheme;
 }

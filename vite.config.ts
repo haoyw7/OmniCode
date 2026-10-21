@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import fontScale from "./scripts/postcss-font-scale.mjs";
 import { excludeEvaluationVite } from "./scripts/production-inputs.mjs";
+import { themeBootstrapPlugin } from "./scripts/theme-bootstrap.mjs";
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -11,7 +12,7 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => {
   const stable = mode === "stable";
 
   return {
-    plugins: [excludeEvaluationVite(), react(), tailwindcss()],
+    plugins: [excludeEvaluationVite(), themeBootstrapPlugin(), react(), tailwindcss()],
     // shadcn/ui registry imports resolve through `@/` (see components.json).
     resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
     // Pierre's highlighting worker imports Shiki's WASM engine dynamically.

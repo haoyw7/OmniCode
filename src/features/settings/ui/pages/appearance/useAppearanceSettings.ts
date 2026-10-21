@@ -2,6 +2,10 @@ import { activePreferenceStore } from "../../../model/sharedPreferences";
 import { uploadPreferenceBackground } from "../../../model/preferenceAssets";
 import { usePreferenceState } from "../../../model/usePreferenceState";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
+import { useStore } from "zustand";
+import { devicePreferences } from "../../../../../shared/lib/persistedPreferences";
+import { isThemePreference } from "../../../../../shared/theme/themeConfig";
 import {
   activeScheme,
   activeScope,
@@ -117,7 +121,7 @@ import {
 import { IS_LINUX } from "../../../../../platform/tauri/platform";
 import {
   DESKTOP_SKIN_DEFAULT,
-  loadDesktopSkin,
+  DESKTOP_SKIN_KEY,
   normalizeDesktopSkin,
   saveDesktopSkin,
 } from "../../../../../shared/theme/desktopSkin";
@@ -127,9 +131,9 @@ import {
 export type AppearanceSettings = ReturnType<typeof useAppearanceSettings>;
 
 export function useAppearanceSettings() {
-  const [desktopSkin, setDesktopSkin] = usePreferenceState(loadDesktopSkin);
-  const [themePreference, setThemePreference] =
-    usePreferenceState<ThemePreference>(loadThemePreference);
+  const desktopSkin = useStore(devicePreferences.store(DESKTOP_SKIN_KEY), state => normalizeDesktopSkin(state.value));
+  const { theme } = useTheme();
+  const themePreference = isThemePreference(theme) ? theme : loadThemePreference();
   const [accentColor, setAccentColor] = usePreferenceState(loadAccentColor);
   const [opacity, setOpacity] = usePreferenceState(loadSidebarOpacity);
   const [popoverOpacity, setPopoverOpacity] = usePreferenceState(loadPopoverOpacity);
@@ -231,14 +235,12 @@ export function useAppearanceSettings() {
   const onThemePreference = useCallback((next: ThemePreference) => {
     applyThemePreference(next);
     saveThemePreference(next);
-    setThemePreference(next);
   }, []);
 
   const onDesktopSkin = useCallback((value: string) => {
     const next = normalizeDesktopSkin(value);
     applyThemePreference(loadThemePreference(), next);
     saveDesktopSkin(next);
-    setDesktopSkin(next);
   }, []);
 
   const onAccentColor = useCallback((value: string | null) => {

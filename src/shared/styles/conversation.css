@@ -1159,7 +1159,7 @@ input,
   background-color: var(--sdm-tbg, transparent);
 }
 
-html:not(.theme-light) .markdown-code-token {
+html.theme-dark .markdown-code-token {
   color: var(--shiki-dark, var(--sdm-c, inherit));
   background-color: var(--shiki-dark-bg, var(--sdm-tbg, transparent));
 }
@@ -1869,7 +1869,7 @@ html:not(.theme-light) .markdown-code-token {
   background: var(--color-background-base);
 }
 
-html.has-native-glass:not(.theme-light) .content-surface {
+html.has-native-glass.theme-dark .content-surface {
   background: color-mix(
     in srgb,
     var(--color-background-base) calc(var(--window-opacity) * 100%),

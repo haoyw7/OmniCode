@@ -53,6 +53,7 @@ import {
   type SessionRow,
 } from "../model/quickOpen";
 import type { ConversationHit, ProjectHit } from "../model/appSearch";
+import { useQuickOpenMode } from "../model/useQuickOpenMode";
 
 type Item =
   | { kind: "file"; key: string; file: RankedFile }
@@ -122,7 +123,14 @@ export function QuickOpen({
   // act on the editor the palette was opened from.
   const previousFocus = useRef<Element | null>(null);
   const commandScheduled = useRef(false);
-  const [query, setQuery] = useState(initialQuery);
+  const [mode, setUrlMode] = useQuickOpenMode(parseQuickOpenQuery(initialQuery).mode);
+  const [rawQuery, setRawQuery] = useState(initialQuery);
+  const query = quickOpenQueryFor(mode, rawQuery);
+  const setQuery = (value: string) => {
+    setRawQuery(value);
+    void setUrlMode(parseQuickOpenQuery(value).mode);
+  };
+  const opened = useRef(false);
   const [active, setActive] = useState("");
   const filesQuery = useQuery(
     {
@@ -147,7 +155,7 @@ export function QuickOpen({
     }
     return out;
   }, [cwd, openPaths, open]);
-  const { mode, query: modeQuery } = parseQuickOpenQuery(query);
+  const { query: modeQuery } = parseQuickOpenQuery(query);
   const sessionsAvailable = Boolean(onOpenSession);
   const projectsAvailable = Boolean(onOpenProject);
 
@@ -203,7 +211,11 @@ export function QuickOpen({
   useEffect(() => {
     if (!open) return;
     commandScheduled.current = false;
-    setQuery(initialQuery);
+    setRawQuery(initialQuery);
+    // The initial URL wins over an empty default. Later shortcut invocations
+    // retain their explicit Files/Commands semantics.
+    if (opened.current || initialQuery) void setUrlMode(parseQuickOpenQuery(initialQuery).mode);
+    opened.current = true;
     setActive("");
   }, [open, cwd, initialQuery]);
 
@@ -250,7 +262,7 @@ export function QuickOpen({
   };
 
   const setMode = (next: QuickOpenMode) => {
-    setQuery((current) => quickOpenQueryFor(next, current));
+    void setUrlMode(next);
     setActive("");
     search.current?.focus();
   };

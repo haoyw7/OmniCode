@@ -14,7 +14,9 @@ const groups: Record<PreferenceKind, readonly string[]> = {
 const deviceLocalGroups: Record<PreferenceKind, readonly string[]> = {
   flag: ["closeToTray", "menuBarVisible", "projectRailOpen", "sessionSidebarOpen", "bodyGlass", "sounds", "notifications", "sessionsShowArchived"],
   number: ["windowOpacity", "sidebarBlur", "sidebarWidth", "uiScale", "soundsEnabledAt"],
-  string: ["modelPickerTab", "desktopSkin", "desktopColorScheme", "desktopAppearanceBackup.v1", "desktopMode"],
+  // next-themes writes only device keys. The Host's colorScheme wire value is
+  // applied through the theme bridge and mirrored locally on mobile.
+  string: ["modelPickerTab", "desktopSkin", "desktopColorScheme", "mobile.colorScheme", "desktopAppearanceBackup.v1", "desktopMode"],
   object: ["projectSidebarTabs.v1", "pinnedSessionsCollapsed", "reminderSessionsCollapsed", "sessionSidebarFilters", "desktopLocations.v1"],
   array: ["sidebarSectionsCollapsed.v1", "projectTreeExpanded.v1"],
 };
