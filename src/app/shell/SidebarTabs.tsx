@@ -96,7 +96,7 @@ export const SidebarTabs = memo(function SidebarTabs({
                 onTabChange(id);
               });
             }}
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 surface-tab relative isolate flex h-6 min-w-0 flex-1 items-center justify-center self-center px-2 text-ui-sm leading-none"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 surface-tab relative isolate flex h-6 min-w-0 flex-1 items-center justify-center self-center px-2 text-ui-sm leading-none"
           >
             {selectedTab === id && !item.sorting ? <motion.span layoutId={indicatorId} transition={reduced || resizing ? immediateTransition : panelTransition} aria-hidden="true" data-sidebar-tab-indicator className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-background-base" /> : null}
             {id === "changes" && (additions || deletions) ? (

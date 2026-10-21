@@ -120,7 +120,7 @@ export function McpServerPicker({
               if (server?.availability === "available") onPick(server);
             }
           }}
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40"
           placeholder={uiT("Search MCP servers…")}
         />
         <Button variant="ghost" size="content"
@@ -128,7 +128,7 @@ export function McpServerPicker({
           aria-label={uiT("Close MCP picker")}
           title={uiT("Back to the conversation (Esc)")}
           onClick={() => onDismiss("escape")}
-          className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+          className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content focus-visible:focus-fill"
         >
           <ChevronDown className="size-4" />
         </Button>
@@ -174,7 +174,7 @@ export function McpServerPicker({
                   if (available) setActive(index);
                 }}
                 onClick={() => onPick(server)}
-                className={cn("flex w-full items-center gap-2 rounded-md text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent justify-start", available ? (active === index ? "bg-selection text-content" : "text-content hover:bg-content/3") : "cursor-default text-content/40")}
+                className={cn("flex w-full items-center gap-2 rounded-md text-left focus-visible:focus-fill justify-start", available ? (active === index ? "bg-selection text-content" : "text-content hover:bg-content/3") : "cursor-default text-content/40")}
               >
                 <HarnessIcon
                   harness={

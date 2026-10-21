@@ -28,7 +28,6 @@
   --color-m-accent-border: #75a4e4;
   --color-m-accent-text: #91b7ec;
   --color-m-accent-ink: #ffffff;
-  --color-m-focus: #75a4e4;
   --color-m-bubble-user: #42403a;
   --color-m-bubble-user-ink: #faf9f5;
   --color-m-success: #38d591;
@@ -60,7 +59,6 @@
   --color-m-accent-border: #b06a2c;
   --color-m-accent-text: #96551f;
   --color-m-accent-ink: #ffffff;
-  --color-m-focus: #96551f;
   --color-m-bubble-user: #e7d9c5;
   --color-m-bubble-user-ink: #1a1a18;
   --color-m-success: #3f6b47;
@@ -92,7 +90,6 @@
   --color-m-accent-border: #e8b25e;
   --color-m-accent-text: #e0a44c;
   --color-m-accent-ink: #1c150c;
-  --color-m-focus: #e0a44c;
   --color-m-bubble-user: #423727;
   --color-m-bubble-user-ink: #f4efe4;
   --color-m-success: #57b078;
@@ -124,7 +121,6 @@
   --color-m-accent-border: #14807a;
   --color-m-accent-text: #0d5f5a;
   --color-m-accent-ink: #ffffff;
-  --color-m-focus: #0d5f5a;
   --color-m-bubble-user: #c1dcd5;
   --color-m-bubble-user-ink: #14201f;
   --color-m-success: #2f6b4f;
@@ -156,7 +152,6 @@
   --color-m-accent-border: #698fbb;
   --color-m-accent-text: #8fb4df;
   --color-m-accent-ink: #ffffff;
-  --color-m-focus: #8fb4df;
   --color-m-bubble-user: #3a4554;
   --color-m-bubble-user-ink: #f2f4f7;
   --color-m-success: #63b58a;
@@ -188,7 +183,6 @@
   --color-m-accent-border: #4978a6;
   --color-m-accent-text: #2c5680;
   --color-m-accent-ink: #ffffff;
-  --color-m-focus: #2c5680;
   --color-m-bubble-user: #d3dfed;
   --color-m-bubble-user-ink: #1d2229;
   --color-m-success: #2f704f;
@@ -220,7 +214,6 @@
   --color-m-accent-border: #9670a3;
   --color-m-accent-text: #c49bd2;
   --color-m-accent-ink: #ffffff;
-  --color-m-focus: #c49bd2;
   --color-m-bubble-user: #45364f;
   --color-m-bubble-user-ink: #f4eff6;
   --color-m-success: #6fad83;
@@ -252,7 +245,6 @@
   --color-m-accent-border: #4682d5;
   --color-m-accent-text: #326bb8;
   --color-m-accent-ink: #ffffff;
-  --color-m-focus: #4682d5;
   --color-m-bubble-user: #e5e2d8;
   --color-m-bubble-user-ink: #141413;
   --color-m-success: #1f7a4d;
@@ -284,7 +276,6 @@
   --color-m-accent-border: #1f8a52;
   --color-m-accent-text: #176b3f;
   --color-m-accent-ink: #ffffff;
-  --color-m-focus: #1a7a48;
   --color-m-bubble-user: #0f1a13;
   --color-m-bubble-user-ink: #ffffff;
   --color-m-success: #1a7a48;
@@ -316,7 +307,6 @@ html.has-user-accent[data-mobile-skin] {
   --color-m-accent-border: var(--user-accent-color);
   --color-m-accent-text: var(--user-accent-color);
   --color-m-accent-ink: var(--user-accent-foreground);
-  --color-m-focus: var(--user-accent-color);
 }
 .mobile-skin-scope[data-mobile-skin] {
   background: var(--color-m-app);

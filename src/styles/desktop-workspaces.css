@@ -317,7 +317,8 @@ html[data-skin] [data-ui="provider-list"] [data-ui="navigation-icon"] { width: 2
   border-radius: var(--desktop-radius-card);
   cursor: pointer;
 }
-.desktop-skin-option:has(:focus-visible) { outline-width: 2px; outline-style: solid; outline-offset: 2px; }
+.desktop-skin-option:has(:focus-visible) {
+  box-shadow: var(--focus-fill-shadow); }
 .desktop-skin-preview {
   display: block;
   height: 100px;
@@ -501,22 +502,24 @@ html[data-skin] [data-app-automations] { container: automations / inline-size; }
   min-height: 0;
   overflow: hidden;
 }
-.desktop-file-explorer [data-surface-tab-strip] {
-  height: 36px;
+.desktop-file-explorer [data-surface-tab-strip],
+.desktop-background-tasks [data-surface-tab-strip] {
+  height: var(--desktop-pane-toolbar-height);
   border-bottom: 0;
   align-items: center;
   column-gap: var(--desktop-pane-toolbar-gap);
   padding-inline-end: var(--desktop-pane-toolbar-inset);
 }
-.desktop-file-explorer [data-surface-tab-list] {
+.desktop-file-explorer [data-surface-tab-list],
+.desktop-background-tasks [data-surface-tab-list] {
   column-gap: var(--desktop-pane-toolbar-gap);
   padding-inline-start: var(--desktop-pane-toolbar-inset);
 }
-html[data-skin][data-desktop-mode] .desktop-file-explorer [data-file-tab-id] > .surface-tab {
+html[data-skin][data-desktop-mode] :is(.desktop-file-explorer, .desktop-background-tasks) [data-file-tab-id] > .surface-tab {
   height: 24px;
   min-height: 24px;
 }
-html[data-skin] .desktop-file-explorer [data-surface-tab-strip] :is([data-file-toolbar-action], [data-card-maximize], [data-surface-pane-drag], [data-session-tool-toggle], [data-session-overflow-menu], [data-surface-mode-toggle]) {
+html[data-skin] :is(.desktop-file-explorer, .desktop-background-tasks) [data-surface-tab-strip] :is([data-file-toolbar-action], [data-card-maximize], [data-surface-pane-drag], [data-session-tool-toggle], [data-session-overflow-menu], [data-surface-mode-toggle]) {
   margin: 0;
 }
 .desktop-file-explorer-body {

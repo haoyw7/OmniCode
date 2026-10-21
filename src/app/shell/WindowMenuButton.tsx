@@ -63,7 +63,7 @@ export function WindowMenuButton({
         ref={anchor}
         type="button"
         data-ui="icon-button"
-        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 desktop-window-menu"
+        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 desktop-window-menu"
         aria-label={t("Main menu")}
         title={t("Main menu")}
         aria-haspopup="menu"

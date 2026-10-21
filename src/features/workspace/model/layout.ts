@@ -137,6 +137,8 @@ export type FilePaneTab = {
   explorer?: boolean;
   /** Chat whose header Files/Terminal toggle opened this explorer or terminal. */
   ownerSessionId?: string;
+  /** Live background tasks owned by a conversation. */
+  backgroundTasks?: { sessionId: string };
   plan?: PlanTabSource;
   releaseNotes?: ReleaseNotesTabSource;
   review?: boolean;
@@ -636,6 +638,7 @@ export function isWorkflowArtifactTab(file: FilePaneTab): file is FilePaneTab & 
 export function isVirtualDocumentTab(file: FilePaneTab): boolean {
   return (
     !!file.explorer ||
+    !!file.backgroundTasks ||
     isWorkflowRunTab(file) ||
     isSubagentTab(file) ||
     isWorkflowAgentTab(file) ||
@@ -726,6 +729,7 @@ export function editorTabKey(file: FilePaneTab): string {
       ? `explorer:${file.ownerSessionId}:${file.cwd}`
       : `explorer:${file.cwd}`;
   if (file.appView) return `app:${file.appView.kind}`;
+  if (file.backgroundTasks) return `background-tasks:${file.backgroundTasks.sessionId}`;
   if (file.terminal) return `terminal:${file.id}`;
   if (file.agent) return `agent:${file.agent.sessionId}`;
   if (file.subagent) return `subagent:${JSON.stringify([file.subagent.parentSessionId, file.subagent.path])}`;
@@ -763,6 +767,7 @@ export type OpenEditorTabOptions = {
 export function isPreviewableTab(file: FilePaneTab): boolean {
   return (
     !file.explorer &&
+    !file.backgroundTasks &&
     !file.appView &&
     !file.terminal &&
     !file.agent &&
@@ -874,6 +879,7 @@ export function openEditorTab(
       : withoutPreview(file);
   const focusedPane = tab.editorPanes.find((pane) => pane.id === tab.focusedId);
   const acceptsFile = (pane: EditorPane) =>
+    !file.backgroundTasks && !pane.files.some(entry => entry.backgroundTasks) &&
     !file.explorer &&
     (!pane.files.some((entry) => entry.explorer) ||
       (isFilesystemTab(file) && !isReviewTab(file) &&

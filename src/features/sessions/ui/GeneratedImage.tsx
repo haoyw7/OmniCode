@@ -56,7 +56,7 @@ export function GeneratedImage({ image, attachment }: { image: GeneratedImageMet
         })}
         title={uiT("Open {value0} full screen", { value0: String(image.name) })}
         onClick={() => setOpen(true)}
-        className="block max-w-full cursor-zoom-in overflow-hidden rounded-xl border border-content/10 bg-content/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="block max-w-full cursor-zoom-in overflow-hidden rounded-xl border border-content/10 bg-content/5 focus-visible:focus-fill"
       >
         <img
           src={url}

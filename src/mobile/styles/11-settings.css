@@ -89,7 +89,7 @@
   -webkit-touch-callout: none;
 }
 .mobile-connection-details > svg { flex-shrink: 0; }
-.mobile-connection-details:focus-visible { outline: 2px solid var(--mobile-accent); outline-offset: 3px; }
+.mobile-connection-details:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 .mobile-connection-menu-name {
   margin: 4px 12px 10px;
   color: var(--color-m-ink-tertiary);
@@ -215,7 +215,7 @@
 .mobile-defaults-status-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
 .mobile-defaults-status-details { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--color-m-ink-secondary); }
 
-.mobile-defaults-status-details:focus-visible { outline: 2px solid var(--mobile-accent); outline-offset: 3px; }
+.mobile-defaults-status-details:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 .mobile-defaults-status-raw { display: grid; gap: 12px; margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--mobile-separator); }
 .mobile-defaults-status-raw dt { font-weight: var(--font-weight-medium); }
 .mobile-defaults-status-raw dd { margin: 2px 0 0; white-space: pre-wrap; color: var(--color-m-ink-secondary); }

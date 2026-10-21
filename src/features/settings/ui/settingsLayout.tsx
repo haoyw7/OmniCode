@@ -58,6 +58,7 @@ export function PageHeader({
 export const SettingsPage = forwardRef<HTMLDivElement, { children: ReactNode; reduced: boolean }>(function SettingsPage({ children, reduced }, ref) {
   const present = useIsPresent();
   return <motion.div ref={ref} data-settings-page inert={!present} aria-hidden={!present || undefined}
+    className={present ? undefined : "absolute inset-x-0 top-0"}
     initial={reduced ? false : { opacity: 0, y: motionDistance.pop }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
     transition={reduced ? immediateTransition : panelTransition}
   ><SurfaceVisibilityContext.Provider value={present}>{children}</SurfaceVisibilityContext.Provider></motion.div>;

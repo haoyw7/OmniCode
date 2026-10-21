@@ -198,7 +198,7 @@ function SessionChangeButtons({
       <span className="mobile-git-actions">
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-git-action"
+          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-git-action"
           data-confirming={confirming || undefined}
           title={undoTitle}
           aria-label={confirming ? t("Confirm undo") : undoTitle}
@@ -217,7 +217,7 @@ function SessionChangeButtons({
         </button>
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-git-action"
+          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-git-action"
           title={actions.busy
             ? t("Keep and undo are unavailable while the session is running")
             : t("Keep all session changes and dismiss this card")}
@@ -256,7 +256,7 @@ function MobileGitFileRow({
     <div className="mobile-git-file-entry">
       <button
         type="button"
-        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-git-file-row"
+        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-git-file-row"
         disabled={!enabled && !expanded}
         aria-expanded={expanded}
         aria-busy={expanded && enabled && !ready || undefined}

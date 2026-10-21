@@ -114,7 +114,7 @@ export function MobileAgentDefaults({
         <button
           ref={trigger}
           type="button"
-          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
+          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
           aria-haspopup="dialog"
           aria-expanded={panel === "agent-defaults"}
           disabled={unavailable || !resolved}

@@ -67,7 +67,8 @@ import { LOW_HEADROOM_PERCENT } from "../../providers/model/accountUsageStatus";
 import { clampUsedPercent, formatUsagePercent, formatWindowLabel, type ProviderRateLimits } from "../../providers/model/rateLimits";
 import { useUsageClock } from "../../providers/model/useProviderUsage";
 import { backgroundTaskItems } from "../model/backgroundTasks";
-import { BackgroundTasksPanel, BackgroundTasksSummary } from "./BackgroundTasksPanel";
+import { useBackgroundTaskPanel } from "../model/backgroundTaskPanels";
+import { BackgroundTasksSummary } from "./BackgroundTasksPanel";
 import { TranscriptClockOffset } from "./transcript/transcriptClock";
 
 /**
@@ -144,6 +145,7 @@ function useRailFits(scope: RefObject<HTMLElement | null>, enabled: boolean): bo
  * progress, context and usage. `scope` is the pane row the cards float in.
  */
 export function SessionStatusPanel({
+  sessionId,
   blocks,
   backgroundTasks,
   busy,
@@ -158,6 +160,7 @@ export function SessionStatusPanel({
   onStopBackgroundTask,
   clockOffsetMs = 0,
 }: {
+  sessionId?: string;
   blocks: Block[];
   backgroundTasks?: string[];
   busy: boolean;
@@ -181,12 +184,14 @@ export function SessionStatusPanel({
   const fits = useRailFits(scope, statusCardsVisible);
   const reduced = useMotionPreference();
   const { t: uiT } = useTranslation();
-  const [backgroundOpen, setBackgroundOpen] = useState(false);
-  const [initialTaskId, setInitialTaskId] = useState<string>();
-  const [clearedTasks, setClearedTasks] = useState<Set<string>>(() => new Set());
-  const background = useMemo(() => backgroundTaskItems(blocks, backgroundTasks)
-    .filter((task) => task.state === "running" || !clearedTasks.has(task.id)), [blocks, backgroundTasks, clearedTasks]);
-  const openBackground = (id?: string) => { setInitialTaskId(id); setBackgroundOpen(true); };
+  const headerActions = useSessionHeaderActions();
+  const panelState = useBackgroundTaskPanel(sessionId ?? "");
+  const allBackground = useMemo(() => backgroundTaskItems(blocks, backgroundTasks), [blocks, backgroundTasks]);
+  const background = useMemo(() => allBackground.filter(task => task.state === "running" ||
+    !panelState.cleared.has(task.id)), [allBackground, panelState.cleared]);
+  const openBackground = (id?: string) => {
+    if (sessionId && headerActions?.openBackgroundTasks) headerActions.openBackgroundTasks(sessionId, id);
+  };
   const summary = <BackgroundTasksSummary tasks={background} onOpen={openBackground} onStop={onStopBackgroundTask} />;
   return (
     <TranscriptClockOffset.Provider value={clockOffsetMs}>
@@ -223,9 +228,6 @@ export function SessionStatusPanel({
           {summary}
         </RailFrame>
       ) : null}
-      {backgroundOpen && statusCardsVisible ? <BackgroundTasksPanel key="background-panel" tasks={background} initialTaskId={initialTaskId}
-        onClose={() => setBackgroundOpen(false)} onStop={onStopBackgroundTask}
-        onClear={() => setClearedTasks((current) => new Set([...current, ...background.filter((task) => task.state !== "running").map((task) => task.id)]))} /> : null}
     </AnimatePresence>
     </TranscriptClockOffset.Provider>
   );

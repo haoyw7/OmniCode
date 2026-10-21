@@ -249,7 +249,7 @@ export function QuickModelSelector({
             placeholder={uiT("Search models…")}
             autoComplete="off"
             spellCheck={false}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
             onKeyDown={(event) => {
               if (event.nativeEvent.isComposing) return;
               if (event.key === "ArrowDown" || event.key === "ArrowUp") {

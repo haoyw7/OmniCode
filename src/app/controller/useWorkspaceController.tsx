@@ -754,6 +754,7 @@ export function useWorkspaceController({
     onOpenFile,
     onOpenSessionFile,
     onOpenPlan,
+    onOpenBackgroundTasks,
     onPinFile,
     onFileDirtyChange,
     onFileErrorCountChange,
@@ -4054,6 +4055,7 @@ export function useWorkspaceController({
         onToggleSessionTerminal(sessionId, session ? sessionExecutionCwd(session) : terminalCwd, session?.cwd);
       },
       filesSessionIds: sessionsWithToolPanes(activeTab, "files"),
+      openBackgroundTasks: onOpenBackgroundTasks,
       toggleFiles: (sessionId) => {
         const session = sessionsRef.current.find((entry) => entry.id === sessionId);
         if (!session?.cwd || session.cwd === "~") return;
@@ -4083,6 +4085,7 @@ export function useWorkspaceController({
       activeTab,
       onClosePane,
       onShowFileExplorer,
+      onOpenBackgroundTasks,
       active?.id,
       sidebarTab,
       sidebarCwd,

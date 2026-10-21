@@ -80,7 +80,7 @@ export function DesktopModeToggle({
             aria-label={t(value === "chat" ? "Chat" : "Code")}
             title={t(value === "chat" ? "Chat" : "Code")}
             aria-pressed={mode === value}
-            onClick={() => onChange(value)} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
+            onClick={() => onChange(value)} className="hover:opacity-80 focus-visible:focus-fill active:opacity-70"
           >
             <Icon strokeWidth={value === "chat" ? 1.5 : 2} />
           </button>

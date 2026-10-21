@@ -357,7 +357,7 @@ function AutomationsContent({
               placeholder={uiT("Filter automations")}
               spellCheck={false}
               autoComplete="off"
-              className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
+              className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] outline-none focus-visible:focus-fill placeholder:text-content/40"
             />
           </label>
           <Button variant="ghost" size="icon-sm"
@@ -985,7 +985,7 @@ function AutomationEditor({
                 value={draft.name}
                 onChange={(event) => update("name", event.target.value)}
                 placeholder={uiT("Untitled")}
-                className="min-w-0 flex-1 bg-transparent text-[20px] font-semibold leading-tight text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[20px] font-semibold leading-tight text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
               />
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                 {!draft.id || dirty ? (
@@ -1210,7 +1210,7 @@ function AutomationEditor({
                       value={triggerQuery}
                       onChange={(event) => setTriggerQuery(event.target.value)}
                       placeholder={uiT("Search triggers")}
-                      className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+                      className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
                     />
                   </label>
                   <div className="p-1">
@@ -1329,7 +1329,7 @@ function AutomationEditor({
 
             <section>
               <SectionTitle>{uiT("Instructions")}</SectionTitle>
-              <div className="relative mt-3 rounded-md border border-content/10 bg-content/3 backdrop-blur-sm has-focus:border-content/20">
+              <div className="relative mt-3 rounded-md border border-content/10 bg-content/3 backdrop-blur-sm has-focus:focus-fill">
                 <PromptField
                   invalid={!!errors?.prompt}
                   value={draft.prompt}
@@ -1432,7 +1432,7 @@ function AutomationEditor({
             </section>
 
             <details className="rounded-md border border-content/10">
-              <summary className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex min-h-14 cursor-default list-none items-center justify-between gap-3 px-4 active:opacity-75">
+              <summary className="hover:opacity-80 focus-visible:focus-fill flex min-h-14 cursor-default list-none items-center justify-between gap-3 px-4 active:opacity-75">
                 <span>
                   <span className="block text-[13px] font-medium text-content/75">
                     {uiT("Advanced")}

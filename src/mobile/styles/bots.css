@@ -901,8 +901,8 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   opacity: 0.5;
 }
 .mobile-assistant-select-trigger:focus-visible {
-  outline: 2px solid var(--mobile-accent);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--focus-fill-shadow);
 }
 .mobile-assistant-select-label {
   flex-shrink: 0;

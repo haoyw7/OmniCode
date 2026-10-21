@@ -320,7 +320,7 @@ export function SearchableProjectPicker({
                 setActive(0);
               }}
               placeholder={uiT("Search projects...")}
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
             />
           </label>
           <div

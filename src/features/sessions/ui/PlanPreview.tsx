@@ -194,7 +194,7 @@ export function PlanPreview({
             onOpen();
           }
         }}
-        className={cn("plan-card-body relative max-h-[220px] overflow-hidden px-4 pb-3", onOpen && "cursor-pointer hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-selection")}
+        className={cn("plan-card-body relative max-h-[220px] overflow-hidden px-4 pb-3", onOpen && "cursor-pointer hover:bg-hover focus-visible:focus-fill active:bg-selection")}
         onClick={(event) => {
           if (!onOpen) return;
           if ((event.target as HTMLElement).closest("a,button,summary")) return;
@@ -267,7 +267,7 @@ export function PlanDecision({
               type="button"
               aria-label={uiT("Collapse question")}
               title={uiT("Collapse question")}
-              className="grid size-6 shrink-0 place-items-center rounded-md text-content/55 hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
+              className="grid size-6 shrink-0 place-items-center rounded-md text-content/55 hover:bg-content/6 hover:text-content focus-visible:focus-fill"
               data-question-collapse
               onClick={onCollapse}
             >
@@ -292,7 +292,7 @@ export function PlanDecision({
               disabled={busy}
               onClick={() => onImplement()}
               data-question-option
-              className="flex w-full items-start gap-2 rounded-md border border-content/10 px-2 py-1.5 text-left hover:bg-content/3 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent disabled:opacity-40 justify-start"
+              className="flex w-full items-start gap-2 rounded-md border border-content/10 px-2 py-1.5 text-left hover:bg-content/3 focus-visible:focus-fill disabled:opacity-40 justify-start"
             >
               <span
                 className="min-w-0 flex-1 text-[12px] text-content"
@@ -306,7 +306,7 @@ export function PlanDecision({
               aria-invalid={!!form.formState.errors.feedback}
               placeholder={uiT("No, describe what to change")}
               aria-label={uiT("No, describe what to change")}
-              className="w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-content/30"
+              className="w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
             />
           </div>
         </div>

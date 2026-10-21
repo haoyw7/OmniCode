@@ -322,4 +322,4 @@
 
 html[data-mobile-skin] .mobile-header-search [data-ui="input"] { min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 /* The caret marks focus; the field and its capsule draw no focus frame. */
-html[data-mobile-skin] .mobile-header-search [data-ui="input"]:is(:focus, :focus-visible) { border-color: transparent; outline: none; box-shadow: none; }
+html[data-mobile-skin] .mobile-header-search [data-ui="input"]:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }

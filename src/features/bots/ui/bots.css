@@ -313,8 +313,8 @@
     .assistant-habit-editor-actions > button
   ):focus-visible,
 .assistant-chip > :is([data-ui="radio"], [data-ui="checkbox"]):focus-visible ~ span {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--focus-fill-shadow);
 }
 :is(.assistant-chat, .assistant-settings) .assistant-primary {
   background: var(--color-brand);
@@ -820,9 +820,6 @@
   border-radius: 16px;
   background: var(--color-card);
   transition: border-color 140ms ease;
-}
-.assistant-compose:focus-within {
-  border-color: var(--color-input-border-hover);
 }
 .assistant-chat .assistant-compose textarea {
   width: 100%;

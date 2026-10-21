@@ -1,4 +1,7 @@
 import { DragDropProvider } from "../../src/shared/ui/primitives/Sortable";
+import { PaneSurfaceSlots } from "../../src/shared/ui/PaneSurfaceSlots";
+import { BackgroundTasksPane, BackgroundTasksClearButton } from "../../src/features/sessions/ui/BackgroundTasksPanel";
+import { useWorkspaceFiles } from "../../src/app/controller/useWorkspaceFiles";
 import { NuqsAdapter } from "nuqs/adapters/react";
 // Offline RPC data with the real desktop shell, file tree, editor, review and xterm UI.
 import { useEffect, useState, type ComponentProps } from "react";
@@ -16,7 +19,7 @@ import { WindowMenuButton } from "../../src/app/shell/WindowMenuButton";
 import { SessionHeaderActionsContext, type SessionHeaderActions } from "../../src/features/workspace/ui/SessionHeaderActions";
 import type { SidebarProps } from "../../src/app/shell/Sidebar.types";
 import { PaneTree } from "../../src/features/workspace/ui/PaneTree";
-import { newSession } from "../../src/features/sessions/model/session";
+import { newSession, type Session } from "../../src/features/sessions/model/session";
 import { TranscriptPool, TranscriptPoolOutlet } from "../../src/features/sessions/ui/TranscriptPool";
 import type { EditorPane, FilePaneTab, LayoutNode, PaneEdge } from "../../src/features/workspace/model/layout";
 import { closeLeaf, moveTabPane, newTab, setSplitRatio } from "../../src/features/workspace/model/layout";
@@ -147,7 +150,7 @@ Object.assign(window, { isTauri: query.get("native") === "1", __TAURI_EVENT_PLUG
   },
 } });
 
-const session = { ...newSession("claude", cwd, "claude-sonnet"), id: "tools-session", title: "Refine the project workspace", blocks: [
+const session: Session = { ...newSession("claude", cwd, "claude-sonnet"), id: "tools-session", title: "Refine the project workspace", blocks: [
   ...Array.from({ length: query.get("history") === "long" ? 60 : 0 }, (_, index) => ({
     id: `history-${index}`, role: (index % 2 === 0 ? "user" : "assistant") as "user" | "assistant",
     text: `Workspace history ${index}. ` + "Keep the terminal and editor available while reviewing the project. ".repeat(12),
@@ -155,6 +158,10 @@ const session = { ...newSession("claude", cwd, "claude-sonnet"), id: "tools-sess
   { id: "prompt", role: "user" as const, text: "Review the layout changes with the project tools visible." },
   { id: "reply", role: "assistant" as const, text: "The workspace keeps the conversation beside the changed files.\n\nThe file tree, review panel, and running terminal remain available while you work." },
 ] };
+if (query.has("backgroundTasks")) session.blocks.push(
+  { id: "background-live", role: "tool", text: "Running background task", tool: { kind: "execute", status: "in_progress", background: true, backgroundTaskId: "live-task", output: "Initial task output" } },
+  { id: "background-done", role: "tool", text: "Completed background task", tool: { kind: "execute", status: "completed", background: true, output: "Finished output" } },
+);
 const source: FilePaneTab = { id: "tools-source", path: sourcePath, cwd };
 const review: FilePaneTab = { id: "tools-review", path: sourcePath, cwd, review: true, changes: true, changeKind: "unstaged" };
 const initialPane: EditorPane = { id: "tools-editor", files: [source, review], activeFileId: query.get("editor") === "source" ? source.id : review.id };
@@ -170,7 +177,11 @@ const stackedToolIds = query.has("filesBelow") ? [stackedTerminal.id, initialPan
 const initialLayout: LayoutNode = { type: "split", id: "tools-split", dir: query.get("split") === "down" ? "down" : "right", children: [{ type: "leaf", id: session.id }, query.has("stackedTools") ? { type: "split", id: "stacked-tools", dir: "down", children: stackedToolIds.map(id => ({ type: "leaf", id })), sizes: [0.5, 0.5] } : { type: "leaf", id: initialPane.id }], sizes: [0.54, 0.46] };
 
 function DesktopToolsFixture() {
-  const [workspaceTab, setWorkspaceTab] = useState(() => ({ ...newTab(session.id), layout: initialLayout }));
+  const [liveSession, setLiveSession] = useState(session);
+  const [workspaceTab, setWorkspaceTab] = useState(() => ({ ...newTab(session.id), layout: initialLayout, editorPanes: query.has("backgroundTasks") ? [initialPane] : [] }));
+  const workspaceFiles = useWorkspaceFiles({ tabs: [workspaceTab], context: () => ({ tabs: [workspaceTab], sessions: [liveSession], activeTabId: workspaceTab.id, projectCwd: cwd, sidebarCwd: cwd, gitCwd: cwd }),
+    ensureContentTab: () => workspaceTab, activateTab: noop, showWorkspace: noop,
+    setTabs: update => setWorkspaceTab(current => (typeof update === "function" ? update([current]) : update)[0]), setComposerFocused: noop, setProjectTerminalFocused: noop });
   const layout = workspaceTab.layout;
   const [sessionHeaderHost, setSessionHeaderHost] = useState<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<SidebarProps["tab"]>("files");
@@ -180,16 +191,22 @@ function DesktopToolsFixture() {
   const [pool] = useState(() => new TranscriptPool());
   const [focusedId, setFocusedId] = useState(session.id);
   useEffect(() => {
+    if (query.has("backgroundTasks")) Object.assign(window, { backgroundFixture: {
+      appendOutput: (output = "Updated task output") => setLiveSession(current => ({ ...current, blocks: current.blocks.map(block => block.id === "background-live" ? { ...block, tool: { ...block.tool, output } } : block) })),
+      open: () => workspaceFiles.onOpenBackgroundTasks(session.id),
+    } });
+  }, [workspaceFiles.onOpenBackgroundTasks]);
+  useEffect(() => {
     Object.assign(window, { toolsFixture: { readTerminal, setTab, setSidebarOpen, setTerminalOpen: (open: boolean) => setDock(value => ({ ...value, open })), selectFile: (activeFileId: string) => setPane(value => ({ ...value, activeFileId })), rpc, output: (text: string, id = "tools-pty") => output(id, text) } });
   }, []);
   const activity = { cwd, recents: [{ path: cwd, openedAt: 1791891000000 }], onSearch: noop, onOpenInbox: noop, onOpenNotes: noop, onOpenAutomations: noop, onOpenWorkflows: noop, onOpenSettings: noop, notesEnabled: true };
   const openFile = (path: string) => setPane(value => ({ ...value, activeFileId: source.id, files: value.files.map(file => file.id === source.id ? { ...file, path } : file) }));
-  const sidebar: SidebarProps = { desktopMode: "code", cwd, recents: activity.recents, open: true, sessions: [{ id: session.id, cwd, harness: session.harness, model: session.model, runtimeMode: session.runtimeMode, title: session.title, createdAt: 1791891000000, updatedAt: 1791891000000 }], busySessionIds: new Set(), approvalSessionIds: new Set(), activeSessionId: session.id, visibleSessionId: session.id, status: "idle", pending: false, onSelectSession: noop, tab, onTabChange: setTab, filesSearchOpen: false, onFilesSearchOpenChange: noop, onOpenFile: openFile, onOpenDiff: () => setPane(value => ({ ...value, activeFileId: review.id })), textHarness: "claude", onOpenTerminal: () => setDock(value => ({ ...value, open: true })), selectedDiffPath: sourcePath, selectedDiffKind: "unstaged" };
+  const sidebar: SidebarProps = { desktopMode: "code", cwd, recents: activity.recents, open: true, sessions: [{ id: session.id, cwd, harness: session.harness, model: session.model, runtimeMode: session.runtimeMode, title: session.title, createdAt: 1791891000000, updatedAt: 1791891000000 }], busySessionIds: new Set(), approvalSessionIds: new Set(), activeSessionId: session.id, visibleSessionId: session.id, status: "idle", pending: false, onSelectSession: noop, tab, onTabChange: setTab, filesSearchOpen: false, onFilesSearchOpenChange: noop, onOpenFile: openFile, onOpenTerminal: () => setDock(value => ({ ...value, open: true })) };
   const handlers = {
     onClose: (paneId: string) => setWorkspaceTab(value => closeLeaf(value, paneId) ?? value), onCwdChange: noop, onBranchChange: noop, onWorkspaceModeChange: noop,
     onWorktreeBaseChange: noop, onModelChange: noop, onModelSettingsChange: noop,
     onRuntimeModeChange: noop, onSaveDraft: noop, onRemoveDraft: noop,
-    onDeleteQueuedMessage: noop, onEditQueuedMessage: noop, onQueuedMessageEditingChange: noop,
+    onDeleteQueuedMessage: noop, onReorderQueuedMessage: noop, onEditQueuedMessage: noop, onQueuedMessageEditingChange: noop,
     onSteerQueuedMessage: noop, onResumeQueue: noop, onUsageLimitResume: noop,
     onUsageLimitResumeAtReset: noop, onUsageLimitDismiss: noop, onApproval: noop,
     onQuestionReply: noop, onOpenSessionFile: noop, onOpenPlan: noop, onUpdatePlan: noop,
@@ -198,13 +215,14 @@ function DesktopToolsFixture() {
     onMovePaneToDock: noop,
     onRatio: (splitId: string, index: number, ratio: number) => setWorkspaceTab(value => ({ ...value, layout: setSplitRatio(value.layout, splitId, index, ratio) })),
   };
-  const paneProps: ComponentProps<typeof PaneTree> = { ...handlers, visible: true, layout, sessions: [session], editorPanes: [pane, ...(query.has("stackedTools") ? [stackedTerminal] : [])], dirtyFileIds: new Set(), fileErrorCounts: new Map(), focusedId, surfaceMode: "split", composerFocused: false, recents: activity.recents, transcriptPool: pool, hideProjectPicker: false, onFocus: setFocusedId, onSubmit: () => true, onStop: noop, onCompactContext: () => true, onOpenFile: openFile, onOpenDiff: () => setPane(value => ({ ...value, activeFileId: review.id })), onNewTerminal: () => setDock(value => ({ ...value, open: true })), onSelectFile: (_pane: string, activeFileId: string) => setPane(value => ({ ...value, activeFileId })), autoArrangeTools: workspaceTab.autoArrangeTools, onFitLayout: (previous, next, manual) => setWorkspaceTab(value => value.layout === previous ? { ...value, layout: next, ...(manual ? { autoArrangeTools: false } : {}) } : value) };
+  const paneProps: ComponentProps<typeof PaneTree> = { ...handlers, visible: true, layout, sessions: [liveSession], editorPanes: [pane, ...workspaceTab.editorPanes.filter(entry => entry.id !== pane.id), ...(query.has("stackedTools") ? [stackedTerminal] : [])], dirtyFileIds: new Set(), fileErrorCounts: new Map(), focusedId: query.has("backgroundTasks") ? workspaceTab.focusedId : focusedId, surfaceMode: "split", composerFocused: false, recents: activity.recents, transcriptPool: pool, hideProjectPicker: false, onFocus: id => { setFocusedId(id); if (query.has("backgroundTasks")) setWorkspaceTab(value => ({ ...value, focusedId: id })); }, onSubmit: () => true, onStop: noop, onCompactContext: () => true, onOpenFile: openFile, onOpenDiff: () => setPane(value => ({ ...value, activeFileId: review.id })), onOpenFileTerminal: () => setDock(value => ({ ...value, open: true })), onSelectFile: (_pane: string, activeFileId: string) => setPane(value => ({ ...value, activeFileId })), autoArrangeTools: workspaceTab.autoArrangeTools, onFitLayout: (previous, next) => setWorkspaceTab(value => value.layout === previous ? { ...value, layout: next } : value) };
   const titlebar = <DesktopTitlebarNavigation menu={<WindowMenuButton handlers={{ "Tab: New": noop }} dispatch={() => true} />} modeToggle={<DesktopModeToggle mode="code" onChange={noop} />} canGoBack onGoBack={noop} panelActive={sidebarOpen} onTogglePanel={() => setSidebarOpen(value => !value)} />;
   const headerActions: SessionHeaderActions = {
+    openBackgroundTasks: workspaceFiles.onOpenBackgroundTasks,
     rename: noop, archive: noop, splitRight: noop,
-    terminalAvailable: true, terminalOpen: dock.open,
+    terminalAvailable: true, terminalSessionIds: dock.open ? new Set([session.id]) : new Set(),
     toggleTerminal: () => setDock(value => ({ ...value, open: !value.open })),
-    filesSessionId: tab === "files" ? session.id : undefined,
+    filesSessionIds: tab === "files" ? new Set([session.id]) : new Set(),
     toggleFiles: sessionId => { setFocusedId(sessionId); setTab(value => value === "files" ? "sessions" : "files"); },
     changesOpen: false, toggleChanges: noop,
   };
@@ -232,4 +250,7 @@ function DesktopToolsFixture() {
   </div></SessionHeaderActionsContext.Provider></MotionConfig>;
 }
 
-createRoot(document.getElementById("root")!).render(<NuqsAdapter><DragDropProvider><DesktopToolsFixture /></DragDropProvider></NuqsAdapter>);
+createRoot(document.getElementById("root")!).render(<NuqsAdapter><PaneSurfaceSlots.Provider value={{ backgroundTasks: {
+  content: (sessionId, visible) => <BackgroundTasksPane sessionId={sessionId} visible={visible} />,
+  actions: sessionId => <BackgroundTasksClearButton sessionId={sessionId} />,
+} }}><DragDropProvider><DesktopToolsFixture /></DragDropProvider></PaneSurfaceSlots.Provider></NuqsAdapter>);

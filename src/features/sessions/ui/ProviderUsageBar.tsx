@@ -323,7 +323,7 @@ function SessionChip({
       <Button variant="ghost" size="content"
       ref={trigger}
       type="button"
-      className="flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
+      className="flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content focus-visible:focus-fill"
       aria-label={uiT("{value0} sign-in required", {
         value0: String(HARNESS_TITLE[session.harness]),
       })}

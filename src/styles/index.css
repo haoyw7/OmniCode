@@ -3,6 +3,7 @@
 @import "./desktop-tokens.css";
 @import "../shared/styles/fonts.css";
 @import "../shared/styles/typography.css";
+@import "../shared/styles/focus.css";
 @import "./controls/forms.css";
 @import "./desktop-controls.css";
 @import "./desktop-workspaces.css";
@@ -138,8 +139,8 @@
   --color-input-focused: var(--card-color);
   --color-input-border: var(--color-stroke);
   --color-input-border-hover: var(--color-border-hover);
-  --color-input-border-focused: var(--color-brand);
-  --color-ring: var(--color-brand);
+  --color-input-border-focused: var(--color-focus);
+  --color-ring: var(--color-focus);
   --color-primary: var(--color-content);
   --color-primary-foreground: var(--color-background-base);
   --color-secondary: var(--color-selection-strong);
@@ -854,9 +855,12 @@ html.theme-light {
     background-color var(--motion-feedback-duration), border-color var(--motion-feedback-duration);
 }
 
-[data-composer-layout="desktop"] [data-ui="message-input"]:hover,
-[data-composer-layout="desktop"] [data-ui="message-input"]:focus-within {
+[data-composer-layout="desktop"] [data-ui="message-input"]:hover {
   border-color: var(--composer-border-hover);
+}
+
+[data-composer-layout="desktop"] [data-ui="message-input"]:has(:focus-visible) {
+  box-shadow: var(--focus-fill-shadow);
 }
 
 [data-composer-layout="desktop"]
@@ -1196,8 +1200,8 @@ html.theme-light {
 }
 
 [data-composer-layout="desktop"] .composer-footer button:focus-visible {
-  outline: 1px solid var(--color-input-border-hover);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--focus-fill-shadow);
 }
 
 :is(.composer-surface, .composer-toolbar)[data-inline-below~="480"] .composer-leading-controls [data-access-picker-trigger] > span,

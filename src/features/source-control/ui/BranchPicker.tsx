@@ -466,7 +466,7 @@ export function BranchPicker({
             autoCorrect="off"
             autoCapitalize="off"
             disabled={busy}
-            className="min-w-0 flex-1 bg-transparent font-sans text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40 disabled:opacity-60"
+            className="min-w-0 flex-1 bg-transparent font-sans text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40 disabled:opacity-60"
             onChange={(e) => {
               setQuery(e.target.value);
               setActive(0);

@@ -138,7 +138,7 @@ export function GitlabSettings() {
           </div>
         ) : (
           <form noValidate onSubmit={onSave} className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
-            <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
+            <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 has-[:focus-visible]:focus-fill">
               <Input variant="inline"
                 type="url"
                 {...form.register("url")}
@@ -147,10 +147,10 @@ export function GitlabSettings() {
                 aria-label={uiT("GitLab URL")}
                 autoComplete="url"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
               />
             </label>
-            <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
+            <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 has-[:focus-visible]:focus-fill">
               <Input variant="inline"
                 type="password"
                 {...form.register("token")}
@@ -159,7 +159,7 @@ export function GitlabSettings() {
                 aria-label={uiT("GitLab access token")}
                 autoComplete="off"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
               />
             </label>
             <Button variant="secondary"
@@ -239,7 +239,7 @@ export function AzureDevOpsSettings() {
           </div>
         ) : (
           <form noValidate onSubmit={onSave} className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
-            <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
+            <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 has-[:focus-visible]:focus-fill">
               <Input variant="inline"
                 type="url"
                 {...form.register("url")}
@@ -248,10 +248,10 @@ export function AzureDevOpsSettings() {
                 aria-label={uiT("Azure DevOps organization URL")}
                 autoComplete="url"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
               />
             </label>
-            <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
+            <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 has-[:focus-visible]:focus-fill">
               <Input variant="inline"
                 type="password"
                 {...form.register("token")}
@@ -260,7 +260,7 @@ export function AzureDevOpsSettings() {
                 aria-label={uiT("Azure DevOps personal access token")}
                 autoComplete="off"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
               />
             </label>
             <Button variant="secondary"
@@ -342,7 +342,7 @@ export function LinearSettings() {
           </Button>
         ) : (
           <form noValidate onSubmit={onSave} className="flex max-w-full flex-wrap items-center gap-2">
-            <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
+            <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 has-[:focus-visible]:focus-fill">
               <Input variant="inline"
                 type="password"
                 {...form.register("token")}
@@ -351,7 +351,7 @@ export function LinearSettings() {
                 aria-label={uiT("Linear API key")}
                 autoComplete="off"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
               />
             </label>
             <Button variant="secondary"

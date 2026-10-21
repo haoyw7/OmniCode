@@ -130,7 +130,7 @@ export function MobileConnectionSheet({
                 setMethod(id);
                 setScanError("");
                 scanned.current = "";
-              }} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
+              }} className="hover:opacity-80 focus-visible:focus-fill active:opacity-70"
             >
               {method === id && <motion.span layoutId={selectionId} className="mobile-segmented-selection" aria-hidden="true" transition={reduced ? immediateTransition : popTransition} />}
               <Icon size={16} />

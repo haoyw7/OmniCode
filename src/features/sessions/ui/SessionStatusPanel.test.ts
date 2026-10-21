@@ -8,6 +8,9 @@ import {
   type SessionHeaderActions,
 } from "../../workspace/ui/SessionHeaderActions";
 import { railFits, SessionStatusPanel } from "./SessionStatusPanel";
+import { BackgroundTasksPane, BackgroundTasksClearButton } from "./BackgroundTasksPanel";
+import { backgroundTaskItems } from "../model/backgroundTasks";
+import { backgroundTaskPanels, publishBackgroundTaskPanel, requestBackgroundTaskPanel } from "../model/backgroundTaskPanels";
 import { setUiLanguage } from "../../../shared/i18n/language";
 import type { ContextUsage } from "../model/contextUsage";
 import { loadStatusCardOrder, saveStatusCardOrder, saveStatusCardsVisible, STATUS_CARD_IDS } from "../model/statusCardOrder";
@@ -72,6 +75,7 @@ const agent: Block = {
 let root: Root;
 let host: HTMLDivElement;
 beforeEach(() => {
+  backgroundTaskPanels.setState({}, true);
   vi.mocked(useRemoteMachines).mockReturnValue({ machines: [], loaded: false });
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   setUiLanguage("en");
@@ -102,6 +106,8 @@ function render(blocks: Block[] = [tasks, agent], busy = true, width = 1600,
   });
   const openAgent = vi.fn();
   const toggleChanges = vi.fn();
+  let panelOpen = false;
+  const source = Symbol();
   const actions: SessionHeaderActions = {
     rename: vi.fn(),
     archive: vi.fn(),
@@ -110,15 +116,22 @@ function render(blocks: Block[] = [tasks, agent], busy = true, width = 1600,
     toggleTerminal: vi.fn(),
     changesOpen: false,
     toggleChanges,
+    openBackgroundTasks: (sessionId, taskId) => {
+      requestBackgroundTaskPanel(sessionId, taskId);
+      panelOpen = true;
+      update();
+    },
   };
   const scope = createRef<HTMLDivElement>();
   scope.current = host;
   const update = (nextBlocks = blocks, nextCwd = cwd) => act(() => {
+    publishBackgroundTaskPanel("status-session", source, backgroundTaskItems(nextBlocks), undefined, 0);
     root.render(
       createElement(
         SessionHeaderActionsContext.Provider,
         { value: actions },
         createElement(SessionStatusPanel, {
+          sessionId: "status-session",
           blocks: nextBlocks,
           busy,
           git: { additions: 3, deletions: 1, files: 2, branch: "master" },
@@ -129,6 +142,10 @@ function render(blocks: Block[] = [tasks, agent], busy = true, width = 1600,
           onNavigate: vi.fn(),
           onOpenAgent: openAgent,
         }),
+        panelOpen ? createElement("div", { "data-test-workspace-pane": true },
+          createElement(BackgroundTasksClearButton, { sessionId: "status-session" }),
+          createElement(BackgroundTasksPane, { sessionId: "status-session", visible: true }),
+        ) : null,
       ),
     );
   });
@@ -178,16 +195,15 @@ describe("session status rail", () => {
     expect(panel.textContent).toContain("$ npm run build:windows");
     expect(panel.textContent).toContain("exit=1");
     expect(panel.textContent).toContain("Waiting for output…");
-    act(() => panel.querySelector<HTMLButtonElement>('[aria-label="Expand panel"]')!.click());
-    expect(panel.hasAttribute("data-wide")).toBe(true);
-    act(() => panel.querySelector<HTMLButtonElement>('[aria-label="Clear finished tasks"]')!.click());
+    expect(panel.closest("[data-test-workspace-pane]")).not.toBeNull();
+    act(() => host.querySelector<HTMLButtonElement>('[aria-label="Clear finished tasks"]')!.click());
     expect(panel.querySelector('[data-background-task="done"]')).toBeNull();
     expect(panel.querySelector('[data-background-task="running"]')).not.toBeNull();
     expect(blocks).toHaveLength(2);
     update([...blocks, { id: "new-done", role: "tool", text: "New result", tool: { background: true, status: "completed" } }]);
     expect(panel.textContent).toContain("New result");
     act(() => panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
-    expect(host.querySelector("[data-background-tasks-panel]")?.hasAttribute("inert") ?? true).toBe(true);
+    expect(panel.hasAttribute("inert")).toBe(false);
   });
 
   it("keeps background task history reachable when the conversation is too narrow for status cards", () => {
@@ -198,7 +214,7 @@ describe("session status rail", () => {
     expect(host.querySelector('[data-background-tasks-panel]')?.textContent).toContain("Finished command");
     act(() => saveStatusCardsVisible(false));
     expect(compact.hasAttribute("inert")).toBe(true);
-    expect(host.querySelector('[data-background-tasks-panel]')?.hasAttribute("inert") ?? true).toBe(true);
+    expect(host.querySelector('[data-background-tasks-panel]')?.hasAttribute("inert")).toBe(false);
     act(() => saveStatusCardsVisible(true));
   });
 

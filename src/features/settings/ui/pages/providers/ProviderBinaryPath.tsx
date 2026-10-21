@@ -262,7 +262,7 @@ export function ProviderBinaryPath({
             placeholder={inspection?.path ?? uiT("Auto-detected path")}
             disabled={working || form.formState.isSubmitting}
             autoFocus
-            className="mt-1.5 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2 font-mono text-[11px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:font-sans placeholder:text-content/35 focus:border-input-border-hover disabled:opacity-50"
+            className="mt-1.5 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2 font-mono text-[11px] text-content outline-none focus-visible:focus-fill placeholder:font-sans placeholder:text-content/35 disabled:opacity-50"
           />
           <p className="mt-1.5 text-[11px] text-content/40">
             {uiT(

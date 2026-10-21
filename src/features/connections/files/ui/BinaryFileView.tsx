@@ -201,7 +201,7 @@ function ImageView({
               : undefined
           }
           className={
-            cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", zoom === "fit"
+            cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", zoom === "fit"
               ? "max-h-full max-w-full object-contain"
               : "max-w-none object-contain")
           }

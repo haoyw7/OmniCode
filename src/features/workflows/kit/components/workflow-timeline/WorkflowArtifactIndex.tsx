@@ -36,7 +36,7 @@ import { PILL_STAGGER_MS } from "./WorkflowTimeline.js";
  */
 
 const LINE_CLASS =
-  "wf-line  -mx-1.5 flex h-[26px] min-w-0 items-center gap-2 rounded-md bg-transparent px-1.5 text-left text-ui-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "wf-line  -mx-1.5 flex h-[26px] min-w-0 items-center gap-2 rounded-md bg-transparent px-1.5 text-left text-ui-sm outline-none focus-visible:focus-fill";
 
 function WorkflowArtifactLine({
   artifact,

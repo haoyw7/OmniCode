@@ -66,7 +66,7 @@ export function QuickPermissions({
       aria-label={uiT("Permissions")}
       aria-activedescendant={`${id}-${active}`}
       tabIndex={-1}
-      className="min-h-0 overflow-y-auto overscroll-none border-t border-stroke p-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="min-h-0 overflow-y-auto overscroll-none border-t border-stroke p-2 outline-none focus-visible:focus-fill"
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.preventDefault();

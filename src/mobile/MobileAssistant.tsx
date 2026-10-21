@@ -173,12 +173,12 @@ function MobileAssistantHeader({
         align="end"
         onClose={() => setMenuOpen(false)}
       >
-        {onTimeline && <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row" onClick={() => action(onTimeline)}>
+        {onTimeline && <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row" onClick={() => action(onTimeline)}>
           <span>{t("Work history")}</span><ChevronRight />
         </button>}
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
+          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
           disabled={busy}
           onClick={() => action(onSettings)}
         >
@@ -190,7 +190,7 @@ function MobileAssistantHeader({
           <>
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
               disabled={busy}
               onClick={() => action(controls.onToggle)}
             >
@@ -199,7 +199,7 @@ function MobileAssistantHeader({
             </button>
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row mobile-assistant-disable"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row mobile-assistant-disable"
               disabled={busy || !controls.enabled}
               onClick={() => action(controls.onDisable)}
             >
@@ -432,8 +432,8 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
     <div ref={dock} className="mobile-assistant-compose-dock">
       {errorNotice}
       <MobileSheet open={addOpen} title="Composer options" placement="anchor" anchor={addButton} width={SHEET_WIDTH.menu} onClose={() => setAddOpen(false)}>
-        <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row" disabled={attachDisabled} onClick={() => { setAddOpen(false); files.current?.click(); }}>{t("Attach files")}</button>
-        {["Continue the last task", "Start a separate task"].map(phrase => <button key={phrase} type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row" disabled={inputDisabled} onClick={() => {
+        <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row" disabled={attachDisabled} onClick={() => { setAddOpen(false); files.current?.click(); }}>{t("Attach files")}</button>
+        {["Continue the last task", "Start a separate task"].map(phrase => <button key={phrase} type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row" disabled={inputDisabled} onClick={() => {
           onDraftChange(`${t(phrase)}${draft.trim() ? `\n${draft}` : ""}`);
           setAddOpen(false);
           input.current?.focus();
@@ -444,7 +444,7 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
           <blockquote>{replyText ?? lastReply.current}</blockquote>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-assistant-reply-cancel"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-assistant-reply-cancel"
             aria-label={t("Cancel reply")}
             onPointerDown={(e) => preserveInputFocus(e, input.current)}
             onMouseDown={(e) => preserveInputFocus(e, input.current)}
@@ -457,7 +457,7 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
       {retry && (
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-assistant-retry"
+          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-assistant-retry"
           disabled={busy}
           onClick={onRetry}
         >
@@ -494,7 +494,7 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
           <button
             ref={addButton}
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-assistant-add"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-assistant-add"
             aria-label={t("Composer options")}
             aria-expanded={addOpen}
             disabled={inputDisabled}
@@ -530,7 +530,7 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
           {stoppable ? (
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-assistant-send"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-assistant-send"
               data-stop="true"
               aria-label={t("Stop")}
               disabled={busy}
@@ -540,7 +540,7 @@ function MobileAssistantComposerView({ vm }: { vm: MobileAssistantComposerViewMo
             </button>
           ) : <button
             type="submit"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-assistant-send"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-assistant-send"
             aria-label={t(sending ? "Sending..." : "Send")}
             aria-busy={sending || undefined}
             disabled={sendDisabled}
@@ -603,7 +603,7 @@ function MobileAssistantMessageMenu({
     >
       {message.replyable && <button
         type="button"
-        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
+        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
         disabled={disabled}
         onClick={onReply}
       >
@@ -612,7 +612,7 @@ function MobileAssistantMessageMenu({
       </button>}
       <button
         type="button"
-        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
+        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
         disabled={copying || !message.text}
         onClick={() => {
           const request = ++copyRequest.current;
@@ -741,7 +741,7 @@ export function MobileAssistantSelect({
     >
       <button
         type="button"
-        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-assistant-select-trigger"
+        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-assistant-select-trigger"
         aria-label={`${label}: ${selected?.label ?? placeholder}`}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -785,7 +785,7 @@ export function MobileAssistantSelect({
               <button
                 key={option.value}
                 type="button"
-                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
+                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
                 role="radio"
                 aria-checked={checked}
                 onClick={() => {

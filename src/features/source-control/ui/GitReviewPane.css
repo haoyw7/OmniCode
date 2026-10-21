@@ -150,8 +150,8 @@ html[data-skin] .review-file-search [data-ui="select-option"] {
 }
 
 .review-comment-button:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--review-comment, var(--color-accent)) 45%, transparent);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--focus-fill-shadow);
 }
 
 .review-comment-button:disabled {

@@ -1,5 +1,6 @@
 /* Desktop Forms presentation. Controls opt in explicitly; business-specific
    editors, hidden inputs and mobile controls retain their own presentation. */
+
 html[data-skin] [data-ui="checkbox"] {
   appearance: none;
   width: var(--desktop-checkbox-size);
@@ -31,7 +32,7 @@ html[data-skin] input[data-ui="checkbox"]:not(.appearance-none):indeterminate {
 }
 html[data-skin] [data-ui="checkbox"]:focus-visible {
   outline: none;
-  box-shadow: var(--desktop-focus-shadow);
+  box-shadow: var(--focus-fill-shadow);
 }
 html[data-skin] [data-ui="checkbox"]:disabled { opacity: .5; }
 html[data-skin] :is([data-slot="checkbox-checked-icon"], [data-slot="checkbox-indeterminate-icon"], [data-desktop-checkbox-mark]) {
@@ -104,7 +105,7 @@ html[data-skin] [data-ui="button"][data-provider-cli-action] svg {
 }
 html[data-skin] :is([data-ui="button"], [data-ui="icon-button"]):focus-visible {
   outline: none;
-  box-shadow: var(--desktop-focus-shadow);
+  box-shadow: var(--focus-fill-shadow);
 }
 
 /* Semantic button variants share one desktop palette. */
@@ -135,13 +136,11 @@ html[data-skin] [data-ui="button"][data-size="content"]:is([aria-current="true"]
 }
 html[data-skin] [data-ui="button"][data-variant="primary"] {
   border-color: transparent;
-  --desktop-focus-shadow: 0 0 0 2px var(--desktop-focus-gap), 0 0 0 3.5px color-mix(in srgb, var(--desktop-primary) 70%, transparent);
   background: var(--desktop-primary);
   color: var(--desktop-on-primary);
 }
 html[data-skin] [data-ui="button"][data-variant="primary"]:not(:disabled, [aria-disabled="true"]):hover { filter: brightness(1.08); }
 html[data-skin] [data-ui="button"][data-variant="danger"] {
-  --desktop-focus-shadow: 0 0 0 2px var(--desktop-focus-gap), 0 0 0 3.5px var(--desktop-focus-danger);
   border-color: transparent;
   background: var(--desktop-danger);
   color: var(--desktop-on-danger);
@@ -180,27 +179,28 @@ html[data-skin] [data-desktop-select-trigger]:not([data-desktop-select-trigger="
   font-size: var(--text-desktop-ui);
   line-height: var(--text-body-sm--line-height);
 }
+html[data-skin] :is([data-ui="input"]:not([data-variant="inline"]), [data-ui="textarea"]:not([data-variant="editor"]), [data-ui="select"], [data-desktop-select-trigger="field"], [data-slot="select-trigger"][data-variant="input"]) {
+  background-color: var(--desktop-control-surface);
+  color: var(--desktop-control-ink);
+  border-color: var(--desktop-control-border);
+}
 html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-slot="select-trigger"]):focus-visible {
   outline: none;
-  box-shadow: var(--desktop-focus-shadow);
+  box-shadow: var(--focus-fill-shadow);
 }
 html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-slot="select-trigger"]):is(:disabled, [aria-disabled="true"]) { opacity: var(--desktop-disabled-opacity); }
-html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-slot="select-trigger"])[aria-invalid="true"] { --desktop-focus-shadow: 0 0 0 2px var(--color-app), 0 0 0 3.5px var(--color-danger); }
+html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-slot="select-trigger"])[aria-invalid="true"]:focus-visible { box-shadow: var(--focus-fill-shadow); }
 html[data-skin] [data-ui="input-group"]:has(> input) { display: flex; align-items: center; }
 html[data-skin] [data-ui="input-group"] > input { min-width: 0; font-size: inherit; line-height: inherit; }
-html[data-skin] :is([data-ui="input-group"]:has(> input:focus-visible), [data-ui="input-group"]:has([data-slot="input-group-control"]:focus-visible)) { box-shadow: var(--desktop-focus-shadow); }
+html[data-skin] [data-ui="input-group"]:has(:focus-visible) {
+  outline: none;
+  box-shadow: var(--focus-fill-shadow);
+}
+html[data-skin] [data-ui="input-group-control"]:focus-visible { box-shadow: none; }
 html[data-skin] [data-ui="input-group"][data-slot="input-group"] { padding: 0; }
-html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-slot="select-trigger"]):focus-visible:not([aria-invalid="true"]) {
-  border-color: var(--color-input-border-hover);
-  box-shadow: none;
-}
 html[data-skin] :is([data-ui="input"][data-variant="inline"], [data-ui="textarea"][data-variant="editor"]):focus-visible {
-  outline: 1px solid var(--color-input-border-hover);
-  outline-offset: 2px;
-}
-html[data-skin] [data-ui="input-group"]:has(:focus-visible):not(:has([aria-invalid="true"])) {
-  border-color: var(--color-input-border-hover);
-  box-shadow: none;
+  outline: none;
+  box-shadow: var(--focus-fill-shadow);
 }
 html[data-skin] [data-slot="input-group-control"] { min-height: 30px; padding-inline: 12px; font-size: var(--text-body-sm); line-height: var(--text-body-sm--line-height); }
 html[data-skin] textarea[data-slot="input-group-control"] { min-height: 130px; padding: 16px; }
@@ -242,7 +242,7 @@ html[data-skin] [data-ui="switch"][data-size="sm"] {
 }
 html[data-skin] [data-ui="switch"]:dir(rtl) { --switch-travel: calc(-1 * var(--desktop-switch-travel)); }
 html[data-skin] [data-ui="switch"]:disabled { opacity: var(--desktop-disabled-opacity); }
-html[data-skin] [data-ui="switch"]:focus-visible { outline: none; box-shadow: var(--desktop-focus-shadow); }
+html[data-skin] [data-ui="switch"]:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 html[data-skin] [data-ui="switch"][data-state="checked"] > [data-slot="switch-thumb"] { border-color: transparent; }
 
 /* Only actual circular radios, never segmented controls or option cards. */
@@ -263,17 +263,12 @@ html[data-skin] [data-ui="radio"]:checked {
 }
 html[data-skin] [data-ui="radio"][data-size="lg"] { width: 20px; height: 20px; }
 html[data-skin] [data-ui="radio"][data-size="lg"]:checked { background: radial-gradient(circle, var(--desktop-control-checked) 0 7px, transparent 7px); }
-html[data-skin] [data-ui="radio"]:focus-visible { outline: none; box-shadow: var(--desktop-focus-shadow); }
+html[data-skin] [data-ui="radio"]:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 html[data-skin] [data-ui="radio"]:disabled { opacity: var(--desktop-disabled-opacity); }
 html[data-skin] [data-ui="checkbox"][data-size="lg"] { --desktop-checkbox-size: 20px; --desktop-checkbox-radius: 6px; }
 html[data-skin] [data-ui="button"][data-variant="danger"]:is(:disabled, [aria-disabled="true"]) { opacity: .6; }
 
 
-html[data-skin] :is([data-ui="input"]:not([data-variant="inline"]), [data-ui="textarea"]:not([data-variant="editor"]), [data-ui="select"], [data-desktop-select-trigger="field"], [data-slot="select-trigger"][data-variant="input"]) {
-  background-color: var(--desktop-control-surface);
-  color: var(--desktop-control-ink);
-  border-color: var(--desktop-control-border);
-}
 html[data-skin] :is([data-ui="input"], [data-ui="textarea"])::placeholder { color: var(--desktop-control-placeholder); opacity: 1; }
 html[data-skin] [data-ui="button-icon"] > svg { width: 20px; height: 20px; }
 html[data-skin] [data-ui="button"].rounded-full { border-radius: 999px; }
@@ -282,7 +277,6 @@ html[data-skin] [data-ui="button"][data-size="xs"]:not(.rounded-full) { border-r
 html[data-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-slot="select-trigger"])[aria-invalid="true"],
 html[data-skin] [data-ui="input-group"]:has([aria-invalid="true"]) {
   border-color: var(--desktop-danger);
-  --desktop-focus-shadow: 0 0 0 2px var(--desktop-focus-gap), 0 0 0 3.5px var(--desktop-focus-danger);
 }
 @media (prefers-reduced-motion: reduce) {
   html[data-skin] [data-ui] { transition: none; }

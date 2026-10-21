@@ -128,7 +128,7 @@ export function ProjectGroupSection({
             aria-label={`${group.name}, ${countLabel}`}
             title={`${group.name} · ${countLabel}`}
             onClick={searchActive ? undefined : onToggleCollapsed}
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 flex min-w-0 flex-1 cursor-default items-center gap-2 pr-6 text-left"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 flex min-w-0 flex-1 cursor-default items-center gap-2 pr-6 text-left"
           >
             <div className="grid size-4 shrink-0 place-items-center">
               {!expanded ? (

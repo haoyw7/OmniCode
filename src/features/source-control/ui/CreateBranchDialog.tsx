@@ -64,7 +64,7 @@ export function CreateBranchDialog({ busy, error, onCreate, onCancel }: Props) {
             autoCorrect="off"
             autoCapitalize="off"
             disabled={busy}
-            className="h-9 rounded-md border border-content/10 bg-content/5 px-2.5 font-sans text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/30 focus:border-content/25 disabled:opacity-50"
+            className="h-9 rounded-md border border-content/10 bg-content/5 px-2.5 font-sans text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/30 disabled:opacity-50"
           />
           <FieldError errors={[form.formState.errors.name]} />
         </label>

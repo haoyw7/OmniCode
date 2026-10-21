@@ -1113,7 +1113,7 @@ function SidebarComponent(props: SidebarProps) {
                     setQuery("");
                   }
                 }}
-                className="h-full w-full min-w-0 rounded-md bg-transparent py-0 pl-7 pr-2 text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+                className="h-full w-full min-w-0 rounded-md bg-transparent py-0 pl-7 pr-2 text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
               />
             </div>
             <IconButton

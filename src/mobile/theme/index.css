@@ -2,6 +2,7 @@
 @import "tailwindcss";
 @import "../../shared/styles/fonts.css";
 @import "../../shared/styles/typography.css";
+@import "../../shared/styles/focus.css";
 @import "./base.css";
 @import "../../shared/styles/conversation.css";
 @import "./tokens.css";

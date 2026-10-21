@@ -96,8 +96,8 @@
   --color-input-focused: var(--card-color);
   --color-input-border: var(--color-stroke);
   --color-input-border-hover: var(--color-border-hover);
-  --color-input-border-focused: var(--color-brand);
-  --color-ring: var(--color-brand);
+  --color-input-border-focused: var(--color-focus);
+  --color-ring: var(--color-focus);
   --color-primary: var(--color-content);
   --color-primary-foreground: var(--color-background-base);
   --color-secondary: var(--color-selection-strong);
@@ -129,9 +129,9 @@
   --color-ink: var(--color-m-ink);
   --color-ink-secondary: var(--color-m-ink-secondary);
   --color-ink-tertiary: var(--color-m-ink-tertiary);
-  --color-accent: var(--m-control-focus);
+  --color-accent: var(--m-control-accent);
   --color-accent-ink: #ffffff;
-  --color-accent-border: var(--m-control-focus);
+  --color-accent-border: var(--m-control-accent);
   --color-accent-text: var(--color-m-accent-text);
   --color-focus: var(--m-control-focus);
   --color-bubble-user: var(--color-m-bubble-user);
@@ -159,7 +159,7 @@
   --menu-hover-color: var(--color-m-raised-hover);
   --brand-color: var(--m-control-primary);
   --brand-foreground: var(--m-control-primary-ink);
-  --accent-color: var(--m-control-focus);
+  --accent-color: var(--m-control-accent);
   --link-color: var(--color-m-accent-text);
   --surface-strength: 5%;
   --surface-hover-strength: 7%;

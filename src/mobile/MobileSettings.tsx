@@ -253,7 +253,7 @@ function useMobileSettingsController({
   }, [connectionTrigger]);
   const addConnectionRow = (className: string) => (
     <button
-      className={cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", className)}
+      className={cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", className)}
       ref={setConnectionButton}
       type="button"
       aria-label={t("Add connection")}
@@ -498,7 +498,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           activity.permission === "prompt" ? (
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row mobile-settings-action"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row mobile-settings-action"
               onClick={() => void activity.requestPermission()}
             >
               <SettingsIcon name="notifications" />
@@ -525,7 +525,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           activity.canOpenSettings ? (
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
               onClick={() => void activity.openSettings()}
             >
               <SettingsIcon name="notifications" />
@@ -613,7 +613,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
         <div className="mobile-settings-card">
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
             aria-label={t("Connections")}
             onClick={() => onPageChange("connections")}
           >
@@ -631,7 +631,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           {agentDefaults ? (
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
               aria-label={t("New conversations")}
               onClick={() => onPageChange("agents")}
             >
@@ -641,7 +641,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             </button>
           ) : null}
           {providerAccounts ? (
-            <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row" aria-label={t("Accounts and usage")}
+            <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row" aria-label={t("Accounts and usage")}
               onClick={() => onPageChange("accounts")}>
               <SettingsIcon name="account" />
               <span className="mobile-settings-label">{t("Accounts and usage")}</span>
@@ -650,7 +650,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           ) : null}
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
             aria-label={t("Notifications")}
             onClick={() => onPageChange("notifications")}
           >
@@ -663,7 +663,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           </button>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
             aria-label={t("Message composer")}
             onClick={() => onPageChange("chat")}
           >
@@ -679,7 +679,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
       <Group title="Appearance">
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
+          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
           aria-label={t("Skin")}
           onClick={() => onPageChange("skin")}
         >
@@ -752,7 +752,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
         </div>
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
+          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
           aria-label={t("Glass")}
           onClick={() => onPageChange("glass")}
         >
@@ -771,7 +771,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
         <div className="mobile-settings-card">
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
             onClick={() => onPageChange("archive")}
           >
             <SettingsIcon name="archive" />
@@ -782,7 +782,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           </button>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
             aria-label={t("App updates")}
             onClick={() => onPageChange("updates")}
           >

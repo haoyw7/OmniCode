@@ -188,6 +188,7 @@
 }
 html[data-mobile-skin] .mobile-composer [data-ui="message-input-field"]:focus-visible {
   outline: none;
+  box-shadow: none;
 }
 .mobile-composer textarea::placeholder {
   color: var(--color-m-ink-tertiary);

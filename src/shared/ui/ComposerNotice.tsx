@@ -51,7 +51,7 @@ export function ComposerNotice({
       {onDismiss ? (
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 composer-notice-dismiss"
+          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 composer-notice-dismiss"
           title={dismissLabel}
           aria-label={dismissLabel}
           onClick={onDismiss}
@@ -72,7 +72,7 @@ export function ComposerNoticeButton({
       type="button"
       {...props}
       className={
-        cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", className ? `composer-notice-action ${className}` : "composer-notice-action")
+        cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", className ? `composer-notice-action ${className}` : "composer-notice-action")
       }
     />
   );

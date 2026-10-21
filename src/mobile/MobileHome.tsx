@@ -502,7 +502,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
         {overview && !!overviewProjects.length && (
           <section className="mobile-home-overview-projects" aria-label={t("Projects")}>
             <h2 className="mobile-home-section-head">
-              <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-section-toggle" aria-expanded={projectsOpen}
+              <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-home-section-toggle" aria-expanded={projectsOpen}
                 onClick={() => setProjectsOpen((open) => !open)}>
                 <span>{t("Projects")}</span>
                 {projectActivity(sessions, true)}
@@ -518,7 +518,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
         {overview && !!pinned.length && (
           <section className="mobile-home-pinned" aria-label={t("Pinned")}>
             <h2 className="mobile-home-section-head">
-              <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-section-toggle" aria-expanded={pinnedOpen}
+              <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-home-section-toggle" aria-expanded={pinnedOpen}
                 onClick={() => setPinnedOpen((open) => !open)}>
                 <span>{t("Pinned")}</span>
                 <MotionChevronDown size={16} aria-hidden="true" animate={{ rotate: pinnedOpen ? 0 : -motionGeometry.disclosureAngle }} transition={panelTransition} />
@@ -536,7 +536,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
               <button
                 ref={filterTrigger}
                 type="button"
-                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-filter"
+                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-home-filter"
                 aria-haspopup="dialog"
                 aria-expanded={filterOpen}
                 onClick={() => setFilterOpen((open) => !open)}
@@ -564,7 +564,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
               </span>
               <button
                 type="button"
-                onClick={() => refresh()} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
+                onClick={() => refresh()} className="hover:opacity-80 focus-visible:focus-fill active:opacity-70"
               >
                 {t("Retry")}
               </button>
@@ -589,7 +589,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
               <button
                 key={option}
                 type="button"
-                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
+                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
                 data-separated={option === "archived" || undefined}
                 role="menuitemradio"
                 aria-checked={filter === option}
@@ -610,7 +610,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
         <div className="mobile-home-dock">
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-new mobile-home-open-project"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-home-new mobile-home-open-project"
             aria-haspopup="dialog"
             onClick={(event) => onAddProject(event.currentTarget)}
           >
@@ -625,7 +625,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
             onNewChat && (
               <button
                 type="button"
-                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-new"
+                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-home-new"
                 aria-label={t("New chat")}
                 onClick={onNewChat}
               >
@@ -636,7 +636,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
           ) : (
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-new"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-home-new"
               aria-label={t("New conversation")}
               onClick={onNewSession}
             >

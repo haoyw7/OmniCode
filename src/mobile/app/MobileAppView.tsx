@@ -393,7 +393,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           <button
             ref={homeMenuTrigger}
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-header-title"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-header-title"
             data-capsule="false"
             inert={searchOpen}
             aria-hidden={searchOpen || undefined}
@@ -946,7 +946,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
         </p>
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
+          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
           onClick={() => {
             setAboutOpen(false);
             changeSettingsPage("updates");

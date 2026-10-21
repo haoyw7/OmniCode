@@ -64,7 +64,7 @@ export function NotificationMuteControl({ projectIds, onChanged }: Props) {
       {muted.length ? (
         <Button variant="ghost" size="sm"
           type="button"
-          className="rounded-md px-2 py-1.5 text-xs text-content/70 hover:bg-content/3 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
+          className="rounded-md px-2 py-1.5 text-xs text-content/70 hover:bg-content/3 hover:text-content focus-visible:focus-fill"
           onClick={() => change(undefined)}
         >
           {uiT("Resume notifications")}

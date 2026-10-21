@@ -176,7 +176,7 @@ export function MobileToolSheet({
           <h3>{t(title)}</h3>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-detail-copy"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-detail-copy"
             aria-label={t(copied === key ? "Copied" : "Copy")}
             onClick={() => copy(key, text)}
           >
@@ -209,7 +209,7 @@ export function MobileToolSheet({
               <div className="mobile-git-file-entry">
                 <button
                   type="button"
-                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-git-file-row"
+                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-git-file-row"
                   aria-expanded={diffExpanded}
                   aria-busy={diffExpanded && !diffReady || undefined}
                   aria-controls={diffId}

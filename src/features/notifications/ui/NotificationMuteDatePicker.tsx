@@ -81,14 +81,14 @@ export function NotificationMuteDatePicker({
         <Button variant="ghost" size="sm"
           type="button"
           onClick={onCancel}
-          className="rounded px-2 py-1.5 text-xs text-content/50 hover:bg-content/3 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
+          className="rounded px-2 py-1.5 text-xs text-content/50 hover:bg-content/3 hover:text-content focus-visible:focus-fill"
         >
           {uiT("Cancel")}
         </Button>
         <Button variant="primary"
           type="submit"
           disabled={!projectIds.length || form.formState.isSubmitting}
-          className="flex shrink-0 items-center rounded-md border border-transparent px-2.5 py-1 text-[12px] focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-default"
+          className="flex shrink-0 items-center rounded-md border border-transparent px-2.5 py-1 text-[12px] focus-visible:focus-fill disabled:cursor-default"
         >
           {uiT("Mute until then")}
         </Button>

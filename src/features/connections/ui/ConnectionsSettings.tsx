@@ -789,7 +789,7 @@ export function ConnectionsSettings() {
               aria-expanded={advancedOpen}
               aria-controls={`${disclosureId}-advanced`}
               onClick={() => setAdvancedOpen((expanded) => !expanded)}
-              className="hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent"
+              className="hover:text-foreground focus-visible:focus-fill"
             >
               {uiT("Advanced")}
             </Button>

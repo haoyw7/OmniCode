@@ -178,8 +178,8 @@ body,
 .mobile-app button:focus-visible,
 .mobile-app a:focus-visible,
 .mobile-app input:is([type="checkbox"], [type="radio"], [type="range"]):focus-visible {
-  outline: 2px solid var(--color-m-focus);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--focus-fill-shadow);
 }
 /* Text fields show their rounded fill as the boundary; a rectangular ring
    would cut across pill and card shapes. */

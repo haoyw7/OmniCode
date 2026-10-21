@@ -886,7 +886,7 @@ export const FileTree = memo(function FileTree({
             e.clientY,
           );
         }}
-        className={cn("flex min-w-0 flex-1 items-center justify-start gap-1 h-full rounded-lg pl-2 text-left outline-none focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-accent/40 hover:bg-surface-hover", dragOverPath === cwd || (navigationOnly && selectedPath === cwd) ? "bg-selection" : "")}
+        className={cn("flex min-w-0 flex-1 items-center justify-start gap-1 h-full rounded-lg pl-2 text-left outline-none focus-visible:focus-fill  hover:bg-surface-hover", dragOverPath === cwd || (navigationOnly && selectedPath === cwd) ? "bg-selection" : "")}
       >
         <span className="grid size-4 shrink-0 place-items-center text-content/50">
           {rootLoading ? (
@@ -927,7 +927,7 @@ export const FileTree = memo(function FileTree({
       <div
         ref={rootRef}
         tabIndex={-1}
-        className="flex h-full min-h-0 flex-col outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex h-full min-h-0 flex-col outline-none focus-visible:focus-fill"
         onKeyDown={onKeyDown}
         onContextMenu={onBackgroundMenu}
       >
@@ -1184,7 +1184,7 @@ function TreeNode({ entry, depth, loading }: { entry: FsEntry; depth: number; lo
           }}
           onContextMenu={(e) => onItemContextMenu(entry, e)}
           style={{ paddingLeft: 8 + depth * 12 }}
-          className={cn("flex h-7 w-full cursor-default items-center justify-start gap-1 rounded-lg pr-2 text-left text-ui-base outline-none focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-accent/40 leading-none touch-none data-[explorer-dragging]:opacity-50", selected
+          className={cn("flex h-7 w-full cursor-default items-center justify-start gap-1 rounded-lg pr-2 text-left text-ui-base outline-none focus-visible:focus-fill  leading-none touch-none data-[explorer-dragging]:opacity-50", selected
               ? "bg-selection text-content"
               : "text-content hover:bg-surface-hover", cutPath === entry.path ? "opacity-50" : "", dragOverPath === entry.path ? "bg-selection" : "")}
         >
@@ -1325,7 +1325,7 @@ export function NameRow({
             }
           }}
           onBlur={() => finish(issue === null || issue.severity !== "error")}
-          className="h-5 min-w-0 flex-1 rounded-sm bg-content/10 px-1 text-[14px] leading-none text-content outline-none focus-visible:ring-2 focus-visible:ring-ring ring-1 ring-accent"
+          className="h-5 min-w-0 flex-1 rounded-sm bg-content/10 px-1 text-[14px] leading-none text-content outline-none focus-visible:focus-fill ring-1 ring-accent"
         />
       </div>
       {showIssue ? (

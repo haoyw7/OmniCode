@@ -1,18 +1,18 @@
 import { Button } from "../../../shared/ui/forms/Button";
-import { motion, useIsPresent } from "motion/react";
+import { useIsPresent } from "motion/react";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
+import { clearFinishedBackgroundTasks, useBackgroundTaskPanel, visibleBackgroundTasks } from "../model/backgroundTaskPanels";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ListMotion, ListMotionItem } from "../../../shared/ui/ListMotion";
-import { immediateTransition, panelTransition, popAnimate, popExit, popInitial } from "../../../shared/motion/tokens";
-import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
-import { Check, CircleAlert, Maximize2, Square, Terminal, Trash2, X } from "../../../shared/ui/icons";
+import { Check, CircleAlert, Square, Terminal, Trash2 } from "../../../shared/ui/icons";
 import type { BackgroundTaskItem } from "../model/backgroundTasks";
-import { formatElapsed, useElapsedFrom } from "./transcript/transcriptClock";
+import { formatElapsed, useElapsedFrom, TranscriptClockOffset } from "./transcript/transcriptClock";
 
 type StopTask = (taskId: string) => Promise<void>;
 
@@ -40,29 +40,22 @@ export function BackgroundTasksSummary({ tasks, onOpen, onStop }: {
   </div>;
 }
 
-export function BackgroundTasksPanel({ tasks, initialTaskId, onClose, onClear, onStop }: {
+function BackgroundTasksPanel({ tasks, initialTaskId, request, onStop }: {
   tasks: BackgroundTaskItem[];
   initialTaskId?: string;
-  onClose: () => void;
-  onClear: () => void;
+  request?: number;
   onStop?: StopTask;
 }) {
   const { t } = useTranslation();
-  const reduced = useMotionPreference();
   const present = useIsPresent();
-  const titleId = useId();
-  const [wide, setWide] = useState(false);
   const [finishedOpen, setFinishedOpen] = useState(true);
   const [limit, setLimit] = useState(10);
   const [expanded, setExpanded] = useState(() => new Set(initialTaskId ? [initialTaskId] : []));
-  const close = useRef<HTMLButtonElement>(null);
   const running = tasks.filter((task) => task.state === "running");
   const finished = tasks.filter((task) => task.state !== "running");
   useEffect(() => {
-    const previous = document.activeElement;
-    close.current?.focus();
-    return () => { if (previous instanceof HTMLElement && previous.isConnected) previous.focus(); };
-  }, []);
+    if (initialTaskId) setExpanded(current => new Set([...current, initialTaskId]));
+  }, [initialTaskId, request]);
   const toggle = (id: string) => setExpanded((current) => {
     const next = new Set(current);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -70,20 +63,11 @@ export function BackgroundTasksPanel({ tasks, initialTaskId, onClose, onClear, o
   });
   const row = (task: BackgroundTaskItem) => <TaskRow key={task.id} task={task} expanded={expanded.has(task.id)}
     onToggle={() => toggle(task.id)} onStop={onStop} />;
-  return <motion.aside
-    data-background-tasks-panel data-wide={wide || undefined}
-    role="complementary" aria-labelledby={titleId}
-    initial={reduced ? false : popInitial} animate={popAnimate} exit={popExit}
-    transition={reduced ? immediateTransition : panelTransition}
+  return <aside
+    data-background-tasks-panel
+    role="complementary" aria-label={t("Background tasks")}
     inert={!present} aria-hidden={!present || undefined}
-    onKeyDown={(event) => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } }}
   >
-    <header className="background-tasks-header">
-      <h2 id={titleId} className="min-w-0 flex-1 truncate font-medium">{t("Background tasks")}</h2>
-      <IconButton label={t("Clear finished tasks")} size="sm" disabled={!finished.length} onClick={onClear}><Trash2 /></IconButton>
-      <IconButton label={t(wide ? "Collapse panel" : "Expand panel")} size="sm" active={wide} onClick={() => setWide((value) => !value)}><Maximize2 /></IconButton>
-      <IconButton ref={close} label={t("Close")} size="sm" onClick={onClose}><X /></IconButton>
-    </header>
     <div className="background-tasks-list">
       {running.length ? <section>
         <h3 className="background-tasks-section-title">{t("Running")}</h3>
@@ -104,7 +88,7 @@ export function BackgroundTasksPanel({ tasks, initialTaskId, onClose, onClear, o
       </section> : null}
       {!tasks.length ? <p className="p-3 text-content/50">{t("No background tasks")}</p> : null}
     </div>
-  </motion.aside>;
+  </aside>;
 }
 
 function TaskRow({ task, expanded, onToggle, onStop }: {
@@ -135,13 +119,29 @@ function TaskRow({ task, expanded, onToggle, onStop }: {
 }
 
 function TaskElapsed({ task }: { task: BackgroundTaskItem }) {
-  if (task.state === "running" && task.startedAt != null) return <LiveElapsed startedAt={task.startedAt} />;
+  const visible = useSurfaceVisibility();
+  if (task.state === "running" && task.startedAt != null) return visible ? <LiveElapsed startedAt={task.startedAt} /> : null;
   return task.durationMs != null ? <span className="background-task-elapsed">{formatElapsed(task.durationMs)}</span> : null;
 }
 
 function LiveElapsed({ startedAt }: { startedAt: number }) {
   const elapsed = useElapsedFrom(startedAt, false);
   return <span className="background-task-elapsed">{formatElapsed(elapsed)}</span>;
+}
+
+export function BackgroundTasksPane({ sessionId, visible }: { sessionId: string; visible: boolean }) {
+  const state = useBackgroundTaskPanel(sessionId);
+  return <SurfaceVisibilityContext.Provider value={visible}><TranscriptClockOffset.Provider value={state.clockOffsetMs}>
+    <BackgroundTasksPanel tasks={visibleBackgroundTasks(state)} initialTaskId={state.selectedTaskId} request={state.request} onStop={state.onStop} />
+  </TranscriptClockOffset.Provider></SurfaceVisibilityContext.Provider>;
+}
+
+export function BackgroundTasksClearButton({ sessionId }: { sessionId: string }) {
+  const { t } = useTranslation();
+  const state = useBackgroundTaskPanel(sessionId);
+  return <IconButton data-file-toolbar-action size="sm" label={t("Clear finished tasks")}
+    disabled={!visibleBackgroundTasks(state).some(task => task.state !== "running")}
+    onClick={() => clearFinishedBackgroundTasks(sessionId)}><Trash2 /></IconButton>;
 }
 
 function StopTaskButton({ taskId, onStop }: { taskId: string; onStop: StopTask }) {

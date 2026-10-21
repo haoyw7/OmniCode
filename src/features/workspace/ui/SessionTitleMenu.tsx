@@ -55,7 +55,7 @@ export function SessionRenamePopover({
           {...form.register("title")}
           disabled={form.formState.isSubmitting}
           onFocus={(event) => event.currentTarget.select()}
-          className="h-8 w-full rounded-md border border-content/15 bg-transparent px-2 text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-input-border-hover"
+          className="h-8 w-full rounded-md border border-content/15 bg-transparent px-2 text-[13px] text-content outline-none focus-visible:focus-fill"
         />
       </form>
     </Popover>

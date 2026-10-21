@@ -104,7 +104,7 @@ function McpPicker<T extends string>({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="mt-1 flex h-8 w-full items-center gap-2 rounded-md border border-content/10 bg-content/5 px-2 text-left text-[12px] text-content outline-none hover:border-content/20 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent justify-start"
+        className="mt-1 flex h-8 w-full items-center gap-2 rounded-md border border-content/10 bg-content/5 px-2 text-left text-[12px] text-content outline-none hover:border-content/20 focus-visible:focus-fill justify-start"
       >
         {selected?.icon}
         <span className="min-w-0 flex-1 truncate">
@@ -161,7 +161,7 @@ function McpPicker<T extends string>({
               setOpen(false);
               trigger.current?.focus();
             }}
-            className={cn("flex w-full items-center gap-2 rounded-lg text-left text-[12px] focus-visible:outline-2 focus-visible:outline-accent justify-start", value === option.value ? "bg-selection text-content" : "text-content hover:bg-content/3")}
+            className={cn("flex w-full items-center gap-2 rounded-lg text-left text-[12px] focus-visible:focus-fill justify-start", value === option.value ? "bg-selection text-content" : "text-content hover:bg-content/3")}
           >
             {option.icon}
             <span className="min-w-0 flex-1 truncate">{option.label}</span>
@@ -257,7 +257,7 @@ function AddServerModal({
           <Input data-ui="input"
             {...form.register("name")}
             aria-invalid={!!form.formState.errors.name}
-            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 text-sm text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-input-border-hover"
+            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 text-sm text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
             placeholder="my-server"
           />
           <FieldError errors={[form.formState.errors.name]} />
@@ -269,7 +269,7 @@ function AddServerModal({
             aria-invalid={!!form.formState.errors.config}
             rows={7}
             spellCheck={false}
-            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 font-mono text-xs text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-input-border-hover"
+            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 font-mono text-xs text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
             placeholder={
               '{"mcpServers":{"my-server":{"command":"npx","args":["-y","example-mcp"]}}}'
             }
@@ -544,7 +544,7 @@ function McpConnections({
                           return next;
                         })
                       }
-                      className="-mx-1 flex max-w-full items-center gap-1 rounded px-1 text-left text-[13px] font-medium text-content enabled:hover:bg-content/3 focus-visible:outline-2 focus-visible:outline-accent justify-start"
+                      className="-mx-1 flex max-w-full items-center gap-1 rounded px-1 text-left text-[13px] font-medium text-content enabled:hover:bg-content/3 focus-visible:focus-fill justify-start"
                     >
                       <span className="truncate">{server.name}</span>
                       {inspectable ? (

@@ -1116,7 +1116,7 @@ function ProjectSessionSectionComponent({
             <button
               type="button"
               onClick={onRetry}
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 ml-2 text-accent"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 ml-2 text-accent"
             >
               {uiT("Retry")}
             </button>
@@ -1159,7 +1159,7 @@ function ProjectSessionSectionComponent({
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 ml-2 text-accent"
+                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 ml-2 text-accent"
                 >
                   {uiT("Retry")}
                 </button>
@@ -1295,7 +1295,7 @@ function ProjectSessionSectionComponent({
                           : TREE_PREVIEW_COUNT,
                       )
                     }
-                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 flex h-8 w-full items-center rounded-lg pl-8 pr-2 text-left text-ui-caption text-content/45 hover:bg-surface-hover hover:text-content"
+                    className="focus-visible:focus-fill active:opacity-70 flex h-8 w-full items-center rounded-lg pl-8 pr-2 text-left text-ui-caption text-content/45 hover:bg-surface-hover hover:text-content"
                   >
                     {hiddenSessions ? uiT("Show more") : uiT("Show less")}
                   </button>

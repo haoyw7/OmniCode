@@ -74,6 +74,8 @@ import { PooledTranscript, type TranscriptPool } from "./TranscriptPool";
 import { agentWaitingForWorktree } from "../../source-control/model/worktreeCreation";
 import { TranscriptFind } from "./TranscriptFind";
 import { SessionStatusPanel } from "./SessionStatusPanel";
+import { backgroundTaskItems } from "../model/backgroundTasks";
+import { publishBackgroundTaskPanel, releaseBackgroundTaskPanel } from "../model/backgroundTaskPanels";
 import { hasSessionUsage, usageSessionFor } from "../../providers/model/sessionUsage";
 import { useOpenSubagent } from "./SubagentTabsContext";
 import { useProjectDiffStats } from "../../source-control/hooks/useProjectDiffStats";
@@ -380,6 +382,20 @@ const LocalSessionPane = memo(function LocalSessionPane({
 }: Props) {
   const { t: uiT } = useTranslation();
   const paneDrag = useDragHandle();
+  const taskSource = useRef(Symbol("background-task-source"));
+  const stopBackgroundTask = useMemo(() => onStopBackgroundTask
+    ? (taskId: string) => onStopBackgroundTask(session.id, taskId)
+    : !hostManaged && canStopHarnessBackgroundTask(session.harness)
+      ? (taskId: string) => stopHarnessBackgroundTask(session.harness, session.id, taskId)
+      : undefined, [onStopBackgroundTask, session.id, session.harness, hostManaged]);
+  // The source stays live when its status rail is hidden or a tool pane is maximized.
+  useEffect(() => {
+    publishBackgroundTaskPanel(session.id, taskSource.current, backgroundTaskItems(session.blocks, session.backgroundTasks), stopBackgroundTask, clockOffsetMs ?? 0);
+  }, [session.id, session.blocks, session.backgroundTasks, stopBackgroundTask, clockOffsetMs]);
+  useEffect(() => {
+    const source = taskSource.current;
+    return () => releaseBackgroundTaskPanel(session.id, source);
+  }, [session.id]);
   const openSubagent = useOpenSubagent(session);
   const closePaneLabel = useShortcutLabel("Close Pane", "Pane: Close");
   const { readOnly: nativeReadOnly, hint: nativeAccessHint, occupied } =
@@ -992,7 +1008,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
           }}
         >
           {paneDrag ? (
-            <button {...paneDrag} type="button" aria-label={uiT("Drag to reorder pane")} className="cursor-grab rounded text-content/35 hover:text-content focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing"
+            <button {...paneDrag} type="button" aria-label={uiT("Drag to reorder pane")} className="cursor-grab rounded text-content/35 hover:text-content focus-visible:focus-fill active:cursor-grabbing"
               onPointerDown={undefined} onTouchStart={paneDrag.onTouchStart}>
               <GripVertical className="size-3.5 shrink-0" />
             </button>
@@ -1208,6 +1224,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
           !linkedNoticeShown ? (
             <SessionStatusPanel
               key={session.id}
+              sessionId={session.id}
               blocks={session.blocks}
               backgroundTasks={session.backgroundTasks}
               busy={!!session.busy}
@@ -1220,11 +1237,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
               onNavigate={navigateBlock}
               onOpenAgent={openSubagent}
               clockOffsetMs={clockOffsetMs}
-              onStopBackgroundTask={onStopBackgroundTask
-                ? (taskId) => onStopBackgroundTask(session.id, taskId)
-                : !hostManaged && canStopHarnessBackgroundTask(session.harness)
-                  ? (taskId) => stopHarnessBackgroundTask(session.harness, session.id, taskId)
-                  : undefined}
+              onStopBackgroundTask={stopBackgroundTask}
             />
           ) : null}</AnimatePresence>
         </div>

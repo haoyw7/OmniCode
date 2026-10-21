@@ -651,7 +651,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
           <button
             ref={hostTrigger}
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item mobile-drawer-device"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item mobile-drawer-device"
             aria-label={t("Switch device")}
             aria-haspopup="dialog"
             aria-expanded={covered}
@@ -677,7 +677,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
           {onAssistant && (
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item mobile-drawer-assistant"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item mobile-drawer-assistant"
               aria-label={assistantUnreadCount > 0 ? t("{name}, {count} unread messages", {
                 name: t("Bots"), count: assistantUnreadCount,
               }) : undefined}
@@ -692,14 +692,14 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
               )}
             </button>
           )}
-          <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item" onClick={onHome}>
+          <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item" onClick={onHome}>
             <Home />
             <span>{t("Sessions")}</span>
           </button>
           <div>
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item mobile-drawer-more-toggle"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item mobile-drawer-more-toggle"
               aria-expanded={moreOpen}
               aria-controls={moreId}
               onClick={() => setMoreOpen((value) => !value)}
@@ -712,14 +712,14 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
               <AnimatedCollapse expanded={moreOpen}>
                 <div className="mobile-drawer-secondary">
                   {onNotes && (
-                    <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item" onClick={onNotes}>
+                    <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item" onClick={onNotes}>
                       <File />
                       <span>{t("Notes")}</span>
                     </button>
                   )}
                   <button
                     type="button"
-                    className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item mobile-drawer-all-projects"
+                    className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item mobile-drawer-all-projects"
                     onClick={onAllProjects}
                   >
                     <Folder />
@@ -771,7 +771,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
                 <button
                   key={item.id}
                   type="button"
-                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-empty mobile-drawer-group-status"
+                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-empty mobile-drawer-group-status"
                   onClick={() => readHistories([item.id])}
                 >
                   {t("Couldn’t load sessions")} · {item.name} · {t("Retry")}

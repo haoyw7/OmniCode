@@ -27,12 +27,12 @@ import {
 // resize 大会话时 Select trigger 跟随基础控件批量重排，
 // transition-all 会把布局/滚动条相关属性也动画化；这里限定为颜色过渡。
 const selectTriggerVariants = cva(
-  "flex w-fit items-center justify-between gap-1.5 border whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 data-placeholder:text-foreground-subtlest *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "flex w-fit items-center justify-between gap-1.5 border whitespace-nowrap transition-colors outline-none focus-visible:focus-fill disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 data-placeholder:text-foreground-subtlest *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         input:
-          "border-input-border bg-input text-foreground hover:border-input-border-hover focus-visible:border-input-border-hover focus-visible:bg-input-focused focus-visible:ring-0",
+          "border-input-border bg-input text-foreground hover:border-input-border-hover focus-visible:focus-fill focus-visible:bg-input-focused",
         default:
           "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
         outline:
@@ -42,7 +42,7 @@ const selectTriggerVariants = cva(
         ghost:
           "border-transparent bg-transparent text-foreground hover:bg-hover hover:text-foreground aria-expanded:bg-hover aria-expanded:text-foreground",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 aria-expanded:bg-destructive aria-expanded:text-destructive-foreground",
+          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:focus-fill aria-expanded:bg-destructive aria-expanded:text-destructive-foreground",
       },
       size: {
         xs: "h-5 rounded-sm pl-2 pr-1 text-ui-base [&_svg:not([class*='size-'])]:size-2.5",

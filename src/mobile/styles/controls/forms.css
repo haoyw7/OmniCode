@@ -1,4 +1,5 @@
 /* Mobile appearance for the shared controls. Portals inherit the root skin. */
+
 html[data-mobile-skin] [data-ui="button"] {
   display: inline-flex;
   align-items: center;
@@ -36,7 +37,7 @@ html[data-mobile-skin] [data-ui="button"]:is([data-variant="ghost"], [data-varia
 html[data-mobile-skin] [data-ui="button"][data-variant="link"] { text-decoration: underline; }
 html[data-mobile-skin] :is([data-ui="button"], [data-ui="icon-button"]):active:not(:disabled, [aria-disabled="true"]) { filter: brightness(.92); }
 html[data-mobile-skin] :is([data-ui="button"], [data-ui="icon-button"], [data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-ui="switch"], [data-ui="checkbox"], [data-ui="radio"]):is(:disabled, [aria-disabled="true"]) { opacity: .5; cursor: default; }
-html[data-mobile-skin] [data-ui]:focus-visible { outline: 2px solid var(--m-control-focus); outline-offset: 2px; }
+html[data-mobile-skin] [data-ui]:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]) {
   min-width: 0;
   min-height: var(--m-control-height);
@@ -53,23 +54,20 @@ html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="se
   caret-color: var(--m-control-ink);
 }
 html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"])::placeholder { color: var(--m-control-placeholder); opacity: 1; }
-html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]):focus {
+html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]):focus-visible {
   outline: none;
   background: var(--m-input-fill-focus);
 }
-html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]):focus:not([aria-invalid="true"]) {
-  border-color: var(--m-control-border);
-  box-shadow: var(--m-control-shadow);
+html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]):focus-visible:not([aria-invalid="true"]) {
+  box-shadow: var(--focus-fill-shadow), var(--m-control-shadow);
 }
 html[data-mobile-skin] :is([data-slot="select-trigger"], [data-desktop-select-trigger], [data-menu-trigger], [data-slot="dropdown-menu-trigger"]):focus-visible:not([aria-invalid="true"]) {
-  border-color: var(--m-control-border);
   outline: none;
-  box-shadow: var(--m-control-shadow);
+  box-shadow: var(--focus-fill-shadow);
 }
 html[data-mobile-skin] [data-ui="input-group"]:has(:focus-visible):not(:has([aria-invalid="true"])) {
-  border-color: var(--m-control-border);
   outline: none;
-  box-shadow: var(--m-control-shadow);
+  box-shadow: var(--focus-fill-shadow), var(--m-control-shadow);
 }
 html[data-mobile-skin] [data-ui="input-group-control"]:focus-visible {
   outline: none;
@@ -116,7 +114,7 @@ html[data-mobile-skin] [data-ui="switch"] {
   background: var(--m-control-off);
   box-shadow: none;
 }
-html[data-mobile-skin] [data-ui="switch"][data-state="checked"] { background: var(--m-control-focus); }
+html[data-mobile-skin] [data-ui="switch"][data-state="checked"] { background: var(--m-control-accent); }
 html[data-mobile-skin] [data-ui="switch"] [data-slot="switch-thumb"] {
   position: absolute;
   top: 2px;
@@ -147,10 +145,10 @@ html[data-mobile-skin] :is([data-ui="radio"], [data-ui="checkbox"])::before {
   border-radius: 50%;
 }
 html[data-mobile-skin] [data-ui="radio"]:checked::before {
-  border-color: var(--m-control-focus);
-  background: radial-gradient(circle, var(--m-control-focus) 0 4px, transparent 4.5px);
+  border-color: var(--m-control-accent);
+  background: radial-gradient(circle, var(--m-control-accent) 0 4px, transparent 4.5px);
 }
-html[data-mobile-skin] [data-ui="checkbox"]:is(:checked, [data-state="checked"], [data-state="indeterminate"])::before { border-color: var(--m-control-focus); background: var(--m-control-focus); }
+html[data-mobile-skin] [data-ui="checkbox"]:is(:checked, [data-state="checked"], [data-state="indeterminate"])::before { border-color: var(--m-control-accent); background: var(--m-control-accent); }
 html[data-mobile-skin] input[data-ui="checkbox"]:checked::after {
   content: "";
   position: absolute;

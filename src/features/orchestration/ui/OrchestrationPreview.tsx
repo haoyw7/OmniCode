@@ -255,7 +255,7 @@ function AssignmentModel({
                 setInEffort(false);
               }}
               onKeyDown={onSearchKey}
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40"
             />
           </label>
           <div
@@ -510,7 +510,7 @@ export function OrchestrationPreview({
     });
   };
   const field =
-    "w-full rounded-md border border-content/12 bg-background-base/40 px-2 py-1.5 text-[12px] leading-5 text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-content/30";
+    "w-full rounded-md border border-content/12 bg-background-base/40 px-2 py-1.5 text-[12px] leading-5 text-content outline-none focus-visible:focus-fill placeholder:text-content/35";
   const fieldLabel = "mb-1 block text-[11px] leading-tight text-content/45";
   return (
     <div

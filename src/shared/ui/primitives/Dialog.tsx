@@ -144,7 +144,7 @@ function DialogContent({
               className={cn(
                 // Electron 自绘标题栏下，弹窗可能会落进窗口顶部的 drag 区域。
                 // 如果不把弹窗内容整体标成 no-drag，右上角关闭按钮这类交互会被窗口拖拽命中吞掉。
-                "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-popover-border bg-popover p-4 text-ui-base/relaxed text-foreground shadow-md  outline-none focus-visible:ring-2 focus-visible:ring-ring       [app-region:no-drag]",
+                "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-popover-border bg-popover p-4 text-ui-base/relaxed text-foreground shadow-md  outline-none focus-visible:focus-fill       [app-region:no-drag]",
                 className,
                 host && "relative top-auto left-auto max-w-none translate-none",
               )}

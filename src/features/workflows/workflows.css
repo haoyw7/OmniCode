@@ -77,11 +77,14 @@
   transition:
     color var(--wf-t-base) var(--wf-ease);
 }
-.wf-pill-open:hover,
-.wf-pill-open:focus-visible {
+.wf-pill-open:hover {
   background-color: var(--color-surface-hover);
   box-shadow: inset 0 0 0 1px
     color-mix(in oklab, var(--wf-avatar, var(--color-border-hover)) 35%, transparent);
+}
+.wf-pill-open:focus-visible {
+  background-color: var(--color-surface-hover);
+  box-shadow: var(--focus-fill-shadow);
 }
 /* 代理胶囊仅用底色反馈悬停，避免彩色描边抢占状态层级。 */
 .wf-agent-pill:hover {
@@ -163,17 +166,19 @@
   border-radius: 0.5rem;
 }
 .wf-tile:has(.wf-tile-hit:focus-visible) {
-  outline: 2px solid color-mix(in oklab, var(--color-ring) 40%, transparent);
-  outline-offset: 2px;
+  outline: none;
   border-radius: 0.5rem;
+  box-shadow: var(--focus-fill-shadow);
 }
 .wf-tile-frame {
   transition:
     border-color var(--wf-t-base) var(--wf-ease);
 }
-.wf-tile:has(.wf-tile-open:hover) .wf-tile-frame,
-.wf-tile:has(.wf-tile-open:focus-visible) .wf-tile-frame {
+.wf-tile:has(.wf-tile-open:hover) .wf-tile-frame {
   border-color: var(--color-border-hover);
+}
+.wf-tile:has(.wf-tile-open:focus-visible) .wf-tile-frame {
+  box-shadow: var(--focus-fill-shadow);
 }
 .wf-tile-open:hover .wf-pill-tile,
 .wf-tile-open:focus-visible .wf-pill-tile {

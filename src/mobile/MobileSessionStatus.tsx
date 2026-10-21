@@ -57,7 +57,7 @@ function StatusField({
         {copyable && (
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-status-copy"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-status-copy"
             aria-label={t(copied ? "Copied" : "Copy")}
             title={t(copied ? "Copied" : "Copy")}
             onClick={() =>
@@ -154,7 +154,7 @@ export function MobileSessionStatus({
         <section className="mobile-status-context">
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-status-context-toggle"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-status-context-toggle"
             aria-expanded={contextExpanded}
             aria-controls={contextDetailsId}
             onClick={() => setContextExpanded((value) => !value)}

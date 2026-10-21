@@ -82,7 +82,7 @@ export function MobileConversation({
         animate={{ opacity: showJump ? 1 : 0 }}
         transition={reduced ? immediateTransition : popTransition}
         onAnimationComplete={jumpMotion.finish}
-        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-jump"
+        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-jump"
         type="button"
         data-open={showJump}
         data-fold-state={jumpMotion.foldState}

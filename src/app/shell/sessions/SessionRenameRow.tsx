@@ -82,7 +82,7 @@ export function SessionRenameRow({
         onChange={(e) => setValue(e.target.value)}
         onBlur={() => finish(true)}
         onKeyDown={onKeyDown}
-        className="w-full rounded bg-content/10 px-2 py-1 text-ui-caption font-semibold leading-snug text-content outline-none focus-visible:ring-2 focus-visible:ring-ring ring-1 ring-accent/40"
+        className="w-full rounded bg-content/10 px-2 py-1 text-ui-caption font-semibold leading-snug text-content outline-none focus-visible:focus-fill ring-1 ring-accent/40"
       />
       {dense && projectLabel !== undefined ? (
         <span data-session-project>{projectLabel}</span>

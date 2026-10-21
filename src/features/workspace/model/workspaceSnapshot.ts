@@ -345,7 +345,7 @@ export function withoutRetiredSessions<T extends {
     }
     if (!remaining) return [];
     for (const pane of remaining.editorPanes) {
-      const files = pane.files.filter((file) => !isWorkerTab(file) ||
+      const files = pane.files.filter((file) => file.backgroundTasks ? !retired(file.backgroundTasks.sessionId) : !isWorkerTab(file) ||
         (!retired(file.agent.sessionId) && !retired(file.agent.leadId)));
       if (files.length === pane.files.length) continue;
       if (!files.length) {
@@ -688,6 +688,15 @@ function sanitizeFile(raw: unknown): FilePaneTab | null {
   if (typeof value.id !== "string" || !value.id) return null;
   if (typeof value.path !== "string" || !value.path) return null;
   if (typeof value.cwd !== "string" || !value.cwd) return null;
+  if ("backgroundTasks" in value) {
+    const source = value.backgroundTasks;
+    if (!source || typeof source !== "object" ||
+      typeof (source as Record<string, unknown>).sessionId !== "string" || !(source as Record<string, unknown>).sessionId ||
+      ["appView", "explorer", "plan", "releaseNotes", "review", "changes", "changeKind", "sessionChanges", "commit", "agent", "subagent", "workflowRun", "workflowAgent", "workflowArtifact", "terminal", "remoteFile"].some(key => key in value)) return null;
+    return { id: value.id, path: "background-tasks", cwd: value.cwd,
+      ...(typeof value.projectCwd === "string" && value.projectCwd ? { projectCwd: value.projectCwd } : {}),
+      backgroundTasks: { sessionId: (source as { sessionId: string }).sessionId } };
+  }
   if ("appView" in value) {
     const appView = value.appView;
     if (!appView || typeof appView !== "object") return null;

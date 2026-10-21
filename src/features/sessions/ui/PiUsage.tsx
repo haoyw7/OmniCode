@@ -80,7 +80,7 @@ function PiProviderUsage({
         title={uiT("Refresh Pi usage")}
         disabled={fetching}
         onClick={() => refresh()}
-        className="grid size-6 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-accent"
+        className="grid size-6 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content disabled:opacity-50 focus-visible:focus-fill"
       >
         <RefreshCw
           className={cn("size-2.5", fetching ? "motion-safe:animate-spin" : "")}

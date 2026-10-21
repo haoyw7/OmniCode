@@ -44,7 +44,7 @@ function SkinOption({
       type="button"
       role="radio"
       aria-checked={selected}
-      className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-skin-option group flex min-h-m-hit flex-col gap-2 rounded-m-xl p-1.5 text-left"
+      className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-skin-option group flex min-h-m-hit flex-col gap-2 rounded-m-xl p-1.5 text-left"
       data-wide={wide || undefined}
       onClick={onSelect}
     >

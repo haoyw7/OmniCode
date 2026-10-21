@@ -133,7 +133,7 @@ export function ToolRow({
       >
         {icon}
         {expandable ? (
-          <div role="button" tabIndex={0} aria-expanded={open} className="flex min-w-0 flex-1 cursor-pointer rounded hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-selection" onClick={toggle} onKeyDown={event => {
+          <div role="button" tabIndex={0} aria-expanded={open} className="flex min-w-0 flex-1 cursor-pointer rounded hover:bg-hover focus-visible:focus-fill active:bg-selection" onClick={toggle} onKeyDown={event => {
             if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
               event.preventDefault();
               toggle();

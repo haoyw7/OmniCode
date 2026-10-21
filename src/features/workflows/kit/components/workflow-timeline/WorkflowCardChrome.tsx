@@ -161,6 +161,7 @@ export function WorkflowCardHeader({
   return (
     <div
       className="flex min-w-0 items-center gap-2 text-ui-base"
+      data-ui="workflow-card-header"
       data-testid="workflow-card-header"
     >
       {WORKFLOW_CARD_ICON}
@@ -188,7 +189,7 @@ export function WorkflowCardHeader({
           就是「整串细节 + 按钮」，它一个像素都不会缩，按钮照样被顶出卡外（本次修复的起因）。
           浏览器实测（卡宽逐档收窄）：修复前 520px 起按钮就出界；修复后 290px 以上零溢出，
           带待答问题芯片时 380px——芯片也是 shrink-0，它把地板整体抬高。 */}
-      <span className="flex min-w-0 items-center gap-2">
+      <span data-workflow-card-actions className="flex min-w-0 items-center gap-2">
         {leading}
         {status}
         {detail === undefined || detail.length === 0 ? null : (

@@ -53,7 +53,7 @@ export function LinkSessionWorkItemDialog({
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "linked-work-item-error" : undefined}
             placeholder="https://github.com/owner/repo/pull/123"
-            className={cn("h-9 rounded-md border bg-content/5 px-2.5 text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/30 focus:border-content/30", error ? "border-danger/60" : "border-content/10")}
+            className={cn("h-9 rounded-md border bg-content/5 px-2.5 text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/30", error ? "border-danger/60" : "border-content/10")}
           />
           {error ? (
 <FieldError id="linked-work-item-error" errors={[error]} />

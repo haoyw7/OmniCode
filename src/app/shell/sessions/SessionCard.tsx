@@ -306,7 +306,7 @@ export const SessionCard = memo(function SessionCard({
         event.stopPropagation();
         void openUrl(linkedWorkItem.url).catch(() => undefined);
       }}
-      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 flex shrink-0 cursor-pointer items-center gap-0.5 rounded px-0.5 text-[11px] tabular-nums text-accent hover:underline"
+      className="focus-visible:focus-fill active:opacity-70 flex shrink-0 cursor-pointer items-center gap-0.5 rounded px-0.5 text-[11px] tabular-nums text-accent hover:underline"
     >
       {linkedWorkItem.kind === "pr" ? (
         <GitPullRequest className="size-3" />
@@ -492,7 +492,7 @@ export const SessionCard = memo(function SessionCard({
             const focused = event.currentTarget.ownerDocument.activeElement;
             if (focused instanceof HTMLElement) focused.blur();
           }}
-          className={`hover:opacity-80 active:opacity-70 rounded-sm outline-none focus-visible:ring-1 focus-visible:ring-accent/50 ${dense ? "min-w-0 flex-1" : ""}`}
+          className={`hover:opacity-80 active:opacity-70 rounded-sm outline-none focus-visible:focus-fill ${dense ? "min-w-0 flex-1" : ""}`}
         >
           {dense || (compact && !orchestrationExpanded) ? null : (
             <span className="relative flex items-center gap-2">
@@ -699,7 +699,7 @@ export const SessionCard = memo(function SessionCard({
                     setOrchestrationTooltipOpen(false);
                     onSelect(session.id, event);
                   }}
-                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 grid size-5 shrink-0 place-items-center rounded-lg text-accent/65 hover:bg-surface-hover hover:text-accent/90"
+                  className="focus-visible:focus-fill active:opacity-70 grid size-5 shrink-0 place-items-center rounded-lg text-accent/65 hover:bg-surface-hover hover:text-accent/90"
                 >
                   <Share className="size-3" />
                 </button>

@@ -138,7 +138,7 @@ export function TranscriptFind({
               step(event.shiftKey ? -1 : 1);
             }
           }}
-          className="w-44 min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
+          className="w-44 min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40"
         />
         <span
           aria-live="polite"

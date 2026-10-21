@@ -71,6 +71,7 @@ html[data-skin] [data-ui="message-input-field"] {
   resize: none;
   background: transparent;
   outline: none;
+  box-shadow: none;
   font: 400 16px/22px var(--font-sans);
   color: var(--color-ink);
 }
@@ -90,6 +91,6 @@ html[data-skin] [data-ui="message-input-actions"] {
   min-height: 56px;
   padding: 12px;
 }
-html[data-skin] [data-ui="message-input"]:focus-within {
-  border-color: var(--color-ink-tertiary);
+html[data-skin] [data-ui="message-input"]:has(:focus-visible) {
+  box-shadow: var(--focus-fill-shadow);
 }

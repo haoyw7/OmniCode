@@ -36,6 +36,18 @@ import {
 } from "./workspaceSnapshot";
 
 describe("app view snapshots", () => {
+  it("persists a background-task pane's placement and session ownership", () => {
+    const session = chat("chat", "/repo");
+    const file = { id: "background", path: "background-tasks", cwd: "/repo", backgroundTasks: { sessionId: session.id } };
+    const tab = openEditorTab(newTab(session.id), file);
+    const raw = { tabs: [tab], sessions: [session], activeTabId: tab.id, projectCwd: "/repo" };
+    const restored = parseWorkspaceSnapshot(raw)!;
+    expect(restored.tabs[0].editorPanes[0].files[0]).toEqual(file);
+    expect(restored.tabs[0].layout).toEqual(tab.layout);
+    const mixed = structuredClone(raw);
+    Object.assign(mixed.tabs[0].editorPanes[0].files[0], { terminal: true });
+    expect(parseWorkspaceSnapshot(mixed)?.tabs[0].editorPanes ?? []).toEqual([]);
+  });
   it.each(APP_PAGE_KINDS)("removes legacy %s pages while preserving chat, file and terminal panes", (kind) => {
     const session = chat("chat", "/repo");
     const tab = openSessionAppView(newTab(session.id), kind);

@@ -513,7 +513,7 @@
 .mobile-status .context-breakdown-toggle { display: flex; align-items: center; width: 100%; gap: 6px; min-height: 44px; text-align: left; }
 .mobile-status .context-breakdown-toggle > :last-child { margin-left: auto; color: var(--color-m-ink-secondary); }
 .mobile-status-context-toggle:focus-visible,
-.mobile-status .context-breakdown-toggle:focus-visible { outline: 2px solid var(--color-m-focus); outline-offset: -2px; border-radius: 4px; }
+.mobile-status .context-breakdown-toggle:focus-visible { outline: none; border-radius: 4px; box-shadow: var(--focus-fill-shadow); }
 .mobile-status .context-breakdown-tool-list { max-height: 240px; overflow-y: auto; }
 .mobile-status .context-breakdown-tool-list .context-breakdown-row { font-size: 0.9em; }
 .mobile-status .context-breakdown-footer { margin-top: 8px; font-size: 0.9em; }

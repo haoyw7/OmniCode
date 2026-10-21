@@ -36,15 +36,15 @@ export function MobileHostPicker({
           open={open} disabled={switching} probe={probe} onSwitch={onSwitch} />
       ))}
       {status.state !== "connected" && activeId && (
-        <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row" disabled={switching || status.state === "reconnecting"}
+        <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row" disabled={switching || status.state === "reconnecting"}
           onClick={onReconnect}>
           <RefreshCw /><span>{t("Reconnect")}</span>
         </button>
       )}
-      <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row" data-separated onClick={onAdd}>
+      <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row" data-separated onClick={onAdd}>
         <Plus /><span>{t("Add connection")}</span>
       </button>
-      <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row" onClick={onManage}>
+      <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row" onClick={onManage}>
         <Settings /><span>{t("Manage devices")}</span>
       </button>
     </MobileSheet>
@@ -64,7 +64,7 @@ function Device({ connection, active, status, open, disabled, probe, onSwitch }:
   const name = useConnectionAppearance(connection.endpoint).displayName || connection.name;
   const observed = useProbedHostStatus(connection, open && !active, probe);
   return (
-    <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row mobile-device-option"
+    <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row mobile-device-option"
       aria-label={t("Switch to {host}", { host: name })} aria-pressed={active}
       disabled={disabled} onClick={() => onSwitch(connection.endpoint)}>
       <MobileHostStatus status={active ? status : observed} dotOnly />

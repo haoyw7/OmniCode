@@ -142,6 +142,10 @@ export function surfaceTabMenuItems(
 export function surfaceTabPresentation(
   file: FilePaneTab,
 ): SurfaceTabPresentation {
+  if (file.backgroundTasks) {
+    const title = translateUi("Background tasks");
+    return { name: title, label: title, iconName: "BACKGROUND_TASKS", tooltip: title };
+  }
   if (file.explorer) {
     const title = translateUi("Files");
     return { name: title, label: title, iconName: "FOLDER", tooltip: file.cwd };
@@ -337,7 +341,7 @@ export function SurfaceTabs({
             title={uiT("Drag to reorder pane")}
             aria-label={uiT("Drag to reorder pane")}
             data-tauri-drag-region="false"
-            className="grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded-md text-content/35 hover:bg-content/3 hover:text-content/70 focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing touch-none"
+            className="grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded-md text-content/35 hover:bg-content/3 hover:text-content/70 focus-visible:focus-fill active:cursor-grabbing touch-none"
           >
             <GripVertical className="size-3.5" />
           </div>
@@ -423,7 +427,7 @@ export function SurfaceTabs({
                 onDoubleClick={() => onPinFile?.(file.id)}
                 className="surface-tab relative flex h-7 min-w-0 flex-1 cursor-default items-center gap-1.5 self-center px-2 pr-7 text-left text-ui-caption"
               >
-                {terminal ? (
+                {terminal || file.backgroundTasks ? (
                   <Terminal className="size-3.5 shrink-0" />
                 ) : iconName === "WORKFLOW" ? (
                   <Workflow className="size-3.5 shrink-0" />

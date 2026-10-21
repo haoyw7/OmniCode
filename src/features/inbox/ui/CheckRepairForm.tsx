@@ -225,7 +225,7 @@ export function CheckRepairForm({
               setSessionId(choices[active]?.id ?? "");
             }
           }}
-          className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+          className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
         />
       </label>
       <div
@@ -303,7 +303,7 @@ export function CheckRepairForm({
           type="button"
           disabled={busy || blocked}
           onClick={() => void start()}
-          className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-selection px-2.5 text-[12px] font-medium text-content hover:bg-selection-hover disabled:opacity-50 focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50"
+          className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-selection px-2.5 text-[12px] font-medium text-content hover:bg-selection-hover disabled:opacity-50 focus-visible:focus-fill"
         >
           {busy ? (
             <Spinner className="size-3.5" />

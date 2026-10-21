@@ -212,7 +212,7 @@ export function WorktreePicker({
                   void select(rows[active]);
                 }
               }}
-              className="min-w-0 flex-1 bg-transparent text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="min-w-0 flex-1 bg-transparent text-[12px] outline-none focus-visible:focus-fill"
             />
           </label>
           {worktreeRemoved && (

@@ -79,7 +79,7 @@ export function WorkflowArtifactRow({
             : undefined
         }
         className={cn(
-          "wf-tile-hit  flex min-w-0 flex-col gap-0.5 rounded-lg bg-transparent p-0 pt-px text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          "wf-tile-hit  flex min-w-0 flex-col gap-0.5 rounded-lg bg-transparent p-0 pt-px text-left outline-none focus-visible:focus-fill",
           openable ? "wf-tile-open cursor-pointer" : "cursor-default",
         )}
         data-artifact-id={artifact.id}

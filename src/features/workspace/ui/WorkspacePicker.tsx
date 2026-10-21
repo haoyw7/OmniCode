@@ -782,7 +782,7 @@ export function WorktreeBasePicker({
                     dismiss();
                   }
                 }}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40"
               />
             </label>
             {desktop ? (

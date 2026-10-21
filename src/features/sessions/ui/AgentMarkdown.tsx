@@ -332,7 +332,7 @@ function MarkdownLink({
   return (
     <a
       href={href}
-      className={cn("focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", cn("font-medium text-[var(--link-color)] underline decoration-dotted underline-offset-4 hover:decoration-solid", className ?? ""))}
+      className={cn("focus-visible:focus-fill active:opacity-70", cn("font-medium text-[var(--link-color)] underline decoration-dotted underline-offset-4 hover:decoration-solid", className ?? ""))}
       {...props}
       dir={dir ?? "auto"}
       onClick={(event) => {

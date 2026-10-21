@@ -83,6 +83,6 @@
   opacity: 0.45;
 }
 :where(.composer-notice-action, .composer-notice-dismiss):focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--composer-notice-tint) 60%, transparent);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--focus-fill-shadow);
 }

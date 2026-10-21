@@ -252,7 +252,7 @@ export function ProjectCard({
             tree.onToggleProject?.(item.path);
           }}
           data-project-tile
-          className="active:opacity-70 grid w-4 shrink-0 place-items-center rounded-sm text-content/55 outline-none focus-visible:ring-2 focus-visible:ring-ring hover:text-content"
+          className="active:opacity-70 grid w-4 shrink-0 place-items-center rounded-sm text-content/55 outline-none focus-visible:focus-fill hover:text-content"
         >
           <span
             data-project-avatar
@@ -296,7 +296,7 @@ export function ProjectCard({
         onBlur={hover.triggerProps.onBlur}
         onKeyDown={(event) => { sortable?.handleProps.onKeyDown?.(event); if (!event.defaultPrevented) hover.triggerProps.onKeyDown(event); }}
         className={
-          cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", compact
+          cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", compact
             ? "relative grid size-8 cursor-grab place-items-center"
             : `flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left ${tree ? "pl-2 pr-14" : "pr-6"}`)
         }
@@ -468,7 +468,7 @@ export function ProjectCard({
                 event.stopPropagation();
                 onTogglePin(item.path);
               }}
-              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 absolute left-2 top-1/2 grid size-4 -translate-y-1/2 place-items-center rounded-sm text-content/55 opacity-0 pointer-events-none transition-opacity hover:text-content group-hover:pointer-events-auto group-hover:opacity-100"
+              className="focus-visible:focus-fill active:opacity-70 absolute left-2 top-1/2 grid size-4 -translate-y-1/2 place-items-center rounded-sm text-content/55 opacity-0 pointer-events-none transition-opacity hover:text-content group-hover:pointer-events-auto group-hover:opacity-100"
             >
               {pinned ? (
                 <PinOff className="size-3.5" />
@@ -509,7 +509,7 @@ export function ProjectCard({
               if (hoverSummary.onPin) hoverSummary.onPin(item.path);
               else onTogglePin(item.path);
             }}
-            className="active:opacity-70 grid size-6 shrink-0 place-items-center rounded-lg text-content/45 hover:bg-surface-hover hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
+            className="active:opacity-70 grid size-6 shrink-0 place-items-center rounded-lg text-content/45 hover:bg-surface-hover hover:text-content focus-visible:focus-fill"
           >
             {pinned ? (
               <PinOff className="size-3.5" />
@@ -568,7 +568,7 @@ export function ProjectCard({
                     type="button"
                     aria-label={uiT("Retry")}
                     onClick={() => hoverSummary.onOpen?.(item.path)}
-                    className="active:opacity-70 shrink-0 rounded-lg px-1.5 py-0.5 text-content/65 hover:bg-surface-hover hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
+                    className="active:opacity-70 shrink-0 rounded-lg px-1.5 py-0.5 text-content/65 hover:bg-surface-hover hover:text-content focus-visible:focus-fill"
                   >
                     {uiT("Retry")}
                   </button>
@@ -612,7 +612,7 @@ export function ProjectCard({
               hover.close();
               onOpenMenu(item.path, rect.left, rect.bottom, trigger);
             }}
-            className="active:opacity-70 -mx-1 flex w-[calc(100%+8px)] items-center gap-2 rounded-lg px-1 py-1 text-left text-content/75 hover:bg-surface-hover hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
+            className="active:opacity-70 -mx-1 flex w-[calc(100%+8px)] items-center gap-2 rounded-lg px-1 py-1 text-left text-content/75 hover:bg-surface-hover hover:text-content focus-visible:focus-fill"
           >
             <Settings className="size-3.5 text-content/45" aria-hidden="true" />
             {uiT("Edit project")}

@@ -1,0 +1,30 @@
+/* A keyboard-only background tint. Filling the entire interior with an inset
+   shadow preserves the control's base fill, checkmark and background image;
+   it draws no perimeter and does not change layout. */
+@theme {
+  --color-focus-fill: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+:root {
+  --focus-fill-shadow: inset 0 0 0 100vmax var(--color-focus-fill);
+}
+
+@utility focus-fill {
+  outline: none;
+  box-shadow: var(--focus-fill-shadow), var(--tw-shadow, 0 0 #0000);
+}
+
+@layer base {
+  :where(:focus) { outline: none; }
+  :where(button, a, input, textarea, select, summary, [tabindex], [contenteditable="true"]):focus-visible {
+    box-shadow: var(--focus-fill-shadow);
+  }
+}
+
+/* Forced-colors removes box shadows; retain a visible keyboard background. */
+@media (forced-colors: active) {
+  :focus-visible {
+    background-color: Highlight !important;
+    color: HighlightText !important;
+  }
+}

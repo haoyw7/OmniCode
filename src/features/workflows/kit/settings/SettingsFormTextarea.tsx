@@ -8,7 +8,7 @@ export function SettingsFormTextarea({ className, ...props }: SettingsFormTextar
   return (
     <Textarea
       className={cn(
-        "rounded-lg border border-input-border bg-input px-2 py-2 text-ui-base shadow-none placeholder:text-foreground-subtlest hover:border-input-border-hover focus-visible:border-input-border-hover focus-visible:bg-input-focused focus-visible:ring-0",
+        "rounded-lg border border-input-border bg-input px-2 py-2 text-ui-base shadow-none placeholder:text-foreground-subtlest hover:border-input-border-hover focus-visible:focus-fill focus-visible:bg-input-focused",
         className,
       )}
       {...props}

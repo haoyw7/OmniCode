@@ -13,6 +13,7 @@ import {
   type OpenFileFn,
 } from "../../features/search/model/search";
 import { planTitle } from "../../features/sessions/model/plan";
+import { requestBackgroundTaskPanel } from "../../features/sessions/model/backgroundTaskPanels";
 import {
   sessionExecutionCwd,
   type Session,
@@ -415,6 +416,21 @@ export function useWorkspaceFiles(options: Options) {
     [openOwnedFile],
   );
 
+  const onOpenBackgroundTasks = useCallback((sessionId: string, taskId?: string) => {
+    const session = context().sessions.find(entry => entry.id === sessionId);
+    const owner = context().tabs.find(tab => leafIds(tab.layout).includes(sessionId));
+    if (!session || !owner) return;
+    requestBackgroundTaskPanel(sessionId, taskId);
+    const file = { id: crypto.randomUUID(), path: "background-tasks", cwd: sessionExecutionCwd(session), projectCwd: session.cwd, backgroundTasks: { sessionId } };
+    setTabs(tabs => tabs.map(tab => tab.id === owner.id
+      ? openEditorTab({ ...tab, focusedId: sessionId, surfaceMode: "split" }, file, { pin: true })
+      : tab));
+    latest.current.showWorkspace();
+    if (context().activeTabId !== owner.id) latest.current.activateTab(owner.id);
+    setComposerFocused(false);
+    setProjectTerminalFocused(false);
+  }, []);
+
   const onOpenPlan = useCallback((sessionId: string, blockId: string) => {
     const session = context().sessions.find((entry) => entry.id === sessionId);
     const block = session?.blocks.find((entry) => entry.id === blockId);
@@ -537,6 +553,7 @@ export function useWorkspaceFiles(options: Options) {
     onOpenFile,
     onOpenSessionFile,
     onOpenPlan,
+    onOpenBackgroundTasks,
     onPinFile,
     onFileDirtyChange,
     onFileErrorCountChange,

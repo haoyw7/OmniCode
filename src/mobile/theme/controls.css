@@ -21,7 +21,9 @@
   --m-control-border: color-mix(in srgb, var(--color-m-ink) 30%, transparent);
   --m-control-placeholder: var(--color-m-ink-tertiary);
   --m-control-active: var(--color-m-raised-hover);
-  --m-control-focus: #4682d5;
+  --m-control-accent: #4682d5;
+  /* Selection colors and keyboard focus have separate semantic roles. */
+  --m-control-focus: var(--color-m-focus);
   --m-control-danger: #b53333;
   --m-control-send: #c6613f;
   --m-control-off: rgb(120 120 120 / 20%);

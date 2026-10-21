@@ -114,6 +114,7 @@ html[data-skin] {
   --desktop-titlebar-action-radius: 5px;
   --desktop-titlebar-icon: 16px;
   --desktop-pane-toolbar-icon: 16px;
+  --desktop-pane-toolbar-height: 32px;
   --desktop-pane-toolbar-action: 24px;
   --desktop-pane-toolbar-gap: 3px;
   --desktop-pane-toolbar-inset: 6px;
@@ -143,7 +144,6 @@ html[data-skin] {
   --desktop-field-height: 32px;
   --desktop-field-pad-y: 5px;
   --desktop-field-large-height: 40px;
-  --desktop-focus-shadow: 0 0 0 2px var(--desktop-focus-gap), 0 0 0 3.5px var(--desktop-focus-info);
   --desktop-primary: var(--color-ink);
   --desktop-on-primary: var(--color-app);
   --desktop-control-track: color-mix(in srgb, var(--color-accent-ink) 14.9%, transparent);
@@ -176,11 +176,8 @@ html[data-skin] {
   --desktop-control-ink: var(--color-ink);
   --desktop-control-placeholder: var(--color-ink-tertiary);
   --desktop-control-border: var(--color-composer-ring);
-  --desktop-focus-gap: var(--color-card);
-  --desktop-focus-info: rgb(70 130 213 / 60%);
   --desktop-danger: var(--color-danger);
   --desktop-on-danger: var(--color-danger-ink);
-  --desktop-focus-danger: color-mix(in srgb, var(--desktop-danger) 50%, transparent);
   --desktop-shadow-composer: 0 2px 8px rgb(0 0 0 / 16%);
   --desktop-shadow-card: 0 1px 2px rgb(0 0 0 / 5%);
 }
@@ -193,15 +190,10 @@ html[data-skin].theme-light {
   --desktop-control-disabled: color-mix(in srgb, var(--color-foreground-subtle) 10.2%, transparent);
   --shadow-sheet: 0 0 0 0.5px var(--color-composer-ring), 0 2px 8px rgb(0 0 0 / 5%);
   --desktop-shadow-composer: 0 2px 8px rgb(0 0 0 / 8%);
-  --desktop-primary: var(--color-background-base);
-  --desktop-on-primary: var(--color-accent-ink);
-  --desktop-danger: var(--color-danger);
-  --desktop-on-danger: var(--color-accent-ink);
-  --desktop-control-ink: var(--color-background-base);
-  --desktop-control-placeholder: var(--color-foreground-subtle);
+  /* Keep the shared ink/surface pairs above: the app ground is a background,
+     not control text. Light skins already provide their own dark ink. */
   --desktop-control-border: rgb(31 30 29 / 30%);
   --desktop-control-track: var(--color-background-base);
-  --desktop-focus-info: rgb(50 102 173 / 50%);
 }
 
 
@@ -209,7 +201,6 @@ html[data-skin].has-user-accent {
   --desktop-primary: var(--color-accent);
   --desktop-on-primary: var(--color-accent-ink);
   --desktop-control-checked: var(--color-accent);
-  --desktop-focus-info: color-mix(in srgb, var(--color-focus) 50%, transparent);
 }
 
 html[data-skin] {

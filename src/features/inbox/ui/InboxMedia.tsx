@@ -65,7 +65,7 @@ export function InboxMedia({ src, alt }: Props) {
       role="link"
       tabIndex={0}
       aria-label={label}
-      className="inbox-media my-2 inline-block max-h-[28rem] w-full max-w-xl cursor-zoom-in rounded-[10px] border border-content/10 bg-content/6 object-contain outline-none hover:border-content/20 focus-visible:ring-2 focus-visible:ring-focus active:opacity-90"
+      className="inbox-media my-2 inline-block max-h-[28rem] w-full max-w-xl cursor-zoom-in rounded-[10px] border border-content/10 bg-content/6 object-contain outline-none hover:border-content/20 focus-visible:focus-fill active:opacity-90"
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -86,7 +86,7 @@ function MediaFallback({ src, alt }: { src: string; alt?: string }) {
   return (
     <a
       href={src}
-      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 text-accent/90 hover:text-accent hover:underline"
+      className="focus-visible:focus-fill active:opacity-70 text-accent/90 hover:text-accent hover:underline"
       onClick={(event) => {
         event.preventDefault();
         void openUrl(src);

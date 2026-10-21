@@ -44,6 +44,7 @@ import {
 import { WorkflowAgentTabView, WorkflowRunTabView, WorkflowArtifactTabView } from "../../../workflows/ui/WorkflowTabs";
 import { AgentTabView } from "../../../sessions/ui/AgentTabView";
 import { SubagentTabView } from "../../../sessions/ui/SubagentTabView";
+import { usePaneSurfaceSlot } from "../../../../shared/ui/PaneSurfaceSlots";
 import { MarkdownPreview } from "../../../sessions/ui/AgentMarkdown";
 import { BinaryFileView } from "./BinaryFileView";
 import { ReleaseNotesSurface } from "../../../../app/ui/ReleaseNotesSurface";
@@ -136,6 +137,7 @@ function FilePaneComponent({
   onTerminalMetaChange,
 }: Props) {
   const { t } = useTranslation();
+  const backgroundSurface = usePaneSurfaceSlot("backgroundTasks");
   const explorer = pane.files.find((file) => file.explorer);
   const documents = explorer ? pane.files.filter((file) => !file.explorer) : pane.files;
   const diffViewer = useSyncExternalStore(
@@ -166,7 +168,7 @@ function FilePaneComponent({
           onPinFile={onPinFile}
           onReorder={(ids) => onReorderFiles(pane.id, ids)}
           leading={<>{tabsLeading}{leading}</>}
-          trailing={<>{trailing}{tabsTrailing}{explorer && onClosePane ? <IconButton size="sm" data-file-toolbar-action label={t("Close panel")} onClick={() => onClosePane(pane.id)}><X /></IconButton> : null}</>}
+          trailing={<>{trailing}{activeFile?.backgroundTasks ? backgroundSurface?.actions?.(activeFile.backgroundTasks.sessionId) : null}{tabsTrailing}{explorer && onClosePane ? <IconButton size="sm" data-file-toolbar-action label={t("Close panel")} onClick={() => onClosePane(pane.id)}><X /></IconButton> : null}</>}
         />
     ) : null
   );
@@ -211,7 +213,9 @@ function FilePaneComponent({
                     : "hidden"
               }
             >
-              {isAppViewTab(file) ? (
+              {file.backgroundTasks ? (
+                backgroundSurface?.content(file.backgroundTasks.sessionId, visible && file.id === pane.activeFileId)
+              ) : isAppViewTab(file) ? (
                 <AppViewHost
                   kind={file.appView.kind}
                   visible={visible && file.id === pane.activeFileId}
@@ -293,7 +297,7 @@ function FilePaneComponent({
       </div>
   );
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col" onMouseDown={() => onFocus(pane.id)}>
+    <div className={cn("flex h-full min-h-0 min-w-0 flex-1 flex-col", activeFile?.backgroundTasks && "desktop-background-tasks")} onMouseDown={() => onFocus(pane.id)}>
       {explorer ? <FileExplorerFrame key={explorer.cwd} cwd={explorer.cwd} focused={focused} hasDocument={documents.length > 0}
         renderHeader={renderHeader} onOpenFile={onOpenFile} onOpenTerminal={onOpenTerminal} activePath={activeFile?.explorer ? undefined : activeFile?.path} onFileMoved={onFileMoved} onFileDeleted={onFileDeleted}
         searchOpen={filesSearchOpen} onSearchOpenChange={onFilesSearchOpenChange}>{content}</FileExplorerFrame>
@@ -450,7 +454,7 @@ function PlanSurface({
             onChange={(event) =>
               onUpdatePlan(plan.sessionId, block.id, event.currentTarget.value)
             }
-            className="h-full w-full resize-none overflow-auto bg-transparent px-5 pb-5 pt-14 font-mono text-[13px] leading-6 text-content outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70"
+            className="h-full w-full resize-none overflow-auto bg-transparent px-5 pb-5 pt-14 font-mono text-[13px] leading-6 text-content outline-none focus-visible:focus-fill disabled:opacity-70"
           />
         }
       />

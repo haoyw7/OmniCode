@@ -335,7 +335,7 @@ export function QuickOpen({
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
-            className="min-w-0 flex-1 bg-transparent text-[14px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
+            className="min-w-0 flex-1 bg-transparent text-[14px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40"
             onValueChange={(next) => {
               setQuery(next);
               setActive("");

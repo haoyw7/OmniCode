@@ -25,6 +25,7 @@ export type SessionHeaderActions = {
   /** Chats whose own file explorer is showing beside them. */
   filesSessionIds?: ReadonlySet<string>;
   toggleFiles?: (sessionId: string) => void;
+  openBackgroundTasks?: (sessionId: string, taskId?: string) => void;
   changesOpen: boolean;
   toggleChanges: () => void;
 };

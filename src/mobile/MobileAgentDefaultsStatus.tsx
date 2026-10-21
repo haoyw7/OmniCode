@@ -134,7 +134,7 @@ export function MobileAgentDefaultsStatus({
       <div className="mobile-defaults-status-actions">
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-defaults-status-details"
+          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-defaults-status-details"
           aria-expanded={detailsOpen}
           aria-controls={detailsId}
           onClick={() => setDetailsOpen((open) => !open)}

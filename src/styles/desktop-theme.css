@@ -126,10 +126,11 @@ html[data-skin].theme-light [data-session-review-shell] [data-session-review-bor
   --color-ink: var(--color-content);
   --color-ink-secondary: var(--color-foreground-subtle);
   --color-ink-tertiary: var(--color-foreground-subtlest);
+  /* Keyboard focus stays neutral across skins and custom brand accents. */
+  --color-focus: color-mix(in srgb, var(--color-ink) 65%, transparent);
   --color-accent-border: var(--color-accent);
   --color-accent-text: var(--color-accent);
   --color-accent-ink: #ffffff;
-  --color-focus: var(--color-accent);
   --color-bubble-user: var(--color-selection-strong);
   --color-bubble-user-ink: var(--color-content);
   --color-danger: var(--color-destructive);
@@ -181,7 +182,6 @@ html[data-skin][data-skin].theme-dark {
   --color-accent: #bd5937;
   --color-accent-border: rgb(240 239 236 / 24%);
   --color-accent-text: #eca78f;
-  --color-focus: #e39478;
   --color-accent-ink: #ffffff;
   --color-bubble-user: #42403a;
   --color-bubble-user-ink: #f0efec;
@@ -216,7 +216,6 @@ html[data-skin][data-skin].theme-dark {
   --color-accent: #3dcdb4;
   --color-accent-border: #5ad8c2;
   --color-accent-text: #6fe0cc;
-  --color-focus: #3dcdb4;
   --color-accent-ink: #04201b;
   --color-primary: #0d3c42;
   --color-primary-foreground: #e7eef4;
@@ -261,7 +260,6 @@ html[data-skin].theme-light {
   --color-accent: #bd5937;
   --color-accent-border: rgb(31 30 29 / 30%);
   --color-accent-text: #a34c30;
-  --color-focus: #bd5937;
   --color-accent-ink: #ffffff;
   --color-bubble-user: #e5e2d8;
   --color-bubble-user-ink: #141413;
@@ -299,7 +297,6 @@ html[data-skin].theme-light {
   --color-accent-border: #e8b25e;
   --color-accent-text: #e0a44c;
   --color-accent-ink: #1c150c;
-  --color-focus: #e0a44c;
   --color-bubble-user: #423727;
   --color-bubble-user-ink: #f4efe4;
   --color-success: #57b078;
@@ -330,7 +327,6 @@ html[data-skin].theme-light {
   --color-accent-border: #698fbb;
   --color-accent-text: #8fb4df;
   --color-accent-ink: #ffffff;
-  --color-focus: #8fb4df;
   --color-bubble-user: #343f4d;
   --color-bubble-user-ink: #f2f4f7;
   --color-success: #63b58a;
@@ -361,7 +357,6 @@ html[data-skin].theme-light {
   --color-accent-border: #9670a3;
   --color-accent-text: #c49bd2;
   --color-accent-ink: #ffffff;
-  --color-focus: #c49bd2;
   --color-bubble-user: #45364f;
   --color-bubble-user-ink: #f4eff6;
   --color-success: #6fad83;
@@ -393,7 +388,6 @@ html[data-skin].theme-light {
   --color-accent-border: #4f86d3;
   --color-accent-text: #81abef;
   --color-accent-ink: #ffffff;
-  --color-focus: #81abef;
   --color-bubble-user: #262626;
   --color-bubble-user-ink: #f5f5f5;
   --color-success: #3bb47c;
@@ -424,7 +418,6 @@ html[data-skin].theme-light {
   --color-accent-border: #b06a2c;
   --color-accent-text: #96551f;
   --color-accent-ink: #ffffff;
-  --color-focus: #96551f;
   --color-bubble-user: #e7d9c5;
   --color-bubble-user-ink: #1a1a18;
   --color-success: #3f6b47;
@@ -455,7 +448,6 @@ html[data-skin].theme-light {
   --color-accent-border: #14807a;
   --color-accent-text: #0d5f5a;
   --color-accent-ink: #ffffff;
-  --color-focus: #0d5f5a;
   --color-bubble-user: #c1dcd5;
   --color-bubble-user-ink: #14201f;
   --color-success: #2f6b4f;
@@ -486,7 +478,6 @@ html[data-skin].theme-light {
   --color-accent-border: #4978a6;
   --color-accent-text: #2c5680;
   --color-accent-ink: #ffffff;
-  --color-focus: #2c5680;
   --color-bubble-user: #d3dfed;
   --color-bubble-user-ink: #1d2229;
   --color-success: #2f704f;
@@ -517,7 +508,6 @@ html[data-skin].theme-light {
   --color-accent-border: #1f8a52;
   --color-accent-text: #176b3f;
   --color-accent-ink: #ffffff;
-  --color-focus: #1a7a48;
   --color-bubble-user: #d9e9dd;
   --color-bubble-user-ink: #0f1a13;
   --color-success: #1a7a48;
@@ -584,7 +574,7 @@ html[data-skin] {
 .desktop-skin-option { border-color: var(--color-hairline); }
 .desktop-skin-option:hover { background: var(--color-hover-fill); }
 .desktop-skin-option:has(:checked) { border-color: var(--color-focus); box-shadow: 0 0 0 1px var(--color-focus); }
-.desktop-skin-option:has(:focus-visible) { outline-color: var(--color-focus); }
+.desktop-skin-option:has(:focus-visible) { outline: none; box-shadow: var(--focus-fill-shadow); }
 .desktop-skin-preview { border-color: var(--color-hairline); }
 .desktop-skin-scene { background: var(--color-app); }
 .desktop-skin-scene-sidebar { background: var(--color-sidebar); }
@@ -610,7 +600,6 @@ html.has-user-accent[data-skin] {
   --color-accent-border: var(--user-accent-color);
   --color-accent-text: var(--user-accent-color);
   --color-accent-ink: var(--user-accent-foreground);
-  --color-focus: var(--user-accent-color);
 }
 
 :root {

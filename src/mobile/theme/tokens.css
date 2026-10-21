@@ -40,7 +40,7 @@
   --color-m-accent-border: #459ffe;
   --color-m-accent-text: #7fc0ff;
   --color-m-accent-ink: #ffffff;
-  --color-m-focus: #459ffe;
+  --color-m-focus: color-mix(in srgb, var(--color-m-ink) 65%, transparent);
   --color-m-bubble-user: #5a5a5a;
   --color-m-bubble-user-ink: #fcfcfc;
   --color-m-success: #38d591;

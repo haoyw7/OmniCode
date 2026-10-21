@@ -172,8 +172,20 @@ html[data-skin] [data-ui="button"][data-variant="ghost"]:is([data-session-disclo
   background: transparent;
 }
 
-.background-tasks-compact,
-[data-background-tasks-panel] {
+/* Workflow card actions use the same compact geometry as file pane tools. */
+html[data-skin] [data-ui="workflow-card-header"] [data-workflow-card-actions] {
+  gap: var(--desktop-pane-toolbar-gap);
+}
+html[data-skin] [data-ui="workflow-card-header"] [data-ui="button"][data-size^="icon"] {
+  --icon-size: var(--desktop-pane-toolbar-action);
+  border-radius: 6px;
+}
+html[data-skin] [data-ui="workflow-card-header"] [data-ui="button"][data-size^="icon"] svg {
+  width: var(--desktop-pane-toolbar-icon);
+  height: var(--desktop-pane-toolbar-icon);
+}
+
+.background-tasks-compact {
   position: absolute;
   z-index: 40;
   top: 8px;
@@ -188,17 +200,17 @@ html[data-skin] [data-ui="button"][data-variant="ghost"]:is([data-session-disclo
 
 .background-tasks-compact { width: min(256px, calc(100% - 24px)); padding: 4px; }
 [data-background-tasks-panel] {
-  bottom: 8px;
   display: flex;
   flex-direction: column;
-  width: min(352px, calc(100% - 24px));
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
-  transition: width 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  color: var(--color-content);
+  font-size: var(--desktop-menu-font);
 }
-[data-background-tasks-panel][data-wide] { width: calc(100% - 24px); }
-.background-tasks-header { display: flex; align-items: center; gap: 2px; padding: 8px 10px; }
-.background-tasks-list { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 12px; }
-.background-tasks-section-title { margin-top: 12px; padding: 4px 8px; color: var(--color-foreground-subtle); }
+.background-tasks-list { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--desktop-pane-toolbar-inset) var(--desktop-pane-toolbar-inset); }
+.background-tasks-section-title { margin-top: 4px; min-height: var(--desktop-menu-row); padding: var(--desktop-menu-pad-y) var(--desktop-menu-pad-x); font-size: var(--desktop-menu-font); line-height: var(--desktop-menu-leading); color: var(--color-foreground-subtle); }
 .background-task-row { display: flex; min-width: 0; align-items: center; gap: 4px; }
 .background-task-open {
   display: flex;
@@ -213,7 +225,7 @@ html[data-skin] [data-ui="button"][data-variant="ghost"]:is([data-session-disclo
   text-align: left;
 }
 .background-task-open:hover { background: var(--color-surface-hover); }
-.background-task-open:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+.background-task-open:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 .background-task-elapsed { flex-shrink: 0; color: var(--color-foreground-subtle); font-size: 11px; font-variant-numeric: tabular-nums; }
 .background-task-stop { position: relative; flex-shrink: 0; }
 .background-task-stop-error { position: absolute; right: 0; top: 100%; z-index: 1; width: max-content; padding: 4px 8px; background: var(--color-card); color: var(--color-content); border: 1px solid var(--color-hairline); border-radius: 6px; }
@@ -221,9 +233,6 @@ html[data-skin] [data-ui="button"][data-variant="ghost"]:is([data-session-disclo
 .background-task-details pre { max-height: 240px; overflow: auto; border-radius: 10px; padding: 10px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .background-task-command { border: 1px solid var(--color-hairline); }
 .background-task-output { background: var(--color-raised); }
-@media (prefers-reduced-motion: reduce) {
-  [data-background-tasks-panel] { transition: none; }
-}
 
 html[data-skin] [data-question-history] {
   background: var(--desktop-panel-card);
@@ -788,8 +797,8 @@ html[data-skin][data-desktop-mode] [data-session-surface-tabs] {
 
 html[data-skin][data-desktop-mode] [data-surface-tab-strip],
 html[data-skin][data-desktop-mode] [data-session-pane-header] {
-  height: 32px;
-  min-height: 32px;
+  height: var(--desktop-pane-toolbar-height);
+  min-height: var(--desktop-pane-toolbar-height);
   font-size: 13px;
   line-height: 1.4615384615;
 }
@@ -1186,7 +1195,7 @@ html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-se
 [data-session-status] [data-tone="free"] { background: var(--context-usage-free); }
 [data-session-status] .context-breakdown-toggle { display: flex; align-items: center; width: 100%; gap: 6px; padding: 8px 0; text-align: left; }
 [data-session-status] .context-breakdown-toggle > :last-child { margin-left: auto; color: var(--color-foreground-subtle); }
-[data-session-status] .context-breakdown-toggle:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; border-radius: 4px; }
+[data-session-status] .context-breakdown-toggle:focus-visible { outline: none; border-radius: 4px; box-shadow: var(--focus-fill-shadow); }
 [data-session-status] .context-breakdown-tool-list { max-height: 220px; overflow-y: auto; }
 [data-session-status] .context-breakdown-tool-list .context-breakdown-row { font-size: 0.9em; }
 [data-session-status] .context-breakdown-footer { margin-top: 8px; font-size: 0.9em; }

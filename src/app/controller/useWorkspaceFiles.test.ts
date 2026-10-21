@@ -44,6 +44,23 @@ let source: Session;
 let sourceTab: WorkspaceTab;
 const editorFiles = () =>
   tabs.flatMap((tab) => tab.editorPanes.flatMap((pane) => pane.files));
+
+it("opens one dedicated background-task pane beside its chat and reuses it", async () => {
+  const file = newFileTab("/repo/code.ts", "/repo");
+  sourceTab = openEditorTab(sourceTab, file, { pin: true });
+  await mount();
+  await act(async () => files.onOpenBackgroundTasks(source.id, "task-a"));
+  const background = editorFiles().find(entry => entry.backgroundTasks)!;
+  const pane = tabs[0].editorPanes.find(entry => entry.files.includes(background))!;
+  expect(background.backgroundTasks?.sessionId).toBe(source.id);
+  expect(background.preview).toBeUndefined();
+  expect(pane.files).toHaveLength(1);
+  expect(tabs[0].surfaceMode).toBe("split");
+  await act(async () => files.onOpenBackgroundTasks(source.id, "task-b"));
+  expect(editorFiles().filter(entry => entry.backgroundTasks)).toHaveLength(1);
+  expect(tabs[0].focusedId).toBe(pane.id);
+  expect(editorFiles().some(entry => entry.id === file.id)).toBe(true);
+});
 function deferred() {
   let resolve!: (path: string) => void;
   const promise = new Promise<string>((done) => {

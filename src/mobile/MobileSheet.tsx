@@ -584,7 +584,7 @@ export function MobileSheet({
           {onBack && !header && (
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row mobile-sheet-back"
+              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row mobile-sheet-back"
               aria-label={t("Back")}
               onClick={onBack}
             >

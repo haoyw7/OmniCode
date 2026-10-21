@@ -300,7 +300,7 @@ export function SkillsPage({
                     ? "…"
                     : `${filtered.length} ${filtered.length === 1 ? "skill" : "skills"}`}
                 </span>
-                <label className="flex h-7 w-52 min-w-0 flex-1 items-center gap-2 rounded-md border border-content/10 px-2 text-content/45 focus-within:border-content/20">
+                <label className="flex h-7 w-52 min-w-0 flex-1 items-center gap-2 rounded-md border border-content/10 px-2 text-content/45 has-[:focus-visible]:focus-fill">
                   <Search className="size-3.5 shrink-0" />
                   <Input variant="inline"
                     ref={filterInput}
@@ -310,7 +310,7 @@ export function SkillsPage({
                     aria-label={uiT("Filter skills")}
                     spellCheck={false}
                     autoComplete="off"
-                    className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
+                    className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
                   />
                 </label>
                 <Button variant="ghost" size="icon-sm"

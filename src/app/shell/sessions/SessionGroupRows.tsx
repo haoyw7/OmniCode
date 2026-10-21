@@ -49,7 +49,7 @@ export function SessionGroupRow({
       data-session-group-row={dense ? "" : undefined}
       data-tauri-drag-region="false"
       onClick={onToggle}
-      className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 group relative flex w-full touch-none items-center gap-1.5 ${dense ? "pl-8 pr-2" : "px-2"} h-8 text-left ${
+      className={`focus-visible:focus-fill active:opacity-70 group relative flex w-full touch-none items-center gap-1.5 ${dense ? "pl-8 pr-2" : "px-2"} h-8 text-left ${
         expanded ? "rounded-lg" : ""
       } ${
         expanded

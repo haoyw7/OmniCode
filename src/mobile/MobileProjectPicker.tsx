@@ -208,7 +208,7 @@ export function MobileProjectPicker({
                 <button
                   type="button"
                   key={entry.path}
-                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
+                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
                   disabled={blocked}
                   title={entry.path}
                   onClick={() => void browse(entry.path)}

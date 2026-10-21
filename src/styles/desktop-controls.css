@@ -179,8 +179,8 @@ html[data-skin] :is(.popover-frame, .composer-popover, .panel-menu, [data-slot="
   background: var(--cds-fill-ghost-hover);
 }
 html[data-skin] :is([data-menu-row], [data-desktop-select-option], [role^="menuitem"]):focus-visible {
-  outline: 1px solid var(--color-input-border-hover);
-  outline-offset: -1px;
+  outline: none;
+  box-shadow: var(--focus-fill-shadow);
 }
 html[data-skin] [data-desktop-select-trigger]:not(:disabled, [aria-disabled="true"]):hover {
   background: var(--cds-fill-ghost-hover);
@@ -190,8 +190,7 @@ html[data-skin] [data-desktop-select-trigger][aria-expanded="true"]:not(:disable
 }
 html[data-skin] :is([data-desktop-select-trigger], [data-menu-trigger], [data-slot="dropdown-menu-trigger"]):focus-visible:not([aria-invalid="true"]) {
   outline: none;
-  border-color: var(--color-input-border-hover);
-  box-shadow: none;
+  box-shadow: var(--focus-fill-shadow);
 }
 html[data-skin] button[data-menu-trigger="sidebar"] { width: var(--desktop-icon-sm); height: var(--desktop-icon-sm); border-radius: 6px; position: absolute; }
 html[data-skin] button[data-menu-trigger="sidebar"] svg { width: 16px; height: 16px; }
@@ -307,9 +306,8 @@ html[data-skin] .branch-menu-search {
   color: var(--color-content);
   background: color-mix(in srgb, var(--color-content) 4%, var(--color-menu));
 }
-html[data-skin] .branch-menu-search:focus-within {
-  border-color: var(--color-input-border-hover);
-  box-shadow: none;
+html[data-skin] .branch-menu-search:has(:focus-visible) {
+  box-shadow: var(--focus-fill-shadow);
 }
 html[data-skin] .branch-menu-search > svg { width: 12px; height: 12px; }
 html[data-skin] .branch-menu-search > input { padding: 0; font-size: 13px; line-height: 19px; }

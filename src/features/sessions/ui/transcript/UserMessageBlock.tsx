@@ -150,7 +150,7 @@ export function UserMessageBlock({
           <div className="mb-1 px-3 text-xs text-content/60" data-assistant-origin={block.origin.assistantId}>
             {openBot ? (
               <Button variant="ghost" size="content" type="button"
-                className="inline-flex items-center gap-1.5 rounded hover:text-content hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-content/40 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded hover:text-content hover:underline focus-visible:focus-fill disabled:opacity-50"
                 disabled={!visible || openingBot} aria-busy={openingBot || undefined} onClick={() => void openOrigin()}>
                 <Bot className="size-3.5" aria-hidden="true" />
                 <span>{uiT("From {value0}", { value0: block.origin.assistantName || uiT("Assistant") })}</span>
@@ -252,7 +252,7 @@ export function UserMessageBlock({
               className="group/ci mt-2 min-w-0 border-t border-content/10 pt-2"
               onClick={(event) => event.stopPropagation()}
             >
-              <Button data-session-disclosure variant="ghost" size="content" aria-expanded={ciExpanded} onClick={() => setCiExpanded(value => !value)} className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded text-xs text-content/50 transition-colors hover:text-content/80 focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/40 [&::-webkit-details-marker]:hidden">
+              <Button data-session-disclosure variant="ghost" size="content" aria-expanded={ciExpanded} onClick={() => setCiExpanded(value => !value)} className="flex w-fit cursor-pointer list-none items-center gap-1.5 rounded text-xs text-content/50 transition-colors hover:text-content/80 focus-visible:focus-fill [&::-webkit-details-marker]:hidden">
                 <DisclosureChevron expanded={ciExpanded} className="size-3 shrink-0" />
                 <span>{uiT("CI context")}</span>
               </Button>

@@ -333,7 +333,7 @@ function RepairCard({
           aria-expanded={expanded}
           aria-controls={detailsId}
           onClick={() => setExpanded(!expanded)}
-          className="flex min-w-0 flex-1 items-center gap-2.5 rounded text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50 justify-start"
+          className="flex min-w-0 flex-1 items-center gap-2.5 rounded text-left focus-visible:focus-fill justify-start"
         >
           <StatusIcon state={lead} />
           <span className="min-w-0 flex-1">
@@ -382,7 +382,7 @@ function RepairCard({
           <Button variant="ghost" size="content"
             type="button"
             onClick={() => onShowCheck?.(single.check)}
-            className="shrink-0 rounded-md px-2 py-1.5 text-[11px] text-content/70 hover:bg-selection hover:text-content focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50"
+            className="shrink-0 rounded-md px-2 py-1.5 text-[11px] text-content/70 hover:bg-selection hover:text-content focus-visible:focus-fill"
           >
             {uiT("Show check")}
           </Button>
@@ -391,7 +391,7 @@ function RepairCard({
           <Button variant="ghost" size="content"
             type="button"
             onClick={() => void repair.onOpenSession?.(group.sessionId)}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-stroke px-2.5 py-1.5 text-[11px] text-content/70 hover:bg-selection hover:text-content focus-visible:outline focus-visible:outline-1 focus-visible:outline-content/50"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-stroke px-2.5 py-1.5 text-[11px] text-content/70 hover:bg-selection hover:text-content focus-visible:focus-fill"
           >
             <MessageSquare aria-hidden="true" className="size-3.5" />
             {uiT("Open conversation")}

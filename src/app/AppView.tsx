@@ -23,6 +23,8 @@ import {
 useState, type CSSProperties
 } from "react";
 import { Sidebar } from "./shell/Sidebar";
+import { PaneSurfaceSlots, type PaneSurfaceSlot } from "../shared/ui/PaneSurfaceSlots";
+import { BackgroundTasksPane, BackgroundTasksClearButton } from "../features/sessions/ui/BackgroundTasksPanel";
 import { DesktopTitlebarNavigation } from "./shell/DesktopNavigation";
 import { WindowMenuButton } from "./shell/WindowMenuButton";
 import { SidebarMain } from "./shell/SidebarMain";
@@ -83,6 +85,12 @@ import type { WorkspaceViewModel } from "./controller/useWorkspaceController";
 import { SessionPageCountsContext, useSessionPageCounts } from "./shell/sessions/sessionPageCounts";
 
 const prefetchRemoteHistory = (path: string) => prefetchRemoteProjectSessions(path).then(() => undefined);
+const paneSurfaceSlots: Record<string, PaneSurfaceSlot> = {
+  backgroundTasks: {
+    content: (sessionId, visible) => <BackgroundTasksPane sessionId={sessionId} visible={visible} />,
+    actions: sessionId => <BackgroundTasksClearButton sessionId={sessionId} />,
+  },
+};
 
 /** Workspace window layout. Pure view over the controller's view-model. */
 export function AppView({ vm }: { vm: WorkspaceViewModel }) {
@@ -358,6 +366,7 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
       <OrchestrationWorkers.Provider value={orchestrationWorkers}>
         <AppViewRendererContext.Provider value={renderAppView}>
           <SessionHeaderActionsContext.Provider value={sessionHeaderActions}>
+          <PaneSurfaceSlots.Provider value={paneSurfaceSlots}>
             <div
               data-desktop-mode={desktopMode}
               className={`app-shell-root desktop-workspace relative flex h-full flex-col text-content ${
@@ -450,7 +459,7 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
                           }
                           className={
                             appPage === kind
-                              ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden outline-none focus-visible:focus-fill"
                               : "hidden"
                           }
                         >
@@ -784,6 +793,7 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
               ) : null}</PresenceBoundary>
             </div>
             <TranscriptPoolOutlet pool={transcriptPool} />
+          </PaneSurfaceSlots.Provider>
           </SessionHeaderActionsContext.Provider>
         </AppViewRendererContext.Provider>
       </OrchestrationWorkers.Provider>

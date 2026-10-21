@@ -249,7 +249,7 @@ export function MobileNotes({
               {error && (
                 <p role="alert" className="mobile-notes-error">
                   {error}{" "}
-                  <button onClick={() => void refresh()} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70">{t("Retry")}</button>
+                  <button onClick={() => void refresh()} className="hover:opacity-80 focus-visible:focus-fill active:opacity-70">{t("Retry")}</button>
                 </p>
               )}
               {loading && !notes.length ? (
@@ -270,7 +270,7 @@ export function MobileNotes({
                   {filtered.map((note) => (
                     <li key={note.id}>
                       <button
-                        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-note-card"
+                        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-note-card"
                         disabled={working || loading || !visible}
                         onClick={() => void open(note.id)}
                       >
@@ -307,7 +307,7 @@ export function MobileNotes({
                 {topics.loading && <p className="mobile-notes-empty" role="status">{t("Loading notes…")}</p>}
                 {topics.errors.map(({ source, error }) => (
                   <p key={source.key} role="alert" className="mobile-notes-error">
-                    {source.name}: {error} <button disabled={!visible} onClick={topics.refresh} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70">{t("Retry")}</button>
+                    {source.name}: {error} <button disabled={!visible} onClick={topics.refresh} className="hover:opacity-80 focus-visible:focus-fill active:opacity-70">{t("Retry")}</button>
                   </p>
                 ))}
                 {!topics.loading && !topics.errors.length && !filteredTopics.length && (
@@ -318,7 +318,7 @@ export function MobileNotes({
                 <ul className="mobile-notes-list">
                   {filteredTopics.map((note) => (
                     <li key={note.key}>
-                      <button className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-note-card" data-assistant-topic disabled={working || !visible} onClick={() => setSelectedTopicKey(note.key)}>
+                      <button className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-note-card" data-assistant-topic disabled={working || !visible} onClick={() => setSelectedTopicKey(note.key)}>
                         <span className="mobile-note-meta">{note.source.name}</span>
                         <strong>{note.name}</strong>
                       </button>

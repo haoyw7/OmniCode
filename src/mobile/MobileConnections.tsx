@@ -89,7 +89,7 @@ function ConnectionRow({
     <li className="mobile-settings-row mobile-connection-row mobile-connection-device">
       <button
         type="button"
-        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-connection-details"
+        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-connection-details"
         aria-label={active
           ? t("Connection options for {host}", { host: name })
           : t("Switch to {host}", { host: name })}
@@ -299,7 +299,7 @@ export function MobileConnections({
           <p className="mobile-connection-menu-name">{name}</p>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
             disabled={disabled}
             onClick={() => {
               close();
@@ -312,7 +312,7 @@ export function MobileConnections({
           </button>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
             disabled={disabled}
             onClick={edit}
           >
@@ -321,7 +321,7 @@ export function MobileConnections({
           </button>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row mobile-menu-danger"
+            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row mobile-menu-danger"
             disabled={disabled}
             onClick={() => {
               setError("");
@@ -375,7 +375,7 @@ export function MobileConnections({
                   aria-label={t(iconNames[icon])}
                   aria-pressed={draft.icon === icon}
                   disabled={disabled}
-                  onClick={() => form.setValue("icon", icon, { shouldDirty: true })} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
+                  onClick={() => form.setValue("icon", icon, { shouldDirty: true })} className="hover:opacity-80 focus-visible:focus-fill active:opacity-70"
                 >
                   <MobileSettingsGlyph name={icon} />
                 </button>

@@ -153,9 +153,9 @@
   color: var(--color-content);
 }
 .assistant-chat.desktop-bots-workspace :is(.desktop-bots-contact-main, .desktop-bots-thread, .desktop-bots-thread-toggle):focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -2px;
+  outline: none;
   border-radius: 8px;
+  box-shadow: var(--focus-fill-shadow);
 }
 .assistant-chat.desktop-bots-workspace .desktop-bots-no-results {
   padding: 14px 8px;
@@ -530,8 +530,8 @@ html[data-reduced-motion="on"] .assistant-chat.desktop-bots-workspace .assistant
   tab-size: 2;
 }
 .desktop-bots-workspace .desktop-bots-memory :is(button, input, select, textarea):not([data-ui]):focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--focus-fill-shadow);
 }
 .desktop-bots-workspace .desktop-bots-memory-toolbar {
   display: flex;

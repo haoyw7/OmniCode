@@ -1515,7 +1515,7 @@ function ModelBrowser({
           value={query}
           placeholder={uiT("Search models")}
           aria-label={uiT("Search models")}
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40"
           onChange={(event) => onQuery(event.target.value)}
           onKeyDown={onSearchKey}
         />

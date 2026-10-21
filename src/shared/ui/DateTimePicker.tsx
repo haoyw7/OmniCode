@@ -169,7 +169,7 @@ export function DateTimePicker({
             aria-label={uiT("Previous month")}
             disabled={previousDisabled}
             onClick={() => navigate(shiftMonth(focusedDate, -1), false)}
-            className="active:opacity-70 grid size-7 place-items-center rounded text-content/55 hover:bg-content/3 hover:text-content focus-visible:outline-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-30"
+            className="active:opacity-70 grid size-7 place-items-center rounded text-content/55 hover:bg-content/3 hover:text-content focus-visible:focus-fill disabled:pointer-events-none disabled:opacity-30"
           >
             <ChevronLeft className="size-3.5" />
           </button>
@@ -177,7 +177,7 @@ export function DateTimePicker({
             type="button"
             aria-label={uiT("Next month")}
             onClick={() => navigate(shiftMonth(focusedDate, 1), false)}
-            className="active:opacity-70 grid size-7 place-items-center rounded text-content/55 hover:bg-content/3 hover:text-content focus-visible:outline-2 focus-visible:outline-accent"
+            className="active:opacity-70 grid size-7 place-items-center rounded text-content/55 hover:bg-content/3 hover:text-content focus-visible:focus-fill"
           >
             <ChevronRight className="size-3.5" />
           </button>
@@ -217,7 +217,7 @@ export function DateTimePicker({
                     aria-current={
                       dateKey(date) === dateKey(today) ? "date" : undefined
                     }
-                    className={`active:opacity-70 relative size-8 rounded text-xs tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:text-content/20 ${dateKey(date) === selectedKey ? "bg-selection-hover font-medium text-content ring-1 ring-inset ring-content/20" : "text-content/70 hover:bg-content/3 hover:text-content"}`}
+                    className={`active:opacity-70 relative size-8 rounded text-xs tabular-nums focus-visible:focus-fill disabled:pointer-events-none disabled:text-content/20 ${dateKey(date) === selectedKey ? "bg-selection-hover font-medium text-content ring-1 ring-inset ring-content/20" : "text-content/70 hover:bg-content/3 hover:text-content"}`}
                     onClick={() => pick(date)}
                   >
                     {date.getDate()}
@@ -250,7 +250,7 @@ export function DateTimePicker({
             {uiT("Local time, 24-hour")}
           </p>
         </div>
-        <div className="w-20 rounded border border-content/10 bg-content/5 focus-within:border-content/40 focus-within:outline-2 focus-within:outline-content/40">
+        <div className="w-20 rounded border border-content/10 bg-content/5 has-[:focus-visible]:focus-fill">
           <input
             id={timeId}
             aria-invalid={invalid}
@@ -263,7 +263,7 @@ export function DateTimePicker({
             onChange={(event) =>
               onChange(`${dateKey(selected)}T${event.target.value}`)
             }
-            className="w-full bg-transparent px-2 py-1.5 text-center font-mono text-xs tabular-nums text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/30"
+            className="w-full bg-transparent px-2 py-1.5 text-center font-mono text-xs tabular-nums text-content outline-none focus-visible:focus-fill placeholder:text-content/30"
           />
         </div>
       </div>

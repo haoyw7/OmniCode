@@ -374,7 +374,7 @@ export function FilePreviewSearch({
               autoCapitalize="off"
               spellCheck={false}
               onChange={(event) => updateQuery(event.currentTarget.value)}
-              className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[12px] text-content outline-none focus-visible:focus-fill"
             />
             <span
               aria-live="polite"

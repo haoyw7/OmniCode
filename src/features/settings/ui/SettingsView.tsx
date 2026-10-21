@@ -280,7 +280,8 @@ export function SettingsView({
                 className="@container/settings min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-none"
               >
                 <div data-settings-content className="relative mx-auto w-full max-w-4xl px-5 py-6 pb-16 @min-[560px]/settings:px-8 @min-[560px]/settings:py-8">
-                  <AnimatePresence mode="popLayout">
+                  <div className="relative">
+                  <AnimatePresence>
                     <SettingsPage key={`${section}:${pageVisit.current.generation}`} reduced={reduced}>
                   <PageHeader
                     title={settingsSectionLabel(section)}
@@ -337,6 +338,7 @@ export function SettingsView({
                   ) : null}
                     </SettingsPage>
                   </AnimatePresence>
+                  </div>
                 </div>
               </div>
             </RevealedSetting.Provider>

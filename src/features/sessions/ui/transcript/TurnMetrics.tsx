@@ -172,7 +172,7 @@ export function TurnMetricsBadge({ metrics }: { metrics?: TurnMetrics }) {
         tabIndex={0}
         aria-label={uiT("Turn metrics: {value0}", { value0: String(label) })}
         title={uiT("Turn metrics")}
-        className="grid rounded-md p-1 text-content/40 outline-none hover:bg-content/5 hover:text-content/70 focus-visible:ring-1 focus-visible:ring-accent"
+        className="grid rounded-md p-1 text-content/40 outline-none hover:bg-content/5 hover:text-content/70 focus-visible:focus-fill"
       >
         <ChartBreakoutSquare className="size-3.5" />
       </span>

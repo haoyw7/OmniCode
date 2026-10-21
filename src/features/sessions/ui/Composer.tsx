@@ -2243,7 +2243,7 @@ export function Composer({
             aria-label={uiT("Stop editing last message")}
             onMouseDown={(event) => event.preventDefault()}
             onClick={exitEditMode}
-            className="edit-last-turn-button flex h-6.5 shrink-0 items-center gap-1 rounded-md border border-current/20 px-2 text-[11px] font-medium transition-[background-color,color,border-color] hover:border-current/35 hover:bg-content/10 hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            className="edit-last-turn-button flex h-6.5 shrink-0 items-center gap-1 rounded-md border border-current/20 px-2 text-[11px] font-medium transition-[background-color,color,border-color] hover:border-current/35 hover:bg-content/10 hover:text-content focus-visible:focus-fill"
           >
             <X className="size-3" />
             <span>{uiT("Cancel edit")}</span>
@@ -2410,7 +2410,7 @@ export function Composer({
             data-composer-file-drag={(fileDrag || explorerDrop.isOver) || undefined}
             className={cn("z-10 border bg-content/3 backdrop-blur-sm", resendEdited
                 ? "edit-last-turn-composer rounded-lg"
-                : "rounded-lg border-content/10 has-focus:border-content/20", (fileDrag || explorerDrop.isOver) ? "border-accent/60" : "")}
+                : "rounded-lg border-content/10 has-focus:focus-fill", (fileDrag || explorerDrop.isOver) ? "border-accent/60" : "")}
           >
             {compact ? workspaceBar : null}
             {(fileDrag || explorerDrop.isOver) ? (
@@ -2497,7 +2497,7 @@ export function Composer({
                 }
                 aria-label={inputAriaLabel}
                 disabled={disabled}
-                className={cn("composer-field scrollbar-none relative max-h-40 w-full resize-none overflow-x-hidden whitespace-pre-wrap wrap-break-word bg-transparent px-3 text-sm leading-5.5 outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap font-sans", shell ? "py-4" : "py-3")}
+                className={cn("composer-field scrollbar-none relative max-h-40 w-full resize-none overflow-x-hidden whitespace-pre-wrap wrap-break-word bg-transparent shadow-none px-3 text-sm leading-5.5 outline-none placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap font-sans", shell ? "py-4" : "py-3")}
                 onFocus={onFocus}
                 onKeyDown={onKeyDown}
                 onPaste={onPaste}
