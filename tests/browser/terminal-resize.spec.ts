@@ -48,7 +48,7 @@ for (const mode of ["shell", "tui"] as const) {
     const initialWidth = (await pane.boundingBox())!.width;
     const renderer = pane.locator(".omnicode-terminal-renderer");
     const rendererWidth = (await renderer.boundingBox())!.width;
-    const handle = page.locator('[data-pane-sash="tools-split:0"] > .resize-handle');
+    const handle = page.locator('[data-pane-sash="tools-split:0"]');
     const box = (await handle.boundingBox())!;
     const x = box.x + box.width / 2;
     const y = box.y + 100;

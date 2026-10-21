@@ -14,18 +14,15 @@ import {
   type Ref,
 } from "react";
 import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
-import {
-  useAnimatedReorder,
-} from "../../shared/hooks/useAnimatedReorder";
+import { motion } from "motion/react";
+import { ListMotion } from "../../shared/ui/ListMotion";
+import { SortableItem, SortableList } from "../../shared/ui/primitives/Sortable";
 import {
   loadSidebarPinnedOrder,
   reorderSidebarPins,
   saveSidebarPinnedOrder,
   subscribeSidebarPinnedOrder,
 } from "../model/sidebarPinnedOrder";
-import {
-  sidebarDragPreview,
-} from "./SidebarEntryReorder";
 import { useTabGroupLogos } from "../../features/projects/hooks/useTabGroupLogos";
 import { basename } from "../../platform/tauri/fs";
 import { pathKey, projectKey } from "../../shared/lib/paths";
@@ -454,27 +451,15 @@ export function ProjectList({
   const visibleSectionIds = (
     compact ? DEFAULT_SIDEBAR_SECTION_ORDER : sectionOrder
   ).filter((id) => visibleSections[id]);
-  const sectionSortable = useAnimatedReorder<SidebarOrderedSectionId>(
-    compact ? [] : visibleSectionIds,
-    (ids) => {
+  const [draggingSection, setDraggingSection] = useState<SidebarOrderedSectionId | null>(null);
+  const reorderSections = (ids: SidebarOrderedSectionId[]) => {
       const next = reorderSidebarSections(sectionOrder, ids);
       saveSidebarSectionOrder(next);
       setSectionOrder(next);
-    },
-    "y",
-    undefined,
-    {
-      activationDistance: 3,
-      floatingPreview: sidebarDragPreview,
-      collapsedSize: (_id, node) =>
-        node.offsetHeight -
-        (node.querySelector<HTMLElement>(".project-tree-collapse")
-          ?.offsetHeight ?? 0),
-    },
-  );
+    };
   useEffect(() => {
-    if (sectionSortable.draggingId) projectMenu.close();
-  }, [sectionSortable.draggingId]);
+    if (draggingSection) projectMenu.close();
+  }, [draggingSection]);
 
   const sectionContent: Record<SidebarOrderedSectionId, ReactNode> = {
     pinned: (
@@ -533,10 +518,7 @@ export function ProjectList({
         />
         <AnimatedCollapse
           keepMounted
-          expanded={
-            sectionExpanded("workflows") &&
-            sectionSortable.draggingId !== "workflows"
-          }
+          expanded={sectionExpanded("workflows")}
           motion="height"
           className="project-tree-collapse"
           durationMs={PROJECT_COLLAPSE_DURATION_MS}
@@ -561,9 +543,7 @@ export function ProjectList({
         )}
         <AnimatedCollapse
           keepMounted
-          expanded={
-            sectionExpanded("groups") && sectionSortable.draggingId !== "groups"
-          }
+          expanded={sectionExpanded("groups")}
           motion="height"
           className="project-tree-collapse"
           durationMs={PROJECT_COLLAPSE_DURATION_MS}
@@ -655,6 +635,8 @@ export function ProjectList({
   };
 
   return (
+    <SortableList ids={visibleSectionIds} onReorder={reorderSections} disabled={compact}
+      renderOverlay={id => uiT(({ pinned: "Pinned items", chats: "Chats", workflows: "Workflows", groups: "Project groups", projects: "Projects" })[id])}>
     <SidebarPinDropContext.Provider value={revealPinnedSection}>
     <ProjectSummaryContext.Provider
       value={{
@@ -665,7 +647,7 @@ export function ProjectList({
           toggleProjectPin(path);
         },
         restoringPinFocusPath: summaryPinFocus,
-        disabled: projectMenu.isActive || sectionSortable.draggingId !== null,
+        disabled: projectMenu.isActive || draggingSection !== null,
       }}
     >
       <div
@@ -684,29 +666,30 @@ export function ProjectList({
           className={`flex flex-col gap-1 pb-2 ${scrollable ? "min-h-0 flex-1 overflow-y-auto overscroll-none" : "shrink-0"}`}
         >
           {leadingContent}
-          {visibleSectionIds.map((id) => (
+          <ListMotion>
+          {visibleSectionIds.map((id) => <SortableItem key={id} id={id} disabled={compact} onActiveChange={active => setDraggingSection(active ? id : null)}>{item => (
             <SidebarSectionReorderContext.Provider
-              key={id}
-              value={compact ? null : { id, sortable: sectionSortable }}
+              value={compact ? null : { id, item }}
             >
-              <div
-                ref={(node) => sectionSortable.setItemRef(id, node)}
+              <motion.div
+                {...item.motionProps}
+                ref={item.ref}
+                style={item.style}
                 data-sidebar-reorder-section={id}
-                className="reorder-item relative flex shrink-0 flex-col"
-                onClickCapture={(event) => {
-                  if (!sectionSortable.consumeClick()) return;
-                  event.preventDefault();
-                  event.stopPropagation();
-                }}
+                data-reordering={item.sorting || undefined}
+                data-dragging={item.dragging || undefined}
+                className="relative flex shrink-0 flex-col"
               >
                 {sectionContent[id]}
-              </div>
+              </motion.div>
             </SidebarSectionReorderContext.Provider>
-          ))}
+          )}</SortableItem>)}
+          </ListMotion>
         </div>
         {projectMenu.element}
       </div>
     </ProjectSummaryContext.Provider>
     </SidebarPinDropContext.Provider>
+    </SortableList>
   );
 }

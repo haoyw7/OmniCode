@@ -1,3 +1,5 @@
+import { DragDropProvider } from "../../src/shared/ui/primitives/Sortable";
+import { NuqsAdapter } from "nuqs/adapters/react";
 // Offline RPC data with the real desktop shell, file tree, editor, review and xterm UI.
 import { useEffect, useState, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
@@ -17,7 +19,7 @@ import { PaneTree } from "../../src/features/workspace/ui/PaneTree";
 import { newSession } from "../../src/features/sessions/model/session";
 import { TranscriptPool, TranscriptPoolOutlet } from "../../src/features/sessions/ui/TranscriptPool";
 import type { EditorPane, FilePaneTab, LayoutNode, PaneEdge } from "../../src/features/workspace/model/layout";
-import { moveTabPane, newTab, setSplitRatio } from "../../src/features/workspace/model/layout";
+import { closeLeaf, moveTabPane, newTab, setSplitRatio } from "../../src/features/workspace/model/layout";
 import type { ProjectTerminalDock } from "../../src/features/projects/model/projectTerminal";
 import type { FsEntry, GitDiffIndex, GitFileDiff, GitHistory } from "../../src/platform/tauri/fs";
 import { SurfaceVisibilityContext } from "../../src/shared/ui/SurfaceVisibility";
@@ -160,10 +162,12 @@ if (query.has("explorer")) initialPane.files.unshift({ id: "tools-explorer", pat
 if (query.get("editor") === "terminal") {
   initialPane.files.push({ id: "tools-pane-pty", path: "omnicode", cwd, terminal: true });
   initialPane.activeFileId = "tools-pane-pty";
+  if (query.has("dockable")) initialPane.files = initialPane.files.filter(file => file.terminal);
 }
 const initialDock: ProjectTerminalDock = { projectPath: cwd, side: "bottom", size: 220, open: true, pane: { id: "tools-terminal-pane", files: [{ id: "tools-pty", path: "omnicode", cwd, terminal: true }], activeFileId: "tools-pty" } };
 const stackedTerminal: EditorPane = { id: "tools-stacked-terminal", files: [{ id: "tools-stacked-pty", path: "omnicode", cwd, terminal: true }], activeFileId: "tools-stacked-pty" };
-const initialLayout: LayoutNode = { type: "split", id: "tools-split", dir: query.get("split") === "down" ? "down" : "right", children: [{ type: "leaf", id: session.id }, query.has("stackedTools") ? { type: "split", id: "stacked-tools", dir: "down", children: [{ type: "leaf", id: initialPane.id }, { type: "leaf", id: stackedTerminal.id }], sizes: [0.5, 0.5] } : { type: "leaf", id: initialPane.id }], sizes: [0.54, 0.46] };
+const stackedToolIds = query.has("filesBelow") ? [stackedTerminal.id, initialPane.id] : [initialPane.id, stackedTerminal.id];
+const initialLayout: LayoutNode = { type: "split", id: "tools-split", dir: query.get("split") === "down" ? "down" : "right", children: [{ type: "leaf", id: session.id }, query.has("stackedTools") ? { type: "split", id: "stacked-tools", dir: "down", children: stackedToolIds.map(id => ({ type: "leaf", id })), sizes: [0.5, 0.5] } : { type: "leaf", id: initialPane.id }], sizes: [0.54, 0.46] };
 
 function DesktopToolsFixture() {
   const [workspaceTab, setWorkspaceTab] = useState(() => ({ ...newTab(session.id), layout: initialLayout }));
@@ -182,7 +186,7 @@ function DesktopToolsFixture() {
   const openFile = (path: string) => setPane(value => ({ ...value, activeFileId: source.id, files: value.files.map(file => file.id === source.id ? { ...file, path } : file) }));
   const sidebar: SidebarProps = { desktopMode: "code", cwd, recents: activity.recents, open: true, sessions: [{ id: session.id, cwd, harness: session.harness, model: session.model, runtimeMode: session.runtimeMode, title: session.title, createdAt: 1791891000000, updatedAt: 1791891000000 }], busySessionIds: new Set(), approvalSessionIds: new Set(), activeSessionId: session.id, visibleSessionId: session.id, status: "idle", pending: false, onSelectSession: noop, tab, onTabChange: setTab, filesSearchOpen: false, onFilesSearchOpenChange: noop, onOpenFile: openFile, onOpenDiff: () => setPane(value => ({ ...value, activeFileId: review.id })), textHarness: "claude", onOpenTerminal: () => setDock(value => ({ ...value, open: true })), selectedDiffPath: sourcePath, selectedDiffKind: "unstaged" };
   const handlers = {
-    onClose: noop, onCwdChange: noop, onBranchChange: noop, onWorkspaceModeChange: noop,
+    onClose: (paneId: string) => setWorkspaceTab(value => closeLeaf(value, paneId) ?? value), onCwdChange: noop, onBranchChange: noop, onWorkspaceModeChange: noop,
     onWorktreeBaseChange: noop, onModelChange: noop, onModelSettingsChange: noop,
     onRuntimeModeChange: noop, onSaveDraft: noop, onRemoveDraft: noop,
     onDeleteQueuedMessage: noop, onEditQueuedMessage: noop, onQueuedMessageEditingChange: noop,
@@ -191,6 +195,7 @@ function DesktopToolsFixture() {
     onQuestionReply: noop, onOpenSessionFile: noop, onOpenPlan: noop, onUpdatePlan: noop,
     onBuildPlan: noop, onMovePane: (from: string, to: string, edge: PaneEdge) => setWorkspaceTab(value => moveTabPane(value, from, to, edge)), onCloseFile: noop, onCloseOtherFiles: noop,
     onReorderFiles: noop, onFileDirtyChange: noop, onFileErrorCountChange: noop,
+    onMovePaneToDock: noop,
     onRatio: (splitId: string, index: number, ratio: number) => setWorkspaceTab(value => ({ ...value, layout: setSplitRatio(value.layout, splitId, index, ratio) })),
   };
   const paneProps: ComponentProps<typeof PaneTree> = { ...handlers, visible: true, layout, sessions: [session], editorPanes: [pane, ...(query.has("stackedTools") ? [stackedTerminal] : [])], dirtyFileIds: new Set(), fileErrorCounts: new Map(), focusedId, surfaceMode: "split", composerFocused: false, recents: activity.recents, transcriptPool: pool, hideProjectPicker: false, onFocus: setFocusedId, onSubmit: () => true, onStop: noop, onCompactContext: () => true, onOpenFile: openFile, onOpenDiff: () => setPane(value => ({ ...value, activeFileId: review.id })), onNewTerminal: () => setDock(value => ({ ...value, open: true })), onSelectFile: (_pane: string, activeFileId: string) => setPane(value => ({ ...value, activeFileId })), autoArrangeTools: workspaceTab.autoArrangeTools, onFitLayout: (previous, next, manual) => setWorkspaceTab(value => value.layout === previous ? { ...value, layout: next, ...(manual ? { autoArrangeTools: false } : {}) } : value) };
@@ -227,4 +232,4 @@ function DesktopToolsFixture() {
   </div></SessionHeaderActionsContext.Provider></MotionConfig>;
 }
 
-createRoot(document.getElementById("root")!).render(<DesktopToolsFixture />);
+createRoot(document.getElementById("root")!).render(<NuqsAdapter><DragDropProvider><DesktopToolsFixture /></DragDropProvider></NuqsAdapter>);

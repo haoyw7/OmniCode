@@ -1,99 +1,39 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { combineSidebarDrops, sidebarPinDrop } from "./sidebarPinDrop";
+import { beforeEach, expect, it, vi } from "vitest";
+import { useActiveDragPayload, useDropTarget } from "../../shared/ui/primitives/Sortable";
+import { useSidebarPinDrop } from "./sidebarPinDrop";
 
-let root: HTMLElement;
-let source: HTMLElement;
-let section: HTMLElement;
-let header: HTMLElement;
-const point = (y: number) =>
-  new PointerEvent("pointermove", { clientX: 40, clientY: y });
-
+vi.mock("../../shared/ui/primitives/Sortable", () => ({ useActiveDragPayload: vi.fn(), useDropTarget: vi.fn() }));
+const ref = vi.fn();
 beforeEach(() => {
-  root = document.createElement("div");
-  root.dataset.projectList = "tree";
-  root.innerHTML =
-    '<div data-project-section="pinned"><div data-sidebar-section-header></div><div data-project-children></div></div><div data-source></div>';
-  document.body.append(root);
-  source = root.querySelector("[data-source]")!;
-  section = root.querySelector('[data-project-section="pinned"]')!;
-  header = root.querySelector("[data-sidebar-section-header]")!;
-  vi.spyOn(root, "getBoundingClientRect").mockReturnValue(
-    new DOMRect(0, 0, 240, 500),
-  );
-  vi.spyOn(section, "getBoundingClientRect").mockReturnValue(
-    new DOMRect(0, 0, 240, 150),
-  );
-  vi.spyOn(header, "getBoundingClientRect").mockReturnValue(
-    new DOMRect(0, 0, 240, 28),
-  );
+  vi.mocked(useActiveDragPayload).mockReturnValue(null);
+  vi.mocked(useDropTarget).mockReset().mockReturnValue({ ref, isOver: false });
+  ref.mockClear();
 });
-
-afterEach(() => {
-  root.remove();
-  document.querySelectorAll(".drag-label").forEach((node) => node.remove());
-  vi.restoreAllMocks();
-});
-
-it("accepts the whole pinned area, commits only on drop and clears feedback on leaving/cancellation", () => {
+it("accepts unpinned sessions and projects and commits only the drop callback", () => {
   const pin = vi.fn();
-  const drop = sidebarPinDrop(source, "Pin", pin)!;
-  expect(drop.onMove("session", point(100))).toBe(true);
-  expect(section.dataset.sidebarPinDropTarget).toBe("true");
+  useSidebarPinDrop(true);
+  const options = vi.mocked(useDropTarget).mock.calls[0][0];
+  for (const type of ["sidebar-session", "sidebar-project"]) {
+    const payload = { type, pinned: false, onPin: pin };
+    expect(options.accepts(payload)).toBe(true);
+    expect(options.accepts({ ...payload, pinned: true })).toBe(false);
+  }
+  expect(options.accepts({ type: "explorer-file", onPin: pin })).toBe(false);
   expect(pin).not.toHaveBeenCalled();
-  expect(drop.onMove("session", point(200))).toBe(false);
-  expect(section.dataset.sidebarPinDropTarget).toBeUndefined();
-  expect(drop.onDrop("session", point(200))).toBe(false);
-  drop.onMove("session", point(20));
-  drop.onEnd?.("session");
-  expect(pin).not.toHaveBeenCalled();
-  expect(document.querySelector(".drag-label")).toBeNull();
-  expect(drop.onDrop("session", point(20))).toBe(true);
+  options.onDrop({ type: "sidebar-session", onPin: pin });
   expect(pin).toHaveBeenCalledOnce();
 });
-
-it("requires the header when dragging an ordinary conversation out of a pinned project", () => {
-  section.querySelector("[data-project-children]")!.append(source);
-  const pin = vi.fn();
-  const drop = sidebarPinDrop(source, "Pin", pin)!;
-  expect(drop.onMove("session", point(100))).toBe(false);
-  expect(drop.onDrop("session", point(100))).toBe(false);
-  expect(drop.onDrop("session", point(20))).toBe(true);
-  expect(pin).toHaveBeenCalledOnce();
-});
-
-it("ignores hidden sidebars and removed drop targets", () => {
-  const pin = vi.fn();
-  const drop = sidebarPinDrop(source, "Pin", pin)!;
-  root.setAttribute("inert", "");
-  expect(drop.onMove("session", point(20))).toBe(false);
-  root.removeAttribute("inert");
-  section.remove();
-  expect(drop.onDrop("session", point(20))).toBe(false);
-  expect(pin).not.toHaveBeenCalled();
-});
-
-it("clears every previous target when switching between pin, group and pane drops", () => {
-  const pin = {
-    onMove: vi.fn(() => true),
-    onDrop: vi.fn(() => true),
-    onEnd: vi.fn(),
-  };
-  const pane = {
-    onMove: vi.fn(() => false),
-    onDrop: vi.fn(() => true),
-    onEnd: vi.fn(),
-  };
-  const drop = combineSidebarDrops(pin, undefined, pane)!;
-  expect(drop.onMove("item", point(20))).toBe(true);
-  expect(pane.onMove).toHaveBeenCalledOnce();
-  pin.onMove.mockReturnValue(false);
-  pane.onMove.mockReturnValue(true);
-  drop.onMove("item", point(200));
-  expect(pin.onMove).toHaveBeenCalledTimes(2);
-  expect(drop.onDrop("item", point(20))).toBe(true);
-  expect(pane.onDrop).not.toHaveBeenCalled();
-  drop.onEnd?.("item");
-  expect(pin.onEnd).toHaveBeenCalledOnce();
-  expect(pane.onEnd).toHaveBeenCalledOnce();
+it("uses only the header for a conversation inside a pinned project", () => {
+  const section = document.createElement("div"), header = document.createElement("div");
+  header.dataset.sidebarSectionHeader = "";
+  section.append(header);
+  vi.mocked(useActiveDragPayload).mockReturnValue({ type: "sidebar-session", insidePins: true });
+  useSidebarPinDrop(true).ref(section);
+  expect(ref).toHaveBeenLastCalledWith(header);
+  vi.mocked(useActiveDragPayload).mockReturnValue({ type: "sidebar-session" });
+  useSidebarPinDrop(true).ref(section);
+  expect(ref).toHaveBeenLastCalledWith(section);
+  useSidebarPinDrop(false);
+  expect(vi.mocked(useDropTarget).mock.lastCall?.[0].disabled).toBe(true);
 });

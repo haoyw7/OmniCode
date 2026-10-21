@@ -121,6 +121,7 @@ export function claimEditorResource(path: string): EditorResource {
         remoteRequest(machine.id, "resources.claim", {
           resourceId,
           path: remote.hostPath,
+          ...(remote.machine ? { machine: remote.machine } : {}),
         });
       release = async () => {
         rememberRelease({ machineId: machine.id, resourceId });

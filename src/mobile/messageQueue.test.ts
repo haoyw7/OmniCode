@@ -9,6 +9,13 @@ import { MOBILE_MATERIAL_SELECTOR } from "./theme/material";
 import { setUiLanguage } from "../shared/i18n/language";
 import type { QueuedMessage } from "../features/sessions/model/session";
 import { SurfaceVisibilityContext } from "../shared/ui/SurfaceVisibility";
+import { mockDragOverlayGeometry } from "../../tests/helpers/dndGeometry";
+// Style snapshot rewriting needs a writable CSSStyleRule.selectorText, which
+// happy-dom lacks. The browser preview tests cover that separate boundary.
+vi.mock("../shared/ui/primitives/dragPreviewStyles", async (importOriginal) => ({
+  ...await importOriginal<typeof import("../shared/ui/primitives/dragPreviewStyles")>(),
+  observeDragPreviewStyles: () => () => {},
+}));
 const mobileCss = ["src/mobile/theme/tokens.css", ...readdirSync("src/mobile/styles").filter((name) => /^\d+-.+\.css$/.test(name)).sort().map((name) => `src/mobile/styles/${name}`)]
   .map((path) => readFileSync(path, "utf8")).join("\n");
 vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -29,79 +36,91 @@ const message: QueuedMessage = {
   ],
 };
 beforeEach(() => {
+  mockDragOverlayGeometry();
   startMotionClock();
   setUiLanguage("en");
   node = document.createElement("div");
   document.body.append(node);
   root = createRoot(node);
 });
-afterEach(() => {
-  act(() => root.unmount());
+afterEach(async () => {
+  await act(async () => {
+    root.unmount();
+    if (vi.isFakeTimers()) vi.advanceTimersByTime(60);
+  });
   document.body.replaceChildren();
   stopMotionClock();
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
-function pointer(type: string, y: number, target: EventTarget) {
-  target.dispatchEvent(new PointerEvent(type, { pointerId: 1, pointerType: "touch", button: 0, clientX: 100, clientY: y, bubbles: true, cancelable: true }));
+let touchTarget: EventTarget;
+function touch(type: string, y: number, target = touchTarget) {
+  if (type === "touchstart") touchTarget = target;
+  const point = { identifier: 1, target, clientX: 100, clientY: y } as Touch;
+  target.dispatchEvent(new TouchEvent(type, { touches: type === "touchend" ? [] : [point], changedTouches: [point], bubbles: true, cancelable: true }));
 }
+const dragPreview = () => document.querySelector(".sortable-overlay");
 function sortableQueue(onReorder = vi.fn()) {
   const messages = [message, { ...message, id: "second", text: "Second" }, { ...message, id: "third", text: "Third" }];
-  render({ messages, onReorder });
+  const props = render({ messages, onReorder });
   const pills = [...node.querySelectorAll<HTMLButtonElement>(".mobile-queue-pills > button")];
   pills.forEach((pill, index) => pill.getBoundingClientRect = () => ({ left: 20, top: 100 + index * 51, width: 200, height: 44, right: 220, bottom: 144 + index * 51 }) as DOMRect);
   const list = node.querySelector<HTMLElement>(".mobile-queue-pills")!;
   list.getBoundingClientRect = () => ({ top: 100, bottom: 260 }) as DOMRect;
-  return { pills, onReorder };
+  return { pills, onReorder, props };
 }
 it("requires a long press, previews the new order and saves the dragged row relative to its successor", async () => {
   vi.useFakeTimers();
   const { pills, onReorder } = sortableQueue();
-  act(() => pointer("pointerdown", 122, pills[0]));
+  act(() => touch("touchstart", 122, pills[0]));
   act(() => vi.advanceTimersByTime(399));
-  expect(node.querySelector('.mobile-queue-drag-preview')).toBeNull();
+  expect(dragPreview()).toBeNull();
   act(() => vi.advanceTimersByTime(1));
-  expect(node.querySelector('.mobile-queue-drag-preview')).not.toBeNull();
-  act(() => { pointer("pointermove", 175, window); vi.advanceTimersByTime(16); motionFrame(); });
-  expect([...node.querySelectorAll<HTMLElement>('.mobile-queue-pills > button')].map(row => row.dataset.queueId)).toEqual(['second','queued','third']);
-  await act(async () => pointer("pointerup", 175, window));
+  expect(dragPreview()).not.toBeNull();
+  act(() => { touch("touchmove", 175); vi.advanceTimersByTime(16); motionFrame(); });
+  expect(pills[1].style.transform).toContain("translate3d");
+  expect(onReorder).not.toHaveBeenCalled();
+  await act(async () => touch("touchend", 175));
   expect(onReorder).toHaveBeenCalledWith('queued','third');
   act(() => pills[0].click());
   expect(node.querySelector('[role="dialog"]')).toBeNull();
 });
-it.each(["pointercancel", "Escape"])("cancels a drag on %s without saving or opening actions", async (action) => {
+it.each(["touchcancel", "Escape", "blur"])("cancels a drag on %s without saving or opening actions", async (action) => {
   vi.useFakeTimers();
   const { pills, onReorder } = sortableQueue();
-  act(() => { pointer("pointerdown",122,pills[0]); vi.advanceTimersByTime(400); pointer("pointermove",224,window); });
-  act(() => action === "Escape" ? window.dispatchEvent(new KeyboardEvent("keydown",{key:'Escape'})) : pointer("pointercancel",224,window));
-  expect(node.querySelector('.mobile-queue-drag-preview')).toBeNull();
+  act(() => { touch("touchstart",122,pills[0]); vi.advanceTimersByTime(400); });
+  act(() => touch("touchmove",224));
+  await act(async () => action === "Escape" ? document.dispatchEvent(new KeyboardEvent("keydown",{key:'Escape', code:'Escape'})) : action === "blur" ? window.dispatchEvent(new Event("blur")) : touch("touchcancel",224));
+  expect(dragPreview()?.textContent).toBeFalsy();
   expect(onReorder).not.toHaveBeenCalled();
   expect([...node.querySelectorAll<HTMLElement>('.mobile-queue-pills > button')].map(row => row.dataset.queueId)).toEqual(['queued','second','third']);
 });
 it("treats movement before the hold as scrolling and preserves a short tap for the actions menu", async () => {
   vi.useFakeTimers();
   const { pills, onReorder } = sortableQueue();
-  act(() => { pointer('pointerdown',122,pills[0]); pointer('pointermove',142,window); vi.advanceTimersByTime(500); pointer('pointerup',142,window); });
-  expect(node.querySelector('.mobile-queue-drag-preview')).toBeNull();
+  act(() => { touch('touchstart',122,pills[0]); touch('touchmove',142); vi.advanceTimersByTime(500); touch('touchend',142); });
+  expect(dragPreview()).toBeNull();
   expect(onReorder).not.toHaveBeenCalled();
-  act(() => { pointer('pointerdown',122,pills[0]); pointer('pointerup',122,window); pills[0].click(); });
+  act(() => { touch('touchstart',122,pills[0]); touch('touchend',122); pills[0].click(); });
   expect(node.querySelector('[role="dialog"]')).not.toBeNull();
 });
 it("reverts the preview and shows a failed reorder without losing any queue messages", async () => {
   vi.useFakeTimers();
   const { pills } = sortableQueue(vi.fn(async () => { throw new Error('Queued destination not found'); }));
-  act(() => { pointer('pointerdown',122,pills[0]); vi.advanceTimersByTime(400); pointer('pointermove',224,window); });
-  await act(async () => pointer('pointerup',224,window));
+  act(() => { touch('touchstart',122,pills[0]); vi.advanceTimersByTime(400); });
+  act(() => touch('touchmove',224));
+  await act(async () => touch('touchend',224));
   expect(node.querySelector('[role="alert"]')?.textContent).toContain('Queued destination not found');
   expect([...node.querySelectorAll<HTMLElement>('.mobile-queue-pills > button')].map(row => row.dataset.queueId)).toEqual(['queued','second','third']);
 });
-it("cancels when another device changes the queue while dragging", () => {
+it("cancels when another device changes the queue while dragging", async () => {
   vi.useFakeTimers();
   const { pills, onReorder } = sortableQueue();
-  act(() => { pointer('pointerdown',122,pills[0]); vi.advanceTimersByTime(400); });
+  act(() => { touch('touchstart',122,pills[0]); vi.advanceTimersByTime(400); });
   render({ messages: [message], onReorder });
-  act(() => pointer('pointerup',224,window));
-  expect(node.querySelector('.mobile-queue-drag-preview')).toBeNull();
+  await act(async () => touch('touchend',224));
+  expect(dragPreview()?.textContent).toBeFalsy();
   expect(onReorder).not.toHaveBeenCalled();
 });
 function render(
@@ -155,7 +174,7 @@ it.each(["frosted", "solid"])(
     render();
     const pill = node.querySelector<HTMLElement>(".mobile-queue-pill")!;
     const preview = document.createElement("div");
-    preview.className = "mobile-queue-pill mobile-queue-drag-preview";
+    preview.className = "mobile-queue-pill";
     node.append(preview);
     try {
       html.setAttribute("data-mobile-glass", effect);
@@ -255,15 +274,35 @@ it("provides the native Back handler while a queue menu is open", async () => {
   await finishMenuExit();
   expect(props.onOverlayChange).toHaveBeenLastCalledWith();
 });
-it("cancels an active drag when its page becomes hidden", () => {
+it("cancels an active drag when its page becomes hidden", async () => {
   vi.useFakeTimers();
   const { pills, onReorder } = sortableQueue();
-  act(() => { pointer("pointerdown", 122, pills[0]); vi.advanceTimersByTime(400); });
-  expect(node.querySelector(".mobile-queue-drag-preview")).not.toBeNull();
+  act(() => { touch("touchstart", 122, pills[0]); vi.advanceTimersByTime(400); });
+  expect(dragPreview()).not.toBeNull();
   render({ messages: [message, { ...message, id: "second", text: "Second" }, { ...message, id: "third", text: "Third" }], onReorder }, false);
-  act(() => pointer("pointerup", 224, window));
-  expect(node.querySelector(".mobile-queue-drag-preview")).toBeNull();
+  await act(async () => touch("touchend", 224));
+  expect(dragPreview()?.textContent).toBeFalsy();
   expect(onReorder).not.toHaveBeenCalled();
+});
+it("cancels a touch on the pill icon through the native Back handler", async () => {
+  vi.useFakeTimers();
+  const { pills, props, onReorder } = sortableQueue();
+  act(() => { touch("touchstart", 122, pills[0].querySelector("svg")!); vi.advanceTimersByTime(400); });
+  expect(dragPreview()).not.toBeNull();
+  const close = props.onOverlayChange.mock.calls.find(args => args[0])![0]!;
+  await act(async () => close());
+  expect(dragPreview()?.textContent).toBeFalsy();
+  expect(onReorder).not.toHaveBeenCalled();
+});
+it("sorts with Space and arrow keys as well as touch", async () => {
+  vi.useFakeTimers();
+  const { pills, onReorder } = sortableQueue();
+  pills[0].focus();
+  act(() => pills[0].dispatchEvent(new KeyboardEvent("keydown", { key: " ", code: "Space", bubbles: true })));
+  act(() => vi.advanceTimersByTime(0));
+  act(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", code: "ArrowDown", bubbles: true })));
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: " ", code: "Space", bubbles: true })));
+  expect(onReorder).toHaveBeenCalledWith("queued", "third");
 });
 it("localizes attachment-only bubbles and menu labels", async () => {
   setUiLanguage("zh-CN");

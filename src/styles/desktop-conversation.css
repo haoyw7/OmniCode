@@ -769,33 +769,6 @@ html[data-skin][data-desktop-mode] .pane-card {
   border: var(--desktop-border) solid var(--color-composer-ring);
 }
 
-html[data-skin][data-desktop-mode] [data-pane-floating] {
-  pointer-events: none;
-}
-
-html[data-skin][data-desktop-mode] [data-pane-floating] > [data-pane-background-geometry] {
-  visibility: hidden;
-}
-
-html[data-skin][data-desktop-mode] .pane-insertion-line {
-  position: fixed;
-  pointer-events: none;
-  border-radius: 2px;
-  background: var(--color-accent);
-}
-
-html[data-skin][data-desktop-mode] .pane-drag-ghost > .drag-ghost-card {
-  /* The clone includes layout gutters; only the retained inner card is lifted. */
-  border-radius: 0;
-  overflow: visible;
-  background: transparent;
-  box-shadow: none;
-}
-
-html[data-skin][data-desktop-mode] .pane-drag-ghost [data-pane-card-frame] {
-  box-shadow: var(--drag-ghost-shadow);
-}
-
 /* A single conversation stays borderless even beside file or terminal cards. */
 html[data-skin][data-desktop-mode] [data-pane-chat-edge] > div > [data-pane-card-frame] {
   border: 0;

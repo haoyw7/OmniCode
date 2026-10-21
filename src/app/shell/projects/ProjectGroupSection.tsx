@@ -5,8 +5,8 @@ import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { MoreHorizontal } from "../../../shared/ui/icons";
 import { type MouseEvent } from "react";
-import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
-import { sidebarDragPreview } from "../SidebarEntryReorder";
+import { SortableItem, SortableList } from "../../../shared/ui/primitives/Sortable";
+import { SidebarProjectGroupContext, useProjectGroupDrop } from "../projectGroupDrop";
 import { useTabGroupLogos } from "../../../features/projects/hooks/useTabGroupLogos";
 import { pathKey } from "../../../shared/lib/paths";
 import { sameProjectPath, type RecentProject } from "../../../features/projects/model/recents";
@@ -16,7 +16,6 @@ import {
 } from "../../../features/projects/model/projectGroups";
 import { ProjectMascot } from "../../../features/projects/ui/ProjectMascot";
 import {
-  collapsedProjectHeaderSize,
   isBusyPath,
   nameClassName,
   PROJECT_COLLAPSE_DURATION_MS,
@@ -85,17 +84,7 @@ export function ProjectGroupSection({
     searchActive,
     { indented: false, expanded },
   );
-  const sortable = useAnimatedReorder(
-    items.slice(0, preview.count).map((item) => item.path),
-    onReorder,
-    "y",
-    undefined,
-    {
-      activationDistance: 3,
-      floatingPreview: sidebarDragPreview,
-      collapsedSize: tree ? collapsedProjectHeaderSize : undefined,
-    },
-  );
+  const drop = useProjectGroupDrop(group.id);
   const countLabel = uiT(
     items.length === 1 ? "{count} project" : "{count} projects",
     { count: items.length },
@@ -106,6 +95,7 @@ export function ProjectGroupSection({
   };
 
   return (
+    <SidebarProjectGroupContext.Provider value={group.id}>
     <div
       className={`shrink-0 overflow-hidden rounded-lg ${
         tree
@@ -120,8 +110,10 @@ export function ProjectGroupSection({
     >
       {compact ? null : (
         <div
+          ref={drop.ref}
+          data-project-group-drop-target={drop.isOver || undefined}
           data-project-group-header={group.id}
-          className="project-reorder-item group relative flex h-8 items-stretch rounded-lg px-2 opacity-65 cursor-default"
+          className="group relative flex h-8 items-stretch rounded-lg px-2 opacity-65 cursor-default"
           onContextMenu={(event) => {
             event.preventDefault();
             event.currentTarget
@@ -136,7 +128,7 @@ export function ProjectGroupSection({
             aria-label={`${group.name}, ${countLabel}`}
             title={`${group.name} · ${countLabel}`}
             onClick={searchActive ? undefined : onToggleCollapsed}
-            className="flex min-w-0 flex-1 cursor-default items-center gap-2 text-left transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[:focus-visible]:pr-6"
+            className="flex min-w-0 flex-1 cursor-default items-center gap-2 pr-6 text-left"
           >
             <div className="grid size-4 shrink-0 place-items-center">
               {!expanded ? (
@@ -198,7 +190,8 @@ export function ProjectGroupSection({
               : `flex flex-col gap-px ${tree ? "px-1 py-px" : "p-1"}`
           }
         >
-          {items.slice(0, preview.mountedCount).map((item, index) => (
+          <SortableList ids={items.slice(0, preview.count).map(item => item.path)} onReorder={onReorder} disabled={!expanded} renderOverlay={() => uiT("Drag to move")}>
+          {items.slice(0, preview.mountedCount).map((item, index) => <SortableItem key={item.path} id={item.path} disabled={index >= preview.count}>{sortable => (
             <AnimatedCollapse key={item.path} expanded={index < preview.count}>
               <ProjectCard
                 compact={compact}
@@ -226,10 +219,12 @@ export function ProjectGroupSection({
                 groupMascots={groupMascots}
               />
             </AnimatedCollapse>
-          ))}
+          )}</SortableItem>)}
+          </SortableList>
           {preview.button}
         </div>
       </AnimatedCollapse>
     </div>
+    </SidebarProjectGroupContext.Provider>
   );
 }

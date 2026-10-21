@@ -1,4 +1,5 @@
 import type { GenerationSample } from "./generationSample";
+import type { StartupProgress } from "../../../integrations/harness/core/startupProgress";
 import { loadSharedAgentDefaults } from "../../settings/model/agentPreferences";
 import { translate } from "../../../shared/i18n/language";
 import { dropContextWindow, type ContextUsage } from "./contextUsage";
@@ -42,6 +43,7 @@ export type SessionExecutionState = {
   runId: string;
   phase: "waiting-resource" | "starting" | "awaiting-response" | "active" | "settling";
   since: number;
+  startup?: StartupProgress;
   /** Separate resource queue time from provider time. */
   providerStartedAt?: number;
   reason?: "integrating" | "removing" | "computer";

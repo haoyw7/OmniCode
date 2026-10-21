@@ -4,19 +4,26 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MessageQueue } from "./MessageQueue";
 import { setUiLanguage } from "../../../shared/i18n/language";
+import { mockDragOverlayGeometry } from "../../../../tests/helpers/dndGeometry";
 
 vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
 let root: Root;
 let node: HTMLDivElement;
 beforeEach(() => {
+  mockDragOverlayGeometry();
   setUiLanguage("en");
   node = document.createElement("div");
   document.body.append(node);
   root = createRoot(node);
 });
-afterEach(() => {
-  act(() => root.unmount());
+afterEach(async () => {
+  await act(async () => {
+    root.unmount();
+    await new Promise(resolve => setTimeout(resolve, 60));
+  });
   document.body.replaceChildren();
+  delete document.documentElement.dataset.reducedMotion;
+  vi.restoreAllMocks();
 });
 function render(props: Partial<Parameters<typeof MessageQueue>[0]> = {}) {
   const onRestore = vi.fn();
@@ -69,19 +76,18 @@ it("waits for take-back confirmation and keeps the row on rejection", async () =
 const rows = ["a", "b", "c"].map(id => ({ id, text: id, attachments: [] }));
 it("supports moving a queued row in both directions with the keyboard", async () => {
   const s = render({ messages: rows });
-  const handle = (id: string) => node.querySelector<HTMLButtonElement>(`[data-queue-id="${id}"] button`)!;
-  await act(async () => handle("a").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })));
+  await keyboardMove("a", "ArrowDown");
   expect(s.onReorder).toHaveBeenLastCalledWith("a", "c");
-  await act(async () => handle("b").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true })));
+  await keyboardMove("b", "ArrowUp");
   expect(s.onReorder).toHaveBeenLastCalledWith("b", "a");
-  await act(async () => handle("c").dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true })));
+  await keyboardMove("c", "ArrowUp");
   expect(s.onReorder).toHaveBeenLastCalledWith("c", "b");
 });
 it("keeps a pending remote order visible and rolls it back on rejection", async () => {
   let reject!: (reason: Error) => void;
   const onReorder = vi.fn(() => new Promise<void>((_, fail) => { reject = fail; }));
   render({ messages: rows, onReorder });
-  await act(async () => node.querySelector('[data-queue-id="b"] button')!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })));
+  await keyboardMove("b", "ArrowDown");
   expect(onReorder).toHaveBeenCalledWith("b", undefined);
   expect([...node.querySelectorAll<HTMLElement>("[data-queue-id]")].map(row => row.dataset.queueId)).toEqual(["a", "c", "b"]);
   await act(async () => reject(new Error("Queue changed")));
@@ -96,13 +102,23 @@ it("keeps the accepted remote order until the Host snapshot arrives", async () =
   let accept!: () => void;
   const onReorder = vi.fn(() => new Promise<void>(resolve => { accept = resolve; }));
   render({ messages: rows, remote: true, onReorder });
-  await act(async () => node.querySelector('[data-queue-id="b"] button')!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })));
+  await keyboardMove("b", "ArrowDown");
   await act(async () => accept());
   expect([...node.querySelectorAll<HTMLElement>("[data-queue-id]")].map(row => row.dataset.queueId)).toEqual(["a", "c", "b"]);
   expect(node.querySelector<HTMLButtonElement>('[aria-label="Drag to reorder queued message"]')?.disabled).toBe(true);
   render({ messages: [rows[0], rows[2], rows[1]], remote: true, onReorder });
   expect(node.querySelector<HTMLButtonElement>('[aria-label="Drag to reorder queued message"]')?.disabled).toBe(false);
 });
+
+async function keyboardMove(id: string, code: string) {
+  dragRows();
+  const handle = node.querySelector<HTMLButtonElement>(`[data-queue-id="${id}"] button`)!;
+  handle.focus();
+  await act(async () => handle.dispatchEvent(new KeyboardEvent("keydown", { key: " ", code: "Space", bubbles: true })));
+  await act(async () => new Promise(resolve => setTimeout(resolve, 0)));
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: code, code, bubbles: true })));
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: " ", code: "Space", bubbles: true })));
+}
 
 function dragRows() {
   document.documentElement.dataset.reducedMotion = "on";
@@ -113,9 +129,12 @@ function dragRows() {
     row.releasePointerCapture = vi.fn();
   }
   return {
-    press: (id: string, y: number) => act(() => node.querySelector(`[data-queue-id="${id}"] button`)!.dispatchEvent(new PointerEvent("pointerdown", { button: 0, clientY: y, pointerId: 1, bubbles: true }))),
-    move: (y: number) => act(() => window.dispatchEvent(new PointerEvent("pointermove", { clientY: y, pointerId: 1 }))),
-    release: (y: number) => act(async () => window.dispatchEvent(new PointerEvent("pointerup", { clientY: y, pointerId: 1 }))),
+    press: (id: string, y: number) => act(() => node.querySelector(`[data-queue-id="${id}"] button`)!.dispatchEvent(new PointerEvent("pointerdown", { button: 0, clientY: y, pointerId: 1, isPrimary: true, bubbles: true }))),
+    move: (y: number) => {
+      act(() => document.dispatchEvent(new PointerEvent("pointermove", { clientY: y, pointerId: 1 })));
+      act(() => document.dispatchEvent(new PointerEvent("pointermove", { clientY: y, pointerId: 1 })));
+    },
+    release: (y: number) => act(async () => document.dispatchEvent(new PointerEvent("pointerup", { clientY: y, pointerId: 1 }))),
   };
 }
 it("commits pointer dragging only on release and supports a second drag in the other direction", async () => {
@@ -139,7 +158,8 @@ it.each(["Escape", "pointercancel", "blur"])("cancels a queued drag with %s", as
   const pointer = dragRows();
   pointer.press("a", 14);
   pointer.move(74);
-  await act(async () => window.dispatchEvent(reason === "Escape" ? new KeyboardEvent("keydown", { key: "Escape" }) : new Event(reason)));
+  expect(node.querySelector('[data-dragging="true"]')).not.toBeNull();
+  await act(async () => (reason === "blur" ? window : document).dispatchEvent(reason === "Escape" ? new KeyboardEvent("keydown", { key: "Escape", code: "Escape" }) : new Event(reason)));
   expect(s.onReorder).not.toHaveBeenCalled();
   expect(node.querySelector('[data-dragging="true"]')).toBeNull();
   delete document.documentElement.dataset.reducedMotion;
@@ -153,6 +173,17 @@ it("disables unavailable steer while leaving edit and delete usable", async () =
   ).toBe(true);
   await s.click("Remove queued message");
   expect(s.onDelete).toHaveBeenCalledWith("row");
+});
+it("cancels an active pointer gesture when the queue unmounts", async () => {
+  const s = render({ messages: rows });
+  const pointer = dragRows();
+  pointer.press("a", 14);
+  pointer.move(74);
+  expect(node.querySelector('[data-dragging="true"]')).not.toBeNull();
+  await act(async () => root.unmount());
+  await pointer.release(74);
+  expect(s.onReorder).not.toHaveBeenCalled();
+  expect(document.querySelector(".sortable-overlay")).toBeNull();
 });
 it("shows a localized shared paused queue with an explicit resume action", () => {
   setUiLanguage("zh-CN");

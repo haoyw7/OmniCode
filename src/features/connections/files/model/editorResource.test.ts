@@ -103,6 +103,32 @@ it("claims remote buffers on their owning Host and renews before another write",
   );
 });
 
+it("keeps the WSL distribution on editor claims and retries while releasing by Host resource ID", async () => {
+  configureSharedHost("env", [], "desktop");
+  vi.mocked(remoteMachineFor).mockResolvedValue({
+    id: "desktop", environmentId: "env", endpoint: "http://host", name: "desktop",
+  });
+  vi.mocked(remoteRequest).mockImplementation(async (_machine, method, params) => {
+    if (method === "environment.describe") return { capabilities: ["resources"] } as never;
+    if (method === "resources.claim" && !(params as { machine?: unknown }).machine)
+      throw new Error("Invalid win32 path for machine local");
+    return undefined as never;
+  });
+  const lease = claimEditorResource("wsl://Ubuntu/home/dev/repo/.env");
+  await lease.ready;
+  await lease.reclaim();
+  const claims = vi.mocked(remoteRequest).mock.calls.filter(([, method]) => method === "resources.claim");
+  expect(claims).toHaveLength(2);
+  for (const [host, , params] of claims) {
+    expect(host).toBe("desktop");
+    expect(params).toEqual({ resourceId: expect.any(String), path: "/home/dev/repo/.env",
+      machine: { kind: "wsl", distribution: "Ubuntu" } });
+  }
+  await lease.release();
+  expect(remoteRequest).toHaveBeenLastCalledWith("desktop", "resources.release", { resourceId: claims[0][2]!.resourceId });
+  expect(invoke).not.toHaveBeenCalled();
+});
+
 it("keeps file editing compatible with Hosts lacking resource claims", async () => {
   vi.mocked(remoteMachineFor).mockResolvedValue({
     id: "old",

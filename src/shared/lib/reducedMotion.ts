@@ -17,6 +17,12 @@ export interface ReducedMotionQuery {
   removeEventListener(type: "change", listener: () => void): void;
 }
 
+let cachedQuery: {
+  owner: Window | undefined;
+  matchMedia: Window["matchMedia"] | undefined;
+  query: ReducedMotionQuery;
+} | undefined;
+
 export function reducedMotionOverride(): ReducedMotionPreference {
   if (typeof document === "undefined") return "system";
   const value = document.documentElement?.dataset?.reducedMotion;
@@ -25,9 +31,12 @@ export function reducedMotionOverride(): ReducedMotionPreference {
 
 /** Drop-in for `matchMedia("(prefers-reduced-motion: reduce)")`. */
 export function reducedMotionQuery(): ReducedMotionQuery {
-  const media =
-    typeof window === "undefined" ? undefined : window.matchMedia?.(QUERY);
-  return {
+  const owner = typeof window === "undefined" ? undefined : window;
+  const matchMedia = owner?.matchMedia;
+  if (cachedQuery && cachedQuery.owner === owner && cachedQuery.matchMedia === matchMedia)
+    return cachedQuery.query;
+  const media = matchMedia?.call(owner, QUERY);
+  const query: ReducedMotionQuery = {
     get matches() {
       const override = reducedMotionOverride();
       if (override !== "system") return override === "on";
@@ -35,15 +44,15 @@ export function reducedMotionQuery(): ReducedMotionQuery {
     },
     addEventListener(_type, listener) {
       media?.addEventListener?.("change", listener);
-      if (typeof window !== "undefined")
-        window.addEventListener(REDUCED_MOTION_CHANGE_EVENT, listener);
+      owner?.addEventListener(REDUCED_MOTION_CHANGE_EVENT, listener);
     },
     removeEventListener(_type, listener) {
       media?.removeEventListener?.("change", listener);
-      if (typeof window !== "undefined")
-        window.removeEventListener(REDUCED_MOTION_CHANGE_EVENT, listener);
+      owner?.removeEventListener(REDUCED_MOTION_CHANGE_EVENT, listener);
     },
   };
+  cachedQuery = { owner, matchMedia, query };
+  return query;
 }
 
 export function prefersReducedMotion(): boolean {

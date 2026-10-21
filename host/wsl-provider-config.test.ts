@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
@@ -53,19 +53,55 @@ it.each(["claude", "codex"] as const)("uses the desktop %s home and explicitly d
   await writeFile(join(home, "auth.json"), '{}');
   const rpc = { request: async <T>(op: string, args?: Record<string, unknown>): Promise<T> => {
     if (op === "exec") return { code: 0, stdout: "/mounted/desktop/home\n" } as T;
+    if (op === "env.info") return { home: "/home/test" } as T;
+    if (op === "fs.mkdir") return null as T;
     if (args?.path === "/repo/.codex/config.toml") return '[mcp_servers.fromProject]\ncommand="tool.exe"' as T;
     throw Object.assign(new Error("Missing fixture file"), { code: "ENOENT" });
   } };
   const prepared = await wslProviderConfiguration({ provider, owner: join(home, "missing-owner.json"), cwd: "/repo/sub", args: provider === "codex" ? ["app-server", "-c", 'mcp_servers."host_agents".command="/usr/bin/node"'] : [], rpc });
   expect(prepared.home).toBe(home);
   if (provider === "codex") {
-    expect(prepared.env).toEqual({ CODEX_HOME: "/mounted/desktop/home", OPENAI_API_KEY: null, CODEX_API_KEY: null, CODEX_ACCESS_TOKEN: null, OPENAI_BASE_URL: null });
+    expect(prepared.env).toEqual({ CODEX_HOME: "/mounted/desktop/home", CODEX_SQLITE_HOME: expect.stringMatching(/^\/home\/test\/\.omnicode\/remote\/codex-state\/[a-f0-9]{64}$/), OPENAI_API_KEY: null, CODEX_API_KEY: null, CODEX_ACCESS_TOKEN: null, OPENAI_BASE_URL: null });
     expect(prepared.warnings).toEqual(["MCP: fromProject"]);
     expect(prepared.args).toContain('mcp_servers.host_agents.command="/usr/bin/node"');
     expect(prepared.args).toContain('mcp_servers.fromProject.enabled=false');
   } else {
     expect(prepared.env).toMatchObject({ CLAUDE_CONFIG_DIR: "/mounted/desktop/home", ANTHROPIC_API_KEY: null, ANTHROPIC_AUTH_TOKEN: null, CLAUDE_CODE_OAUTH_TOKEN: null });
   }
+});
+
+it("keeps Codex SQLite in WSL per shared Home, overriding mounted paths without changing user configuration", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "omnicode-wsl-sqlite-")); directories.push(directory);
+  const owner = join(directory, "owner.json");
+  const home = join(directory, "codex-home");
+  await mkdir(home);
+  await mkdir(join(directory, "provider-accounts"));
+  await writeFile(join(directory, "provider-accounts/state.json"), JSON.stringify({ accounts: { codex: [
+    { id: "one", label: "One", dataHome: home }, { id: "alias", label: "Same home", dataHome: home },
+  ] }, defaults: {} }));
+  await writeFile(join(home, "auth.json"), '{}');
+  const sourceConfig = 'sqlite_home="C:/desktop/state"\nmodel="user-model"\n';
+  await writeFile(join(home, "config.toml"), sourceConfig);
+  let mappedHome = "/mounted/desktop/account";
+  const request = vi.fn(async <T>(op: string, args?: Record<string, unknown>): Promise<T> => {
+    if (op === "exec") return { code: 0, stdout: mappedHome } as T;
+    if (op === "env.info") return { home: "/home/test" } as T;
+    if (op === "fs.mkdir") return null as T;
+    if (args?.path === "/repo/.codex/config.toml") return 'sqlite_home="/mounted/project/state"' as T;
+    throw Object.assign(new Error("Missing fixture file"), { code: "ENOENT" });
+  });
+  const prepare = (accountId: string, cwd = "/repo") => wslProviderConfiguration({ provider: "codex", owner, accountId, cwd,
+    args: ["app-server", "-c", 'sqlite_home="/mounted/cli/state"'], rpc: { request } });
+  const first = await prepare("one");
+  const sqliteHome = first.env.CODEX_SQLITE_HOME;
+  expect(sqliteHome).toMatch(/^\/home\/test\/\.omnicode\/remote\/codex-state\/[a-f0-9]{64}$/);
+  expect(request).toHaveBeenCalledWith("fs.mkdir", { path: sqliteHome, recursive: true, mode: 0o700 });
+  expect(first.args.slice(-2)).toEqual(["-c", `sqlite_home=${JSON.stringify(sqliteHome)}`]);
+  expect(first.env.CODEX_HOME).toBe(mappedHome);
+  expect((await prepare("alias", "/other-project")).env.CODEX_SQLITE_HOME).toBe(sqliteHome);
+  mappedHome = "/mounted/desktop/other-account";
+  expect((await prepare("one")).env.CODEX_SQLITE_HOME).not.toBe(sqliteHome);
+  expect(await readFile(join(home, "config.toml"), "utf8")).toBe(sourceConfig);
 });
 
 it("serializes one account but allows unrelated accounts and releases after failure", async () => {

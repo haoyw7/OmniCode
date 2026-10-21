@@ -1,5 +1,6 @@
 import { MobileSpinner } from "./MobileSpinner";
-import type { ButtonHTMLAttributes } from "react";
+import type { ComponentProps } from "react";
+import { ListMotionButton } from "../shared/ui/ListMotion";
 import type { HostSessionSummary } from "../features/connections/model/protocol";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
 import { sessionRecencyAt } from "../features/sessions/model/sessionActivity";
@@ -22,12 +23,12 @@ export function MobileSessionRow({
   unread: boolean;
   /** The paired device a row comes from when Home lists every device. */
   hostName?: string;
-} & ButtonHTMLAttributes<HTMLButtonElement>) {
+} & ComponentProps<typeof ListMotionButton>) {
   const { language, t } = useTranslation();
   const state =
     session.needsInput ? "input" : session.status === "running" ? "running" : "idle";
   return (
-    <button
+    <ListMotionButton
       type="button"
       className="mobile-home-session"
       data-session-id={session.id}
@@ -66,6 +67,6 @@ export function MobileSessionRow({
       {unread && (
         <span className="mobile-unread-dot" role="img" aria-label={t("Unread reply")} />
       )}
-    </button>
+    </ListMotionButton>
   );
 }

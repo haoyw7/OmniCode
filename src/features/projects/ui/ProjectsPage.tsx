@@ -2,9 +2,7 @@ import { Button } from "../../../shared/ui/forms/Button";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 import { Input } from "../../../shared/ui/forms/Input";
 import { useEffect, useMemo, useState } from "react";
-import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { autoAnimateOptions } from "../../../shared/motion/tokens";
-import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
+import { ListMotion, ListMotionItem } from "../../../shared/ui/ListMotion";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
@@ -76,11 +74,6 @@ export function ProjectsPage({
   const [labels, setLabels] = usePreferenceState(loadTabGroupLabels);
   const chats = useChatFolders();
   const [menu, setMenu] = useState<{ path: string; anchor: HTMLElement }>();
-  const [grid, enable] = useAutoAnimate<HTMLDivElement>(autoAnimateOptions);
-  const reduced = useMotionPreference();
-  useEffect(() => {
-    enable(!reduced);
-  }, [enable, reduced]);
   useEffect(
     () => subscribeArchivedProjects(() => setArchive(loadArchivedProjects())),
     [],
@@ -189,7 +182,8 @@ export function ProjectsPage({
           </Button>
         </div>
       </div>
-      <div className="desktop-project-grid" ref={grid}>
+      <div className="desktop-project-grid">
+        <ListMotion enabled={visible}>
         {projects.map((project) => {
           const Icon =
             mode === "chat"
@@ -198,7 +192,7 @@ export function ProjectsPage({
                 ? Internet
                 : Folder;
           return (
-            <article className="desktop-project-card" key={project.path}>
+            <ListMotionItem role="article" className="desktop-project-card" key={project.path}>
               <Button variant="ghost" size="content"
                 type="button"
                 className="desktop-project-open"
@@ -233,9 +227,10 @@ export function ProjectsPage({
                 <MenuHover />
                 <MoreHorizontal />
               </Button>
-            </article>
+            </ListMotionItem>
           );
         })}
+        </ListMotion>
       </div>
       {projects.length === 0 ? (
         <p className="desktop-collection-empty">

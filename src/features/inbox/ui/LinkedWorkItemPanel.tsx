@@ -18,8 +18,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { CircleX, ExternalLink, PanelLeft } from "../../../shared/ui/icons";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
-import { useDragResize } from "../../../shared/hooks/useDragResize";
-import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
+import { ResizableRegion } from "../../../shared/ui/primitives/Resizable";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import {
   inboxItemKey,
@@ -71,25 +70,8 @@ export function LinkedWorkItemPanel({
   const item = itemQuery.data ?? null;
   const error = errorMessage(itemQuery.error) ?? null;
   const loading = itemQuery.isPending;
-  const resize = useDragResize({
-    min: LINKED_PANEL_MIN_WIDTH,
-    max: () =>
-      Math.max(
-        LINKED_PANEL_MIN_WIDTH,
-        Math.round(
-          (typeof window === "undefined"
-            ? LINKED_PANEL_DEFAULT_WIDTH / 0.65
-            : window.innerWidth) * 0.65,
-        ),
-      ),
-    defaultWidth: LINKED_PANEL_DEFAULT_WIDTH,
-    initial: rememberedLinkedPanelWidth,
-    direction: "left",
-    onCommit: (width) => {
-      rememberedLinkedPanelWidth = width;
-    },
-  });
-
+  const resizePane = useRef<HTMLElement | null>(null);
+  const [width, setWidth] = useState(rememberedLinkedPanelWidth);
   useEffect(() => {
     if (!visible) return;
     const onKey = (event: KeyboardEvent) => {
@@ -119,8 +101,8 @@ export function LinkedWorkItemPanel({
     <motion.aside
       {...lifetime.motionProps}
       animate={{ x: visible ? 0 : `${motionGeometry.linkedPanelPercent}%` }}
-      transition={reduced || resize.dragging ? immediateTransition : panelTransition}
-      ref={resize.setPaneRef}
+      transition={reduced || false ? immediateTransition : panelTransition}
+      ref={resizePane}
       aria-label={uiT("Linked {value0} #{value1}", {
         value0: String(kindLabel.toLowerCase()),
         value1: String(target.number),
@@ -131,15 +113,8 @@ export function LinkedWorkItemPanel({
       data-linked-work-item-panel
       className={cn("relative min-h-0 max-w-full shrink-0 flex-col text-content max-[950px]:absolute max-[950px]:inset-y-0 max-[950px]:right-0 max-[950px]:z-30 max-[950px]:shadow-2xl", lifetime.foldState === "closed" ? "hidden" : "flex")}
     >
-      <ResizeHandle
-        edge="left"
-        dragging={resize.dragging}
-        aria-label={uiT("Resize linked {value0} panel", {
-          value0: String(kindLabel.toLowerCase()),
-        })}
-        onPointerDown={resize.onPointerDown}
-        onDoubleClick={resize.onDoubleClick}
-      />
+      <ResizableRegion targetRef={resizePane} edge="left" size={width} min={LINKED_PANEL_MIN_WIDTH} max={() => Math.max(LINKED_PANEL_MIN_WIDTH, Math.round(window.innerWidth * 0.65))} defaultSize={LINKED_PANEL_DEFAULT_WIDTH}
+        label={uiT("Resize linked {value0} panel", { value0: String(kindLabel.toLowerCase()) })} disabled={!visible} onCommit={next => { rememberedLinkedPanelWidth = next; setWidth(next); }} />
       <div
         className={cn("flex min-h-0 min-w-0 flex-1 flex-col", opening ? "overflow-hidden" : "")}
       >

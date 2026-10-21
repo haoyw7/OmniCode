@@ -4,10 +4,9 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DragDropEvent } from "@tauri-apps/api/webview";
 import { setUiLanguage } from "../../../shared/i18n/language";
-import {
-  EXPLORER_FILE_POINTER_DRAG_EVENT,
-  type ExplorerFilePointerDragDetail,
-} from "../../../shared/lib/drag";
+import { DragDropProvider, useDraggableItem } from "../../../shared/ui/primitives/Sortable";
+import { mockDragOverlayGeometry } from "../../../../tests/helpers/dndGeometry";
+import { dndPointer } from "../../../../tests/helpers/dndEvents";
 import { Composer } from "./Composer";
 
 const { invoke, listen, platform } = vi.hoisted(() => ({
@@ -52,7 +51,7 @@ async function render(props: Record<string, unknown> = {}) {
       createElement(
         "div",
         { "data-session-drop": "session-1" },
-        createElement(Composer, {
+        createElement(DragDropProvider, { children: [createElement(ExplorerSource, { key: "source" }), createElement(Composer, {
           focused: false,
           harness: "codex",
           model: "",
@@ -65,7 +64,7 @@ async function render(props: Record<string, unknown> = {}) {
           onRuntimeModeChange: vi.fn(),
           onSubmit: submit,
           ...props,
-        }),
+        })] }),
       ),
     );
   });
@@ -117,16 +116,23 @@ function attachmentCount() {
   return container.querySelectorAll('[aria-label^="Remove "]').length;
 }
 
-function explorerDrag(detail: ExplorerFilePointerDragDetail) {
-  return new CustomEvent<ExplorerFilePointerDragDetail>(
-    EXPLORER_FILE_POINTER_DRAG_EVENT,
-    { detail },
-  );
+function ExplorerSource() {
+  const drag = useDraggableItem({ payload: { type: "explorer-file", path: "/project/src/main.ts" }, renderOverlay: () => "main.ts" });
+  return createElement("button", { ...drag.handleProps, "data-explorer-source": true,
+    ref: (node: HTMLButtonElement | null) => { drag.ref(node); drag.handleProps.ref(node); } }, "main.ts");
+}
+async function explorerDrag(drop: boolean) {
+  const source = container.querySelector<HTMLElement>("[data-explorer-source]")!;
+  source.getBoundingClientRect = () => new DOMRect(550, 0, 200, 30);
+  dndPointer(source, "pointerdown", { clientX: 560, clientY: 10 });
+  dndPointer(document, "pointermove", { clientX: 100, clientY: 100 });
+  if (drop) await act(async () => dndPointer(document, "pointerup", { clientX: 100, clientY: 100 }));
 }
 
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   setUiLanguage("en");
+  mockDragOverlayGeometry();
   platform.isWin = false;
   submit = vi.fn();
   handlers = new Set();
@@ -156,8 +162,10 @@ beforeEach(() => {
   mounted = true;
 });
 
-afterEach(() => {
+afterEach(async () => {
   if (mounted) act(() => root.unmount());
+  if (vi.isFakeTimers()) act(() => vi.advanceTimersByTime(60));
+  else await act(async () => new Promise(resolve => setTimeout(resolve, 60)));
   container.remove();
   setUiLanguage("en");
   vi.restoreAllMocks();
@@ -168,9 +176,7 @@ describe("Composer Explorer file drops", () => {
   it("accepts local Explorer files for a Host-managed session while honoring upload capabilities", async () => {
     await render({ hostManaged: true, remoteSession: false,
       hostFeatures: { attachments: true, plan: false, draft: false } });
-    await act(async () => window.dispatchEvent(explorerDrag({
-      type: "drop", path: "/project/src/main.ts", x: 100, y: 100,
-    })));
+    await explorerDrag(true);
     expect(invoke).toHaveBeenCalledWith("inspect_paths", { paths: ["/project/src/main.ts"] });
     expect(container.querySelector('[title="/project/src/main.ts"]')).not.toBeNull();
 
@@ -184,28 +190,9 @@ describe("Composer Explorer file drops", () => {
   it("attaches a file from the pointer-driven Explorer drag", async () => {
     await render();
 
-    act(() =>
-      window.dispatchEvent(
-        explorerDrag({
-          type: "move",
-          path: "/project/src/main.ts",
-          x: 100,
-          y: 100,
-        }),
-      ),
-    );
+    await explorerDrag(false);
     expect(container.textContent).toContain("Drop files to attach");
-
-    await act(async () => {
-      window.dispatchEvent(
-        explorerDrag({
-          type: "drop",
-          path: "/project/src/main.ts",
-          x: 100,
-          y: 100,
-        }),
-      );
-    });
+    await act(async () => dndPointer(document, "pointerup", { clientX: 100, clientY: 100 }));
 
     expect(invoke).toHaveBeenCalledWith("inspect_paths", {
       paths: ["/project/src/main.ts"],
@@ -270,16 +257,7 @@ describe("Composer image drops", () => {
       remoteSession: true,
       hostFeatures: { attachments: true, plan: false, draft: false },
     });
-    await act(async () => {
-      window.dispatchEvent(
-        explorerDrag({
-          type: "drop",
-          path: "/remote/project/file.ts",
-          x: 100,
-          y: 100,
-        }),
-      );
-    });
+    await explorerDrag(true);
     expect(invoke).not.toHaveBeenCalledWith("inspect_paths", expect.anything());
 
     await nativeDrop(["/local/image.png"]);

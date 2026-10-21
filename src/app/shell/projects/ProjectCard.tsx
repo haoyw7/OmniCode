@@ -1,6 +1,8 @@
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
+import { motion } from "motion/react";
+import type { SortableItemState } from "../../../shared/ui/primitives/Sortable";
 import { HoverSummary, HoverSummaryRow, useHoverSummary } from "../../../shared/ui/HoverSummary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
@@ -14,7 +16,7 @@ import {
   Plus,
   Settings,
 } from "../../../shared/ui/icons";
-import { useContext, useEffect, type MouseEvent } from "react";
+import { useContext, useEffect, useLayoutEffect, type MouseEvent } from "react";
 import { useProjectDiffStats } from "../../../features/source-control/hooks/useProjectDiffStats";
 import { useTabGroupLogos } from "../../../features/projects/hooks/useTabGroupLogos";
 import { basename, type GitDiffStats } from "../../../platform/tauri/fs";
@@ -34,14 +36,13 @@ import {
 } from "../../../features/connections/model/connections";
 import { remoteProjectFor } from "../../../features/connections/model/remoteProjects";
 import { ProjectAvatar } from "../ProjectAvatar";
-import { projectGroupDrop } from "../projectGroupDrop";
-import { combineSidebarDrops, sidebarPinDrop, SidebarPinDropContext } from "../sidebarPinDrop";
+import { SidebarProjectGroupContext } from "../projectGroupDrop";
+import { InsidePinnedSectionContext, SidebarPinDropContext } from "../sidebarPinDrop";
 import {
   nameClassName,
   PROJECT_COLLAPSE_DURATION_MS,
   ProjectSummaryContext,
   type ProjectTree,
-  type SortableHandle,
 } from "./projectListShared";
 
 
@@ -74,7 +75,7 @@ export function ProjectCard({
   statsEnabled: boolean;
   tree?: ProjectTree;
   pinned: boolean;
-  sortable?: SortableHandle;
+  sortable?: SortableItemState;
   onSelect: (path: string) => void;
   onTogglePin: (path: string) => void;
   onContextMenu: (path: string, event: MouseEvent<HTMLElement>) => void;
@@ -92,9 +93,11 @@ export function ProjectCard({
 }) {
   const { t: uiT } = useTranslation();
   const revealPins = useContext(SidebarPinDropContext);
+  const insidePins = useContext(InsidePinnedSectionContext);
+  const groupId = useContext(SidebarProjectGroupContext);
   const hoverSummary = useContext(ProjectSummaryContext);
   const hover = useHoverSummary<HTMLButtonElement>({
-    enabled: !hoverSummary.disabled && !sortable?.draggingId,
+    enabled: !hoverSummary.disabled && !sortable?.sorting,
     interactive: true,
     // A clicked project keeps focus; the card must still leave with the pointer.
     focusRetains: false,
@@ -105,6 +108,15 @@ export function ProjectCard({
   const fallbackName = basename(item.path);
   const key = projectKey(item.path);
   const name = resolveTabGroupLabel(key, groupLabels, fallbackName);
+  useLayoutEffect(() => sortable?.setPayload({
+    type: "sidebar-project", path: item.path, pinned, insidePins, groupId,
+    onPin: compact ? undefined : () => {
+      const pins = loadPinnedProjects();
+      if (!pins.some(path => sameProjectPath(path, item.path))) savePinnedProjects([...pins, item.path]);
+      revealPins?.();
+    },
+  }, () => <span className="flex items-center gap-1.5"><FolderOpen className="size-4" /><span className="truncate">{name}</span></span>),
+  [sortable?.setPayload, item.path, pinned, insidePins, groupId, compact, revealPins, name]);
   const diffEnabled = statsEnabled && Boolean(item.path) && item.path !== "~";
   const stats = useProjectDiffStats(item.path, diffEnabled);
   const files = stats?.files ?? 0;
@@ -162,11 +174,13 @@ export function ProjectCard({
   }, [expanded, item.path, tree?.pendingActivation]);
 
   const header = (
-    <div
-      ref={tree ? undefined : (el) => sortable?.setItemRef(item.path, el)}
+    <motion.div
+      {...(tree ? undefined : sortable?.motionProps)}
+      ref={tree ? undefined : sortable?.ref}
+      style={tree ? undefined : sortable?.style}
       data-selected={selected || undefined}
       data-project-header={tree ? "" : undefined}
-      className={`${tree ? "project-tree-header project-reorder-item" : "reorder-item project-reorder-item"} group relative flex touch-none items-stretch rounded-lg ${compact ? "size-8" : "px-2 h-8"} ${
+      className={`${tree ? "project-tree-header" : ""} group relative flex touch-none items-stretch rounded-lg ${compact ? "size-8" : "px-2 h-8"} ${
         tree
           ? selected
             ? "text-content hover:bg-surface-hover"
@@ -184,22 +198,7 @@ export function ProjectCard({
         if ((event.target as HTMLElement | null)?.closest("[data-no-drag]")) {
           return;
         }
-        const groupDrop = compact
-          ? undefined
-          : projectGroupDrop(event.currentTarget, uiT("Move to group"));
-        const pinDrop = compact || pinned ? undefined : sidebarPinDrop(
-          event.currentTarget,
-          uiT("Pin project"),
-          () => {
-            const pins = loadPinnedProjects();
-            if (!pins.some((path) => sameProjectPath(path, item.path)))
-              savePinnedProjects([...pins, item.path]);
-            revealPins?.();
-          },
-        );
-        const externalDrop = combineSidebarDrops(pinDrop, groupDrop);
-        if (externalDrop) sortable?.onItemPointerDown(item.path, event, externalDrop);
-        else sortable?.onItemPointerDown(item.path, event);
+        sortable?.handleProps.onPointerDown?.(event);
       }}
       onClick={(event) => {
         if ((event.target as HTMLElement | null)?.closest("[data-no-drag]")) {
@@ -256,14 +255,14 @@ export function ProjectCard({
         >
           <span
             data-project-avatar
-            className="project-card-logo grid size-4 place-items-center group-hover:hidden group-has-[:focus-visible]:hidden"
+            className="project-card-logo col-start-1 row-start-1 grid size-4 place-items-center group-hover:invisible group-has-[:focus-visible]:invisible"
           >
             {treeAvatar}
           </span>
           <DisclosureChevron
             expanded={expanded}
             data-project-chevron
-            className="project-tree-chevron hidden size-3.5 group-hover:block group-has-[:focus-visible]:block"
+            className="project-tree-chevron invisible col-start-1 row-start-1 size-3.5 group-hover:visible group-has-[:focus-visible]:visible"
           />
         </button>
       ) : tree ? (
@@ -276,7 +275,9 @@ export function ProjectCard({
         </span>
       ) : null}
       <button
-        ref={nameButtonRef}
+        {...sortable?.handleProps}
+        onPointerDown={undefined}
+        ref={(node) => { nameButtonRef.current = node; sortable?.handleProps.ref(node); }}
         type="button"
         data-project-select={pathKey(item.path)}
         aria-label={
@@ -286,17 +287,17 @@ export function ProjectCard({
         aria-current={selected ? "true" : undefined}
         aria-expanded={tree && expandable ? expanded : undefined}
         aria-haspopup="dialog"
-        aria-describedby={hover.open ? hover.id : undefined}
+        aria-describedby={[sortable?.handleProps["aria-describedby"], hover.open ? hover.id : undefined].filter(Boolean).join(" ") || undefined}
         onFocus={() => {
           if (hoverSummary.restoringPinFocusPath?.current === item.path) return;
           hover.triggerProps.onFocus();
         }}
         onBlur={hover.triggerProps.onBlur}
-        onKeyDown={hover.triggerProps.onKeyDown}
+        onKeyDown={(event) => { sortable?.handleProps.onKeyDown?.(event); if (!event.defaultPrevented) hover.triggerProps.onKeyDown(event); }}
         className={
           compact
             ? "relative grid size-8 cursor-grab place-items-center"
-            : `flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left ${tree ? "pl-2 group-hover:pr-14 group-has-[:focus-visible]:pr-14" : "transition-[padding] duration-150 motion-reduce:transition-none group-hover:pr-6 group-has-[:focus-visible]:pr-6"}`
+            : `flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left ${tree ? "pl-2 pr-14" : "pr-6"}`
         }
       >
         {compact ? (
@@ -333,7 +334,7 @@ export function ProjectCard({
               </span>
             ) : null}
             {hasChanges ? (
-              <span className="project-card-stats shrink-0 group-hover:hidden group-has-[:focus-visible]:hidden">
+              <span className="project-card-stats shrink-0 group-hover:invisible group-has-[:focus-visible]:invisible">
                 <ProjectDiffStat additions={additions} deletions={deletions} />
               </span>
             ) : null}
@@ -617,18 +618,22 @@ export function ProjectCard({
           </button>
         </div>
       </HoverSummary>
-    </div>
+    </motion.div>
   );
   return tree ? (
-    <div
-      ref={(el) => sortable?.setItemRef(item.path, el)}
+    <motion.div
+      {...sortable?.motionProps}
+      ref={sortable?.ref}
+      style={sortable?.style}
       data-project-path={pathKey(item.path)}
-      className="reorder-item relative shrink-0"
+      data-reordering={sortable?.sorting || undefined}
+      data-dragging={sortable?.dragging || undefined}
+      className="relative shrink-0"
     >
       {header}
       <AnimatedCollapse
         keepMounted
-        expanded={expanded && sortable?.draggingId !== item.path}
+        expanded={expanded}
         motion="height"
         className="project-tree-collapse"
         durationMs={PROJECT_COLLAPSE_DURATION_MS}
@@ -645,7 +650,7 @@ export function ProjectCard({
           </div>
         )}
       </AnimatedCollapse>
-    </div>
+    </motion.div>
   ) : (
     header
   );

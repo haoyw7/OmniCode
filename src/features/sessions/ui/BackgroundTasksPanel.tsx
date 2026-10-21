@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
+import { ListMotion, ListMotionItem } from "../../../shared/ui/ListMotion";
 import { immediateTransition, panelTransition, popAnimate, popExit, popInitial } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
@@ -56,10 +56,8 @@ export function BackgroundTasksPanel({ tasks, initialTaskId, onClose, onClear, o
   const [limit, setLimit] = useState(10);
   const [expanded, setExpanded] = useState(() => new Set(initialTaskId ? [initialTaskId] : []));
   const close = useRef<HTMLButtonElement>(null);
-  const list = useRef<HTMLDivElement>(null);
   const running = tasks.filter((task) => task.state === "running");
   const finished = tasks.filter((task) => task.state !== "running");
-  useListReorderMotion(list, [...running, ...finished.slice(0, limit)].map((task) => task.id), "data-background-task", present, `${finishedOpen}:${limit}`);
   useEffect(() => {
     const previous = document.activeElement;
     close.current?.focus();
@@ -86,10 +84,10 @@ export function BackgroundTasksPanel({ tasks, initialTaskId, onClose, onClear, o
       <IconButton label={t(wide ? "Collapse panel" : "Expand panel")} size="sm" active={wide} onClick={() => setWide((value) => !value)}><Maximize2 /></IconButton>
       <IconButton ref={close} label={t("Close")} size="sm" onClick={onClose}><X /></IconButton>
     </header>
-    <div ref={list} className="background-tasks-list">
+    <div className="background-tasks-list">
       {running.length ? <section>
         <h3 className="background-tasks-section-title">{t("Running")}</h3>
-        {running.map(row)}
+        <ListMotion enabled={present}>{running.map(row)}</ListMotion>
       </section> : null}
       {finished.length ? <section>
         <Button variant="ghost" size="content" type="button" className="background-tasks-section-title flex items-center gap-1.5" aria-expanded={finishedOpen}
@@ -97,7 +95,7 @@ export function BackgroundTasksPanel({ tasks, initialTaskId, onClose, onClear, o
           {t("Finished {count}", { count: finished.length })}<DisclosureChevron expanded={finishedOpen} className="size-3" />
         </Button>
         <AnimatedCollapse expanded={finishedOpen}>
-          {finished.slice(0, limit).map(row)}
+          <ListMotion enabled={present && finishedOpen}>{finished.slice(0, limit).map(row)}</ListMotion>
           {finished.length > 10 ? <Button variant="ghost" size="content" type="button" className="background-task-open text-content/50"
             onClick={() => setLimit((value) => value < finished.length ? value + 10 : 10)}>
             {t(limit < finished.length ? "Show more" : "Show fewer")}
@@ -115,7 +113,7 @@ function TaskRow({ task, expanded, onToggle, onStop }: {
   const { t } = useTranslation();
   const detailsId = useId();
   const stateLabel = t(task.state === "running" ? "Running" : task.state === "failed" ? "Failed" : task.state === "stopped" ? "Stopped" : "Completed");
-  return <div data-background-task={task.id}>
+  return <ListMotionItem data-background-task={task.id}>
     <div className="background-task-row">
       <Button variant="ghost" size="content" type="button" className="background-task-open" aria-expanded={expanded} aria-controls={detailsId} onClick={onToggle} title={task.title}>
         {task.state === "failed" ? <CircleAlert className="size-3.5 shrink-0 text-red-400" aria-label={stateLabel} /> : null}
@@ -133,7 +131,7 @@ function TaskRow({ task, expanded, onToggle, onStop }: {
         <span className="text-[11px] text-content/50">{stateLabel}</span>
       </div>
     </AnimatedCollapse>
-  </div>;
+  </ListMotionItem>;
 }
 
 function TaskElapsed({ task }: { task: BackgroundTaskItem }) {

@@ -36,14 +36,12 @@ export function ProjectSectionHeader({
       className="group/section flex items-center gap-1 px-3 py-0.5"
     >
       <button
+        {...reorder?.item.handleProps}
         type="button"
         data-sidebar-section-toggle
         aria-expanded={expanded}
         aria-controls={contentId}
-        onPointerDown={(event) =>
-          reorder?.sortable.onItemPointerDown(reorder.id, event)
-        }
-        onClick={onToggleExpanded}
+        onClick={() => { if (!reorder?.item.consumeClick()) onToggleExpanded(); }}
         className={`flex min-w-0 flex-1 items-center gap-1 px-1 py-0.5 text-left text-ui-base text-foreground-subtle hover:text-content ${reorder ? "touch-none cursor-grab" : ""}`}
       >
         <span className="min-w-0 truncate text-foreground-subtle transition-colors duration-150 group-hover/section:text-content motion-reduce:transition-none">

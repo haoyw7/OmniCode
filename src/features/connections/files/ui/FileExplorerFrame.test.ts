@@ -117,17 +117,21 @@ function click(label: string) {
 const tree = () =>
   container.querySelector<HTMLElement>(".desktop-file-explorer-tree")!;
 const preview = () => container.querySelector<HTMLTextAreaElement>("textarea")!;
+const divider = () => container.querySelector<HTMLElement>('[aria-label="Resize file tree"]');
 
 it("opens a file in place and returns to the full tree without losing the editor", () => {
   render();
+  expect(divider()).toBeNull();
   click("a.ts");
   const editor = preview();
   expect(tree().inert).toBe(true);
   expect(editor.dataset.visible).toBe("true");
+  expect(divider()).toBeNull();
   editor.value = "keep this edit";
   click("Back to file tree");
   expect(tree().inert).toBe(false);
   expect(editor.dataset.visible).toBe("false");
+  expect(divider()).toBeNull();
   click("a.ts");
   expect(tree().inert).toBe(true);
   expect(preview()).toBe(editor);
@@ -145,14 +149,18 @@ it("allows the active file tab to return from the tree to the same document", ()
 
 it("adapts to the panel width without a maximize action and preserves the editor", () => {
   render(1000);
+  expect(divider()).toBeNull();
   click("a.ts");
+  expect(divider()).not.toBeNull();
   const editor = preview();
   expect(tree().inert).toBe(false);
   expect(editor.dataset.visible).toBe("true");
   resizePanel(540);
+  expect(divider()).toBeNull();
   expect(tree().inert).toBe(true);
   expect(preview()).toBe(editor);
   resizePanel(1000);
+  expect(divider()).not.toBeNull();
   expect(tree().inert).toBe(false);
   expect(preview()).toBe(editor);
 });
@@ -161,14 +169,14 @@ it("adapts to the panel width without a maximize action and preserves the editor
 it("caches responsive width during a drag and switches layout only after release", () => {
   render(900);
   click("a.ts");
-  expect(container.querySelector<HTMLElement>('[aria-label="Resize file tree"]')!.hidden).toBe(false);
+  expect(divider()).not.toBeNull();
   const finish = beginPaneResize();
   try {
     resizePanel(600);
-    expect(container.querySelector<HTMLElement>('[aria-label="Resize file tree"]')!.hidden).toBe(false);
+    expect(divider()).not.toBeNull();
   } finally {
     act(() => finish());
   }
-  expect(container.querySelector<HTMLElement>('[aria-label="Resize file tree"]')!.hidden).toBe(true);
+  expect(divider()).toBeNull();
   expect(preview().dataset.visible).toBe("true");
 });

@@ -142,6 +142,11 @@ export function TerminalDockLayout({
                 focused={show && focused}
                 onSizePaint={paintSize}
                 onSizeCommit={commitSize}
+                onSizeCancel={() => {
+                  syncDragSize(dock.size);
+                  dragSize.current = null;
+                  grid.current?.style.removeProperty("transition-property");
+                }}
               />
             </SurfaceVisibilityContext.Provider>
           </div>

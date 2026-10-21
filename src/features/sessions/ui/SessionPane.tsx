@@ -1,3 +1,4 @@
+import { useDragHandle } from "../../../shared/ui/primitives/Sortable";
 import { cn } from "../../../shared/lib/cn";
 import { Button } from "../../../shared/ui/forms/Button";
 import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
@@ -20,9 +21,9 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type ComponentProps,
   type CSSProperties,
   type ReactNode,
-  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useNativeSessionAccess } from "./useNativeSessionAccess";
 import { OccupiedSessionNotice } from "./OccupiedSessionNotice";
@@ -259,7 +260,6 @@ export type SessionPaneProps = {
     modelSettings: Record<string, string>,
   ) => void;
 
-  onPaneDragStart?: (event: ReactPointerEvent<HTMLElement>) => void;
   /** Keeps this transcript mounted after the pane closes. */
   transcriptPool?: TranscriptPool;
   /** History received by the first Host sync after opening or returning to a tab. */
@@ -374,12 +374,12 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onBtwDelete,
   onBtwStop,
   onBtwModelChange,
-  onPaneDragStart,
   transcriptPool,
   transcriptHistory,
   initialPromptId,
 }: Props) {
   const { t: uiT } = useTranslation();
+  const paneDrag = useDragHandle();
   const openSubagent = useOpenSubagent(session);
   const closePaneLabel = useShortcutLabel("Close Pane", "Pane: Close");
   const { readOnly: nativeReadOnly, hint: nativeAccessHint, occupied } =
@@ -517,10 +517,10 @@ const LocalSessionPane = memo(function LocalSessionPane({
     setOpenQuestionId(undefined);
     setDismissRevision((revision) => revision + 1);
   }, []);
-  const answerQuestionLater = (answer: QuestionAnswer) =>
+  const answerQuestionLater = useCallback((answer: QuestionAnswer) =>
     onSubmit(session.id, questionFollowUp(session, answer), [], {
       questionAnswer: answer,
-    });
+    }), [onSubmit, session]);
   const pendingQuestionId = useRef(session.pendingQuestion?.historyId);
   pendingQuestionId.current = session.pendingQuestion?.historyId;
   const openQuestion = useCallback((blockId: string) => {
@@ -717,6 +717,46 @@ const LocalSessionPane = memo(function LocalSessionPane({
     return () => window.removeEventListener(ADD_TO_CHAT_EVENT, onAdd);
   }, [addSelectionToChat, addToChatTarget]);
   const workCwd = sessionExecutionCwd(session);
+  const transcriptActionSource = useRef({ session, onSubmit, onRemoveDraft, onOpenDiff, onSecondOpinion, onHandoff, onFocus });
+  transcriptActionSource.current = { session, onSubmit, onRemoveDraft, onOpenDiff, onSecondOpinion, onHandoff, onFocus };
+  const transcriptActions = useMemo(() => ({
+    onOpenDiff: (...args: Parameters<SessionPaneProps["onOpenDiff"]>) => transcriptActionSource.current.onOpenDiff(...args),
+    onSendDraft: (block) => {
+      const current = transcriptActionSource.current;
+      return current.onSubmit(current.session.id, block.text, block.attachments ?? [], {
+        draftBlockId: block.id,
+        ...(block.appRequestId ? { appRequestId: block.appRequestId } : {}),
+      });
+    },
+    onRemoveDraft: (block) => {
+      const current = transcriptActionSource.current;
+      return current.onRemoveDraft(current.session.id, block.id);
+    },
+    onSecondOpinion: (target, turn) => {
+      const current = transcriptActionSource.current;
+      return current.onSecondOpinion?.(current.session.id, target, turn);
+    },
+    onHandoff: (target, turn) => {
+      const current = transcriptActionSource.current;
+      return current.onHandoff?.(current.session.id, target, turn);
+    },
+    onEditLastTurn: () => {
+      const current = transcriptActionSource.current;
+      current.onFocus(current.session.id);
+      recallLastTurnRef.current?.();
+    },
+  } satisfies Pick<ComponentProps<typeof AgentTranscript>, "onOpenDiff" | "onSendDraft" | "onRemoveDraft" | "onSecondOpinion" | "onHandoff" | "onEditLastTurn">), []);
+  const canReview = !((hostManaged && !hostFeatures?.checkpoint) || session.inboxAsk || session.worktreeRemoved);
+  const hasDraftBlock = !!draftBlock;
+  const checkpointUndoLocked = !!reviewUndoLocked || orchestrationRuns.some(run =>
+    (run.status === "active" || run.status === "paused") &&
+    (run.leadId === session.id || run.tasks.some(task => task.sessionId === session.id)));
+  const turnAccessory = useCallback((user: Block | undefined, latest: boolean) =>
+    !canReview || (latest && hasDraftBlock) ? undefined : (
+      <SessionReview key={user?.id} turnId={user?.checkpointTurnId} historical={!latest}
+        sessionId={session.id} cwd={workCwd} enabled={visible} busy={latest && !!session.busy}
+        undoLocked={checkpointUndoLocked} onOpenDiff={transcriptActions.onOpenDiff} />
+    ), [canReview, hasDraftBlock, session.id, session.busy, workCwd, visible, checkpointUndoLocked, transcriptActions]);
   const workflowParent = useMemo(
     () => session.blocks.some((block) => block.workflowRun)
       ? { id: session.id, harness: session.harness, model: session.model, modelSettings: session.modelSettings, workflowRuns: session.workflowRuns, cwd: session.cwd }
@@ -940,22 +980,22 @@ const LocalSessionPane = memo(function LocalSessionPane({
       {renderHeader ? renderHeader(session) : inSplit ? (
         <div
           data-session-pane-header
-          className={cn("flex h-9 shrink-0 touch-none items-center gap-1.5 border-b border-stroke px-2 select-none", onPaneDragStart ? "cursor-grab active:cursor-grabbing" : "")}
+          className={cn("flex h-9 shrink-0 touch-none items-center gap-1.5 border-b border-stroke px-2 select-none", paneDrag ? "cursor-grab active:cursor-grabbing" : "")}
           onPointerDown={(event) => {
-            if (event.button !== 0 || !onPaneDragStart) return;
+            if (event.button !== 0 || !paneDrag) return;
             if (
               (event.target as HTMLElement | null)?.closest("[data-no-drag]")
             ) {
               return;
             }
-            onPaneDragStart(event);
+            paneDrag.onPointerDown?.(event);
           }}
         >
-          {onPaneDragStart ? (
-            <GripVertical
-              className="size-3.5 shrink-0 text-content/35"
-              strokeWidth={1.75}
-            />
+          {paneDrag ? (
+            <button {...paneDrag} type="button" aria-label={uiT("Drag to reorder pane")} className="cursor-grab rounded text-content/35 hover:text-content focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing"
+              onPointerDown={undefined} onTouchStart={paneDrag.onTouchStart}>
+              <GripVertical className="size-3.5 shrink-0" strokeWidth={1.75} />
+            </button>
           ) : null}
           <span
             className={cn("size-2 shrink-0 rounded-full", focused ? "bg-accent" : "bg-transparent")}
@@ -1078,32 +1118,15 @@ const LocalSessionPane = memo(function LocalSessionPane({
                   onApproval={session.worktreeRemoved ? undefined : approve}
                   onAddToChat={addSelectionToChat}
                   onSaveNote={notesEnabled ? saveNote : undefined}
-                  onSendDraft={
-                    draftBlock
-                      ? (block) =>
-                          onSubmit(
-                            session.id,
-                            block.text,
-                            block.attachments ?? [],
-                            {
-                              draftBlockId: block.id,
-                              ...(block.appRequestId
-                                ? { appRequestId: block.appRequestId }
-                                : {}),
-                            },
-                          )
-                      : undefined
-                  }
+                  onSendDraft={draftBlock ? transcriptActions.onSendDraft : undefined}
                   onRemoveDraft={
-                    draftBlock
-                      ? (block) => onRemoveDraft(session.id, block.id)
-                      : undefined
+                    draftBlock ? transcriptActions.onRemoveDraft : undefined
                   }
                   onSaveSelectionNote={
                     notesEnabled ? saveSelectionNote : undefined
                   }
                   onOpenFile={onOpenFile}
-                  onOpenDiff={onOpenDiff}
+                  onOpenDiff={transcriptActions.onOpenDiff}
                   onOpenPlan={openPlan}
                   onBuildPlan={session.worktreeRemoved ? undefined : buildPlan}
                   decidingPlanId={decidingPlanId}
@@ -1112,13 +1135,12 @@ const LocalSessionPane = memo(function LocalSessionPane({
                     !session.inboxAsk &&
                     !session.worktreeRemoved &&
                     onSecondOpinion
-                      ? (target, turn) =>
-                          onSecondOpinion(session.id, target, turn)
+                      ? transcriptActions.onSecondOpinion
                       : undefined
                   }
                   onHandoff={
                     !session.inboxAsk && !session.worktreeRemoved && onHandoff
-                      ? (target, turn) => onHandoff(session.id, target, turn)
+                      ? transcriptActions.onHandoff
                       : undefined
                   }
                   onJumpToBottomChange={setShowJumpToBottom}
@@ -1128,42 +1150,9 @@ const LocalSessionPane = memo(function LocalSessionPane({
                   onScrollerChange={setTranscriptScroller}
                   editingLastTurn={editingLastTurn}
                   onEditLastTurn={
-                    editLastTurnSupported
-                      ? () => {
-                          onFocus(session.id);
-                          recallLastTurnRef.current?.();
-                        }
-                      : undefined
+                    editLastTurnSupported ? transcriptActions.onEditLastTurn : undefined
                   }
-                  turnAccessory={(user, latest) =>
-                    (hostManaged && !hostFeatures?.checkpoint) ||
-                    session.inboxAsk ||
-                    session.worktreeRemoved ||
-                    (latest && draftBlock) ? undefined : (
-                      <SessionReview
-                        key={user?.id}
-                        turnId={user?.checkpointTurnId}
-                        historical={!latest}
-                        sessionId={session.id}
-                        cwd={workCwd}
-                        enabled={visible}
-                        busy={latest && !!session.busy}
-                        undoLocked={
-                          reviewUndoLocked ||
-                          orchestrationRuns.some(
-                            (run) =>
-                              (run.status === "active" ||
-                                run.status === "paused") &&
-                              (run.leadId === session.id ||
-                                run.tasks.some(
-                                  (task) => task.sessionId === session.id,
-                                )),
-                          )
-                        }
-                        onOpenDiff={onOpenDiff}
-                      />
-                    )
-                  }
+                  turnAccessory={turnAccessory}
                 />
               </PooledTranscript>
               {!session.inboxAsk ? (

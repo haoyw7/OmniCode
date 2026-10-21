@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useListReorderMotion } from "../shared/hooks/useListReorderMotion";
+import { useCallback, useEffect, useState } from "react";
+import { ListMotion, ListMotionButton } from "../shared/ui/ListMotion";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { Computer } from "../shared/ui/icons";
 import type { Connection, HostConnectionStatus } from "./client";
@@ -25,7 +25,6 @@ export function MobileDeviceChips({
   onSwitch: (endpoint: string) => void;
 }) {
   const { t } = useTranslation();
-  const row = useRef<HTMLDivElement>(null);
   const [online, setOnline] = useState<Record<string, boolean>>({});
   const onObserved = useCallback((endpoint: string, connected: boolean) => {
     setOnline((previous) => previous[endpoint] === connected
@@ -34,15 +33,14 @@ export function MobileDeviceChips({
   const isOnline = (connection: Connection) => connection.endpoint === activeId
     ? status.state === "connected" : online[connection.endpoint] === true;
   const ordered = [...connections].sort((a, b) => Number(isOnline(b)) - Number(isOnline(a)));
-  useListReorderMotion(row, ordered.map((connection) => connection.endpoint), "data-device-endpoint");
   if (connections.length < 2) return null;
   return (
-    <div ref={row} className="mobile-device-chips" role="radiogroup" aria-label={t("Devices")}>
+    <div className="mobile-device-chips" role="radiogroup" aria-label={t("Devices")}>
       <button type="button" className="mobile-device-chip" role="radio"
         aria-checked={scope === "all"} onClick={() => onScope("all")}>
         {t("All")}
       </button>
-      {ordered.map((connection) => (
+      <ListMotion>{ordered.map((connection) => (
         <Chip key={connection.endpoint} connection={connection}
           active={connection.endpoint === activeId}
           selected={scope === "device" && connection.endpoint === activeId}
@@ -52,7 +50,7 @@ export function MobileDeviceChips({
             onScope("device");
             if (connection.endpoint !== activeId) onSwitch(connection.endpoint);
           }} />
-      ))}
+      ))}</ListMotion>
     </div>
   );
 }
@@ -74,12 +72,12 @@ function Chip({ connection, active, selected, status, probing, disabled, probe, 
     onObserved(connection.endpoint, observed.state === "connected");
   }, [connection.endpoint, observed.state, onObserved]);
   return (
-    <button type="button" className="mobile-device-chip" role="radio" aria-checked={selected}
+    <ListMotionButton type="button" className="mobile-device-chip" role="radio" aria-checked={selected}
       data-device-endpoint={connection.endpoint}
       disabled={disabled && !active} onClick={onSelect}>
       <MobileHostStatus status={active ? status : observed} dotOnly />
       <Computer size={16} aria-hidden="true" />
       <span>{name}</span>
-    </button>
+    </ListMotionButton>
   );
 }

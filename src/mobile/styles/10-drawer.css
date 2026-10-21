@@ -29,7 +29,7 @@
   --mobile-press-color: var(--color-selection-subtle);
 }
 .mobile-queue-pill[data-sortable="true"] {
-  touch-action: none;
+  touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
@@ -37,13 +37,6 @@
 .mobile-queue-pill[data-dragging="true"] {
   opacity: 0.35;
   border-color: var(--color-m-accent);
-}
-.mobile-queue-drag-preview {
-  position: fixed;
-  z-index: 40;
-  pointer-events: none;
-  transform: scale(1.03);
-  will-change: transform;
 }
 .mobile-queue-pill svg {
   flex-shrink: 0;

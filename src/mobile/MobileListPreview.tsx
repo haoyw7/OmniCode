@@ -2,6 +2,7 @@ import { useId, useRef, type ReactNode } from "react";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { useMobilePageState } from "./mobilePageState";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
+import { ListMotion } from "../shared/ui/ListMotion";
 
 /** Each group owns its preview; extra rows retain the shared collapse lifetime. */
 export function MobileListPreview<T>({
@@ -63,13 +64,13 @@ export function MobileListPreview<T>({
   );
   return (
     <>
-      {rows(0, initialLimit)}
+      <ListMotion>{rows(0, initialLimit)}</ListMotion>
       {count > initialLimit && (
         <>
           <div id={id}>
             {batches.map((start) => (
               <AnimatedCollapse key={start} expanded={start < visibleLimit}>
-                {() => rows(start, start + batchSize)}
+                {() => <ListMotion>{rows(start, start + batchSize)}</ListMotion>}
               </AnimatedCollapse>
             ))}
           </div>

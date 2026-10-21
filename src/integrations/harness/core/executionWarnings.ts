@@ -1,5 +1,10 @@
 type Translate = (key: string, values?: Record<string, string | number>) => string;
 
+/** Configuration compatibility belongs in MCP settings, not the transcript. */
+export function isConfigurationExecutionWarning(warning: string): boolean {
+  return warning.startsWith("MCP: ") || warning.startsWith("Hook: ");
+}
+
 /** Localize only Host-owned framing, never provider IDs or configuration names. */
 export function executionWarningText(warning: string, t: Translate): string {
   const fallback = "Using the provider installed inside WSL: ";

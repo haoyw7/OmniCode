@@ -6,7 +6,7 @@ import { IconButton } from "../../../../shared/ui/forms/IconButton";
 import type { OpenFileFn } from "../../../search/model/search";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { lazySurface } from "../../../../shared/ui/lazySurface";
-import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { memo, useSyncExternalStore } from "react";
 import {
   MarkdownViewShell,
@@ -102,7 +102,6 @@ type Props = {
     target?: PlanBuildTarget,
   ) => void;
   editorNavigation?: EditorNavigationTarget | null;
-  onPaneDragStart?: (event: ReactPointerEvent<HTMLElement>) => void;
   onTerminalMetaChange?: (fileId: string, patch: TerminalMetaPatch) => void;
 };
 
@@ -134,7 +133,6 @@ function FilePaneComponent({
   onUpdatePlan,
   onBuildPlan,
   editorNavigation,
-  onPaneDragStart,
   onTerminalMetaChange,
 }: Props) {
   const { t } = useTranslation();
@@ -167,7 +165,6 @@ function FilePaneComponent({
           onCloseOtherFiles={(fileId) => onCloseOtherFiles(pane.id, fileId)}
           onPinFile={onPinFile}
           onReorder={(ids) => onReorderFiles(pane.id, ids)}
-          onPaneDragStart={onPaneDragStart}
           leading={<>{tabsLeading}{leading}</>}
           trailing={<>{trailing}{tabsTrailing}{explorer && onClosePane ? <IconButton size="sm" data-file-toolbar-action label={t("Close panel")} onClick={() => onClosePane(pane.id)}><X /></IconButton> : null}</>}
         />
@@ -333,7 +330,6 @@ export const FilePane = memo(FilePaneComponent, (previous, next) => {
     previous.onUpdatePlan !== next.onUpdatePlan ||
     previous.onBuildPlan !== next.onBuildPlan ||
     previous.editorNavigation !== next.editorNavigation ||
-    Boolean(previous.onPaneDragStart) !== Boolean(next.onPaneDragStart) ||
     previous.onTerminalMetaChange !== next.onTerminalMetaChange
   ) {
     return false;

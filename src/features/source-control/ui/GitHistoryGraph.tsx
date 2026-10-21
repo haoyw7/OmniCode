@@ -13,7 +13,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type PointerEvent as ReactPointerEvent,
 } from "react";
 import {
   ChevronDown,
@@ -28,8 +27,7 @@ import {
 } from "../../../shared/ui/SurfaceVisibility";
 import { GitGraphDialog } from "./GitGraphDialog";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { beginResizeInteraction } from "../../../shared/lib/resizeInteraction";
-import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
+import { ResizableRegion } from "../../../shared/ui/primitives/Resizable";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { HoverSummary, useHoverSummary } from "../../../shared/ui/HoverSummary";
 import {
@@ -436,110 +434,8 @@ export function GraphResizeSash({
   maxHeight: () => number;
 }) {
   const { t: uiT } = useTranslation();
-  const drag = useRef<{ start: number; size: number } | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const paintedRef = useRef(height);
-  if (!drag.current) paintedRef.current = height;
-  const stopDrag = useRef<(() => void) | null>(null);
-  const paintRef = useRef(onHeightPaint);
-  paintRef.current = onHeightPaint;
-  const commitRef = useRef(onHeightCommit);
-  commitRef.current = onHeightCommit;
-  const maxRef = useRef(maxHeight);
-  maxRef.current = maxHeight;
-  useEffect(() => () => stopDrag.current?.(), []);
+  return <ResizableRegion edge="top" size={height} min={GRAPH_PANEL_MIN} max={maxHeight}
+    defaultSize={GRAPH_PANEL_DEFAULT} label={uiT("Resize graph")}
+    onPreview={onHeightPaint} onCommit={onHeightCommit} />;
 
-  const clamp = (value: number) =>
-    Math.min(maxRef.current(), Math.max(GRAPH_PANEL_MIN, Math.round(value)));
-
-  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || stopDrag.current) return;
-    event.preventDefault();
-    event.stopPropagation();
-    const handle = event.currentTarget;
-    const pointerId = event.pointerId;
-    // Measure before the interaction changes styles.
-    const maximum = maxRef.current();
-    handle.setPointerCapture(pointerId);
-    const endInteraction = beginResizeInteraction("row-resize");
-    drag.current = { start: event.clientY, size: paintedRef.current };
-    setDragging(true);
-    let pending = paintedRef.current;
-    let frame: number | null = null;
-    const sample = (ev: PointerEvent) => {
-      if (!drag.current) return;
-      pending = Math.min(
-        maximum,
-        Math.max(
-          GRAPH_PANEL_MIN,
-          Math.round(drag.current.size - (ev.clientY - drag.current.start)),
-        ),
-      );
-    };
-    const paint = () => {
-      if (paintedRef.current === pending) return;
-      paintedRef.current = pending;
-      handle.setAttribute("aria-valuenow", String(pending));
-      paintRef.current(pending);
-    };
-
-    const onMove = (ev: PointerEvent) => {
-      if (ev.pointerId !== pointerId || !drag.current) return;
-      sample(ev);
-      if (frame != null) return;
-      frame = requestAnimationFrame(() => {
-        frame = null;
-        paint();
-      });
-    };
-
-    const stop = () => {
-      if (stopDrag.current !== stop) return;
-      stopDrag.current = null;
-      if (frame != null) cancelAnimationFrame(frame);
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
-      window.removeEventListener("blur", stop);
-      handle.removeEventListener("lostpointercapture", stop);
-      paint();
-      endInteraction();
-      setDragging(false);
-      drag.current = null;
-      try {
-        handle.releasePointerCapture(pointerId);
-      } catch {
-        /* already released */
-      }
-      commitRef.current(pending);
-    };
-
-    const onUp = (ev: PointerEvent) => {
-      if (ev.pointerId !== pointerId) return;
-      if (ev.type === "pointerup") sample(ev);
-      stop();
-    };
-
-    stopDrag.current = stop;
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
-    window.addEventListener("blur", stop);
-    handle.addEventListener("lostpointercapture", stop);
-  };
-
-  return (
-    <div className="relative z-10 h-0 shrink-0">
-      <ResizeHandle
-        edge="top"
-        dragging={dragging}
-        className="resize-handle-centered"
-        style={{ top: -8 }}
-        aria-label={uiT("Resize graph")}
-        aria-valuenow={height}
-        onPointerDown={onPointerDown}
-        onDoubleClick={() => commitRef.current(clamp(GRAPH_PANEL_DEFAULT))}
-      />
-    </div>
-  );
 }

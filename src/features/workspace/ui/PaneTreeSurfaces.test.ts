@@ -2,6 +2,12 @@
 import { completeMotionAnimation, motionTestDriver } from "../../../../tests/helpers/motionDriver";
 import { duration } from "../../../shared/motion/tokens";
 vi.mock("motion/react", async (importOriginal) => { const actual = await importOriginal<typeof import("motion/react")>(); return { ...actual, ...motionTestDriver(actual, true) }; });
+// CSSStyleRule.selectorText is read-only in happy-dom; stylesheet snapshots
+// are verified by drag-preview-styles.spec.ts in a real browser.
+vi.mock("../../../shared/ui/primitives/dragPreviewStyles", async (importOriginal) => ({
+  ...await importOriginal<typeof import("../../../shared/ui/primitives/dragPreviewStyles")>(),
+  observeDragPreviewStyles: () => () => {},
+}));
 import {
   act,
   createElement,
@@ -653,48 +659,6 @@ describe("session surface layout", () => {
     expect(pane("tools").dataset.foldState).toBe("opening");
     expect([...container.querySelectorAll("[data-file-pane]")]).toEqual(before);
     expect(lifetime).toEqual({ mounts: 2, unmounts: 0 });
-  });
-
-  it("disables grid transitions during direct resizing and restores them on release", () => {
-    let frame: FrameRequestCallback | undefined;
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-      frame = callback;
-      return 1;
-    });
-    vi.stubGlobal("cancelAnimationFrame", () => {
-      frame = undefined;
-    });
-    render();
-    layout().getBoundingClientRect = () => new DOMRect(0, 0, 1000, 800);
-    const handle = container.querySelector('[role="separator"]')!
-      .firstElementChild as HTMLElement;
-    const capture = new Set<number>();
-    handle.setPointerCapture = (id) => capture.add(id);
-    handle.hasPointerCapture = (id) => capture.has(id);
-    handle.releasePointerCapture = (id) => capture.delete(id);
-    const pointer = (type: string, x: number) =>
-      act(() =>
-        handle.dispatchEvent(
-          new PointerEvent(type, {
-            bubbles: true,
-            button: 0,
-            pointerId: 1,
-            clientX: x,
-            clientY: 300,
-          }),
-        ),
-      );
-    pointer("pointerdown", 600);
-    expect(layout().style.transitionProperty).toBe("none");
-    pointer("pointermove", 650);
-    act(() => frame?.(0));
-    expect(layout().style.gridTemplateColumns).toBe(
-      "minmax(0, 0.65fr) minmax(0, 0.35fr)",
-    );
-    expect(layout().style.transitionProperty).toBe("none");
-    pointer("pointerup", 650);
-    expect(layout().style.transitionProperty).toBe("");
-    expect(props.onRatio).toHaveBeenCalledWith("split", 0, 0.65);
   });
 
   it("grows the card before switching full-view chrome and restores split tracks on exit", () => {

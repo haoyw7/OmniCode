@@ -23,16 +23,12 @@ export const motionGeometry = {
   toggleTravel: 16, toggleCompactTravel: 12, selectAngle: 180, copyCheckScale: 0.65, copyHiddenScale: 0.55, copyTilt: 12,
   linkedPanelPercent: 100, clockPercent: 100,
   headerOpacity: 0.4, popScale: 0.97, dialogScale: 0.96,
-  sheetExitGap: 24, queueScale: 1.03,
+  sheetExitGap: 24,
   mobileSwitchTravel: 20,
 } as const;
 export const popInitial = { opacity: 0, y: motionDistance.pop, scale: motionGeometry.popScale };
 export const popAnimate = { opacity: 1, y: 0, scale: 1 };
 export const popExit = popInitial;
-export const autoAnimateOptions = {
-  duration: duration.panel * 1000,
-  easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-};
 
 export const msgInitial = { opacity: 0, y: motionDistance.msg };
 export const msgAnimate = { opacity: 1, y: 0 };

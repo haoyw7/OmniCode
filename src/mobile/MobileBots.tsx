@@ -17,7 +17,7 @@ import { Button } from "../shared/ui/forms/Button";
 import { Input } from "../shared/ui/forms/Input";
 import { ArrowLeft, Pin, Plus, Search, X } from "../shared/ui/icons";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
-import { useListReorderMotion } from "../shared/hooks/useListReorderMotion";
+import { ListMotion, ListMotionButton, ListMotionItem } from "../shared/ui/ListMotion";
 import { useLongPress } from "../shared/hooks/useLongPress";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { MobileSpinner } from "./MobileSpinner";
@@ -49,8 +49,6 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
   const [menu, setMenu] = useState<Entry>();
   const searchInput = useRef<HTMLInputElement>(null);
   const searchButton = useRef<HTMLButtonElement>(null);
-  const pinnedList = useRef<HTMLDivElement>(null);
-  const regularList = useRef<HTMLDivElement>(null);
   const chat = useRef<MobileAssistantHandle>(null);
   const createPage = useRef<MobileAssistantHandle>(null);
   const listVisible = visible && !selected && !creating;
@@ -87,8 +85,6 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
   const matches = (bot: Entry) => bot.name.toLocaleLowerCase().includes(needle);
   const pinned = pins.flatMap(id => { const bot = entries?.find(item => item.id === id); return bot && matches(bot) ? [bot] : []; });
   const regular = (entries ?? []).filter(bot => !pins.includes(bot.id) && matches(bot));
-  useListReorderMotion(pinnedList, pinned.map(bot => bot.id), "data-bot-id", listVisible, pinned.length > 0 ? "open" : "closed");
-  useListReorderMotion(regularList, regular.map(bot => bot.id), "data-bot-id", listVisible);
   useEffect(() => { setSelected(surfaceVisible ? initialSelection : undefined); }, [surfaceVisible, initialSelection]);
   useEffect(() => {
     if (!surfaceVisible) { setCreating(false); setSearching(false); setQuery(""); setMenu(undefined); }
@@ -152,25 +148,25 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
       {!entries && !error && <div className="assistant-availability" role="status"><MobileSpinner size={20} className="animate-spin motion-reduce:animate-none" /><span>{t("Loading…")}</span></div>}
       {entries?.length === 0 && <p className="assistant-availability">{t("No bots yet")}</p>}
       <AnimatedCollapse expanded={pinned.length > 0}>
-        <div ref={pinnedList} className="mobile-bots-pinned" aria-label={t("Pinned bots")}>
-          {pinned.map(bot => <button key={bot.id} type="button" data-bot-id={bot.id} {...botActions(bot)}>
+        <div className="mobile-bots-pinned" aria-label={t("Pinned bots")}>
+          <ListMotion enabled={listVisible}>{pinned.map(bot => <ListMotionButton key={bot.id} type="button" data-bot-id={bot.id} {...botActions(bot)}>
             <BotAvatar bot={bot} size={96} /><span>{bot.name}</span>
-          </button>)}
+          </ListMotionButton>)}</ListMotion>
         </div>
       </AnimatedCollapse>
-      <div ref={regularList} className="mobile-bots-rows">
-        {regular.map(bot => {
+      <div className="mobile-bots-rows">
+        <ListMotion enabled={listVisible}>{regular.map(bot => {
           const feed = bot.threadId ? activity.get(botCacheKey(props.hostKey, { botId: bot.id, threadId: bot.threadId })) : undefined;
           const latest = feed?.latest && (feed.latest.kind === "user" || feed.latest.kind === "assistant") ? feed.latest : undefined;
-          return <NavigationItem key={bot.id} data-bot-id={bot.id} icon={<BotAvatar bot={bot} size={40} />} {...botActions(bot)}>
+          return <ListMotionItem key={bot.id}><NavigationItem data-bot-id={bot.id} icon={<BotAvatar bot={bot} size={40} />} {...botActions(bot)}>
             <span className="mobile-bots-row-heading"><strong>{bot.name}</strong>
               {latest && <time dateTime={new Date(latest.createdAt).toISOString()}>{formatMobileRelativeTime(latest.createdAt, Date.now(), language)}</time>}
             </span>
             <span className="mobile-bots-row-preview"><span>{latest ? latest.text.trim() || t("Attachments") : t("No messages yet")}</span>
               {!!feed?.count && <span className="mobile-unread-dot" role="img" aria-label={t("Unread reply")} />}
             </span>
-          </NavigationItem>;
-        })}
+          </NavigationItem></ListMotionItem>;
+        })}</ListMotion>
       </div>
       {entries && entries.length > 0 && !pinned.length && !regular.length && <p className="assistant-availability" role="status">{t("No matching bots")}</p>}
     </nav>

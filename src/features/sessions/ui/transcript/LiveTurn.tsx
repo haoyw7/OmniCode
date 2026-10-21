@@ -13,13 +13,18 @@ import { RollingClock, rollingClockMotion } from "../../../../shared/ui/RollingC
 import { type Block, type SessionExecutionState } from "../../model/session";
 import { ActivityPhaseIcon } from "./activity/ActivityPhaseIcon";
 import { formatElapsed, formatWorkingDuration, useElapsedFrom, useNow } from "./transcriptClock";
+import { startupLabels, startupProgressText } from "../../model/startupStatus";
+import { parseStartupProgress } from "../../../../integrations/harness/core/startupProgress";
 
 
 
 function executionLabel(state?: SessionExecutionState): string | undefined {
   switch (state?.phase) {
     case "waiting-resource": return state.reason === "computer" ? "Waiting for computer access…" : state.reason === "removing" ? "Waiting for worktree cleanup…" : "Waiting for workspace changes to finish…";
-    case "starting": return "Preparing to start…";
+    case "starting": {
+      const startup = parseStartupProgress(state.startup);
+      return startup ? startupLabels[startup.stage] : "Preparing to start…";
+    }
     case "awaiting-response": return "Waiting for model response…";
     case "settling": return "Finishing up…";
     default: return undefined;
@@ -40,15 +45,17 @@ export function InitialThinking({
   embedded?: boolean;
 }) {
   const { t: uiT } = useTranslation();
+  const progress = executionState?.phase === "starting" ? startupProgressText(executionState.startup, uiT) : undefined;
+  const text = `${uiT(executionLabel(executionState) ?? "Thinking…")}${progress ? ` · ${progress}` : ""}`;
   return (
     <div
       className={cn("flex min-w-0 items-center gap-1.5 pt-3 pb-1 font-sans text-sm text-content/50", embedded ? "" : "px-4 @md:px-6")}
     >
       <ActivityPhaseIcon kind="think" />
       {live ? (
-        <Shimmer duration={1.6}>{uiT(executionLabel(executionState) ?? "Thinking…")}</Shimmer>
+        <Shimmer duration={1.6}>{text}</Shimmer>
       ) : (
-        uiT(executionLabel(executionState) ?? "Thinking…")
+        text
       )}
     </div>
   );
@@ -81,6 +88,7 @@ export function LiveFoldTitle({
 }) {
   const { t: uiT } = useTranslation();
   const phaseLabel = executionLabel(executionState);
+  const progress = executionState?.phase === "starting" ? startupProgressText(executionState.startup, uiT) : undefined;
   const elapsedMs = useElapsedFrom(phaseLabel ? executionState?.since : executionState?.providerStartedAt ?? startedAt, paused);
   const elapsed = formatElapsed(elapsedMs);
   // The footer's clock tracks the current activity; the fold line keeps the
@@ -95,7 +103,7 @@ export function LiveFoldTitle({
   const text = paused
     ? (waitingLabel ?? "Waiting for approval")
     : phaseLabel
-      ? `${uiT(phaseLabel)}${elapsed ? ` · ${elapsed}` : ""}`
+      ? `${uiT(phaseLabel)}${progress ? ` · ${progress}` : ""}${elapsed ? ` · ${elapsed}` : ""}`
     : background?.length
       ? `${working} · ${backgroundLabel(background)}`
       : working;
@@ -150,10 +158,12 @@ export function LiveTurnFooter({
     background: background?.length,
     seed,
   });
+  const startup = !status.starting && executionState?.phase === "starting" && !waiting ? parseStartupProgress(executionState.startup) : undefined;
+  const progress = startupProgressText(startup, uiT);
   if (phaseLabel && executionState) {
     status.phase = executionState.phase === "waiting-resource" ? "waiting" : "working";
     status.clock = "round";
-    status.label = { literal: uiT(phaseLabel) };
+    status.label = { literal: `${uiT(phaseLabel)}${progress ? ` · ${progress}` : ""}` };
     status.clockStartedAt = executionState.since;
     status.elapsed = formatElapsed(Math.max(0, now - executionState.since)) ?? undefined;
     status.showClock = true;
@@ -163,10 +173,8 @@ export function LiveTurnFooter({
       ? status.label.literal
       : uiT(status.label.key, status.label.params);
   const verb = status.phase === "tool" ? `${label}…` : label;
-  // While the turn starts up, dots alone follow the mascot: no clock, no text.
-  // Waiting on a resource still says what it is waiting for.
-  const typing = status.starting && !paused &&
-    (!phaseLabel || executionState?.phase === "starting" || executionState?.phase === "awaiting-response");
+  // Startup details are already shown above the footer.
+  const typing = status.starting && !paused;
   return (
     <AssistantStatus
       icon={
@@ -196,11 +204,14 @@ export function LiveTurnFooter({
           </>
         ) : null}
         {/* Phase copy can ease in without remounting the ticking digits. */}
-        <AnimatePresence mode="popLayout"><motion.span key={typing ? "starting" : `${status.phase}:${label}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={reduced ? immediateTransition : msgTransition} className="transcript-live-status flex min-w-0 items-center">
+        <AnimatePresence mode="popLayout"><motion.span key={typing ? "starting" : `${status.phase}:${startup?.stage ?? label}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={reduced ? immediateTransition : msgTransition} className="transcript-live-status flex min-w-0 items-center"
+          role={startup ? "progressbar" : undefined} aria-label={startup && phaseLabel ? uiT(phaseLabel) : undefined}
+          aria-valuemin={startup ? 0 : undefined} aria-valuemax={startup?.total} aria-valuenow={startup?.total ? startup.completed : undefined}
+          aria-valuetext={startup ? verb : undefined}>
           {typing ? (
             <TypingDots className="transcript-typing shrink-0" label={verb} />
           ) : (
-            <Shimmer className="min-w-0 truncate" duration={1.6}>
+            <Shimmer className={cn("min-w-0", startup ? "whitespace-normal break-words" : "truncate")} duration={1.6}>
               {verb}
             </Shimmer>
           )}

@@ -353,7 +353,7 @@ export const GitChangesPanel = memo(function GitChangesPanel({
       <motionElement.div
       initial={false} animate={{ gridTemplateRows: graphExpanded ? "minmax(0, 0px) minmax(0, var(--git-graph-height))" : "minmax(0, 0px) minmax(0, var(--desktop-control-md, 32px))" }} transition={motionPreferenceQuery().matches ? immediateTransition : panelTransition} onAnimationComplete={graphMotion.finish}
         ref={graphPaneRef}
-        className="git-history-panel animated-collapse-size grid shrink-0 overflow-visible"
+        className="git-history-panel animated-collapse-size relative grid shrink-0 overflow-visible"
         style={
           {
             "--git-graph-height": `${graphHeight}px`,

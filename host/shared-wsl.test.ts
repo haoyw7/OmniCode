@@ -158,6 +158,18 @@ it("uses one Host database and paired-device API for local and same-path WSL pro
   }
   expect(await call("workspace.run", { projectId: ubuntu.id, command: "read_text_file", args: { path: "/workspace/readme.txt" } }, phone.token)).toBe("Ubuntu workspace");
   expect(await call("workspace.run", { projectId: debian.id, command: "read_text_file", args: { path: "/workspace/readme.txt" } }, phone.token)).toBe("Debian workspace");
+  // Editors claim before reading. Keep identical file paths scoped to their distribution.
+  for (const project of [ubuntu, debian]) {
+    await call("resources.claim", { resourceId: `editor-${project.id}`, path: "/workspace/readme.txt", machine: project.machine }, phone.token);
+  }
+  expect(store.db.prepare("SELECT path FROM checkout_resources WHERE id LIKE 'device:%' ORDER BY path").all())
+    .toEqual([{ path: "wsl%3ADebian:/workspace/readme.txt" }, { path: "wsl%3AUbuntu:/workspace/readme.txt" }]);
+  await expect(call("resources.claim", { resourceId: "editor-outside", path: "/outside/.env", machine: ubuntu.machine }, phone.token))
+    .rejects.toThrow("outside");
+  for (const project of [ubuntu, debian]) {
+    await call("resources.release", { resourceId: `editor-${project.id}` }, phone.token);
+  }
+  expect(store.db.prepare("SELECT path FROM checkout_resources WHERE id LIKE 'device:%'").all()).toEqual([]);
   await call("workspace.run", { projectId: ubuntu.id, command: "write_text_file", args: { path: "/workspace/readme.txt", content: "Changed in Ubuntu" } }, phone.token);
   expect(services.get("Ubuntu")!.files.get("/workspace/readme.txt")?.toString()).toBe("Changed in Ubuntu");
   expect(services.get("Debian")!.files.get("/workspace/readme.txt")?.toString()).toBe("Debian workspace");

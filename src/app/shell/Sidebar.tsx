@@ -20,7 +20,7 @@ import { useTranslation } from "../../shared/i18n/useTranslation";
 import { pathKey, projectKey } from "../../shared/lib/paths";
 import { basename } from "../../platform/tauri/fs";
 import { useShortcutLabel } from "../commands/useCommandShortcut";
-import { useDragResize } from "../../shared/hooks/useDragResize";
+import { ResizableRegion } from "../../shared/ui/primitives/Resizable";
 import { useLockOverscroll } from "../../shared/hooks/useLockOverscroll";
 import { sessionRecencyAt } from "../../features/sessions/model/sessionActivity";
 import { SessionCompletionOrder, type SessionCompletionRow } from "../model/sessionCompletionOrder";
@@ -87,7 +87,6 @@ import { windowDragRegion } from "./startWindowDrag";
 import { SidebarTransition } from "./SidebarTransition";
 import { SidebarChromeWidth } from "./SidebarChromeWidth";
 import { SidebarTabs } from "./SidebarTabs";
-import { ResizeHandle } from "../../shared/ui/ResizeHandle";
 import { ProjectList } from "./ProjectList";
 import { AddProjectButton } from "./projects/ProjectSectionHeader";
 import { ProjectSessionSection } from "./ProjectSessionSection";
@@ -115,15 +114,11 @@ function SidebarComponent(props: SidebarProps) {
   const toggleLabel = useShortcutLabel("Toggle Sidebar", "App: Toggle Sidebar");
   const quickOpenLabel = useShortcutLabel("Quick Open", "App: Go to File");
   const [initialWidth] = usePreferenceState(loadSidebarWidth);
-  const resize = useDragResize({
-    cssProperty: "--sidebar-resize-width",
-    min: SIDEBAR_WIDTH_MIN,
-    max: () => Math.min(SIDEBAR_WIDTH_MAX, Math.floor(window.innerWidth * 0.5)),
-    defaultWidth: SIDEBAR_WIDTH_DEFAULT,
-    initial: initialWidth,
-    value: initialWidth,
-    onCommit: saveSidebarWidth,
-  });
+  const [width, setWidth] = useState(initialWidth);
+  const [resizing, setResizing] = useState(false);
+  const resizePane = useRef<HTMLElement | null>(null);
+  const setResizePane = useCallback((node: HTMLElement | null) => { resizePane.current = node; }, []);
+  useEffect(() => { if (!resizing) setWidth(initialWidth); }, [initialWidth, resizing]);
   const [expandedPaths, setExpandedPaths] = useState(() =>
     loadProjectTreeExpanded(cwd),
   );
@@ -1017,28 +1012,22 @@ function SidebarComponent(props: SidebarProps) {
   return (
     <SidebarTransition
       open={open}
-      width={resize.width}
+      width={width}
       trailingInset={props.desktopMode ? "var(--desktop-sidebar-inset)" : undefined}
-      dragging={resize.dragging}
-      setPaneRef={resize.setPaneRef}
-      finishDrag={resize.finishDrag}
+      dragging={resizing}
+      setPaneRef={setResizePane}
       resizeHandle={
-        <ResizeHandle
-          edge="right"
-          dragging={resize.dragging}
-          aria-label={t("Resize sidebar")}
-          aria-valuenow={resize.width}
-          aria-valuemin={SIDEBAR_WIDTH_MIN}
-          aria-valuemax={SIDEBAR_WIDTH_MAX}
-          onPointerDown={resize.onPointerDown}
-          onDoubleClick={resize.onDoubleClick}
-        />
+        <ResizableRegion targetRef={resizePane} property="--sidebar-resize-width" size={width}
+          min={SIDEBAR_WIDTH_MIN} max={() => Math.min(SIDEBAR_WIDTH_MAX, Math.floor(window.innerWidth * 0.5))}
+          defaultSize={SIDEBAR_WIDTH_DEFAULT} label={t("Resize sidebar")} disabled={!open}
+          offset={props.desktopMode ? "calc(0px - var(--desktop-sidebar-inset))" : undefined}
+          onActiveChange={setResizing} onCommit={next => { setWidth(next); saveSidebarWidth(next); }} />
       }
     >
       <aside
         data-desktop-sidebar={props.desktopMode}
         className={`${props.desktopMode ? "" : "sidebar-glass "}relative flex h-full min-h-0 shrink-0 flex-col`}
-        style={{ width: props.desktopMode || resize.dragging ? "100%" : resize.width }}
+        style={{ width: props.desktopMode || resizing ? "100%" : width }}
       >
         {props.desktopMode ? <SidebarChromeWidth /> : null}
         {props.desktopMode && !props.chromeInMenuBar ? (
@@ -1091,7 +1080,7 @@ function SidebarComponent(props: SidebarProps) {
           additions={additions}
           deletions={deletions}
           filesLabel={props.recents !== undefined ? t("Files") : undefined}
-          resizing={resize.dragging}
+          resizing={resizing}
         />}
         {!props.desktopMode && tab === "sessions" ? (
           <div

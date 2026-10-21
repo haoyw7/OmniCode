@@ -7,6 +7,9 @@ import { afterEach, expect, it } from "vitest";
 import type { ProviderRuntimeArtifact } from "./provider-runtime";
 import { ensureWslProviderRuntime, type ProviderRuntimeRpc } from "./wsl-provider-runtime";
 import { ensureProviderTransferArchive } from "./provider-runtime-transfer";
+import { readLines } from "./wsl-exec-protocol.mjs";
+import { withStartupProgress } from "./startup-progress";
+import type { StartupProgress } from "../src/integrations/harness/core/startupProgress";
 
 const directories: string[] = [];
 afterEach(async () => { await Promise.all(directories.splice(0).map(path => rm(path, { recursive: true, force: true }))); });
@@ -23,7 +26,10 @@ async function fixture() {
     packageName: "fixture", packageVersion: "1.2.3", integrity: "fixture-integrity",
     files: [{ path: "claude", size: Buffer.byteLength("fixture-native-artifact"), sha256: createHash("sha256").update("fixture-native-artifact").digest("hex"), executable: true }],
   };
-  const rpc: ProviderRuntimeRpc = { async request<T>(op: string, params: Record<string, unknown> = {}): Promise<T> {
+  const listeners = new Set<(event: { stream: string; kind: string; data: unknown }) => void>();
+  const rpc: ProviderRuntimeRpc = {
+    onEvent(listener) { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    async request<T>(op: string, params: Record<string, unknown> = {}): Promise<T> {
     if (op === "env.info") return { node: process.execPath, arch: "x64" } as T;
     if (op !== "exec") throw new Error("Unexpected operation");
     return new Promise((resolve, reject) => {
@@ -33,16 +39,24 @@ async function fixture() {
       const stdout: Buffer[] = [], stderr: Buffer[] = [];
       child.once("error", reject);
       child.stdout.on("data", chunk => stdout.push(chunk)); child.stderr.on("data", chunk => stderr.push(chunk));
+      readLines(child.stderr, line => {
+        if (!line.startsWith("OMNICODE_STARTUP ")) return;
+        for (const listener of listeners) listener({ stream: String(params.progressStream), kind: "startup", data: JSON.parse(line.slice(17)) });
+      });
       child.once("close", code => resolve({ code, stdout: Buffer.concat(stdout).toString(), stderr: Buffer.concat(stderr).toString() } as T));
       child.stdin.end(String(params.stdin));
     });
   } };
-  return { root, home, artifact, rpc };
+  return { root, home, artifact, rpc, listeners };
 }
 
 it("verifies transferred bytes and reuses the immutable Linux installation", async () => {
-  const { artifact, rpc } = await fixture();
-  const first = await ensureWslProviderRuntime(rpc, artifact);
+  const { artifact, rpc, listeners } = await fixture();
+  const progress: StartupProgress[] = [];
+  const first = await withStartupProgress(value => progress.push(value), () => ensureWslProviderRuntime(rpc, artifact));
+  expect(progress).toContainEqual({ stage: "copying", completed: artifact.files[0].size, total: artifact.files[0].size, unit: "bytes" });
+  expect(progress).toContainEqual({ stage: "verifying", completed: 1, total: 1, unit: "files" });
+  expect(listeners.size).toBe(0);
   const before = await stat(first.command);
   expect(await readFile(first.command, "utf8")).toBe("fixture-native-artifact");
   const second = await ensureWslProviderRuntime(rpc, artifact);
@@ -51,9 +65,10 @@ it("verifies transferred bytes and reuses the immutable Linux installation", asy
 });
 
 it("rejects transfer checksum changes without publishing an installation", async () => {
-  const { artifact, rpc, home } = await fixture();
+  const { artifact, rpc, home, listeners } = await fixture();
   artifact.files[0].sha256 = "0".repeat(64);
   await expect(ensureWslProviderRuntime(rpc, artifact)).rejects.toThrow("checksum mismatch");
+  expect(listeners.size).toBe(0);
   await expect(stat(join(home, ".omnicode/remote/providers/claude/1.2.3-0123456789abcdef"))).rejects.toMatchObject({ code: "ENOENT" });
 });
 

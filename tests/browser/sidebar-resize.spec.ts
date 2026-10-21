@@ -150,7 +150,7 @@ for (const mode of ["code", "chat"] as const) {
         const shell = el.closest("[data-sidebar-transition]")!;
         const chrome = document.querySelector<HTMLElement>("[data-window-drag-bar]")!;
         const main = document.querySelector("[data-sidebar-main]")!;
-        const handle = shell.querySelector(".resize-handle")!;
+        const handle = shell.querySelector('[data-ui="resizable-handle"]')!;
         const point = document.elementFromPoint(rect.right + 4, rect.top + 100);
         return {
           sidebar: rect.right,

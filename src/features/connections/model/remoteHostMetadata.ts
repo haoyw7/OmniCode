@@ -34,6 +34,6 @@ export function loadRemoteHostCatalog(machineId: string, environmentId: string, 
       const value = await remoteRequest<HostModelCatalog>(machineId, "models.list", { projectId, ...params });
       signal.throwIfAborted();
       return value;
-    }, value => queryClient.setQueryData(queryKey, value)).promise,
+    }, value => queryClient.setQueryData(queryKey, value), queryClient.getQueryData<HostModelCatalog>(queryKey)).promise,
   }).finally(() => stop?.());
 }

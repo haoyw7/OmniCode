@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useCollapseMotion } from "../../shared/ui/AnimatedCollapse";
 import { SurfaceVisibilityContext } from "../../shared/ui/SurfaceVisibility";
+import { beginPaneResize } from "../../shared/lib/paneResize";
 
 type Props = {
   open: boolean;
@@ -19,7 +20,6 @@ type Props = {
   trailingInset?: string;
   dragging: boolean;
   setPaneRef: (pane: HTMLElement | null) => void;
-  finishDrag: () => void;
   resizeHandle?: ReactNode;
   children: ReactNode;
 };
@@ -53,12 +53,13 @@ export function SidebarTransition({
   trailingInset,
   dragging,
   setPaneRef,
-  finishDrag,
   resizeHandle,
   children,
 }: Props) {
   const reduced = useMotionPreference();
   const { foldState, finish } = useCollapseMotion(open, SIDEBAR_TRANSITION_MS);
+  const folding = foldState === "opening" || foldState === "closing";
+  useLayoutEffect(() => folding ? beginPaneResize() : undefined, [folding]);
   const hasOpened = useRef(open);
   const animatedWidth = useMotionValue(open ? width : 0);
   const insetWidth = useMotionTemplate`max(0px, calc(${animatedWidth}px - ${trailingInset ?? "0px"}))`;
@@ -72,10 +73,6 @@ export function SidebarTransition({
     [setPaneRef],
   );
 
-  useLayoutEffect(() => {
-    if (open) return;
-    finishDrag();
-  }, [open, finishDrag]);
 
   useLayoutEffect(() => {
     if (dragging) {

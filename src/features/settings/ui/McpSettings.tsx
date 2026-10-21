@@ -40,6 +40,8 @@ import {
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { mcpServerKey } from "../model/mcpInspect";
 import { McpServerDetails } from "./McpServerDetails";
+import { useMcpExecutionWarnings } from "../model/mcpExecutionWarnings";
+import { executionWarningText } from "../../../integrations/harness/core/executionWarnings";
 import { MCP_PROVIDER_LABELS, type McpConnection } from "../model/mcp";
 import {
   useMcpSettings,
@@ -338,6 +340,7 @@ function McpConnections({
 }) {
   const { t: uiT } = useTranslation();
   const mcp = useMcpSettings(cwd);
+  const executionWarnings = useMcpExecutionWarnings(cwd);
   const { servers, claudeError, piError } = mcp;
   const [filter, setFilter] = useState<Filter>("all");
   const [showAllProviders, setShowAllProviders] = useState(false);
@@ -449,6 +452,11 @@ function McpConnections({
           </Button>
         </div>
       </div>
+      {executionWarnings.length ? (
+        <div role="status" className="space-y-1 text-xs text-content/65">
+          {executionWarnings.map(warning => <p key={warning}>{executionWarningText(warning, uiT)}</p>)}
+        </div>
+      ) : null}
       <div
         role="group"
         className="inline-flex max-w-full flex-wrap gap-0.5 rounded-md border border-content/10 p-0.5 text-[12px]"

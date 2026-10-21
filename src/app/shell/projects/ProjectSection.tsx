@@ -1,17 +1,15 @@
 import { useSidebarListPreview } from "../useSidebarListPreview";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useContext, useId, useRef, type MouseEvent } from "react";
-import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
-import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
+import { useContext, useId, type MouseEvent } from "react";
+import { SortableItem, SortableList } from "../../../shared/ui/primitives/Sortable";
+import { InsidePinnedSectionContext, useSidebarPinDrop } from "../sidebarPinDrop";
 import { orderByIds } from "../../../shared/lib/reorder";
 import { orderSidebarPins } from "../../model/sidebarPinnedOrder";
-import { sidebarDragPreview } from "../SidebarEntryReorder";
 import { useTabGroupLogos } from "../../../features/projects/hooks/useTabGroupLogos";
 import { pathKey } from "../../../shared/lib/paths";
 import { sameProjectPath, type RecentProject } from "../../../features/projects/model/recents";
 import {
-  collapsedProjectHeaderSize,
   isBusyPath,
   PROJECT_COLLAPSE_DURATION_MS,
   type ProjectListEntry,
@@ -95,7 +93,8 @@ export function ProjectSection({
   const sectionReorder = useContext(SidebarSectionReorderContext);
   const sectionDragging =
     !!sectionReorder &&
-    sectionReorder.sortable.draggingId === sectionReorder.id;
+    sectionReorder.item.dragging;
+  const pinDrop = useSidebarPinDrop(pinned);
   const preview = useSidebarListPreview(
     items.length + leadingEntries.length,
     `${previewAll}\0${previewKey}`,
@@ -116,26 +115,12 @@ export function ProjectSection({
     ],
     itemOrder ?? [],
   );
-  const list = useRef<HTMLDivElement>(null);
-  const sortable = useAnimatedReorder(
-    rows
-      .slice(0, preview.count)
-      .filter((row) => pinned || row.project)
-      .map((row) => row.id),
-    onReorder,
-    "y",
-    undefined,
-    {
-      activationDistance: 3,
-      floatingPreview: sidebarDragPreview,
-      collapsedSize: tree ? collapsedProjectHeaderSize : undefined,
-    },
-  );
-  useListReorderMotion(list, rows.map((row) => row.id), "data-sidebar-pinned-entry",
-    (compact || hideHeader || expanded) && !sectionDragging && !sortable.draggingId,
-    preview.count, pinned && leadingEntries.length > 0);
+  const sortableIds = rows.slice(0, preview.count).filter(row => pinned || row.project).map(row => row.id);
   return (
+    <InsidePinnedSectionContext.Provider value={pinned}>
     <div
+      ref={pinDrop.ref}
+      data-sidebar-pin-drop-target={pinDrop.isOver || undefined}
       className={compact ? "shrink-0" : `shrink-0 ${tree ? "mb-1" : "mb-2"}`}
       data-project-section={pinned ? "pinned" : "projects"}
     >
@@ -150,7 +135,7 @@ export function ProjectSection({
       )}
       <AnimatedCollapse
         keepMounted
-        expanded={(compact || hideHeader || expanded) && !sectionDragging}
+        expanded={compact || hideHeader || expanded}
         motion="height"
         className="project-tree-collapse"
         durationMs={PROJECT_COLLAPSE_DURATION_MS}
@@ -162,7 +147,6 @@ export function ProjectSection({
             </p>
           ) : null}
           <div
-            ref={pinned ? list : undefined}
             data-project-rows
             className={
               compact
@@ -170,9 +154,10 @@ export function ProjectSection({
                 : "flex flex-col gap-px px-2"
             }
           >
+            <SortableList ids={sortableIds} onReorder={onReorder} disabled={sectionDragging || !(compact || hideHeader || expanded)} renderOverlay={() => uiT("Drag to move")}>
             {rows
               .slice(0, preview.mountedCount)
-              .map(({ id, entry, project: item }, index) => (
+              .map(({ id, entry, project: item }, index) => <SortableItem key={id} id={id} disabled={!sortableIds.includes(id)}>{(sortable) => (
                 <AnimatedCollapse key={id} expanded={index < preview.count}>
                   {() => {
                     if (entry)
@@ -217,11 +202,13 @@ export function ProjectSection({
                     );
                   }}
                 </AnimatedCollapse>
-              ))}
+              )}</SortableItem>)}
+            </SortableList>
             {preview.button}
           </div>
         </div>
       </AnimatedCollapse>
     </div>
+    </InsidePinnedSectionContext.Provider>
   );
 }

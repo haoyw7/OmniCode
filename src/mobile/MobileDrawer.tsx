@@ -42,7 +42,7 @@ import { lightImpact } from "./haptics";
 import { formatMobileRelativeTime } from "./relativeTime";
 import { useMobileSessionLists, type MobileProjectHistory } from "./sessionListStore";
 import { sortMobileProjects, sortMobileSessions } from "./sessionList";
-import { useListReorderMotion } from "../shared/hooks/useListReorderMotion";
+import { ListMotion, ListMotionButton } from "../shared/ui/ListMotion";
 import type { MobileSheetPoint } from "./MobileSheet";
 import { animate, motion, useDragControls, useMotionValue, useTransform, type AnimationPlaybackControls } from "motion/react";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
@@ -167,7 +167,6 @@ function useMobileDrawerController({
   });
   const panel = useRef<HTMLElement>(null);
   const backdrop = useRef<HTMLDivElement>(null);
-  const sessionsList = useRef<HTMLDivElement>(null);
   const swipe = useRef<Swipe>(undefined);
   const clearSwipe = () => {
     const current = swipe.current;
@@ -440,8 +439,6 @@ function useMobileDrawerController({
     pinnedOrder.current = new Map(pins.map((item, index) => [item.id, index]));
   }, [pins]);
   const recents = useMemo(() => allSessions.filter((item) => !item.pinned), [allSessions]);
-  const sessionOrder = useMemo(() => [...pins, ...recents].map((item) => item.id), [pins, recents]);
-  useListReorderMotion(sessionsList, sessionOrder, "data-session-id");
   const failedProjects = useMemo(() => tree.filter((item) => {
     const history = projectHistory(item);
     return history.failed && !history.sessions;
@@ -449,7 +446,7 @@ function useMobileDrawerController({
   const row = (item: HostSessionSummary) => {
     const owner = ownerById.get(item.projectId)!;
     return (
-      <button
+      <ListMotionButton
         type="button"
         className="mobile-list-row mobile-session-row"
         key={item.id}
@@ -537,7 +534,7 @@ function useMobileDrawerController({
             ) : null}
           </small>
         </span>
-      </button>
+      </ListMotionButton>
     );
   };
   return {
@@ -569,7 +566,6 @@ function useMobileDrawerController({
     readHistories,
     recents,
     row,
-    sessionsList,
     setMoreOpen,
     settledClosed,
     controls, x, progress,
@@ -612,7 +608,6 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
     readHistories,
     recents,
     row,
-    sessionsList,
     setMoreOpen,
     settledClosed,
     controls, x, progress,
@@ -735,7 +730,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
             </div>
           </div>
         </div>
-        <div ref={sessionsList} className="mobile-drawer-sessions">
+        <div className="mobile-drawer-sessions">
           {projectsUnavailable && !tree.length ? (
             <p className="mobile-drawer-empty">{t("Couldn’t load projects")}</p>
           ) : projectsPending || treeLoading ? (
@@ -751,7 +746,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
                 <section className="mobile-drawer-group" aria-label={t("Pinned")}>
                   <h2 className="mobile-drawer-heading">{t("Pinned")}</h2>
                   <div className="mobile-list mobile-session-list">
-                    {pins.map(row)}
+                    <ListMotion>{pins.map(row)}</ListMotion>
                   </div>
                 </section>
               )}

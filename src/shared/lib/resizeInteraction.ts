@@ -13,7 +13,7 @@ export function beginResizeInteraction(cursor: "col-resize" | "row-resize") {
   if (active++ === 0) originallyResizing = root.classList.contains("is-resizing");
   root.classList.add("is-resizing");
   const endResize = beginPaneResize();
-  const restoreSelection = suppressTextSelection({ reordering: false });
+  const restoreSelection = suppressTextSelection();
   const surface = document.createElement("div");
   surface.dataset.resizeCursor = cursor;
   surface.setAttribute("aria-hidden", "true");

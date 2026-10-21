@@ -185,14 +185,15 @@ it.each([-65_000, 65_000])("uses the Host clock for both live timers with %i ms 
   expect(session.blocks[0].startedAt).toBe(100_000 + offset);
 });
 
-it("shows actual startup and resource phases with their own clocks instead of thinking", () => {
+it("shows startup and resource phases above the footer while keeping its dots until model output", () => {
   session.executionState = { runId: "run", phase: "waiting-resource", since: 95_000, reason: "integrating",
     blockers: [{ id: "native:terminal", ownerPid: 123, kind: "integrating", path: "/project" }] };
   update();
   expect(node.textContent).toContain("Waiting for workspace changes to finish…");
   expect(node.textContent).not.toContain("Thinking…");
   expect(node.querySelector("[data-live-footer]")?.getAttribute("title")).toContain("PID 123");
-  dots(false);
+  dots(true);
+  noClock();
   // Starting up and waiting for the model are initialization: dots stand in for the footer text.
   session.executionState = { runId: "run", phase: "starting", since: 100_000 };
   update(); expect(node.textContent).toContain("Preparing to start…");
@@ -206,4 +207,39 @@ it("shows actual startup and resource phases with their own clocks instead of th
   session.executionState = { ...session.executionState, phase: "active" };
   update({ type: "reasoning.delta", text: "Actual reasoning" });
   expect(node.textContent).toContain("Thinking");
+});
+
+it("keeps startup progress above the footer without interrupting its typing dots", async () => {
+  act(() => applyReducedMotion("on"));
+  session.executionState = { runId: "run", phase: "starting", since: 95_000,
+    startup: { stage: "copying", completed: 1024, total: 2048, unit: "bytes" } };
+  update();
+  dots(true);
+  noClock();
+  expect(node.textContent).toContain("Copying agent to WSL…");
+  expect(node.textContent).toContain("1.0 KiB / 2.0 KiB (50%)");
+  const typing = node.querySelector("[data-live-footer] .typing-dots");
+  expect(node.querySelector("[data-live-footer]")?.textContent).toBe("");
+  expect(node.querySelector('[role="progressbar"]')).toBeNull();
+  session.executionState.startup!.completed = 2048;
+  update();
+  expect(node.querySelector("[data-live-footer] .typing-dots")).toBe(typing);
+  expect(node.textContent).toContain("100%");
+  session.executionState.startup = { stage: "configuring" };
+  update();
+  expect(node.textContent).toContain("Configuring agent…");
+  expect(node.querySelector("[data-live-footer] .typing-dots")).toBe(typing);
+  session.executionState = { runId: "run", phase: "awaiting-response", since: 100_000 };
+  update();
+  await act(async () => {});
+  const current = [...node.querySelectorAll("[data-live-footer] .transcript-live-status")].at(-1);
+  expect(current?.getAttribute("role")).toBeNull();
+  dots(true);
+  noClock();
+  expect(node.querySelector("[data-live-footer] .typing-dots")).toBe(typing);
+  session.executionState = { ...session.executionState, phase: "active" };
+  update({ type: "message.delta", text: "First model response" });
+  await act(async () => {});
+  dots(false);
+  verb("Responding…");
 });

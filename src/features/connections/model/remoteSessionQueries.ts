@@ -15,6 +15,9 @@ export function remoteSessionCatalogQuery(machineId: string, environmentId: stri
   const queryKey = remoteSessionKeys.catalog(machineId, environmentId, projectId);
   return queryOptions({
     queryKey,
+    // Brief focus changes and pane remounts can reuse the catalog. Explicit
+    // invalidation (picker refresh or reconnect recovery) still reads at once.
+    staleTime: 60_000,
     // CatalogLoad can publish ready providers before slow CLIs finish.
     queryFn: async ({ signal }): Promise<HostModelCatalog> => {
       try {

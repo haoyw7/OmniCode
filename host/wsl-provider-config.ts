@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, posix } from "node:path";
@@ -196,8 +197,17 @@ export async function wslProviderConfiguration(input: {
     });
     if (!(await optionalText(join(home, "auth.json"))))
       throw new Error("This Codex account has no shared auth.json. Import it as a managed account before using WSL.");
-    return { home, args: [...normalizeCodexOverrides(input.args), ...config.args], env: {
-      CODEX_HOME: linuxHome, OPENAI_API_KEY: null, CODEX_API_KEY: null, CODEX_ACCESS_TOKEN: null,
+    // Keep shared auth/config/history, but Linux SQLite cannot use the desktop's
+    // mounted state DB. Scope native state to the shared account Home, not the
+    // selected project or replaceable provider runtime version.
+    const native = await input.rpc.request<{ home: string }>("env.info");
+    if (!native.home?.startsWith("/") || native.home.includes("\0")) throw new Error("Invalid WSL home directory");
+    const sqliteHome = posix.join(native.home, ".omnicode/remote/codex-state", createHash("sha256").update(linuxHome).digest("hex"));
+    await input.rpc.request("fs.mkdir", { path: sqliteHome, recursive: true, mode: 0o700 });
+    // A config.toml sqlite_home overrides the environment, so pin both without
+    // modifying the user's Windows configuration or databases.
+    return { home, args: [...normalizeCodexOverrides(input.args), ...config.args, "-c", `sqlite_home=${inlineToml(sqliteHome)}`], env: {
+      CODEX_HOME: linuxHome, CODEX_SQLITE_HOME: sqliteHome, OPENAI_API_KEY: null, CODEX_API_KEY: null, CODEX_ACCESS_TOKEN: null,
       OPENAI_BASE_URL: null,
     }, warnings: config.warnings };
   }

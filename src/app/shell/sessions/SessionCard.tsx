@@ -1,11 +1,8 @@
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
-import { SidebarEntryReorderContext, sidebarDragPreview } from "../SidebarEntryReorder";
+import { SidebarEntryReorderContext } from "../SidebarEntryReorder";
 import { sessionRecencyAt } from "../../../features/sessions/model/sessionActivity";
-import {
-  useAnimatedReorder,
-  type ReorderExternalDrop,
-} from "../../../shared/hooks/useAnimatedReorder";
+import { useDraggableItem, type DragPayload } from "../../../shared/ui/primitives/Sortable";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { NO_BRANCH_LABEL } from "../../../features/source-control/model/worktrees";
 import {
@@ -35,6 +32,8 @@ import {
   useContext,
   useEffect,
   useId,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -50,10 +49,8 @@ import {
 } from "../../../features/sessions/model/session";
 import { ParticleText } from "../../../shared/ui/ParticleText";
 import { orchestrationTaskLabel } from "../../../features/orchestration/model/orchestrationSummary";
-import { paneDropFromPoint, setExternalPaneDrop } from "../../../features/workspace/model/paneDrop";
 import type { PaneEdge } from "../../../features/workspace/model/layout";
-import { createDragLabel } from "../../../shared/lib/drag";
-import { combineSidebarDrops, sidebarPinDrop, SidebarPinDropContext } from "../sidebarPinDrop";
+import { InsidePinnedSectionContext, SidebarPinDropContext } from "../sidebarPinDrop";
 import type { SessionSummary } from "../../../features/sessions/data/sessionStore";
 import { HarnessIcon } from "../../../features/sessions/ui/HarnessIcon";
 import { useSessionPageCount } from "./sessionPageCounts";
@@ -133,19 +130,15 @@ export const SessionCard = memo(function SessionCard({
   const running = busy || !!workflow?.activity.runs.some((run) => isSessionWorkflowRunLive(run.status));
   const inheritedReorder = useContext(SidebarEntryReorderContext);
   const revealPins = useContext(SidebarPinDropContext);
-  const standaloneReorder = useAnimatedReorder(
-    inheritedReorder ? [] : [session.id],
-    () => {},
-    "y",
-    undefined,
-    { floatingPreview: sidebarDragPreview },
-  );
-  const sidebarReorder = inheritedReorder ?? {
-    dragging: standaloneReorder.draggingId !== null,
-    onPointerDown: (event: ReactPointerEvent, drop?: ReorderExternalDrop<string>) =>
-      standaloneReorder.onItemPointerDown(session.id, event, drop),
-    consumeClick: standaloneReorder.consumeClick,
-  };
+  const insidePins = useContext(InsidePinnedSectionContext);
+  const payload = useMemo<DragPayload>(() => ({ type: "sidebar-session", sessionId: session.id, pinned: session.pinned, insidePins,
+    onPin: onPin ? () => { onPin(session.id); revealPins?.(); } : undefined,
+    onPlace: onPlaceOnPane ? (targetId: string, edge: PaneEdge) => onPlaceOnPane(session.id, targetId, edge) : undefined,
+  }), [session.id, session.pinned, insidePins, onPin, revealPins, onPlaceOnPane]);
+  const preview = useMemo(() => () => <span className="flex items-center gap-1.5"><HarnessIcon harness={session.harness} /><span className="truncate">{sessionDisplayTitle(session.title, session.harness)}</span></span>, [session.title, session.harness]);
+  useLayoutEffect(() => inheritedReorder?.setPayload(payload, preview), [inheritedReorder?.setPayload, payload, preview]);
+  const standaloneReorder = useDraggableItem({ payload, renderOverlay: preview, disabled: !!inheritedReorder });
+  const sidebarReorder = inheritedReorder ?? standaloneReorder;
   const prefetchTimer = useRef<number | null>(null);
   const orchestrationTooltipRootRef = useRef<HTMLDivElement>(null);
   const orchestrationTooltipId = useId();
@@ -326,7 +319,9 @@ export const SessionCard = memo(function SessionCard({
 
   const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return;
-    if (e.key === "Enter" || e.key === " ") {
+    if (sidebarReorder.sorting) return;
+    if (e.key === " ") { sidebarReorder.handleProps.onKeyDown?.(e); return; }
+    if (e.key === "Enter") {
       e.preventDefault();
       metadataHover.close();
       onSelect(session.id, e);
@@ -354,56 +349,7 @@ export const SessionCard = memo(function SessionCard({
       prefetchTimer.current = null;
     }
     onPrefetch?.(session.id);
-    const source = event.currentTarget;
-    let feedback: ReturnType<typeof createDragLabel> | undefined;
-    const clearPaneDrop = () => {
-      feedback?.dispose();
-      feedback = undefined;
-      setExternalPaneDrop(null);
-    };
-    const pinDrop =
-      onPin && !session.pinned
-        ? sidebarPinDrop(source, uiT("Pin"), () => {
-            onPin(session.id);
-            revealPins?.();
-          })
-        : undefined;
-    const paneDrop: ReorderExternalDrop<string> | undefined = onPlaceOnPane
-      ? {
-          onMove: (_id, ev) => {
-            const over = paneDropFromPoint(ev.clientX, ev.clientY);
-            if (!over) {
-              clearPaneDrop();
-              return false;
-            }
-            if (over.id !== session.id) {
-              feedback ??= createDragLabel(
-                uiT("Open in split view"),
-                uiT("Open in split view"),
-              );
-              feedback.move(ev.clientX, ev.clientY, true);
-            } else {
-              feedback?.dispose();
-              feedback = undefined;
-            }
-            setExternalPaneDrop({
-              fromId: session.id,
-              overId: over.id,
-              edge: over.edge,
-            });
-            return true;
-          },
-          onDrop: (_id, ev) => {
-            const over = paneDropFromPoint(ev.clientX, ev.clientY);
-            if (!over) return false;
-            if (over.id !== session.id)
-              onPlaceOnPane(session.id, over.id, over.edge);
-            return true;
-          },
-          onEnd: clearPaneDrop,
-        }
-      : undefined;
-    sidebarReorder.onPointerDown(event, combineSidebarDrops(pinDrop, paneDrop));
+    sidebarReorder.handleProps.onPointerDown?.(event);
   };
 
   useEffect(
@@ -465,11 +411,14 @@ export const SessionCard = memo(function SessionCard({
     <div
       ref={(node) => {
         metadataHover.anchorRef.current = node;
-        standaloneReorder.setItemRef(session.id, inheritedReorder ? null : node);
+        standaloneReorder.ref(inheritedReorder ? null : node);
       }}
-      className={`group relative ${inheritedReorder ? "" : "reorder-item session-reorder-item"}`}
+      className="group relative"
     >
       <div
+        onPointerDownCapture={sidebarReorder.handleProps.onPointerDownCapture}
+        onTouchStartCapture={sidebarReorder.handleProps.onTouchStartCapture}
+        onTouchStart={sidebarReorder.handleProps.onTouchStart}
         title={dense ? undefined : title}
         data-session-card={session.id}
         data-orchestration-card={orchestration ? "true" : undefined}
@@ -520,6 +469,9 @@ export const SessionCard = memo(function SessionCard({
         }`}
       >
         <div
+          {...sidebarReorder.handleProps}
+          onPointerDown={undefined}
+          onTouchStart={undefined}
           role="button"
           tabIndex={0}
           aria-current={isActive ? "true" : undefined}
@@ -529,7 +481,7 @@ export const SessionCard = memo(function SessionCard({
           onFocus={metadataHover.triggerProps.onFocus}
           onBlur={metadataHover.triggerProps.onBlur}
           aria-describedby={
-            dense && metadataHover.open ? metadataHover.id : undefined
+            [sidebarReorder.handleProps["aria-describedby"], dense && metadataHover.open ? metadataHover.id : undefined].filter(Boolean).join(" ") || undefined
           }
           onMouseDown={(event) => {
             if (event.button !== 0) return;

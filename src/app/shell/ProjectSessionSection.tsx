@@ -1,16 +1,11 @@
 import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
 import { usePreferenceState } from "../../features/settings/model/usePreferenceState";
 import { delegateDesktopSession } from "../../features/bots/model/delegateDesktopSession";
-import {
-  sidebarDragPreview,
-} from "./SidebarEntryReorder";
 import { AnimatedCollapse } from "../../shared/ui/AnimatedCollapse";
 import { useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";
-import { useListReorderMotion } from "../../shared/hooks/useListReorderMotion";
+import { ListMotion } from "../../shared/ui/ListMotion";
 import { sessionRecencyAt } from "../../features/sessions/model/sessionActivity";
-import {
-  useAnimatedReorder,
-} from "../../shared/hooks/useAnimatedReorder";
+import { SortableItem, SortableList } from "../../shared/ui/primitives/Sortable";
 import { mergeOrderedSubset, orderByIds } from "../../shared/lib/reorder";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import {
@@ -585,15 +580,14 @@ function ProjectSessionSectionComponent({
     flatPins,
   );
   const sessionListEntries: SessionListEntry[] = groupedSessionListEntries;
-  const sortableSessions = useAnimatedReorder(
-    shortcutId || tab !== "sessions" || !sectionVisible
+  const sortableSessionIds = shortcutId || tab !== "sessions" || !sectionVisible
       ? []
       : sessionListEntries.flatMap((entry) =>
           entry.kind === "session" && shownUngroupedIds.has(entry.session.id)
             ? [entry.session.id]
             : [],
-        ),
-    (ids) => {
+        );
+  const reorderSessions = (ids: string[]) => {
       const allIds = sessionSidebarOrder(
         [...listedSessions]
           .sort(compareSessionSummaries)
@@ -606,33 +600,12 @@ function ProjectSessionSectionComponent({
       ).map(({ id }) => id);
       saveSessionSidebarOrder(cwd, next);
       setSavedSessionOrder({ cwd, ids: next });
-    },
-    "y",
-    undefined,
-    { floatingPreview: sidebarDragPreview },
-  );
+    };
   const sessionNavigationIds = sessionListNavigationIds(
     fullSessionListEntries,
     searchNarrowed,
   );
   const sessionNavigationKey = sessionNavigationIds.join("\0");
-  // Activity re-sorts the list; rows slide to their new places instead of jumping.
-  const sessionRowOrder = sessionListEntries.flatMap((entry) =>
-    entry.kind === "session"
-      ? [entry.session.id]
-      : entry.kind === "folder"
-        ? []
-        : entry.sessions.map((session) => session.id),
-  );
-  // The drag already animated this move; do not replay it after committing.
-  // Rows revealed by "Show more" open with their own disclosure.
-  useListReorderMotion(
-    sectionRef,
-    sessionRowOrder,
-    "data-session-row",
-    !sortableSessions.draggingId,
-    shownUngroupedCount,
-  );
   useEffect(() => {
     if (activeProject && !shortcutId)
       onSessionNavigationOrder?.(sessionNavigationIds);
@@ -1257,10 +1230,12 @@ function ProjectSessionSectionComponent({
               />
             )
           ) : (
+            <SortableList ids={sortableSessionIds} onReorder={reorderSessions} renderOverlay={() => uiT("Drag to move")}>
             <ul
               data-session-list
               className={`flex flex-col ${dense ? "w-full gap-px px-0 py-px" : "gap-px px-1 pb-1"}`}
             >
+              <ListMotion>
               {sessionListEntries.map((entry, index) => {
                 if (entry.kind === "pinned" || entry.kind === "reminders") {
                   const isReminders = entry.kind === "reminders";
@@ -1333,12 +1308,12 @@ function ProjectSessionSectionComponent({
                 }
                 if (entry.kind === "folder") return null;
                 return (
+                  <SortableItem key={entry.session.id} id={entry.session.id} disabled={!sortableSessionIds.includes(entry.session.id)}>{sortable => (
                   <SessionListItem
-                    key={entry.session.id}
                     session={entry.session}
                     cwd={cwd}
                     motion={sessionInsertMotion}
-                    sortable={sortableSessions}
+                    sortable={shortcutId ? undefined : sortable}
                     expanded={
                       treePreview
                         ? shownUngroupedIds.has(entry.session.id)
@@ -1347,8 +1322,10 @@ function ProjectSessionSectionComponent({
                   >
                     {renderSessionCard(entry.session)}
                   </SessionListItem>
+                  )}</SortableItem>
                 );
               })}
+              </ListMotion>
               {hasMoreSessions ? (
                 <li ref={loadMoreRef} aria-hidden className="h-px list-none" />
               ) : null}
@@ -1373,6 +1350,7 @@ function ProjectSessionSectionComponent({
                 </li>
               ) : null}
             </ul>
+            </SortableList>
           )}
         </div>
       )}{" "}

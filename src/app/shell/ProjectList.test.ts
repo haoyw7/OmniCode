@@ -1,3 +1,4 @@
+import { dndPointer } from "../../../tests/helpers/dndEvents";
 import { completeMotionAnimation } from "../../../tests/helpers/motionDriver";
 // @vitest-environment happy-dom
 import { act, createElement, type ComponentProps } from "react";
@@ -25,7 +26,8 @@ import {
   savePinnedProjects,
   saveProjectRailOrder,
 } from "../../features/projects/model/recents";
-import { useAnimatedReorder } from "../../shared/hooks/useAnimatedReorder";
+import { SortableList } from "../../shared/ui/primitives/Sortable";
+import { mockDragOverlayGeometry } from "../../../tests/helpers/dndGeometry";
 import {
   loadSidebarSectionOrder,
   saveSidebarSectionOrder,
@@ -33,18 +35,31 @@ import {
 
 const { reorderPointerDown, reorderState } = vi.hoisted(() => ({
   reorderPointerDown: vi.fn(),
-  reorderState: { draggingId: null as string | null, consumeClick: false },
+  reorderState: { draggingId: null as string | null, consumeClick: false, real: false },
 }));
-vi.mock("../../shared/hooks/useAnimatedReorder", () => ({
-  useAnimatedReorder: vi.fn((ids: string[]) => ({
-    draggingId: ids.includes(reorderState.draggingId ?? "")
-      ? reorderState.draggingId
-      : null,
-    setItemRef: vi.fn(),
-    onItemPointerDown: reorderPointerDown,
-    consumeClick: () => reorderState.consumeClick,
-  })),
-}));
+vi.mock("../../shared/ui/primitives/Sortable", async importOriginal => {
+  const actual = await importOriginal<typeof import("../../shared/ui/primitives/Sortable")>();
+  const React = await import("react");
+  return { ...actual,
+    SortableList: vi.fn(function MockList(props: ComponentProps<typeof actual.SortableList>) {
+      const active = props.ids.includes(reorderState.draggingId ?? "");
+      React.useEffect(() => { if (!reorderState.real) props.onActiveChange?.(active); }, [active]);
+      return createElement(actual.SortableList, props);
+    }),
+    SortableItem: function MockItem(props: ComponentProps<typeof actual.SortableItem>) {
+      const active = props.id === reorderState.draggingId;
+      React.useEffect(() => { if (!reorderState.real) props.onActiveChange?.(active); }, [active]);
+      return createElement(actual.SortableItem, {
+      ...props,
+      children: item => props.children(reorderState.real ? item : { ...item,
+        dragging: props.id === reorderState.draggingId,
+        sorting: !!reorderState.draggingId,
+        consumeClick: () => reorderState.consumeClick,
+        handleProps: { ...item.handleProps, onPointerDown: event => reorderPointerDown(props.id, event) },
+      }),
+    }); },
+  };
+});
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(async () => null),
@@ -79,9 +94,11 @@ beforeEach(() => {
   localStorage.clear();
   configureSharedHost(undefined, []);
   reorderPointerDown.mockClear();
-  vi.mocked(useAnimatedReorder).mockClear();
+  vi.mocked(SortableList).mockClear();
   reorderState.draggingId = null;
   reorderState.consumeClick = false;
+  reorderState.real = false;
+  mockDragOverlayGeometry();
   vi.mocked(useProjectDiffStats).mockClear();
   vi.mocked(useRemoteMachines)
     .mockReset()
@@ -92,8 +109,10 @@ beforeEach(() => {
   root = createRoot(container);
 });
 
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
+  if (vi.isFakeTimers()) act(() => vi.advanceTimersByTime(60));
+  else await act(async () => new Promise(resolve => setTimeout(resolve, 60)));
   container.remove();
   configureSharedHost(undefined, []);
   localStorage.clear();
@@ -292,7 +311,7 @@ it("keeps expand, select, new session and child actions independent", async () =
     const child = beta.querySelector<HTMLButtonElement>("[data-session]")!;
     child.click();
     child.dispatchEvent(
-      new PointerEvent("pointerdown", { bubbles: true, button: 0 }),
+      new PointerEvent("pointerdown", { isPrimary: true, bubbles: true, button: 0 }),
     );
     child.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true }));
   });
@@ -309,13 +328,12 @@ it("keeps expand, select, new session and child actions independent", async () =
     beta
       .querySelector("[data-project-header]")!
       .dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true, button: 0 }),
+        new PointerEvent("pointerdown", { isPrimary: true, bubbles: true, button: 0 }),
       ),
   );
   expect(reorderPointerDown).toHaveBeenCalledExactlyOnceWith(
     "/work/beta",
     expect.objectContaining({ type: "pointerdown" }),
-    expect.objectContaining({ onDrop: expect.any(Function) }),
   );
 });
 
@@ -332,48 +350,43 @@ it.each([false, true])(
     )!;
     act(() =>
       header.dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true, button: 0 }),
+        new PointerEvent("pointerdown", { isPrimary: true, bubbles: true, button: 0 }),
       ),
     );
     expect(reorderPointerDown).toHaveBeenCalledExactlyOnceWith(
       "/work/beta",
       expect.objectContaining({ type: "pointerdown" }),
-      expect.objectContaining({ onDrop: expect.any(Function) }),
-    );
-    const call = vi.mocked(useAnimatedReorder).mock.calls.find(([ids]) =>
+      );
+    const call = vi.mocked(SortableList).mock.calls.map(([props]) => [props.ids, props.onReorder, props.axis ?? "y"] as const).find(([ids]) =>
       ids.includes("/work/beta"),
     )!;
     expect(call[2]).toBe("y");
-    expect(call[4]?.activationDistance).toBe(3);
-    Object.defineProperty(header, "offsetHeight", { value: 32 });
-    expect(call[4]?.collapsedSize?.("/work/beta", header.parentElement!)).toBe(32);
   },
 );
 
-it("temporarily folds only the dragged project's children and animates them back", async () => {
+it("keeps the dragged project's children expanded and mounted until release", async () => {
   const props = await renderTree();
+  const retained = container.querySelector('[data-project-children="/work/beta"]');
   reorderState.draggingId = "/work/beta";
   await renderTree(props);
   const beta = container.querySelector('[data-project-path="/work/beta"]')!;
   const fold = beta.querySelector<HTMLElement>(".zen-fold-item")!;
-  expect(fold.dataset.foldState).toBe("closing");
-  expect(fold.inert).toBe(true);
-  expect(fold.getAttribute("aria-hidden")).toBe("true");
+  expect(fold.dataset.foldState).toBe("open");
+  expect(fold.inert).toBe(false);
+  expect(fold.getAttribute("aria-hidden")).not.toBe("true");
   expect(beta.querySelector('[aria-expanded="true"]')).not.toBeNull();
   expect(
     container.querySelector<HTMLElement>(
       '[data-project-path="/work/alpha"] .zen-fold-item',
     )?.dataset.foldState,
   ).toBe("open");
-  act(() => completeMotionAnimation(fold));
-  const retained = beta.querySelector("[data-project-children]");
-  expect(retained).not.toBeNull();
-  expect(fold.hidden).toBe(true);
+  expect(beta.querySelector("[data-project-children]")).toBe(retained);
+  expect(fold.hidden).toBe(false);
 
   reorderState.draggingId = null;
   await renderTree(props);
   const reopening = beta.querySelector<HTMLElement>(".zen-fold-item")!;
-  expect(reopening.dataset.foldState).toBe("opening");
+  expect(reopening.dataset.foldState).toBe("open");
   expect(reopening.inert).toBe(false);
   expect(beta.querySelector("[data-project-children]")).toBe(retained);
   expect(reopening.hidden).toBe(false);
@@ -398,10 +411,10 @@ it("persists each project subset without moving pins, other groups or chats", as
     chatEntries: [{ id: "session", content: "Chat conversation" }],
   });
   const reorder = (subset: string[]) => {
-    const call = vi.mocked(useAnimatedReorder).mock.calls.find(([ids]) =>
+    const call = vi.mocked(SortableList).mock.calls.map(([props]) => [props.ids, props.onReorder, props.axis ?? "y"] as const).find(([ids]) =>
       ids.includes(subset[0]),
     )!;
-    vi.mocked(useAnimatedReorder).mockClear();
+    vi.mocked(SortableList).mockClear();
     act(() => call[1](subset));
   };
   reorder([paths[3], paths[1]]);
@@ -661,7 +674,7 @@ it("allows Tab into summary actions and edits the original project without activ
   act(() => {
     edit.focus();
     edit.dispatchEvent(
-      new PointerEvent("pointerdown", { bubbles: true, button: 0 }),
+      new PointerEvent("pointerdown", { isPrimary: true, bubbles: true, button: 0 }),
     );
     edit.click();
   });
@@ -694,7 +707,7 @@ it("pins a project from its summary without activating it or starting a reorder"
   )!;
   act(() => {
     pin.dispatchEvent(
-      new PointerEvent("pointerdown", { bubbles: true, button: 0 }),
+      new PointerEvent("pointerdown", { isPrimary: true, bubbles: true, button: 0 }),
     );
     pin.click();
   });
@@ -790,7 +803,7 @@ it("suppresses pointer-origin focus and hides summaries during project drag", as
   const beta = projectNameButton("/work/beta");
   act(() => {
     beta.dispatchEvent(
-      new PointerEvent("pointerdown", {
+      new PointerEvent("pointerdown", { isPrimary: true,
         bubbles: true,
         pointerType: "mouse",
         button: 0,
@@ -1121,7 +1134,7 @@ it("drags every sidebar section from its title without intercepting new-chat or 
     reorderPointerDown.mockClear();
     act(() =>
       sectionHeader(id!).dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true, button: 0 }),
+        new PointerEvent("pointerdown", { isPrimary: true, bubbles: true, button: 0 }),
       ),
     );
     expect(reorderPointerDown).toHaveBeenCalledExactlyOnceWith(
@@ -1134,7 +1147,7 @@ it("drags every sidebar section from its title without intercepting new-chat or 
     for (const selector of ['[aria-label="New chat"]', "[data-chat-action]"]) {
       const button = container.querySelector<HTMLButtonElement>(selector)!;
       button.dispatchEvent(
-        new PointerEvent("pointerdown", { bubbles: true, button: 0 }),
+        new PointerEvent("pointerdown", { isPrimary: true, bubbles: true, button: 0 }),
       );
       button.click();
     }
@@ -1164,8 +1177,8 @@ it("persists section moves, preserves mounted content and restores hidden sectio
   const draft = container.querySelector<HTMLInputElement>("[data-chat-draft]")!;
   draft.value = "Keep this draft";
   const call = vi
-    .mocked(useAnimatedReorder)
-    .mock.calls.find(([ids]) => ids.includes("chats"))!;
+    .mocked(SortableList)
+    .mock.calls.map(([props]) => [props.ids, props.onReorder, props.axis ?? "y"] as const).find(([ids]) => ids.includes("chats"))!;
   act(() => call[1](["projects", "chats", "workflows"], "projects"));
   expect(sectionIds()).toEqual(["pinned", "projects", "chats", "workflows"]);
   expect(container.querySelector("[data-chat-draft]")).toBe(draft);
@@ -1207,7 +1220,7 @@ it("persists section moves, preserves mounted content and restores hidden sectio
 });
 
 it.each(["pinned", "chats", "workflows", "groups", "projects"])(
-  "temporarily folds only the dragged %s section and reverses without changing its preference",
+  "keeps the dragged %s section expanded without changing its preference",
   async (id) => {
     saveProjectGroups([{ id: "team", name: "Team", collapsed: false }]);
     const props = await renderTree({
@@ -1222,8 +1235,8 @@ it.each(["pinned", "chats", "workflows", "groups", "projects"])(
     const content = fold.firstElementChild;
     reorderState.draggingId = id;
     await renderTree(props);
-    expect(fold.dataset.foldState).toBe("closing");
-    expect(fold.inert).toBe(true);
+    expect(fold.dataset.foldState).toBe("open");
+    expect(fold.inert).toBe(false);
     expect(sectionHeader(id).getAttribute("aria-expanded")).toBe("true");
     for (const other of sectionIds().filter((value) => value !== id)) {
       expect(
@@ -1234,7 +1247,7 @@ it.each(["pinned", "chats", "workflows", "groups", "projects"])(
     }
     reorderState.draggingId = null;
     await renderTree(props);
-    expect(fold.dataset.foldState).toBe("opening");
+    expect(fold.dataset.foldState).toBe("open");
     expect(fold.inert).toBe(false);
     expect(fold.firstElementChild).toBe(content);
     expect(
@@ -1263,7 +1276,8 @@ it("keeps a previously collapsed section closed after dragging and leaves the co
     "false",
   );
   await renderTree({ ...props, compact: true });
-  expect(container.querySelector("[data-sidebar-section-toggle]")).toBeNull();
+  act(() => completeMotionAnimation(container));
+  expect(container.querySelector("[data-sidebar-section-toggle]:not([inert] *)")).toBeNull();
   expect(
     container.querySelector<HTMLElement>(
       '[data-project-section="projects"] .project-tree-collapse',
@@ -1274,12 +1288,9 @@ it("keeps a previously collapsed section closed after dragging and leaves the co
 it.each([false, true])(
   "handles a real section pointer gesture across unequal heights (cancel: %s)",
   async (cancel) => {
-    const actual = await vi.importActual<
-      typeof import("../../shared/hooks/useAnimatedReorder")
-    >("../../shared/hooks/useAnimatedReorder");
-    const mock = vi.mocked(useAnimatedReorder);
+    const mock = vi.mocked(SortableList);
     const implementation = mock.getMockImplementation()!;
-    mock.mockImplementation(actual.useAnimatedReorder);
+    reorderState.real = true;
     document.documentElement.dataset.reducedMotion = "on";
     try {
       await renderTree({
@@ -1325,7 +1336,7 @@ it.each([false, true])(
       const header = sectionHeader("chats");
       act(() =>
         header.dispatchEvent(
-          new PointerEvent("pointerdown", {
+          new PointerEvent("pointerdown", { isPrimary: true,
             bubbles: true,
             button: 0,
             buttons: 1,
@@ -1335,25 +1346,21 @@ it.each([false, true])(
           }),
         ),
       );
-      act(() =>
-        window.dispatchEvent(
-          new PointerEvent("pointermove", {
+      dndPointer(document, "pointermove", {
             buttons: 1,
             pointerId: 1,
             pointerType: "mouse",
             clientY: 300,
-          }),
-        ),
-      );
+          });
       expect(sections[1].dataset.dragging).toBe("true");
       expect(
         sections[1].querySelector<HTMLElement>(".project-tree-collapse")?.inert,
-      ).toBe(true);
+      ).toBe(false);
       act(() => {
         if (cancel)
-          window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape" }));
         else
-          window.dispatchEvent(
+          document.dispatchEvent(
             new PointerEvent("pointerup", {
               pointerId: 1,
               pointerType: "mouse",
@@ -1383,6 +1390,7 @@ it.each([false, true])(
     } finally {
       delete document.documentElement.dataset.reducedMotion;
       mock.mockImplementation(implementation);
+      reorderState.real = false;
     }
   },
 );
@@ -1395,12 +1403,9 @@ it.each([
 ])(
   "drags a lone project from $origin into a collapsed group (cancel: $cancel)",
   async ({ origin, cancel }) => {
-    const actual = await vi.importActual<
-      typeof import("../../shared/hooks/useAnimatedReorder")
-    >("../../shared/hooks/useAnimatedReorder");
-    const mock = vi.mocked(useAnimatedReorder);
+    const mock = vi.mocked(SortableList);
     const implementation = mock.getMockImplementation()!;
-    mock.mockImplementation(actual.useAnimatedReorder);
+    reorderState.real = true;
     document.documentElement.dataset.reducedMotion = "on";
     try {
       saveProjectGroups([
@@ -1438,7 +1443,7 @@ it.each([
       });
       act(() =>
         header.dispatchEvent(
-          new PointerEvent("pointerdown", {
+          new PointerEvent("pointerdown", { isPrimary: true,
             bubbles: true,
             button: 0,
             buttons: 1,
@@ -1449,17 +1454,13 @@ it.each([
           }),
         ),
       );
-      act(() =>
-        window.dispatchEvent(
-          new PointerEvent("pointermove", {
+      dndPointer(document, "pointermove", {
             buttons: 1,
             pointerId: 1,
             pointerType: "mouse",
             clientX: 100,
             clientY: 56,
-          }),
-        ),
-      );
+          });
       expect(target.dataset.projectGroupDropTarget).toBe("true");
       expect(
         projectNameButton("/work/alpha")
@@ -1468,9 +1469,9 @@ it.each([
       ).toBe(origin === "group" ? "source" : undefined);
       act(() => {
         if (cancel)
-          window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape" }));
         else
-          window.dispatchEvent(
+          document.dispatchEvent(
             new PointerEvent("pointerup", {
               pointerId: 1,
               pointerType: "mouse",
@@ -1513,6 +1514,7 @@ it.each([
     } finally {
       delete document.documentElement.dataset.reducedMotion;
       mock.mockImplementation(implementation);
+      reorderState.real = false;
     }
   },
 );
@@ -1520,12 +1522,9 @@ it.each([
 it.each([false, true])(
   "drags a project into the empty pinned area (cancel: %s)",
   async (cancel) => {
-    const actual = await vi.importActual<
-      typeof import("../../shared/hooks/useAnimatedReorder")
-    >("../../shared/hooks/useAnimatedReorder");
-    const mock = vi.mocked(useAnimatedReorder);
+    const mock = vi.mocked(SortableList);
     const implementation = mock.getMockImplementation()!;
-    mock.mockImplementation(actual.useAnimatedReorder);
+    reorderState.real = true;
     document.documentElement.dataset.reducedMotion = "on";
     try {
       const props = await renderTree({
@@ -1563,7 +1562,7 @@ it.each([false, true])(
       });
       act(() =>
         header.dispatchEvent(
-          new PointerEvent("pointerdown", {
+          new PointerEvent("pointerdown", { isPrimary: true,
             bubbles: true,
             button: 0,
             buttons: 1,
@@ -1574,24 +1573,20 @@ it.each([false, true])(
           }),
         ),
       );
-      act(() =>
-        window.dispatchEvent(
-          new PointerEvent("pointermove", {
+      dndPointer(document, "pointermove", {
             buttons: 1,
             pointerId: 1,
             pointerType: "mouse",
             clientX: 100,
             clientY: 16,
-          }),
-        ),
-      );
+          });
       expect(pins.dataset.sidebarPinDropTarget).toBe("true");
       expect(loadPinnedProjects()).toEqual([]);
       act(() => {
         if (cancel)
-          window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape" }));
         else
-          window.dispatchEvent(
+          document.dispatchEvent(
             new PointerEvent("pointerup", {
               pointerId: 1,
               pointerType: "mouse",
@@ -1627,6 +1622,7 @@ it.each([false, true])(
     } finally {
       delete document.documentElement.dataset.reducedMotion;
       mock.mockImplementation(implementation);
+      reorderState.real = false;
     }
   },
 );

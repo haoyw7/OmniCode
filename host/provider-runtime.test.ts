@@ -11,6 +11,8 @@ import {
   type ProviderPlatform,
 } from "./provider-runtime";
 import { resolveProviderRuntime } from "./process";
+import { withStartupProgress } from "./startup-progress";
+import type { StartupProgress } from "../src/integrations/harness/core/startupProgress";
 
 const directories: string[] = [];
 afterEach(async () => { await Promise.all(directories.splice(0).map((path) => rm(path, { recursive: true, force: true }))); });
@@ -61,6 +63,16 @@ function fixture(provider: "claude" | "codex", platform: ProviderPlatform, versi
 }
 
 describe("verified provider runtimes", () => {
+  it("reports measured download and extraction bytes", async () => {
+    const root = await directory(), data = fixture("claude", "linux-x64");
+    const events: StartupProgress[] = [];
+    const fetcher = vi.fn<typeof fetch>(async input => String(input).endsWith(".tgz")
+      ? new Response(new Uint8Array(data.tarball), { headers: { "content-length": String(data.tarball.length) } })
+      : data.fetcher(input));
+    await withStartupProgress(progress => events.push(progress), () => ensureProviderRuntime("claude", "1.2.3", "linux-x64", { root, fetch: fetcher }));
+    expect(events).toContainEqual({ stage: "downloading", completed: data.tarball.length, total: data.tarball.length, unit: "bytes" });
+    expect(events).toContainEqual({ stage: "installing", completed: Buffer.byteLength("native-artifact"), unit: "bytes" });
+  });
   it.each([
     ["1.19.3", "linux-x64", "opencode-ai", "opencode-linux-x64-baseline"],
     ["1.19.3", "linux-arm64", "opencode-ai", "opencode-linux-arm64"],

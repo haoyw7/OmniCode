@@ -9,6 +9,11 @@ describe("file breadcrumb paths", () => {
     ["c:\\Repo\\a.ts", "C:\\REPO", ["c:/Repo", "c:/Repo/a.ts"]],
     ["\\\\server\\share\\repo\\a.ts", "\\\\server\\share", ["//server/share", "//server/share/repo", "//server/share/repo/a.ts"]],
     ["remote://machine/home/repo/a.ts", "remote://machine/home/repo", ["remote://machine/home/repo", "remote://machine/home/repo/a.ts"]],
+    ["remote://machine/a.ts", "remote://machine/repo", ["remote://machine/", "remote://machine/a.ts"]],
+    ["wsl://Ubuntu-26.04/home/wy/L-Projects/rag-knowledge-base/docker-compose.prod.yml", "wsl://Ubuntu-26.04/home/wy/L-Projects/rag-knowledge-base", ["wsl://Ubuntu-26.04/home/wy/L-Projects/rag-knowledge-base", "wsl://Ubuntu-26.04/home/wy/L-Projects/rag-knowledge-base/docker-compose.prod.yml"]],
+    ["src/a.ts", "wsl://Ubuntu%20Work/home/repo/", ["wsl://Ubuntu%20Work/home/repo", "wsl://Ubuntu%20Work/home/repo/src", "wsl://Ubuntu%20Work/home/repo/src/a.ts"]],
+    ["wsl://Debian/a.ts", "wsl://Debian/", ["wsl://Debian/", "wsl://Debian/a.ts"]],
+    ["wsl://Debian/outside/a.ts", "wsl://Debian/repo", ["wsl://Debian/", "wsl://Debian/outside", "wsl://Debian/outside/a.ts"]],
     ["/a.ts", "/", ["/", "/a.ts"]],
     ["/repo-other/a.ts", "/repo", ["/", "/repo-other", "/repo-other/a.ts"]],
   ])("uses the project boundary without corrupting paths for %s", (path, cwd, paths) => {

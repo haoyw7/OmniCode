@@ -1,7 +1,7 @@
 import { duration } from "../../../shared/motion/tokens";
 import type { ProjectHoverSummary } from "../../model/projectHoverSummary";
 import { createContext, type ReactNode } from "react";
-import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
+import type { SortableItemState } from "../../../shared/ui/primitives/Sortable";
 import { sameProjectPath } from "../../../features/projects/model/recents";
 import { type SidebarOrderedSectionId } from "../../../features/settings/model/sidebarSectionOrder";
 
@@ -9,13 +9,6 @@ import { type SidebarOrderedSectionId } from "../../../features/settings/model/s
 export type ProjectListEntry = { id: string; content: ReactNode | (() => ReactNode) };
 
 export const PROJECT_COLLAPSE_DURATION_MS = duration.collapse * 1000;
-
-export function collapsedProjectHeaderSize(_id: string, node: HTMLElement) {
-  return (
-    node.querySelector<HTMLElement>("[data-project-header]")?.offsetHeight ??
-    node.offsetHeight
-  );
-}
 
 export const ProjectSummaryContext = createContext<{
   summaries?: ReadonlyMap<string, ProjectHoverSummary>;
@@ -27,10 +20,9 @@ export const ProjectSummaryContext = createContext<{
 
 export const SidebarSectionReorderContext = createContext<{
   id: SidebarOrderedSectionId;
-  sortable: ReturnType<typeof useAnimatedReorder<SidebarOrderedSectionId>>;
+  item: SortableItemState;
 } | null>(null);
 
-export type SortableHandle = ReturnType<typeof useAnimatedReorder>;
 export type ProjectTree = {
   expandedPaths: ReadonlySet<string>;
   pendingActivation: { current: string | undefined };

@@ -1,3 +1,4 @@
+import { useDragHandle } from "../../../shared/ui/primitives/Sortable";
 import { Button } from "../../../shared/ui/forms/Button";
 import { cn } from "../../../shared/lib/cn";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
@@ -10,7 +11,7 @@ import {
   Workflow,
   X,
 } from "../../../shared/ui/icons";
-import type { KeyboardEventHandler, PointerEvent as ReactPointerEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { copyText } from "../../../platform/tauri/clipboard";
 import {
@@ -40,7 +41,7 @@ import { IS_MAC, IS_WIN } from "../../../platform/tauri/platform";
 import { releaseNotesTitle } from "../../../app/model/releaseNotes";
 import { terminalTabLabel } from "../../terminal/model/terminalTab";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
+import { SortableItem, SortableList } from "../../../shared/ui/primitives/Sortable";
 import { useTabCloseMotion } from "../hooks/useTabCloseMotion";
 import { TabWidthMotion } from "../../../app/shell/ClosingTab";
 import {
@@ -73,8 +74,6 @@ type Props = {
   /** Double-click makes a preview tab permanent. */
   onPinFile?: (fileId: string) => void;
   onReorder: (ids: string[]) => void;
-  onPaneDragStart?: (event: ReactPointerEvent<HTMLElement>) => void;
-  onPaneDragKeyDown?: KeyboardEventHandler<HTMLElement>;
   label?: string;
   /** Persistent surface selector, such as the owning session's Chat tab. */
   leading?: ReactNode;
@@ -254,19 +253,18 @@ export function SurfaceTabs({
   onCloseOtherFiles,
   onPinFile,
   onReorder,
-  onPaneDragStart,
-  onPaneDragKeyDown,
   label = "Open files",
   leading,
   trailing,
 }: Props) {
   const { t: uiT } = useTranslation();
+  const paneDrag = useDragHandle();
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
   const activeTabRef = useRef<HTMLDivElement | null>(null);
   const [menu, setMenu] = useState<SurfaceTabMenu | null>(null);
   const [fileActionError, setFileActionError] = useState<string | null>(null);
   const fileIds = files.map((file) => file.id);
-  const sortable = useAnimatedReorder(fileIds, onReorder);
+  const [dragging, setDragging] = useState(false);
   const { displayed, setTabNode, finishMotion } = useTabCloseMotion(files);
   const menuFile = menu
     ? files.find((file) => file.id === menu.fileId)
@@ -315,12 +313,12 @@ export function SurfaceTabs({
   };
 
   useLayoutEffect(() => {
-    if (sortable.draggingId) return;
+    if (dragging) return;
     activeTabRef.current?.scrollIntoView({
       inline: "nearest",
       block: "nearest",
     });
-  }, [activeFileId, sortable.draggingId]);
+  }, [activeFileId, dragging]);
 
   return (
     <div data-surface-tab-strip className="flex h-10 min-w-0 shrink-0 border-b border-stroke/50">
@@ -331,29 +329,23 @@ export function SurfaceTabs({
         aria-label={label}
         className="scrollbar-none flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto overscroll-none pl-1.5 pr-2.5"
       >
-        {onPaneDragStart ? (
+        {paneDrag ? (
           <div
+            {...paneDrag}
             data-surface-pane-drag
             role="button"
             title={uiT("Drag to reorder pane")}
             aria-label={uiT("Drag to reorder pane")}
-            tabIndex={onPaneDragKeyDown ? 0 : -1}
-            aria-keyshortcuts={onPaneDragKeyDown ? "ArrowLeft ArrowRight ArrowUp ArrowDown" : undefined}
             data-tauri-drag-region="false"
-            onKeyDown={onPaneDragKeyDown}
-            className="grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded-md text-content/35 hover:bg-content/3 hover:text-content/70 active:cursor-grabbing touch-none"
-            onPointerDown={(event) => {
-              if (event.button !== 0) return;
-              event.preventDefault();
-              event.stopPropagation();
-              onPaneDragStart(event);
-            }}
+            className="grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded-md text-content/35 hover:bg-content/3 hover:text-content/70 focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing touch-none"
           >
             <GripVertical className="size-3.5" />
           </div>
         ) : null}
         {leading}
-        {displayed.map((entry) => {
+        <SortableList ids={fileIds} axis="x" onReorder={onReorder} onActiveChange={setDragging}
+          renderOverlay={(id) => surfaceTabPresentation(files.find(file => file.id === id)!).label}>
+        {displayed.map((entry) => <SortableItem key={entry.item.id} id={entry.item.id} disabled={entry.closing || entry.opening}>{(item) => {
           const file = entry.item;
           const closing = entry.closing;
           const opening = entry.opening;
@@ -369,15 +361,16 @@ export function SurfaceTabs({
           const tab = (
             <div
               ref={(el) => {
+                item.ref(el);
                 if (closing) return;
                 setTabNode(file.id, el);
-                sortable.setItemRef(file.id, el);
                 if (el && file.id === activeFileId) activeTabRef.current = el;
               }}
+              style={item.style}
               className={
                 closing || opening
                   ? "tab-motion group relative flex h-full w-full min-w-0 overflow-hidden items-center"
-                  : "reorder-item tab-motion group relative flex h-full w-56 min-w-28 shrink touch-none items-center"
+                  : "tab-motion group relative flex h-full w-56 min-w-28 shrink touch-none items-center"
               }
               data-tab-slot-id={closing ? undefined : file.id}
               data-file-tab-id={closing ? undefined : file.id}
@@ -403,7 +396,6 @@ export function SurfaceTabs({
                   return;
                 }
                 onSelectFile(file.id);
-                sortable.onItemPointerDown(file.id, event);
               }}
               onContextMenu={(event) => {
                 if (closing) return;
@@ -418,13 +410,14 @@ export function SurfaceTabs({
               }}
             >
               <Button variant="ghost" size="content"
+                {...item.handleProps}
                 type="button"
                 role="tab"
                 data-closable
                 aria-selected={active}
                 title={appendProblems(tooltip, errors)}
                 onClick={() => {
-                  if (sortable.consumeClick()) return;
+                  if (item.consumeClick()) return;
                   onSelectFile(file.id);
                 }}
                 onDoubleClick={() => onPinFile?.(file.id)}
@@ -499,15 +492,13 @@ export function SurfaceTabs({
               {tab}
             </div>
           );
-        })}
-        {onPaneDragStart ? (
+        }}</SortableItem>)}
+        </SortableList>
+        {paneDrag ? (
           <div
             className="min-w-4 flex-1 cursor-grab active:cursor-grabbing"
-            onPointerDown={(event) => {
-              if (event.button !== 0) return;
-              event.preventDefault();
-              onPaneDragStart(event);
-            }}
+            onPointerDown={paneDrag.onPointerDown}
+            onTouchStart={paneDrag.onTouchStart}
           />
         ) : null}
       </div>

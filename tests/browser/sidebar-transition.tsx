@@ -9,7 +9,7 @@ function Fixture() {
   const [open, setSidebar] = useState(true);
   useEffect(() => { Object.assign(window, { desktopFixture: { setSidebar } }); }, []);
   return <div style={{ display: "flex", height: "100vh" }}>
-    <SidebarTransition open={open} width={360} trailingInset="8px" dragging={false} setPaneRef={noop} finishDrag={noop}>
+    <SidebarTransition open={open} width={360} trailingInset="8px" dragging={false} setPaneRef={noop}>
       <aside style={{ height: "100%", background: "#ccc" }}>
         <button onClick={() => setSidebar(false)}>Close sidebar</button>
         <input aria-label="Retained sidebar draft" defaultValue="draft" />

@@ -1,7 +1,7 @@
 import { Button } from "../shared/ui/forms/Button";
 import { motion } from "motion/react";
 import { motionGeometry, panelTransition } from "../shared/motion/tokens";
-import { useListReorderMotion } from "../shared/hooks/useListReorderMotion";
+import { ListMotion, ListMotionButton } from "../shared/ui/ListMotion";
 import { MobileSpinner } from "./MobileSpinner";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type {
@@ -312,7 +312,7 @@ function useMobileHomeController({
   ) => {
     const state = projectState(history);
     return (
-      <button
+      <ListMotionButton
         type="button"
         className="mobile-home-project"
         data-list-row
@@ -329,12 +329,12 @@ function useMobileHomeController({
         </span>
         {overview?.hostName && <small className="mobile-home-project-host">{overview.hostName}</small>}
         {projectActivity(history, !!overview)}
-      </button>
+      </ListMotionButton>
     );
   };
   const chatHistory = chatProjects.flatMap((item) => histories[item.id]?.sessions ?? []);
   const chatsRow = (overview: boolean) => (
-    <button
+    <ListMotionButton
       type="button"
       className="mobile-home-project"
       key="chats"
@@ -348,7 +348,7 @@ function useMobileHomeController({
         <strong>{t("Chats")}</strong>
       </span>
       {projectActivity(chatHistory, overview)}
-    </button>
+    </ListMotionButton>
   );
   const overviewProjects = [
     ...(onChats && !needle ? [{ key: "chats", render: () => chatsRow(true) }] : []),
@@ -412,13 +412,6 @@ function useMobileHomeController({
 type MobileHomeViewModel = ReturnType<typeof useMobileHomeController>;
 
 function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
-  const list = useRef<HTMLDivElement>(null);
-  useListReorderMotion(list, [
-    ...vm.matchingProjects.map((project) => project.id),
-    ...vm.overviewProjects.map((project) => project.key),
-    ...vm.pinned.map((session) => session.id),
-    ...vm.recent.map((session) => session.id),
-  ], "data-list-row", !vm.inactive);
   const {
     activeFilter,
     chatsPage,
@@ -473,7 +466,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
       inert={inactive}
       aria-hidden={inactive || undefined}
     >
-      <div ref={list} className="mobile-home-scroll" key={chatsPage ? "chats" : project?.id ?? "all"}>
+      <div className="mobile-home-scroll" key={chatsPage ? "chats" : project?.id ?? "all"}>
         {root && devices}
         {root && unavailable && !hasProjects && (projectsUnavailable || projectsPending) ? unavailable
           : projectsUnavailable && !hasProjects ? (
@@ -532,7 +525,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
               </button>
             </h2>
             <AnimatedCollapse expanded={pinnedOpen} motion="height">
-              {pinned.map(row)}
+              <ListMotion enabled={!inactive}>{pinned.map(row)}</ListMotion>
             </AnimatedCollapse>
           </section>
         )}

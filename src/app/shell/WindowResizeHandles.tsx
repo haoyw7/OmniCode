@@ -39,7 +39,7 @@ const INTERACTIVE_TARGETS = [
   "[role='radio']",
   "[role='switch']",
   "[role='option']",
-  ".resize-handle",
+  '[data-ui="resizable-handle"]',
   "[data-resize-edge]",
   "[role='separator']",
   ".cm-editorScrollbar",

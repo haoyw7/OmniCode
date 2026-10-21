@@ -503,6 +503,22 @@ async function settle() {
     });
 }
 
+it("keeps WSL configuration notices out of the transcript while retaining other notices", async () => {
+  host = { projectId: "project", revision: 1, status: "idle", updatedAt: 0,
+    executionWarnings: ["MCP: node_repl", "Hook: notify", "Imported history"],
+    session: { ...shell(), id: "host-session", cwd: "/home/me/repo" } };
+  rememberRemoteSession("shell", "host-session");
+  await act(async () => root.render(createElement(RemoteSession, {
+    shell: shell(), visible: true, onSnapshot: vi.fn(), onOpenFile: vi.fn(), onOpenDiff: vi.fn(), onOpenPlan: vi.fn(),
+    render: () => createElement("span", null, "Conversation"),
+  })));
+  await settle();
+  expect(container.textContent).toContain("Conversation");
+  expect(container.textContent).toContain("Imported history");
+  expect(container.textContent).not.toContain("node_repl");
+  expect(container.textContent).not.toContain("notify");
+});
+
 it.each([false, true])("routes DSH background task stops only through a capable Host (supported: %s)", async (supported) => {
   providers = ["deepseek"];
   host = { projectId: "project", revision: 1, status: "running", updatedAt: 0, runId: "run",
@@ -2063,6 +2079,9 @@ it("keeps a saved model's effort editable when the host catalog fails", async ()
   await act(async () => root.unmount());
   root = createRoot(container);
   await render();
+  expect(container.textContent).not.toContain("Couldn’t load models");
+  await act(async () => queryClient.invalidateQueries({ queryKey: ["remoteSession", "catalog"] }));
+  await settle();
   expect(container.textContent).toContain("Couldn’t load models");
   expect(byLabel("Reasoning:")?.getAttribute("aria-label")).toBe(
     "Reasoning: High",

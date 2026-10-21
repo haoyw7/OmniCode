@@ -27,8 +27,7 @@ import { InboxFiltersMenu, INBOX_FILTER_MENU_WIDTH } from "./InboxFiltersMenu";
 import { useInboxQueryState } from "../model/useInboxQueryState";
 import { InboxConnectMenu } from "./InboxConnectMenu";
 import { InboxProviderMark } from "./InboxProviderMark";
-import { useDragResize } from "../../../shared/hooks/useDragResize";
-import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup, type PanelImperativeHandle } from "../../../shared/ui/primitives/Resizable";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import {
@@ -280,15 +279,7 @@ export function InboxView({
     setRefresh((value) => value + 1);
   }, []);
 
-  const resize = useDragResize({
-    min: MIN_WIDTH,
-    max: () => Math.min(MAX_WIDTH, Math.round(window.innerWidth * 0.5)),
-    defaultWidth: DEFAULT_WIDTH,
-    initial: rememberedWidth,
-    onCommit: (width) => {
-      rememberedWidth = width;
-    },
-  });
+  const listPanel = useRef<PanelImperativeHandle | null>(null);
 
   useEffect(() => {
     setTargetSource(target ? "github" : null);
@@ -508,7 +499,6 @@ export function InboxView({
 
   const list = (
     <div
-      ref={resize.setPaneRef}
       className="relative flex h-full min-h-0 shrink-0 flex-col border-r border-stroke"
     >
       <div className="desktop-toolbar flex h-9 shrink-0 items-center gap-px border-b border-stroke px-2">
@@ -695,13 +685,6 @@ export function InboxView({
           </ul>
         )}
       </div>
-      <ResizeHandle
-        edge="right"
-        dragging={resize.dragging}
-        aria-label={uiT("Resize inbox list")}
-        onPointerDown={resize.onPointerDown}
-        onDoubleClick={resize.onDoubleClick}
-      />
     </div>
   );
 
@@ -743,8 +726,20 @@ export function InboxView({
     >
       <AppPageHeader title={uiT("Inbox")} icon={Inbox} />
 
-      <div className="flex min-h-0 min-w-0 flex-1">
-        {list}
+      <ResizablePanelGroup className="flex-1" onLayoutChanged={(_, meta) => {
+        if (meta.isUserInteraction) queueMicrotask(() => {
+          if (listPanel.current) rememberedWidth = Math.round(listPanel.current.getSize().inPixels);
+        });
+      }}>
+        <ResizablePanel id="inbox-list" panelRef={listPanel} defaultSize={rememberedWidth} minSize={MIN_WIDTH}
+          maxSize={() => Math.min(MAX_WIDTH, Math.round(window.innerWidth * 0.5))} groupResizeBehavior="preserve-pixel-size">
+          {list}
+        </ResizablePanel>
+        <ResizableHandle aria-label={uiT("Resize inbox list")} onDoubleClick={() => {
+          listPanel.current?.resize(DEFAULT_WIDTH);
+          rememberedWidth = DEFAULT_WIDTH;
+        }} />
+        <ResizablePanel id="inbox-detail" minSize={0}>
         <div className="relative flex min-h-0 min-w-0 flex-1">
           <div className="min-h-0 min-w-0 flex-1 pl-4">
             <InboxDetailBody
@@ -774,7 +769,8 @@ export function InboxView({
             />
           ) : null}
         </div>
-      </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
       <PresenceBoundary propagate>{filtersPortal}</PresenceBoundary>
       <PresenceBoundary propagate>{connectPortal}</PresenceBoundary>
     </div>

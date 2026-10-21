@@ -1080,7 +1080,7 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
 .mobile-bots-pinned .desktop-bot-avatar > svg { max-width: 100%; height: 100%; }
 .mobile-bots-list .desktop-bot-avatar { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .mobile-bots-rows { display: flex; flex-direction: column; gap: 8px; }
-.mobile-bots-rows > [data-ui="navigation-item"] {
+.mobile-bots-rows [data-ui="navigation-item"] {
   gap: 14px;
   min-height: 76px;
   width: 100%;

@@ -11,7 +11,7 @@ test("split rich diffs keep wrapping and gutters aligned during a resize", async
   await expect(host.locator("[data-line] span").first()).toBeVisible();
   await expect(file.locator("[aria-busy=true]")).toHaveCount(0);
   await host.evaluate(el => el.setAttribute("data-retained", "true"));
-  const handle = page.locator('[data-pane-sash="tools-split:0"] .resize-handle');
+  const handle = page.locator('[data-pane-sash="tools-split:0"]');
   const box = (await handle.boundingBox())!;
   const x = box.x + box.width / 2, y = box.y + 100;
   await page.mouse.move(x, y);
@@ -164,7 +164,7 @@ test("review divider follows pointer reversals, commits and cancels with termina
   const host = review.locator("diffs-container").first();
   const terminal = page.locator(".xterm");
   const sash = page.locator('[data-pane-sash="tools-split:0"]');
-  const handle = sash.locator(".resize-handle");
+  const handle = sash;
   await expect(host.locator("[data-line]").first()).toBeVisible();
   await expect(terminal).toBeVisible();
   await terminal.evaluate(el => el.setAttribute("data-resize-retained", "true"));

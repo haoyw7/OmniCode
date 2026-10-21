@@ -10,7 +10,7 @@ import {
 } from "react";
 import { AnimatePresence, animate as animateElement, motion, usePresenceData } from "motion/react";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
-import { ListReorderMotionContext } from "../shared/hooks/useListReorderMotion";
+import { ListMotionContext } from "../shared/ui/ListMotion";
 import { duration, immediateTransition, motionGeometry, panelTransition } from "../shared/motion/tokens";
 import { useCollapseMotion } from "../shared/ui/AnimatedCollapse";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
@@ -59,7 +59,7 @@ const PageLayer = forwardRef<HTMLDivElement, {
   onEntered: () => void;
   profile: PageMotion;
 }>(function PageLayer({ id, active, visible, enter, direction, page, children, onExited, onEntered, profile }, forwarded) {
-  const parentSettled = useContext(ListReorderMotionContext);
+  const parentSettled = useContext(ListMotionContext);
   const element = useRef<HTMLDivElement>(null);
   const assignRef = useCallback((node: HTMLDivElement | null) => {
     element.current = node;
@@ -115,13 +115,13 @@ const PageLayer = forwardRef<HTMLDivElement, {
       aria-hidden={!active || !visible || undefined}
     >
       <MobilePageStateContext.Provider value={page}>
-        <ListReorderMotionContext.Provider value={parentSettled && active && visible && (!enter || reduced)}>
+        <ListMotionContext.Provider value={parentSettled && active && visible && (!enter || reduced)}>
           <SurfaceVisibilityContext.Provider value={active && visible}>
             <ReadonlyTextStateContext.Provider value={page.values}>
               {children}
             </ReadonlyTextStateContext.Provider>
           </SurfaceVisibilityContext.Provider>
-        </ListReorderMotionContext.Provider>
+        </ListMotionContext.Provider>
       </MobilePageStateContext.Provider>
     </motion.div>
   );

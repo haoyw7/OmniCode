@@ -477,7 +477,6 @@ html[data-skin] [data-app-automations] { container: automations / inline-size; }
     border-right: 0;
     border-bottom: 1px solid var(--color-hairline);
   }
-  html[data-skin] [data-notes-list] > .resize-handle { display: none; }
   html[data-skin] [data-notes-detail] { padding-left: 0; }
 }
 
@@ -545,7 +544,6 @@ html.is-resizing .desktop-file-explorer-body {
   border-right: 1px solid var(--color-stroke);
 }
 .desktop-file-explorer-divider { position: relative; z-index: 1; }
-.desktop-file-explorer-divider [data-resize-edge="left"] { left: -3px; }
 .desktop-file-filter[data-ui="input-group"] { width: auto; flex-shrink: 0; margin: 3px 8px 8px 2px; }
 .desktop-file-breadcrumb { position: relative; display: flex; align-items: center; gap: 8px; min-height: 34px; flex-shrink: 0; padding: 0 10px; border-bottom: 1px solid var(--color-hairline); font-size: var(--text-ui-caption); font-weight: var(--ui-font-weight, var(--font-weight-normal)); }
 .desktop-file-breadcrumb-path { display: flex; align-items: center; gap: 0; min-width: 0; flex: 1; overflow: hidden; white-space: nowrap; color: var(--color-ink-secondary); }

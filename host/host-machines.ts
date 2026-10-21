@@ -79,7 +79,7 @@ export class HostMachines {
       if (session && !hostOwned) await this.prepare(this.store.project(session.projectId).machine);
       return this.forSession(sessionId, operation);
     }
-    if (params.machine !== undefined && !["projects.open", "projects.browse", "workspace.run"].includes(method)) throw new Error("This operation does not accept an execution machine");
+    if (params.machine !== undefined && !["projects.open", "projects.browse", "workspace.run", "resources.claim"].includes(method)) throw new Error("This operation does not accept an execution machine");
     const machine = parseProjectMachine(params.machine);
     await this.prepare(machine);
     return this.run(machine, operation);

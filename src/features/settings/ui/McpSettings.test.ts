@@ -8,6 +8,8 @@ import { clearMcpInspections } from "../model/mcpInspect";
 
 const invoke = vi.fn();
 const ask = vi.fn(async () => true);
+let executionWarnings: string[] = [];
+vi.mock("../model/mcpExecutionWarnings", () => ({ useMcpExecutionWarnings: () => executionWarnings }));
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: (...args: unknown[]) => invoke(...args),
 }));
@@ -19,6 +21,7 @@ let container: HTMLDivElement;
 let root: Root;
 
 beforeEach(() => {
+  executionWarnings = [];
   clearMcpSettingsCache();
   clearMcpInspections();
   const storage = new Map<string, string>();
@@ -80,6 +83,13 @@ async function selectProject(path: string) {
       .click(),
   );
 }
+
+it("shows WSL MCP and hook compatibility notices in MCP settings", async () => {
+  executionWarnings = ["MCP: node_repl", "Hook: notify"];
+  await act(async () => root.render(createElement(McpSettings, { cwd: "/repo" })));
+  expect(container.textContent).toContain("Disabled Windows-only MCP server: node_repl");
+  expect(container.textContent).toContain("Disabled Windows-only hook: notify");
+});
 
 it("lists servers and routes sign in through Claude MCP", async () => {
   await act(async () =>

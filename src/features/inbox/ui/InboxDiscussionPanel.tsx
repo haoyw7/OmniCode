@@ -1,13 +1,12 @@
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { toast } from "sonner";
 import { PanelLeft, RotateCcw } from "../../../shared/ui/icons";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
-import { useDragResize } from "../../../shared/hooks/useDragResize";
-import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
+import { ResizableRegion } from "../../../shared/ui/primitives/Resizable";
 import { inboxItemRef, type InboxItem } from "../model/githubTasks";
 import { inboxAskKey } from "../model/inboxAsk";
 
@@ -37,16 +36,8 @@ export function InboxDiscussionPanel({
   const { mutateAsync } = openMutation;
   const error = errorMessage(openMutation.error);
   const loading = openMutation.isPending;
-  const resize = useDragResize({
-    min: 360,
-    max: () => Math.max(360, window.innerWidth - 650),
-    initial: rememberedWidth,
-    defaultWidth: 440,
-    direction: "left",
-    onCommit: (width) => {
-      rememberedWidth = width;
-    },
-  });
+  const resizePane = useRef<HTMLElement | null>(null);
+  const [width, setWidth] = useState(rememberedWidth);
   const key = inboxAskKey(item);
   const activeKey = useRef<string | null>(key);
   activeKey.current = key;
@@ -69,20 +60,14 @@ export function InboxDiscussionPanel({
 
   return (
     <aside
-      ref={resize.setPaneRef}
+      ref={resizePane}
       aria-label={uiT("Ask about {value0}", {
         value0: String(inboxItemRef(item)),
       })}
       className="relative flex min-h-0 shrink-0 flex-col border-l border-stroke pl-4 max-[1100px]:absolute max-[1100px]:inset-0 max-[1100px]:z-10 max-[1100px]:!w-auto max-[1100px]:pl-0"
     >
-      <ResizeHandle
-        edge="left"
-        dragging={resize.dragging}
-        aria-label={uiT("Resize discussion")}
-        onPointerDown={resize.onPointerDown}
-        onDoubleClick={resize.onDoubleClick}
-        className="max-[1100px]:hidden"
-      />
+      <ResizableRegion targetRef={resizePane} edge="left" size={width} min={360} max={() => Math.max(360, window.innerWidth - 650)} defaultSize={440}
+        label={uiT("Resize discussion")} className="max-[1100px]:hidden" onCommit={next => { rememberedWidth = next; setWidth(next); }} />
       <header className="desktop-toolbar flex h-11 shrink-0 items-center border-b border-stroke px-3">
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
           {uiT("Ask · ")}

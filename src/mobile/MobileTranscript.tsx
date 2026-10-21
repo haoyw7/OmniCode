@@ -1,4 +1,4 @@
-import { executionWarningText } from "../integrations/harness/core/executionWarnings";
+import { executionWarningText, isConfigurationExecutionWarning } from "../integrations/harness/core/executionWarnings";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { QuestionForm } from "../features/sessions/ui/QuestionForm";
@@ -364,8 +364,8 @@ export const MobileTranscript = memo(function MobileTranscript({
           ...current, active: kind, [kind]: { kind, blockId, fromProgress: true },
         }))} />
       <MobileConversation
-        notice={snapshot.executionWarnings?.length ? <div className="mobile-execution-notice" role="status">
-          {snapshot.executionWarnings.map((warning, index) => <p key={`${index}:${warning}`}>{executionWarningText(warning, t)}</p>)}
+        notice={snapshot.executionWarnings?.some(warning => !isConfigurationExecutionWarning(warning)) ? <div className="mobile-execution-notice" role="status">
+          {snapshot.executionWarnings.filter(warning => !isConfigurationExecutionWarning(warning)).map((warning, index) => <p key={`${index}:${warning}`}>{executionWarningText(warning, t)}</p>)}
         </div> : undefined}
         containerRef={findSheetHost}
         active={visible}

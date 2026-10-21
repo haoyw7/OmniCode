@@ -13,7 +13,7 @@ export class ModelCatalogLoad {
   private latest?: HostModelCatalog;
   private listeners = new Set<(catalog: HostModelCatalog) => void>();
 
-  constructor(read: ModelCatalogReader, publish?: (catalog: HostModelCatalog) => void) {
+  constructor(read: ModelCatalogReader, publish?: (catalog: HostModelCatalog) => void, previous?: HostModelCatalog) {
     this.promise = Promise.resolve().then(async () => {
       const started = Date.now();
       let providers: RemoteProvider[] | undefined;
@@ -25,8 +25,24 @@ export class ModelCatalogLoad {
           models: { ...value.models, ...next.models },
           errors: { ...value.errors, ...next.errors },
         };
-        // Retain the original result object for complete, single-response reads.
-        if (providers === undefined) value = next;
+        // The first response defines the current providers. Keep cached rows
+        // only for providers still loading or failing; a ready empty list or
+        // a removed provider must still replace its old rows.
+        if (providers === undefined) {
+          value = next;
+          if (previous) {
+            const models = { ...next.models };
+            const unresolved = new Set([
+              ...(next.pending ?? []),
+              ...Object.keys(next.errors) as RemoteProvider[],
+            ]);
+            for (const provider of unresolved) {
+              if (models[provider] === undefined && previous.models[provider] !== undefined)
+                models[provider] = previous.models[provider];
+            }
+            value = { ...next, models };
+          }
+        }
         if (!this.latest || Object.keys(next.models).length || Object.keys(next.errors).length ||
             next.pending?.join(",") !== this.latest.pending?.join(",")) {
           this.latest = value;

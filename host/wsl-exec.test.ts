@@ -65,6 +65,20 @@ it("multiplexes exec replies and process events, including large UTF-8 output an
   expect(events.find((event) => event.kind === "stderr")?.data).toBe("diagnostic");
 });
 
+it("streams correlated exec progress before completion without changing stdout", async () => {
+  const connection = connect();
+  const events: WslExecutionEvent[] = [];
+  connection.onEvent(event => events.push(event));
+  const result = connection.request<{ stdout: string }>("exec", { command: process.execPath,
+    args: ["-e", "console.error('OMNICODE_STARTUP '+JSON.stringify({stage:'copying',completed:10,total:20,unit:'bytes'}));setTimeout(()=>console.log('result'),300)"],
+    progressStream: "startup:fixture" });
+  await waitFor(() => events.some(event => event.stream === "startup:fixture"));
+  expect(events.find(event => event.kind === "startup")).toMatchObject({
+    stream: "startup:fixture", data: { stage: "copying", completed: 10, total: 20 },
+  });
+  expect((await result).stdout.trim()).toBe("result");
+});
+
 it("owns each child and append handle by connection and kills children on disconnect", async () => {
   const first = connect(), second = connect();
   const processArgs = { command: process.execPath, args: ["-e", "setInterval(()=>{},1000)"] };

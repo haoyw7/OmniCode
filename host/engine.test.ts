@@ -13,6 +13,7 @@ import { readAttachmentChunk, writeAttachmentChunk } from "./attachments";
 import type { HarnessBotContext } from "../src/integrations/harness/core/botContext";
 import { providerBotCapabilities } from "../src/integrations/harness/providers/botCapabilities";
 import { checkoutPath } from "./checkout-guards";
+import { startupProgressReporter } from "./startup-progress";
 
 const cleanups: Array<() => Promise<void> | void> = [];
 afterEach(async () => {
@@ -74,6 +75,31 @@ function setup(harness: "codex" | "claude" | "pi" | "omp" | "deepseek" = "codex"
 }
 
 describe("headless session ownership", () => {
+  it.each(["pi", "omp"] as const)("persists %s startup progress and ignores stale updates after acceptance", async harness => {
+    const { engine, store, provider, turns, id } = setup(harness);
+    let report: ReturnType<typeof startupProgressReporter>;
+    const send = provider.send;
+    provider.send = input => {
+      report = startupProgressReporter();
+      report?.({ stage: "copying", completed: 10, total: 20, unit: "bytes" });
+      return send(input);
+    };
+    await engine.ready;
+    engine.command({ type: "send", commandId: "startup", sessionId: id, text: "Hello" });
+    await vi.waitFor(() => expect(turns).toHaveLength(1), { timeout: 5000 });
+    expect(store.session(id).session.executionState?.startup).toEqual({ stage: "copying", completed: 10, total: 20, unit: "bytes" });
+    const since = store.session(id).session.executionState?.since;
+    report?.({ stage: "copying", completed: 20, total: 20, unit: "bytes" });
+    expect(store.session(id).session.executionState?.since).toBe(since);
+    turns[0].input.onAccepted?.();
+    report?.({ stage: "installing" });
+    expect(store.session(id).session.executionState?.phase).toBe("awaiting-response");
+    expect(store.session(id).session.executionState?.startup).toBeUndefined();
+    turns[0].finish();
+    await vi.waitFor(() => expect(store.session(id).status).toBe("idle"));
+    report?.({ stage: "copying", completed: 0 });
+    expect(store.session(id).session.executionState).toBeUndefined();
+  });
   it.each(["claude", "deepseek"] as const)("stops a selected %s background task without cancelling its parent turn", async (harness) => {
     const { engine, provider, id, turns, store } = setup(harness);
     await engine.ready;

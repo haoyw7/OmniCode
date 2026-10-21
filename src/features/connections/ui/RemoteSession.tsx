@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { invalidateAfterChange, queryClient } from "../../../shared/lib/queryClient";
 import { remoteSessionKeys, remoteSessionCatalogQuery, remoteSnapshotQuery, remoteSessionReadQuery, rememberSessionSnapshot, remoteCommandMutation } from "../model/remoteSessionQueries";
 import { RemoteSnapshotReporter } from "../model/remoteSnapshotReporter";
-import { executionWarningText } from "../../../integrations/harness/core/executionWarnings";
+import { executionWarningText, isConfigurationExecutionWarning } from "../../../integrations/harness/core/executionWarnings";
 import { sessionComposerConfiguration } from "../../sessions/model/composerConfiguration";
 import { wrapHandoffPrompt } from "../../sessions/model/handoff";
 import { requestedProviderAccountId, supportsProviderAccounts, workBuddyAccountIdForModel } from "../../providers/model/providerAccounts";
@@ -1981,9 +1981,9 @@ function ConnectedRemoteSession({
         openDetails: parentWorkers.openDetails ? worker => parentWorkers.openDetails?.(hostWorker(worker)) : undefined,
       }}>
       <div data-pane-background-geometry className="relative flex h-full min-h-0 flex-col">
-        {snapshot?.executionWarnings?.length ? (
+        {snapshot?.executionWarnings?.some(warning => !isConfigurationExecutionWarning(warning)) ? (
           <div role="status" className="desktop-toolbar shrink-0 border-b border-stroke px-4 py-2 text-[12px] text-content/65">
-            {snapshot.executionWarnings.map((warning, index) => <p key={`${index}:${warning}`}>{executionWarningText(warning, uiT)}</p>)}
+            {snapshot.executionWarnings.filter(warning => !isConfigurationExecutionWarning(warning)).map((warning, index) => <p key={`${index}:${warning}`}>{executionWarningText(warning, uiT)}</p>)}
           </div>
         ) : null}
         <div data-pane-background-geometry className="min-h-0 flex-1">{render(overrides)}</div>

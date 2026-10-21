@@ -30,8 +30,7 @@ import {
   useSurfaceVisibility,
 } from "../../../../shared/ui/SurfaceVisibility";
 import { isPaneResizing, onPaneResizeSettled } from "../../../../shared/lib/paneResize";
-import { useDragResize } from "../../../../shared/hooks/useDragResize";
-import { ResizeHandle } from "../../../../shared/ui/ResizeHandle";
+import { ResizableRegion } from "../../../../shared/ui/primitives/Resizable";
 import { MOD } from "../../../../platform/tauri/platform";
 import { useGitFileStatuses } from "../../../source-control/hooks/useGitFileStatuses";
 import { ProjectSearch } from "../../../projects/ui/ProjectSearch";
@@ -83,13 +82,13 @@ export function FileExplorerFrame({
   const visible = useSurfaceVisibility();
   const prefs = useEditorPreferences();
   const panelRef = useRef<HTMLDivElement>(null);
+  const measuredWidth = useRef(1067);
   const [splitLayout, setSplitLayout] = useState(false);
   useLayoutEffect(() => {
     const panel = panelRef.current;
     if (!panel) return;
-    let measuredWidth = panel.clientWidth;
     const measure = (width: number) => {
-      measuredWidth = width;
+      measuredWidth.current = width;
       // Cache live geometry, but defer responsive React layout changes until release.
       if (width > 0 && !isPaneResizing()) setSplitLayout(width >= 720);
     };
@@ -98,7 +97,7 @@ export function FileExplorerFrame({
       if (entry) measure(entry.contentRect.width);
     });
     observer.observe(panel);
-    const unsubscribe = onPaneResizeSettled(() => measure(measuredWidth));
+    const unsubscribe = onPaneResizeSettled(() => measure(measuredWidth.current));
     return () => {
       observer.disconnect();
       unsubscribe();
@@ -138,20 +137,8 @@ export function FileExplorerFrame({
   const expanded = !hasDocument || (splitLayout ? treeOpen : browsing);
   const previewVisible = hasDocument && (splitLayout || !browsing);
   const { foldState, finish } = useCollapseMotion(expanded, 240);
-  const resize = useDragResize({
-    direction: "right",
-    cssProperty: "--explorer-tree-width",
-    min: 160,
-    max: () => 480,
-    defaultWidth: 260,
-    initial: width,
-    value: width,
-    onCommit: setWidth,
-  });
+  const resizePane = useRef<HTMLDivElement>(null);
   const statuses = useGitFileStatuses(cwd, visible && expanded);
-  useEffect(() => {
-    if (!visible || !expanded || !splitLayout) resize.finishDrag();
-  }, [visible, expanded, splitLayout, resize.finishDrag]);
   useEffect(() => {
     if (!visible || !focused || !hasDocument) return;
     const key = (event: KeyboardEvent) => {
@@ -265,10 +252,9 @@ export function FileExplorerFrame({
         () => setBrowsing(false),
       )}
       <div
-        ref={resize.setPaneRef}
-        className="desktop-file-explorer-body animated-collapse-size"
+        ref={resizePane}
+        className="desktop-file-explorer-body animated-collapse-size relative"
         data-fold-state={foldState}
-        data-resizing={resize.dragging || undefined}
         data-has-document={hasDocument}
         data-split-layout={splitLayout}
         style={
@@ -382,33 +368,12 @@ export function FileExplorerFrame({
             )}
           </SurfaceVisibilityContext.Provider>
         </div>
-        <div className="desktop-file-explorer-divider">
-          <ResizeHandle
-            edge="left"
-            disabled={!splitLayout || !expanded || !hasDocument}
-            tabIndex={splitLayout && expanded && hasDocument ? 0 : -1}
-            aria-label={t("Resize file tree")}
-            aria-valuenow={width}
-            aria-valuemin={160}
-            aria-valuemax={480}
-            onPointerDown={resize.onPointerDown}
-            onDoubleClick={resize.onDoubleClick}
-            onKeyDown={(event) => {
-              if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-                event.preventDefault();
-                setWidth((value) =>
-                  Math.max(
-                    160,
-                    Math.min(
-                      480,
-                      value + (event.key === "ArrowRight" ? 16 : -16),
-                    ),
-                  ),
-                );
-              }
-            }}
-          />
-        </div>
+        <div className="desktop-file-explorer-divider" />
+        {hasDocument && splitLayout && expanded ? (
+          <ResizableRegion targetRef={resizePane} property="--explorer-tree-width" size={width} min={160}
+            max={() => Math.min(480, measuredWidth.current * 0.45)} defaultSize={260}
+            disabled={!visible} label={t("Resize file tree")} onCommit={setWidth} />
+        ) : null}
         <div
           className="desktop-file-explorer-preview"
           hidden={!hasDocument}

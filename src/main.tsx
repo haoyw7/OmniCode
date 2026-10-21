@@ -1,3 +1,4 @@
+import { DragDropProvider } from "./shared/ui/primitives/Sortable";
 import { observeNativeScrollbarEdges } from "./shared/ui/nativeScrollbarEdges";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { NuqsAdapter } from "nuqs/adapters/react";
@@ -105,7 +106,7 @@ function BootGate({ children }: { children: React.ReactNode }) {
       <NuqsAdapter>
         <AppearanceThemeProvider storageKey={DESKTOP_THEME_STORAGE_KEY}>
           <MotionConfig reducedMotion="user" transition={defaultTransition}>
-            {children}
+            <DragDropProvider>{children}</DragDropProvider>
             <div style={{ position: "fixed", bottom: 8, right: 8, zIndex: 10000, maxWidth: "70vw" }}><SharedStateStatus /></div>
             <WindowResizeHandles />
             <WindowResizeObserver />

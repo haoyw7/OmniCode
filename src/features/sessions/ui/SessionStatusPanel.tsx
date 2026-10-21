@@ -15,16 +15,13 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
-  type PointerEvent as ReactPointerEvent,
   type ButtonHTMLAttributes,
   type ReactNode,
   type RefObject,
 } from "react";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
-import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
+import { SortableItem, SortableList, type SortableItemState } from "../../../shared/ui/primitives/Sortable";
 import { mergeOrderedSubset } from "../../../shared/lib/reorder";
 import { usePreferenceState } from "../../settings/model/usePreferenceState";
 import {
@@ -264,7 +261,6 @@ function RailCards({
 }) {
   const { t: uiT } = useTranslation();
   const actions = useSessionHeaderActions();
-  const list = useRef<HTMLDivElement>(null);
   const [order, setOrder] = usePreferenceState(loadStatusCardOrder);
   const [moreTasks, setMoreTasks] = useState(false);
   const tasks = model.tasks;
@@ -435,23 +431,20 @@ function RailCards({
   ].filter((card) => card !== null);
   const present = cards.map((card) => card.props.id);
   const visible = order.filter((id) => present.includes(id));
-  const sortable = useAnimatedReorder(visible, (next) => {
+  const reorder = (next: StatusCardId[]) => {
     const merged = mergeOrderedSubset(order.map((id) => ({ id })), next.map((id) => ({ id }))).map(({ id }) => id);
     setOrder(merged);
     saveStatusCardOrder(merged);
-  }, "y");
-  useListReorderMotion(list, visible, "data-status-card", !sortable.draggingId);
-  const reorder = useMemo<CardReorder>(() => ({
-    setItemRef: sortable.setItemRef,
-    onHandlePointerDown: sortable.onItemPointerDown,
-    draggingId: sortable.draggingId,
-    movable: visible.length > 1,
-  }), [sortable.setItemRef, sortable.onItemPointerDown, sortable.draggingId, visible.length]);
+  };
   return (
-    <div ref={list} data-reordering={sortable.draggingId ? "" : undefined} className="flex flex-col gap-2.5">
-      <CardReorderContext.Provider value={reorder}>
-        {visible.map((id) => cards.find((card) => card.props.id === id))}
-      </CardReorderContext.Provider>
+    <div className="flex flex-col gap-2.5">
+      <SortableList ids={visible} onReorder={reorder} renderOverlay={(id) => uiT(STATUS_CARD_LABELS[id])}>
+        {visible.map((id) => <SortableItem key={id} id={id} disabled={visible.length < 2}>{(item) =>
+          <CardReorderContext.Provider value={{ ...item, movable: visible.length > 1 }}>
+            {cards.find((card) => card.props.id === id)}
+          </CardReorderContext.Provider>
+        }</SortableItem>)}
+      </SortableList>
     </div>
   );
 }
@@ -519,10 +512,11 @@ function EnvironmentRows({ cwd, branch }: { cwd: string; branch?: string }) {
     ? machines.find((entry) => entry.environmentId === remote.environmentId)
     : machines.find(isSharedHostMachine);
   const localComputerName = !remote ? machine?.name.trim() : undefined;
+  const distribution = remote?.machine?.distribution ?? machine?.wsl?.distribution;
   const machineName = !remote
     ? [uiT("This machine"), localComputerName].filter(Boolean).join(" · ")
-    : machine?.wsl
-      ? `WSL · ${machine.wsl.distribution}`
+    : distribution
+      ? `WSL · ${distribution}`
       : machine?.name ?? uiT("Remote");
   const path = environmentPath(cwd);
   const parent = prettyParent(path);
@@ -604,12 +598,11 @@ function TaskRows({ items }: { items: SessionStatusPanelModel["tasks"] }) {
   );
 }
 
-type CardReorder = {
-  setItemRef: (id: StatusCardId, node: HTMLElement | null) => void;
-  onHandlePointerDown: (id: StatusCardId, event: ReactPointerEvent) => void;
-  draggingId: StatusCardId | null;
-  movable: boolean;
+const STATUS_CARD_LABELS: Record<StatusCardId, string> = {
+  environment: "Environment", changes: "Changes", tasks: "Tasks", plans: "Plans",
+  subagents: "Subagents", background: "Background tasks", context: "Context", usage: "Usage",
 };
+type CardReorder = SortableItemState & { movable: boolean };
 const CardReorderContext = createContext<CardReorder | null>(null);
 
 function Card({
@@ -642,10 +635,12 @@ function Card({
   };
   const { t: uiT } = useTranslation();
   const reorder = useContext(CardReorderContext);
-  const dragging = reorder?.draggingId === id;
+  const dragging = reorder?.dragging;
   return (
-    <section
-      ref={(node) => reorder?.setItemRef(id, node)}
+    <motion.section
+      {...reorder?.motionProps}
+      ref={reorder?.ref}
+      style={reorder?.style}
       data-status-card={id}
       data-dragging={dragging || undefined}
       className={cn("shrink-0 overflow-hidden rounded-xl border border-content/10 bg-card text-content", dragging ? "relative z-10 shadow-lg" : "shadow-sm")}
@@ -680,11 +675,11 @@ function Card({
       </Button>
       {reorder?.movable ? (
         <Button variant="ghost" size="content"
+          {...reorder.handleProps}
           type="button"
           data-status-card-handle
           title={uiT("Drag to move")}
           aria-label={uiT("Drag to move")}
-          onPointerDown={(event) => reorder.onHandlePointerDown(id, event)}
           className={cn("absolute top-1/2 right-2 grid size-6 -translate-y-1/2 touch-none cursor-grab place-items-center rounded-md text-content/45 transition-opacity duration-150 hover:bg-content/5 hover:text-content/75 active:cursor-grabbing motion-reduce:transition-none group-hover/status-card:opacity-100 focus-visible:opacity-100", dragging ? " opacity-100" : " opacity-0")}
         >
           <GripVertical className="size-3.5" />
@@ -694,7 +689,7 @@ function Card({
       <AnimatedCollapse expanded={expanded} motion="height">
         <div className="px-1.5 pb-2">{children}</div>
       </AnimatedCollapse>
-    </section>
+    </motion.section>
   );
 }
 

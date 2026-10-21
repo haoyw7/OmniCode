@@ -3,9 +3,8 @@ import { useSidebarListPreview } from "../useSidebarListPreview";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { Plus } from "../../../shared/ui/icons";
-import { useContext, useEffect, useId, useRef, useState } from "react";
-import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
-import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
+import { useContext, useEffect, useId, useState } from "react";
+import { SortableItem, SortableList } from "../../../shared/ui/primitives/Sortable";
 import {
   loadSidebarChatOrder,
   orderSidebarChats,
@@ -13,7 +12,6 @@ import {
   saveSidebarChatOrder,
   subscribeSidebarChatOrder,
 } from "../../model/sidebarChatOrder";
-import { sidebarDragPreview } from "../SidebarEntryReorder";
 import {
   PROJECT_COLLAPSE_DURATION_MS,
   type ProjectListEntry,
@@ -39,7 +37,7 @@ export function ChatProjectCard({
   const { t: uiT } = useTranslation();
   const contentId = useId();
   const sectionReorder = useContext(SidebarSectionReorderContext);
-  const sectionDragging = sectionReorder?.sortable.draggingId === "chats";
+  const sectionDragging = sectionReorder?.item.dragging;
   const [stored, setStored] = useState(
     () => localStorage.getItem(CHAT_PROJECT_EXPANDED_KEY) !== "false",
   );
@@ -55,7 +53,6 @@ export function ChatProjectCard({
     });
   const [order, setOrder] = useState(loadSidebarChatOrder);
   useEffect(() => subscribeSidebarChatOrder(() => setOrder(loadSidebarChatOrder())), []);
-  const list = useRef<HTMLDivElement>(null);
   const rows = orderSidebarChats(
     entries.map((entry) => ({ id: `chat:${entry.id}`, entry })),
     order,
@@ -66,19 +63,11 @@ export function ChatProjectCard({
     searchActive,
     { expanded },
   );
-  const sortable = useAnimatedReorder(
-    rows.slice(0, preview.count).map((row) => row.id),
-    (visible) => {
+  const reorder = (visible: string[]) => {
       const next = reorderSidebarChats(order, rows.map((row) => row.id), visible);
       saveSidebarChatOrder(next);
       setOrder(next);
-    },
-    "y",
-    undefined,
-    { activationDistance: 3, floatingPreview: sidebarDragPreview },
-  );
-  useListReorderMotion(list, rows.map((row) => row.id), "data-sidebar-pinned-entry",
-    expanded && !sectionDragging && !sortable.draggingId, preview.count);
+    };
   if (searchActive && entries.length === 0) return null;
   return (
     <div data-chat-project className="relative shrink-0">
@@ -103,26 +92,28 @@ export function ChatProjectCard({
       </ProjectSectionHeader>
       <AnimatedCollapse
         keepMounted
-        expanded={expanded && !sectionDragging}
+        expanded={expanded}
         motion="height"
         className="project-tree-collapse"
         durationMs={PROJECT_COLLAPSE_DURATION_MS}
         animateContentResize
       >
         {() => (
-          <div ref={list} id={contentId} data-chat-project-children className="px-2">
+          <div id={contentId} data-chat-project-children className="px-2">
             {entries.length === 0 ? (
               <p className="px-2 py-1 text-[11px] leading-tight text-content/40">
                 {uiT("Chats you start will show up here")}
               </p>
             ) : null}
-            {rows.slice(0, preview.mountedCount).map(({ id, entry }, index) => (
+            <SortableList ids={rows.slice(0, preview.count).map(row => row.id)} onReorder={reorder} disabled={!expanded || sectionDragging} renderOverlay={() => uiT("Drag to move")}>
+            {rows.slice(0, preview.mountedCount).map(({ id, entry }, index) => <SortableItem key={id} id={id} disabled={index >= preview.count}>{sortable => (
               <AnimatedCollapse key={id} expanded={index < preview.count}>
                 {() => (
                   <SidebarEntry entry={entry} id={id} sortable={sortable} />
                 )}
               </AnimatedCollapse>
-            ))}
+            )}</SortableItem>)}
+            </SortableList>
             {preview.button}
           </div>
         )}

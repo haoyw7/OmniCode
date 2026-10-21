@@ -8,6 +8,8 @@ import { Readable } from "node:stream";
 import type { ReadableStream } from "node:stream/web";
 import { createGunzip } from "node:zlib";
 import { promisify } from "node:util";
+import { reportStartupProgress, sharedStartupProgress } from "./startup-progress";
+import { npmInstallProgress } from "./npm-install-progress";
 
 export type RuntimeProvider = "claude" | "codex" | "pi" | "opencode";
 export type ProviderPlatform = "win32-x64" | "win32-arm64" | "linux-x64" | "linux-arm64" | "darwin-x64" | "darwin-arm64";
@@ -82,7 +84,6 @@ const VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$/;
 const MANIFEST = ".omnicode-runtime.json";
 const MAX_ARCHIVE_BYTES = 1024 * 1024 * 1024;
 const MAX_UNPACKED_BYTES = 2 * MAX_ARCHIVE_BYTES;
-const inFlight = new Map<string, Promise<ProviderRuntimeArtifact>>();
 const retained = new Map<string, Promise<void>>();
 
 export function providerRuntimeRoot(): string {
@@ -142,6 +143,7 @@ function integrityDigest(integrity: string): Buffer {
 }
 
 async function download(metadata: PackageMetadata, destination: string, options: ProviderRuntimeOptions): Promise<void> {
+  reportStartupProgress({ stage: "downloading", completed: 0, unit: "bytes" });
   const url = new URL(metadata.dist.tarball);
   if (url.protocol !== "https:" || url.username || url.password) throw new Error("Invalid provider tarball URL");
   if (options.tarballMirror) {
@@ -154,15 +156,19 @@ async function download(metadata: PackageMetadata, destination: string, options:
   const expected = integrityDigest(metadata.dist.integrity);
   const response = await (options.fetch ?? fetch)(url, { signal: AbortSignal.timeout(300_000) });
   if (!response.ok || !response.body) throw new Error(`Provider download failed (${response.status})`);
+  const length = Number(response.headers.get("content-length"));
+  const total = !response.headers.has("content-encoding") && Number.isSafeInteger(length) && length > 0 ? length : undefined;
   const hash = createHash("sha512");
   const file = await open(destination, "wx", 0o600);
   let size = 0;
+  reportStartupProgress({ stage: "downloading", completed: 0, total, unit: "bytes" });
   try {
     for await (const chunk of Readable.fromWeb(response.body as ReadableStream<Uint8Array>)) {
       size += chunk.length;
       if (size > MAX_ARCHIVE_BYTES) throw new Error("Provider archive exceeds size limit");
       hash.update(chunk);
       await file.writeFile(chunk);
+      reportStartupProgress({ stage: "downloading", completed: size, total: total && size <= total ? total : undefined, unit: "bytes" });
     }
     if (!timingSafeEqual(hash.digest(), expected)) throw new Error("Provider archive integrity mismatch");
   } finally {
@@ -226,6 +232,8 @@ function paxPath(bytes: Buffer): string | undefined {
 }
 
 async function extract(archive: string, destination: string): Promise<ProviderRuntimeFile[]> {
+  let extractedBytes = 0;
+  reportStartupProgress({ stage: "installing", completed: 0, unit: "bytes" });
   const input = createReadStream(archive);
   const gunzip = input.pipe(createGunzip());
   input.on("error", (error) => gunzip.destroy(error));
@@ -276,6 +284,8 @@ async function extract(archive: string, destination: string): Promise<ProviderRu
                 hash.update(chunk);
                 await file.writeFile(chunk);
                 remaining -= chunk.length;
+                extractedBytes += chunk.length;
+                reportStartupProgress({ stage: "installing", completed: extractedBytes, unit: "bytes" });
               }
             } finally { await file.close(); }
             files.push({ path: relative, sha256: hash.digest("hex"), size, executable });
@@ -361,11 +371,10 @@ export async function ensureProviderRuntime(provider: string, version: string, p
   if (version !== "latest" && !VERSION.test(version)) throw new Error("An exact provider version is required");
   const root = resolve(options.root ?? providerRuntimeRoot());
   const key = `${root}\0${provider}\0${version}\0${platform}`;
-  const existing = inFlight.get(key);
-  if (existing) return existing;
-  const operation = install(provider, version, platform, { ...options, root });
-  inFlight.set(key, operation);
-  try { return await operation; } finally { inFlight.delete(key); }
+  return sharedStartupProgress(`provider:${key}`, () => {
+    reportStartupProgress({ stage: "checking-provider" });
+    return install(provider, version, platform, { ...options, root });
+  });
 }
 
 async function install(provider: RuntimeProvider, version: string, platform: ProviderPlatform, options: ProviderRuntimeOptions): Promise<ProviderRuntimeArtifact> {
@@ -464,6 +473,8 @@ export async function verifyProviderDependencyLock(lock: NpmLock, fetcher: typeo
   if (lock.lockfileVersion !== 3 || !lock.packages || typeof lock.packages !== "object") throw new Error("Unsupported provider dependency lock");
   const entries = Object.entries(lock.packages).filter(([key]) => key !== "");
   if (entries.length > 1500) throw new Error("Provider dependency tree exceeds package limit");
+  let completed = 0;
+  reportStartupProgress({ stage: "verifying", completed, total: entries.length || undefined, unit: "packages" });
   for (let offset = 0; offset < entries.length; offset += 8) await Promise.all(entries.slice(offset, offset + 8).map(async ([path, value]) => {
     portablePath(path);
     const marker = "node_modules/";
@@ -474,6 +485,7 @@ export async function verifyProviderDependencyLock(lock: NpmLock, fetcher: typeo
     integrityDigest(value.integrity);
     if (official.dist.integrity !== value.integrity || official.dist.tarball !== value.resolved)
       throw new Error("Provider dependency differs from official registry metadata");
+    reportStartupProgress({ stage: "verifying", completed: ++completed, total: entries.length, unit: "packages" });
   }));
 }
 
@@ -494,6 +506,7 @@ async function hashPackageTree(root: string): Promise<ProviderRuntimeFile[]> {
         hash.update(chunk);
       }
       result.push({ path: file, size: info.size, sha256: hash.digest("hex"), executable });
+      reportStartupProgress({ stage: "verifying", completed: result.length, unit: "files" });
     }
   };
   await walk(""); return result;
@@ -523,9 +536,18 @@ async function installPi(version: string, platform: ProviderPlatform, options: P
   try {
     await writeFile(userConfig, ""); await writeFile(globalConfig, "");
     await writeFile(join(staging, "package.json"), JSON.stringify({ name: "omnicode-provider-runtime", version: "1.0.0", private: true, dependencies: { [pkg.name]: pkg.version } }));
-    const runNpm = (args: string[]) => promisify(execFile)(process.execPath, [npm, ...args, ...flags], {
-      cwd: staging, env, windowsHide: true, timeout: 600_000, maxBuffer: 4 * 1024 * 1024,
-    });
+    const runNpm = (args: string[]) => {
+      const install = args[0] === "ci";
+      reportStartupProgress({ stage: install ? "installing-dependencies" : "resolving-dependencies" });
+      const child = promisify(execFile)(process.execPath, [npm, ...args, ...flags, ...(install ? ["--timing", "--loglevel=http", "--color=false"] : [])], {
+        cwd: staging, env, windowsHide: true, timeout: 600_000, maxBuffer: 16 * 1024 * 1024,
+      });
+      if (install) {
+        const progress = npmInstallProgress();
+        child.child.stderr?.on("data", chunk => progress(String(chunk)));
+      }
+      return child;
+    };
     await runNpm(["install", "--package-lock-only"]);
     const canonicalLock = await readFile(join(staging, "package-lock.json"), "utf8");
     const lock = JSON.parse(canonicalLock) as NpmLock;

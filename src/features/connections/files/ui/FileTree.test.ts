@@ -13,10 +13,9 @@ import {
   saveSelected,
 } from "../model/fileTree";
 import type { FsEntry } from "../../../../platform/tauri/fs";
-import {
-  EXPLORER_FILE_POINTER_DRAG_EVENT,
-  type ExplorerFilePointerDragDetail,
-} from "../../../../shared/lib/drag";
+import { DragDropProvider } from "../../../../shared/ui/primitives/Sortable";
+import { mockDragOverlayGeometry } from "../../../../../tests/helpers/dndGeometry";
+import { dndPointer } from "../../../../../tests/helpers/dndEvents";
 import { FileTree } from "./FileTree";
 
 const { iconRender, directories, clipboardFiles, copied, dragDrop } =
@@ -102,7 +101,7 @@ function render(tick = 0, hidden = false) {
     createElement(
       "div",
       { hidden, "data-tick": tick },
-      createElement(FileTree, props),
+      createElement(DragDropProvider, { children: createElement(FileTree, props) }),
     ),
   );
 }
@@ -122,9 +121,11 @@ beforeEach(async () => {
   root = createRoot(container);
 });
 
-afterEach(() => {
+afterEach(async () => {
   queryClient.clear();
   act(() => root.unmount());
+  if (vi.isFakeTimers()) act(() => vi.advanceTimersByTime(60));
+  else await act(async () => new Promise(resolve => setTimeout(resolve, 300)));
   container.remove();
   localStorage.removeItem("omnicode.showExcludedFiles");
   vi.clearAllMocks();
@@ -480,110 +481,25 @@ describe("FileTree starts Explorer file drags", () => {
     await refreshDir(cwd);
   });
 
-  it("publishes a pointer-driven file drop without opening the file", async () => {
+  it("uses an overlay for files, cancels without opening, and keeps folders out of file drags", async () => {
+    mockDragOverlayGeometry();
     await act(async () => render());
-    const fileRow = row("first.ts");
-    const folderRow = row("docs");
-    const events: ExplorerFilePointerDragDetail[] = [];
-    const onDrag = (event: Event) => {
-      events.push((event as CustomEvent<ExplorerFilePointerDragDetail>).detail);
-    };
-    window.addEventListener(EXPLORER_FILE_POINTER_DRAG_EVENT, onDrag);
-
-    act(() => {
-      fileRow.dispatchEvent(
-        new PointerEvent("pointerdown", {
-          button: 0,
-          pointerId: 1,
-          clientX: 10,
-          clientY: 10,
-          bubbles: true,
-        }),
-      );
-      window.dispatchEvent(
-        new PointerEvent("pointermove", {
-          pointerId: 1,
-          clientX: 30,
-          clientY: 30,
-        }),
-      );
-    });
-
-    const preview = document.querySelector<HTMLElement>(
-      ".explorer-file-drag-preview",
-    );
-    expect(preview).not.toBeNull();
-    expect(preview?.getAttribute("aria-hidden")).toBe("true");
-    expect(preview?.textContent).toContain("first.ts");
-    expect(preview?.children).toHaveLength(2);
-    expect(preview?.querySelectorAll('[data-icon="first.ts"]')).toHaveLength(1);
-    expect(preview?.style.transform).toBe("translate3d(18px, 17px, 0)");
-
-    act(() => {
-      window.dispatchEvent(
-        new PointerEvent("pointermove", {
-          pointerId: 1,
-          clientX: 36,
-          clientY: 38,
-        }),
-      );
-    });
-    expect(preview?.style.transform).toBe("translate3d(24px, 25px, 0)");
-
-    act(() => {
-      window.dispatchEvent(
-        new PointerEvent("pointerup", {
-          pointerId: 1,
-          clientX: 40,
-          clientY: 40,
-        }),
-      );
-      fileRow.click();
-    });
-
-    expect(document.querySelector(".explorer-file-drag-preview")).toBeNull();
-    expect(events.some((event) => event.type === "move")).toBe(true);
-    expect(events.slice(-2)).toEqual([
-      {
-        type: "drop",
-        path: `${cwd}/first.ts`,
-        x: 40,
-        y: 40,
-      },
-      { type: "end", path: `${cwd}/first.ts` },
-    ]);
+    const fileRow = row("first.ts"), folderRow = row("docs");
+    fileRow.getBoundingClientRect = () => new DOMRect(0, 0, 200, 30);
+    dndPointer(fileRow, "pointerdown", { clientX: 10, clientY: 10 });
+    dndPointer(document, "pointermove", { clientX: 40, clientY: 40 });
+    expect(document.querySelector(".sortable-overlay")?.textContent).toContain("first.ts");
+    act(() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true })));
+    expect(fileRow.hasAttribute("data-explorer-dragging")).toBe(false);
+    act(() => fileRow.click());
     expect(props.onOpenFile).not.toHaveBeenCalled();
-
-    events.length = 0;
-    act(() => {
-      folderRow.dispatchEvent(
-        new PointerEvent("pointerdown", {
-          button: 0,
-          pointerId: 2,
-          clientX: 10,
-          clientY: 10,
-          bubbles: true,
-        }),
-      );
-      window.dispatchEvent(
-        new PointerEvent("pointermove", {
-          pointerId: 2,
-          clientX: 40,
-          clientY: 40,
-        }),
-      );
-      window.dispatchEvent(
-        new PointerEvent("pointerup", {
-          pointerId: 2,
-          clientX: 40,
-          clientY: 40,
-        }),
-      );
-    });
-    expect(events).toEqual([]);
-
-    window.removeEventListener(EXPLORER_FILE_POINTER_DRAG_EVENT, onDrag);
+    await act(async () => new Promise(resolve => setTimeout(resolve, 60)));
+    dndPointer(folderRow, "pointerdown", { clientX: 10, clientY: 10 });
+    dndPointer(document, "pointermove", { clientX: 40, clientY: 40 });
+    dndPointer(document, "pointerup", { clientX: 40, clientY: 40 });
+    expect(document.querySelector(".sortable-overlay")?.textContent ?? "").not.toContain("docs");
   });
+
 });
 
 describe("FileTree keyboard navigation", () => {

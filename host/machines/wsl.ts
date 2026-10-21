@@ -5,10 +5,12 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { MAX_FRAME_BYTES, readLines, WSL_EXEC_PROTOCOL } from "../wsl-exec-protocol.mjs";
 import bootstrapScript from "./wsl-bootstrap.sh?raw";
+import { reportStartupProgress, sharedStartupProgress } from "../startup-progress";
+import { parseStartupProgress } from "../../src/integrations/harness/core/startupProgress";
 
 export interface WslExecutionEvent {
   stream: string;
-  kind: "stdout" | "stderr" | "exit" | "sse" | "sse-error" | "sse-close" | "disconnect" | "tcp-open" | "tcp-data" | "tcp-end" | "tcp-close";
+  kind: "stdout" | "stderr" | "exit" | "sse" | "sse-error" | "sse-close" | "disconnect" | "tcp-open" | "tcp-data" | "tcp-end" | "tcp-close" | "startup";
   data: unknown;
 }
 
@@ -40,20 +42,34 @@ interface Connection {
 }
 
 export async function wslRuntimeDirectory(configured?: string): Promise<string> {
+  const requiredFiles = ["SHA256SUMS", "ARCH", "VERSION", "bin/node", "bin/omnicode-control",
+    "control-cli.mjs", "wsl-exec.mjs", "wsl-exec-protocol.mjs"];
   const candidates = configured ? [configured] : [
     process.env.OMNICODE_WSL_RUNTIME,
     join(dirname(fileURLToPath(import.meta.url)), "wsl"),
     resolve("build/wsl-host"),
   ].filter((path): path is string => Boolean(path));
+  let incomplete = false;
   for (const path of candidates) {
-    try { if ((await stat(join(path, "SHA256SUMS"))).isFile() && (await stat(join(path, "wsl-exec.mjs"))).isFile()) return resolve(path); }
-    catch (error) { if (!["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException).code ?? "")) throw error; }
+    try {
+      if (!(await stat(path)).isDirectory()) continue;
+      incomplete = true;
+      let complete = true;
+      for (const file of requiredFiles) {
+        if (!(await stat(join(path, file))).isFile()) { complete = false; break; }
+      }
+      if (complete) return resolve(path);
+    } catch (error) {
+      if (!["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException).code ?? "")) throw error;
+    }
   }
+  if (incomplete) throw new WslRequestError("The WSL execution runtime is incomplete or outdated. Update or reinstall OmniCode.", false);
   throw new WslRequestError("The WSL execution runtime is missing from this installation.", false);
 }
 
 /** One multiplexed wsl.exe stdio connection per machine, owned by the Windows Host. */
 export class WslConnection {
+  private readonly startupKey = Symbol("wsl-startup");
   private readonly events = new EventEmitter();
   private nextId = 0;
   private connecting?: Promise<Connection>;
@@ -76,14 +92,15 @@ export class WslConnection {
   private async connect(): Promise<Connection> {
     if (this.closed) throw new WslRequestError("WSL execution connection is closed", false);
     if (this.active && !this.active.closed) return this.active;
-    if (this.connecting) return this.connecting;
-    const pending = this.open();
+    if (this.connecting) return sharedStartupProgress(this.startupKey, () => this.connecting!);
+    const pending = sharedStartupProgress(this.startupKey, () => this.open());
     this.connecting = pending;
     try { return await pending; }
     finally { if (this.connecting === pending) this.connecting = undefined; }
   }
 
   private async open(): Promise<Connection> {
+    reportStartupProgress({ stage: "connecting-wsl" });
     const runtime = this.options.launch ? undefined : await wslRuntimeDirectory(this.options.runtimeDirectory);
     if (this.closed) throw new WslRequestError("WSL execution connection is closed", false);
     const child = this.options.launch?.() ?? spawn("wsl.exe", [
@@ -120,6 +137,8 @@ export class WslConnection {
         try { frame = JSON.parse(line); }
         catch { fail(new Error("Invalid WSL execution response")); return; }
         if (!connection.ready) {
+          const progress = parseStartupProgress(frame.startup);
+          if (progress) { reportStartupProgress(progress); return; }
           if (frame.ready !== WSL_EXEC_PROTOCOL || frame.service !== "wsl-exec") { fail(new Error("Unsupported WSL execution protocol")); return; }
           connection.ready = true;
           clearTimeout(timer);

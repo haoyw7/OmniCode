@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SidebarTabId } from "../../features/settings/model/appearance";
 import { SidebarTabs } from "./SidebarTabs";
+import { mockDragOverlayGeometry } from "../../../tests/helpers/dndGeometry";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -94,6 +95,7 @@ function pointer(target: EventTarget, type: string, clientX: number) {
         bubbles: true,
         button: 0,
         pointerId: 1,
+        isPrimary: true,
         clientX,
         clientY: 12,
       }),
@@ -102,6 +104,7 @@ function pointer(target: EventTarget, type: string, clientX: number) {
 }
 
 beforeEach(() => {
+  mockDragOverlayGeometry();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   frames = new Map();
   let nextFrame = 0;
@@ -123,6 +126,7 @@ afterEach(() => {
   document.documentElement.style.removeProperty("--motion-reorder-duration");
   delete document.documentElement.dataset.reducedMotion;
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("sidebar tab selection feedback", () => {
@@ -244,8 +248,9 @@ describe("sidebar tab selection feedback", () => {
     });
 
     pointer(button("Explorer"), "pointerdown", 150);
-    pointer(window, "pointermove", 250);
-    pointer(window, "pointerup", 250);
+    pointer(document, "pointermove", 250);
+    pointer(document, "pointermove", 250);
+    pointer(document, "pointerup", 250);
     await click("Explorer");
 
     expect(onTabChange).not.toHaveBeenCalled();
@@ -254,8 +259,9 @@ describe("sidebar tab selection feedback", () => {
       JSON.parse(localStorage.getItem("omnicode.sidebarTabOrder")!),
     ).toEqual(["sessions", "changes", "files"]);
 
+    await act(async () => new Promise(resolve => setTimeout(resolve, 60)));
     pointer(button("Explorer"), "pointerdown", 250);
-    pointer(window, "pointerup", 250);
+    pointer(document, "pointerup", 250);
     await click("Explorer");
     expect(onTabChange).toHaveBeenCalledExactlyOnceWith("files");
     expect(selectedLabel()).toBe("Explorer");

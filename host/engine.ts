@@ -3,6 +3,8 @@ import { providerBotCapabilities } from "../src/integrations/harness/providers/b
 import { HostResourceGuard, HostResourceWaiter, HostResourceBusyError } from "./bots/resources";
 import { selectComposerConfiguration } from "../src/features/sessions/model/composerConfiguration";
 import { createHash, randomUUID } from "node:crypto";
+import { reportStartupProgress, withStartupProgress } from "./startup-progress";
+import type { StartupProgress } from "../src/integrations/harness/core/startupProgress";
 import { HostOrchestration, type HostOrchestrationOptions } from "./orchestration";
 import type { BotThreadRuntime } from "./bots/thread";
 import { BotManager } from "./bots/manager";
@@ -2191,12 +2193,27 @@ export class HostEngine {
     };
     this.running.set(session.id, active);
     this.live.set(session.id, { value, events: [] });
+    let lastProgressAt = 0;
+    const startup = (progress: StartupProgress) => {
+      const live = this.live.get(session.id);
+      const state = live?.value.session.executionState;
+      if (this.closing || active.cancelled || !live || live.value.runId !== runId || state?.phase !== "starting") return;
+      const now = Date.now();
+      const changed = state.startup?.stage !== progress.stage;
+      if (!changed && now - lastProgressAt < 500 && (progress.total === undefined || progress.completed !== progress.total)) return;
+      if (JSON.stringify(state.startup) === JSON.stringify(progress)) return;
+      lastProgressAt = now;
+      const next = { ...state, since: changed ? now : state.since, startup: progress };
+      live.value = this.save({ ...live.value, session: { ...live.value.session, executionState: next } },
+        { type: "session.executionState", state: next }, false);
+    };
     active.done = Promise.resolve()
-      .then(() => withCheckoutOwner(this.store, resourceOwner, async () => {
+      .then(() => withStartupProgress(startup, () => withCheckoutOwner(this.store, resourceOwner, async () => {
         let error: string | undefined;
         let checkpointTurn: string | undefined;
         try {
           this.executionPhase(session.id, runId!, "starting");
+          if (this.providerStops.get(session.id)?.size) reportStartupProgress({ stage: "stopping-previous" });
           await this.cleanPreviousProviders(session.id);
           // Waiting has no provider side effects and remains cancellable. A restart
           // interrupts this accepted run rather than replaying an uncertain send.
@@ -2239,11 +2256,14 @@ export class HostEngine {
             if (prompt === null) await provider.compact!(input);
             else {
               if (this.checkpointed(session)) {
+                reportStartupProgress({ stage: "preparing-workspace" });
                 // Capture errors are persisted and shown in the review.
                 await this.checkpoints.beginTurn(session.id, sessionExecutionCwd(session), runId!).catch(() => undefined);
                 checkpointTurn = runId!;
               }
+              reportStartupProgress({ stage: "loading-skills" });
               const prepared = await this.skills.prepare(turnPrompt!, { harness: session.harness as RemoteProvider, cwd: sessionExecutionCwd(session), sessionId: session.id }, provider);
+              reportStartupProgress({ stage: "initializing" });
               if (!this.closing && !active.cancelled) await provider.send({
                 ...input,
                 ...(questionReply ? { questionReply } : {}),
@@ -2378,7 +2398,7 @@ export class HostEngine {
           !this.closing
         )
           this.dispatchQueue(session.id);
-      }))
+      })))
       .catch(async (error) => {
         clearTimeout(this.live.get(session.id)?.timer);
         console.error(

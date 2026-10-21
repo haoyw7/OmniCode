@@ -20,6 +20,7 @@ import {
   Fragment,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -34,9 +35,9 @@ import { remoteRequest } from "../../connections/model/connections";
 import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { SearchableProjectPicker } from "../../projects/ui/SearchableProjectPicker";
-import { useDragResize } from "../../../shared/hooks/useDragResize";
-import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup, type PanelImperativeHandle } from "../../../shared/ui/primitives/Resizable";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
+import { useInlineBreakpoints } from "../../../shared/hooks/useInlineBreakpoints";
 import { useTabGroupLogos } from "../../projects/hooks/useTabGroupLogos";
 import { formatRelativeTime } from "../../inbox/model/githubTasks";
 import {
@@ -87,6 +88,7 @@ const DEFAULT_WIDTH = 280;
 const EMPTY_NOTES: Note[] = [];
 
 let rememberedWidth = DEFAULT_WIDTH;
+const NOTES_BREAKPOINTS = [681];
 let rememberedNoteId: string | null = null;
 
 // Keep pending saves ordered across editor unmounts and reopened notes.
@@ -129,15 +131,10 @@ export function NotesView({
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const listLock = useLockOverscroll<HTMLDivElement>();
-  const resize = useDragResize({
-    min: MIN_WIDTH,
-    max: () => Math.min(MAX_WIDTH, Math.round(window.innerWidth * 0.5)),
-    defaultWidth: DEFAULT_WIDTH,
-    initial: rememberedWidth,
-    onCommit: (width) => {
-      rememberedWidth = width;
-    },
-  });
+  const listPanel = useRef<PanelImperativeHandle | null>(null);
+  const [stacked, setStacked] = useState(false);
+  const notesRef = useInlineBreakpoints(NOTES_BREAKPOINTS, "px", true, below => setStacked(below.length > 0));
+  useLayoutEffect(() => { listPanel.current?.resize(stacked ? 200 : rememberedWidth); }, [stacked]);
   const listQuery = useQuery(notesQuery(), queryClient);
   const notes = listQuery.data ?? EMPTY_NOTES;
   const loading = listQuery.isPending;
@@ -249,7 +246,6 @@ export function NotesView({
 
   const list = (
     <div
-      ref={resize.setPaneRef}
       data-notes-list
       className="relative flex h-full min-h-0 shrink-0 flex-col border-r border-stroke"
     >
@@ -355,13 +351,6 @@ export function NotesView({
           </section>
         )}
       </div>
-      <ResizeHandle
-        edge="right"
-        dragging={resize.dragging}
-        aria-label={uiT("Resize notes list")}
-        onPointerDown={resize.onPointerDown}
-        onDoubleClick={resize.onDoubleClick}
-      />
     </div>
   );
 
@@ -370,11 +359,24 @@ export function NotesView({
       role="region"
       aria-label={uiT("Notes")}
       data-app-notes
+      ref={notesRef}
       className="flex min-h-0 min-w-0 flex-1 flex-col text-content"
     >
       <AppPageHeader title={uiT("Notes")} icon={File} onBack={onClose} />
-      <div data-notes-columns className="flex min-h-0 min-w-0 flex-1">
-        {list}
+      <ResizablePanelGroup data-notes-columns className="flex-1" orientation={stacked ? "vertical" : "horizontal"} disabled={stacked} onLayoutChanged={(_, meta) => {
+        if (!stacked && meta.isUserInteraction) queueMicrotask(() => {
+          if (listPanel.current) rememberedWidth = Math.round(listPanel.current.getSize().inPixels);
+        });
+      }}>
+        <ResizablePanel id="notes-list" panelRef={listPanel} defaultSize={stacked ? 200 : rememberedWidth} minSize={stacked ? 0 : MIN_WIDTH}
+          maxSize={stacked ? 200 : () => Math.min(MAX_WIDTH, Math.round(window.innerWidth * 0.5))} groupResizeBehavior="preserve-pixel-size">
+          {list}
+        </ResizablePanel>
+        <ResizableHandle aria-label={uiT("Resize notes list")} className={stacked ? "hidden" : undefined} onDoubleClick={() => {
+          listPanel.current?.resize(DEFAULT_WIDTH);
+          rememberedWidth = DEFAULT_WIDTH;
+        }} />
+        <ResizablePanel id="notes-detail" minSize={0}>
         <div data-notes-detail className="flex min-h-0 min-w-0 flex-1 flex-col pl-4">
           {selectedTopic ? (
             <BotTopicNote key={selectedTopic.key} note={selectedTopic} active={active} />
@@ -387,7 +389,8 @@ export function NotesView({
             onAddToChat={onAddToChat}
           />}
         </div>
-      </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }

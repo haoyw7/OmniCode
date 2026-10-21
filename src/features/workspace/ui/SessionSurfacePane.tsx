@@ -1,3 +1,5 @@
+import { DragHandleContext, useActiveDragPayload, useDraggableItem, type DragPayload } from "../../../shared/ui/primitives/Sortable";
+import { PaneDropTargets } from "./PaneDrag";
 import { cn } from "../../../shared/lib/cn";
 import { motion } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
@@ -17,8 +19,9 @@ export function SessionSurfacePane({
   visible,
   expanded,
   grid,
-  dragging,
-  floating = false,
+  dragPayload,
+  dragLabel = "",
+  dragEnabled = false,
   style,
   onScroll,
   children,
@@ -29,8 +32,9 @@ export function SessionSurfacePane({
   visible: boolean;
   expanded: boolean;
   grid: boolean;
-  dragging: boolean;
-  floating?: boolean;
+  dragPayload?: DragPayload;
+  dragLabel?: string;
+  dragEnabled?: boolean;
   style: CSSProperties;
   onScroll: UIEventHandler<HTMLDivElement>;
   children: ReactNode;
@@ -39,25 +43,29 @@ export function SessionSurfacePane({
   const { foldState, finish } = useCollapseMotion(expanded);
   const reduced = useMotionPreference();
   const interactive = parentVisible && visible && expanded;
+  const active = useActiveDragPayload();
+  const dragging = active?.type === "workspace-pane" && active.paneId === id;
+  const drag = useDraggableItem({ payload: dragPayload ?? { type: "workspace-pane", paneId: id }, renderOverlay: () => dragLabel, disabled: !interactive || !dragEnabled });
   return (
     <motion.div
+      ref={drag.ref}
       initial={false}
-      animate={{ opacity: expanded ? dragging && !floating ? 0.4 : 1 : 0 }}
+      animate={{ opacity: expanded ? dragging || drag.dragging ? 0.4 : 1 : 0 }}
       transition={reduced ? immediateTransition : panelTransition}
       onAnimationComplete={finish}
       data-pane-id={id}
       data-pane-chat={chat ? "" : undefined}
-      data-pane-floating={floating ? "" : undefined}
       data-pane-chat-edge={chatEdge}
       data-fold-state={grid ? foldState : undefined}
       aria-hidden={!interactive}
-      inert={!interactive || floating || undefined}
-      className={cn(grid ? "relative" : "absolute", "flex min-h-0 min-w-0 flex-col overflow-hidden", !expanded && foldState === "closed" ? "invisible" : "", dragging && !floating ? "opacity-40" : "")}
+      inert={!interactive || undefined}
+      className={cn(grid ? "relative" : "absolute", "flex min-h-0 min-w-0 flex-col overflow-hidden", !expanded && foldState === "closed" ? "invisible" : "", dragging || drag.dragging ? "opacity-40" : "")}
       style={style}
       onScroll={onScroll}
     >
       <SurfaceVisibilityContext.Provider value={interactive}>
-        {children}
+        <DragHandleContext.Provider value={dragEnabled ? drag.handleProps : undefined}>{children}</DragHandleContext.Provider>
+        <PaneDropTargets id={id} enabled={interactive} />
       </SurfaceVisibilityContext.Provider>
     </motion.div>
   );

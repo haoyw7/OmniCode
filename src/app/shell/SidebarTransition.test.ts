@@ -1,11 +1,11 @@
 // @vitest-environment happy-dom
-import { act, createElement, useEffect } from "react";
+import { act, createElement, useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { startMotionClock, stopMotionClock, finishMotion } from "../../../tests/helpers/sharedMotionClock";
 import { SidebarTransition } from "./SidebarTransition";
 import { useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";
-import { useDragResize } from "../../shared/hooks/useDragResize";
+import { isPaneResizing, onPaneResizeSettled } from "../../shared/lib/paneResize";
 
 let root: Root;
 let container: HTMLDivElement;
@@ -28,11 +28,11 @@ afterEach(() => {
 it("starts closed at zero width and reopens at the current saved width", async () => {
   const committed = vi.fn();
   function Harness({ open, savedWidth }: { open: boolean; savedWidth: number }) {
-    const resize = useDragResize({ cssProperty: "--sidebar-resize-width", min: 260, max: () => 560, initial: savedWidth,
-      value: savedWidth, defaultWidth: 288, onCommit: committed });
-    return createElement(SidebarTransition, { open, width: resize.width,
-      dragging: resize.dragging, setPaneRef: resize.setPaneRef, finishDrag: resize.finishDrag,
-      resizeHandle: createElement("button", { onDoubleClick: resize.onDoubleClick }, "Reset width"),
+    const [width, setWidth] = useState(savedWidth);
+    useEffect(() => setWidth(savedWidth), [savedWidth]);
+    return createElement(SidebarTransition, { open, width,
+      dragging: false, setPaneRef: () => {},
+      resizeHandle: createElement("button", { onDoubleClick: () => { setWidth(288); committed(288); } }, "Reset width"),
       children: createElement("input", { defaultValue: "Retained draft" }) });
   }
   const render = (open: boolean, savedWidth: number) => act(() => root.render(createElement(Harness, { open, savedWidth })));
@@ -55,6 +55,35 @@ it("starts closed at zero width and reopens at the current saved width", async (
   await act(async () => { await finishMotion(); });
   expect(width()).toBe("288px");
   expect(committed).toHaveBeenLastCalledWith(288);
+});
+
+it("defers workspace fitting throughout folding and rapid reversal, and releases it on unmount", async () => {
+  const settled = vi.fn();
+  const unsubscribe = onPaneResizeSettled(settled);
+  const render = (open: boolean) => act(() => root.render(createElement(SidebarTransition, {
+    open, width: 320, dragging: false, setPaneRef: () => {}, children: "Sidebar",
+  })));
+  try {
+    render(false);
+    expect(isPaneResizing()).toBe(false);
+    render(true);
+    expect(isPaneResizing()).toBe(true);
+    render(false);
+    render(true);
+    expect(isPaneResizing()).toBe(true);
+    expect(settled).not.toHaveBeenCalled();
+    await act(async () => { await finishMotion(); });
+    expect(isPaneResizing()).toBe(false);
+    expect(settled).toHaveBeenCalledOnce();
+    render(false);
+    expect(isPaneResizing()).toBe(true);
+    act(() => root.unmount());
+    root = createRoot(container);
+    expect(isPaneResizing()).toBe(false);
+    expect(settled).toHaveBeenCalledTimes(2);
+  } finally {
+    unsubscribe();
+  }
 });
 
 describe("retained sidebar content", () => {

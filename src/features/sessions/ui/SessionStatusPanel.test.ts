@@ -18,6 +18,12 @@ vi.mock("../../connections/model/connections", () => ({
   useRemoteMachines: vi.fn(),
 }));
 
+// happy-dom exposes selectorText as read-only. Drag-preview CSS is outside these status-card tests.
+vi.mock("../../../shared/ui/primitives/dragPreviewStyles", async (importOriginal) => ({
+  ...await importOriginal<typeof import("../../../shared/ui/primitives/dragPreviewStyles")>(),
+  observeDragPreviewStyles: () => () => {},
+}));
+
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
   convertFileSrc: (path: string) => path,
@@ -88,7 +94,7 @@ const emit = (width: number) => act(() => resize!([
 ], {} as ResizeObserver));
 
 function render(blocks: Block[] = [tasks, agent], busy = true, width = 1600,
-  context: ContextUsage = { used: 46_000, window: 200_000 }) {
+  context: ContextUsage = { used: 46_000, window: 200_000 }, cwd = "D:/A-Projects/omnicode") {
   vi.stubGlobal("ResizeObserver", class {
     constructor(private callback: ResizeObserverCallback) {}
     observe(target: Element) { if (target === host) resize = this.callback; }
@@ -107,7 +113,7 @@ function render(blocks: Block[] = [tasks, agent], busy = true, width = 1600,
   };
   const scope = createRef<HTMLDivElement>();
   scope.current = host;
-  const update = (nextBlocks = blocks) => act(() => {
+  const update = (nextBlocks = blocks, nextCwd = cwd) => act(() => {
     root.render(
       createElement(
         SessionHeaderActionsContext.Provider,
@@ -116,7 +122,7 @@ function render(blocks: Block[] = [tasks, agent], busy = true, width = 1600,
           blocks: nextBlocks,
           busy,
           git: { additions: 3, deletions: 1, files: 2, branch: "master" },
-          cwd: "D:/A-Projects/omnicode",
+          cwd: nextCwd,
           branch: "master",
           context,
           scope,
@@ -138,6 +144,22 @@ const cardToggle = (title: string) =>
 const card = () => host.querySelector<HTMLElement>("[data-subagent-card]");
 
 describe("session status rail", () => {
+  it("shows the project's WSL distribution before Host metadata loads and after switching distributions", () => {
+    configureSharedHost("local-environment", [], "local-machine");
+    const { update } = render([], false, 1600, undefined, "wsl://Ubuntu-26.04/home/dev/repo");
+    const environment = host.querySelector('[data-status-card="environment"]')!;
+    expect(environment.textContent).toContain("WSL · Ubuntu-26.04");
+    vi.mocked(useRemoteMachines).mockReturnValue({ loaded: true, machines: [
+      { id: "local-machine", environmentId: "local-environment", name: "DESKTOP-PC", endpoint: "http://127.0.0.1:3774" },
+    ] });
+    update();
+    expect(environment.textContent).toContain("WSL · Ubuntu-26.04");
+    expect(environment.textContent).not.toContain("DESKTOP-PC");
+    update([], "wsl://Debian/home/dev/repo");
+    expect(environment.textContent).toContain("WSL · Debian");
+    expect(environment.textContent).not.toContain("Ubuntu-26.04");
+    expect(environment.querySelector('[title="WSL · Debian"]')).not.toBeNull();
+  });
   it("opens background task history, expands multiple outputs and clears only finished panel rows", () => {
     const blocks: Block[] = [
       { id: "done", role: "tool", text: "Build Windows installer", tool: { kind: "execute", status: "completed", background: true,

@@ -6,9 +6,9 @@ import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { createGzip } from "node:zlib";
 import type { ProviderRuntimeArtifact } from "./provider-runtime";
+import { reportStartupProgress, sharedStartupProgress } from "./startup-progress";
 
 export interface ProviderTransferArchive { path: string; sha256: string; size: number }
-const pending = new Map<string, Promise<ProviderTransferArchive>>();
 
 function header(path: string, size: number, mode: number, type = "0"): Buffer {
   const value = Buffer.alloc(512);
@@ -21,6 +21,9 @@ function header(path: string, size: number, mode: number, type = "0"): Buffer {
 }
 
 async function* tarFiles(artifact: ProviderRuntimeArtifact): AsyncGenerator<Buffer> {
+  const total = artifact.files.reduce((sum, file) => sum + file.size, 0);
+  let completed = 0;
+  reportStartupProgress({ stage: "packing", completed, total: total || undefined, unit: "bytes" });
   for (const file of artifact.files) {
     if (!file.path || file.path.includes("\\") || file.path.split("/").some((part) => !part || part === "." || part === ".." || /[\x00-\x1f:]/.test(part)))
       throw new Error("Invalid provider transfer path");
@@ -40,6 +43,8 @@ async function* tarFiles(artifact: ProviderRuntimeArtifact): AsyncGenerator<Buff
     let size = 0;
     for await (const chunk of createReadStream(source)) {
       size += chunk.length; hash.update(chunk); yield chunk;
+      completed += chunk.length;
+      reportStartupProgress({ stage: "packing", completed, total: total || undefined, unit: "bytes" });
     }
     if (size !== file.size || hash.digest("hex") !== file.sha256) throw new Error("Provider source changed while archiving");
     if (size % 512) yield Buffer.alloc(512 - size % 512);
@@ -51,9 +56,7 @@ async function* tarFiles(artifact: ProviderRuntimeArtifact): AsyncGenerator<Buff
 export function ensureProviderTransferArchive(artifact: ProviderRuntimeArtifact): Promise<ProviderTransferArchive> {
   const root = join(dirname(dirname(dirname(artifact.directory))), ".transfers");
   const path = join(root, `${artifact.provider}-${artifact.platform}-${basename(artifact.directory)}.tgz`);
-  const existing = pending.get(path);
-  if (existing) return existing;
-  const operation = (async () => {
+  return sharedStartupProgress(`archive:${path}`, async () => {
     const identity = createHash("sha256").update(JSON.stringify(artifact.files)).digest("hex");
     try {
       const cached = JSON.parse(await readFile(path + ".json", "utf8"));
@@ -73,8 +76,5 @@ export function ensureProviderTransferArchive(artifact: ProviderRuntimeArtifact)
       await rename(staging + ".json", path + ".json");
       return result;
     } finally { await rm(staging, { force: true }); await rm(staging + ".json", { force: true }); }
-  })();
-  pending.set(path, operation);
-  void operation.finally(() => pending.delete(path)).catch(() => {});
-  return operation;
+  });
 }

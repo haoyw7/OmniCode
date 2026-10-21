@@ -124,6 +124,30 @@ const draft: Session = {
   worktreeBase: "main",
 };
 
+it("retains an unchanged transcript through pane updates while routing actions to the latest handlers", async () => {
+  const pool = new TranscriptPool();
+  const session: Session = { ...draft, id: "stable-transcript", blocks: [
+    { id: "prompt", role: "user", text: "Keep this conversation" },
+    { id: "reply", role: "assistant", text: "Saved reply" },
+  ] };
+  const previousOpen = vi.fn();
+  const currentOpen = vi.fn();
+  await render(session, { transcriptPool: pool, onOpenDiff: previousOpen });
+  const snapshot = pool.getSnapshot();
+  expect(snapshot).toHaveLength(1);
+  await render(session, { transcriptPool: pool, focused: false, onOpenDiff: currentOpen });
+  expect(pool.getSnapshot()).toBe(snapshot);
+  const actions = snapshot[0].element.props as { onOpenDiff: SessionPaneProps["onOpenDiff"] };
+  actions.onOpenDiff("/repo/a.ts");
+  expect(currentOpen).toHaveBeenCalledExactlyOnceWith("/repo/a.ts");
+  expect(previousOpen).not.toHaveBeenCalled();
+  await render({ ...session, blocks: [...session.blocks,
+    { id: "next", role: "assistant", text: "New reply" },
+  ] }, { transcriptPool: pool, onOpenDiff: currentOpen });
+  expect(pool.getSnapshot()).not.toBe(snapshot);
+  expect(container.textContent).toContain("New reply");
+});
+
 it("replaces an occupied composer's controls, retries access, forks the visible snapshot and restores its draft", async () => {
   const session = { ...draft, id: "occupied-session", blocks: [
     { id: "u", role: "user" as const, text: "Saved history" },

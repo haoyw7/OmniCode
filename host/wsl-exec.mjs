@@ -231,6 +231,14 @@ export async function createWslExecServer({ socket, runDirectory }) {
       const maximum = params.maxBuffer ?? MAX_OUTPUT_BYTES;
       let size = 0, failure;
       const { record } = await launch(params, false, (record) => {
+        // Progress is an opt-in side channel; ordinary exec stdout stays intact.
+        if (typeof params.progressStream === "string") {
+          readLines(record.child.stderr, line => {
+            if (!line.startsWith("OMNICODE_STARTUP ")) return;
+            try { event(params.progressStream, "startup", JSON.parse(line.slice(17))); }
+            catch { /* Keep malformed diagnostics in the normal exec response. */ }
+          }, () => {}, MAX_DIAGNOSTIC_BYTES);
+        }
         // Subscribe before /proc registration yields: short-lived commands can
         // finish and drain their pipes while their ownership file is written.
         for (const kind of ["stdout", "stderr"])

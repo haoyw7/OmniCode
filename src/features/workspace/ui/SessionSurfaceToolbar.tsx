@@ -4,7 +4,6 @@ import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
   useState,
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
 import {
@@ -110,7 +109,6 @@ export function SessionSurfaceToolbar({
   onReorderFiles,
   windowControls,
   reserveWindowNavigationSpace = false,
-  onPaneDragStart,
   onClosePane,
   paneFocused,
   tools = true,
@@ -129,7 +127,6 @@ export function SessionSurfaceToolbar({
   onReorderFiles: (paneId: string, ids: string[]) => void;
   windowControls?: ReactNode;
   reserveWindowNavigationSpace?: boolean;
-  onPaneDragStart?: (event: ReactPointerEvent<HTMLElement>) => void;
   onClosePane?: () => void;
   paneFocused?: boolean;
   /** False when the window's top bar carries this chat's tool toggles. */
@@ -167,7 +164,6 @@ export function SessionSurfaceToolbar({
         dirtyFileIds={dirtyFileIds}
         fileErrorCounts={fileErrorCounts}
         label={t("Session tabs")}
-        onPaneDragStart={onPaneDragStart}
         leading={
           <>
             {reserveWindowNavigationSpace ? <WindowNavigationSpace /> : null}

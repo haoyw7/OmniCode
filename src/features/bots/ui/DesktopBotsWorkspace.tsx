@@ -36,8 +36,7 @@ import { botErrorMessage } from "../model/botErrors";
 
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import { useDragResize } from "../../../shared/hooks/useDragResize";
-import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
+import { ResizableRegion } from "../../../shared/ui/primitives/Resizable";
 import { AnimatedCollapse, useCollapseMotion } from "../../../shared/ui/AnimatedCollapse";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { Modal } from "../../../shared/ui/Modal";
@@ -356,8 +355,7 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
   const search = expanded ? query.trim().toLocaleLowerCase() : "";
   const clearSearch = () => { setQuery(""); searchRef.current?.focus(); };
   const visible = useSurfaceVisibility();
-  const resize = useDragResize({ cssProperty: "--bots-sidebar-preference", min: 240, max: () => 400, defaultWidth: 280, initial: navigationWidth, value: navigationWidth, onCommit: onNavigationWidth });
-  useEffect(() => { if (!visible || !expanded) resize.finishDrag(); }, [visible, expanded, resize.finishDrag]);
+  const resizePane = useRef<HTMLElement | null>(null);
   const [menu, setMenu] = useState<{ botId: string; x: number; y: number; open: boolean }>();
   useEffect(() => { if (!visible) setMenu(current => current && { ...current, open: false }); }, [visible]);
   const menuBot = snapshot?.bots.find(bot => bot.id === menu?.botId && !bot.archivedAt);
@@ -406,8 +404,8 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
           </div>
         </div>;
   };
-  const setNavigationRef = useCallback((node: HTMLElement | null) => resize.setPaneRef(node?.parentElement ?? null), [resize.setPaneRef]);
-  return <nav ref={setNavigationRef} className="desktop-bots-navigation" data-resizing={resize.dragging || undefined} aria-label={t("Bots")}>
+  const setNavigationRef = useCallback((node: HTMLElement | null) => { resizePane.current = node?.parentElement ?? null; }, []);
+  return <nav ref={setNavigationRef} className="desktop-bots-navigation" aria-label={t("Bots")}>
     <header className="desktop-bots-navigation-header">
       <div className="desktop-bots-navigation-title"><h2>{t("Bots")}</h2><span className="desktop-bots-host-name" title={hostName}>{hostName}</span></div>
       <BotNavigationToggle />
@@ -446,14 +444,8 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
       {roomsSupported && <Button variant="ghost" size="content" type="button" aria-label={t("Manage rooms")} title={t("Manage rooms")} onClick={() => onManage("rooms")}><MessageSquare size={16} /><span>{t("Rooms")}</span></Button>}
     </div>}
     <Button variant="ghost" size="content" type="button" className="desktop-bots-archive-entry" onClick={onArchive} aria-label={t("Archived bots and threads")} title={t("Archived bots and threads")} aria-current={archiveOpen ? "page" : undefined}><Archive size={16} /><span>{t("Archived bots and threads")}</span></Button>
-    <ResizeHandle edge="right" dragging={resize.dragging} aria-label={t("Resize sidebar")} tabIndex={0}
-      aria-valuemin={240} aria-valuemax={400} aria-valuenow={navigationWidth}
-      onPointerDown={resize.onPointerDown} onDoubleClick={resize.onDoubleClick}
-      onKeyDown={event => {
-        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-        event.preventDefault();
-        onNavigationWidth(event.key === "Home" ? 240 : event.key === "End" ? 400 : Math.max(240, Math.min(400, navigationWidth + (event.key === "ArrowRight" ? 10 : -10))));
-      }} />
+    <ResizableRegion targetRef={resizePane} property="--bots-sidebar-preference" size={navigationWidth} min={240} max={400} defaultSize={280}
+      disabled={!visible || !expanded} label={t("Resize sidebar")} onCommit={onNavigationWidth} />
     <ExplorerMenu ownerId="bots-navigation" open={!!menu?.open && !!menuBot && visible} x={menu?.x ?? 0} y={menu?.y ?? 0} ariaLabel={t("Bot actions")}
       items={[{ kind: "item", id: "pin", label: t(menuBot && pins.includes(menuBot.id) ? "Unpin Bot" : "Pin Bot"), icon: <Pin size={14} /> }]}
       onPick={() => { if (menuBot) onTogglePin(menuBot.id); setMenu(current => current && { ...current, open: false }); }} onClose={() => setMenu(current => current && { ...current, open: false })} />

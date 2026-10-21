@@ -1,8 +1,12 @@
 import { retainProviderRuntime, type ProviderRuntimeArtifact } from "./provider-runtime";
 import { ensureProviderTransferArchive } from "./provider-runtime-transfer";
+import { randomUUID } from "node:crypto";
+import { parseStartupProgress } from "../src/integrations/harness/core/startupProgress";
+import { reportStartupProgress, startupProgressReporter } from "./startup-progress";
 
 export interface ProviderRuntimeRpc {
   request<T = unknown>(op: string, params?: Record<string, unknown>): Promise<T>;
+  onEvent?(listener: (event: { stream: string; kind: string; data: unknown }) => void): () => void;
 }
 
 export interface WslProviderRuntime {
@@ -18,14 +22,31 @@ const retainedByConnection = new WeakMap<ProviderRuntimeRpc, Set<string>>();
 // involved. Large files are copied once from the Windows cache, never as RPC frames.
 const installScript = String.raw`
 import { createHash, randomUUID } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
-import { createReadStream } from 'node:fs';
-import { chmod, copyFile, lstat, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { execFileSync, spawn } from 'node:child_process';
+import { createReadStream, createWriteStream } from 'node:fs';
+import { Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { chmod, lstat, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 let input = '';
 for await (const chunk of process.stdin) input += chunk;
 const artifact = JSON.parse(input);
+let lastAt = 0, lastStage;
+const progress = (stage, completed, total, unit = 'bytes') => {
+  const now = Date.now();
+  if (stage === lastStage && now - lastAt < 250 && completed !== total) return;
+  lastAt = now; lastStage = stage;
+  process.stderr.write('OMNICODE_STARTUP ' + JSON.stringify({ stage, completed, total: total || undefined, unit }) + '\n');
+};
+const copy = async (from, to, total, offset = 0) => {
+  let completed = offset;
+  progress('copying', completed, total);
+  await pipeline(createReadStream(from), new Transform({ transform(chunk, encoding, done) {
+    completed += chunk.length; progress('copying', completed, total); done(null, chunk);
+  } }), createWriteStream(to, { flags: 'wx', mode: 0o600 }));
+  return completed;
+};
 if (!['claude', 'codex', 'pi', 'opencode'].includes(artifact.provider) || !/^linux-(x64|arm64)$/.test(artifact.platform) ||
     !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?-[a-f0-9]{16}$/.test(artifact.name)) throw new Error('Invalid provider artifact');
 const source = process.platform === 'win32' ? artifact.directory : execFileSync('wslpath', ['-u', artifact.directory], { encoding: 'utf8' }).trim();
@@ -59,28 +80,52 @@ if (!await valid()) {
       const archive = join(staging, '.transfer.tgz');
       const info = await lstat(archiveSource);
       if (!info.isFile() || info.isSymbolicLink() || info.size !== artifact.archive.size) throw new Error('Provider archive changed during transfer');
-      await copyFile(archiveSource, archive);
+      await copy(archiveSource, archive, info.size);
       const hash = createHash('sha256');
-      for await (const chunk of createReadStream(archive)) hash.update(chunk);
+      let hashed = 0;
+      progress('verifying', 0, info.size);
+      for await (const chunk of createReadStream(archive)) {
+        hash.update(chunk); hashed += chunk.length; progress('verifying', hashed, info.size);
+      }
       if (hash.digest('hex') !== artifact.archive.sha256) throw new Error('Provider archive checksum mismatch');
-      // This archive was generated from the verified manifest with no links or special entries.
-      execFileSync('tar', ['-xzf', archive, '--strip-components=1', '--no-same-owner', '-C', staging], { stdio: 'pipe' });
+      // Count compressed input consumed by tar; extraction still must exit successfully.
+      progress('installing', 0, info.size);
+      const tar = spawn('tar', ['-xzf', '-', '--strip-components=1', '--no-same-owner', '-C', staging], { stdio: ['pipe', 'ignore', 'pipe'], windowsHide: true });
+      let diagnostic = '';
+      tar.stderr.on('data', chunk => { diagnostic = (diagnostic + chunk).slice(-8192); });
+      const exited = new Promise((done, reject) => {
+        tar.once('error', reject);
+        tar.once('close', code => code === 0 ? done() : reject(new Error('Provider extraction failed: ' + diagnostic)));
+      });
+      let consumed = 0;
+      try {
+        await Promise.all([exited, pipeline(createReadStream(archive), new Transform({ transform(chunk, encoding, done) {
+          consumed += chunk.length; progress('installing', consumed, info.size); done(null, chunk);
+        } }), tar.stdin)]);
+      } catch (error) { tar.kill(); throw error; }
       await rm(archive);
     }
-    for (const file of artifact.files) {
-      const from = safe(source, file.path), to = safe(staging, file.path);
-      if (!artifact.archive) {
+    const copyTotal = artifact.files.reduce((sum, file) => sum + file.size, 0);
+    let copied = 0, verified = 0;
+    if (!artifact.archive) {
+      for (const file of artifact.files) {
+        const from = safe(source, file.path), to = safe(staging, file.path);
         const info = await lstat(from);
         if (!info.isFile() || info.isSymbolicLink() || info.size !== file.size) throw new Error('Provider source changed during transfer');
         await mkdir(dirname(to), { recursive: true, mode: 0o700 });
-        await copyFile(from, to);
+        copied = await copy(from, to, copyTotal, copied);
       }
+    }
+    progress('verifying', 0, artifact.files.length, 'files');
+    for (const file of artifact.files) {
+      const to = safe(staging, file.path);
       const info = await lstat(to);
       if (!info.isFile() || info.isSymbolicLink() || info.size !== file.size) throw new Error('Provider transfer file mismatch');
       const hash = createHash('sha256');
       for await (const chunk of createReadStream(to)) hash.update(chunk);
       if (hash.digest('hex') !== file.sha256) throw new Error('Provider transfer checksum mismatch');
       await chmod(to, file.executable ? 0o755 : 0o644);
+      progress('verifying', ++verified, artifact.files.length, 'files');
     }
     if (!(await lstat(safe(staging, artifact.entrypoint))).isFile()) throw new Error('Missing provider executable');
     await writeFile(join(staging, marker), identity, { flag: 'wx', mode: 0o600 });
@@ -125,16 +170,30 @@ export async function ensureWslProviderRuntime(rpc: ProviderRuntimeRpc, artifact
   let retained = retainedByConnection.get(rpc);
   if (!retained) { retained = new Set(); retainedByConnection.set(rpc, retained); }
   retained.add(`${artifact.provider}/${name}`);
-  const result = await rpc.request<{ code: number | null; stdout: string; stderr: string }>("exec", {
-    command: info.node,
-    args: ["--input-type=module", "-e", installScript],
-    stdin: JSON.stringify({ ...artifact, archive, name, keep: [...retained].filter((path) => path.startsWith(`${artifact.provider}/`)).map((path) => path.slice(artifact.provider.length + 1)) }),
-    timeout: 300_000,
-    maxBuffer: 1024 * 1024,
+  const stream = `startup:${randomUUID()}`;
+  const report = startupProgressReporter();
+  const stop = rpc.onEvent?.(event => {
+    if (event.stream !== stream || event.kind !== "startup") return;
+    const progress = parseStartupProgress(event.data);
+    if (progress) report?.(progress);
   });
-  if (result.code !== 0) throw new Error(`WSL provider transfer failed: ${result.stderr.trim() || "execution stopped"}`);
-  const value = JSON.parse(result.stdout) as WslProviderRuntime;
-  if (value.version !== artifact.version || value.platform !== artifact.platform || typeof value.command !== "string" || typeof value.directory !== "string")
-    throw new Error("Invalid WSL provider transfer result");
-  return artifact.kind === "javascript" ? { ...value, command: info.node, args: [value.command] } : value;
+  reportStartupProgress({ stage: "checking-provider" });
+  try {
+    const result = await rpc.request<{ code: number | null; stdout: string; stderr: string }>("exec", {
+      command: info.node,
+      args: ["--input-type=module", "-e", installScript],
+      stdin: JSON.stringify({ ...artifact, archive, name, keep: [...retained].filter((path) => path.startsWith(`${artifact.provider}/`)).map((path) => path.slice(artifact.provider.length + 1)) }),
+      timeout: 300_000,
+      maxBuffer: 1024 * 1024,
+      progressStream: stream,
+    });
+    if (result.code !== 0) {
+      const diagnostic = result.stderr.split("\n").filter(line => !line.startsWith("OMNICODE_STARTUP ")).join("\n").trim();
+      throw new Error(`WSL provider transfer failed: ${diagnostic || "execution stopped"}`);
+    }
+    const value = JSON.parse(result.stdout) as WslProviderRuntime;
+    if (value.version !== artifact.version || value.platform !== artifact.platform || typeof value.command !== "string" || typeof value.directory !== "string")
+      throw new Error("Invalid WSL provider transfer result");
+    return artifact.kind === "javascript" ? { ...value, command: info.node, args: [value.command] } : value;
+  } finally { stop?.(); }
 }

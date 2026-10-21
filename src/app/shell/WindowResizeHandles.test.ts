@@ -429,12 +429,12 @@ describe("native window resize handles", () => {
 
   it("lets internal panel resize endpoints retain their own drag gesture at the window edge", async () => {
     await render();
-    for (const attribute of ["class", "data-resize-edge", "role"]) {
+    for (const attribute of ["data-ui", "data-resize-edge", "role"]) {
       const sash = document.createElement("div");
       sash.setAttribute(
         attribute,
-        attribute === "class"
-          ? "resize-handle"
+        attribute === "data-ui"
+          ? "resizable-handle"
           : attribute === "role"
             ? "separator"
             : "right",

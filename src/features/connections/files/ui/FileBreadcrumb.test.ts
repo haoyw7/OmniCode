@@ -26,8 +26,8 @@ const openFile = vi.fn();
 const entry = (path: string, isDir = false): FsEntry => ({ path, name: path.split("/").at(-1)!, isDir, ignored: false });
 const trigger = (name: string) => Array.from(container.querySelectorAll("button")).find(button => button.textContent === name)!;
 const option = (name: string) => Array.from(document.querySelectorAll<HTMLButtonElement>('[role="treeitem"]')).find(button => button.textContent === name)!;
-async function render(path = "/repo/src/a.ts") {
-  await act(async () => root.render(createElement(FileBreadcrumb, { path, cwd: "/repo", onOpenFile: openFile })));
+async function render(path = "/repo/src/a.ts", cwd = "/repo") {
+  await act(async () => root.render(createElement(FileBreadcrumb, { path, cwd, onOpenFile: openFile })));
 }
 beforeEach(() => {
   queryClient.clear();
@@ -104,4 +104,20 @@ it("starts at the project directory and opens that project as the tree root", as
   expect(listDir).not.toHaveBeenCalledWith("/");
   expect(option("repo").getAttribute("aria-level")).toBe("1");
   expect(option("src").getAttribute("aria-level")).toBe("2");
+});
+
+it("lists the WSL project and opens siblings without joining the absolute path onto the project", async () => {
+  const cwd = "wsl://Ubuntu-26.04/home/wy/L-Projects/rag-knowledge-base";
+  const path = `${cwd}/docker-compose.prod.yml`;
+  const sibling = `${cwd}/docker-compose.yml`;
+  vi.mocked(listDir).mockResolvedValue([entry(path), entry(sibling)]);
+  await render(path, cwd);
+  expect(Array.from(container.querySelectorAll('nav button')).map(button => button.textContent)).toEqual(["rag-knowledge-base", "docker-compose.prod.yml"]);
+  await act(async () => trigger("rag-knowledge-base").click());
+  expect(listDir).toHaveBeenLastCalledWith(cwd);
+  expect(option("docker-compose.prod.yml")).toBeDefined();
+  await act(async () => option("docker-compose.yml").click());
+  expect(openFile).toHaveBeenCalledWith(sibling);
+  await act(async () => trigger("docker-compose.prod.yml").click());
+  expect(listDir).toHaveBeenLastCalledWith(cwd);
 });

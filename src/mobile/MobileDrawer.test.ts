@@ -512,7 +512,7 @@ describe("mobile sidebar recents", async () => {
   ];
   const project = projects[2];
   const ids = (area = ".mobile-drawer-sessions") =>
-    [...node.querySelectorAll(`${area} .mobile-session-row`)].map((item) =>
+    [...node.querySelectorAll(`${area} .mobile-session-row:not([inert]):not([inert] *)`)].map((item) =>
       item.getAttribute("data-session-id"),
     );
   const pinnedIds = () => ids('[aria-label="Pinned"]');

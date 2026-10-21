@@ -54,3 +54,30 @@ it("bounds polling when a provider never finishes", async () => {
   await result;
   expect(vi.getTimerCount()).toBe(0);
 });
+
+it("keeps cached pending providers until replacement while dropping removed providers", async () => {
+  vi.useFakeTimers();
+  const updatedPi = { ...pi, id: "pi:new", name: "New" };
+  const previous: HostModelCatalog = {
+    models: { codex: [codex], pi: [pi], claude: [{ id: "claude:old", harness: "claude", name: "Removed" }] },
+    errors: { codex: "Old failure" },
+  };
+  const publish = vi.fn();
+  const load = new ModelCatalogLoad(vi.fn()
+    .mockResolvedValueOnce({ models: { codex: [codex] }, errors: {}, pending: ["pi"] })
+    .mockResolvedValueOnce({ models: { pi: [updatedPi] }, errors: {}, pending: [] }), publish, previous);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(publish).toHaveBeenLastCalledWith({ models: { codex: [codex], pi: [pi] }, errors: {}, pending: ["pi"] });
+  await vi.advanceTimersByTimeAsync(500);
+  expect(await load.promise).toEqual({ models: { codex: [codex], pi: [updatedPi] }, errors: {}, pending: [] });
+});
+
+it("retains failed providers but accepts explicit empty lists and subsequent recovery", async () => {
+  const previous: HostModelCatalog = { models: { codex: [codex], pi: [pi] }, errors: {} };
+  const failed = await new ModelCatalogLoad(vi.fn().mockResolvedValue({
+    models: { codex: [] }, errors: { pi: "Login required" }, pending: [],
+  }), undefined, previous).promise;
+  expect(failed).toEqual({ models: { codex: [], pi: [pi] }, errors: { pi: "Login required" }, pending: [] });
+  const recovered = { models: { pi: [pi] }, errors: {} };
+  expect(await new ModelCatalogLoad(vi.fn().mockResolvedValue(recovered), undefined, failed).promise).toEqual(recovered);
+});

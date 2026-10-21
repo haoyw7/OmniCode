@@ -33,7 +33,7 @@ test("workspace panes stop at pixel minima and remain readable in a narrow windo
   await expect.poll(() => resizing(page)).toBe(false);
   const chat = page.locator('[data-pane-id="tools-session"]');
   const tool = page.locator('[data-pane-id="tools-editor"]');
-  const handle = page.locator('[data-pane-sash="tools-split:0"] > .resize-handle');
+  const handle = page.locator('[data-pane-sash="tools-split:0"]');
   const box = (await handle.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + 100);
   await page.mouse.down();
@@ -89,6 +89,40 @@ async function painted(page: Page) {
   }));
 }
 
+test("file-tree separator follows the constrained width after its workspace pane shrinks", async ({ page }) => {
+  await openTools(page);
+  const tree = page.locator(".desktop-file-explorer-tree").first();
+  const handle = page.getByRole("separator", { name: "Resize file tree", exact: true });
+  const body = page.locator(".desktop-file-explorer-body").first();
+  const initialWidth = (await body.boundingBox())!.width;
+  expect(initialWidth).toBeGreaterThan(760);
+  const treeGrip = (await handle.boundingBox())!;
+  await page.mouse.move(treeGrip.x, treeGrip.y + 60);
+  await page.mouse.down();
+  await page.mouse.move(treeGrip.x + 180, treeGrip.y + 60);
+  await page.mouse.up();
+  const expandedWidth = (await tree.boundingBox())!.width;
+  const sash = page.locator('[data-pane-sash="tools-split:0"]');
+  const start = (await sash.boundingBox())!;
+  await page.mouse.move(start.x, start.y + 100);
+  await page.mouse.down();
+  // Keep both columns visible; narrow single-column views have no divider.
+  await page.mouse.move(start.x + initialWidth - 760, start.y + 100, { steps: 8 });
+  await page.mouse.up();
+  await expect(body).toHaveAttribute("data-split-layout", "true");
+  await expect.poll(async () => (await tree.boundingBox())!.width).toBeLessThan(expandedWidth - 10);
+  await expect.poll(async () => {
+    const visible = (await tree.boundingBox())!, separator = (await handle.boundingBox())!;
+    return Math.abs(visible.x + visible.width - separator.x);
+  }).toBeLessThan(1.5);
+  const position = (await handle.boundingBox())!;
+  await page.mouse.move(position.x, position.y + 60);
+  await page.mouse.down();
+  await page.mouse.move(position.x - 15, position.y + 60);
+  await page.mouse.up();
+  await expect.poll(() => resizing(page)).toBe(false);
+});
+
 async function resizing(page: Page) {
   return page.evaluate(async () => {
     const module = "/src/shared/lib/paneResize.ts";
@@ -97,6 +131,7 @@ async function resizing(page: Page) {
 }
 
 async function openTools(page: Page, query = "") {
+  test.setTimeout(60000);
   await page.setViewportSize({ width: 2200, height: 1000 });
   await page.goto(`/tests/browser/desktop-tools.html?editor=source&explorer${query}`);
   await expect(page.locator(".cm-editor").first()).toBeVisible();
@@ -115,7 +150,7 @@ for (const direction of ["right", "down"] as const) {
     const editor = page.locator('[data-pane-id="tools-editor"]');
     const content = editor.locator(".cm-editor").first();
     const sash = page.locator('[data-pane-sash="tools-split:0"]');
-    const handle = sash.locator(".resize-handle");
+    const handle = sash;
     const before = {
       chat: (await chat.boundingBox())!,
       editor: (await editor.boundingBox())!,
@@ -140,6 +175,18 @@ for (const direction of ["right", "down"] as const) {
     await expect.poll(() => resizing(page)).toBe(false);
     await painted(page);
     expect(Math.abs((await chat.boundingBox())![extent] - before.chat[extent] - 15)).toBeLessThan(1);
+    if (!horizontal) {
+      const current = (await sash.boundingBox())!;
+      const tree = (await page.locator("[data-pane-tree-layout]").boundingBox())!;
+      await page.mouse.move(current.x + 100, current.y);
+      await page.mouse.down();
+      await page.mouse.move(current.x + 100, 0);
+      await painted(page);
+      const minimum = (await chat.boundingBox())!;
+      expect(minimum.height).toBeGreaterThanOrEqual(tree.height * 0.08 - 1);
+      expect(Math.abs(minimum.y + minimum.height - (await sash.boundingBox())!.y)).toBeLessThan(1.5);
+      await page.mouse.up();
+    }
   });
 }
 
@@ -176,7 +223,7 @@ test("keeps split background geometry out of the transcript while preserving its
     return geometry.pane;
   };
   const before = await checkBackground();
-  const handle = page.locator('[data-pane-sash="tools-split:0"] > .resize-handle');
+  const handle = page.locator('[data-pane-sash="tools-split:0"]');
   const box = (await handle.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + 100);
   await page.mouse.down();
@@ -188,7 +235,7 @@ test("keeps split background geometry out of the transcript while preserving its
 
 test("keeps the split aligned with its sash when file content rerenders during a drag", async ({ page }) => {
   await openTools(page);
-  const handle = page.locator('[data-pane-sash="tools-split:0"] > .resize-handle');
+  const handle = page.locator('[data-pane-sash="tools-split:0"]');
   const chat = page.locator('[data-pane-id="tools-session"]');
   const before = (await chat.boundingBox())!.width;
   const box = (await handle.boundingBox())!;

@@ -42,13 +42,13 @@ export function fitFileBreadcrumb(
 /** Stop at the project directory; keep real roots for files outside that project. */
 export function fileBreadcrumbSegments(path: string, cwd: string): FileBreadcrumbSegment[] {
   const normalized = slash(path);
-  const absolute = /^(?:\/|[A-Za-z]:\/|remote:\/\/)/.test(normalized)
+  const absolute = /^(?:\/|[A-Za-z]:\/|(?:remote|wsl):\/\/)/.test(normalized)
     ? normalized : joinPath(cwd, normalized);
-  const remoteRoot = /^remote:\/\/[^/]+\//.exec(absolute)?.[0];
+  const remoteRoot = /^(?:remote|wsl):\/\/[^/]+\//.exec(absolute)?.[0];
   const paths = [absolute];
   let current = parentPath(absolute);
   while (pathKey(current) !== pathKey(paths[0]) && pathKey(paths[0]) !== pathKey(cwd)) {
-    paths.unshift(current);
+    paths.unshift(remoteRoot && pathKey(current) === pathKey(remoteRoot) ? remoteRoot : current);
     if (remoteRoot && pathKey(current) === pathKey(remoteRoot)) break;
     const parent = parentPath(current);
     if (pathKey(parent) === pathKey(current)) break;
@@ -57,7 +57,7 @@ export function fileBreadcrumbSegments(path: string, cwd: string): FileBreadcrum
   return paths.map((entry, index) => ({
     path: entry,
     label: remoteRoot && pathKey(entry) === pathKey(remoteRoot) ? remoteRoot : basename(entry),
-    directory: index === paths.length - 1 ? parentPath(entry) : entry,
+    directory: index === paths.length - 1 ? paths[index - 1] ?? parentPath(entry) : entry,
     selected: paths[index + 1] ?? entry,
   }));
 }

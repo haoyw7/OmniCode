@@ -326,16 +326,6 @@ html[data-skin] .sidebar-transition:has([data-desktop-sidebar])::after {
   pointer-events: none;
 }
 
-/* The drag target overlays the workspace edge. */
-html[data-skin] .sidebar-transition:has([data-desktop-sidebar]) > .resize-handle[data-resize-edge="right"] {
-  right: calc(-1 * var(--desktop-sidebar-inset));
-  width: var(--desktop-sidebar-inset);
-}
-
-html[data-skin] .sidebar-transition:has([data-desktop-sidebar]) > .resize-handle[data-resize-edge="right"]::after {
-  left: 0;
-}
-
 .sidebar-transition:not([data-fold-state="open"]) {
   /* Fixed-width children must stay inside the animated viewport. Once open,
      allow the sidebar's resize target to extend into the trailing gutter. */

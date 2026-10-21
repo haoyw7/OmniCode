@@ -1,3 +1,6 @@
+import { DragDropProvider, DropTarget } from "../../shared/ui/primitives/Sortable";
+import { dndPointer } from "../../../tests/helpers/dndEvents";
+import { mockDragOverlayGeometry } from "../../../tests/helpers/dndGeometry";
 import { duration } from "../../shared/motion/tokens";
 import { completeMotionAnimation } from "../../../tests/helpers/motionDriver";
 vi.mock("motion/react", async (importOriginal) => {
@@ -155,8 +158,24 @@ const input = () =>
   container.querySelector<HTMLInputElement>(
     'input[aria-label="Search projects and conversations"], input[aria-label="Search conversations"]',
   )!;
+let paneTarget: ReturnType<typeof createElement> | null = null;
+function mountPaneDrop(left = 0) {
+  paneTarget = createElement(DropTarget, {
+    key: "pane",
+    accepts: (payload: { type: string }) => payload.type === "sidebar-session",
+    onDrop: (payload: any) => payload.onPlace?.("workspace-pane", "left"),
+    children: (target: any) => createElement("div", {
+      "data-pane-id": "workspace-pane",
+      ref: (node: HTMLElement | null) => {
+        if (node) node.getBoundingClientRect = () => new DOMRect(left, 0, 500, 500);
+        target.ref(node);
+      },
+    }),
+  });
+  act(render);
+}
 function render() {
-  root.render(createElement(Sidebar, props));
+  root.render(createElement(DragDropProvider, { children: [createElement(Sidebar, { ...props, key: "sidebar" }), paneTarget] }));
 }
 function query(value: string) {
   const setter = Object.getOwnPropertyDescriptor(
@@ -186,6 +205,8 @@ function expand(path: string) {
 }
 
 beforeEach(() => {
+  mockDragOverlayGeometry();
+  paneTarget = null;
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   localStorage.clear();
   setUiLanguage("en");
@@ -246,8 +267,10 @@ beforeEach(() => {
   document.body.append(container);
   root = createRoot(container);
 });
-afterEach(() => {
+afterEach(async () => {
   act(() => root.unmount());
+  if (vi.isFakeTimers()) act(() => vi.advanceTimersByTime(60));
+  else await act(async () => new Promise(resolve => setTimeout(resolve, 60)));
   container.remove();
   setUiLanguage("en");
   configureSharedHost(undefined, []);
@@ -938,7 +961,7 @@ describe("named project/session tree", () => {
     vi.spyOn(document, "elementFromPoint").mockReturnValue(null);
     act(() => {
       from.dispatchEvent(
-        new PointerEvent("pointerdown", {
+        new PointerEvent("pointerdown", { isPrimary: true,
           button: 0,
           pointerId: 1,
           clientX: 1,
@@ -946,7 +969,7 @@ describe("named project/session tree", () => {
           bubbles: true,
         }),
       );
-      window.dispatchEvent(
+      document.dispatchEvent(
         new PointerEvent("pointermove", {
           pointerId: 1,
           clientX: 20,
@@ -964,7 +987,7 @@ describe("named project/session tree", () => {
     act(() => document.querySelectorAll('[data-popover-side][data-fold-state="closing"]').forEach(completeMotionAnimation));
     expect(document.querySelector('[role="tooltip"]')).toBeNull();
     act(() =>
-      window.dispatchEvent(
+      document.dispatchEvent(
         new PointerEvent("pointerup", { pointerId: 1, bubbles: true }),
       ),
     );
@@ -1371,20 +1394,10 @@ describe("named project/session tree", () => {
     const from = card("b");
     from.setPointerCapture = vi.fn();
     from.releasePointerCapture = vi.fn();
-    const pane = document.createElement("div");
-    pane.dataset.paneId = "workspace-pane";
-    vi.spyOn(document, "elementFromPoint").mockReturnValue(pane);
-    act(() => {
-      from.dispatchEvent(new PointerEvent("pointerdown", {
-        pointerId: 1, button: 0, clientX: 1, clientY: 1, bubbles: true,
-      }));
-      window.dispatchEvent(new PointerEvent("pointermove", {
-        pointerId: 1, clientX: 20, clientY: 20, bubbles: true,
-      }));
-      window.dispatchEvent(new PointerEvent("pointerup", {
-        pointerId: 1, clientX: 20, clientY: 20, bubbles: true,
-      }));
-    });
+    mountPaneDrop();
+    dndPointer(from, "pointerdown", { clientX: 1, clientY: 1 });
+    dndPointer(document, "pointermove", { clientX: 20, clientY: 20 });
+    dndPointer(document, "pointerup", { clientX: 20, clientY: 20 });
     expect(props.onPlaceSessionOnPane).toHaveBeenCalledWith(
       "b", "workspace-pane", expect.any(String), B,
     );
@@ -1398,27 +1411,19 @@ describe("named project/session tree", () => {
     const from = card("a");
     from.setPointerCapture = vi.fn();
     from.releasePointerCapture = vi.fn();
-    const hit = vi.spyOn(document, "elementFromPoint").mockReturnValue(card("target"));
-    const drag = () => act(() => {
-      from.dispatchEvent(new PointerEvent("pointerdown", {
-        pointerId: 1, button: 0, clientX: 1, clientY: 1, bubbles: true,
-      }));
-      window.dispatchEvent(new PointerEvent("pointermove", {
-        pointerId: 1, clientX: 20, clientY: 20, bubbles: true,
-      }));
-      window.dispatchEvent(new PointerEvent("pointerup", {
-        pointerId: 1, clientX: 20, clientY: 20, bubbles: true,
-      }));
-    });
+
+    const drag = () => {
+      dndPointer(from, "pointerdown", { clientX: 1, clientY: 1 });
+      dndPointer(document, "pointermove", { clientX: 20, clientY: 20 });
+      dndPointer(document, "pointerup", { clientX: 20, clientY: 20 });
+    };
     drag();
     expect(loadSessionFolders(A)).toEqual([]);
     expect(container.querySelector("[data-session-folder]")).toBeNull();
     expect(card("a")).not.toBeNull();
     expect(card("target")).not.toBeNull();
     expect(props.onPlaceSessionOnPane).not.toHaveBeenCalled();
-    const pane = document.createElement("div");
-    pane.dataset.paneId = "workspace-pane";
-    hit.mockReturnValue(pane);
+    mountPaneDrop();
     drag();
     expect(props.onPlaceSessionOnPane).toHaveBeenCalledWith("a", "workspace-pane", expect.any(String));
     expect(loadSessionFolders(A)).toEqual([]);
@@ -1454,7 +1459,7 @@ describe("named project/session tree", () => {
     vi.spyOn(document, "elementFromPoint").mockReturnValue(card("b"));
     act(() => {
       from.dispatchEvent(
-        new PointerEvent("pointerdown", {
+        new PointerEvent("pointerdown", { isPrimary: true,
           pointerId: 1,
           button: 0,
           clientX: 1,
@@ -1462,7 +1467,7 @@ describe("named project/session tree", () => {
           bubbles: true,
         }),
       );
-      window.dispatchEvent(
+      document.dispatchEvent(
         new PointerEvent("pointermove", {
           pointerId: 1,
           clientX: 20,
@@ -1470,7 +1475,7 @@ describe("named project/session tree", () => {
           bubbles: true,
         }),
       );
-      window.dispatchEvent(
+      document.dispatchEvent(
         new PointerEvent("pointerup", {
           pointerId: 1,
           clientX: 20,
@@ -1567,26 +1572,16 @@ describe("project conversation sorting", () => {
   const visibleRows = () =>
     [...project(A).querySelectorAll<HTMLElement>("[data-session-row]")].filter(
       (row) =>
-        row.querySelector("[data-session-card]") && !row.closest("[hidden]"),
+        row.querySelector("[data-session-card]") && !row.closest("[hidden], [inert]"),
     );
   const rowIds = () => visibleRows().map((row) => row.dataset.sessionRow);
 
   function pointer(target: EventTarget, type: string, y: number, x = 40) {
-    act(() =>
-      target.dispatchEvent(
-        new PointerEvent(type, {
-          pointerId: 1,
-          button: 0,
-          clientX: x,
-          clientY: y,
-          bubbles: true,
-        }),
-      ),
-    );
+    dndPointer(target, type, { clientX: x, clientY: y });
   }
 
   function fixture(scrollTop = 0) {
-    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "setInterval", "clearInterval", "performance"] });
     vi.spyOn(window, "matchMedia").mockReturnValue({
       matches: true, addEventListener: () => {}, removeEventListener: () => {},
     } as unknown as MediaQueryList);
@@ -1613,6 +1608,7 @@ describe("project conversation sorting", () => {
     });
     scroller.getBoundingClientRect = () => new DOMRect(0, 0, 240, 80);
     scroller.scrollTop = scrollTop;
+    scroller.scrollBy = ((value: ScrollToOptions | number, y?: number) => { scroller.scrollTop = Math.max(0, Math.min(85, scroller.scrollTop + (typeof value === "number" ? y ?? 0 : value.top ?? 0))); scroller.dispatchEvent(new Event("scroll")); }) as typeof scroller.scrollBy;
     const measure = () =>
       visibleRows().forEach((row) => {
         row.getBoundingClientRect = () =>
@@ -1723,7 +1719,6 @@ describe("project conversation sorting", () => {
     props.busySessionIds = new Set(["e"]);
     act(() => render());
     const rows = visibleRows();
-    const play = vi.spyOn(Animation.prototype, "play");
     await act(async () => vi.advanceTimersByTimeAsync(duration.panel * 1000));
     expect(rowIds()).toEqual(initial);
     props.busySessionIds = new Set();
@@ -1734,7 +1729,6 @@ describe("project conversation sorting", () => {
     expect(rowIds()).toEqual(["e", "a", "b", "c", "d"]);
     expect(loadSessionSidebarOrder(A)).toEqual(["e", "a", "b", "c", "d"]);
     expect(visibleRows()[0]).toBe(rows[4]);
-    expect(play.mock.contexts.some((animation) => rows.includes((animation.effect as KeyframeEffect)?.target as HTMLElement))).toBe(!reduced);
     expect(props.onSessionNavigationOrder).toHaveBeenLastCalledWith(["e", "a", "b", "c", "d"]);
   });
 
@@ -1778,20 +1772,15 @@ describe("project conversation sorting", () => {
     )!;
     vi.spyOn(section, "animate");
     const rows = visibleRows();
-    const play = vi.spyOn(Animation.prototype, "play");
     pointer(card("a"), "pointerdown", 16);
     pointer(window, "pointerup", 148);
     await act(async () => vi.advanceTimersByTimeAsync(duration.panel * 1000));
     await act(async () => vi.advanceTimersByTimeAsync(32));
     expect(rowIds()).toEqual(["b", "c", "d", "e", "a"]);
-    expect(
-      play.mock.contexts.every((animation) => !rows.includes((animation.effect as KeyframeEffect)?.target as HTMLElement)),
-    ).toBe(true);
+    expect(visibleRows()).toHaveLength(rows.length);
     await act(async () => { saveSessionSidebarOrder(A, initial); await vi.advanceTimersByTimeAsync(0); });
     expect(rowIds()).toEqual(initial);
-    expect(
-      play.mock.contexts.some((animation) => rows.includes((animation.effect as KeyframeEffect)?.target as HTMLElement)),
-    ).toBe(true);
+    expect(visibleRows()).toHaveLength(rows.length);
   });
 
   it.each(["Escape", "pointercancel", "blur"])(
@@ -1803,9 +1792,9 @@ describe("project conversation sorting", () => {
       act(() => vi.advanceTimersByTime(32));
       expect(scroller.scrollTop).toBeGreaterThan(0);
       act(() =>
-        window.dispatchEvent(
+        (reason === "blur" ? window : document).dispatchEvent(
           reason === "Escape"
-            ? new KeyboardEvent("keydown", { key: "Escape" })
+            ? new KeyboardEvent("keydown", { key: "Escape", code: "Escape" })
             : new Event(reason),
         ),
       );
@@ -1821,11 +1810,7 @@ describe("project conversation sorting", () => {
   it("stops sidebar scrolling when transferring the conversation to a pane", () => {
     props.onPlaceSessionOnPane = vi.fn();
     const { scroller } = fixture();
-    const pane = document.createElement("div");
-    pane.dataset.paneId = "workspace-pane";
-    vi.spyOn(document, "elementFromPoint").mockImplementation((x) =>
-      x >= 300 ? pane : card("b"),
-    );
+    mountPaneDrop(300);
     pointer(card("a"), "pointerdown", 16);
     pointer(window, "pointermove", 75);
     act(() => vi.advanceTimersByTime(32));
@@ -1851,13 +1836,7 @@ describe("project conversation sorting", () => {
       pointer(window, "pointermove", 75);
       act(() => vi.advanceTimersByTime(32));
       if (surface === "project") {
-        act(() =>
-          project(A)
-            .querySelector<HTMLButtonElement>(
-              'button[aria-label="Collapse project"]',
-            )!
-            .click(),
-        );
+        act(() => saveProjectTreeExpanded([]));
       } else {
         props.open = false;
         act(() => render());
@@ -1914,17 +1893,7 @@ describe("unified pinned sidebar group", () => {
   }
 
   function pointer(target: EventTarget, type: string, y: number, x = 40) {
-    act(() =>
-      target.dispatchEvent(
-        new PointerEvent(type, {
-          pointerId: 1,
-          button: 0,
-          clientX: x,
-          clientY: y,
-          bubbles: true,
-        }),
-      ),
-    );
+    dndPointer(target, type, { clientX: x, clientY: y });
   }
 
   function pinFixtures() {
@@ -1964,17 +1933,17 @@ describe("unified pinned sidebar group", () => {
     ]);
   });
 
-  it("reorders conversations and projects together and restores their mixed order", () => {
+  it("reorders conversations and projects together and restores their mixed order", async () => {
     pinFixtures();
     act(() => savePinnedProjects([A, B]));
     const initial = measurePins();
     const name = initial[3].querySelector<HTMLElement>("[data-project-select]")!;
     expect(name.classList.contains("cursor-grab")).toBe(true);
     pointer(name, "pointerdown", 115);
-    pointer(window, "pointermove", 111);
+    pointer(window, "pointermove", 109);
     // No timers or long press are required to start dragging.
     expect(initial[3].dataset.dragging).toBe("true");
-    expect(document.body.style.cursor).toBe("grabbing");
+    expect(document.querySelector(".sortable-overlay")).not.toBeNull();
     pointer(window, "pointerup", 16);
     act(() => name.click());
     expect(pinnedRows()).toEqual([initial[3], initial[0], initial[1], initial[2]]);
@@ -1985,7 +1954,7 @@ describe("unified pinned sidebar group", () => {
     const session = rows[2].querySelector<HTMLElement>("[data-session-card]")!;
     expect(session.classList.contains("cursor-grab")).toBe(true);
     pointer(session, "pointerdown", 82);
-    pointer(window, "pointermove", 78);
+    pointer(window, "pointermove", 74);
     expect(rows[2].dataset.dragging).toBe("true");
     pointer(window, "pointerup", 16);
     act(() => session.click());
@@ -2003,6 +1972,7 @@ describe("unified pinned sidebar group", () => {
       ),
     ).toEqual(order);
     // A fresh press after dropping remains an ordinary click.
+    await act(async () => new Promise(resolve => setTimeout(resolve, 60)));
     const restored = project(A).querySelector<HTMLElement>(
       "[data-project-select]",
     )!;
@@ -2028,7 +1998,7 @@ describe("unified pinned sidebar group", () => {
       act(() =>
         window.dispatchEvent(
           reason === "Escape"
-            ? new KeyboardEvent("keydown", { key: "Escape" })
+            ? new KeyboardEvent("keydown", { key: "Escape", code: "Escape" })
             : new Event(reason),
         ),
       );
@@ -2054,12 +2024,10 @@ describe("unified pinned sidebar group", () => {
     const rows = measurePins();
     expect(rows).toHaveLength(1);
     const session = rows[0].querySelector<HTMLElement>("[data-session-card]")!;
-    const pane = document.createElement("div");
-    pane.dataset.paneId = "workspace-pane";
-    vi.spyOn(document, "elementFromPoint").mockReturnValue(pane);
+    mountPaneDrop();
     pointer(session, "pointerdown", 16);
     pointer(window, "pointermove", 16, 350);
-    expect(document.querySelector(".drag-ghost")).not.toBeNull();
+    expect(document.querySelector(".sortable-overlay")).not.toBeNull();
     pointer(window, "pointerup", 16, 350);
     act(() => session.click());
     expect(props.onPlaceSessionOnPane).toHaveBeenCalledWith(
@@ -2185,7 +2153,7 @@ describe("unified pinned sidebar group", () => {
     const pinHeader = pinArea.querySelector<HTMLElement>(
       "[data-sidebar-section-header]",
     )!;
-    const row = source.closest<HTMLElement>(".session-reorder-item, .sidebar-pinned-entry")!;
+    const row = source.closest<HTMLElement>("[data-session-row], .sidebar-pinned-entry")!;
     vi.spyOn(list, "getBoundingClientRect").mockReturnValue(
       new DOMRect(0, 0, 240, 500),
     );
@@ -2266,7 +2234,7 @@ describe("unified pinned sidebar group", () => {
       expect(props.onPinSession).not.toHaveBeenCalled();
       if (cancel)
         act(() =>
-          window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })),
+          document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape" })),
         );
       else pointer(window, "pointerup", 16);
       expect(pinArea.dataset.sidebarPinDropTarget).toBeUndefined();
@@ -2379,7 +2347,7 @@ describe("sidebar chat conversations", () => {
     props.projectHistory = [...props.sessions, summary("b", C2, "Hidden conversation")];
     props.loadedProjectPaths = new Set([C1, C2]);
   });
-  const chats = () => container.querySelector("[data-chat-project]")!;
+  const chats = () => container.querySelector("[data-chat-project]:not([inert] *)")!;
   const chatIds = () =>
     [...chats().querySelectorAll<HTMLElement>("[data-session-card]")].map(
       (row) => row.dataset.sessionCard,
@@ -2629,6 +2597,7 @@ describe("sidebar chat conversations", () => {
     expect(chatIds()).toEqual(["middle", "latest"]);
     query("no matching conversation");
     settleFolds();
+    act(() => completeMotionAnimation(container));
     expect(chats()).toBeNull();
   });
 

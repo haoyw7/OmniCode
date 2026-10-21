@@ -19,6 +19,7 @@ import type { HostStore } from "./store";
 import { readWslCursorSubagents } from "./cursor-subagents";
 import { WslLoopbackRelay } from "./machines/wsl-relay";
 import { assertWslSharedProviderSupported, wslSharedProviderEnvironment } from "./wsl-provider-environment";
+import { reportStartupProgress } from "./startup-progress";
 
 type Runtime = { command: string; args?: string[]; version?: string; fallback?: boolean };
 const runtimeArguments = (runtime: Runtime, args: string[]): string[] => {
@@ -106,6 +107,7 @@ export class WslChildBackend implements ChildBackend {
   }
 
   private async resolve(provider: RemoteProvider): Promise<Runtime> {
+    reportStartupProgress({ stage: "checking-provider" });
     assertWslSharedProviderSupported(provider);
     if (this.resolveOverride) return this.resolveOverride(provider);
     try {
@@ -154,6 +156,7 @@ export class WslChildBackend implements ChildBackend {
           if (this.closing) throw new Error("Host is stopping");
           await this.rpc.request("process.kill", { stream: id });
           this.earlyExits.delete(id);
+          reportStartupProgress({ stage: "configuring" });
           const prepared = provider === "claude" || provider === "codex"
             ? await wslProviderConfiguration({ provider, owner: this.owner, accountId: account?.id, cwd: String(args.cwd), args: args.args as string[], rpc: this.rpc })
             : { args: args.args as string[], env: await wslSharedProviderEnvironment(provider, this.rpc), warnings: [] };
@@ -166,6 +169,7 @@ export class WslChildBackend implements ChildBackend {
           this.notice(id, warnings);
           const release = this.store ? withMachineIO(this.io, () => claimCheckoutResource(this.store!, `host-guard:${randomUUID()}`, String(args.cwd))) : undefined;
           try {
+            reportStartupProgress({ stage: "initializing" });
             const result = await this.rpc.request<{ pid: number }>("process.spawn", { stream: id,
               command: runtime.command, args: runtimeArguments(runtime, prepared.args), cwd: args.cwd,
               env: { OMNICODE_HOST: "1", ...environment, ...prepared.env } });

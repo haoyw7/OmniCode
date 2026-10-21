@@ -10,9 +10,6 @@ import { archiveProject, loadArchivedProjects, loadPinnedProjects, loadRecents, 
 import { rememberChatFolder } from "../model/chatFolders";
 import { ProjectsPage } from "./ProjectsPage";
 
-const animation = vi.hoisted(() => ({ ref: () => {}, enable: () => {} }));
-vi.mock("@formkit/auto-animate/react", () => ({ useAutoAnimate: () => [animation.ref, animation.enable] }));
-
 const A = "/work/alpha";
 const B = "/work/beta";
 const CHAT = "/home/me/Documents/omnicode/2026-10-13/chat-120000-abcdef";
@@ -64,6 +61,7 @@ it("separates local and remote Code projects from Chat folders and routes existi
   expect(props.onOpen).toHaveBeenCalledOnce();
   props.mode = "chat";
   await act(async () => render());
+  await act(async () => finishMotion());
   expect(cards()).toHaveLength(1);
   expect(card(CHAT)).not.toBeUndefined();
   await click(container.querySelector(".desktop-collection-create"));
@@ -84,6 +82,7 @@ it("uses normalized project names for Windows cards, search and live rename upda
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "Renamed workspace");
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
+  await act(async () => finishMotion());
   expect(cards()).toHaveLength(1);
 });
 

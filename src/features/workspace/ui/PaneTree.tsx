@@ -3,13 +3,11 @@ import { Button } from "../../../shared/ui/forms/Button";
 import { fitToolLayout } from "../model/fitToolLayout";
 import { fitPaneWidths, paneMinimumWidths, paneWidthBounds } from "../model/paneWidths";
 import { beginPaneResize, isPaneResizing, onPaneResizeSettled } from "../../../shared/lib/paneResize";
-import { beginResizeInteraction } from "../../../shared/lib/resizeInteraction";
 import { motion, useAnimationControls, type TargetAndTransition } from "motion/react";
 import { panelTransition, immediateTransition, motionDistance } from "../../../shared/motion/tokens";
 import { useMotionPreference } from "../../../shared/motion/useMotionPreference";
 import {
   memo,
-  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -18,25 +16,16 @@ import {
   useState,
   type CSSProperties,
   type ReactNode,
-  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { createPortal } from "react-dom";
-import { usePaneDrag } from "../hooks/usePaneDrag";
-import { PaneDragOverlay } from "./PaneDragOverlay";
+import { useActiveDragPayload, useActiveDragPayloadRef } from "../../../shared/ui/primitives/Sortable";
+import { PaneHeaderDrag, TerminalDockTarget } from "./PaneDrag";
 import { PaneCardFrame, paneCardInset } from "./PaneCard";
-import { ResizeHandle } from "../../../shared/ui/ResizeHandle";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle, type GroupImperativeHandle } from "../../../shared/ui/primitives/Resizable";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { Maximize2 } from "../../../shared/ui/icons";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import {
-  overOpenTerminalDock,
-  setTerminalDockDrop,
-  terminalDockOpen,
-  TERMINAL_DOCK_BAND,
-  useExternalPaneDrop,
-  useTerminalDockDrop,
-  type TerminalDockDrop,
-} from "../model/paneDrop";
+import { terminalDockOpen } from "../model/paneDrop";
 import type {
   ApprovalDecision,
   UserQuestionReply,
@@ -47,6 +36,7 @@ import {
   layoutLeaves,
   layoutSashes,
   setSplitRatio,
+  splitSizesAtBoundary,
   type EditorPane,
   type LayoutLeaf,
   type LayoutNode,
@@ -81,7 +71,6 @@ import {
   type SessionSurfaceMode,
 } from "./SessionSurfaceToolbar";
 import { SessionSurfacePane } from "./SessionSurfacePane";
-import { DropTargetHint } from "./DropTargetHint";
 import { sessionSurfaceGrid } from "./sessionSurfaceGrid";
 import { WindowNavigationSpace } from "../../../app/shell/WindowChrome";
 
@@ -332,12 +321,9 @@ function PaneTreeComponent({
   const layoutRef = useRef(layout);
   layoutRef.current = layout;
   const draft = useRef<LayoutNode | null>(null);
-  const { state: paneDrag, start: beginPaneDrag, cancelRef: stopPaneDrag } = usePaneDrag<NonNullable<TerminalDockDrop>>();
-  useLayoutEffect(() => () => stopPaneDrag.current?.(), [layout, visible]);
+  const activeDrag = useActiveDragPayloadRef();
   // A card can temporarily fill the chat area; the rest stay mounted.
   const [maximizedId, setMaximizedId] = useState<string | null>(null);
-  const externalDrop = useExternalPaneDrop(visible);
-  const drop = paneDrag ?? externalDrop;
   const onMovePaneRef = useRef(onMovePane);
   onMovePaneRef.current = onMovePane;
   const onMovePaneToDockRef = useRef(onMovePaneToDock);
@@ -351,11 +337,7 @@ function PaneTreeComponent({
       )
       .map((pane) => pane.id),
   );
-  const dockDrop = useTerminalDockDrop();
   const { t } = useTranslation();
-  const dockHintLabel = t("Move to terminal panel");
-  const onFocusRef = useRef(onFocus);
-  onFocusRef.current = onFocus;
   const sessionsRef = useRef(sessions);
   sessionsRef.current = sessions;
   const fileActionsRef = useRef({ onOpenFile, onOpenSessionFile });
@@ -390,10 +372,6 @@ function PaneTreeComponent({
     draft.current = null;
   }, [layout]);
 
-  // Keep controls stable when another pane streams or the layout is committed.
-  const dragHandlers = useRef(
-    new Map<string, (event: ReactPointerEvent<HTMLElement>) => void>(),
-  );
   // Stable per card so a sash drag never re-renders memoized file panes.
   const cardMaximize = useRef(
     new Map<string, { maximized: boolean; node: ReactNode }>(),
@@ -446,18 +424,10 @@ function PaneTreeComponent({
     });
     return node;
   };
-  const paneDragStartFor = (paneId: string) => {
-    const cached = dragHandlers.current.get(paneId);
-    if (cached) return cached;
-    const handler = (event: ReactPointerEvent<HTMLElement>) =>
-      startPaneDrag(paneId, event);
-    dragHandlers.current.set(paneId, handler);
-    return handler;
-  };
 
   const tree = layout;
   const leaves = layoutLeaves(tree);
-  const sashes = layoutSashes(tree);
+  const sashes = useMemo(() => layoutSashes(tree), [tree]);
   const inSplit = leaves.length > 1;
   const sessionLeaves = leaves.filter((leaf) =>
     sessions.some((session) => session.id === leaf.id),
@@ -535,7 +505,7 @@ function PaneTreeComponent({
     let measuredWidth = container.clientWidth;
     const minimums = paneMinimumSizes(container);
     const toolMinimum = minimums.tool;
-    const chats = new Set(sessionPaneIds.split("\n"));
+    const chats = new Set(sessionPaneIds.split("\\n"));
     const capPaneWidths = () => {
       if (measuredWidth <= 0) return;
       // A size-query container here makes WebKit reevaluate the entire chat
@@ -552,7 +522,7 @@ function PaneTreeComponent({
     const fit = () => {
       // Dock and sibling-panel drags also resize this container. Cache their
       // measurements, but only normalize the React layout after release.
-      if (isPaneResizing() || draft.current || stopPaneDrag.current) return;
+      if (isPaneResizing() || draft.current || activeDrag.current?.type === "workspace-pane") return;
       if (requestedUnified || maximized || !fitCallback.current) return;
       const width = measuredWidth;
       if (width <= 0) return;
@@ -639,14 +609,28 @@ function PaneTreeComponent({
   };
   const gridColumns = surfaceGrid ? String(surfaceGrid.style.gridTemplateColumns) : undefined;
   const gridRows = surfaceGrid ? String(surfaceGrid.style.gridTemplateRows) : undefined;
+  const gridTopology = surfaceGrid ? JSON.stringify([...surfaceGrid.placements]) : undefined;
+  const previousGridTopology = useRef(gridTopology);
   useLayoutEffect(() => {
+    const topologyChanged = previousGridTopology.current !== gridTopology;
+    previousGridTopology.current = gridTopology;
     if (!gridColumns || !gridRows) return;
-    void gridControls.start({
-      gridTemplateColumns: gridColumns,
-      gridTemplateRows: gridRows,
-      transition: reduced || unified || !!draft.current ? immediateTransition : panelTransition,
-    });
-  }, [gridColumns, gridRows, gridControls, reduced, unified]);
+    const target = { gridTemplateColumns: gridColumns, gridTemplateRows: gridRows };
+    if (topologyChanged) {
+      // Grid line placements update in this commit. Old tracks would briefly
+      // shrink an unchanged chat when a neighbouring split loses a row/column.
+      gridControls.stop();
+      gridControls.set(target);
+      releaseGridMotion.current?.();
+      releaseGridMotion.current = undefined;
+      gridMoving.current = false;
+    } else {
+      void gridControls.start({
+        ...target,
+        transition: reduced || unified || !!draft.current ? immediateTransition : panelTransition,
+      });
+    }
+  }, [gridColumns, gridRows, gridTopology, gridControls, reduced, unified]);
   const paintLayout = (tree: LayoutNode, syncMotion = false) => {
     const container = treeRef.current;
     const { grid, selectedId, unified } = resizeConfig.current;
@@ -696,31 +680,11 @@ function PaneTreeComponent({
   }
   knownLeafIds.current = new Set(leaves.map((leaf) => leaf.id));
 
-  const startPaneDrag = useCallback(
-    (fromId: string, event: ReactPointerEvent<HTMLElement>) => {
-      const container = treeRef.current;
-      const source = Array.from(container?.children ?? []).find(
-        (element): element is HTMLElement => element instanceof HTMLElement && element.dataset.paneId === fromId,
-      );
-      if (!container || !source) return;
-      const dockable = !!onMovePaneToDockRef.current && dockablePaneIds.current.has(fromId);
-      beginPaneDrag(event, {
-        container, source, fromId, layout: layoutRef.current,
-        onFocus: () => onFocusRef.current(fromId),
-        onMove: (from, to, edge) => onMovePaneRef.current(from, to, edge),
-        externalTarget: (x, y, bounds) => {
-          if (!dockable) return null;
-          if (overOpenTerminalDock(x, y)) return "dock";
-          if (!treeRef.current || terminalDockOpen()) return null;
-          const inside = x >= bounds.left && x <= bounds.right && y <= bounds.bottom;
-          return inside && y >= bounds.bottom - TERMINAL_DOCK_BAND ? "band" : null;
-        },
-        onExternalPreview: setTerminalDockDrop,
-        onExternalDrop: () => onMovePaneToDockRef.current?.(fromId),
-      });
-    },
-    [beginPaneDrag],
-  );
+  const dragPayloadFor = (paneId: string) => ({
+    type: "workspace-pane", paneId,
+    onPlace: (targetId: string, edge: PaneEdge) => onMovePaneRef.current(paneId, targetId, edge),
+    onDock: dockablePaneIds.current.has(paneId) && onMovePaneToDockRef.current ? () => onMovePaneToDockRef.current?.(paneId) : undefined,
+  });
 
   // Keyed by the session ids only: a streamed token replaces a `Session`
   // object every frame, and a new header function would defeat the memo on
@@ -757,9 +721,6 @@ function PaneTreeComponent({
                         !!reserveWindowNavigationSpace &&
                         sessionId === chromeLeftId
                       }
-                      onPaneDragStart={
-                        inSplit ? paneDragStartFor(sessionId) : undefined
-                      }
                       onClosePane={canCloseSessionPane ? () => onClose(sessionId) : undefined}
                       paneFocused={
                         inSplit && !hasOwnerSession
@@ -790,15 +751,15 @@ function PaneTreeComponent({
 
   const ownerHeader = ownerTopBar && ownerSession ? (
     <SurfaceVisibilityContext.Provider value={parentVisible && visible}>
+      <PaneHeaderDrag payload={dragPayloadFor(ownerSession.id)} label={ownerSession.title} disabled={!inSplit || unified}
+        previewElement={() => treeRef.current?.querySelector<HTMLElement>(`[data-pane-id="${CSS.escape(ownerSession.id)}"]`) ?? null}>
       <SessionSurfaceToolbar
         {...toolbarProps}
         session={ownerSession}
         showTools={unified}
         tools={!liftTools}
-        onPaneDragStart={
-          inSplit && !unified ? paneDragStartFor(ownerSession.id) : undefined
-        }
       />
+      </PaneHeaderDrag>
     </SurfaceVisibilityContext.Provider>
   ) : null;
 
@@ -821,7 +782,6 @@ function PaneTreeComponent({
         onAnimationComplete={finishGridMotion}
         ref={treeRef}
         data-pane-tree-layout
-        data-pane-moving={paneDrag ? "" : undefined}
         data-chat-overlap={ownerSession && !unified ? "" : undefined}
         data-chat-tiles={sessionLeaves.length > 1 ? "" : undefined}
         data-surface-mode={unified ? "unified" : "split"}
@@ -843,9 +803,6 @@ function PaneTreeComponent({
             ? selectedId === leaf.id
             : !maximized || maximized === leaf.id;
           const paneVisible = visible && expanded;
-          const dragging = drop?.fromId === leaf.id;
-          const onPaneDragStart =
-            inSplit && !unified ? paneDragStartFor(leaf.id) : undefined;
           const backgroundStyle = paneBackgroundStyle(leaf.rect, unified);
           return (
             <SessionSurfacePane
@@ -860,8 +817,9 @@ function PaneTreeComponent({
               grid={!!surfaceGrid}
               expanded={expanded}
               visible={visible}
-              dragging={dragging}
-              floating={paneDrag?.fromId === leaf.id}
+              dragEnabled={inSplit && !unified}
+              dragPayload={dragPayloadFor(leaf.id)}
+              dragLabel={session?.title ?? editorPane?.files.find(file => file.id === editorPane.activeFileId)?.path ?? t("Split view")}
               // The new pane focuses its composer or editor while it is still
               // offscreen, and focus scrolls this clip box to reveal it, which
               // fights the slide. Scroll events land before paint, so undoing
@@ -878,8 +836,6 @@ function PaneTreeComponent({
                     ? hasOwnerSession ? "var(--desktop-conversation-min-width)" : undefined
                     : "var(--pane-min-width, var(--desktop-pane-min-width))"
                   : undefined,
-                translate: paneDrag?.offsets.get(leaf.id),
-                transition: paneDrag && !reduced ? "translate 0.24s cubic-bezier(0.22, 1, 0.36, 1)" : undefined,
                 ...(surfaceGrid
                   ? {
                       ...surfaceGrid.placements.get(leaf.id),
@@ -898,9 +854,6 @@ function PaneTreeComponent({
                       }),
               }}
             >
-              {!paneDrag && drop && drop.overId === leaf.id && drop.fromId !== leaf.id ? (
-                <PaneDropHint edge={drop.edge} />
-              ) : null}
               <motion.div
                 data-pane-background-geometry
                 initial={enteringPanes.current.has(leaf.id) && !reduced ? paneEntrance(enteringPanes.current.get(leaf.id)!) : false}
@@ -974,7 +927,6 @@ function PaneTreeComponent({
                       onUpdatePlan={onUpdatePlan}
                       onBuildPlan={onBuildPlan}
                       editorNavigation={editorNavigation}
-                      onPaneDragStart={onPaneDragStart}
                       onTerminalMetaChange={onTerminalMetaChange}
                     />
                   </div>
@@ -1049,7 +1001,6 @@ function PaneTreeComponent({
                     onBtwDelete={onBtwDelete}
                     onBtwStop={onBtwStop}
                     onBtwModelChange={onBtwModelChange}
-                    onPaneDragStart={onPaneDragStart}
                     transcriptPool={transcriptPool}
                   />
                 ) : null}
@@ -1058,7 +1009,6 @@ function PaneTreeComponent({
             </SessionSurfacePane>
           );
         })}
-        <PaneDragOverlay drag={paneDrag} />
         {!unified &&
           sashes.map((sash) => (
             <Sash
@@ -1066,7 +1016,7 @@ function PaneTreeComponent({
               sash={sash}
               layout={layout}
               sessionPaneIds={sessionPaneIds}
-              visible={visible && parentVisible && !maximized && !paneDrag}
+              visible={visible && parentVisible && !maximized}
               containerRef={treeRef}
               onStart={() => {
                 gridControls.stop();
@@ -1094,11 +1044,7 @@ function PaneTreeComponent({
               }}
             />
           ))}
-        {visible && dockDrop === "band" ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-[min(220px,45%)]">
-            <DropTargetHint label={dockHintLabel} />
-          </div>
-        ) : null}
+        {visible && !terminalDockOpen() && <TerminalDockTarget className="absolute inset-x-0 bottom-0 z-40 h-14" />}
       </motion.div>
     </div>
   );
@@ -1125,18 +1071,6 @@ function paneEnterFrom({ rect, axis }: LayoutLeaf): PaneEnterFrom {
 
 // Desktop themes can set their panel rhythm without changing split ratios or
 // the stable tracks used by collapsed editor and terminal panes.
-const DROP_HINT_RECT: Record<PaneEdge, CSSProperties> = {
-  left: { left: 0, top: 0, width: "50%", height: "100%" },
-  right: { left: "50%", top: 0, width: "50%", height: "100%" },
-  top: { left: 0, top: 0, width: "100%", height: "50%" },
-  bottom: { left: 0, top: "50%", width: "100%", height: "50%" },
-};
-
-function PaneDropHint({ edge }: { edge: PaneEdge }) {
-  const { t } = useTranslation();
-  return <DropTargetHint label={t("Split view")} rect={DROP_HINT_RECT[edge]} />;
-}
-
 function paneBackgroundStyle(
   rect: LayoutLeaf["rect"],
   unified = false,
@@ -1162,21 +1096,17 @@ function panePositionStyle(rect: LayoutLeaf["rect"]): CSSProperties {
 }
 
 function sashStyle(sash: LayoutSash): CSSProperties {
-  const boundary = sash.sizes
-    .slice(0, sash.index + 1)
-    .reduce((sum, size) => sum + size, 0);
-  const { group } = sash;
-  return sash.dir === "right"
-    ? {
-        left: `${(group.x + boundary * group.w) * 100}%`,
-        top: `${group.y * 100}%`,
-        height: `${group.h * 100}%`,
-      }
-    : {
-        left: `${group.x * 100}%`,
-        top: `${(group.y + boundary * group.h) * 100}%`,
-        width: `${group.w * 100}%`,
-      };
+  return { left: `${sash.group.x * 100}%`, top: `${sash.group.y * 100}%`,
+    width: `${sash.group.w * 100}%`, height: `${sash.group.h * 100}%` };
+}
+
+function writeLayoutStyle(element: HTMLElement, values: CSSProperties | undefined) {
+  if (!values) return;
+  for (const [property, value] of Object.entries(values)) {
+    const name = property.startsWith("--") ? property : property.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+    const text = value == null ? "" : String(value);
+    if (element.style.getPropertyValue(name) !== text) element.style.setProperty(name, text);
+  }
 }
 
 /** Resize only the layout DOM; editors, diffs, chat and their providers stay mounted. */
@@ -1193,31 +1123,23 @@ function paintPaneLayout(
     layoutSashes(tree).map((sash) => [`${sash.splitId}:${sash.index}`, sash]),
   );
   const surface = grid ? sessionSurfaceGrid(leaves, selectedId) : undefined;
-  if (surface) Object.assign(container.style, surface.style);
+  if (surface) writeLayoutStyle(container, surface.style);
   // Direct children only: embedded surfaces can contain their own splitters.
   for (const element of container.children) {
     if (!(element instanceof HTMLElement)) continue;
     const pane = panes.get(element.dataset.paneId ?? "");
     if (pane) {
-      for (const [name, value] of Object.entries(
-        paneBackgroundStyle(pane.rect, unified),
-      )) {
-        element.style.setProperty(name, String(value));
-      }
-      Object.assign(
-        element.style,
+      writeLayoutStyle(element, paneBackgroundStyle(pane.rect, unified));
+      writeLayoutStyle(
+        element,
         surface
           ? surface.placements.get(pane.id)
           : panePositionStyle(pane.rect),
       );
     }
-    const sash = sashes.get(element.dataset.paneSash ?? "");
+    const sash = sashes.get(element.dataset.paneSashGroup ?? "");
     if (sash) {
-      Object.assign(element.style, sashStyle(sash));
-      const boundary = sash.sizes
-        .slice(0, sash.index + 1)
-        .reduce((sum, size) => sum + size, 0);
-      element.setAttribute("aria-valuenow", String(Math.round(boundary * 100)));
+      writeLayoutStyle(element, sashStyle(sash));
     }
   }
   return surface;
@@ -1237,7 +1159,7 @@ function Sash({
   sash,
   layout,
   sessionPaneIds,
-  visible,
+  visible: allowed,
   containerRef,
   onStart,
   onPreview,
@@ -1254,120 +1176,73 @@ function Sash({
   onCommit: (ratio: number) => void;
   onCancel: () => void;
 }) {
-  const reduced = useMotionPreference();
+  const active = useActiveDragPayload();
+  const visible = allowed && active?.type !== "workspace-pane";
+  const { t } = useTranslation();
   const row = sash.dir === "right";
-  const [dragging, setDragging] = useState(false);
-  const boundary = sash.sizes
-    .slice(0, sash.index + 1)
-    .reduce((sum, size) => sum + size, 0);
-  const group = sash.group;
-  const stopDrag = useRef<((commit: boolean) => void) | null>(null);
+  const boundary = sash.sizes.slice(0, sash.index + 1).reduce((sum, size) => sum + size, 0);
+  const beforeId = `${sash.splitId}:${sash.index}:before`, afterId = `${sash.splitId}:${sash.index}:after`;
+  const bounded = (value: number) => splitSizesAtBoundary(sash.sizes, sash.index, value)
+    .slice(0, sash.index + 1).reduce((sum, size) => sum + size, 0);
+  const modelBounds = { min: bounded(-Infinity), max: bounded(Infinity) };
+  const api = useRef<GroupImperativeHandle | null>(null);
+  const groupElement = useRef<HTMLDivElement | null>(null);
+  const resizing = useRef(false);
+  const priorTransition = useRef("");
+  const [bounds, setBounds] = useState(modelBounds);
+  const pending = useRef(boundary);
   const callbacks = useRef({ onStart, onPreview, onCommit, onCancel });
   callbacks.current = { onStart, onPreview, onCommit, onCancel };
-  useLayoutEffect(() => () => stopDrag.current?.(false), [layout, visible]);
-
-  return (
-    <motion.div initial={false} animate={{ opacity: visible ? 1 : 0 }} transition={reduced ? immediateTransition : panelTransition}
-      data-pane-sash={`${sash.splitId}:${sash.index}`}
-      role="separator"
-      aria-orientation={row ? "vertical" : "horizontal"}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(boundary * 100)}
-      aria-hidden={!visible || undefined}
-      className={cn("absolute z-10", row ? "w-px" : "h-px", visible ? "" : "pointer-events-none")}
-      style={sashStyle(sash)}
-    >
-      <ResizeHandle
-        edge={row ? "left" : "top"}
-        role="presentation"
-        dragging={dragging}
-        style={row ? { left: "50%" } : { top: "50%" }}
-        onPointerDown={(e) => {
-          if (e.button !== 0 || !visible || stopDrag.current) return;
-          e.preventDefault();
-          e.stopPropagation();
-          const handle = e.currentTarget;
-          const parent = containerRef.current;
-          if (!parent) return;
-          const rect = parent.getBoundingClientRect();
-          const chats = new Set(sessionPaneIds.split("\n"));
-          const bounds = paneWidthBounds(layout, sash, rect.width, paneMinimumWidths(layout, chats, rect.width, paneMinimumSizes(parent)));
-          handle.setPointerCapture(e.pointerId);
-          const endInteraction = beginResizeInteraction(row ? "col-resize" : "row-resize");
-          setDragging(true);
-          const previousTransition = parent.style.transitionProperty;
-          parent.style.transitionProperty = "none";
-          callbacks.current.onStart();
-          const startPointer = row ? e.clientX : e.clientY;
-          const span = row ? group.w * rect.width : group.h * rect.height;
-          let nextBoundary = boundary;
-          let moved = false;
-
-          const sample = (ev: PointerEvent) => {
-            if (span <= 0) return false;
-            const pos = row ? ev.clientX : ev.clientY;
-            const requested = boundary + (pos - startPointer) / span;
-            const next = bounds ? Math.max(bounds.min, Math.min(bounds.max, requested)) : requested;
-            if (next === nextBoundary) return false;
-            moved = true;
-            nextBoundary = next;
-            return true;
-          };
-          const move = (ev: PointerEvent) => {
-            if (ev.pointerId !== e.pointerId) return;
-            if (!sample(ev)) return;
-            callbacks.current.onPreview(nextBoundary);
-          };
-          const finish = (commit: boolean) => {
-            if (stopDrag.current !== finish) return;
-            stopDrag.current = null;
-            window.removeEventListener("pointermove", move);
-            window.removeEventListener("pointerup", up);
-            window.removeEventListener("pointercancel", cancel);
-            handle.removeEventListener("lostpointercapture", lostCapture);
-            window.removeEventListener("keydown", keydown);
-            window.removeEventListener("blur", lostCapture);
-            // Flush the release sample with transitions still disabled.
-            if (moved && commit) {
-              callbacks.current.onPreview(nextBoundary);
-              callbacks.current.onCommit(nextBoundary);
-            } else callbacks.current.onCancel();
-            parent.style.transitionProperty = previousTransition;
-            endInteraction();
-            if (handle.hasPointerCapture(e.pointerId)) {
-              handle.releasePointerCapture(e.pointerId);
-            }
-            setDragging(false);
-          };
-          const up = (event: PointerEvent) => {
-            if (event.pointerId !== e.pointerId) return;
-            sample(event);
-            finish(true);
-          };
-          const cancel = (event: PointerEvent) => {
-            if (event.pointerId === e.pointerId) finish(false);
-          };
-          const lostCapture = () => finish(false);
-          const keydown = (event: KeyboardEvent) => {
-            if (event.key !== "Escape") return;
-            event.preventDefault();
-            finish(false);
-          };
-          stopDrag.current = finish;
-          window.addEventListener("pointermove", move);
-          window.addEventListener("pointerup", up);
-          window.addEventListener("pointercancel", cancel);
-          handle.addEventListener("lostpointercapture", lostCapture);
-          window.addEventListener("keydown", keydown);
-          window.addEventListener("blur", lostCapture);
-        }}
-      />
-    </motion.div>
-  );
+  useLayoutEffect(() => {
+    // The enclosing ref attaches after child layout effects on the first mount.
+    const parent = containerRef.current ?? groupElement.current?.parentElement;
+    if (!parent) return;
+    const measure = (width: number) => {
+      if (resizing.current) return;
+      const chats = new Set(sessionPaneIds.split("\n"));
+      const next = paneWidthBounds(layout, sash, width, paneMinimumWidths(layout, chats, width, paneMinimumSizes(parent))) ?? modelBounds;
+      setBounds(previous => previous.min === next.min && previous.max === next.max ? previous : next);
+    };
+    measure(parent.getBoundingClientRect().width);
+    const observer = new ResizeObserver(entries => { if (entries[0]) measure(entries[0].contentRect.width); });
+    observer.observe(parent);
+    return () => observer.disconnect();
+  }, [layout, sash, sessionPaneIds, containerRef]);
+  useLayoutEffect(() => {
+    if (!resizing.current) api.current?.setLayout({ [beforeId]: boundary * 100, [afterId]: (1 - boundary) * 100 });
+  }, [boundary]);
+  return <ResizablePanelGroup data-pane-sash-group={`${sash.splitId}:${sash.index}`} groupRef={api} elementRef={groupElement}
+    className="absolute z-10 pointer-events-none" style={sashStyle(sash)}
+    orientation={row ? "horizontal" : "vertical"} disabled={!visible}
+    onResizeStart={() => {
+      resizing.current = true;
+      pending.current = boundary;
+      const parent = containerRef.current;
+      if (parent) { priorTransition.current = parent.style.transitionProperty; parent.style.transitionProperty = "none"; }
+      callbacks.current.onStart();
+    }}
+    onLayoutChange={next => {
+      const ratio = next[beforeId] / 100;
+      if (!resizing.current || ratio === pending.current) return;
+      pending.current = ratio;
+      callbacks.current.onPreview(ratio);
+    }}
+    onLayoutChanged={(next, meta) => {
+      if (!meta.isUserInteraction) return;
+      callbacks.current.onPreview(next[beforeId] / 100);
+      callbacks.current.onCommit(next[beforeId] / 100);
+    }}
+    onResizeEnd={committed => {
+      resizing.current = false;
+      if (!committed) callbacks.current.onCancel();
+      if (containerRef.current) containerRef.current.style.transitionProperty = priorTransition.current;
+    }}>
+    <ResizablePanel id={beforeId} defaultSize={`${boundary * 100}%`} minSize={`${bounds.min * 100}%`} maxSize={`${bounds.max * 100}%`} />
+    <ResizableHandle data-pane-sash={`${sash.splitId}:${sash.index}`} aria-label={t("Resize pane")} className="pointer-events-auto !w-px aria-[orientation=horizontal]:!h-px aria-[orientation=horizontal]:!w-full" />
+    <ResizablePanel id={afterId} minSize={0} />
+  </ResizablePanelGroup>;
 }
 
-/** Card header control: fill the chat area with this card, or restore it. */
 function CardMaximizeButton({
   maximized,
   onToggle,

@@ -1,16 +1,12 @@
 import { useSidebarListPreview } from "../useSidebarListPreview";
 import { SidebarEntryReorderContext } from "../SidebarEntryReorder";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
-import {
-  useAnimatedReorder,
-  type ReorderExternalDrop,
-} from "../../../shared/hooks/useAnimatedReorder";
+import type { SortableItemState } from "../../../shared/ui/primitives/Sortable";
+import { ListMotion, ListMotionLi } from "../../../shared/ui/ListMotion";
 import { ChevronDown, ChevronRight, CircleAlert } from "../../../shared/ui/icons";
 import {
   useLayoutEffect,
-  useMemo,
   useRef,
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -132,6 +128,7 @@ export function SessionGroupPreview({
   );
   return (
     <>
+      <ListMotion>
       {sessions.map((session, index) => (
         <SessionListItem
           key={session.id}
@@ -143,6 +140,7 @@ export function SessionGroupPreview({
           {renderCard(session)}
         </SessionListItem>
       ))}
+      </ListMotion>
       {preview.button && <li className="list-none">{preview.button}</li>}
     </>
   );
@@ -161,30 +159,11 @@ export function SessionListItem({
   cwd: string;
   motion: RefObject<SessionInsertMotion>;
   expanded?: boolean;
-  sortable?: ReturnType<typeof useAnimatedReorder<string>>;
+  sortable?: SortableItemState;
   children: ReactNode;
 }) {
-  const ref = useRef<HTMLLIElement>(null);
-  // A fresh value would re-render every memoized card on each section render.
-  const dragging = !!sortable && sortable.draggingId !== null;
-  const onItemPointerDown = sortable?.onItemPointerDown;
-  const consumeClick = sortable?.consumeClick;
-  const reorder = useMemo(
-    () =>
-      onItemPointerDown && consumeClick
-        ? {
-            dragging,
-            onPointerDown: (
-              event: ReactPointerEvent,
-              externalDrop?: ReorderExternalDrop<string>,
-            ) => onItemPointerDown(session.id, event, externalDrop),
-            consumeClick,
-          }
-        : null,
-    [dragging, onItemPointerDown, consumeClick, session.id],
-  );
-  const content = reorder ? (
-    <SidebarEntryReorderContext.Provider value={reorder}>
+  const content = sortable ? (
+    <SidebarEntryReorderContext.Provider value={sortable}>
       {children}
     </SidebarEntryReorderContext.Provider>
   ) : (
@@ -201,19 +180,20 @@ export function SessionListItem({
 
   }, []);
   return (
-    <li
-      ref={(node) => {
-        ref.current = node;
-        sortable?.setItemRef(session.id, node);
-      }}
+    <ListMotionLi
+      {...sortable?.motionProps}
+      data-reordering={sortable?.sorting || undefined}
+      data-dragging={sortable?.dragging || undefined}
+      ref={sortable?.ref}
+      style={sortable?.style}
       data-session-row={session.id}
-      className={`${sortable ? "reorder-item session-reorder-item relative" : ""} ${expanded === undefined ? "" : "empty:hidden"}`}
+      className={`${sortable ? "relative" : ""} ${expanded === undefined ? "" : "empty:hidden"}`}
     >
       {expanded === undefined ? (
         content
       ) : (
         <AnimatedCollapse expanded={expanded}>{content}</AnimatedCollapse>
       )}
-    </li>
+    </ListMotionLi>
   );
 }

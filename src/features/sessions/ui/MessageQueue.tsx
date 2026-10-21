@@ -3,8 +3,8 @@ import { cn } from "../../../shared/lib/cn";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useAnimatedReorder } from "../../../shared/hooks/useAnimatedReorder";
-import { useListReorderMotion } from "../../../shared/hooks/useListReorderMotion";
+import { motion } from "motion/react";
+import { SortableItem, SortableList } from "../../../shared/ui/primitives/Sortable";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { orderByIds } from "../../../shared/lib/reorder";
 import {
@@ -118,10 +118,8 @@ function DesktopMessageQueue({
   view: MessageQueueView;
 }) {
   const { t } = useTranslation();
-  const list = useRef<HTMLDivElement>(null);
   const [pendingOrder, setPendingOrder] = useState<string[]>();
   const reorderBaseline = useRef("");
-  const manualReorder = useRef(false);
   const snapshotOrder = view.messages.map((message) => message.id).join("\0");
   useEffect(() => {
     if (pendingOrder && snapshotOrder !== reorderBaseline.current)
@@ -146,20 +144,6 @@ function DesktopMessageQueue({
       }
     });
   };
-  const sorting = useAnimatedReorder(
-    sortable ? ids : [],
-    (order, id) => {
-      manualReorder.current = true;
-      reorder(order, id);
-    },
-    "y",
-  );
-  useListReorderMotion(
-    list,
-    ids,
-    "data-queue-id",
-    !sorting.draggingId && !(manualReorder.current && pendingOrder),
-  );
 
   return (
     <div className="px-2 text-content/55" data-message-queue>
@@ -193,40 +177,27 @@ function DesktopMessageQueue({
             {view.error}
           </p>
         )}
-        <div ref={list}>
-          {messages.map((message, index) => (
-            <div
-              key={message.id}
-              ref={(node) => sorting.setItemRef(message.id, node)}
+        <div>
+          <SortableList ids={ids} onReorder={reorder} disabled={!sortable} renderOverlay={(id) => {
+            const message = messages.find(message => message.id === id)!;
+            return message.text.trim() || t("Queued attachments ({count})", { count: message.attachments.length });
+          }}>
+          {messages.map((message, index) => <SortableItem key={message.id} id={message.id} disabled={!sortable}>{(item) => (
+            <motion.div
+              {...item.motionProps}
+              ref={item.ref}
+              style={item.style}
               data-queue-id={message.id}
+              data-dragging={item.dragging || undefined}
               className={cn("relative flex min-h-6 items-center gap-2 text-[12px] data-[dragging=true]:z-10 data-[dragging=true]:bg-content/6", index > 0 ? "border-t border-stroke" : "")}
             >
               {onReorder && messages.length > 1 ? (
                 <Button variant="ghost" size="content"
+                  {...item.handleProps}
                   type="button"
                   title={t("Drag to reorder queued message")}
                   aria-label={t("Drag to reorder queued message")}
                   disabled={!sortable}
-                  onPointerDown={(event) =>
-                    sorting.onItemPointerDown(message.id, event)
-                  }
-                  onClick={(event) => {
-                    if (sorting.consumeClick()) event.preventDefault();
-                  }}
-                  onKeyDown={(event) => {
-                    if (
-                      !sortable ||
-                      (event.key !== "ArrowUp" && event.key !== "ArrowDown")
-                    )
-                      return;
-                    event.preventDefault();
-                    const to = index + (event.key === "ArrowUp" ? -1 : 1);
-                    if (to < 0 || to >= ids.length) return;
-                    const order = ids.filter((id) => id !== message.id);
-                    order.splice(to, 0, message.id);
-                    manualReorder.current = false;
-                    reorder(order, message.id);
-                  }}
                   className="grid size-6 shrink-0 touch-none cursor-grab place-items-center rounded-md hover:bg-content/6 hover:text-content active:cursor-grabbing disabled:cursor-default disabled:opacity-30"
                 >
                   <GripVertical className="size-3.5" />
@@ -284,8 +255,9 @@ function DesktopMessageQueue({
               >
                 <Trash2 className="size-3.5" />
               </Button>
-            </div>
-          ))}
+            </motion.div>
+          )}</SortableItem>)}
+          </SortableList>
         </div>
       </div>
     </div>

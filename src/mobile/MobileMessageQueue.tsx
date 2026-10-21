@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { memo, useEffect, useRef, useState, type ComponentProps } from "react";
+import { memo, useContext, useEffect, useRef, useState, type ComponentProps } from "react";
 import {
   MessageQueue,
   type MessageQueueView,
@@ -16,10 +16,12 @@ import {
   Trash2,
 } from "../shared/ui/icons";
 import { MobileSheet, SHEET_WIDTH } from "./MobileSheet";
-import { useQueueDrag } from "./useQueueDrag";
+import { SortableItem, SortableList } from "../shared/ui/primitives/Sortable";
+import { orderByIds } from "../shared/lib/reorder";
+import { lightImpact } from "./haptics";
 import { useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
 import { MobileSheetPresence } from "./MobileSheetPresence";
-import { useListReorderMotion } from "../shared/hooks/useListReorderMotion";
+import { MobileOverlayHostContext } from "./MobileOverlayHost";
 
 type Props = Omit<ComponentProps<typeof MessageQueue>, "renderQueue"> & {
   onRestore: (message: QueuedMessage) => void | Promise<void>;
@@ -68,41 +70,35 @@ function MobileQueueView({
 }) {
   const { t } = useTranslation();
   const visible = useSurfaceVisibility();
+  const overlayContainer = useContext(MobileOverlayHostContext);
   const [menuId, setMenuId] = useState<string>();
   const anchor = useRef<HTMLButtonElement>(null);
-  const list = useRef<HTMLDivElement>(null);
+  const [pendingOrder, setPendingOrder] = useState<string[]>();
+  const [dragging, setDragging] = useState(false);
+  const cancelDrag = useRef<(() => void) | undefined>(undefined);
   const menuMessage = view.messages.find((message) => message.id === menuId);
-  const blocked = !visible || view.disabled || view.working;
+  const blocked = !visible || view.disabled || view.working || !!pendingOrder;
   const sortable =
     !blocked && canReorder && !!onReorder && view.messages.length > 1;
-  const sorting = useQueueDrag(
-    view.messages.map((message) => message.id),
-    sortable,
-    (id, beforeId) => {
+  const reorder = (ids: string[], id: string) => {
       view.runAction(async () => {
+        setPendingOrder(ids);
         try {
-          await onReorder?.(id, beforeId);
+          await onReorder?.(id, ids[ids.indexOf(id) + 1]);
         } finally {
-          sorting.clearPreview();
+          setPendingOrder(undefined);
         }
       });
-    },
-  );
-  const messages = sorting.order
-    .map((id) => view.messages.find((message) => message.id === id)!)
-    .filter(Boolean);
-  useListReorderMotion(list, sorting.order, "data-queue-id", visible);
-  const dragged = view.messages.find(
-    (message) => message.id === sorting.drag?.id,
-  );
+  };
+  const messages = pendingOrder ? orderByIds(view.messages, pendingOrder) : view.messages;
   useEffect(() => {
-    if (!visible || (!menuMessage && !sorting.drag)) return;
+    if (!visible || (!menuMessage && !dragging)) return;
     onOverlayChange?.(() => {
-      sorting.cancel();
+      cancelDrag.current?.();
       setMenuId(undefined);
     });
     return () => onOverlayChange?.();
-  }, [visible, !!menuMessage, !!sorting.drag, onOverlayChange]);
+  }, [visible, !!menuMessage, dragging, onOverlayChange]);
   useEffect(() => {
     if (menuId && (!visible || !menuMessage)) setMenuId(undefined);
   }, [visible, menuId, menuMessage]);
@@ -123,7 +119,14 @@ function MobileQueueView({
             </button>
           </div>
         )}
-        <div ref={list} className="mobile-queue-pills">
+        <div className="mobile-queue-pills">
+          <SortableList touch ids={messages.map(message => message.id)} disabled={!sortable} onReorder={reorder} cancelRef={cancelDrag}
+            overlayContainer={overlayContainer} overlayClassName="mobile-queue-pill"
+            onActiveChange={(active) => { setDragging(active); if (active) setMenuId(undefined); void lightImpact(); }}
+            renderOverlay={(id) => {
+              const message = messages.find(message => message.id === id)!;
+              return <><ListEnd size={16} /><span>{message.text.trim() || t("Queued attachments ({count})", { count: message.attachments.length })}</span><MoreHorizontal size={16} /></>;
+            }}>
           {messages.map((message) => {
             const label =
               message.text.trim() ||
@@ -131,15 +134,18 @@ function MobileQueueView({
                 count: message.attachments.length,
               });
             return (
-              <button
+              <SortableItem id={message.id} key={message.id} disabled={!sortable}>{(item) => <motion.button
+                {...item.motionProps}
+                {...item.handleProps}
+                ref={(node) => { item.ref(node); item.handleProps.ref(node); }}
+                style={item.style}
                 type="button"
                 key={message.id}
                 className="mobile-queue-pill"
                 data-queue-id={message.id}
                 data-sortable={sortable}
-                data-dragging={sorting.drag?.id === message.id}
+                data-dragging={item.dragging}
                 disabled={blocked}
-                onPointerDown={(event) => sorting.start(message.id, event)}
                 onContextMenu={(event) => {
                   if (sortable) event.preventDefault();
                 }}
@@ -148,7 +154,7 @@ function MobileQueueView({
                 aria-expanded={menuId === message.id}
                 title={label}
                 onClick={(event) => {
-                  if (sorting.suppressClick()) {
+                  if (item.consumeClick()) {
                     event.preventDefault();
                     return;
                   }
@@ -161,9 +167,10 @@ function MobileQueueView({
                 {message.blocked && <small title={t(message.blocked)}>{t("Blocked")}</small>}
                 <span>{label}</span>
                 <MoreHorizontal size={16} aria-hidden="true" />
-              </button>
+              </motion.button>}</SortableItem>
             );
           })}
+          </SortableList>
         </div>
         {view.error && (
           <p className="mobile-queue-error" role="alert">
@@ -171,31 +178,6 @@ function MobileQueueView({
           </p>
         )}
       </div>
-      {sorting.drag && dragged && (
-        <motion.div
-          layout="position"
-          ref={sorting.previewRef}
-          className="mobile-queue-pill mobile-queue-drag-preview"
-          aria-hidden="true"
-          // The pill follows the finger on the compositor: moving `top` would
-          // re-lay out and re-blur the glass on every frame.
-          style={{
-            left: sorting.drag.left,
-            top: 0,
-            width: sorting.drag.width,
-            ...sorting.previewStyle,
-          }}
-        >
-          <ListEnd size={16} />
-          <span>
-            {dragged.text.trim() ||
-              t("Queued attachments ({count})", {
-                count: dragged.attachments.length,
-              })}
-          </span>
-          <MoreHorizontal size={16} />
-        </motion.div>
-      )}
       <MobileSheetPresence open={visible && !!menuMessage}>
       {menuMessage ? (
         <MobileSheet

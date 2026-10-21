@@ -61,10 +61,7 @@ import {
   messageFilesFromClipboard,
   nativeClipboardAttachments,
 } from "../../../platform/tauri/clipboard";
-import {
-  EXPLORER_FILE_POINTER_DRAG_EVENT,
-  type ExplorerFilePointerDragDetail,
-} from "../../../shared/lib/drag";
+import { useDropTarget } from "../../../shared/ui/primitives/Sortable";
 import { dragPointToClient } from "../../../shared/lib/dragPoint";
 import type { ContextUsage } from "../model/contextUsage";
 import {
@@ -1098,6 +1095,15 @@ export function Composer({
     field.focus({ preventScroll: true });
   }, [disabled, focused, question, busy, focusToken]);
 
+  const explorerDrop = useDropTarget({
+    disabled: !enabled || disabled || !attachmentsSupported || remote,
+    accepts: payload => payload.type === "explorer-file" && typeof payload.path === "string",
+    onDrop: payload => readDroppedAttachments(() => attachmentsFromPaths([payload.path as string])),
+  });
+  useLayoutEffect(() => {
+    explorerDrop.ref(boxRef.current?.closest<HTMLElement>("[data-session-drop]") ?? null);
+    return () => explorerDrop.ref(null);
+  }, [explorerDrop.ref, enabled]);
   useEffect(() => {
     if (!enabled || disabled) {
       setFileDrag(false);
@@ -1144,33 +1150,10 @@ export function Composer({
       readDroppedAttachments(() => attachmentsFromFiles(files));
     };
 
-    const onExplorerFilePointerDrag = (event: Event) => {
-      if (fileDropStateRef.current.remote) return;
-      const detail = (event as CustomEvent<ExplorerFilePointerDragDetail>)
-        .detail;
-      if (!detail || detail.type === "end") {
-        setFileDrag(false);
-        return;
-      }
-      const over = overTarget(detail.x, detail.y);
-      const supported = fileDropStateRef.current.attachmentsSupported;
-      if (detail.type === "move") {
-        setFileDrag(over && supported);
-        return;
-      }
-      setFileDrag(false);
-      if (!over || !supported) return;
-      readDroppedAttachments(() => attachmentsFromPaths([detail.path]));
-    };
-
     const root = dropRoot();
     root?.addEventListener("dragover", onDragOver);
     root?.addEventListener("dragleave", onDragLeave);
     root?.addEventListener("drop", onDrop);
-    window.addEventListener(
-      EXPLORER_FILE_POINTER_DRAG_EVENT,
-      onExplorerFilePointerDrag,
-    );
 
     let unlisten: (() => void) | undefined;
     void getCurrentWebview()
@@ -1214,10 +1197,6 @@ export function Composer({
       root?.removeEventListener("dragover", onDragOver);
       root?.removeEventListener("dragleave", onDragLeave);
       root?.removeEventListener("drop", onDrop);
-      window.removeEventListener(
-        EXPLORER_FILE_POINTER_DRAG_EVENT,
-        onExplorerFilePointerDrag,
-      );
       unlisten?.();
     };
   }, [disabled, enabled, readDroppedAttachments]);
@@ -2428,13 +2407,13 @@ export function Composer({
             ref={boxRef}
             data-composer-box
             data-composer-editing={resendEdited ? "" : undefined}
-            data-composer-file-drag={fileDrag || undefined}
+            data-composer-file-drag={(fileDrag || explorerDrop.isOver) || undefined}
             className={cn("z-10 border bg-content/3 backdrop-blur-sm", resendEdited
                 ? "edit-last-turn-composer rounded-lg"
-                : "rounded-lg border-content/10 has-focus:border-content/20", fileDrag ? "border-accent/60" : "")}
+                : "rounded-lg border-content/10 has-focus:border-content/20", (fileDrag || explorerDrop.isOver) ? "border-accent/60" : "")}
           >
             {compact ? workspaceBar : null}
-            {fileDrag ? (
+            {(fileDrag || explorerDrop.isOver) ? (
               <div className="composer-file-drop pointer-events-none absolute inset-0 z-20 grid place-items-center rounded-lg bg-accent/8 text-[12px] text-content/70">
                 {uiT("Drop files to attach")}
               </div>

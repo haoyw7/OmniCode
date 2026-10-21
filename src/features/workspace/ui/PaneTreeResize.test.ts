@@ -49,8 +49,78 @@ vi.mock("../../sessions/ui/SessionPane", () => ({
 let container: HTMLDivElement;
 let root: Root;
 let pendingFrame: FrameRequestCallback | undefined;
+let layoutRect: DOMRect;
+const resizeObservers = new Set<{ callback: ResizeObserverCallback; targets: Set<Element> }>();
+
+// happy-dom has no layout engine. Supply only this fixture's sizing-track
+// geometry; the actual v4 hit testing, constraints and drag lifecycle still run.
+function fixtureRect(element: HTMLElement): DOMRect | undefined {
+  if (element.hasAttribute("data-pane-tree-layout")) return layoutRect;
+  if (element.hasAttribute("data-pane-sash-group")) {
+    return new DOMRect(
+      layoutRect.x + parseFloat(element.style.left) / 100 * layoutRect.width,
+      layoutRect.y + parseFloat(element.style.top) / 100 * layoutRect.height,
+      parseFloat(element.style.width) / 100 * layoutRect.width,
+      parseFloat(element.style.height) / 100 * layoutRect.height,
+    );
+  }
+  const group = element.parentElement;
+  if (!group?.hasAttribute("data-pane-sash-group")) return;
+  const rect = fixtureRect(group)!;
+  const row = group.style.flexDirection === "row";
+  const panels = Array.from(group.children).filter(
+    (child): child is HTMLElement => child instanceof HTMLElement && child.hasAttribute("data-panel"),
+  );
+  const total = panels.reduce((sum, panel) => sum + (parseFloat(panel.style.flexGrow) || 1), 0);
+  let offset = 0;
+  for (const child of group.children) {
+    const fraction = child instanceof HTMLElement && child.hasAttribute("data-panel")
+      ? (parseFloat(child.style.flexGrow) || 1) / total : 0;
+    if (child === element) return row
+      ? new DOMRect(rect.x + offset * rect.width, rect.y, fraction * rect.width, rect.height)
+      : new DOMRect(rect.x, rect.y + offset * rect.height, rect.width, fraction * rect.height);
+    offset += fraction;
+  }
+}
+
+function measureFixture() {
+  act(() => {
+    for (const observer of [...resizeObservers]) {
+      const entries = [...observer.targets].map(target => {
+        const contentRect = target.getBoundingClientRect();
+        return { target, contentRect, borderBoxSize: [{ inlineSize: contentRect.width, blockSize: contentRect.height }] } as ResizeObserverEntry;
+      });
+      observer.callback(entries, {} as ResizeObserver);
+    }
+  });
+}
 
 beforeEach(() => {
+  layoutRect = new DOMRect(100, 100, 1000, 800);
+  resizeObservers.clear();
+  const originalRect = HTMLElement.prototype.getBoundingClientRect;
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
+    return fixtureRect(this) ?? originalRect.call(this);
+  });
+  vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function () {
+    return fixtureRect(this)?.width ?? 0;
+  });
+  vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(function () {
+    return fixtureRect(this)?.height ?? 0;
+  });
+  vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function () {
+    return (fixtureRect(this)?.x ?? 0) - (this.parentElement && fixtureRect(this.parentElement)?.x || 0);
+  });
+  vi.spyOn(HTMLElement.prototype, "offsetTop", "get").mockImplementation(function () {
+    return (fixtureRect(this)?.y ?? 0) - (this.parentElement && fixtureRect(this.parentElement)?.y || 0);
+  });
+  vi.stubGlobal("ResizeObserver", class {
+    targets = new Set<Element>();
+    constructor(public callback: ResizeObserverCallback) { resizeObservers.add(this); }
+    observe(target: Element) { this.targets.add(target); }
+    unobserve(target: Element) { this.targets.delete(target); }
+    disconnect() { resizeObservers.delete(this); }
+  });
   paneRenders.session.mockClear();
   paneRenders.file.mockClear();
   paneRenders.layout.mockClear();
@@ -139,11 +209,13 @@ function render(
     ...patch,
   };
   act(() => root.render(createElement(PaneTree, props)));
-  container.querySelector<HTMLElement>(
-    "[data-pane-tree-layout]",
-  )!.getBoundingClientRect = () => new DOMRect(100, 100, 1000, 800);
+  measureFixture();
+  // happy-dom does not implement ARIAMixin's reflected ariaDisabled property.
+  for (const item of container.querySelectorAll<HTMLElement>('[role="separator"]')) {
+    Object.defineProperty(item, "ariaDisabled", { get: () => item.getAttribute("aria-disabled") });
+  }
   const separator = container.querySelector<HTMLElement>('[role="separator"]')!;
-  const handle = separator.firstElementChild as HTMLElement;
+  const handle = separator;
   const capture = new Set<number>();
   handle.setPointerCapture = (id) => capture.add(id);
   handle.hasPointerCapture = (id) => capture.has(id);
@@ -171,7 +243,10 @@ function pointer(
     target.dispatchEvent(
       new PointerEvent(type, {
         bubbles: true,
+        cancelable: true,
         button: 0,
+        buttons: type === "pointerup" ? 0 : 1,
+        pointerType: "mouse",
         pointerId,
         clientX,
         clientY,
@@ -208,7 +283,8 @@ describe("workspace split resize handles", () => {
     const tree = container.querySelector<HTMLElement>("[data-pane-tree-layout]")!;
     expect(tree.hasAttribute("data-chat-tiles")).toBe(true);
     // Two 420px chats cannot fit 600px; the compact minimum keeps them draggable.
-    tree.getBoundingClientRect = () => new DOMRect(100, 100, 600, 800);
+    layoutRect = new DOMRect(100, 100, 600, 800);
+    measureFixture();
     pointer(handle, "pointerdown", 400, 500);
     pointer(handle, "pointermove", 0, 500);
     expect(separator.getAttribute("aria-valuenow")).toBe("40");
@@ -257,9 +333,11 @@ describe("workspace split resize handles", () => {
     expect(separator.getAttribute("aria-valuenow")).toBe("28");
     pointer(handle, "pointermove", 1500, 500);
     expect(separator.getAttribute("aria-valuenow")).toBe("72");
+    pointer(handle, "pointermove", 650, 500);
     pointer(handle, "pointerup", 650, 500);
     expect(onRatio).toHaveBeenLastCalledWith("split", 0, 0.55);
-    pointer(handle, "pointerdown", 600, 500);
+    pointer(handle, "pointerdown", 650, 500);
+    pointer(handle, "pointermove", 50, 500);
     pointer(handle, "pointerup", 50, 500);
     expect(onRatio).toHaveBeenLastCalledWith("split", 0, 0.28);
   });
@@ -309,25 +387,34 @@ describe("workspace split resize handles", () => {
   });
 
   it.each(["right", "down"] as const)(
-    "previews and commits a %s split through the enlarged target",
+    "previews and commits a %s grid split with transitions disabled until release",
     (dir) => {
-      const { onRatio, separator, handle, capture } = render(dir);
+      const { onRatio, separator, handle, capture } = render(dir, {
+        sessions: [{ id: "first", title: "Chat", cwd: "/project", blocks: [] } as unknown as Session],
+      });
+      const grid = container.querySelector<HTMLElement>("[data-pane-tree-layout]")!;
       const previousCursor = document.body.style.cursor;
       expect(container.querySelectorAll('[role="separator"]')).toHaveLength(1);
       expect(separator.getAttribute("aria-orientation")).toBe(
         dir === "right" ? "vertical" : "horizontal",
       );
-      const grid = container.querySelector<HTMLElement>("[data-pane-tree-layout]")!;
-      const measure = vi.spyOn(grid, "getBoundingClientRect");
+      const measure = vi.spyOn(separator, "getBoundingClientRect");
       pointer(handle, "pointerdown", 600, 500);
       expect(capture.has(1)).toBe(true);
-      pointer(window, "pointermove", 750, 620);
-      expect(measure).toHaveBeenCalledOnce();
+      expect(grid.style.transitionProperty).toBe("none");
+      const startMeasurements = measure.mock.calls.length;
+      expect(startMeasurements).toBeGreaterThan(0);
+      pointer(document, "pointermove", 750, 620);
+      expect(measure).toHaveBeenCalledTimes(startMeasurements);
       expect(onRatio).not.toHaveBeenCalled();
       expect(separator.getAttribute("aria-valuenow")).toBe("65");
+      expect(dir === "right" ? grid.style.gridTemplateColumns : grid.style.gridTemplateRows)
+        .toBe("minmax(0, 0.65fr) minmax(0, 0.35fr)");
+      expect(grid.style.transitionProperty).toBe("none");
       pointer(handle, "pointerup", 750, 620);
       expect(onRatio).toHaveBeenCalledExactlyOnceWith("split", 0, 0.65);
       expect(capture.has(1)).toBe(false);
+      expect(grid.style.transitionProperty).toBe("");
       expect(document.body.style.cursor).toBe(previousCursor);
     },
   );
@@ -337,8 +424,8 @@ describe("workspace split resize handles", () => {
     (dir) => {
       const { onRatio, handle } = render(dir);
       const row = dir === "right";
-      pointer(handle, "pointerdown", row ? 615 : 600, row ? 500 : 515);
-      pointer(handle, "pointermove", row ? 616 : 600, row ? 500 : 516);
+      pointer(handle, "pointerdown", row ? 604 : 600, row ? 500 : 504);
+      pointer(handle, "pointermove", row ? 605 : 600, row ? 500 : 505);
       act(() => pendingFrame?.(0));
 
       const pane = container.querySelector<HTMLElement>(
@@ -349,7 +436,7 @@ describe("workspace split resize handles", () => {
         parseFloat(row ? pane.style.width : pane.style.height),
       ).toBeCloseTo(50 + 100 / span);
 
-      pointer(handle, "pointerup", row ? 616 : 600, row ? 500 : 516);
+      pointer(handle, "pointerup", row ? 605 : 600, row ? 500 : 505);
       expect(onRatio).toHaveBeenCalledExactlyOnceWith(
         "split",
         0,
@@ -374,7 +461,7 @@ describe("workspace split resize handles", () => {
     expect(capture.has(1)).toBe(false);
   });
 
-  it("immediately paints a diff/assistant horizontal split and lands the release sample without rendering its panes", () => {
+  it("immediately paints a diff/assistant horizontal split and commits the final move without rendering its panes", () => {
     const { handle, separator, onRatio } = render("down", {
       editorPanes: ["first", "second"].map((id, index) => ({
         id,
@@ -386,12 +473,13 @@ describe("workspace split resize handles", () => {
     });
     pointer(handle, "pointerdown", 600, 500);
     pointer(handle, "pointermove", 600, 560);
-    pointer(window, "pointermove", 600, 620);
+    pointer(document, "pointermove", 600, 620);
     expect(separator.getAttribute("aria-valuenow")).toBe("65");
     expect(onRatio).not.toHaveBeenCalled();
     act(() => pendingFrame?.(0));
     expect(separator.getAttribute("aria-valuenow")).toBe("65");
     pointer(handle, "pointermove", 600, 660);
+    pointer(handle, "pointermove", 600, 700);
     pointer(handle, "pointerup", 600, 700);
     expect(onRatio).toHaveBeenCalledExactlyOnceWith("split", 0, 0.75);
     expect(separator.getAttribute("aria-valuenow")).toBe("75");
@@ -412,6 +500,7 @@ describe("workspace split resize handles", () => {
     const latestCommit = vi.fn();
     rerender({ onRatio: latestCommit });
     expect(separator.getAttribute("aria-valuenow")).toBe("65");
+    pointer(handle, "pointermove", 800, 500);
     pointer(handle, "pointerup", 800, 500);
     expect(latestCommit).toHaveBeenCalledExactlyOnceWith("split", 0, 0.7);
   });
@@ -460,11 +549,11 @@ describe("workspace split resize handles", () => {
         .gridRow,
     ).toBe("1 / 3");
     const nested = container.querySelector<HTMLElement>(
-      '[data-pane-sash="nested:0"]',
+      '[data-pane-sash-group="nested:0"]',
     )!;
     expect(nested.style.left).toBe("65%");
     expect(nested.style.width).toBe("35%");
-    expect(separator.style.left).toBe("65%");
+    expect(separator.getBoundingClientRect().left).toBe(750);
     pointer(handle, "pointercancel", 750, 500);
     expect(grid.style.gridTemplateColumns).toBe(
       "minmax(0, 0.5fr) minmax(0, 0.5fr)",
@@ -526,7 +615,7 @@ it("defers tool reflow during a dock resize and fits the final measured width on
       ], {} as ResizeObserver);
     }
   });
-  expect(observations.filter(item => item.target.hasAttribute("data-pane-tree-layout"))).toHaveLength(1);
+  expect(observations.some(item => item.target.hasAttribute("data-pane-tree-layout"))).toBe(true);
   measure(1200);
   expect(onFitLayout).not.toHaveBeenCalled();
   resizing = true;

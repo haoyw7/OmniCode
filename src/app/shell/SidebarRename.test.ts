@@ -1,3 +1,8 @@
+import { ResizableRegion } from "../../shared/ui/primitives/Resizable";
+vi.mock("../../shared/ui/primitives/Resizable", async importOriginal => {
+  const actual = await importOriginal<typeof import("../../shared/ui/primitives/Resizable")>();
+  return { ...actual, ResizableRegion: vi.fn(actual.ResizableRegion) };
+});
 import { completeMotionAnimation } from "../../../tests/helpers/motionDriver";
 vi.mock("motion/react", async (importOriginal) => {
   const actual = await importOriginal<typeof import("motion/react")>();
@@ -286,10 +291,11 @@ describe("sidebar session multiselection", () => {
     )!;
     // All sessions still match, but the list returns to its first page.
     typeTitle(search, "Original conversation");
+    act(() => completeMotionAnimation(container));
     expect(
-      container.querySelector('[data-session-card="session-40"]'),
+      container.querySelector('[data-session-card="session-40"]:not([inert] *)'),
     ).toBeNull();
-    expect(container.querySelectorAll("[data-session-card]")).toHaveLength(32);
+    expect(container.querySelectorAll("[data-session-card]:not([inert] *)")).toHaveLength(32);
 
     act(() =>
       container.querySelector('[data-session-card="session-3"]')!.dispatchEvent(
@@ -1518,27 +1524,13 @@ describe("single sidebar layout and width", () => {
     expect(container.querySelector<HTMLElement>("[data-sidebar-transition]")!.style.width).toBe("0px");
   });
 
-  it("finishes a live resize before collapse and restores its saved width", () => {
+  it("restores the committed width after collapse", () => {
     const resizedWidth = SIDEBAR_WIDTH_DEFAULT + 130;
-    let frame: FrameRequestCallback | undefined;
-    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
-      frame = callback;
-      return 1;
-    });
     vi.stubGlobal("innerWidth", 1500);
     act(render);
-    const handle = container.querySelector<HTMLElement>('[aria-label="Resize sidebar"]')!;
-    handle.setPointerCapture = vi.fn();
-    handle.releasePointerCapture = vi.fn();
-    act(() => {
-      handle.dispatchEvent(new PointerEvent("pointerdown", { button: 0, pointerId: 1, clientX: SIDEBAR_WIDTH_DEFAULT, bubbles: true }));
-      window.dispatchEvent(new PointerEvent("pointermove", { pointerId: 1, clientX: resizedWidth }));
-    });
-    act(() => frame?.(0));
+    act(() => vi.mocked(ResizableRegion).mock.lastCall![0].onCommit(resizedWidth));
     const shell = container.querySelector<HTMLElement>("[data-sidebar-transition]")!;
     // While resizing, CSS reads the live width from this property; Motion owns the resting width.
-    expect(shell.style.getPropertyValue("--sidebar-resize-width")).toBe(`${resizedWidth}px`);
-    expect(shell.dataset.resizing).toBe("true");
     props.open = false;
     act(render);
     expect(shell.style.width).toBe("0px");
@@ -1562,11 +1554,7 @@ describe("single sidebar layout and width", () => {
     const handle = container.querySelector<HTMLElement>('[aria-label="Resize sidebar"]')!;
     handle.setPointerCapture = vi.fn();
     handle.releasePointerCapture = vi.fn();
-    act(() => {
-      handle.dispatchEvent(new PointerEvent("pointerdown", { button: 0, pointerId: 1, clientX: SIDEBAR_WIDTH_DEFAULT, bubbles: true }));
-      window.dispatchEvent(new PointerEvent("pointermove", { pointerId: 1, clientX: resizedWidth }));
-      window.dispatchEvent(new PointerEvent("pointerup", { pointerId: 1, clientX: resizedWidth }));
-    });
+    act(() => vi.mocked(ResizableRegion).mock.lastCall![0].onCommit(resizedWidth));
     expect(localStorage.getItem("omnicode.sidebarWidth")).toBe(String(resizedWidth));
     expect(container.querySelector("aside")!.style.width).toBe(`${resizedWidth}px`);
     act(() => root.unmount());
