@@ -1,3 +1,4 @@
+import { ToolContentPanel } from "../features/sessions/ui/ToolContentPanel";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { Button } from "../shared/ui/forms/Button";
 import { motion } from "motion/react";
@@ -193,16 +194,19 @@ export function MobileToolSheet({
 
   // The sheet is titled by the tool, like "Bash" or "Read"; the call itself
   // is the first section, so a long command never crowds the title row.
-  const reviewDiff = !!path && !!preview?.lines?.length;
+  const reviewDiff = !!path && (!!preview?.lines?.length || !!block.toolContent?.fields.some(field => field.name === "diff"));
   const verb = toolCategory(block) === "edit" ? editVerb(label) : (label.split(/\s/, 1)[0] ?? "");
   const name = verb ? verb[0].toUpperCase() + verb.slice(1) : t("Tool details");
   const content = (
       <div className="mobile-tool-sheet" data-state={state}>
+        {block.toolContent ? <ToolContentPanel reference={block.toolContent} active={open} renderDiff={lines =>
+          <MobileToolDiff path={displayPath(path ?? block.tool?.preview?.path ?? "", cwd)} lines={lines}
+            startLine={block.tool?.preview?.startLine} wrap={wrap} /> } /> : null}
         {/* A command the call did not echo back as input is shown under the title. */}
         {toolCategory(block) === "run" && !input
           ? section("call", "Command", label)
           : null}
-        {preview ? (
+        {preview && !block.toolContent ? (
           <div className="mobile-detail-section mobile-tool-diff">
             {reviewDiff && path ? (
               // The call's own diff opens in place, styled like the Git review.
@@ -243,7 +247,7 @@ export function MobileToolSheet({
         {input ? section("input", "Input", input) : null}
         {output ? section("output", "Output", output, outputNotice) : null}
         {details ? section("details", "Details", details) : null}
-        {!preview && !input && !output && !details ? (
+        {!block.toolContent && !preview && !input && !output && !details ? (
           <p className="mobile-muted mobile-detail-note">
             {t("This tool call has no further details.")}
           </p>

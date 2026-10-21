@@ -1,3 +1,5 @@
+import type { HistoryWindow } from "../../../integrations/harness/core/history";
+import type { ToolContentMode } from "../../../integrations/harness/core/toolContent";
 import type { SessionInteractionCapabilities } from "../../../integrations/harness/core/capabilities";
 import type { Block, Session, RuntimeMode, RemoteControlDevice } from "../../sessions/model/session";
 import type { QuestionAnswer, UserQuestionReply } from "../../sessions/model/userQuestion";
@@ -125,6 +127,9 @@ export type HostWorktree = {
   log?: string[];
 };
 export type HostSession = {
+  history?: HistoryWindow;
+  /** Transport projection only; never persisted by Host. */
+  contentMode?: ToolContentMode;
   /** Execution support supplied by the owning Host; absent on pre-v1 Hosts. */
   interactionCapabilities?: SessionInteractionCapabilities;
   /** Execution differences such as a WSL-installed provider or filtered configuration. */
@@ -214,6 +219,9 @@ export type RemoteAttachment = {
 /** `sessions.sync` sends only the blocks that changed after the client's
  * revision, so a long transcript is not re-downloaded on every poll. */
 export type SessionSync = {
+  history?: HistoryWindow;
+  historyBase?: string;
+  contentMode?: ToolContentMode;
   /** Client-only clock sample taken when receiving this sync. */
   clockOffsetMs?: number;
 } & (
@@ -284,6 +292,9 @@ function mergeSessionSync(known: HostSession | undefined, sync: SessionSync): Ho
   if (sync.kind === "snapshot") return sync.value;
   if (
     !known ||
+    known.contentMode !== sync.contentMode ||
+    known.history?.mode !== sync.history?.mode ||
+    (sync.kind === "delta" && sync.history && known.history?.start !== sync.historyBase) ||
     known.revision !== (sync.kind === "delta" ? sync.base : sync.revision)
   )
     throw new Error("Session sync base does not match");

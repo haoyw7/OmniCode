@@ -1,8 +1,13 @@
+import type { TranscriptHistory } from "../../../integrations/harness/core/history";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "../../../shared/lib/queryClient";
+import { TranscriptPlatformContext } from "./TranscriptPlatform";
 import { cn } from "../../../shared/lib/cn";
 import { Input } from "../../../shared/ui/forms/Input";
 import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import {
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -16,6 +21,7 @@ import { keybindingPressed } from "../../settings/model/settings";
 
 type Props = {
   blocks: Block[];
+  historyPaging?: TranscriptHistory;
   visible: boolean;
   focused: boolean;
   onNavigate: (blockId: string | null, query?: string) => boolean;
@@ -24,21 +30,40 @@ type Props = {
 
 export function TranscriptFind({
   blocks,
+  historyPaging,
   visible,
   focused,
   onNavigate,
   side = "right",
 }: Props) {
   const { t: uiT } = useTranslation();
+  const { toolContent: source, selectToolContent } = useContext(TranscriptPlatformContext);
   const input = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const matches = useMemo(
+  const localMatches = useMemo(
     () => findTranscriptBlocks(blocks, query),
     [blocks, query],
   );
-  const selected = matches[Math.min(active, matches.length - 1)] ?? null;
+  const historyLoad = useMutation({ mutationFn: async () => { await historyPaging?.loadEarlier(); }, networkMode: "always" }, queryClient);
+  const pageOffset = Math.floor(active / 100) * 100;
+  const remote = useQuery({
+    queryKey: ["toolContentSearch", ...(source?.key ?? []), query.trim(), pageOffset],
+    enabled: !!source?.search && open && visible && !!query.trim(),
+    queryFn: ({ signal }) => source!.search!(query.trim(), pageOffset, signal),
+    placeholderData: keepPreviousData,
+    networkMode: "always",
+    retry: false, gcTime: 0,
+  }, queryClient);
+  const matches = source?.search ? (remote.data?.ids ?? []) : localMatches;
+  const total = source?.search ? remote.data?.total ?? 0 : matches.length;
+  const selected = remote.isPlaceholderData ? null : matches[source?.search ? active - pageOffset : active] ?? null;
+  useEffect(() => {
+    if (source?.search && open && visible && query.trim())
+      void queryClient.invalidateQueries({ queryKey: ["toolContentSearch", ...source.key] });
+  }, [blocks, source, open, visible]);
+  useEffect(() => { if (total && active >= total) setActive(total - 1); }, [total, active]);
 
   const openFind = () => {
     setOpen(true);
@@ -49,18 +74,25 @@ export function TranscriptFind({
   };
   const closeFind = () => {
     setOpen(false);
+    historyLoad.reset();
     onNavigate(null);
+    selectToolContent?.(undefined);
   };
   const step = (direction: number) => {
-    if (!matches.length) return;
-    setActive((index) => (index + direction + matches.length) % matches.length);
+    if (!total || remote.isFetching) return;
+    setActive((index) => (index + direction + total) % total);
   };
 
   useEffect(() => {
     if (!open || !visible) return;
-    const frame = requestAnimationFrame(() => onNavigate(selected, query));
+    const frame = requestAnimationFrame(() => {
+      const found = onNavigate(selected, query);
+      if (selected && !found && historyPaging?.hasMore && !historyLoad.isPending && !historyLoad.error) historyLoad.mutate();
+      const hit = selected ? remote.data?.hits?.[selected] : undefined;
+      selectToolContent?.(selected && hit ? { blockId: selected, ...hit, query } : undefined);
+    });
     return () => cancelAnimationFrame(frame);
-  }, [open, visible, selected, query, onNavigate]);
+  }, [open, visible, selected, query, onNavigate, remote.data, selectToolContent, blocks, historyPaging?.hasMore, historyLoad.isPending, historyLoad.error]);
 
   useEffect(() => {
     if (!visible || !focused) return;
@@ -130,6 +162,7 @@ export function TranscriptFind({
           spellCheck={false}
           onChange={(event) => {
             setQuery(event.target.value);
+            historyLoad.reset();
             setActive(0);
           }}
           onKeyDown={(event: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -144,11 +177,11 @@ export function TranscriptFind({
           aria-live="polite"
           className="min-w-[10ch] shrink-0 whitespace-nowrap text-right font-mono text-[11px] tabular-nums text-content/50"
         >
-          {query.trim()
+          {(remote.isFetching || historyLoad.isPending) ? uiT("Loading…") : (remote.error || historyLoad.error) ? uiT("Search failed") : query.trim()
             ? matches.length
               ? uiT("{value0} of {value1}", {
-                  value0: String(Math.min(active, matches.length - 1) + 1),
-                  value1: String(matches.length),
+                  value0: String(active + 1),
+                  value1: String(total),
                 })
               : uiT("No results")
             : ""}
@@ -156,17 +189,18 @@ export function TranscriptFind({
         <FindButton
           label={uiT("Previous match")}
           onClick={() => step(-1)}
-          disabled={!matches.length}
+          disabled={!matches.length || remote.isFetching}
         >
           <ChevronUp className="size-3.5" />
         </FindButton>
         <FindButton
           label={uiT("Next match")}
           onClick={() => step(1)}
-          disabled={!matches.length}
+          disabled={!matches.length || remote.isFetching}
         >
           <ChevronDown className="size-3.5" />
         </FindButton>
+        {(remote.error || historyLoad.error) && <Button variant="ghost" size="sm" onClick={() => { historyLoad.reset(); void remote.refetch(); }}>{uiT("Retry")}</Button>}
         <FindButton label={uiT("Close find")} onClick={closeFind}>
           <X className="size-3.5" />
         </FindButton>

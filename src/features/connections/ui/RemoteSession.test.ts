@@ -61,8 +61,10 @@ vi.mock("../../sessions/ui/AgentTranscript", () => ({
     onQuestionFollowUp,
     worktreeCreation,
     turnAccessory,
+    historyPaging,
   }: {
     blocks: Block[];
+    historyPaging?: { hasMore: boolean; loadEarlier(): Promise<void> };
     busy: boolean;
     executionState?: Session["executionState"];
     animateFrom?: string;
@@ -78,6 +80,7 @@ vi.mock("../../sessions/ui/AgentTranscript", () => ({
       "ol",
       { "aria-label": "Transcript", "data-busy": busy, "data-animate-from": animateFrom,
         "data-execution-phase": executionState?.phase, "data-execution-since": executionState?.since },
+      historyPaging?.hasMore ? createElement("button", { onClick: () => void historyPaging.loadEarlier() }, "Load earlier messages") : null,
       turnAccessory?.(blocks.findLast((block) => block.role === "user"), true),
       createElement("button", { "aria-label": "Open transcript file", onClick: () => onOpenFile?.("src/app.ts") }),
       createElement("button", { "aria-label": "Open transcript diff", onClick: () => onOpenDiff?.("src/app.ts") }),
@@ -1234,6 +1237,34 @@ it("opens on a pressed conversation's read still in flight instead of reading ag
   await settle();
   expect(container.textContent).toContain("Earlier message");
   expect(hostCalls("sessions.sync", "pressed-session")).toHaveLength(1);
+});
+
+it("negotiates a tail window and loads older Host rows through the existing history control", async () => {
+  const rows: Block[] = Array.from({ length: 200 }, (_, i) => ({ id: `history-${i}`, role: i % 2 ? "assistant" : "user", text: `History row ${i}.` }));
+  hostConversation("paged-session", rows);
+  const original = vi.mocked(invoke).getMockImplementation()!;
+  vi.mocked(invoke).mockImplementation(async (command, input) => {
+    const call = input as { method?: string; params?: { history?: { start?: string; before?: string } } } | undefined;
+    if (call?.method === "environment.describe") {
+      const descriptor = await original(command, input) as { capabilities: string[] };
+      return { ...descriptor, capabilities: [...descriptor.capabilities, "sessions.history.v1", "sessions.tool-content.v1"] };
+    }
+    if (call?.method === "sessions.sync" || call?.method === "sessions.history") {
+      expect(call.params?.history).toBeDefined();
+      const start = call.params?.history?.before ? 50 : 125;
+      const history = { mode: "tail-v1", start: `history-${start}`, hasMore: true };
+      return { kind: "snapshot", contentMode: "tool-refs-v1", history,
+        value: { ...host!, contentMode: "tool-refs-v1", history, session: { ...host!.session, blocks: rows.slice(start) } } };
+    }
+    return original(command, input);
+  });
+  await render();
+  expect(container.textContent).not.toContain("History row 50.");
+  const earlier = () => [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent === "Load earlier messages")!;
+  await act(async () => earlier().click());
+  await settle();
+  expect(hostCalls("sessions.history", "paged-session")).toHaveLength(1);
+  expect(container.textContent).toContain("History row 50.");
 });
 
 it("revalidates a tab when it is shown but not when it is hidden", async () => {

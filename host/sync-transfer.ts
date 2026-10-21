@@ -20,7 +20,7 @@ const encodedBytes = (value: string) =>
 export class SyncTransfers {
   private transfers = new Map<
     string,
-    { sessionId: string; text: string; expires: number }
+    { sessionId: string; text: string; expires: number; chunk: number }
   >();
 
   constructor(
@@ -30,13 +30,14 @@ export class SyncTransfers {
     },
   ) {}
 
-  respond(sessionId: string, sync: SessionSync): SessionSyncResponse {
+  respond(sessionId: string, sync: SessionSync, maxBytes?: number): SessionSyncResponse {
+    const inline = maxBytes ?? this.limits.inline;
     // UTF-8 uses at most 3 bytes per UTF-16 unit; skip measuring small syncs.
     if (sync.kind === "unchanged") return sync;
     const text = JSON.stringify(sync);
     if (
-      text.length * 3 <= this.limits.inline ||
-      Buffer.byteLength(text) <= this.limits.inline
+      text.length * 3 <= inline ||
+      Buffer.byteLength(text) <= inline
     )
       return sync;
     this.prune();
@@ -44,6 +45,7 @@ export class SyncTransfers {
     this.transfers.set(transfer, {
       sessionId,
       text,
+      chunk: maxBytes ?? this.limits.chunk,
       expires: Date.now() + TRANSFER_TTL_MS,
     });
     return { kind: "chunked", transfer, length: text.length };
@@ -63,11 +65,11 @@ export class SyncTransfers {
     // the piece when escaping or non-ASCII text makes it larger.
     let end = Math.min(
       entry.text.length,
-      offset + Math.max(1, Math.floor((this.limits.chunk * 2) / 3)),
+      offset + Math.max(1, Math.floor((entry.chunk * 2) / 3)),
     );
     while (
       end - offset > 1 &&
-      encodedBytes(entry.text.slice(offset, end)) > this.limits.chunk
+      encodedBytes(entry.text.slice(offset, end)) > entry.chunk
     )
       end = offset + Math.ceil((end - offset) / 2);
     // Never split a surrogate pair: a lone surrogate is not valid JSON text

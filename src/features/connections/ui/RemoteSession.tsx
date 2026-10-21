@@ -1,3 +1,8 @@
+import { retainHistoryWindow } from "../model/historyRead";
+import { HISTORY_CAPABILITY, type TranscriptHistory } from "../../../integrations/harness/core/history";
+import { TOOL_CONTENT_CAPABILITY, TOOL_CONTENT_MODE, type ToolContentSource } from "../../../integrations/harness/core/toolContent";
+import { remoteToolContentSource } from "../model/remoteToolContent";
+import { removeToolContentQueries } from "../../sessions/model/toolContentQueries";
 import type { SessionInteractionCapabilities } from "../../../integrations/harness/core/capabilities";
 import { hostInteractionCapabilities } from "../model/interactionCapabilities";
 import { Button } from "../../../shared/ui/forms/Button";
@@ -79,9 +84,9 @@ import {
 import { notifyReviewChanged, registerHostCheckpointRoute } from "../../sessions/model/checkpoint";
 import {
   clearPendingRemoteCommand,
-  loadRemoteSession,
   loadRemoteSessionPreviews,
   loadRemoteSessionText,
+  remoteMachineById,
   OPEN_CONNECTIONS_EVENT,
   pendingRemoteCommand,
   pendingRemoteFollowup,
@@ -125,6 +130,8 @@ export type RemoteSessionOverrides = Partial<SessionPaneProps> & {
   messageQueue?: { render: (restore: (message: QueuedMessage, position?: QueueReturnPosition) => void) => ReactNode };
   composerNotice?: ReactNode;
   interactionCapabilities: SessionInteractionCapabilities;
+  toolContentSource?: ToolContentSource;
+  historyPaging?: TranscriptHistory;
   hostManaged: boolean;
   remoteSession: boolean;
   hostFeatures: { attachments: boolean; plan: boolean; draft: boolean; orchestration?: boolean; checkpoint?: boolean };
@@ -170,7 +177,11 @@ const descriptorKey = remoteSessionKeys.descriptor;
 export async function preloadRemoteSession(machineId: string, sessionId: string): Promise<void> {
   const key = snapshotKey(machineId, sessionId);
   if (queryClient.getQueryData<HostSession>(key)) return;
-  const snapshot = await queryClient.fetchQuery(remoteSnapshotQuery(key, () => loadRemoteSessionText(machineId, sessionId)));
+  const machine = await remoteMachineById(machineId);
+  if (!machine) return;
+  const descriptor = await loadRemoteHostDescriptor(machineId, machine.environmentId);
+  const mode = descriptor?.capabilities.includes(TOOL_CONTENT_CAPABILITY) ? TOOL_CONTENT_MODE : undefined;
+  const snapshot = await queryClient.fetchQuery(remoteSnapshotQuery([...key, mode ?? "full", descriptor.capabilities.includes(HISTORY_CAPABILITY)], () => loadRemoteSessionText(machineId, sessionId, undefined, undefined, mode, descriptor.capabilities.includes(HISTORY_CAPABILITY))));
   rememberSessionSnapshot(key, snapshot);
 }
 
@@ -351,6 +362,9 @@ function ConnectedRemoteSession({
       ? queryClient.getQueryData<HostSession>(snapshotKey(machine.id, sessionId))
       : undefined,
   );
+  const toolContentSource = useMemo(() => sessionId && descriptor?.capabilities.includes(TOOL_CONTENT_CAPABILITY)
+    ? remoteToolContentSource(machine.id, machine.environmentId, sessionId) : undefined,
+  [machine.id, machine.environmentId, sessionId, descriptor?.capabilities]);
   const snapshotRef = useRef(snapshot);
   const interactionCapabilities = hostInteractionCapabilities(snapshot, descriptor?.capabilities);
   snapshotRef.current = snapshot;
@@ -600,6 +614,8 @@ function ConnectedRemoteSession({
           );
           describedHost.current = JSON.stringify(hostKey);
         }
+        const contentMode = queryClient.getQueryData<HostDescriptor>(hostKey)?.capabilities.includes(TOOL_CONTENT_CAPABILITY) ? TOOL_CONTENT_MODE : undefined;
+        const windowed = !!queryClient.getQueryData<HostDescriptor>(hostKey)?.capabilities.includes(HISTORY_CAPABILITY);
         const known =
           snapshotRef.current?.session.id === sessionId
             ? snapshotRef.current
@@ -609,10 +625,10 @@ function ConnectedRemoteSession({
           ? known
             ? await loadRemoteSessionText(machine.id, sessionId, known,
                 visible && !document.hidden && (known.session.busy || known.orchestration?.status === "active") &&
-                  queryClient.getQueryData<HostDescriptor>(hostKey)?.capabilities.includes("sessions.sync.wait.v1") ? 1_000 : undefined)
+                  queryClient.getQueryData<HostDescriptor>(hostKey)?.capabilities.includes("sessions.sync.wait.v1") ? 1_000 : undefined, contentMode, windowed)
             : await queryClient.fetchQuery(remoteSnapshotQuery(
-                snapshotKey(machine.id, sessionId),
-                () => loadRemoteSessionText(machine.id, sessionId),
+                [...snapshotKey(machine.id, sessionId), contentMode ?? "full", windowed],
+                () => loadRemoteSessionText(machine.id, sessionId, undefined, undefined, contentMode, windowed),
               ))
           : undefined;
         if (stale()) return null;
@@ -633,7 +649,7 @@ function ConnectedRemoteSession({
           setTranscriptHistory(next);
           if (visible) historySyncPending.current = false;
         }
-        setSnapshot(next);
+        setSnapshot(current => next ? retainHistoryWindow(current, next) : next);
         if (next && sessionId && needsRemoteAttachmentPreviews(next)) {
           const key = snapshotKey(machine.id, sessionId);
           void loadRemoteSessionPreviews(machine.id, next).then((hydrated) => {
@@ -946,7 +962,10 @@ function ConnectedRemoteSession({
         projectId: project.projectId,
         sessionId: id,
       });
-      queryClient.removeQueries({ queryKey: snapshotKey(machine.id, id), exact: true });
+      removeToolContentQueries(["desktop", machine.id, machine.environmentId, id]);
+      await queryClient.cancelQueries({ queryKey: ["sessionHistory", "desktop", machine.id, id] });
+      queryClient.removeQueries({ queryKey: ["sessionHistory", "desktop", machine.id, id] });
+      queryClient.removeQueries({ queryKey: snapshotKey(machine.id, id) });
       if (!alive.current || version !== bindingVersion.current) return;
       setSnapshot(undefined);
       rememberRemoteSession(shell.id);
@@ -1664,7 +1683,9 @@ function ConnectedRemoteSession({
   const refreshOrchestration = async () => {
     const id = hostSession?.id;
     if (!id || !alive.current) return;
-    const next = await queryClient.fetchQuery(remoteSnapshotQuery(snapshotKey(machine.id, id), () => loadRemoteSession(machine.id, id, snapshotRef.current)));
+    const mode = descriptor?.capabilities.includes(TOOL_CONTENT_CAPABILITY) ? TOOL_CONTENT_MODE : undefined;
+    const next = await queryClient.fetchQuery(remoteSnapshotQuery([...snapshotKey(machine.id, id), mode ?? "full"],
+      () => loadRemoteSessionText(machine.id, id, snapshotRef.current, undefined, mode, !!descriptor?.capabilities.includes(HISTORY_CAPABILITY))));
     if (!alive.current || boundSession.current !== id) return;
     snapshotRef.current = next;
     setSnapshot(next);
@@ -1870,6 +1891,19 @@ function ConnectedRemoteSession({
       }}
     /> },
     interactionCapabilities,
+    toolContentSource,
+    historyPaging: snapshot?.history ? { hasMore: snapshot.history.hasMore, loadEarlier: async (beforeCommit) => {
+      const version = bindingVersion.current;
+      const id = boundSession.current;
+      if (!id) return;
+      const next = await loadRemoteSessionText(machine.id, id, snapshotRef.current, undefined, TOOL_CONTENT_MODE, true, true);
+      if (!alive.current || bindingVersion.current !== version || boundSession.current !== id || deletingSession.current === id) return;
+      beforeCommit?.();
+      snapshotRef.current = next;
+      setTranscriptHistory(next);
+      rememberSessionSnapshot(snapshotKey(machine.id, id), next);
+      setSnapshot(current => retainHistoryWindow(current, next));
+    } } : undefined,
     hostManaged: true,
     remoteSession: !project.local,
     hostFeatures: {

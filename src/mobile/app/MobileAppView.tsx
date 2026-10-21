@@ -695,7 +695,15 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           {(projectBackground?.effect === "gradient-blur" || (!projectBackground && backgroundPath && backgroundEffect === "gradient-blur")) && <GradientBlurBackground />}
           {transcriptSessionId ? (
             <MobileSessionTranscript
-                hostCapabilities={client.hostCapabilities}
+              hostCapabilities={client.hostCapabilities}
+              toolContentSource={client.toolContentSource(transcriptSessionId)}
+              loadEarlierHistory={async beforeCommit => {
+                const connection = client.connection;
+                const value = await client.session(transcriptSessionId, undefined, true);
+                if (client.connection?.environmentId !== connection?.environmentId || snapshotStore.get()?.session.id !== transcriptSessionId) return;
+                beforeCommit?.();
+                snapshotStore.set(value);
+              }}
               key={transcriptKeys.current.get(transcriptSessionId) ?? transcriptSessionId}
               store={snapshotStore}
               sessionId={transcriptSessionId}

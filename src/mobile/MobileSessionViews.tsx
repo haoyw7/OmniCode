@@ -36,14 +36,14 @@ export const MobileSessionTranscript = memo(function MobileSessionTranscript({
   }, [store, visible, sessionId]);
   const snapshot = useSyncExternalStore(subscribe, get, get);
   const history = useRef<HostSession["session"]["blocks"] | undefined>(undefined);
-  const previous = useRef({ visible, historyLoading });
+  const previous = useRef({ visible, historyLoading, historyStart: snapshot?.history?.start });
   // Cache refreshes and output received while away are already history. Keep
   // this baseline after returning, so only subsequent output is animated.
-  if (historyLoading || previous.current.historyLoading || !visible || !previous.current.visible)
+  if (historyLoading || previous.current.historyLoading || !visible || !previous.current.visible || previous.current.historyStart !== snapshot?.history?.start)
     history.current = snapshot?.session.blocks;
   useLayoutEffect(() => {
-    previous.current = { visible, historyLoading };
-  }, [visible, historyLoading]);
+    previous.current = { visible, historyLoading, historyStart: snapshot?.history?.start };
+  }, [visible, historyLoading, snapshot?.history?.start]);
   useLayoutEffect(() => {
     if (visible && snapshot?.session.id === sessionId) {
       retained.current = snapshot;

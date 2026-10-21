@@ -81,6 +81,50 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+it("anchors a remote partial turn by its surviving message through late prefix layout", async () => {
+  let blocks: Block[] = [{ id: "reply", role: "assistant", text: "Existing reply" },
+    { id: "later", role: "user", text: "Next question" }, { id: "answer", role: "assistant", text: "Next answer" }];
+  let scroller: HTMLDivElement, top = 0, prefixHeight = 0;
+  let commit!: () => void;
+  const original = HTMLElement.prototype.getBoundingClientRect;
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
+    if (this === scroller) return new DOMRect(0, 0, 600, 120);
+    const id = this.dataset.transcriptItem ?? this.dataset.transcriptTurn;
+    if (id === "prefix") return new DOMRect(0, -top, 600, prefixHeight + (this.classList.contains("transcript-turn") ? 100 : 0));
+    if (id === "reply") return new DOMRect(0, prefixHeight - top, 600, 100);
+    if (id === "later") return new DOMRect(0, prefixHeight + 100 - top, 600, 100);
+    if (id === "answer") return new DOMRect(0, prefixHeight + 200 - top, 600, 100);
+    return original.call(this);
+  });
+  const show = () => root.render(createElement(AgentTranscript, { blocks,
+    historyPaging: { hasMore: true, loadEarlier: before => new Promise<void>(resolve => {
+      commit = () => {
+        before?.(); prefixHeight = 150;
+        blocks = [{ id: "prefix", role: "user", text: "Earlier prompt" }, ...blocks];
+        show(); resolve();
+      };
+    }) },
+    onScrollerChange: el => {
+      if (!el) return; scroller = el;
+      Object.defineProperties(el, { clientHeight: { configurable: true, get: () => 120 },
+        scrollHeight: { configurable: true, get: () => prefixHeight + 300 },
+        scrollTop: { configurable: true, get: () => top, set: (value: number) => { top = value; } } });
+    },
+  }));
+  act(show);
+  act(() => { scroller!.dispatchEvent(new WheelEvent("wheel", { deltaY: -100 })); top = 0; scroller!.dispatchEvent(new Event("scroll")); });
+  await act(async () => [...container.querySelectorAll<HTMLButtonElement>("button")].find(button => button.textContent === "Load earlier messages")!.click());
+  await act(async () => commit());
+  const reply = container.querySelector<HTMLElement>('[data-transcript-item="reply"]')!;
+  expect(reply.getBoundingClientRect().top).toBe(0);
+  prefixHeight = 310;
+  const resize = observers.find(observer => observer.targets.some(target => target.classList.contains("transcript-turn")))!;
+  act(() => resize.resize([...container.querySelectorAll(".transcript-turn")].map(target => ({
+    target, borderBoxSize: [{ blockSize: target.getBoundingClientRect().height }], contentRect: target.getBoundingClientRect(),
+  }))));
+  expect(reply.getBoundingClientRect().top).toBe(0);
+});
+
 describe("subagent scrolling", () => {
   it("follows growing content to the bottom with only one live scroll window", () => {
     const blocks: Block[] = [

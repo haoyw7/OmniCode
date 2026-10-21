@@ -1,3 +1,4 @@
+import { HISTORY_MODE } from "../integrations/harness/core/history";
 import { REMOTE_PROVIDERS, type HostModelCatalog, type HostProject, type HostSession } from "../features/connections/model/protocol";
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -14,6 +15,8 @@ function blocks(value: unknown): boolean {
 }
 export function isOfflineSession(value: unknown, id: string): value is HostSession {
   if (!record(value) || !record(value.session)) return false;
+  if (value.history !== undefined && (!record(value.history) || value.history.mode !== HISTORY_MODE ||
+    typeof value.history.hasMore !== "boolean" || (value.history.start !== undefined && typeof value.history.start !== "string"))) return false;
   const session = value.session;
   return session.id === id && typeof value.projectId === "string" &&
     Number.isSafeInteger(value.revision) && Number(value.revision) >= 0 &&

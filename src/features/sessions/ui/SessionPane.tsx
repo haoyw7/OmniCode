@@ -1,3 +1,5 @@
+import type { TranscriptHistory } from "../../../integrations/harness/core/history";
+import { ToolContentProvider } from "./ToolContentProvider";
 import { NO_INTERACTION_CAPABILITIES, type SessionInteractionCapabilities } from "../../../integrations/harness/core/capabilities";
 import { harnessInteractionCapabilities } from "../../../integrations/harness/core/registry";
 import { useDragHandle } from "../../../shared/ui/primitives/Sortable";
@@ -266,6 +268,7 @@ export type SessionPaneProps = {
   transcriptPool?: TranscriptPool;
   /** History received by the first Host sync after opening or returning to a tab. */
   transcriptHistory?: readonly Block[];
+  historyPaging?: TranscriptHistory;
 };
 
 const TRANSCRIPT_BREAKPOINTS = [28] as const;
@@ -300,9 +303,9 @@ export const SessionPane = memo(function SessionPane(props: SessionPaneProps) {
         onOpenDiff={props.onOpenDiff}
         onOpenPlan={props.onOpenPlan}
         unavailableHeader={props.renderHeader?.(props.session)}
-        render={(remote) => <LocalSessionPane {...props} {...remote}
+        render={(remote) => <ToolContentProvider source={remote.toolContentSource}><LocalSessionPane {...props} {...remote}
           {...(project?.local ? {
-            onManageWorktrees: props.onManageWorktrees, onCwdChange: props.onCwdChange } : {})} />}
+            onManageWorktrees: props.onManageWorktrees, onCwdChange: props.onCwdChange } : {})} /></ToolContentProvider>}
       />
     );
   return <LocalSessionPane {...props} />;
@@ -380,6 +383,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
   onBtwModelChange,
   transcriptPool,
   transcriptHistory,
+  historyPaging,
   initialPromptId,
 }: Props) {
   const { t: uiT } = useTranslation();
@@ -1115,6 +1119,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                   clockOffsetMs={clockOffsetMs}
                   blocks={session.blocks}
                   historyEntries={transcriptHistory}
+                  historyPaging={historyPaging}
                   animateFrom={animateFrom}
                   onOpenAgent={openSubagent}
                   onOpenBot={onOpenBot ? openOriginBot : undefined}
@@ -1182,6 +1187,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
                   visible={visible}
                   focused={focused}
                   onNavigate={navigateBlock}
+                  historyPaging={historyPaging}
                   side={
                     session.linkedWorkItemUpdateCard &&
                     session.linkedWorkItemUpdateCard.status !== "loading"

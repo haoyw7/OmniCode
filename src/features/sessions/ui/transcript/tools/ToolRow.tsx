@@ -1,7 +1,8 @@
+import { ToolContentPanel } from "../../ToolContentPanel";
 import { cn } from "../../../../../shared/lib/cn";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { DisclosureChevron } from "../../../../../shared/ui/DisclosureChevron";
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import type { ApprovalDecision } from "../../../../../integrations/harness";
@@ -52,8 +53,12 @@ export function ToolRow({
   onOpenDiff?: (path: string) => void;
 }) {
   const { t } = useTranslation();
-  const { openTool } = useContext(TranscriptPlatformContext);
+  const { openTool, toolContentSelection } = useContext(TranscriptPlatformContext);
   const [override, setOverride] = useState<boolean | null>(null);
+  const reference = block.toolContent;
+  useEffect(() => {
+    if (reference && toolContentSelection?.blockId === reference.blockPath[0]) setOverride(true);
+  }, [reference?.sessionId, reference?.blockPath[0], toolContentSelection]);
   const renderer = resolveToolRenderer(block);
   const label = toolCallLabel(block, cwd);
   const state = toolCallState(block);
@@ -75,9 +80,9 @@ export function ToolRow({
     ? (block.tool?.preview?.kind === "shell" ? block.tool.preview.title : undefined)
       || input || block.tool?.title || block.text
     : undefined;
-  const expandable = !pending && !!(command || bodyText);
+  const expandable = !pending && !!(command || bodyText || reference);
   // A command you are watching run shows its output; it folds once it is done.
-  const autoOpen = renderer === "execute" && live && running && !!bodyText;
+  const autoOpen = renderer === "execute" && live && running && !!(bodyText || reference?.fields.some(field => ["output", "previewOutput"].includes(field.name) && field.characters > 0));
   const open = expandable && (override ?? autoOpen);
   const toggle = () => setOverride(!open);
 
@@ -174,6 +179,7 @@ export function ToolRow({
       {expandable ? (
         <AnimatedCollapse expanded={open}>
           {() => {
+            if (reference) return <ToolContentPanel reference={reference} active={open} />;
             const output = bodyText ? (
               <ToolOutput
                 text={bodyText}

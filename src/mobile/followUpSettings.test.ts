@@ -66,6 +66,7 @@ const host = vi.hoisted(() => ({
   providerAccounts: vi.fn(async () => ({})),
   cachedSession: () => undefined,
   sessionPreviews: async () => undefined,
+  toolContentSource: () => undefined,
   session: vi.fn(async () => snapshot),
   uploadAttachments: vi.fn(async () => []),
   dispatch: vi.fn(async (command: { commandId: string }) => ({

@@ -1,3 +1,7 @@
+import { HistoryService, HISTORY_BYTES } from "./history";
+import { HISTORY_CAPABILITY, HISTORY_MODE } from "../src/integrations/harness/core/history";
+import { ToolContentService } from "./tool-content";
+import { TOOL_CONTENT_CAPABILITY, TOOL_CONTENT_MODE } from "../src/integrations/harness/core/toolContent";
 import { SESSION_CAPABILITIES_V1 } from "../src/integrations/harness/core/capabilities";
 import { dirname, join } from "node:path";
 import { HostProviderUsage } from "./provider-usage";
@@ -176,6 +180,8 @@ export function createHostServer(
     ),
     capabilities: [
       SESSION_CAPABILITIES_V1,
+      TOOL_CONTENT_CAPABILITY,
+      HISTORY_CAPABILITY,
       HOST_CLIENT_STATE_CAPABILITY,
       "preferences.read",
       "preferences.patch",
@@ -265,6 +271,8 @@ export function createHostServer(
     }
   >();
   const transfers = new SyncTransfers();
+  const toolContent = new ToolContentService(engine.store);
+  const history = new HistoryService(toolContent);
   const worktreeStatus = new HostWorktreeStatus();
   const linkedWorktree = (projectId: string, cwd: string) => {
     const project = engine.store.project(projectId);
@@ -744,9 +752,17 @@ export function createHostServer(
             if (current.projectId !== params.projectId)
               throw new Error("Session does not belong to this project");
             await engine.deleteSession(sessionId);
+            toolContent.forget(sessionId);
             result = { deleted: true };
             break;
           }
+          case "sessions.toolContent.read":
+            result = toolContent.read(params);
+            break;
+          case "sessions.toolContent.search":
+            result = toolContent.search(params);
+            break;
+          case "sessions.history":
           case "sessions.sync": {
             const sessionId = String(params.sessionId ?? "");
             engine.nativeSessions.touch(sessionId);
@@ -768,7 +784,9 @@ export function createHostServer(
               if (!engine.store.authenticated(token)) throw new Error("Device credential is invalid or revoked");
               if (engine.store.isAssistantSession(sessionId)) throw new Error("Assistant brain is private");
             }
-            const sync = engine.store.sync(sessionId, revision);
+            const windowed = (params.history as { mode?: unknown } | undefined)?.mode === HISTORY_MODE;
+            if (input.method === "sessions.history" && !windowed) throw new Error("Invalid history cursor");
+            const sync = windowed ? history.sync(engine.store.session(sessionId), revision, params.history) : engine.store.sync(sessionId, revision);
             if (sync.kind !== "unchanged") {
               sync.value = { ...sync.value, session: { ...sync.value.session,
                 linkedWorktree: await linkedWorktree(sync.value.projectId, sync.value.session.executionCwd || sync.value.session.cwd),
@@ -777,7 +795,8 @@ export function createHostServer(
             result = {
               ...transfers.respond(
                 sessionId,
-                sync,
+                !windowed && params.contentMode === TOOL_CONTENT_MODE ? toolContent.project(sync) : sync,
+                windowed ? HISTORY_BYTES - 1024 : undefined,
               ),
               serverTime: Date.now(),
               ...(serverWaitMs ? { serverWaitMs } : {}),

@@ -1,3 +1,4 @@
+import { retainHistoryWindow } from "./historyRead";
 import { mutationOptions, queryOptions } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { remoteRequest } from "./connections";
@@ -38,7 +39,7 @@ export const remoteSnapshotQuery = (queryKey: readonly unknown[], load: () => Pr
 });
 
 export function rememberSessionSnapshot(key: readonly unknown[], snapshot: HostSession) {
-  queryClient.setQueryData(key, snapshot);
+  queryClient.setQueryData<HostSession>(key, current => retainHistoryWindow(current, snapshot));
   const snapshots = queryClient.getQueryCache().findAll({ queryKey: ["remoteSession", "snapshot"] })
     .sort((a, b) => Number(JSON.stringify(b.queryKey) === JSON.stringify(key)) - Number(JSON.stringify(a.queryKey) === JSON.stringify(key)) || b.state.dataUpdatedAt - a.state.dataUpdatedAt);
   for (const old of snapshots.slice(8)) {

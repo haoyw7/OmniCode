@@ -1,3 +1,4 @@
+import type { ToolContentSource, ToolContentSelection } from "../../../integrations/harness/core/toolContent";
 import { createContext } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { save } from "@tauri-apps/plugin-dialog";
@@ -20,6 +21,9 @@ const desktopPlatform = {
 };
 export const TranscriptPlatformContext = createContext<
   Omit<typeof desktopPlatform, "liveClockInFooter"> & {
+    toolContent?: ToolContentSource;
+    toolContentSelection?: ToolContentSelection;
+    selectToolContent?: (selection?: ToolContentSelection) => void;
     textReveal?: (blockId?: string) => TextRevealOptions;
     textRevealQueue?: TextRevealQueue;
     /** Animate message entrances and layout alongside character reveal. */

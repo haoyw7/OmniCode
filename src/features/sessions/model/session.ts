@@ -1,3 +1,4 @@
+import type { ToolContentRef } from "../../../integrations/harness/core/toolContent";
 import type { GenerationSample } from "./generationSample";
 import type { StartupProgress } from "../../../integrations/harness/core/startupProgress";
 import { loadSharedAgentDefaults } from "../../settings/model/agentPreferences";
@@ -241,6 +242,7 @@ export type ToolPreview = {
 export type AgentStepKind = "tool" | "message" | "reasoning" | "user";
 
 export type AgentStep = {
+  toolContent?: ToolContentRef;
   /** Provider step identity, so repeats merge instead of stacking up. */
   id: string;
   kind: AgentStepKind;
@@ -358,6 +360,7 @@ export type TurnMetrics = {
 };
 
 export type Block = {
+  toolContent?: ToolContentRef;
   /** Durable workspace recording belonging to this user turn. */
   checkpointTurnId?: string;
   id: string;

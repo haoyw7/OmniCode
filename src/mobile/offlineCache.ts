@@ -1,15 +1,17 @@
 /** IndexedDB holds transcript-sized data without synchronous localStorage writes. */
-export type OfflineCacheKind = "session" | "models" | "projects" | "summaries";
+export type OfflineCacheKind = "session" | "models" | "projects" | "summaries" | "toolContent";
 export type OfflineCacheEntry = { kind: OfflineCacheKind; id: string; value: unknown };
 export type OfflineCacheWrite = Omit<OfflineCacheEntry, "value"> & { value?: unknown };
 export interface MobileOfflineCache {
   readHost(host: string): Promise<OfflineCacheEntry[]>;
   write(host: string, entries: OfflineCacheWrite[]): Promise<void>;
   removeHost(host: string): Promise<void>;
+  readEntry?(host: string, kind: OfflineCacheKind, id: string): Promise<unknown>;
+  removeEntries?(host: string, kind: OfflineCacheKind, prefix: string): Promise<void>;
 }
 type Metadata = { key: string; host: string; kind: OfflineCacheKind; id: string; used: number; bytes: number };
 export const OFFLINE_SESSION_LIMIT = 12;
-const limits: Record<OfflineCacheKind, number> = { session: OFFLINE_SESSION_LIMIT, models: 8, projects: 1, summaries: 1 };
+const limits: Record<OfflineCacheKind, number> = { session: OFFLINE_SESSION_LIMIT, models: 8, projects: 1, summaries: 1, toolContent: 128 };
 export const OFFLINE_CACHE_BYTES = 512 * 1024 * 1024;
 const MAX_ENTRIES = 256;
 
@@ -52,7 +54,7 @@ export class IndexedDbMobileOfflineCache implements MobileOfflineCache {
       const entries: OfflineCacheEntry[] = [];
       const request = tx.objectStore("lru").getAll();
       request.onsuccess = () => {
-        for (const meta of (request.result as Metadata[]).filter(item => item.host === host).sort((a, b) => a.used - b.used)) {
+        for (const meta of (request.result as Metadata[]).filter(item => item.host === host && item.kind !== "toolContent").sort((a, b) => a.used - b.used)) {
           const read = tx.objectStore("data").get(meta.key);
           read.onsuccess = () => {
             if (read.result !== undefined) entries.push({ kind: meta.kind, id: meta.id, value: read.result });
@@ -60,6 +62,34 @@ export class IndexedDbMobileOfflineCache implements MobileOfflineCache {
         }
       };
       tx.oncomplete = () => resolve(entries);
+      tx.onerror = tx.onabort = () => reject(tx.error);
+    }));
+  }
+
+  readEntry(host: string, kind: OfflineCacheKind, id: string) {
+    return this.run<unknown>(undefined, db => new Promise((resolve, reject) => {
+      const tx = db.transaction("data", "readonly");
+      const request = tx.objectStore("data").get(JSON.stringify([host, kind, id]));
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    }));
+  }
+
+  removeEntries(host: string, kind: OfflineCacheKind, prefix: string) {
+    return this.run(undefined, db => new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(["data", "lru"], "readwrite");
+      const request = tx.objectStore("lru").openCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) return;
+        const meta = cursor.value as Metadata;
+        const identity = JSON.parse(meta.key) as string[];
+        if (meta.host === host && meta.kind === kind && (kind === "toolContent" ? identity[2].startsWith(prefix) : identity[2] === prefix)) {
+          tx.objectStore("data").delete(meta.key); cursor.delete();
+        }
+        cursor.continue();
+      };
+      tx.oncomplete = () => resolve();
       tx.onerror = tx.onabort = () => reject(tx.error);
     }));
   }

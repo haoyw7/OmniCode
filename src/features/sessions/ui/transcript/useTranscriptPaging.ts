@@ -1,3 +1,6 @@
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "../../../../shared/lib/queryClient";
+import type { TranscriptHistory } from "../../../../integrations/harness/core/history";
 import {
   startTransition,
   useCallback,
@@ -32,8 +35,10 @@ export function useTranscriptPaging({
   pinTranscript,
   rememberScroll,
   onRevealReady,
+  historyPaging,
 }: {
   turns: Block[][];
+  historyPaging?: TranscriptHistory;
   scroller: RefObject<HTMLDivElement | null>;
   prependAnchor: RefObject<PrependScrollAnchor | null>;
   stickToBottom: RefObject<boolean>;
@@ -45,6 +50,17 @@ export function useTranscriptPaging({
 }) {
   const prependHeight = useRef<number | null>(null);
   const [visibleTurnCount, setVisibleTurnCount] = useState(FIRST_PAINT_TURNS);
+  const remotePrepend = useRef<Block[][] | undefined>(undefined);
+  const remoteCommit = useRef(0);
+  const remoteAnchor = useRef<{ id: string; top: number } | undefined>(undefined);
+  if (remotePrepend.current && remotePrepend.current !== turns) {
+    const first = remotePrepend.current[0]?.[0]?.id;
+    remotePrepend.current = undefined;
+    if (first && turns.some(turn => turn.some(block => block.id === first))) {
+      remoteCommit.current++;
+      if (visibleTurnCount < turns.length) setVisibleTurnCount(turns.length);
+    } else prependHeight.current = null;
+  }
   const firstVisibleTurn = Math.max(0, turns.length - visibleTurnCount);
   const visibleTurns = turns.slice(firstVisibleTurn);
   const turnsRef = useRef(turns);
@@ -72,7 +88,13 @@ export function useTranscriptPaging({
       return;
     }
     prependHeight.current = null;
-    el.scrollTop += el.scrollHeight - previousHeight;
+    const saved = remoteAnchor.current;
+    remoteAnchor.current = undefined;
+    const row = saved ? el.querySelector<HTMLElement>(`[data-transcript-item="${CSS.escape(saved.id)}"]`) : null;
+    if (row && saved) {
+      el.scrollTop += row.getBoundingClientRect().top - el.getBoundingClientRect().top - saved.top;
+      prependAnchor.current = { turn: row, top: null };
+    } else el.scrollTop += el.scrollHeight - previousHeight;
     rememberScroll(el);
     const anchor = prependAnchor.current;
     if (anchor) {
@@ -82,7 +104,7 @@ export function useTranscriptPaging({
         anchor.turn.getBoundingClientRect().top -
         el.getBoundingClientRect().top + el.scrollTop;
     }
-  }, [visibleTurnCount, pinTranscript, rememberScroll]);
+  }, [visibleTurnCount, remoteCommit.current, pinTranscript, rememberScroll]);
 
   // Short turns can leave the first paint with empty space above them, and
   // the rest of the window arriving later would then push everything down.
@@ -112,7 +134,20 @@ export function useTranscriptPaging({
     stickToBottom.current = false;
   }, []);
 
+  const remote = useMutation({ networkMode: "always", mutationFn: async () => {
+    await historyPaging?.loadEarlier(() => {
+      prepareToPrepend();
+      const el = scroller.current;
+      if (el) {
+        const viewport = el.getBoundingClientRect().top;
+        const row = [...el.querySelectorAll<HTMLElement>("[data-transcript-item]")].find(item => item.getBoundingClientRect().bottom > viewport);
+        if (row?.dataset.transcriptItem) remoteAnchor.current = { id: row.dataset.transcriptItem, top: row.getBoundingClientRect().top - viewport };
+      }
+      remotePrepend.current = turnsRef.current;
+    });
+  } }, queryClient);
   const loadEarlier = () => {
+    if (!firstVisibleTurn && historyPaging?.hasMore) { remote.mutate(); return; }
     prepareToPrepend();
     setVisibleTurnCount((count) =>
       Math.min(turns.length, count + TURN_PAGE_SIZE),
@@ -145,6 +180,8 @@ export function useTranscriptPaging({
   }, [revealBlock, onRevealReady]);
 
   return {
+    historyPending: remote.isPending,
+    historyError: remote.error,
     visibleTurnCount,
     firstVisibleTurn,
     visibleTurns,

@@ -85,7 +85,7 @@ export function isIncompleteTool(
   label: string,
   state: ToolCallState,
 ): boolean {
-  if (state !== "pending") return false;
+  if (state !== "pending" || block.toolContent) return false;
   const kind = block.tool?.kind?.toLowerCase();
   if (kind && kind !== "other") return false;
   if (

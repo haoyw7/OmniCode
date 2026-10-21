@@ -1,3 +1,7 @@
+import { HISTORY_MODE, type HistoryRequest } from "../../../integrations/harness/core/history";
+import { readHistoryWindow } from "./historyRead";
+import { removeToolContentQueries } from "../../sessions/model/toolContentQueries";
+import type { ToolContentMode } from "../../../integrations/harness/core/toolContent";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useMemo } from "react";
 import { queryOptions, useQuery, type Query } from "@tanstack/react-query";
@@ -302,17 +306,17 @@ export async function remoteRequest<T>(
 }
 
 /** Share one transfer at a time; a newer revision waits for the current transfer. */
-function syncRemoteSession(machineId: string, sessionId: string, revision?: number, waitMs?: number): Promise<SessionSync> {
-  const queryKey = ["remoteSessionTransfer", machineId, sessionId];
+function syncRemoteSession(machineId: string, sessionId: string, revision?: number, waitMs?: number, contentMode?: ToolContentMode, history?: HistoryRequest): Promise<SessionSync> {
+  const queryKey = ["remoteSessionTransfer", machineId, sessionId, contentMode ?? "full", history];
   const pending = queryClient.getQueryCache().find<SessionSync>({ queryKey, exact: true });
   if (pending?.state.fetchStatus === "fetching" && pending.promise) {
     if (pending.meta?.revision === revision) return pending.promise;
-    const retry = () => syncRemoteSession(machineId, sessionId, revision, waitMs);
+    const retry = () => syncRemoteSession(machineId, sessionId, revision, waitMs, contentMode, history);
     return pending.promise.then(retry, retry);
   }
   return queryClient.fetchQuery({
     queryKey, gcTime: 0, meta: { revision },
-    queryFn: () => requestSessionSync(machineId, sessionId, revision, waitMs),
+    queryFn: () => requestSessionSync(machineId, sessionId, revision, waitMs, contentMode, history),
   });
 }
 
@@ -322,12 +326,14 @@ async function requestSessionSync(
   sessionId: string,
   revision?: number,
   waitMs?: number,
+  contentMode?: ToolContentMode,
+  history?: HistoryRequest,
 ): Promise<SessionSync> {
   const sentAt = Date.now();
   const response = await remoteRequest<SessionSyncResponse>(
     machineId,
-    "sessions.sync",
-    { sessionId, revision, ...(waitMs ? { waitMs } : {}) },
+    history?.before ? "sessions.history" : "sessions.sync",
+    { sessionId, revision, ...(history ? { history } : {}), ...(waitMs ? { waitMs } : {}), ...(contentMode ? { contentMode } : {}) },
   );
   const clockOffsetMs = sessionClockOffset(response, sentAt, Date.now());
   if (response.kind !== "chunked") return { ...response, clockOffsetMs };
@@ -366,10 +372,23 @@ export async function loadRemoteSessionText(
   sessionId: string,
   known?: HostSession,
   waitMs?: number,
+  contentMode?: ToolContentMode,
+  windowed = false,
+  earlier = false,
 ): Promise<HostSession> {
+  if (windowed) return readHistoryWindow(["desktop", machineId, sessionId], known, earlier, async (base, page) => {
+    const history: HistoryRequest = { mode: HISTORY_MODE, start: base?.history?.start,
+      ...(page && base?.history?.start ? { before: base.history.start } : {}) };
+    const revision = base?.history?.mode === HISTORY_MODE && base.contentMode === contentMode ? base.revision : undefined;
+    const update = await syncRemoteSession(machineId, sessionId, revision, page ? undefined : waitMs, contentMode, history);
+    let result: HostSession;
+    try { result = applySessionSync(base, update); }
+    catch { result = applySessionSync(undefined, await syncRemoteSession(machineId, sessionId, undefined, undefined, contentMode, history)); }
+    return reuseRemoteAttachmentPreviews(result, base);
+  });
   const sync = (revision?: number) =>
-    syncRemoteSession(machineId, sessionId, revision, revision === undefined ? undefined : waitMs);
-  const update = await sync(known?.revision);
+    syncRemoteSession(machineId, sessionId, revision, revision === undefined ? undefined : waitMs, contentMode);
+  const update = await sync(known?.contentMode === contentMode ? known?.revision : undefined);
   let snapshot: HostSession;
   try {
     snapshot = applySessionSync(known, update);
@@ -397,6 +416,10 @@ const machinesQuery = () => queryOptions({
     return machineRevision === revision ? (Array.isArray(value) ? value : []) : queryClient.getQueryData<RemoteMachine[]>(machinesKey) ?? [];
   },
 });
+export async function remoteMachineById(machineId: string): Promise<RemoteMachine | undefined> {
+  const known = queryClient.getQueryData<RemoteMachine[]>(machinesKey)?.find(machine => machine.id === machineId);
+  return known ?? (await queryClient.fetchQuery(machinesQuery())).find(machine => machine.id === machineId);
+}
 export function knownRemoteMachine(environmentId: string): RemoteMachine | undefined {
   return queryClient.getQueryData<RemoteMachine[]>(machinesKey)?.find(entry => entry.environmentId === environmentId);
 }
@@ -433,6 +456,9 @@ export async function disconnectMachine(machineId: string): Promise<void> {
   if (machineId === sharedHostMachineId() || (machine && isSharedHostMachine(machine)))
     throw new Error(translate("This computer cannot be removed."));
   await invoke("remote_disconnect", { machineId });
+  removeToolContentQueries(["desktop", machineId]);
+  await queryClient.cancelQueries({ queryKey: ["sessionHistory", "desktop", machineId] });
+  queryClient.removeQueries({ queryKey: ["sessionHistory", "desktop", machineId] });
   machineRevision++;
   queryClient.setQueryData<RemoteMachine[]>(machinesKey, current => (current ?? []).filter(entry => entry.id !== machineId));
   window.dispatchEvent(new Event(CHANGE));

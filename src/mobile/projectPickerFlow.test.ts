@@ -28,6 +28,7 @@ const host = vi.hoisted(() => ({
   cachedModels: () => undefined,
   cachedSession: () => undefined,
   sessionPreviews: async () => undefined,
+  toolContentSource: () => undefined,
   models: vi.fn(async () => ({
     models: {
       codex: [{ id: "codex:test", name: "Test model", harness: "codex" }],

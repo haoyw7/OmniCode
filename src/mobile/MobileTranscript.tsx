@@ -1,3 +1,5 @@
+import type { TranscriptHistory } from "../integrations/harness/core/history";
+import type { ToolContentSource } from "../integrations/harness/core/toolContent";
 import { hostInteractionCapabilities } from "../features/connections/model/interactionCapabilities";
 import { executionWarningText, isConfigurationExecutionWarning } from "../integrations/harness/core/executionWarnings";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -81,6 +83,8 @@ type Details = {
 export const MobileTranscript = memo(function MobileTranscript({
   snapshot,
   hostCapabilities,
+  toolContentSource,
+  loadEarlierHistory,
   historyEntries,
   disabled,
   onCommand,
@@ -101,6 +105,8 @@ export const MobileTranscript = memo(function MobileTranscript({
 }: {
   snapshot: HostSession;
   hostCapabilities?: readonly string[];
+  toolContentSource?: ToolContentSource;
+  loadEarlierHistory?: TranscriptHistory["loadEarlier"];
   /** History restored after the cached conversation first painted. */
   historyEntries?: readonly { id: string; text: string }[];
   disabled: boolean;
@@ -158,6 +164,7 @@ export const MobileTranscript = memo(function MobileTranscript({
       ...(readBinaryFile
         ? createMobileTranscriptPlatform(readBinaryFile)
         : mobileTranscriptPlatform),
+      toolContent: toolContentSource,
       resolveNoteImage,
       openBot: onOpenBot,
       openAgent: (block: Block) => setDetail((current) => ({
@@ -181,7 +188,7 @@ export const MobileTranscript = memo(function MobileTranscript({
       })),
       liveClockInFooter: true,
     }),
-    [readBinaryFile, resolveNoteImage, revealPendingQuestion, onOpenBot],
+    [readBinaryFile, resolveNoteImage, revealPendingQuestion, onOpenBot, toolContentSource],
   );
   // Phones have no editor pane, so file links open a read-only sheet.
   const openFile = useCallback(
@@ -385,6 +392,7 @@ export const MobileTranscript = memo(function MobileTranscript({
         blocks={session.blocks}
         executionState={session.executionState}
         historyEntries={historyEntries}
+        historyPaging={snapshot.history && loadEarlierHistory ? { hasMore: snapshot.history.hasMore, loadEarlier: loadEarlierHistory } : undefined}
         busy={snapshot.status === "running"}
         cwd={session.cwd}
         harness={session.harness}

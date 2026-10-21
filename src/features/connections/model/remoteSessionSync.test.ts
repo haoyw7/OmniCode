@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
 import { loadRemoteSessionText } from "./connections";
 import type { HostSession, SessionSyncResponse } from "./protocol";
+import { TOOL_CONTENT_MODE } from "../../../integrations/harness/core/toolContent";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 afterEach(() => vi.resetAllMocks());
@@ -37,4 +38,18 @@ it("releases failed requests for retry and does not wait on a full resynchroniza
   vi.mocked(invoke).mockResolvedValueOnce({ kind: "snapshot", value: { ...known, revision: 2 } });
   expect((await loadRemoteSessionText("host", "session", known, 1_000)).revision).toBe(2);
   expect(invoke).toHaveBeenLastCalledWith("remote_request", { machineId: "host", method: "sessions.sync", params: { sessionId: "session", revision: undefined } });
+});
+
+it("isolates full and reference requests and drops revisions when switching modes", async () => {
+  let finishFull!: (value: SessionSyncResponse) => void;
+  vi.mocked(invoke).mockImplementationOnce(() => new Promise(resolve => { finishFull = resolve; }));
+  const full = loadRemoteSessionText("host", "session", known);
+  const projected = { ...known, contentMode: TOOL_CONTENT_MODE };
+  vi.mocked(invoke).mockResolvedValueOnce({ kind: "snapshot", contentMode: TOOL_CONTENT_MODE, value: projected });
+  const compact = await loadRemoteSessionText("host", "session", known, undefined, TOOL_CONTENT_MODE);
+  expect(invoke).toHaveBeenCalledTimes(2);
+  expect(invoke).toHaveBeenLastCalledWith("remote_request", { machineId: "host", method: "sessions.sync", params: { sessionId: "session", revision: undefined, contentMode: TOOL_CONTENT_MODE } });
+  expect(compact.contentMode).toBe(TOOL_CONTENT_MODE);
+  finishFull({ kind: "unchanged", revision: 1 });
+  expect(await full).toBe(known);
 });

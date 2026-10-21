@@ -1,3 +1,7 @@
+import { HISTORY_CAPABILITY, HISTORY_MODE, type HistoryRequest } from "../integrations/harness/core/history";
+import { readHistoryWindow } from "../features/connections/model/historyRead";
+import { TOOL_CONTENT_CAPABILITY, TOOL_CONTENT_MODE, type ToolContentPage, type ToolContentSource, type ToolContentRequest, type ToolContentSearchPage } from "../integrations/harness/core/toolContent";
+import { removeToolContentQueries } from "../features/sessions/model/toolContentQueries";
 import { queryClient } from "../shared/lib/queryClient";
 import { createStore } from "zustand/vanilla";
 import { readMobileDeviceInfo } from "./deviceInfo";
@@ -208,6 +212,7 @@ export class MobileClient {
   private deviceInfo?: Promise<HostDeviceInfo | undefined>;
   connection?: Connection;
   private capabilities: string[] = [];
+  private toolSources = new Map<string, ToolContentSource>();
   hasCapability(capability: string): boolean {
     return this.capabilities.includes(capability);
   }
@@ -383,6 +388,10 @@ export class MobileClient {
     return this.cacheReadable() ? this.projectSnapshot() : undefined;
   }
   private clearCaches() {
+    removeToolContentQueries(["mobile", this.queryId]);
+    this.toolSources.clear();
+    void queryClient.cancelQueries({ queryKey: ["sessionHistory", "mobile", this.queryId] });
+    queryClient.removeQueries({ queryKey: ["sessionHistory", "mobile", this.queryId] });
     void this.flushOfflineCache();
     this.capabilities = [];
     this.cancelSummaryWrite();
@@ -401,7 +410,7 @@ export class MobileClient {
     this.cacheSnapshot(value.session.id, value);
     if (this.snapshotEntries().length > OFFLINE_SESSION_LIMIT)
       this.dropSnapshot(this.snapshotEntries()[0]![0]);
-    if (!previousSnapshot || previousSnapshot.revision !== value.revision || previousSnapshot.updatedAt !== value.updatedAt) {
+    if (!previousSnapshot || previousSnapshot.revision !== value.revision || previousSnapshot.updatedAt !== value.updatedAt || previousSnapshot.contentMode !== value.contentMode || previousSnapshot.history?.start !== value.history?.start || previousSnapshot.history?.mode !== value.history?.mode) {
       this.queueOffline({ kind: "session", id: value.session.id, value });
       if (this.projectSnapshot()) this.queueOffline({ kind: "projects", id: "", value: this.projectSnapshot() });
     }
@@ -716,6 +725,7 @@ export class MobileClient {
     method: string,
     params: object,
     options?: { timeoutMs?: number },
+    observeConnection = true,
   ): Promise<T> {
     try {
       if (method === "environment.describe" || method === "devices.pair") {
@@ -737,7 +747,7 @@ export class MobileClient {
         ...(options ? [options] : []),
       );
       if (
-        this.connection === connection &&
+        observeConnection && this.connection === connection &&
         method !== "environment.describe" &&
         this.connectionStatus.state !== "reconnecting"
       )
@@ -745,7 +755,7 @@ export class MobileClient {
       return result as T;
     } catch (error) {
       if (
-        this.connection === connection &&
+        observeConnection && this.connection === connection &&
         method !== "environment.describe" &&
         this.connectionStatus.state !== "reconnecting"
       ) {
@@ -759,7 +769,22 @@ export class MobileClient {
   rpc<T>(method: string, params: object = {}, options?: { timeoutMs?: number }): Promise<T> {
     if (!this.connection || this.connection.disabled)
       return Promise.reject(new Error("Connect to a Host first."));
-    return this.requestWith<T>(this.connection, method, params, options);
+    const connection = this.connection, epoch = this.cacheEpoch;
+    return this.requestWith<T>(connection, method, params, options).then(async result => {
+      const id = (params as { sessionId?: unknown }).sessionId;
+      if (method === "sessions.delete" && typeof id === "string") {
+        removeToolContentQueries(["mobile", this.queryId, connection.environmentId, epoch, id]);
+        await queryClient.cancelQueries({ queryKey: ["sessionHistory", "mobile", this.queryId, epoch, id] });
+        queryClient.removeQueries({ queryKey: ["sessionHistory", "mobile", this.queryId, epoch, id] });
+        if (epoch === this.cacheEpoch) {
+          this.dropSnapshot(id); this.toolSources.delete(id);
+          for (const [key, entry] of this.offlineWrites) if ((entry.kind === "toolContent" && entry.id.startsWith(`${JSON.stringify(id)}:`)) || (entry.kind === "session" && entry.id === id)) this.offlineWrites.delete(key);
+        }
+        await this.offline.removeEntries?.(connection.environmentId, "toolContent", `${JSON.stringify(id)}:`);
+        await this.offline.removeEntries?.(connection.environmentId, "session", id);
+      }
+      return result;
+    });
   }
   branches(projectId: string, cwd?: string) {
     return this.rpc<MobileBranches>("git.branches", { projectId, ...(cwd ? { cwd } : {}) });
@@ -1050,12 +1075,15 @@ export class MobileClient {
     connection: Connection,
     sessionId: string,
     revision?: number,
+    history?: HistoryRequest,
   ): Promise<SessionSync> {
     const sentAt = Date.now();
-    const result = await this.requestWith<SessionSyncResponse>(connection, "sessions.sync", {
+    const result = await this.requestWith<SessionSyncResponse>(connection, history?.before ? "sessions.history" : "sessions.sync", {
+      ...(history ? { history } : {}),
       sessionId,
       revision,
-    });
+      ...(this.hasCapability(TOOL_CONTENT_CAPABILITY) ? { contentMode: TOOL_CONTENT_MODE } : {}),
+    }, undefined, !history?.before);
     const clockOffsetMs = sessionClockOffset(result, sentAt, Date.now());
     if (result.kind !== "chunked") return { ...result, clockOffsetMs };
     if (
@@ -1070,7 +1098,7 @@ export class MobileClient {
         sessionId,
         transfer: result.transfer,
         offset: serialized.length,
-      });
+      }, undefined, !history?.before);
       if (!chunk.data || serialized.length + chunk.data.length > result.length)
         throw new Error("Incomplete conversation response.");
       serialized += chunk.data;
@@ -1088,9 +1116,76 @@ export class MobileClient {
     return result;
   }
 
-  async session(sessionId: string, minimumRevision?: number): Promise<HostSession> {
+  toolContentSource(sessionId: string): ToolContentSource | undefined {
+    if (!this.connection || !this.hasCapability(TOOL_CONTENT_CAPABILITY) && this.cachedSession(sessionId)?.contentMode !== TOOL_CONTENT_MODE) return undefined;
+    const cachedSource = this.toolSources.get(sessionId);
+    if (cachedSource) { this.toolSources.delete(sessionId); this.toolSources.set(sessionId, cachedSource); return cachedSource; }
+    const connection = this.connection, epoch = this.cacheEpoch;
+    const current = (signal?: AbortSignal) => {
+      signal?.throwIfAborted();
+      if (this.connection?.environmentId !== connection.environmentId || epoch !== this.cacheEpoch || this.toolSources.get(sessionId) !== source) throw new Error(translate("Host connection changed."));
+    };
+    const cacheId = (request: ToolContentRequest, version = request.version) => `${JSON.stringify(sessionId)}:` + JSON.stringify([request.blockPath, request.step === true, version, request.field, request.offset ?? null, request.end ?? null, request.tail === true]);
+    const source: ToolContentSource = {
+      key: ["mobile", this.queryId, connection.environmentId, epoch, sessionId],
+      read: async (request, signal) => {
+        current(signal);
+        if (request.sessionId !== sessionId) throw new Error("Invalid tool content session");
+        const cached = this.offlineWrites.get(JSON.stringify(["toolContent", cacheId(request)]))?.value ??
+          await this.offline.readEntry?.(connection.environmentId, "toolContent", cacheId(request)).catch(() => undefined);
+        current(signal);
+        try {
+          if (connection.disabled || this.connectionStatus.state === "disconnected" || (typeof navigator !== "undefined" && navigator.onLine === false)) throw new Error("Connect to load tool details.");
+          const page = await this.requestWith<ToolContentPage>(connection, "sessions.toolContent.read", request, undefined, false);
+          current(signal);
+          this.queueOffline({ kind: "toolContent", id: cacheId(request), value: page });
+          if (page.version !== request.version) this.queueOffline({ kind: "toolContent", id: cacheId(request, page.version), value: page });
+          return page;
+        } catch (error) {
+          current(signal);
+          if (error instanceof HostRequestError && error.status < 500) throw error;
+          const page = cached as ToolContentPage | undefined;
+          if (this.cacheReadable() && page?.sessionId === sessionId && (!request.transfer || page.version === request.version) && page.field === request.field && typeof page.text === "string") {
+            this.queueOffline({ kind: "toolContent", id: cacheId(request) });
+            return { ...page, transfer: request.transfer ?? page.transfer, running: false };
+          }
+          throw error;
+        }
+      },
+      search: async (query, offset, signal) => {
+        current(signal);
+        const page = await this.requestWith<ToolContentSearchPage>(connection, "sessions.toolContent.search", { sessionId, query, offset }, undefined, false);
+        current(signal); return page;
+      },
+    };
+    this.toolSources.set(sessionId, source);
+    while (this.toolSources.size > OFFLINE_SESSION_LIMIT) this.toolSources.delete(this.toolSources.keys().next().value!);
+    return source;
+  }
+
+  async session(sessionId: string, minimumRevision?: number, earlier = false): Promise<HostSession> {
+    if (this.hasCapability(HISTORY_CAPABILITY)) {
+      const connection = this.connection;
+      if (!connection || connection.disabled) throw new Error("Connect to a Host first.");
+      const epoch = this.cacheEpoch;
+      const result = await readHistoryWindow(["mobile", this.queryId, epoch, sessionId], this.cachedSession(sessionId), earlier, async (known, page, signal) => {
+        const history: HistoryRequest = { mode: HISTORY_MODE, start: known?.history?.start,
+          ...(page && known?.history?.start ? { before: known.history.start } : {}) };
+        const sync = await this.sync(connection, sessionId, known?.history ? known.revision : undefined, history);
+        let value: HostSession;
+        try { value = applySessionSync(known, sync); }
+        catch { value = applySessionSync(undefined, await this.sync(connection, sessionId, undefined, history)); }
+        signal.throwIfAborted();
+        if (epoch !== this.cacheEpoch || !this.hasCapability(HISTORY_CAPABILITY)) throw new Error(translate("Conversation request is no longer current."));
+        if (value.session.id !== sessionId) throw new Error(translate("Host returned a different conversation."));
+        this.retainSessionPreviews(sessionId);
+        return this.rememberSession(reuseRemoteAttachmentPreviews(value, this.peekSnapshot(sessionId)));
+      });
+      return minimumRevision !== undefined && result.revision < minimumRevision ? this.session(sessionId, minimumRevision) : result;
+    }
     this.retainSessionPreviews(sessionId);
-    const queryKey = this.dataKey("sessionRead", sessionId);
+    const mode = this.hasCapability(TOOL_CONTENT_CAPABILITY) ? TOOL_CONTENT_MODE : undefined;
+    const queryKey = [...this.dataKey("sessionRead", sessionId), mode ?? "full"];
     const current = queryClient.getQueryCache().find({ queryKey, exact: true });
     if (current?.state.fetchStatus === "fetching") {
       const result = await current.promise as HostSession;
@@ -1100,11 +1195,12 @@ export class MobileClient {
     if (!connection) throw new Error("Connect to a Host first.");
     const epoch = this.cacheEpoch, known = this.cachedSession(sessionId);
     return this.readQuery(queryKey, async () => {
-      const sync = await this.sync(connection, sessionId, known?.revision);
+      const sync = await this.sync(connection, sessionId, known?.contentMode === mode ? known?.revision : undefined);
       let result: HostSession;
       try { result = applySessionSync(known, sync); }
       catch { result = applySessionSync(undefined, await this.sync(connection, sessionId)); }
-      if (epoch !== this.cacheEpoch) throw new Error(translate("Conversation request is no longer current."));
+      if (epoch !== this.cacheEpoch || mode !== (this.hasCapability(TOOL_CONTENT_CAPABILITY) ? TOOL_CONTENT_MODE : undefined))
+        throw new Error(translate("Conversation request is no longer current."));
       if (result.session.id !== sessionId) throw new Error(translate("Host returned a different conversation."));
       return this.rememberSession(reuseRemoteAttachmentPreviews(result, this.peekSnapshot(sessionId)));
     }).catch(error => {

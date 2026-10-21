@@ -46,7 +46,7 @@ export function useTurnScrollAnchor(
       // The callback's entries can arrive out of order. Later turns already
       // include earlier height corrections in their current layout position.
       for (const turn of inner.children) {
-        if (turn === prepend?.turn) beforePrependAnchor = false;
+        if (turn === prepend?.turn || (prepend?.turn && turn.contains(prepend.turn))) beforePrependAnchor = false;
         const entry = byTurn.get(turn);
         if (!entry) continue;
         const height =

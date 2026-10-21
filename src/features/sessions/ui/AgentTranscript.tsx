@@ -1,3 +1,4 @@
+import type { TranscriptHistory } from "../../../integrations/harness/core/history";
 import { Button } from "../../../shared/ui/forms/Button";
 import { cn } from "../../../shared/lib/cn";
 import type { SessionExecutionState } from "../model/session";
@@ -96,6 +97,7 @@ type Props = {
   blocks: Block[];
   /** Restored history may arrive after the cached transcript is already visible. */
   historyEntries?: readonly { id: string; text: string }[];
+  historyPaging?: TranscriptHistory;
   busy?: boolean;
   cwd?: string;
   harness?: HarnessId;
@@ -159,6 +161,7 @@ type Props = {
 function AgentTranscriptComponent({
   blocks: sourceBlocks,
   historyEntries,
+  historyPaging,
   busy,
   cwd,
   harness,
@@ -526,6 +529,8 @@ function AgentTranscriptComponent({
     return -1;
   }, [turns]);
   const {
+    historyPending,
+    historyError,
     visibleTurnCount,
     firstVisibleTurn,
     visibleTurns,
@@ -542,6 +547,7 @@ function AgentTranscriptComponent({
     pinTranscript,
     rememberScroll,
     onRevealReady,
+    historyPaging,
   });
 
   const navigateToBlock = useCallback(
@@ -647,17 +653,19 @@ function AgentTranscriptComponent({
           retain their own horizontal scrolling. Clip the content column so
           WebKit can keep scrolling the transcript vertically. */}
       <div className="desktop-transcript-content mx-auto flex w-full min-w-0 max-w-4xl flex-col gap-1 overflow-x-clip wrap-anywhere pb-8">
-        {firstVisibleTurn > 0 ? (
+        {firstVisibleTurn > 0 || historyPaging?.hasMore ? (
           <div className="flex justify-center px-4 @md:px-6 py-3">
             <Button variant="ghost" size="content"
               type="button"
               className="rounded-md bg-content/8 px-2.5 py-1.5 font-sans text-[12px] text-content/60 hover:bg-content/12 hover:text-content"
               onClick={loadEarlier}
+              disabled={historyPending || !visible}
             >
-              {uiT("Load earlier messages")}
+              {uiT(historyPending ? "Loading…" : "Load earlier messages")}
             </Button>
           </div>
         ) : null}
+        {historyError && historyPaging?.hasMore && <p role="alert" className="px-4 text-sm">{uiT("Unable to load earlier messages. Try again.")}</p>}
         {visibleTurns.map((turn, turnIndex) => {
           const isLastTurn = firstVisibleTurn + turnIndex === turns.length - 1;
           const userBlock = turnUserBlock(turn, managed);
@@ -924,6 +932,7 @@ function AgentTranscriptComponent({
                           <div
                             key={turnItemKey(entry)}
                             data-transcript-search-item
+                            data-transcript-item={turnItemKey(entry)}
                             data-transcript-search-current={
                               isCurrentItem(entry) || undefined
                             }
@@ -956,6 +965,7 @@ function AgentTranscriptComponent({
                       <div
                         key={turnItemKey(entry)}
                         data-transcript-search-item
+                        data-transcript-item={turnItemKey(entry)}
                         data-transcript-search-current={
                           isCurrentItem(entry) || undefined
                         }
@@ -970,6 +980,7 @@ function AgentTranscriptComponent({
                   <div
                     key={turnItemKey(item)}
                     data-transcript-search-item
+                    data-transcript-item={turnItemKey(item)}
                     data-transcript-search-current={
                       isCurrentItem(item) || undefined
                     }

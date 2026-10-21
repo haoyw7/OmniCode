@@ -16,6 +16,7 @@ export function agentStepBlock(step: AgentStep): Block {
     id: step.id,
     role: "tool",
     text: step.text,
+    toolContent: step.toolContent,
     tool: {
       callId: step.id,
       title: step.text,

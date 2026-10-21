@@ -1,9 +1,11 @@
+import { ToolContentPanel } from "../ToolContentPanel";
 import { cn } from "../../../../shared/lib/cn";
 import { Button } from "../../../../shared/ui/forms/Button";
 import { Omi } from "../../../../shared/ui/branding/Omi";
 import { DisclosureChevron } from "../../../../shared/ui/DisclosureChevron";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { TranscriptPlatformContext } from "../TranscriptPlatform";
 import { FilePreview } from "../../../connections/files/ui/FilePreview";
 import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
 import type { ApprovalDecision } from "../../../../integrations/harness";
@@ -40,7 +42,12 @@ export function OmniCodeCallRow({
   const output =
     block.tool?.detail?.trim() || block.tool?.preview?.output?.trim();
   const [errorOpen, setErrorOpen] = useState(false);
-  const hasError = state === "rejected" && !!output;
+  const { toolContentSelection } = useContext(TranscriptPlatformContext);
+  useEffect(() => {
+    if (block.toolContent && toolContentSelection?.blockId === block.toolContent.blockPath[0]) setErrorOpen(true);
+  }, [block.toolContent?.blockPath[0], toolContentSelection]);
+  const hasError = state === "rejected" && !!(output || block.toolContent);
+  const hasDetails = hasError || !!block.toolContent;
   const pendingApproval = needsApproval(block);
   const command = `omnicode app ${call.action}`;
   const verb = pendingApproval
@@ -63,19 +70,19 @@ export function OmniCodeCallRow({
         <span className="min-w-0 truncate">{command}</span>
       </span>
       <ToolCallStatusIcon state={state} />
-      {hasError ? (
-        <DisclosureChevron expanded={errorOpen} className="size-3.5 shrink-0 text-danger/60" />
+      {hasDetails ? (
+        <DisclosureChevron expanded={errorOpen} className={cn("size-3.5 shrink-0", hasError ? "text-danger/60" : "text-content/60")} />
       ) : null}
     </>
   );
   return (
     <div data-omnicode-tool-call={call.action} className="min-w-0">
-      {hasError ? (
+      {hasDetails ? (
         <Button data-session-disclosure variant="ghost" size="content"
           type="button"
           aria-expanded={errorOpen}
           aria-label={
-            errorOpen
+            !hasError ? uiT(errorOpen ? "Hide details for {value0}" : "Show details for {value0}", { value0: call.label }) : errorOpen
               ? uiT("Hide error details for OmniCode: {value0}", {
                   value0: call.label,
                 })
@@ -91,10 +98,9 @@ export function OmniCodeCallRow({
       ) : (
         <div className="flex min-w-0 items-center gap-1.5 py-1">{summary}</div>
       )}
-      <AnimatedCollapse expanded={errorOpen && hasError}>
-        <pre className="zen-detail-panel whitespace-pre-wrap break-words text-danger/80">
-          {output}
-        </pre>
+      <AnimatedCollapse expanded={errorOpen && hasDetails}>
+        {block.toolContent ? <ToolContentPanel reference={block.toolContent} active={errorOpen} /> :
+          <pre className="zen-detail-panel whitespace-pre-wrap break-words text-danger/80">{output}</pre>}
       </AnimatedCollapse>
       {pendingApproval ? (
         <pre className="max-h-32 min-w-0 overflow-auto whitespace-pre-wrap break-all py-1 pl-5 font-mono text-ui-sm leading-5 text-content/70">
@@ -155,7 +161,7 @@ export function ToolCall({
     );
   }
 
-  if (isIncompleteTool(block, label, state)) return null;
+  if (!block.toolContent && isIncompleteTool(block, label, state)) return null;
 
   return (
     <div className={frame}>

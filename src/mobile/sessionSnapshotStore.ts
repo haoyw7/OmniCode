@@ -1,3 +1,4 @@
+import { retainHistoryWindow } from "../features/connections/model/historyRead";
 import { useMemo } from "react";
 import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
@@ -18,7 +19,8 @@ export function createSessionSnapshotStore(initial?: HostSession) {
     get: () => store.getState().value,
     set: (update: Snapshot | ((previous: Snapshot) => Snapshot)) => {
       const { value, rendered } = store.getState();
-      const next = typeof update === "function" ? update(value) : update;
+      const incoming = typeof update === "function" ? update(value) : update;
+      const next = incoming ? retainHistoryWindow(value, incoming) : incoming;
       if (next === value || (next && value && next.session.id === value.session.id && next.revision < value.revision)) return;
       const changedSession = next?.session.id !== value?.session.id;
       store.setState({ value: next, rendered: changedSession ? undefined : rendered });

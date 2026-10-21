@@ -138,6 +138,7 @@ const host = vi.hoisted(() => ({
   ),
   cachedSession: () => undefined,
   sessionPreviews: async () => undefined,
+  toolContentSource: () => undefined,
   session: vi.fn(async () => snapshot),
   uploadAttachments: vi.fn(async () => []),
   rpc: vi.fn(async () => null),
