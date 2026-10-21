@@ -1,5 +1,6 @@
 // Remembers the last conversation and the default project for a new chat.
 // Launch opens Home. Only identifiers are stored; credentials stay in mobileStorage.
+import { devicePreferences } from "../shared/lib/persistedPreferences";
 export interface MobileLocation {
   environmentId: string;
   projectId: string;
@@ -14,7 +15,7 @@ export function readLastLocation(
   if (!environmentId) return undefined;
   try {
     const value: unknown = JSON.parse(
-      localStorage.getItem(LAST_LOCATION_KEY) ?? "null",
+      devicePreferences.getItem(LAST_LOCATION_KEY) ?? "null",
     );
     if (!value || typeof value !== "object") return undefined;
     const location = value as Partial<MobileLocation>;
@@ -37,7 +38,7 @@ export function readLastLocation(
 
 export function saveLastLocation(location: MobileLocation) {
   try {
-    localStorage.setItem(LAST_LOCATION_KEY, JSON.stringify(location));
+    devicePreferences.setItem(LAST_LOCATION_KEY, JSON.stringify(location));
   } catch {
     // Private or restricted storage only loses the launch shortcut.
   }

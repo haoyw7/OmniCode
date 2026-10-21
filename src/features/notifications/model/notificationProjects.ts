@@ -1,6 +1,7 @@
 import { pathKey, projectName } from "../../../shared/lib/paths";
 import { looksLikeProject } from "../../projects/model/recents";
 import type { InboxItem } from "../../inbox/model/githubTasks";
+import { devicePreferences } from "../../../shared/lib/persistedPreferences";
 
 export type NotificationProject = {
   id: string;
@@ -11,7 +12,6 @@ export type NotificationProject = {
 };
 
 const CATALOG_KEY = "omnicode.notificationProjects.v2";
-const CATALOG_CHANGE = "omnicode:notification-projects-change";
 let catalogValue: string | null | undefined;
 let catalog: NotificationProject[] = [];
 
@@ -62,7 +62,7 @@ export function knownNotificationProjectSelection(
 
 export function loadNotificationProjects(): NotificationProject[] {
   try {
-    const value = localStorage.getItem(CATALOG_KEY);
+    const value = devicePreferences.getItem(CATALOG_KEY);
     if (value === catalogValue) return catalog;
     catalogValue = value;
     catalog = [];
@@ -101,12 +101,11 @@ export function rememberNotificationProjects(
   if (next === JSON.stringify(current)) return;
   catalog = nextProjects;
   try {
-    localStorage.setItem(CATALOG_KEY, next);
+    devicePreferences.setItem(CATALOG_KEY, next, true);
     catalogValue = next;
   } catch {
     // Keep the catalog in memory when browser storage is unavailable.
   }
-  window.dispatchEvent(new Event(CATALOG_CHANGE));
 }
 
 export function notificationProjectsSnapshot(): string {
@@ -116,15 +115,7 @@ export function notificationProjectsSnapshot(): string {
 export function subscribeNotificationProjects(
   listener: () => void,
 ): () => void {
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === CATALOG_KEY || event.key === null) listener();
-  };
-  window.addEventListener(CATALOG_CHANGE, listener);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(CATALOG_CHANGE, listener);
-    window.removeEventListener("storage", onStorage);
-  };
+  return devicePreferences.subscribe([CATALOG_KEY], listener);
 }
 
 type NotificationWorkItem = Pick<InboxItem, "provider" | "repo" | "url"> &

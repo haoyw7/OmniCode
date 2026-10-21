@@ -1,5 +1,5 @@
-import { useSyncExternalStore } from "react";
-import { readFlag, writeFlag } from "./storageFlags";
+import { useStore } from "zustand";
+import { preferenceStorage } from "./sharedPreferences";
 
 const SHOW_REMAINING_USAGE_KEY = "omnicode.showRemainingUsage";
 const MASK_EMAILS_KEY = "omnicode.maskEmails";
@@ -14,32 +14,17 @@ export const SHOW_REMAINING_USAGE_CHANGE_EVENT =
 export const MASK_EMAILS_CHANGE_EVENT = "omnicode:maskemailschange";
 
 function flagStore(key: string, fallback: boolean, event: string) {
-  // Holds a saved value only while storage failed to keep it, so the switch
-  // still flips for this window when preferenceStorage is unavailable.
-  let unsaved: boolean | null = null;
-  const load = () => unsaved ?? readFlag(key) ?? fallback;
+  const decode = (raw: string | null) => raw === null ? fallback : raw === "1" || raw === "true";
+  const load = () => {
+    try { return decode(preferenceStorage.getItem(key)); } catch { return fallback; }
+  };
   const save = (value: boolean) => {
-    writeFlag(key, value);
-    unsaved = readFlag(key) === value ? null : value;
+    try { preferenceStorage.setItem(key, value ? "1" : "0", true); } catch { /* Keep this window usable. */ }
     if (typeof window === "undefined") return;
     window.dispatchEvent(new CustomEvent<boolean>(event, { detail: value }));
   };
-  const subscribe = (onStoreChange: () => void) => {
-    if (typeof window === "undefined") return () => {};
-    // Other windows write the same preferenceStorage; `storage` reports their saves.
-    const onStorage = (storage: StorageEvent) => {
-      if (storage.key !== key && storage.key !== null) return;
-      unsaved = null;
-      onStoreChange();
-    };
-    window.addEventListener(event, onStoreChange);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(event, onStoreChange);
-      window.removeEventListener("storage", onStorage);
-    };
-  };
-  const useFlag = () => useSyncExternalStore(subscribe, load, () => fallback);
+  const subscribe = (onStoreChange: () => void) => preferenceStorage.subscribe([key], onStoreChange);
+  const useFlag = () => useStore(preferenceStorage.store(key), state => decode(state.value));
   return { load, save, subscribe, useFlag };
 }
 

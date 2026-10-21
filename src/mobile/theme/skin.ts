@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
+import { devicePreferences } from "../../shared/lib/persistedPreferences";
 import {
   applyThemePreference,
   type ThemePreference,
@@ -59,7 +60,7 @@ export function normalizeMobileSkin(value: unknown): MobileSkinPreference {
 
 export function loadMobileSkin(): MobileSkinPreference {
   try {
-    return normalizeMobileSkin(localStorage.getItem(MOBILE_SKIN_KEY));
+    return normalizeMobileSkin(devicePreferences.getItem(MOBILE_SKIN_KEY));
   } catch {
     return MOBILE_SKIN_DEFAULT;
   }
@@ -67,7 +68,7 @@ export function loadMobileSkin(): MobileSkinPreference {
 
 export function saveMobileSkin(value: MobileSkinPreference) {
   try {
-    localStorage.setItem(MOBILE_SKIN_KEY, normalizeMobileSkin(value));
+    devicePreferences.setItem(MOBILE_SKIN_KEY, normalizeMobileSkin(value));
   } catch {
     // Storage can be unavailable; the skin still applies for this run.
   }

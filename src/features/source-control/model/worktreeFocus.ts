@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { create } from "zustand";
 import { pathKey } from "../../../shared/lib/paths";
 
 /** The working copy a project's sidebar is narrowed to. New sessions in that
@@ -6,32 +6,28 @@ import { pathKey } from "../../../shared/lib/paths";
  * project's default workspace. */
 export type WorktreeFocus = { path: string; branch: string | null };
 
-const listeners = new Set<() => void>();
-let focuses: Record<string, WorktreeFocus> = {};
+const useWorktreeFocusStore = create<{ focuses: Record<string, WorktreeFocus> }>(() => ({
+  focuses: {},
+}));
 
 export function worktreeFocus(project: string): WorktreeFocus | undefined {
-  return focuses[pathKey(project)];
+  return useWorktreeFocusStore.getState().focuses[pathKey(project)];
 }
 
 export function setWorktreeFocus(
   project: string,
   focus: WorktreeFocus | undefined,
 ) {
-  const next = { ...focuses };
-  if (focus) next[pathKey(project)] = focus;
-  else delete next[pathKey(project)];
-  focuses = next;
-  for (const listener of listeners) listener();
+  useWorktreeFocusStore.setState(({ focuses }) => {
+    const next = { ...focuses };
+    if (focus) next[pathKey(project)] = focus;
+    else delete next[pathKey(project)];
+    return { focuses: next };
+  });
 }
 
 export function useWorktreeFocus(project: string): WorktreeFocus | undefined {
-  return useSyncExternalStore(
-    (listener) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-    () => worktreeFocus(project),
-  );
+  return useWorktreeFocusStore((state) => state.focuses[pathKey(project)]);
 }
 
 export function inWorktreeFocus(

@@ -76,10 +76,12 @@ it("notifies mounted trees about same-window and other-window preference changes
   saveProjectTreeExpanded(["/work/a"]);
   window.dispatchEvent(new StorageEvent("storage", { key: "unrelated" }));
   expect(onChange).toHaveBeenCalledOnce();
+  localStorage.setItem("omnicode.projectTreeExpanded.v1", JSON.stringify(["/work/b"]));
   window.dispatchEvent(
     new StorageEvent("storage", { key: "omnicode.projectTreeExpanded.v1" }),
   );
   expect(onChange).toHaveBeenCalledTimes(2);
+  expect([...loadProjectTreeExpanded("/current")]).toEqual(["/work/b"]);
   unsubscribe();
   saveProjectTreeExpanded([]);
   expect(onChange).toHaveBeenCalledTimes(2);

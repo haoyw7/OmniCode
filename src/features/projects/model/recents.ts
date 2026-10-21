@@ -1,4 +1,5 @@
 import { preferenceStorage } from "../../settings/model/sharedPreferences";
+import { createStore } from "zustand/vanilla";
 import { pathKey, prettyCwd, slash } from "../../../shared/lib/paths";
 import { REMOTE_PATH_PREFIX } from "../../../shared/lib/remotePaths";
 import { WSL_PATH_PREFIX } from "../../../shared/lib/wslPaths";
@@ -13,8 +14,12 @@ const RAIL_ORDER_KEY = "omnicode.projectRailOrder";
 const RAIL_ORDER_VERSION_KEY = "omnicode.projectRailOrderVersion";
 const RAIL_PINNED_KEY = "omnicode.projectRailPinned";
 const ARCHIVED_KEY = "omnicode.archivedProjects";
-const ARCHIVED_CHANGED = "omnicode:archived-projects-changed";
-const PROJECT_PATHS_CHANGED = "omnicode:project-paths-changed";
+const presentation = createStore(() => ({ revision: 0 }));
+const projectPreferenceKeys = new Set([KEY, RAIL_ORDER_KEY, RAIL_PINNED_KEY, ARCHIVED_KEY, "omnicode.projectGroups", "omnicode.projectGroupAssignments"]);
+let presentationSubscriptions = 0;
+const onProjectStorage = (event: StorageEvent) => {
+  if (event.key === null || projectPreferenceKeys.has(event.key)) notifyProjectPathsChanged();
+};
 
 export type RecentProject = {
   path: string;
@@ -155,22 +160,17 @@ export function replaceProjectPath(from: string, to: string): RecentProject[] {
 
 /** Rail projects, pins, groups, or their appearance changed in storage. */
 export function notifyProjectPathsChanged(): void {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(PROJECT_PATHS_CHANGED));
-  }
+  presentation.setState(state => ({ revision: state.revision + 1 }));
 }
 
 export function subscribeProjectPathsChanged(onChange: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-  const keys = new Set([KEY, RAIL_ORDER_KEY, RAIL_PINNED_KEY, ARCHIVED_KEY, "omnicode.projectGroups", "omnicode.projectGroupAssignments"]);
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === null || keys.has(event.key)) onChange();
-  };
-  window.addEventListener(PROJECT_PATHS_CHANGED, onChange);
-  window.addEventListener("storage", onStorage);
+  // Local actions publish once after their related keys are saved, as before.
+  // Subscribing to each key here would expose intermediate rail states.
+  if (presentationSubscriptions++ === 0 && typeof window !== "undefined") window.addEventListener("storage", onProjectStorage);
+  const stopPresentation = presentation.subscribe(onChange);
   return () => {
-    window.removeEventListener(PROJECT_PATHS_CHANGED, onChange);
-    window.removeEventListener("storage", onStorage);
+    stopPresentation();
+    if (--presentationSubscriptions === 0 && typeof window !== "undefined") window.removeEventListener("storage", onProjectStorage);
   };
 }
 
@@ -240,16 +240,7 @@ export function loadArchivedProjects(): ArchivedProject[] {
 }
 
 export function subscribeArchivedProjects(onChange: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === null || event.key === ARCHIVED_KEY) onChange();
-  };
-  window.addEventListener(ARCHIVED_CHANGED, onChange);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(ARCHIVED_CHANGED, onChange);
-    window.removeEventListener("storage", onStorage);
-  };
+  return preferenceStorage.subscribe([ARCHIVED_KEY], onChange);
 }
 
 function saveArchived(next: ArchivedProject[]) {
@@ -257,9 +248,6 @@ function saveArchived(next: ArchivedProject[]) {
     preferenceStorage.setItem(ARCHIVED_KEY, JSON.stringify(next));
   } catch {
     // private mode / quota
-  }
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(ARCHIVED_CHANGED));
   }
 }
 

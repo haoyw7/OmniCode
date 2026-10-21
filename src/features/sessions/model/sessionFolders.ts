@@ -7,11 +7,9 @@ import { orderByIds } from "../../../shared/lib/reorder";
 import { TAB_GROUP_COLORS } from "../../workspace/model/tabGroups";
 
 const KEY = "omnicode.sessionFolders";
-const CHANGE_EVENT = "omnicode:session-folders-change";
 const PINNED_COLLAPSED_KEY = "omnicode.pinnedSessionsCollapsed";
 const REMINDERS_COLLAPSED_KEY = "omnicode.reminderSessionsCollapsed";
 const SIDEBAR_ORDER_KEY = "omnicode.sessionSidebarOrder.v1";
-const SIDEBAR_ORDER_CHANGED = "omnicode:session-sidebar-order-changed";
 
 export type SessionFolder = {
   id: string;
@@ -458,11 +456,6 @@ export function saveSessionFolders(
     if (folders.length === 0) delete store[key];
     else store[key] = folders;
     preferenceStorage.setItem(KEY, JSON.stringify(store));
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent(CHANGE_EVENT, { detail: { cwd: key } }),
-      );
-    }
   } catch {
     // private mode / quota
   }
@@ -538,28 +531,19 @@ export function saveSessionSidebarOrder(cwd: string, order: string[]): void {
   } catch {
     // The current view can still be sorted when storage is unavailable.
   }
-  window.dispatchEvent(
-    new CustomEvent(SIDEBAR_ORDER_CHANGED, { detail: { cwd: key } }),
-  );
 }
 
 export function subscribeSessionSidebarOrder(
   cwd: string,
   onChange: () => void,
 ): () => void {
-  const key = storageKey(cwd);
-  const changed = (event: Event) => {
-    if ((event as CustomEvent<{ cwd: string }>).detail?.cwd === key) onChange();
-  };
-  const stored = (event: StorageEvent) => {
-    if (event.key === SIDEBAR_ORDER_KEY || event.key === null) onChange();
-  };
-  window.addEventListener(SIDEBAR_ORDER_CHANGED, changed);
-  window.addEventListener("storage", stored);
-  return () => {
-    window.removeEventListener(SIDEBAR_ORDER_CHANGED, changed);
-    window.removeEventListener("storage", stored);
-  };
+  let previous = JSON.stringify(loadSessionSidebarOrder(cwd));
+  return preferenceStorage.subscribe([SIDEBAR_ORDER_KEY], () => {
+    const next = JSON.stringify(loadSessionSidebarOrder(cwd));
+    if (previous === next) return;
+    previous = next;
+    onChange();
+  });
 }
 
 export function loadPinnedSessionsCollapsed(cwd: string): boolean {
@@ -628,22 +612,16 @@ export function subscribeSessionFolders(
   cwd: string,
   onChange: () => void,
 ): () => void {
-  if (typeof window === "undefined") return () => undefined;
   const key = storageKey(cwd);
   if (!key) return () => undefined;
-  const listener = (event: Event) => {
-    const changed = (event as CustomEvent<{ cwd?: string }>).detail?.cwd;
-    if (changed === key) onChange();
-  };
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === null || [KEY, PINNED_COLLAPSED_KEY, REMINDERS_COLLAPSED_KEY].includes(event.key)) onChange();
-  };
-  window.addEventListener(CHANGE_EVENT, listener);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(CHANGE_EVENT, listener);
-    window.removeEventListener("storage", onStorage);
-  };
+  const snapshot = () => JSON.stringify([loadSessionFolders(cwd), loadPinnedSessionsCollapsed(cwd), loadReminderSessionsCollapsed(cwd)]);
+  let previous = snapshot();
+  return preferenceStorage.subscribe([KEY, PINNED_COLLAPSED_KEY, REMINDERS_COLLAPSED_KEY], () => {
+    const next = snapshot();
+    if (previous === next) return;
+    previous = next;
+    onChange();
+  });
 }
 
 function storageKey(cwd: string): string | null {

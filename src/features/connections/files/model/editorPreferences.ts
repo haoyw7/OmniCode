@@ -1,7 +1,7 @@
-import { useSyncExternalStore } from "react";
+import { useMemo } from "react";
+import { useStore } from "zustand";
 import {
   preferenceStorage,
-  subscribeSharedPreferences,
   SHARED_PREFERENCES_CHANGED,
 } from "../../../settings/model/sharedPreferences";
 
@@ -22,24 +22,14 @@ const defaults: EditorPreferences = {
   tabSize: 4,
 };
 const key = "omnicode.editorPreferences";
-let cachedRaw: string | null | undefined;
-let cached = defaults;
-export function loadEditorPreferences(): EditorPreferences {
-  let raw: string | null = null;
-  try {
-    raw = preferenceStorage.getItem(key);
-  } catch {
-    /* Use defaults. */
-  }
-  if (raw === cachedRaw) return cached;
-  cachedRaw = raw;
+function decode(raw: string | null): EditorPreferences {
   let value: Partial<EditorPreferences> = {};
   try {
     value = JSON.parse(raw ?? "{}") ?? {};
   } catch {
     /* Use defaults. */
   }
-  cached = { ...defaults };
+  const result = { ...defaults };
   for (const name of [
     "previewTabs",
     "wordWrap",
@@ -47,10 +37,13 @@ export function loadEditorPreferences(): EditorPreferences {
     "showWhitespace",
     "scrollPastEnd",
   ] as const) {
-    if (typeof value[name] === "boolean") cached[name] = value[name];
+    if (typeof value[name] === "boolean") result[name] = value[name];
   }
-  if ([2, 4, 8].includes(value.tabSize ?? 0)) cached.tabSize = value.tabSize!;
-  return cached;
+  if ([2, 4, 8].includes(value.tabSize ?? 0)) result.tabSize = value.tabSize!;
+  return result;
+}
+export function loadEditorPreferences(): EditorPreferences {
+  try { return decode(preferenceStorage.getItem(key)); } catch { return defaults; }
 }
 export function saveEditorPreferences(patch: Partial<EditorPreferences>) {
   try {
@@ -64,17 +57,9 @@ export function saveEditorPreferences(patch: Partial<EditorPreferences>) {
   window.dispatchEvent(new Event(SHARED_PREFERENCES_CHANGED));
 }
 export function subscribeEditorPreferences(listener: () => void) {
-  const stop = subscribeSharedPreferences(listener);
-  window.addEventListener("storage", listener);
-  return () => {
-    stop();
-    window.removeEventListener("storage", listener);
-  };
+  return preferenceStorage.subscribe([key], listener);
 }
 export function useEditorPreferences() {
-  return useSyncExternalStore(
-    subscribeEditorPreferences,
-    loadEditorPreferences,
-    loadEditorPreferences,
-  );
+  const raw = useStore(preferenceStorage.store(key), state => state.value);
+  return useMemo(() => decode(raw), [raw]);
 }

@@ -9,6 +9,7 @@ import {
 import { activePreferenceStore, preferenceStorage, SHARED_PREFERENCES_CHANGED } from "../../settings/model/sharedPreferences";
 import { parsePreferenceAsset } from "../../settings/model/preferenceAssets";
 import { pathKey } from "../../../shared/lib/paths";
+import { createStore } from "zustand/vanilla";
 
 const KEY = "omnicode:project-chat-backgrounds";
 const SHARED_KEY = "omnicode.projectBackgroundAssets";
@@ -28,8 +29,9 @@ type StoredProjectChatBackground = Partial<ProjectChatBackgroundSettings> & {
   sessionOpacity?: number;
 };
 
-let revision = Date.now();
-let imageRevision = revision;
+const initialRevision = Date.now();
+const revisions = createStore(() => ({ revision: initialRevision, imageRevision: initialRevision }));
+let subscriptions = 0;
 
 function clampOpacity(value: number): number {
   return Math.min(
@@ -40,7 +42,7 @@ function clampOpacity(value: number): number {
 
 function read(): Record<string, StoredProjectChatBackground> {
   try {
-    const raw = activePreferenceStore() ? preferenceStorage.getItem(SHARED_KEY) : localStorage.getItem(KEY);
+    const raw = preferenceStorage.getItem(activePreferenceStore() ? SHARED_KEY : KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as unknown;
     return parsed && typeof parsed === "object"
@@ -53,8 +55,7 @@ function read(): Record<string, StoredProjectChatBackground> {
 
 function write(value: Record<string, StoredProjectChatBackground>) {
   try {
-    if (activePreferenceStore()) preferenceStorage.setItem(SHARED_KEY, JSON.stringify(value));
-    else localStorage.setItem(KEY, JSON.stringify(value));
+    preferenceStorage.setItem(activePreferenceStore() ? SHARED_KEY : KEY, JSON.stringify(value));
   } catch {
     // private mode / quota
   }
@@ -136,31 +137,29 @@ export function rebaseProjectChatBackgroundSetting(from: string, to: string) {
 }
 
 export function notifyProjectChatBackgroundChanged(imageChanged = true) {
-  revision += 1;
-  if (imageChanged) imageRevision += 1;
+  revisions.setState(state => ({ revision: state.revision + 1, imageRevision: state.imageRevision + Number(imageChanged) }));
   window.dispatchEvent(new CustomEvent(PROJECT_CHAT_BACKGROUND_CHANGED));
 }
 
 export function projectChatBackgroundRevision(): number {
-  return revision;
+  return revisions.getState().revision;
 }
 
 export function projectChatBackgroundImageRevision(): number {
-  return imageRevision;
+  return revisions.getState().imageRevision;
+}
+
+function shared(event: Event) {
+  const keys = (event as CustomEvent<string[]>).detail;
+  if (keys && !keys.includes(SHARED_KEY)) return;
+  revisions.setState(state => ({ revision: state.revision + 1, imageRevision: state.imageRevision + 1 }));
 }
 
 export function subscribeProjectChatBackground(listener: () => void) {
-  const shared = (event: Event) => {
-    const keys = (event as CustomEvent<string[]>).detail;
-    if (keys && !keys.includes(SHARED_KEY)) return;
-    revision += 1;
-    imageRevision += 1;
-    listener();
-  };
-  window.addEventListener(PROJECT_CHAT_BACKGROUND_CHANGED, listener);
-  window.addEventListener(SHARED_PREFERENCES_CHANGED, shared);
+  if (subscriptions++ === 0) window.addEventListener(SHARED_PREFERENCES_CHANGED, shared);
+  const stop = revisions.subscribe(listener);
   return () => {
-    window.removeEventListener(PROJECT_CHAT_BACKGROUND_CHANGED, listener);
-    window.removeEventListener(SHARED_PREFERENCES_CHANGED, shared);
+    stop();
+    if (--subscriptions === 0) window.removeEventListener(SHARED_PREFERENCES_CHANGED, shared);
   };
 }

@@ -1,3 +1,4 @@
+import { createPersistedPreferences } from "../../../shared/lib/persistedPreferences";
 import {
   DEVICE_LOCAL_PREFERENCE_KINDS, DEVICE_LOCAL_PROJECT_LIST_PREFERENCES, DEVICE_LOCAL_PROJECT_MAP_PREFERENCES,
   preferenceField, preferenceKind, SHARED_PREFERENCE_KINDS, validateSharedPreferenceValue,
@@ -210,8 +211,11 @@ function announcePreferenceChange(keys: string[]) {
 }
 /** Explicit adapter, never a monkey-patch of browser storage. Non-preference caches stay local. */
 let preferenceRouting: { get(key: string): string | null | undefined; set(key: string, raw: string | null): boolean } | undefined;
-export function setPreferenceRouting(routing: typeof preferenceRouting) { preferenceRouting = routing; }
-export const preferenceStorage = {
+export function setPreferenceRouting(routing: typeof preferenceRouting) {
+  preferenceRouting = routing;
+  preferenceStorage.refresh();
+}
+export const preferenceStorage = createPersistedPreferences({
   getItem(key: string): string | null {
     const routed = preferenceRouting?.get(key);
     if (routed !== undefined) return routed;
@@ -229,7 +233,8 @@ export const preferenceStorage = {
     if (preferenceRouting?.set(key, null)) return;
     if (active && own(SHARED_PREFERENCE_KINDS, key)) active.setItem(key, null); else localStorage.removeItem(key);
   },
-};
+});
+if (import.meta.hot) import.meta.hot.dispose(() => preferenceStorage.dispose());
 export function subscribeSharedPreferences(listener: () => void) {
   if (typeof window === "undefined") return () => {};
   window.addEventListener(SHARED_PREFERENCES_CHANGED, listener);

@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { create } from "zustand";
 import { paneEdgeFromPoint, type PaneEdge } from "./layout";
 
 export type PaneDrop = {
@@ -7,18 +7,10 @@ export type PaneDrop = {
   edge: PaneEdge;
 };
 
-let drop: PaneDrop | null = null;
-const listeners = new Set<() => void>();
-
-function subscribeNoop() {
-  return () => {};
-}
-
-function getNullDrop(): PaneDrop | null {
-  return null;
-}
+const usePaneDrop = create<{ drop: PaneDrop | null }>(() => ({ drop: null }));
 
 export function setExternalPaneDrop(next: PaneDrop | null) {
+  const drop = usePaneDrop.getState().drop;
   if (
     drop?.fromId === next?.fromId &&
     drop?.overId === next?.overId &&
@@ -27,27 +19,20 @@ export function setExternalPaneDrop(next: PaneDrop | null) {
     return;
   }
   if (drop == null && next == null) return;
-  drop = next;
-  for (const listener of listeners) listener();
+  usePaneDrop.setState({ drop: next });
 }
 
 export function subscribeExternalPaneDrop(listener: () => void) {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
+  return usePaneDrop.subscribe(listener);
 }
 
 export function getExternalPaneDrop() {
-  return drop;
+  return usePaneDrop.getState().drop;
 }
 
 /** Overlay for a drag that starts outside the pane tree (sidebar cards). */
 export function useExternalPaneDrop(enabled = true) {
-  return useSyncExternalStore(
-    enabled ? subscribeExternalPaneDrop : subscribeNoop,
-    enabled ? getExternalPaneDrop : getNullDrop,
-  );
+  return usePaneDrop(state => enabled ? state.drop : null);
 }
 
 export function paneDropFromPoint(
@@ -142,28 +127,14 @@ export function paneDropFromDrag(
  */
 export type TerminalDockDrop = "dock" | "band" | null;
 
-let dockDrop: TerminalDockDrop = null;
-const dockListeners = new Set<() => void>();
+const useDockDrop = create<{ drop: TerminalDockDrop }>(() => ({ drop: null }));
 
 export function setTerminalDockDrop(next: TerminalDockDrop) {
-  if (dockDrop === next) return;
-  dockDrop = next;
-  for (const listener of dockListeners) listener();
-}
-
-function subscribeTerminalDockDrop(listener: () => void) {
-  dockListeners.add(listener);
-  return () => {
-    dockListeners.delete(listener);
-  };
+  if (useDockDrop.getState().drop !== next) useDockDrop.setState({ drop: next });
 }
 
 export function useTerminalDockDrop() {
-  return useSyncExternalStore(
-    subscribeTerminalDockDrop,
-    () => dockDrop,
-    () => null,
-  );
+  return useDockDrop(state => state.drop);
 }
 
 /** Height of the bottom strip that docks a dragged terminal when no dock is open. */

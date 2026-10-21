@@ -1,9 +1,20 @@
 // @vitest-environment happy-dom
-import { afterEach, expect, it } from "vitest";
-import { activatePreferenceStore, SharedPreferenceStore } from "../../settings/model/sharedPreferences";
-import { loadProjectChatBackgroundSettings, saveProjectChatBackgroundSettings } from "./projectChatBackground";
+import { afterEach, expect, it, vi } from "vitest";
+import { activatePreferenceStore, SharedPreferenceStore, SHARED_PREFERENCES_CHANGED } from "../../settings/model/sharedPreferences";
+import { loadProjectChatBackgroundSettings, saveProjectChatBackgroundSettings, subscribeProjectChatBackground, projectChatBackgroundImageRevision } from "./projectChatBackground";
 
 afterEach(() => { activatePreferenceStore(undefined); localStorage.clear(); });
+
+it("publishes one image revision to every subscriber for a shared preference change", () => {
+  const first = vi.fn(), second = vi.fn();
+  const stops = [subscribeProjectChatBackground(first), subscribeProjectChatBackground(second)];
+  const before = projectChatBackgroundImageRevision();
+  window.dispatchEvent(new CustomEvent(SHARED_PREFERENCES_CHANGED, { detail: ["omnicode.projectBackgroundAssets"] }));
+  expect(projectChatBackgroundImageRevision()).toBe(before + 1);
+  expect(first).toHaveBeenCalledOnce();
+  expect(second).toHaveBeenCalledOnce();
+  stops.forEach(stop => stop());
+});
 
 it("keeps project background references portable and retains the legacy file as recovery data", async () => {
   const legacy = JSON.stringify({ "/repo": { path: "/old/background.png", opacity: 0.2 } });

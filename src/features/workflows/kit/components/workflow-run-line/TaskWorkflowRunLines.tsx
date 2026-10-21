@@ -17,7 +17,7 @@ import {
   workflowRunStopReasonMessageId,
 } from "../workflow-graph/run-status-presentation.js";
 import { formatTaskRelativeTime } from "../../lib/taskListItemPresentation.js";
-import { getWorkflowRunAckStore, useWorkflowRunAcknowledged } from "../../lib/workflowRunAckStore.js";
+import { acknowledgeWorkflowRuns, useWorkflowRunAcknowledged } from "../../lib/workflowRunAckStore.js";
 import {
   foldWorkflowRunRail,
   selectWorkflowRunLines,
@@ -178,7 +178,7 @@ export function TaskWorkflowRunLines({
   // 打开会话 = 确认它此刻所有已结束的 run；会话保持打开时 run 结束也立即确认（在读者眼前折叠）。
   useEffect(() => {
     if (!isActive || settledKey.length === 0) return;
-    getWorkflowRunAckStore().acknowledge(settledKey.split(" "));
+    acknowledgeWorkflowRuns(settledKey.split(" "));
   }, [isActive, settledKey]);
   const selection = useMemo(
     () => selectWorkflowRunLines(activity, isAcknowledged),

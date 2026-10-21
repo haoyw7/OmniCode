@@ -11,9 +11,6 @@ import type { HarnessId } from "./session";
 
 const KEY = "omnicode.projectProviderSettings.v1";
 
-/** Fired on `window` when any project's provider settings change. */
-export const PROJECT_PROVIDERS_CHANGE_EVENT = "omnicode:project-providers-change";
-
 export type ProjectProviderSettings = {
   defaultHarness?: HarnessId;
   defaultModel?: string;
@@ -24,13 +21,9 @@ export type ProjectProviderSettings = {
 
 type Stored = Record<string, ProjectProviderSettings>;
 
-let revision = 0;
-let cache: Stored | null = null;
-let cacheRaw: string | null = null;
-
 /** Bumps on every write so `useSyncExternalStore` consumers can re-render. */
 export function projectProvidersRevision(): number {
-  return revision;
+  return preferenceStorage.store(KEY).getState().revision;
 }
 
 export function loadProjectProviderSettings(
@@ -104,20 +97,7 @@ export function rebaseProjectProviders(from: string, to: string): void {
 }
 
 export function subscribeProjectProviders(listener: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-  const storage = (event: StorageEvent) => {
-    if (event.key !== KEY) return;
-    cache = null;
-    cacheRaw = null;
-    revision += 1;
-    listener();
-  };
-  window.addEventListener(PROJECT_PROVIDERS_CHANGE_EVENT, listener);
-  window.addEventListener("storage", storage);
-  return () => {
-    window.removeEventListener(PROJECT_PROVIDERS_CHANGE_EVENT, listener);
-    window.removeEventListener("storage", storage);
-  };
+  return preferenceStorage.subscribe([KEY], listener);
 }
 
 function update(
@@ -148,10 +128,7 @@ function readAll(): Stored {
   } catch {
     raw = null;
   }
-  if (cache && cacheRaw === raw) return cache;
-  cacheRaw = raw;
-  cache = parse(raw);
-  return cache;
+  return parse(raw);
 }
 
 function parse(raw: string | null): Stored {
@@ -204,15 +181,10 @@ function normalize(value: ProjectProviderSettings): ProjectProviderSettings {
 }
 
 function writeAll(next: Stored): void {
-  revision += 1;
-  cache = next;
   const serialized = JSON.stringify(next);
-  cacheRaw = serialized;
   try {
     preferenceStorage.setItem(KEY, serialized);
   } catch {
     // private mode / quota
   }
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent(PROJECT_PROVIDERS_CHANGE_EVENT));
 }

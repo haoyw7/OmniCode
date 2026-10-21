@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { create } from "zustand";
 import type { Block, PlanBlockMeta } from "./session";
 import { legacyTaskListFromText } from "./taskList";
 
@@ -20,24 +20,15 @@ export function planBuildable(
 }
 
 /** Plans whose decision the user skipped, kept for the app's lifetime. */
-const skipped = new Set<string>();
-const listeners = new Set<() => void>();
-let version = 0;
+const usePlanDecisions = create<{ skipped: ReadonlySet<string> }>(() => ({ skipped: new Set() }));
 
 export function skipPlanDecision(blockId: string): void {
-  if (skipped.has(blockId)) return;
-  skipped.add(blockId);
-  version += 1;
-  for (const listener of listeners) listener();
-}
-
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+  usePlanDecisions.setState(state => state.skipped.has(blockId) ? state
+    : { skipped: new Set([...state.skipped, blockId]) });
 }
 
 /** The newest plan still awaiting a decision, unless the user moved on. */
-export function latestPlanDecision(blocks: Block[]): string | undefined {
+export function latestPlanDecision(blocks: Block[], skipped = usePlanDecisions.getState().skipped): string | undefined {
   for (let index = blocks.length - 1; index >= 0; index--) {
     const block = blocks[index];
     if (block.role === "user" && !block.draft) return undefined;
@@ -54,6 +45,5 @@ export function usePlanDecision(
   blocks: Block[] | undefined,
   enabled: boolean,
 ): string | undefined {
-  useSyncExternalStore(subscribe, () => version);
-  return enabled && blocks ? latestPlanDecision(blocks) : undefined;
+  return usePlanDecisions(state => enabled && blocks ? latestPlanDecision(blocks, state.skipped) : undefined);
 }

@@ -2,7 +2,7 @@ import { animate, type AnimationPlaybackControlsWithThen } from "motion/react";
 import { panelTransition, immediateTransition } from "../../../shared/motion/tokens";
 import { prefersReducedMotion } from "../../../shared/lib/reducedMotion";
 import { DESKTOP_SCHEME_KEY, isDesktopDocument, loadDesktopTheme } from "../../../shared/theme/desktopAppearance";
-import { activePreferenceStore, SHARED_PREFERENCES_CHANGED } from "./sharedPreferences";
+import { activePreferenceStore } from "./sharedPreferences";
 import { parsePreferenceAsset, preferenceAssetUrl, PREFERENCE_ASSET_READY } from "./preferenceAssets";
 import { preferenceStorage } from "./sharedPreferences";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
@@ -732,13 +732,13 @@ export function saveChatBackgroundPath(value: string | null) {
 export function subscribeChatBackgroundPath(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => {};
   window.addEventListener(CHAT_BACKGROUND_PATH_CHANGE_EVENT, onStoreChange);
-  window.addEventListener(SHARED_PREFERENCES_CHANGED, onStoreChange);
+  const stop = preferenceStorage.subscribe([CHAT_BACKGROUND_PATH_KEY, "omnicode.chatBackgroundAsset", NEW_THREAD_BACKGROUND_EFFECT_KEY], onStoreChange);
   return () => {
     window.removeEventListener(
       CHAT_BACKGROUND_PATH_CHANGE_EVENT,
       onStoreChange,
     );
-    window.removeEventListener(SHARED_PREFERENCES_CHANGED, onStoreChange);
+    stop();
   };
 }
 
@@ -1047,10 +1047,7 @@ export function saveShowExcludedFiles(value: boolean) {
 }
 
 export function subscribeShowExcludedFiles(onStoreChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-  window.addEventListener(SHOW_EXCLUDED_FILES_CHANGE_EVENT, onStoreChange);
-  return () =>
-    window.removeEventListener(SHOW_EXCLUDED_FILES_CHANGE_EVENT, onStoreChange);
+  return preferenceStorage.subscribe([SHOW_EXCLUDED_FILES_KEY], onStoreChange);
 }
 
 if (typeof window !== "undefined") window.addEventListener(PREFERENCE_ASSET_READY, () => {

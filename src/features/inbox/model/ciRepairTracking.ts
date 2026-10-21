@@ -1,5 +1,7 @@
 import type { CiRepairRequest } from "./ciRepair";
 import { sameProjectPath } from "../../projects/model/recents";
+import { createStore } from "zustand/vanilla";
+import { devicePreferences } from "../../../shared/lib/persistedPreferences";
 
 export type CiRepairOutcome = "completed" | "failed" | "cancelled";
 export type TrackedCiRepair = CiRepairRequest["target"] & {
@@ -13,8 +15,8 @@ export type TrackedCiRepair = CiRepairRequest["target"] & {
 
 const KEY = "omnicode.ciRepairs.v1";
 const ENTRY_PREFIX = `${KEY}.`;
-const listeners = new Set<() => void>();
-let repairs: readonly TrackedCiRepair[] | undefined;
+const repairStore = createStore<{ repairs: readonly TrackedCiRepair[] | undefined }>(() => ({ repairs: undefined }));
+let subscriptions = 0;
 const interrupted = new Set<string>();
 const pendingWrites = new Map<string, TrackedCiRepair | null>();
 
@@ -26,7 +28,7 @@ function loadStored(): TrackedCiRepair[] {
   try {
     let value: unknown[] = [];
     try {
-      const legacy: unknown = JSON.parse(localStorage.getItem(KEY) ?? "[]");
+      const legacy: unknown = JSON.parse(devicePreferences.getItem(KEY) ?? "[]");
       if (Array.isArray(legacy)) value = legacy;
     } catch {
       // New records remain readable if the legacy history is damaged.
@@ -35,7 +37,7 @@ function loadStored(): TrackedCiRepair[] {
       const key = localStorage.key(index);
       if (!key?.startsWith(ENTRY_PREFIX)) continue;
       try {
-        value.push(JSON.parse(localStorage.getItem(key) ?? "null"));
+        value.push(JSON.parse(devicePreferences.getItem(key) ?? "null"));
       } catch {
         // One damaged record must not hide other repairs.
       }
@@ -96,8 +98,8 @@ function save(repair: TrackedCiRepair, remove = false) {
   const previous = getCiRepairs();
   try {
     const key = `${ENTRY_PREFIX}${repair.id}`;
-    if (remove) localStorage.removeItem(key);
-    else localStorage.setItem(key, JSON.stringify(repair));
+    if (remove) devicePreferences.removeItem(key);
+    else devicePreferences.setItem(key, JSON.stringify(repair));
     pendingWrites.delete(repair.id);
   } catch {
     // Keep tracking in memory if storage is full or unavailable.
@@ -112,22 +114,23 @@ function save(repair: TrackedCiRepair, remove = false) {
   for (const item of ordered.slice(200)) {
     pendingWrites.delete(item.id);
     try {
-      localStorage.removeItem(`${ENTRY_PREFIX}${item.id}`);
+      devicePreferences.removeItem(`${ENTRY_PREFIX}${item.id}`);
     } catch {
       // The visible history stays bounded when storage is unavailable.
     }
   }
-  repairs = ordered
+  const repairs: readonly TrackedCiRepair[] = ordered
     .slice(0, 200)
     .map((item) =>
       item.phase === "running" && interrupted.has(item.id)
         ? { ...item, phase: "interrupted" }
         : item,
     );
-  for (const listener of listeners) listener();
+  repairStore.setState({ repairs });
 }
 
 export function getCiRepairs(): readonly TrackedCiRepair[] {
+  let repairs = repairStore.getState().repairs;
   if (!repairs) {
     repairs = load()
       .slice(0, 200)
@@ -136,16 +139,17 @@ export function getCiRepairs(): readonly TrackedCiRepair[] {
         interrupted.add(item.id);
         return { ...item, phase: "interrupted" };
       });
+    repairStore.setState({ repairs });
   }
   return repairs;
 }
 
 export function subscribeCiRepairs(listener: () => void): () => void {
-  if (listeners.size === 0) window.addEventListener("storage", onStorage);
-  listeners.add(listener);
+  if (subscriptions++ === 0) window.addEventListener("storage", onStorage);
+  const stop = repairStore.subscribe(listener);
   return () => {
-    listeners.delete(listener);
-    if (listeners.size === 0) window.removeEventListener("storage", onStorage);
+    stop();
+    if (--subscriptions === 0) window.removeEventListener("storage", onStorage);
   };
 }
 
@@ -158,14 +162,14 @@ function onStorage(event: StorageEvent) {
     return;
   if (event.key?.startsWith(ENTRY_PREFIX))
     interrupted.delete(event.key.slice(ENTRY_PREFIX.length));
-  repairs = load()
+  const repairs: readonly TrackedCiRepair[] = load()
     .slice(0, 200)
     .map((item) =>
       item.phase === "running" && interrupted.has(item.id)
         ? { ...item, phase: "interrupted" }
         : item,
     );
-  for (const listener of listeners) listener();
+  repairStore.setState({ repairs });
 }
 
 export function trackCiRepair(

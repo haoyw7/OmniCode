@@ -2,7 +2,6 @@ import { mergeOrderedSubset } from "../../../shared/lib/reorder";
 import { preferenceStorage } from "./sharedPreferences";
 
 const KEY = "omnicode.sidebarSectionOrder.v1";
-const CHANGED = "omnicode:sidebar-section-order-changed";
 export const DEFAULT_SIDEBAR_SECTION_ORDER = [
   "pinned",
   "chats",
@@ -46,7 +45,6 @@ export function saveSidebarSectionOrder(
   } catch {
     // Keep the current view sortable when storage is unavailable.
   }
-  window.dispatchEvent(new Event(CHANGED));
 }
 
 export function subscribeSidebarSectionOrder(onChange: () => void): () => void {
@@ -57,13 +55,5 @@ export function subscribeSidebarSectionOrder(onChange: () => void): () => void {
     previous = next;
     onChange();
   };
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === KEY || event.key === null) notify();
-  };
-  window.addEventListener(CHANGED, notify);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(CHANGED, notify);
-    window.removeEventListener("storage", onStorage);
-  };
+  return preferenceStorage.subscribe([KEY], notify);
 }

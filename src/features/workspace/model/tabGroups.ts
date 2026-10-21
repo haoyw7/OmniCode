@@ -26,7 +26,6 @@ export function tabGroupColor(project: string): string {
 const COLOR_KEY = "omnicode:tab-group:colors";
 const CUSTOM_COLOR_KEY = "omnicode:tab-group:custom-colors";
 const LABEL_KEY = "omnicode:tab-group:labels";
-const LABELS_CHANGED = "omnicode:tab-group-labels-changed";
 const LOGO_KEY = "omnicode:tab-group:logos";
 const MASCOT_KEY = "omnicode:tab-group:mascots";
 
@@ -222,14 +221,7 @@ export function loadTabGroupLabels(): Record<string, string> {
 }
 
 export function subscribeTabGroupLabels(onChange: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-  window.addEventListener(LABELS_CHANGED, onChange);
-  return () => window.removeEventListener(LABELS_CHANGED, onChange);
-}
-
-function notifyTabGroupLabelsChanged(): void {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new Event(LABELS_CHANGED));
+  return preferenceStorage.subscribe([LABEL_KEY], onChange);
 }
 
 export function saveTabGroupLabel(project: string, label: string): void {
@@ -238,7 +230,6 @@ export function saveTabGroupLabel(project: string, label: string): void {
   if (!trimmed) delete next[project];
   else next[project] = trimmed;
   if (!writeRecord(LABEL_KEY, next)) return;
-  notifyTabGroupLabelsChanged();
   notifyProjectPathsChanged();
 }
 
@@ -272,9 +263,7 @@ export function clearTabGroupSettings(project: string): void {
     const next = readRecord(key);
     if (!(project in next)) continue;
     delete next[project];
-    if (writeRecord(key, next) && key === LABEL_KEY) {
-      notifyTabGroupLabelsChanged();
-    }
+    writeRecord(key, next);
   }
 }
 
@@ -283,7 +272,6 @@ export function rebaseProjectTabGroupSettings(from: string, to: string): void {
   const oldKey = projectKey(from);
   const newKey = projectKey(to);
   if (oldKey === newKey) return;
-  let labelsChanged = false;
   let logosChanged = false;
   for (const key of APPEARANCE_KEYS) {
     const next = readRecord(key);
@@ -291,10 +279,8 @@ export function rebaseProjectTabGroupSettings(from: string, to: string): void {
     if (!(newKey in next)) next[newKey] = next[oldKey];
     delete next[oldKey];
     if (!writeRecord(key, next)) continue;
-    labelsChanged ||= key === LABEL_KEY;
     logosChanged ||= key === LOGO_KEY;
   }
-  if (labelsChanged) notifyTabGroupLabelsChanged();
   if (logosChanged) notifyTabGroupLogosChanged();
 }
 

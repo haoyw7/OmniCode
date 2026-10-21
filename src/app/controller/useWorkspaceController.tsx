@@ -1,4 +1,6 @@
 import { supportsProjectTerminal } from "../../features/terminal/model/terminalAvailability";
+import { useStore } from "zustand";
+import { createWorkspaceUiStore } from "../model/workspaceUiStore";
 import { resolveBotOrigin } from "../../features/bots/model/botOrigin";
 import { selectBotThread } from "../../features/bots/model/botSelection";
 import { invoke } from "@tauri-apps/api/core";
@@ -409,6 +411,12 @@ export function useWorkspaceController({
   historyCwd: bootHistoryCwd = null,
 }: AppProps) {
   const { t: translateUi } = useTranslation();
+  const [uiStore] = useState(createWorkspaceUiStore);
+  const {
+    navigationExpanded, setNavigationExpanded, filesSearchOpen, setFilesSearchOpen,
+    searchFocusToken, setSearchFocusToken, paletteOpen, setPaletteOpen,
+    paletteQuery, setPaletteQuery, paletteToken, setPaletteToken,
+  } = useStore(uiStore);
   const projectRemoval = useMutation({ mutationFn: (path: string) => withToast(() => removeProjectData(path),
     { loading: translateUi("Saving…"), success: false }) }, queryClient);
   const [desktopStartup] = useState(() => {
@@ -483,7 +491,6 @@ export function useWorkspaceController({
   const [sessionSidebarOpen, setSessionSidebarOpen] = usePreferenceState(
     loadSessionSidebarOpen,
   );
-  const [navigationExpanded, setNavigationExpanded] = useState(false);
   const onToggleNavigation = useCallback(
     () => setNavigationExpanded((expanded) => !expanded),
     [],
@@ -491,8 +498,6 @@ export function useWorkspaceController({
   const tabCloseScope = "project" as const;
   const currentProjectDock = findProjectTerminal(projectTerminals, projectCwd);
   const dockVisible = !!currentProjectDock?.open;
-  const [filesSearchOpen, setFilesSearchOpen] = useState(false);
-  const [searchFocusToken, setSearchFocusToken] = useState(0);
   const [linkedWorkItemPanels, setLinkedWorkItemPanels] = useState<
     ReadonlyMap<string, LinkedWorkItemPanelState>
   >(() => new Map());
@@ -566,9 +571,6 @@ export function useWorkspaceController({
         return [providerSignInRequestKey(session)];
       }),
     ));
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [paletteQuery, setPaletteQuery] = useState("");
-  const [paletteToken, setPaletteToken] = useState(0);
   const {
     appPage,
     showWorkspace,

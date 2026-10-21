@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useStore } from "zustand";
+import { createStore } from "zustand/vanilla";
+import { devicePreferences } from "../../../shared/lib/persistedPreferences";
 import { sameProjectPath } from "../../projects/model/recents";
 
 const KEY = "omnicode.inboxSeen";
@@ -18,11 +20,11 @@ type SeenStore = {
 
 type Listener = () => void;
 
-const listeners = new Set<Listener>();
-const knownItems = new Map<string, InboxSeenEntry & { projectPaths: string[] }>();
+const known = createStore(() => ({ revision: 0, items: new Map<string, InboxSeenEntry & { projectPaths: string[] }>() }));
 
 /** Share fetched activity across the Inbox view, background poll, and rail menu. */
 export function rememberInboxItems(entries: readonly (InboxSeenEntry & { projectPath: string })[]) {
+  const knownItems = new Map(known.getState().items);
   let changed = false;
   for (const entry of entries) {
     const previous = knownItems.get(entry.key);
@@ -37,11 +39,11 @@ export function rememberInboxItems(entries: readonly (InboxSeenEntry & { project
     });
     changed = true;
   }
-  if (changed) notifyInboxSeen();
+  if (changed) known.setState(state => ({ items: knownItems, revision: state.revision + 1 }));
 }
 
 export function knownInboxEntries(projectPaths: readonly string[]): InboxSeenEntry[] {
-  return [...knownItems.values()].filter((entry) =>
+  return [...known.getState().items.values()].filter((entry) =>
     entry.projectPaths.some((knownPath) =>
       !knownPath || projectPaths.some((path) => sameProjectPath(path, knownPath)),
     ),
@@ -49,17 +51,12 @@ export function knownInboxEntries(projectPaths: readonly string[]): InboxSeenEnt
 }
 
 export function clearKnownInboxItems() {
-  knownItems.clear();
-  notifyInboxSeen();
+  known.setState(state => ({ items: new Map(), revision: state.revision + 1 }));
 }
 
 export function inboxUpdatedAt(item: { updatedAt: string }): number {
   const value = Date.parse(item.updatedAt);
   return Number.isFinite(value) ? value : 0;
-}
-
-function notifyInboxSeen() {
-  for (const listener of listeners) listener();
 }
 
 function isSeenMap(value: unknown): value is SeenMap {
@@ -77,7 +74,7 @@ let parsedSeen: { raw: string; store: SeenStore } | null = null;
 function loadInboxSeenStore(): SeenStore {
   let raw: string | null;
   try {
-    raw = localStorage.getItem(KEY);
+    raw = devicePreferences.getItem(KEY);
   } catch {
     return { seeded: false, items: {} };
   }
@@ -109,7 +106,7 @@ function parseInboxSeenStore(raw: string): SeenStore {
 
 function saveInboxSeenStore(store: SeenStore): boolean {
   try {
-    localStorage.setItem(
+    devicePreferences.setItem(
       KEY,
       JSON.stringify({ seeded: store.seeded, items: store.items }),
     );
@@ -121,7 +118,6 @@ function saveInboxSeenStore(store: SeenStore): boolean {
   } catch {
     // Legacy cleanup must not turn a successful write into a failure.
   }
-  notifyInboxSeen();
   return true;
 }
 
@@ -192,14 +188,16 @@ export function inboxHasUnseenItems(items: readonly InboxSeenEntry[]): boolean {
 }
 
 export function subscribeInboxSeen(listener: Listener): () => void {
-  listeners.add(listener);
+  const stopKnown = known.subscribe(listener);
+  const stopSeen = devicePreferences.subscribe([KEY], listener);
   return () => {
-    listeners.delete(listener);
+    stopKnown();
+    stopSeen();
   };
 }
 
 export function useInboxSeenTick(): number {
-  const [tick, setTick] = useState(0);
-  useEffect(() => subscribeInboxSeen(() => setTick((value) => value + 1)), []);
-  return tick;
+  const revision = useStore(known, state => state.revision);
+  const seen = useStore(devicePreferences.store(KEY), state => state.revision);
+  return revision + seen;
 }

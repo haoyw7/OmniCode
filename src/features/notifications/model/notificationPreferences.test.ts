@@ -151,10 +151,14 @@ it("notifies mounted controls at expiry without a reload and synchronizes change
     expect(listener).toHaveBeenCalled();
     expect(notificationPreferencesSnapshot()).not.toBe(muted);
     listener.mockClear();
+    localStorage.setItem("omnicode.projectNotifications.v1", "{}");
     window.dispatchEvent(
       new StorageEvent("storage", { key: "omnicode.projectNotifications.v1" }),
     );
     expect(listener).toHaveBeenCalled();
+    listener.mockClear();
+    window.dispatchEvent(new StorageEvent("storage", { key: "omnicode.projectNotifications.v1" }));
+    expect(listener).not.toHaveBeenCalled();
   } finally {
     unsubscribe();
     vi.useRealTimers();

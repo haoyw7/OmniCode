@@ -796,10 +796,7 @@ export function saveModelControls(value: ModelControls) {
 }
 
 export function subscribeModelControls(onStoreChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-  window.addEventListener(MODEL_CONTROLS_CHANGE_EVENT, onStoreChange);
-  return () =>
-    window.removeEventListener(MODEL_CONTROLS_CHANGE_EVENT, onStoreChange);
+  return preferenceStorage.subscribe([MODEL_CONTROLS_KEY], onStoreChange);
 }
 
 const NOTES_ENABLED_KEY = "omnicode.notesEnabled";
@@ -822,10 +819,7 @@ export function saveNotesEnabled(value: boolean) {
 }
 
 export function subscribeNotesEnabled(onStoreChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-  window.addEventListener(NOTES_ENABLED_CHANGE_EVENT, onStoreChange);
-  return () =>
-    window.removeEventListener(NOTES_ENABLED_CHANGE_EVENT, onStoreChange);
+  return preferenceStorage.subscribe([NOTES_ENABLED_KEY], onStoreChange);
 }
 
 const QUICK_COMPOSER_ENABLED_KEY = "omnicode.quickComposerEnabled";
@@ -887,10 +881,7 @@ export function saveLiveAgentsEnabled(value: boolean) {
 }
 
 export function subscribeLiveAgentsEnabled(onStoreChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-  window.addEventListener(LIVE_AGENTS_ENABLED_CHANGE_EVENT, onStoreChange);
-  return () =>
-    window.removeEventListener(LIVE_AGENTS_ENABLED_CHANGE_EVENT, onStoreChange);
+  return preferenceStorage.subscribe([LIVE_AGENTS_ENABLED_KEY], onStoreChange);
 }
 
 const CLOSE_TO_TRAY_KEY = "omnicode.closeToTray";
@@ -943,10 +934,7 @@ export function saveDiffViewer(value: DiffViewer) {
 }
 
 export function subscribeDiffViewer(onStoreChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-  window.addEventListener(DIFF_VIEWER_CHANGE_EVENT, onStoreChange);
-  return () =>
-    window.removeEventListener(DIFF_VIEWER_CHANGE_EVENT, onStoreChange);
+  return preferenceStorage.subscribe([DIFF_VIEWER_KEY], onStoreChange);
 }
 
 const FORMAT_ON_SAVE_KEY = "omnicode.formatOnSave";
@@ -980,16 +968,7 @@ export function saveAutosave(value: boolean): boolean {
 }
 
 export function subscribeAutosave(onStoreChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === AUTOSAVE_KEY) onStoreChange();
-  };
-  window.addEventListener(AUTOSAVE_CHANGE_EVENT, onStoreChange);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(AUTOSAVE_CHANGE_EVENT, onStoreChange);
-    window.removeEventListener("storage", onStorage);
-  };
+  return preferenceStorage.subscribe([AUTOSAVE_KEY], onStoreChange);
 }
 
 const MENU_BAR_VISIBLE_KEY = "omnicode.menuBarVisible";
@@ -1009,16 +988,7 @@ export function saveMenuBarVisible(value: boolean): boolean {
 }
 
 export function subscribeMenuBarVisible(onStoreChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === MENU_BAR_VISIBLE_KEY) onStoreChange();
-  };
-  window.addEventListener(MENU_BAR_CHANGE_EVENT, onStoreChange);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(MENU_BAR_CHANGE_EVENT, onStoreChange);
-    window.removeEventListener("storage", onStorage);
-  };
+  return preferenceStorage.subscribe([MENU_BAR_VISIBLE_KEY], onStoreChange);
 }
 
 const CLAUDE_HOOKS_KEY = "omnicode.claudeHooks";
@@ -1399,16 +1369,7 @@ export function keybindingShortcutTokens(
 }
 
 export function subscribeKeybindings(onStoreChange: () => void) {
-  if (typeof window === "undefined") return () => {};
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === KEYBINDING_OVERRIDES_KEY) onStoreChange();
-  };
-  window.addEventListener(KEYBINDINGS_CHANGE_EVENT, onStoreChange);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(KEYBINDINGS_CHANGE_EVENT, onStoreChange);
-    window.removeEventListener("storage", onStorage);
-  };
+  return preferenceStorage.subscribe([KEYBINDING_OVERRIDES_KEY, QUICK_COMPOSER_SHORTCUT_KEY, QUICK_COMPOSER_ENABLED_KEY], onStoreChange);
 }
 
 export function currentKeybindings(): KeybindingRow[] {

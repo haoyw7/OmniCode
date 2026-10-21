@@ -25,7 +25,6 @@ export type ProjectNotificationPreference = {
 };
 type Preferences = Record<string, ProjectNotificationPreference>;
 const KEY = "omnicode.projectNotifications.v1";
-const CHANGE = "omnicode:project-notifications-change";
 
 /** `after` is the last suppressed millisecond, shared with native delivery. */
 export type ProjectNotificationRule = { enabled: boolean; after: number };
@@ -133,7 +132,6 @@ export function updateNotificationPreferences(
     };
   }
   preferenceStorage.setItem(KEY, JSON.stringify(preferences));
-  if (typeof window !== "undefined") window.dispatchEvent(new Event(CHANGE));
 }
 
 export function allowsProjectNotification(
@@ -203,21 +201,16 @@ export function subscribeNotificationPreferences(
     schedule();
     listener();
   };
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === KEY || event.key === null) changed();
-  };
   const onVisible = () => {
     if (!document.hidden) changed();
   };
-  window.addEventListener(CHANGE, changed);
-  window.addEventListener("storage", onStorage);
+  const stop = preferenceStorage.subscribe([KEY], changed);
   window.addEventListener("focus", changed);
   document.addEventListener("visibilitychange", onVisible);
   schedule();
   return () => {
     clearTimeout(timer);
-    window.removeEventListener(CHANGE, changed);
-    window.removeEventListener("storage", onStorage);
+    stop();
     window.removeEventListener("focus", changed);
     document.removeEventListener("visibilitychange", onVisible);
   };

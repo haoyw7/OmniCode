@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient, invalidateAfterChange } from "../../shared/lib/queryClient";
 import { mobileSavedConnectionsQuery } from "../mobileQueries";
+import { useStore } from "zustand";
+import { devicePreferences } from "../../shared/lib/persistedPreferences";
 import { lightImpact, attentionHaptic, setHapticsForeground } from "../haptics";
 
 import { usePreferenceState } from "../../features/settings/model/usePreferenceState";
@@ -171,16 +173,9 @@ const message = (error: unknown) =>
     ? translate(error.message)
     : translate("Unable to reach this Host.");
 const HOME_SCOPE_KEY = "omnicode.mobile.homeScope";
-function loadHomeScope(): MobileHomeScope {
-  try {
-    return localStorage.getItem(HOME_SCOPE_KEY) === "all" ? "all" : "device";
-  } catch {
-    return "device";
-  }
-}
 function saveHomeScope(scope: MobileHomeScope) {
   try {
-    localStorage.setItem(HOME_SCOPE_KEY, scope);
+    devicePreferences.setItem(HOME_SCOPE_KEY, scope, true);
   } catch {
     // Scope is a convenience; an unavailable store keeps the session's choice.
   }
@@ -220,11 +215,8 @@ export function useMobileAppController() {
   const settingsReturnView = useRef<View>("home");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [hostPickerOpen, setHostPickerOpen] = useState(false);
-  const [homeScope, setHomeScopeState] = usePreferenceState<MobileHomeScope>(loadHomeScope);
-  const setHomeScope = useCallback((scope: MobileHomeScope) => {
-    saveHomeScope(scope);
-    setHomeScopeState(scope);
-  }, []);
+  const homeScope = useStore(devicePreferences.store(HOME_SCOPE_KEY), (state): MobileHomeScope => state.value === "all" ? "all" : "device");
+  const setHomeScope = saveHomeScope;
   const hostPickerTrigger = useRef<HTMLButtonElement>(null);
   const [settingsPage, setSettingsPage] = useState<MobileSettingsPage>("root");
 

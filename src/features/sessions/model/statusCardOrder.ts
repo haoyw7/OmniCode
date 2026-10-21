@@ -1,7 +1,6 @@
-import { useSyncExternalStore } from "react";
+import { useStore } from "zustand";
 import {
   preferenceStorage,
-  subscribeSharedPreferences,
 } from "../../settings/model/sharedPreferences";
 
 export const STATUS_CARD_IDS = [
@@ -45,7 +44,6 @@ export function saveStatusCardOrder(order: readonly StatusCardId[]) {
 }
 
 const VISIBLE_KEY = "omnicode.statusCardsVisible";
-const visibilityListeners = new Set<() => void>();
 
 /** Whether the session status cards show beside the conversation; on by default. */
 export function loadStatusCardsVisible(): boolean {
@@ -62,18 +60,12 @@ export function saveStatusCardsVisible(visible: boolean) {
   } catch {
     // private mode / quota
   }
-  for (const listener of visibilityListeners) listener();
 }
 
 export function subscribeStatusCardsVisible(listener: () => void) {
-  visibilityListeners.add(listener);
-  const unsubscribeShared = subscribeSharedPreferences(listener);
-  return () => {
-    visibilityListeners.delete(listener);
-    unsubscribeShared();
-  };
+  return preferenceStorage.subscribe([VISIBLE_KEY], listener);
 }
 
 export function useStatusCardsVisible(): boolean {
-  return useSyncExternalStore(subscribeStatusCardsVisible, loadStatusCardsVisible, () => true);
+  return useStore(preferenceStorage.store(VISIBLE_KEY), state => state.value !== "false");
 }

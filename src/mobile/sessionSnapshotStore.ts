@@ -1,4 +1,6 @@
 import { useMemo, useSyncExternalStore } from "react";
+import { createStore } from "zustand/vanilla";
+import { subscribeWithSelector } from "zustand/middleware";
 import type { HostSession, RemoteProvider } from "../features/connections/model/protocol";
 import { withOutgoing, type OutgoingMessage } from "../features/connections/model/outgoing";
 import { sessionComposerConfiguration } from "../features/sessions/model/composerConfiguration";
@@ -9,37 +11,27 @@ type Snapshot = HostSession | undefined;
 
 /** One store per mobile shell: navigation and Host changes retain their guards. */
 export function createSessionSnapshotStore(initial?: HostSession) {
-  let value = initial;
-  let rendered: Snapshot;
-  const listeners = new Set<() => void>();
-  const renderedListeners = new Set<() => void>();
-  const subscribeTo = (set: Set<() => void>, listener: () => void) => {
-    set.add(listener);
-    return () => { set.delete(listener); };
-  };
+  const store = createStore(subscribeWithSelector(() => ({ value: initial, rendered: undefined as Snapshot })));
   return {
-    get: () => value,
+    store,
+    get: () => store.getState().value,
     set: (update: Snapshot | ((previous: Snapshot) => Snapshot)) => {
+      const { value, rendered } = store.getState();
       const next = typeof update === "function" ? update(value) : update;
       if (next === value || (next && value && next.session.id === value.session.id && next.revision < value.revision)) return;
       const changedSession = next?.session.id !== value?.session.id;
-      value = next;
-      if (changedSession) {
-        rendered = undefined;
-        for (const listener of renderedListeners) listener();
-      }
-      for (const listener of listeners) listener();
+      store.setState({ value: next, rendered: changedSession ? undefined : rendered });
     },
-    subscribe: (listener: () => void) => subscribeTo(listeners, listener),
+    subscribe: (listener: () => void) => store.subscribe(state => state.value, listener),
     // Read acknowledgements follow a visible transcript commit, not receipt of
     // a network response (which may arrive while another surface covers chat).
-    getRendered: () => rendered,
+    getRendered: () => store.getState().rendered,
     markRendered: (snapshot: HostSession) => {
+      const { value, rendered } = store.getState();
       if (snapshot !== value || snapshot === rendered) return;
-      rendered = snapshot;
-      for (const listener of renderedListeners) listener();
+      store.setState({ rendered: snapshot });
     },
-    subscribeRendered: (listener: () => void) => subscribeTo(renderedListeners, listener),
+    subscribeRendered: (listener: () => void) => store.subscribe(state => state.rendered, listener),
   };
 }
 

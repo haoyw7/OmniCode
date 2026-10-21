@@ -1,5 +1,6 @@
 import { loadSharedAgentDefaults, updateSharedAgentDefault } from "../../settings/model/agentPreferences";
 import { preferenceStorage } from "../../settings/model/sharedPreferences";
+import { createStore } from "zustand/vanilla";
 import type { HarnessId } from "./session";
 import { HARNESSES } from "./session";
 import { loadProjectProviderSettings } from "./projectProviders";
@@ -273,26 +274,21 @@ let overlays: Partial<Record<HarnessId, AgentModel[]>> = {};
 let overlayDefaults: Partial<Record<HarnessId, string>> = {};
 const freshCatalogs = new Set<HarnessId>();
 const loadingCatalogs = new Map<HarnessId, number>();
-let catalogVersion = 0;
-const listeners = new Set<() => void>();
+const catalogState = createStore(() => ({ revision: 0 }));
 
 function emit() {
-  catalogVersion += 1;
   baseByHarness = null;
   indexById = null;
   allCache = null;
-  for (const listener of listeners) listener();
+  catalogState.setState(state => ({ revision: state.revision + 1 }));
 }
 
 export function subscribeModels(onStoreChange: () => void): () => void {
-  listeners.add(onStoreChange);
-  return () => {
-    listeners.delete(onStoreChange);
-  };
+  return catalogState.subscribe(onStoreChange);
 }
 
 export function getModelSnapshot(): number {
-  return catalogVersion;
+  return catalogState.getState().revision;
 }
 
 export function setHarnessModels(harness: HarnessId, models: AgentModel[]) {
@@ -779,25 +775,14 @@ function isHarnessId(value: string): value is HarnessId {
   return HARNESS_ORDER.includes(value as HarnessId);
 }
 
-let pickerVisibilityVersion = 0;
-const pickerVisibilityListeners = new Set<() => void>();
-
-function emitPickerVisibility() {
-  pickerVisibilityVersion += 1;
-  for (const listener of pickerVisibilityListeners) listener();
-}
-
 export function subscribePickerVisibility(
   onStoreChange: () => void,
 ): () => void {
-  pickerVisibilityListeners.add(onStoreChange);
-  return () => {
-    pickerVisibilityListeners.delete(onStoreChange);
-  };
+  return preferenceStorage.subscribe([HIDDEN_PICKER_PROVIDERS_KEY], onStoreChange);
 }
 
 export function getPickerVisibilitySnapshot(): number {
-  return pickerVisibilityVersion;
+  return preferenceStorage.store(HIDDEN_PICKER_PROVIDERS_KEY).getState().revision;
 }
 
 export function loadHiddenPickerProviders(): HarnessId[] {
@@ -830,7 +815,6 @@ export function savePickerProviderVisible(id: HarnessId, visible: boolean) {
   } catch {
     // private mode / quota
   }
-  emitPickerVisibility();
 }
 
 /**

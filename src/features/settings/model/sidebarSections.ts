@@ -1,6 +1,5 @@
 import { preferenceStorage } from "./sharedPreferences";
 const KEY = "omnicode.sidebarSectionsCollapsed.v1";
-const CHANGED = "omnicode:sidebar-sections-collapsed-changed";
 const SECTIONS = ["pinned", "recent", "workflows", "groups", "projects"] as const;
 
 export type SidebarSectionId = (typeof SECTIONS)[number];
@@ -27,13 +26,11 @@ export function saveSidebarSectionsCollapsed(
   } catch {
     // Keep the current view usable when storage is unavailable.
   }
-  if (typeof window !== "undefined") window.dispatchEvent(new Event(CHANGED));
 }
 
 export function subscribeSidebarSectionsCollapsed(
   onChange: () => void,
 ): () => void {
-  if (typeof window === "undefined") return () => {};
   let previous = [...loadSidebarSectionsCollapsed()].sort().join("\0");
   const notify = () => {
     const next = [...loadSidebarSectionsCollapsed()].sort().join("\0");
@@ -41,13 +38,5 @@ export function subscribeSidebarSectionsCollapsed(
     previous = next;
     onChange();
   };
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === KEY || event.key === null) notify();
-  };
-  window.addEventListener(CHANGED, notify);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(CHANGED, notify);
-    window.removeEventListener("storage", onStorage);
-  };
+  return preferenceStorage.subscribe([KEY], notify);
 }

@@ -16,6 +16,7 @@ import {
   type MobileConfiguration,
 } from "./MobileModelControls";
 import { activePreferenceStore, preferenceStorage } from "../features/settings/model/sharedPreferences";
+import { devicePreferences } from "../shared/lib/persistedPreferences";
 
 const KEY = "omnicode.mobileAgentDefaults";
 const SHARED_KEY = "omnicode.agentDefaults";
@@ -89,7 +90,7 @@ function parseDefaults(raw: unknown): MobileAgentDefaults {
 }
 function read(): Record<string, unknown> {
   try {
-    const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? "{}");
+    const raw: unknown = JSON.parse(devicePreferences.getItem(KEY) ?? "{}");
     return isRecord(raw) ? raw : {};
   } catch {
     return {};
@@ -97,7 +98,7 @@ function read(): Record<string, unknown> {
 }
 function write(value: StoredDefaults): boolean {
   try {
-    localStorage.setItem(KEY, JSON.stringify(value));
+    devicePreferences.setItem(KEY, JSON.stringify(value));
     return true;
   } catch {
     return false;

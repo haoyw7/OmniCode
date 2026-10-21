@@ -7,7 +7,6 @@ import { translate } from "../../../shared/i18n/language";
 const ACCOUNTS_KEY = "omnicode.providerAccounts.v1";
 const SELECTIONS_KEY = "omnicode.providerAccountSelections.v1";
 const SHARED_DEFAULTS_KEY = "omnicode.sharedProviderDefaults.cache.v1";
-const CHANGE_EVENT = "omnicode-provider-accounts-changed";
 
 export const DEFAULT_PROVIDER_ACCOUNT_ID = "default";
 const DEFAULT_PROVIDER_ACCOUNT_LABEL = "Default account";
@@ -166,7 +165,6 @@ export function saveProviderAccount(account: ProviderAccount): void {
       resolvedDataHome: account.resolvedDataHome },
   ]);
   writeAccounts(stored);
-  announceChange();
 }
 
 export function renameProviderAccount(
@@ -187,7 +185,6 @@ export function renameProviderAccount(
     accounts.map((account) => (account.id === accountId ? renamed : account)),
   );
   writeAccounts(stored);
-  announceChange();
   return renamed;
 }
 
@@ -220,7 +217,6 @@ export function removeProviderAccount(
   }
   writeJson(SELECTIONS_KEY, selections);
   if (loadSharedAgentDefaults().agents?.[provider]?.accountId === accountId) updateSharedAgentDefault(provider, { accountId: undefined });
-  announceChange();
   return existed;
 }
 
@@ -262,7 +258,6 @@ export function rememberSharedProviderDefaults(
   defaults: SharedProviderDefaults,
 ): void {
   writeJson(SHARED_DEFAULTS_KEY, defaults);
-  announceChange();
 }
 export function sharedProviderAccountId(
   provider: ProviderAccountProvider,
@@ -309,7 +304,6 @@ export function selectProviderAccount(
   if (key === "~") updateSharedAgentDefault(provider, { accountId });
   selections[key] = { ...selections[key], [provider]: accountId };
   writeJson(SELECTIONS_KEY, selections);
-  announceChange();
 }
 
 export function providerAccountLabel(
@@ -323,21 +317,7 @@ export function providerAccountLabel(
 }
 
 export function subscribeProviderAccounts(listener: () => void): () => void {
-  const local = () => listener();
-  const storage = (event: StorageEvent) => {
-    if (
-      event.key === ACCOUNTS_KEY ||
-      event.key === SELECTIONS_KEY ||
-      event.key === SHARED_DEFAULTS_KEY
-    )
-      listener();
-  };
-  window.addEventListener(CHANGE_EVENT, local);
-  window.addEventListener("storage", storage);
-  return () => {
-    window.removeEventListener(CHANGE_EVENT, local);
-    window.removeEventListener("storage", storage);
-  };
+  return preferenceStorage.subscribe([ACCOUNTS_KEY, SELECTIONS_KEY, SHARED_DEFAULTS_KEY, "omnicode.agentDefaults"], listener);
 }
 
 /** Replace the device cache with the Host catalog; removed rows and old labels never win. */
@@ -353,7 +333,6 @@ export function restoreProviderAccounts(value: unknown): void {
     }) : [];
   }
   writeAccounts(stored);
-  announceChange();
 }
 
 function cleanDataHome(value: unknown): string | undefined {
@@ -411,8 +390,4 @@ function writeJson(key: string, value: unknown): void {
   } catch {
     // A private or full storage area should not block the provider itself.
   }
-}
-
-function announceChange(): void {
-  window.dispatchEvent(new Event(CHANGE_EVENT));
 }

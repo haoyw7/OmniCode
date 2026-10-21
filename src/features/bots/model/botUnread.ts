@@ -1,18 +1,20 @@
 import type { BotMessage } from "./botView";
+import { createStore } from "zustand/vanilla";
+import { devicePreferences } from "../../../shared/lib/persistedPreferences";
 
 const PREFIX = "omnicode.assistant-read:";
-const CHANGE = "omnicode:assistant-read";
-const fallback = new Map<string, number>();
+const readMarks = createStore(() => ({ revision: 0, fallback: {} as Record<string, number> }));
+let subscriptions = 0;
 
 export function botReadRevision(hostKey: string): number {
   try {
-    const value = Number(localStorage.getItem(PREFIX + hostKey));
+    const value = Number(devicePreferences.getItem(PREFIX + hostKey));
     return Math.max(
       Number.isFinite(value) ? value : 0,
-      fallback.get(hostKey) ?? 0,
+      readMarks.getState().fallback[hostKey] ?? 0,
     );
   } catch {
-    return fallback.get(hostKey) ?? 0;
+    return readMarks.getState().fallback[hostKey] ?? 0;
   }
 }
 
@@ -26,23 +28,24 @@ export function markBotRead(
   );
   if (revision <= botReadRevision(hostKey)) return;
   try {
-    localStorage.setItem(PREFIX + hostKey, String(revision));
+    devicePreferences.setItem(PREFIX + hostKey, String(revision));
   } catch {
     // Keep read state usable when storage is unavailable.
-    fallback.set(hostKey, revision);
+    readMarks.setState(state => ({ fallback: { ...state.fallback, [hostKey]: revision }, revision: state.revision + 1 }));
+    return;
   }
-  window.dispatchEvent(new Event(CHANGE));
+  readMarks.setState(state => ({ revision: state.revision + 1 }));
 }
 
+function storage(event: StorageEvent) {
+  if (event.key === null || event.key.startsWith(PREFIX)) readMarks.setState(state => ({ revision: state.revision + 1 }));
+}
 export function subscribeBotRead(listener: () => void) {
-  const storage = (event: StorageEvent) => {
-    if (event.key === null || event.key.startsWith(PREFIX)) listener();
-  };
-  window.addEventListener(CHANGE, listener);
-  window.addEventListener("storage", storage);
+  if (subscriptions++ === 0) window.addEventListener("storage", storage);
+  const stop = readMarks.subscribe(listener);
   return () => {
-    window.removeEventListener(CHANGE, listener);
-    window.removeEventListener("storage", storage);
+    stop();
+    if (--subscriptions === 0) window.removeEventListener("storage", storage);
   };
 }
 

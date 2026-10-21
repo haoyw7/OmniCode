@@ -1,4 +1,6 @@
 import { sameProjectPath } from "../../projects/model/recents";
+import { createStore } from "zustand/vanilla";
+import { subscribeWithSelector } from "zustand/middleware";
 
 const MAX_PENDING_AGE_MS = 10 * 60_000;
 
@@ -20,18 +22,10 @@ export type InboxSelfActivityItem = InboxSelfActivityTarget & {
 type PendingActivity = InboxSelfActivityTarget & { recordedAt: number };
 type Listener = () => void;
 
-const pending: PendingActivity[] = [];
-const listeners = new Set<Listener>();
+const activityStore = createStore(subscribeWithSelector(() => ({ pending: [] as PendingActivity[], revision: 0 })));
 
 function normalized(value: string | undefined): string {
   return value?.trim().toLowerCase() ?? "";
-}
-
-function prune(now: number) {
-  const oldest = now - MAX_PENDING_AGE_MS;
-  for (let index = pending.length - 1; index >= 0; index -= 1) {
-    if (pending[index]!.recordedAt < oldest) pending.splice(index, 1);
-  }
 }
 
 function matches(activity: PendingActivity, item: InboxSelfActivityItem) {
@@ -61,9 +55,10 @@ export function recordInboxSelfActivity(
   target: InboxSelfActivityTarget,
   now = Date.now(),
 ) {
-  prune(now);
-  pending.push({ ...target, recordedAt: now });
-  for (const listener of listeners) listener();
+  activityStore.setState(state => ({
+    pending: [...state.pending.filter(item => item.recordedAt >= now - MAX_PENDING_AGE_MS), { ...target, recordedAt: now }],
+    revision: state.revision + 1,
+  }));
 }
 
 /** Consume all coalesced mutations for this revision. A later revision can notify normally. */
@@ -71,21 +66,22 @@ export function consumeInboxSelfActivity(
   item: InboxSelfActivityItem,
   now = Date.now(),
 ): boolean {
-  prune(now);
   let consumed = false;
-  for (let index = pending.length - 1; index >= 0; index -= 1) {
-    if (!matches(pending[index]!, item)) continue;
-    pending.splice(index, 1);
+  const pending = activityStore.getState().pending.filter(activity => {
+    if (activity.recordedAt < now - MAX_PENDING_AGE_MS) return false;
+    if (!matches(activity, item)) return true;
     consumed = true;
-  }
+    return false;
+  });
+  // Consuming a receipt must not recursively trigger the notification processor.
+  activityStore.setState({ pending });
   return consumed;
 }
 
 export function subscribeInboxSelfActivity(listener: Listener): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+  return activityStore.subscribe(state => state.revision, listener);
 }
 
 export function clearPendingInboxSelfActivity() {
-  pending.splice(0, pending.length);
+  activityStore.setState({ pending: [] });
 }

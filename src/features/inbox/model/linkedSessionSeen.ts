@@ -1,14 +1,14 @@
+import { devicePreferences } from "../../../shared/lib/persistedPreferences";
 const KEY = "omnicode.linkedSessionSeen";
 const MAX_ENTRIES = 500;
 
 type SeenMap = Record<string, number>;
 type Listener = () => void;
 
-const listeners = new Set<Listener>();
 
 function loadSeenMap(): SeenMap {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = devicePreferences.getItem(KEY);
     if (!raw) return {};
     const parsed: unknown = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -28,11 +28,10 @@ function loadSeenMap(): SeenMap {
 
 function saveSeenMap(items: SeenMap) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(items));
+    devicePreferences.setItem(KEY, JSON.stringify(items), true);
   } catch {
     // Private mode / quota. The in-memory notification still clears this run.
   }
-  for (const listener of listeners) listener();
 }
 
 export function linkedSessionSeenAt(sessionId: string): number {
@@ -59,6 +58,5 @@ export function markLinkedSessionUpdateSeen(
 }
 
 export function subscribeLinkedSessionSeen(listener: Listener): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+  return devicePreferences.subscribe([KEY], listener);
 }

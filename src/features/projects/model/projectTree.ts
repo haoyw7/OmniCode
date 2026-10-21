@@ -2,7 +2,6 @@ import { preferenceStorage } from "../../settings/model/sharedPreferences";
 import { pathKey } from "../../../shared/lib/paths";
 
 const KEY = "omnicode.projectTreeExpanded.v1";
-const CHANGED = "omnicode:project-tree-expanded-changed";
 
 function readExpanded(): Set<string> | undefined {
   try {
@@ -32,7 +31,6 @@ export function saveProjectTreeExpanded(paths: Iterable<string>): void {
   } catch {
     // Storage can be unavailable in private mode.
   }
-  if (typeof window !== "undefined") window.dispatchEvent(new Event(CHANGED));
 }
 
 export function rebaseProjectTreeExpanded(from: string, to: string): void {
@@ -49,14 +47,5 @@ export function clearProjectTreeExpanded(path: string): void {
 }
 
 export function subscribeProjectTreeExpanded(onChange: () => void): () => void {
-  if (typeof window === "undefined") return () => {};
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === KEY || event.key === null) onChange();
-  };
-  window.addEventListener(CHANGED, onChange);
-  window.addEventListener("storage", onStorage);
-  return () => {
-    window.removeEventListener(CHANGED, onChange);
-    window.removeEventListener("storage", onStorage);
-  };
+  return preferenceStorage.subscribe([KEY], onChange);
 }

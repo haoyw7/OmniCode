@@ -1,13 +1,14 @@
 import { preferenceStorage } from "../../features/settings/model/sharedPreferences";
 import chinese from "./zh-CN.json";
+import { createStore } from "zustand/vanilla";
 
 export type UiLanguage = "en" | "zh-CN";
 export type TranslationValues = Record<string, string | number>;
 
 export const UI_LANGUAGE_KEY = "omnicode.uiLanguage";
 const translations: Readonly<Record<string, string>> = chinese;
-const listeners = new Set<() => void>();
-let language: UiLanguage | null = null;
+const languageStore = createStore<{ language: UiLanguage | null }>(() => ({ language: null }));
+let subscriptions = 0;
 
 export function resolveUiLanguage(value: unknown): UiLanguage {
   return typeof value === "string" && /^zh(?:[-_]|$)/i.test(value)
@@ -28,14 +29,13 @@ export function loadUiLanguage(): UiLanguage {
 }
 
 export function getUiLanguage(): UiLanguage {
-  return (language ??= loadUiLanguage());
+  if (languageStore.getState().language === null) languageStore.setState({ language: loadUiLanguage() });
+  return languageStore.getState().language!;
 }
 
 function applyLanguage(next: UiLanguage) {
   if (typeof document !== "undefined") document.documentElement.lang = next;
-  if (language === next) return;
-  language = next;
-  for (const listener of listeners) listener();
+  if (languageStore.getState().language !== next) languageStore.setState({ language: next });
 }
 
 export function setUiLanguage(next: UiLanguage) {
@@ -57,13 +57,13 @@ function onStorage(event: StorageEvent) {
 }
 
 export function subscribeUiLanguage(listener: () => void): () => void {
-  if (listeners.size === 0 && typeof window !== "undefined") {
+  if (subscriptions++ === 0 && typeof window !== "undefined") {
     window.addEventListener("storage", onStorage);
   }
-  listeners.add(listener);
+  const unsubscribe = languageStore.subscribe(listener);
   return () => {
-    listeners.delete(listener);
-    if (listeners.size === 0 && typeof window !== "undefined") {
+    unsubscribe();
+    if (--subscriptions === 0 && typeof window !== "undefined") {
       window.removeEventListener("storage", onStorage);
     }
   };
