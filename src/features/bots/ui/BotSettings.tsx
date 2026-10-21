@@ -266,7 +266,7 @@ function CollapsibleSection({
         {summary && (
           <small className="assistant-settings-summary">{summary}</small>
         )}
-        <ChevronDown size={18} aria-hidden="true" />
+        <ChevronDown aria-hidden="true" />
       </Button>
       <AnimatedCollapse expanded={open} ready={ready}>{children}</AnimatedCollapse>
     </section>
@@ -290,7 +290,7 @@ function Disclosure({
       onClick={onToggle}
     >
       <span className="assistant-settings-disclosure-title">{label}</span>
-      <ChevronDown size={18} aria-hidden="true" />
+      <ChevronDown aria-hidden="true" />
     </Button>
   );
 }
@@ -1747,7 +1747,7 @@ export function WatchedSessions({
               })}
               onClick={() => onRemove(session.id)}
             >
-              <X size={14} aria-hidden="true" />
+              <X aria-hidden="true" />
             </Button>
           </div>
         ))}

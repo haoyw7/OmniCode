@@ -96,7 +96,7 @@ export const SidebarTabs = memo(function SidebarTabs({
                 onTabChange(id);
               });
             }}
-            className="surface-tab relative isolate flex h-6 min-w-0 flex-1 items-center justify-center self-center px-2 text-ui-sm leading-none"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 surface-tab relative isolate flex h-6 min-w-0 flex-1 items-center justify-center self-center px-2 text-ui-sm leading-none"
           >
             {selectedTab === id && !item.sorting ? <motion.span layoutId={indicatorId} transition={reduced || resizing ? immediateTransition : panelTransition} aria-hidden="true" data-sidebar-tab-indicator className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-background-base" /> : null}
             {id === "changes" && (additions || deletions) ? (
@@ -134,10 +134,10 @@ function DiffStat({
       className="flex shrink-0 items-center gap-1.5 font-sans text-[11px] font-semibold tabular-nums"
     >
       {additions > 0 ? (
-        <span className="text-emerald-400">+{formatInteger(additions)}</span>
+        <span className="text-success">+{formatInteger(additions)}</span>
       ) : null}
       {deletions > 0 ? (
-        <span className="text-red-400">-{formatInteger(deletions)}</span>
+        <span className="text-danger">-{formatInteger(deletions)}</span>
       ) : null}
     </span>
   );

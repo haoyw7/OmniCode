@@ -1,3 +1,4 @@
+import { cn } from "../../shared/lib/cn";
 import { windowDragRegion } from "./startWindowDrag";
 import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
 import { useEffect, useRef, useState } from "react";
@@ -354,9 +355,9 @@ function UpdateBadge({
       aria-expanded={expanded}
       onClick={onClick}
       className={
-        row
+        cn("focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", row
           ? `absolute right-1 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md transition-colors ${expanded ? "bg-selection text-content" : "text-accent hover:bg-surface-hover"}`
-          : `absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-surface text-accent shadow-sm ring-1 ring-border transition-colors hover:bg-surface-hover`
+          : `absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-surface text-accent shadow-sm ring-1 ring-border transition-colors hover:bg-surface-hover`)
       }
     >
       <Icon
@@ -366,7 +367,7 @@ function UpdateBadge({
       {row ? (
         <span
           aria-hidden
-          className="absolute right-0.5 top-0.5 size-1.5 rounded-full bg-sky-500"
+          className="absolute right-0.5 top-0.5 size-1.5 rounded-full bg-accent"
         />
       ) : null}
     </button>
@@ -444,9 +445,9 @@ function ActivityAction({
           : undefined
       }
       className={
-        row
+        cn("focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", row
           ? `relative flex ${horizontal ? "h-7 w-auto gap-1.5 px-2 text-ui-sm" : "h-8 w-full gap-2 px-2.5 text-ui-base"} shrink-0 items-center rounded-lg text-left transition-colors ${active ? "bg-selection text-content" : "text-content hover:bg-surface-hover"} disabled:cursor-default disabled:opacity-35`
-          : `relative grid size-8 shrink-0 place-items-center rounded-lg transition-colors ${active ? "bg-selection text-content" : "text-foreground-subtle hover:bg-surface-hover hover:text-content"} disabled:cursor-default disabled:opacity-35`
+          : `relative grid size-8 shrink-0 place-items-center rounded-lg transition-colors ${active ? "bg-selection text-content" : "text-foreground-subtle hover:bg-surface-hover hover:text-content"} disabled:cursor-default disabled:opacity-35`)
       }
     >
       <Icon className="size-4 shrink-0" />
@@ -463,7 +464,7 @@ function ActivityAction({
       {dot && row ? (
         <span
           aria-hidden
-          className="size-1.5 shrink-0 rounded-full bg-sky-500"
+          className="size-1.5 shrink-0 rounded-full bg-accent"
         />
       ) : null}
       {dot && !row ? (

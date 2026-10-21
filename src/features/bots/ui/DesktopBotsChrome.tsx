@@ -47,7 +47,7 @@ export function DesktopBotsNavigation({ hostName, assistant, messages, onSelect 
         <BotNavigationToggle />
       </header>
       <label className="desktop-bots-search">
-        <Search size={15} aria-hidden="true" />
+        <Search aria-hidden="true" />
         <Input variant="inline" value={query} onChange={(event) => setQuery(event.target.value)}
           placeholder={t("Search bots")} aria-label={t("Search bots")} />
       </label>
@@ -57,7 +57,7 @@ export function DesktopBotsNavigation({ hostName, assistant, messages, onSelect 
             <Button variant="ghost" size="content" type="button" className="desktop-bots-contact-main" onClick={onSelect}
               aria-label={name} aria-current="true" title={`${name}: ${preview}`}>
               <span className="desktop-bots-avatar" aria-hidden="true">
-                <Bot size={20} />
+                <Bot />
                 <span className="desktop-bots-presence" data-lifecycle={assistant?.lifecycle ?? "idle"} />
               </span>
               <span className="desktop-bots-contact-copy">
@@ -73,7 +73,7 @@ export function DesktopBotsNavigation({ hostName, assistant, messages, onSelect 
             {assistant && <Button variant="ghost" size="content" type="button" className="desktop-bots-thread-toggle"
               aria-label={t(expanded ? "Hide threads" : "Show threads")}
               aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
-              <ChevronRight size={14} aria-hidden="true" />
+              <ChevronRight aria-hidden="true" />
             </Button>}
           </div>
           <AnimatedCollapse expanded={expanded && !!assistant}>
@@ -105,13 +105,13 @@ function DesktopBotsHeader({ name, botIdentity, status, lifecycle, busy, setting
     </Button>
     <div className="assistant-header-actions">
       {controls && <DropdownMenu open={menuOpen && visible} onOpenChange={setMenuOpen}>
-        <DropdownMenuTrigger asChild><IconButton size="sm" label={t("Bot actions")} active={menuOpen}><MoreHorizontal size={18} /></IconButton></DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild><IconButton size="sm" label={t("Bot actions")} active={menuOpen}><MoreHorizontal /></IconButton></DropdownMenuTrigger>
         <DropdownMenuContent align="end" aria-label={t("Bot actions")}>
           <DropdownMenuItem disabled={busy} onSelect={controls.onToggle}>
-            {controls.continuable ? <Play size={15} /> : <Pause size={15} />}{t(controls.continuable ? "Continue" : "Pause")}
+            {controls.continuable ? <Play /> : <Pause />}{t(controls.continuable ? "Continue" : "Pause")}
           </DropdownMenuItem>
           <DropdownMenuItem disabled={busy || !controls.enabled} onSelect={controls.onDisable}>
-            <Square size={14} />{t("Disable assistant")}
+            <Square />{t("Disable assistant")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>}
@@ -159,7 +159,7 @@ function DesktopBotsSettingsPanel({ open, initialSetup, onClose, children }: Bot
         <header className="desktop-bots-inspector-header">
           {initialSetup && <strong>{t("Set up assistant")}</strong>}
           {!initialSetup && <IconButton type="button" className="assistant-icon-button" onClick={onClose}
-            label={t("Hide bot details")}><X size={18} /></IconButton>}
+            label={t("Hide bot details")}><X /></IconButton>}
         </header>
         <div className="assistant-settings-content">{children}</div>
       </>}

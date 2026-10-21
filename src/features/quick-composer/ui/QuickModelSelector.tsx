@@ -249,7 +249,7 @@ export function QuickModelSelector({
             placeholder={uiT("Search models…")}
             autoComplete="off"
             spellCheck={false}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35"
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
             onKeyDown={(event) => {
               if (event.nativeEvent.isComposing) return;
               if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -381,7 +381,7 @@ export function QuickModelSelector({
                   onClick={() =>
                     changeSetting(fast.id, fastEnabled ? fastOff : fastOn)
                   }
-                  className={cn("grid size-7 place-items-center rounded-md transition-colors", fastEnabled ? "bg-amber-400/20 text-amber-400 hover:bg-amber-400/30" : "text-content/40 hover:bg-selection-hover hover:text-content")}
+                  className={cn("grid size-7 place-items-center rounded-md transition-colors", fastEnabled ? "bg-warning/20 text-warning hover:bg-warning/30" : "text-content/40 hover:bg-selection-hover hover:text-content")}
                 >
                   <Zap
                     className="size-4"

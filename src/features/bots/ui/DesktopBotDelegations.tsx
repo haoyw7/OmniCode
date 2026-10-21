@@ -36,7 +36,7 @@ function Delegations({ scope, rpc, botNames, onOpenThread }: ScopedProps) {
   const refresh = async () => { await query.refetch({ cancelRefetch: false, throwOnError: true }); };
   const more = () => loadMoreBotDelegations(rpc, scope).catch(() => undefined);
   return <section className="desktop-bot-delegations desktop-bot-page-body" aria-label={t("Delegations")}>
-    <header><IconButton size="sm" label={t("Refresh")} onClick={() => void refresh().catch(() => undefined)}><RefreshCw size={16} /></IconButton></header>
+    <header><IconButton size="sm" label={t("Refresh")} onClick={() => void refresh().catch(() => undefined)}><RefreshCw /></IconButton></header>
     {error && <p className="desktop-bot-section-note" role="alert">{t(error)}</p>}
     {!rows.length && <p className="desktop-bot-section-note" role="status">{t(page ? "No delegations yet" : "Loading delegations…")}</p>}
     {rows.length > 0 && <div className="desktop-bot-row-group">{rows.map(value => <Delegation key={value.id} value={value} scope={scope} rpc={rpc} names={names} onRefresh={refresh} onOpenThread={onOpenThread} />)}</div>}
@@ -88,7 +88,7 @@ function Delegation({ value, scope, rpc, names, onRefresh, onOpenThread }: {
   const other = matches(value.source, scope) ? value.target : value.source;
   return <article className="desktop-bot-delegation-card" data-status={value.status}>
     <Button variant="ghost" size="content" type="button" className="desktop-bot-delegation-heading" aria-expanded={expanded} onClick={() => setExpanded(current => !current)}>
-      <Bot size={16} aria-hidden="true" /><strong>{source} → {target}</strong><span>{t(labels[value.status])}</span><ChevronRight size={14} aria-hidden="true" />
+      <Bot aria-hidden="true" /><strong>{source} → {target}</strong><span>{t(labels[value.status])}</span><ChevronRight aria-hidden="true" />
     </Button>
     {value.result && <p className="desktop-bot-delegation-preview">{value.result.slice(0, 200)}</p>}
     <AnimatedCollapse expanded={expanded}><div className="desktop-bot-delegation-body">

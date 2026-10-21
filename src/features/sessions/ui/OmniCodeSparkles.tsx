@@ -1,11 +1,10 @@
 import { motion } from "motion/react";
+import { Sparkles } from "../../../shared/ui/icons";
 import { panelTransition } from "../../../shared/motion/tokens";
 import { useState, type CSSProperties } from "react";
 import { useTurnCelebration } from "./turnCelebration";
 
 const SPARKLE_COUNT = 18;
-const STAR_PATH =
-  "M12 0C12.9 6.6 17.4 11.1 24 12C17.4 12.9 12.9 17.4 12 24C11.1 17.4 6.6 12.9 0 12C6.6 11.1 11.1 6.6 12 0Z";
 
 type Sparkle = {
   star: boolean;
@@ -57,9 +56,7 @@ export function OmniCodeSparkles({
           }
         >
           {sparkle.star ? (
-            <svg viewBox="0 0 24 24" className="omnicode-sparkle-glyph">
-              <path d={STAR_PATH} fill="currentColor" />
-            </svg>
+            <Sparkles className="omnicode-sparkle-glyph" />
           ) : (
             <span className="omnicode-sparkle-glyph omnicode-sparkle-ember" />
           )}

@@ -1,3 +1,4 @@
+import { cn } from "../shared/lib/cn";
 import { Button } from "../shared/ui/forms/Button";
 import { Switch } from "../shared/ui/forms/Switch";
 import { MobileHapticSettings } from "./MobileHapticSettings";
@@ -36,7 +37,7 @@ function GlassPreview({ label }: { label: string }) {
         <span>Glass</span>
       </div>
       <div className="mobile-glass-preview-chip">
-        <Sparkles size={16} />
+        <Sparkles />
         {label}
       </div>
     </div>
@@ -252,7 +253,7 @@ function useMobileSettingsController({
   }, [connectionTrigger]);
   const addConnectionRow = (className: string) => (
     <button
-      className={className}
+      className={cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", className)}
       ref={setConnectionButton}
       type="button"
       aria-label={t("Add connection")}
@@ -497,7 +498,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           activity.permission === "prompt" ? (
             <button
               type="button"
-              className="mobile-settings-row mobile-settings-action"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row mobile-settings-action"
               onClick={() => void activity.requestPermission()}
             >
               <SettingsIcon name="notifications" />
@@ -524,12 +525,12 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           activity.canOpenSettings ? (
             <button
               type="button"
-              className="mobile-settings-row"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
               onClick={() => void activity.openSettings()}
             >
               <SettingsIcon name="notifications" />
               <span className="mobile-settings-label">{t("Notification settings…")}</span>
-              <ChevronRight size={20} aria-hidden="true" />
+              <ChevronRight aria-hidden="true" />
             </button>
           ) : null}
           {activity.notificationError ? (
@@ -612,7 +613,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
         <div className="mobile-settings-card">
           <button
             type="button"
-            className="mobile-settings-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
             aria-label={t("Connections")}
             onClick={() => onPageChange("connections")}
           >
@@ -623,33 +624,33 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
                 ? `${connectionAppearance.displayName || connection.name} · ${t(hostStatusLabel(hostStatus))}`
                 : t("Not connected")}
             </small>
-            <ChevronRight size={20} />
+            <ChevronRight />
           </button>
           {/* Without a saved Host, keep pairing one tap away on first launch. */}
           {connection ? null : addConnectionRow("mobile-settings-row")}
           {agentDefaults ? (
             <button
               type="button"
-              className="mobile-settings-row"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
               aria-label={t("New conversations")}
               onClick={() => onPageChange("agents")}
             >
               <SettingsIcon name="agent" />
               <span className="mobile-settings-label">{t("New conversations")}</span>
-              <ChevronRight size={20} />
+              <ChevronRight />
             </button>
           ) : null}
           {providerAccounts ? (
-            <button type="button" className="mobile-settings-row" aria-label={t("Accounts and usage")}
+            <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row" aria-label={t("Accounts and usage")}
               onClick={() => onPageChange("accounts")}>
               <SettingsIcon name="account" />
               <span className="mobile-settings-label">{t("Accounts and usage")}</span>
-              <ChevronRight size={20} />
+              <ChevronRight />
             </button>
           ) : null}
           <button
             type="button"
-            className="mobile-settings-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
             aria-label={t("Notifications")}
             onClick={() => onPageChange("notifications")}
           >
@@ -658,11 +659,11 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             <small className="mobile-settings-value">
               {t(activity.permission !== "unsupported" && activity.enabled ? "On" : "Off")}
             </small>
-            <ChevronRight size={20} />
+            <ChevronRight />
           </button>
           <button
             type="button"
-            className="mobile-settings-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
             aria-label={t("Message composer")}
             onClick={() => onPageChange("chat")}
           >
@@ -671,14 +672,14 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             <small className="mobile-settings-value">
               {t(followUpBehavior === "queue" ? "Queue" : "Steer")}
             </small>
-            <ChevronRight size={20} />
+            <ChevronRight />
           </button>
         </div>
       </section>
       <Group title="Appearance">
         <button
           type="button"
-          className="mobile-settings-row"
+          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
           aria-label={t("Skin")}
           onClick={() => onPageChange("skin")}
         >
@@ -687,7 +688,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           <small className="mobile-settings-value">
             {skin === "auto" ? t("Automatic") : t(MOBILE_SKIN_INFO[skin].label)}
           </small>
-          <ChevronRight size={20} />
+          <ChevronRight />
         </button>
         {/* Color mode chooses between Midnight and Daylight for the automatic skin. */}
         {skin === "auto" ? (
@@ -751,7 +752,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
         </div>
         <button
           type="button"
-          className="mobile-settings-row"
+          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
           aria-label={t("Glass")}
           onClick={() => onPageChange("glass")}
         >
@@ -760,7 +761,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           <small className="mobile-settings-value">
             {t(glass.effect === "frosted" ? "Frosted glass" : "Solid")}
           </small>
-          <ChevronRight size={20} />
+          <ChevronRight />
         </button>
       </Group>
       <section
@@ -770,18 +771,18 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
         <div className="mobile-settings-card">
           <button
             type="button"
-            className="mobile-settings-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
             onClick={() => onPageChange("archive")}
           >
             <SettingsIcon name="archive" />
             <span className="mobile-settings-label">
               {t("Archived conversations")}
             </span>
-            <ChevronRight size={20} />
+            <ChevronRight />
           </button>
           <button
             type="button"
-            className="mobile-settings-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
             aria-label={t("App updates")}
             onClick={() => onPageChange("updates")}
           >
@@ -795,7 +796,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             {appUpdates.available ? (
               <span className="mobile-unread-dot" aria-hidden="true" />
             ) : null}
-            <ChevronRight size={20} />
+            <ChevronRight />
           </button>
         </div>
       </section>

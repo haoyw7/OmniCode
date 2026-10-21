@@ -24,6 +24,13 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe("icon imports", () => {
+  it("defaults chrome glyphs to 16px and inherited color", () => {
+    const html = renderToStaticMarkup(createElement(FilePlus));
+    expect(html).toContain('width="16"');
+    expect(html).toContain('height="16"');
+    expect(html).toContain('stroke="currentColor"');
+    expect(html).toContain('aria-hidden="true"');
+  });
   it("only imports lucide glyphs through shared/ui/icons.tsx", () => {
     const violations: string[] = [];
 
@@ -56,7 +63,7 @@ describe("icon imports", () => {
         className: "size-4 shrink-0",
       }),
     );
-    expect(html).toContain("items-center justify-center");
+    expect(html).toContain("grid place-items-center");
     expect(html).toContain("size-[72%]");
   });
 });

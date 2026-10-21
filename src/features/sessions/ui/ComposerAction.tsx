@@ -54,7 +54,7 @@ export function ComposerAction({
   onStop: () => void;
 }) {
   const { t: uiT } = useTranslation();
-  const sendIcon = <><ArrowUp className="composer-send-arrow size-3.5" strokeWidth={2.25} /><CornerDownLeft className="composer-send-return hidden size-3.5" strokeWidth={1.5} /></>;
+  const sendIcon = <><ArrowUp className="composer-send-arrow size-3.5" /><CornerDownLeft className="composer-send-return hidden size-3.5" /></>;
   if (disabled) {
     return (
       <Button variant="primary" size="content"

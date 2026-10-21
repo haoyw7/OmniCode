@@ -332,12 +332,12 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
       {view !== "bots" && <>
       <header ref={header} className="mobile-header" data-floating={floatingHeader} data-project={view === "home" && homePageOpen} data-search={view === "home" && searchOpen} inert={drawerOpen || pageOverlayOpen || hostPickerOpen}>
         {view === "chat" && sessionEntrySource === "bot" ? (
-          <IconButton label={t("Back to Bot conversation")} onClick={backToBot}><ArrowLeft size={24} /></IconButton>
+          <IconButton label={t("Back to Bot conversation")} onClick={backToBot}><ArrowLeft /></IconButton>
         ) : view === "chat" && sessionEntrySource === "project" ? (
           <IconButton label={t("Back")} onClick={() => project && isChatFolder(project.cwd)
             ? openChats()
             : openHome(projects.find((item) => item.id === project?.id))}>
-            <ArrowLeft size={24} />
+            <ArrowLeft />
           </IconButton>
         ) : view === "chat" || (view === "home" && !homePageOpen) ? (
           <IconButton
@@ -349,11 +349,11 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               setDrawerOpen(true);
             }}
           >
-            <PanelLeft size={24} />
+            <PanelLeft />
           </IconButton>
         ) : view === "home" ? (
           <IconButton label={t("Back")} inert={searchOpen} aria-hidden={searchOpen || undefined} onClick={() => openHome()}>
-            <ArrowLeft size={24} />
+            <ArrowLeft />
           </IconButton>
         ) : client.connection || settingsPage !== "root" ? (
           <IconButton
@@ -364,7 +364,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
                 : navigate(settingsReturnView.current)
             }
           >
-            <ArrowLeft size={24} />
+            <ArrowLeft />
           </IconButton>
         ) : (
           <span className="mobile-header-logo">
@@ -384,7 +384,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               </span>
               <span className="mobile-header-host">
                 <MobileHostStatus status={hostStatus} dotOnly />
-                <Computer size={14} aria-hidden="true" />
+                <Computer aria-hidden="true" />
                 <span className="mobile-project-header-host-name">{connectionName}</span>
               </span>
             </span>
@@ -393,7 +393,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           <button
             ref={homeMenuTrigger}
             type="button"
-            className="mobile-header-title"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-header-title"
             data-capsule="false"
             inert={searchOpen}
             aria-hidden={searchOpen || undefined}
@@ -403,7 +403,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
             onClick={() => setHomeMenuOpen((open) => !open)}
           >
             <strong>{title}</strong>
-            <ChevronDown size={16} aria-hidden="true" />
+            <ChevronDown aria-hidden="true" />
           </button>
         ) : <div className="mobile-header-title" data-capsule={view === "settings" ? false : floatingHeader}>
           <strong>{view === "settings" && settingsPage === "root" ? "OmniCode" : title}</strong>
@@ -414,7 +414,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               ) : <>
               {!projectlessChat && project?.name && (
                 <span className="mobile-header-context-item">
-                  <Folder size={14} aria-hidden="true" />
+                  <Folder aria-hidden="true" />
                   <span>{project.name}</span>
                 </span>
               )}
@@ -463,16 +463,16 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               }}
               disabled={busy}
             >
-              <MoreVertical size={24} />
+              <MoreVertical />
             </IconButton>
           </div>
         ) : view === "settings" && settingsPage === "root" ? (
           <IconButton ref={aboutTrigger} label={t("About")} onClick={() => setAboutOpen((open) => !open)}>
-            <Info size={24} />
+            <Info />
           </IconButton>
         ) : view === "home" ? (
           <IconButton ref={searchTrigger} label={t(searchOpen ? "Close search" : homeChats ? "Search chats" : "Search conversations")} onClick={toggleHomeSearch}>
-            {searchOpen ? <X size={24} /> : <Search size={24} />}
+            {searchOpen ? <X /> : <Search />}
           </IconButton>
         ) : null}
       </header>
@@ -724,19 +724,19 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               {t("Loading conversation…")}
             </div>
           ) : !project ? (
-            <MobileEmpty icon={<Folder size={40} />} title={t("Open your first project")}>
+            <MobileEmpty icon={<Folder />} title={t("Open your first project")}>
               {t("Add a folder from your connected computer to get started.")}
               <Button variant="secondary"
 
                 onClick={(event) => openAddProject(event.currentTarget)}
               >
-                <FolderPlus size={16} />
+                <FolderPlus />
                 {t("Open project")}
               </Button>
             </MobileEmpty>
           ) : (
             <MobileEmpty
-              icon={<Chatting size={40} />}
+              icon={<Chatting />}
               title={t(
                 sessionId
                   ? "Conversation unavailable"
@@ -946,13 +946,13 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
         </p>
         <button
           type="button"
-          className="mobile-sheet-row"
+          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
           onClick={() => {
             setAboutOpen(false);
             changeSettingsPage("updates");
           }}
         >
-          <RefreshCw size={20} />
+          <RefreshCw />
           <span>{t("App updates")}</span>
         </button>
       </MobileSheet>

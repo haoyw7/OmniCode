@@ -66,7 +66,7 @@ export function McpServerDetails({
       <div className="flex flex-wrap items-start gap-2 px-4 pb-4 pl-14">
         <p
           role="alert"
-          className="min-w-0 flex-1 whitespace-pre-wrap break-words rounded-md border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-400"
+          className="min-w-0 flex-1 whitespace-pre-wrap break-words rounded-md border border-danger/30 bg-danger/10 p-2 text-xs text-danger"
         >
           {state.error}
         </p>
@@ -146,7 +146,7 @@ export function McpServerDetails({
         {reload}
       </div>
       {inspection.errors.length > 0 ? (
-        <p className="whitespace-pre-wrap text-xs text-red-400">
+        <p className="whitespace-pre-wrap text-xs text-danger">
           {inspection.errors.join("\n")}
         </p>
       ) : null}

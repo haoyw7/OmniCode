@@ -983,7 +983,6 @@ export function ModelPicker({
                         <Check
                           data-menu-check
                           className="size-3.5 shrink-0 text-content/50"
-                          strokeWidth={2}
                         />
                       ) : null}
                     </Button>
@@ -1053,7 +1052,6 @@ export function ModelPicker({
                 <Check
                   data-menu-check
                   className="size-3.5 shrink-0 text-content/55"
-                  strokeWidth={2}
                 />
               ) : null}
             </Button>
@@ -1323,7 +1321,6 @@ function SelectPill({
                       <Check
                         data-menu-check
                         className="size-3.5 shrink-0 text-content/50"
-                        strokeWidth={2}
                       />
                     ) : null}
                   </Button>
@@ -1518,7 +1515,7 @@ function ModelBrowser({
           value={query}
           placeholder={uiT("Search models")}
           aria-label={uiT("Search models")}
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/40"
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
           onChange={(event) => onQuery(event.target.value)}
           onKeyDown={onSearchKey}
         />
@@ -1693,7 +1690,6 @@ function ModelBrowser({
                         <Check
                           data-menu-check
                           className="size-3.5 text-content/55"
-                          strokeWidth={2}
                         />
                       </span>
                     ) : null}

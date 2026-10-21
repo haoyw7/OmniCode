@@ -109,7 +109,7 @@ export function MobileQrScanner({ active, onDetected }: {
       {state === "starting" && (
         <span className="mobile-qr-overlay mobile-qr-loading" role="status">
           <span className="mobile-qr-loading-icon" aria-hidden="true">
-            <ScanQrCode size={40} />
+            <ScanQrCode />
           </span>
           <span className="mobile-qr-loading-label">
             <MobileSpinner size={16} className="mobile-spin" aria-hidden="true" />
@@ -119,7 +119,7 @@ export function MobileQrScanner({ active, onDetected }: {
       )}
       {blocked && (
         <span className="mobile-qr-overlay" role="status">
-          <CameraOff size={40} />
+          <CameraOff />
           <span>
             {t(
               state === "denied"

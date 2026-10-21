@@ -212,7 +212,7 @@ export function WorktreePicker({
                   void select(rows[active]);
                 }
               }}
-              className="min-w-0 flex-1 bg-transparent text-[12px] outline-none"
+              className="min-w-0 flex-1 bg-transparent text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </label>
           {worktreeRemoved && (
@@ -283,7 +283,7 @@ export function WorktreePicker({
               </p>
             )}
             {(error || loadError) && (
-              <p role="alert" className="px-2 py-2 text-[11px] text-red-400">
+              <p role="alert" className="px-2 py-2 text-[11px] text-danger">
                 {error || loadError}
               </p>
             )}

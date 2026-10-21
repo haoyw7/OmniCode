@@ -88,7 +88,7 @@ export function CreateWorktreeDialog({
     });
   });
   const field =
-    "h-9 rounded-md border border-content/10 bg-content/5 px-2.5 text-[13px] outline-none focus:border-content/25 disabled:opacity-50";
+    "h-9 rounded-md border border-content/10 bg-content/5 px-2.5 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-content/25 disabled:opacity-50";
   return (
     <Modal
       title={uiT("Create worktree")}
@@ -184,7 +184,7 @@ export function CreateWorktreeDialog({
           </p>
         )}
         {error && (
-          <p role="alert" className="text-[12px] text-red-400">
+          <p role="alert" className="text-[12px] text-danger">
             {error}
           </p>
         )}

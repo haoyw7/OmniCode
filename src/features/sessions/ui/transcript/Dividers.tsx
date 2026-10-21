@@ -72,9 +72,9 @@ export function interjectionChrome(meta: InterjectionMeta): {
           : undefined;
   const severityClass =
     meta.severity === "blocker"
-      ? "text-red-400"
+      ? "text-danger"
       : meta.severity === "concern"
-        ? "text-amber-400"
+        ? "text-warning"
         : "text-content/55";
   return { label, severityText, severityClass };
 }

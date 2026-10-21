@@ -96,7 +96,7 @@ export function MobileSheetHeader({ title, subtitle, className, action, onBack, 
       <IconButton type="button" className="mobile-sheet-header-button"
         data-mobile-sheet-back={onBack ? true : undefined}
         label={t(onBack ? "Back" : "Close")} onClick={onBack ?? onClose}>
-        {onBack ? <ArrowLeft size={24} /> : <X size={24} />}
+        {onBack ? <ArrowLeft /> : <X />}
       </IconButton>
       <div className="mobile-sheet-header-title">
         <strong>{title}</strong>
@@ -584,11 +584,11 @@ export function MobileSheet({
           {onBack && !header && (
             <button
               type="button"
-              className="mobile-sheet-row mobile-sheet-back"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row mobile-sheet-back"
               aria-label={t("Back")}
               onClick={onBack}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft />
               <span>{t("Back")}</span>
             </button>
           )}

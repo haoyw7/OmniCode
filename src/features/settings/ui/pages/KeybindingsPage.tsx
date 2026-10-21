@@ -175,7 +175,7 @@ function ShortcutEditor({
           onFocus={beginRecording}
           onClick={beginRecording}
           onBlur={() => setRecording(false)}
-          className={cn("h-6 w-28 shrink-0 truncate rounded-md border bg-transparent px-1.5 py-0 font-mono text-[11px] leading-none outline-none focus:border-input-border-hover", busy ? "opacity-50" : "", display === null
+          className={cn("h-6 w-28 shrink-0 truncate rounded-md border bg-transparent px-1.5 py-0 font-mono text-[11px] leading-none outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-input-border-hover", busy ? "opacity-50" : "", display === null
               ? "border-dashed border-content/15 text-content/35"
               : "border-content/15 text-content/80 hover:bg-content/6")}
         />
@@ -204,7 +204,7 @@ function ShortcutEditor({
       {error ? (
         <p
           role="alert"
-          className="absolute top-full left-0 z-40 mt-1.5 w-max max-w-64 rounded-md border border-content/10 bg-background-base/95 px-2 py-1 text-[11px] whitespace-nowrap text-red-400 shadow-lg"
+          className="absolute top-full left-0 z-40 mt-1.5 w-max max-w-64 rounded-md border border-content/10 bg-background-base/95 px-2 py-1 text-[11px] whitespace-nowrap text-danger shadow-lg"
         >
           {error}
         </p>
@@ -322,7 +322,7 @@ export function KeybindingsPage() {
               aria-label={uiT("Filter keybindings")}
               spellCheck={false}
               autoComplete="off"
-              className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
+              className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
             />
           </label>
         </div>

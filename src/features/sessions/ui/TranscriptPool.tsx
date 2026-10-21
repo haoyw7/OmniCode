@@ -3,10 +3,11 @@ import {
   memo,
   useLayoutEffect,
   useRef,
-  useSyncExternalStore,
   type ReactElement,
 } from "react";
 import { createPortal } from "react-dom";
+import { useStore } from "zustand";
+import { createStore } from "zustand/vanilla";
 
 /** Transcripts kept mounted after their pane closes, so a revisit skips the rebuild. */
 export const TRANSCRIPT_POOL_LIMIT = 12;
@@ -29,19 +30,15 @@ export type TranscriptPoolEntry = {
  */
 export class TranscriptPool {
   private entries = new Map<string, TranscriptPoolEntry>();
-  private listeners = new Set<() => void>();
-  private snapshot: TranscriptPoolEntry[] = [];
+  readonly store = createStore(() => ({ entries: [] as TranscriptPoolEntry[] }));
 
   constructor(private readonly limit = TRANSCRIPT_POOL_LIMIT) {}
 
   subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
+    return this.store.subscribe(listener);
   };
 
-  getSnapshot = () => this.snapshot;
+  getSnapshot = () => this.store.getState().entries;
 
   show(
     id: string,
@@ -92,8 +89,7 @@ export class TranscriptPool {
   }
 
   private emit() {
-    this.snapshot = [...this.entries.values()];
-    for (const listener of this.listeners) listener();
+    this.store.setState({ entries: [...this.entries.values()] });
   }
 }
 
@@ -130,11 +126,7 @@ export const TranscriptPoolOutlet = memo(function TranscriptPoolOutlet({
 }: {
   pool: TranscriptPool;
 }) {
-  const entries = useSyncExternalStore(
-    pool.subscribe,
-    pool.getSnapshot,
-    pool.getSnapshot,
-  );
+  const entries = useStore(pool.store, state => state.entries);
   return entries.map((entry) => <PooledEntry key={entry.id} entry={entry} />);
 });
 

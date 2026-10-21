@@ -3,7 +3,6 @@
 @import "./desktop-tokens.css";
 @import "../shared/styles/fonts.css";
 @import "../shared/styles/typography.css";
-@import "../shared/styles/icons.css";
 @import "./controls/forms.css";
 @import "./desktop-controls.css";
 @import "./desktop-workspaces.css";
@@ -87,7 +86,7 @@
   );
   --color-brand: var(--brand-color);
   --color-brand-foreground: var(--brand-foreground);
-  --color-destructive: #ef4444;
+  --color-destructive: var(--theme-default-destructive);
   /* Interactive fills keep their dark-theme contrast but use gentler ink in
      light mode. Prefer these over content opacity for selected/raised UI. */
   --color-selection-subtle: color-mix(
@@ -116,8 +115,8 @@
     transparent
   );
   --color-accent: var(--accent-color);
-  --color-skill: #e8c547;
-  --color-mention: #38bdf8;
+  --color-skill: var(--theme-default-skill);
+  --color-mention: var(--theme-default-mention);
 
 }
 
@@ -150,12 +149,12 @@
      mixed into a quiet surface so muted fills stay legible on dark grounds. */
   --color-muted: color-mix(in srgb, var(--muted, var(--color-content)) 8%, transparent);
   --color-muted-foreground: var(--muted-foreground, var(--color-foreground-subtle));
-  --color-accent-foreground: var(--accent-foreground, #ffffff);
-  --color-destructive-foreground: #ffffff;
-  --color-success: #16a34a;
-  --color-success-foreground: #ffffff;
-  --color-warning: #d97706;
-  --color-warning-foreground: #ffffff;
+  --color-accent-foreground: var(--theme-default-accent-foreground);
+  --color-destructive-foreground: var(--theme-default-destructive-foreground);
+  --color-success: var(--theme-default-success);
+  --color-success-foreground: var(--theme-default-success-foreground);
+  --color-warning: var(--theme-default-warning);
+  --color-warning-foreground: var(--theme-default-warning-foreground);
   --color-workflow-rule: color-mix(in srgb, var(--color-content) 6%, transparent);
   --color-workflow-trace: color-mix(in srgb, var(--color-content) 32%, transparent);
   --color-workflow-trace-strong: color-mix(in srgb, var(--color-content) 57%, transparent);
@@ -203,9 +202,6 @@
   --surface-strength: 5%;
   --surface-hover-strength: 7%;
   --subtlest-strength: calc(30% + var(--contrast-offset, 0) * 15%);
-  --brand-color: #ffffff;
-  --brand-foreground: #000000;
-  --accent-color: #4099ff;
   --sidebar-opacity: 0.85;
   --popover-opacity: 0.02;
   --window-opacity: 1;
@@ -218,9 +214,6 @@
   --selection-emphasis-strength: 15%;
   --background-lightness: var(--theme-dark-lightness);
   --content-lightness: calc(83% + var(--contrast-offset, 0) * 12%);
-  --link-color: #4099ff;
-  --color-skill: #e8c547;
-  --color-mention: #38bdf8;
   --color-markdown-heading: var(--color-content);
 }
 
@@ -240,12 +233,6 @@ html.theme-light {
   --surface-strength: 3%;
   --surface-hover-strength: 4%;
   --subtlest-strength: calc(40% + var(--contrast-offset, 0) * 15%);
-  --brand-color: #000000;
-  --brand-foreground: #ffffff;
-  --accent-color: #0066dd;
-  --link-color: #0066dd;
-  --color-skill: #a07c10;
-  --color-mention: #0284c7;
   --color-markdown-heading: var(--color-content);
   --selection-subtle-strength: 3%;
   --selection-strength: 5%;
@@ -904,7 +891,7 @@ html.theme-light {
 .question-dock [data-question-dock-option][aria-pressed="true"] [data-question-dock-mark] {
   border-color: var(--user-accent-color, var(--color-accent));
   background: var(--user-accent-color, var(--color-accent));
-  color: #fff;
+  color: var(--color-accent-ink);
 }
 
 .question-dock .question-dock-skip {
@@ -920,7 +907,7 @@ html.theme-light {
 
 .question-dock .question-dock-submit {
   background: var(--user-accent-color, var(--color-accent));
-  color: #fff;
+  color: var(--color-accent-ink);
   transition:
     background-color var(--motion-feedback-duration);
 }
@@ -1453,7 +1440,7 @@ header[data-tauri-drag-region] button {
 .pane-drop-hint-label {
   border-radius: 9999px;
   background: var(--user-accent-color, var(--color-accent));
-  color: var(--user-accent-foreground, #fff);
+  color: var(--user-accent-foreground, var(--color-accent-ink));
   padding: 5px 13px;
   font-size: 15px;
   font-weight: var(--font-weight-medium);
@@ -1741,9 +1728,9 @@ html.theme-light .btw-burst {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 11px;
-  border: 1px solid color-mix(in srgb, #f87171 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 24%, transparent);
   border-radius: 10px;
-  background: color-mix(in srgb, #f87171 7%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 7%, transparent);
 }
 
 /* The selected project mascot turns banked resets into a tiny status scene. */

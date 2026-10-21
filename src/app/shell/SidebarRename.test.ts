@@ -265,8 +265,9 @@ describe("sidebar session multiselection", () => {
     },
   );
 
-  it("starts a range at the active session when pagination hides the anchor", () => {
-    props.sessions = Array.from({ length: 80 }, (_, index) => ({
+  it("keeps a selection anchor across the virtual window", () => {
+    props.onArchiveSession = vi.fn();
+    props.sessions = Array.from({ length: 100 }, (_, index) => ({
       ...props.sessions[0],
       id: `session-${index + 1}`,
       updatedAt: 100 - index,
@@ -289,13 +290,13 @@ describe("sidebar session multiselection", () => {
     const search = container.querySelector<HTMLInputElement>(
       'input[placeholder="Search conversations..."]',
     )!;
-    // All sessions still match, but the list returns to its first page.
+    // All sessions still match; only the viewport is mounted after filtering.
     typeTitle(search, "Original conversation");
     act(() => completeMotionAnimation(container));
     expect(
       container.querySelector('[data-session-card="session-40"]:not([inert] *)'),
     ).toBeNull();
-    expect(container.querySelectorAll("[data-session-card]:not([inert] *)")).toHaveLength(32);
+    expect(container.querySelectorAll("[data-session-card]:not([inert] *)").length).toBeLessThan(80);
 
     act(() =>
       container.querySelector('[data-session-card="session-3"]')!.dispatchEvent(
@@ -305,12 +306,11 @@ describe("sidebar session multiselection", () => {
         }),
       ),
     );
-    expect(
-      Array.from(
-        container.querySelectorAll('[data-session-selected="true"]'),
-        (el) => el.getAttribute("data-session-card"),
-      ),
-    ).toEqual(["session-1", "session-2", "session-3"]);
+    expect(container.querySelector('[data-session-card="session-3"]')?.getAttribute("data-session-selected")).toBe("true");
+    act(() => container.querySelector('[data-session-card="session-3"]')!.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })));
+    const archive = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(item => item.textContent?.startsWith("Archive"))!;
+    act(() => archive.click());
+    expect(vi.mocked(props.onArchiveSession).mock.calls.map(([id]) => id)).toEqual(Array.from({ length: 38 }, (_, index) => `session-${index + 3}`));
     expect(props.onSelectSession).toHaveBeenCalledTimes(1);
     expect(props.onSelectSession).toHaveBeenCalledWith("session-40");
   });
@@ -801,7 +801,7 @@ describe("sidebar pinned sessions", () => {
     expect(
       group.querySelector('[data-session-card="session-1"]'),
     ).not.toBeNull();
-    expect(container.querySelector("li[aria-hidden]")).toBeNull();
+    expect(container.querySelector("li[aria-hidden]:not([data-virtual-spacer])")).toBeNull();
 
     act(() => toggle.click());
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
@@ -1375,6 +1375,7 @@ describe("sidebar session reminders", () => {
     expect(props.onSetReminders).not.toHaveBeenCalled();
     props.reminders = [];
     act(() => render());
+    act(() => completeMotionAnimation(container));
     expect(container.querySelector("[data-reminder-sessions]")).toBeNull();
     expect(
       container.querySelector(

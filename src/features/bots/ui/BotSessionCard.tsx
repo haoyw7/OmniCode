@@ -66,10 +66,10 @@ export function BotSessionCard({
             <HarnessIcon harness={message.harness} className="size-[15px]" />
           </span>
           <span className="assistant-task-title">{title}</span>
-          {opening ? <Spinner className="size-4" aria-hidden="true" /> : <ArrowUpRight size={16} aria-hidden="true" />}
+          {opening ? <Spinner className="size-4" aria-hidden="true" /> : <ArrowUpRight aria-hidden="true" />}
         </Button>
         <span role="status">{t(labels[message.status])}</span>
-        {accessible && onTimeline && <IconButton label={t("View progress")} shape="round" disabled={opening} onClick={() => void open(true)}><ListChecks size={16} aria-hidden="true" /></IconButton>}
+        {accessible && onTimeline && <IconButton label={t("View progress")} shape="round" disabled={opening} onClick={() => void open(true)}><ListChecks aria-hidden="true" /></IconButton>}
       </div>
       {(failure || message.error || !accessible || message.status === "unavailable") && <p role="alert">{t(failure || message.error || (!accessible
         ? "This conversation is outside the assistant's current permissions." : "Conversation is unavailable"))}</p>}

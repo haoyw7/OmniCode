@@ -145,8 +145,8 @@
   -webkit-user-select: text;
 }
 .mobile-git-diff[data-theme="light"] {
-  --diffs-addition-color-override: #199f73;
-  --diffs-deletion-color-override: #d84444;
+  --diffs-addition-color-override: var(--color-success);
+  --diffs-deletion-color-override: var(--color-danger);
 }
 .mobile-diff-context-toggle {
   width: 100%;

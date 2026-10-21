@@ -259,7 +259,7 @@ export function NotesView({
             aria-label={uiT("Filter notes")}
             spellCheck={false}
             autoComplete="off"
-            className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] text-content outline-none placeholder:text-content/40"
+            className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
           />
         </div>
         <Button variant="ghost" size="icon-sm"
@@ -899,7 +899,7 @@ function NoteEditor({
             }}
             onKeyDown={onTitleKeyDown}
             aria-label={uiT("Note title")}
-            className="w-full border-0 bg-transparent p-0 text-[20px] font-semibold leading-tight text-content outline-none placeholder:text-content/35"
+            className="w-full border-0 bg-transparent p-0 text-[20px] font-semibold leading-tight text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
             placeholder={uiT("Untitled")}
           />
           {time ? (
@@ -931,7 +931,7 @@ function NoteEditor({
                   window.clearTimeout(saveTimer.current);
                 void enqueueNoteSave(note.id, () => onDelete(note.id));
               }}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 h-7 text-[12px] text-content/70 hover:bg-content/6 hover:text-red-400"
+              className="inline-flex items-center gap-1.5 rounded-md px-3 h-7 text-[12px] text-content/70 hover:bg-content/6 hover:text-danger"
             >
               <Trash2 className="size-3.5" />
               {uiT("Delete")}
@@ -940,7 +940,7 @@ function NoteEditor({
           {saveError ? (
             <div
               role="alert"
-              className="flex items-center gap-2 text-[12px] text-red-400/90"
+              className="flex items-center gap-2 text-[12px] text-danger/90"
             >
               <span>
                 {uiT("Could not save note: ")}
@@ -1081,7 +1081,7 @@ function NoteSource({
         onChange={(event) => onChange(event.target.value)}
         spellCheck={false}
         placeholder={uiT("Write markdown…")}
-        className="markdown-source-field absolute inset-0 h-full w-full resize-none overflow-hidden border-0 bg-transparent py-0 pr-0 font-mono text-[13px] leading-5 whitespace-pre-wrap wrap-break-word outline-none"
+        className="markdown-source-field absolute inset-0 h-full w-full resize-none overflow-hidden border-0 bg-transparent py-0 pr-0 font-mono text-[13px] leading-5 whitespace-pre-wrap wrap-break-word outline-none focus-visible:ring-2 focus-visible:ring-ring"
         style={{ paddingLeft: textOffset }}
       />
     </div>
@@ -1152,7 +1152,7 @@ function NoteTagsEditor({
           placeholder={uiT("Add tag…")}
           spellCheck={false}
           autoComplete="off"
-          className="h-6 min-w-20 flex-1 border-0 bg-transparent px-1 text-[11px] text-content outline-none placeholder:text-content/35"
+          className="h-6 min-w-20 flex-1 border-0 bg-transparent px-1 text-[11px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
         />
       ) : null}
     </div>

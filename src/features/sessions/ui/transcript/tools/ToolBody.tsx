@@ -33,7 +33,7 @@ export function ToolOutput({
       className={cn(shell ? "zen-shell-output" : "zen-detail-panel", "max-h-60 overflow-auto")}
     >
       <pre
-        className={cn("whitespace-pre-wrap break-words", failed ? "text-red-400/80" : "")}
+        className={cn("whitespace-pre-wrap break-words", failed ? "text-danger/80" : "")}
       >
         {lines && diff
           ? lines.map((line, index) => (

@@ -62,7 +62,7 @@ export function BotRecipientPicker({ open, bots, roomsSupported, onChoose, onCre
     <header className="desktop-bot-recipient-header">
       <label htmlFor={id}>{t("To:")}</label>
       <div className="desktop-bot-recipients">
-        {selected.map(bot => <span key={bot.id} className="desktop-bot-recipient-chip"><BotAvatar bot={bot} size={24} />{bot.name}<Button variant="ghost" size="content" type="button" disabled={busy} aria-label={t("Remove {name}", { name: bot.name })} onClick={() => setMembers(current => current.filter(id => id !== bot.id))}><X size={12} /></Button></span>)}
+        {selected.map(bot => <span key={bot.id} className="desktop-bot-recipient-chip"><BotAvatar bot={bot} size={24} />{bot.name}<Button variant="ghost" size="content" type="button" disabled={busy} aria-label={t("Remove {name}", { name: bot.name })} onClick={() => setMembers(current => current.filter(id => id !== bot.id))}><X /></Button></span>)}
         <Input variant="inline" ref={input} id={id} role="combobox" value={query} disabled={busy} autoComplete="off" aria-label={t("Search or create a Bot")} placeholder={t("Search or create a Bot")}
           aria-expanded={expanded} aria-controls={`${id}-list`} aria-autocomplete="list" aria-activedescendant={expanded ? `${id}-option-${index}` : undefined}
           onFocus={() => setDropdown(true)} onChange={event => { setQuery(event.target.value); setHighlight(0); setDropdown(true); }}
@@ -73,12 +73,12 @@ export function BotRecipientPicker({ open, bots, roomsSupported, onChoose, onCre
             else if (event.key === "Tab" && !event.shiftKey && roomsSupported && highlighted && selected.length < 10) { event.preventDefault(); add(highlighted); }
           }} />
       </div>
-      <IconButton type="button" className="assistant-icon-button" disabled={busy} label={t("Cancel")} onClick={onClose}><X size={18} /></IconButton>
+      <IconButton type="button" className="assistant-icon-button" disabled={busy} label={t("Cancel")} onClick={onClose}><X /></IconButton>
     </header>
     <AnimatedCollapse expanded={expanded} className="desktop-bot-recipient-dropdown">
       <div className="desktop-bot-recipient-menu">
         <div role="listbox" id={`${id}-list`} aria-label={t("Recipients")}>
-          <Button data-menu-row="single" variant="ghost" size="content" type="button" role="option" id={`${id}-option-0`} aria-selected={index === 0} tabIndex={-1} onMouseDown={event => event.preventDefault()} onClick={() => choose()}><span className="desktop-bot-recipient-create"><Plus size={16} /></span><span>{t("Create new Bot")}</span></Button>
+          <Button data-menu-row="single" variant="ghost" size="content" type="button" role="option" id={`${id}-option-0`} aria-selected={index === 0} tabIndex={-1} onMouseDown={event => event.preventDefault()} onClick={() => choose()}><span className="desktop-bot-recipient-create"><Plus /></span><span>{t("Create new Bot")}</span></Button>
           {matches.map((bot, i) => <Button data-menu-row="single" variant="ghost" size="content" type="button" role="option" id={`${id}-option-${i + 1}`} aria-selected={index === i + 1} tabIndex={-1} key={bot.id} onMouseDown={event => event.preventDefault()} onMouseEnter={() => setHighlight(i + 1)} onClick={() => choose(bot)}><BotAvatar bot={bot} size={16} /><span>{bot.name}</span></Button>)}
         </div>
         <footer>{roomsSupported && <span>{t("Tab to add")}</span>}<span>{t("Enter to open")}</span></footer>
@@ -91,7 +91,7 @@ export function BotRecipientPicker({ open, bots, roomsSupported, onChoose, onCre
         <label className="desktop-bot-recipient-hint">{t(selected.length < 2 ? "Add another Bot to start a room" : "Send a message to start a room")}</label>
         <div><Textarea variant="editor" rows={1} {...form.register("draft")} aria-invalid={!!form.formState.errors.draft} disabled={busy} aria-label={t("Room message")} placeholder={t("Message your Bots…")} onFocus={() => setDropdown(false)} onKeyDown={event => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); }
-        }} /><IconButton shape="round" type="submit" className="assistant-send" label={t("Send")} disabled={busy || selected.length < 2 || !draft.trim()}><ArrowUp size={18} /></IconButton></div>
+        }} /><IconButton shape="round" type="submit" className="assistant-send" label={t("Send")} disabled={busy || selected.length < 2 || !draft.trim()}><ArrowUp /></IconButton></div>
         <FieldError errors={[form.formState.errors.draft, form.formState.errors.members]} />
       </form>
     </AnimatedCollapse>}

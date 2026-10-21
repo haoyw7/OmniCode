@@ -77,7 +77,7 @@ function GenericLinkPreview({ link }: { link: UserLink }) {
       data-user-link-preview
       title={link.url}
       aria-label={uiT("Open {value0}", { value0: String(title) })}
-      className="user-link-preview group mx-0.5 text-sky-400/90 hover:text-sky-300 hover:underline"
+      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 user-link-preview group mx-0.5 text-accent/90 hover:text-accent hover:underline"
       onClick={(event) => openExternalLink(event, link.url)}
     >
       <span className="mr-1 inline-flex size-4 items-center justify-center overflow-hidden rounded bg-background-base/50 align-[-0.125em] text-[9px] font-semibold uppercase text-content/55">
@@ -209,8 +209,8 @@ function GithubWorkItemPreview({
           className={cn("inline-flex shrink-0 items-center font-medium", compact
               ? "h-[18px] gap-0.5 rounded-[6px] px-1.5"
               : "h-5 gap-1 rounded-[5px] px-1.5", workItem.kind === "pr"
-              ? "bg-violet-400/10 text-violet-400/90"
-              : "bg-emerald-400/10 text-emerald-400/90")}
+              ? "bg-accent/10 text-accent/90"
+              : "bg-success/10 text-success/90")}
         >
           {workItem.kind === "pr" ? (
             <GitPullRequest
@@ -500,20 +500,20 @@ function workItemStatus(
     return {
       Icon: GitMerge,
       label: translateUi("Merged"),
-      className: "text-violet-400/90",
+      className: "text-accent/90",
     };
   }
   if (item?.state === "closed") {
     return {
       Icon: kind === "pr" ? GitPullRequestClosed : CircleX,
       label: translateUi("Closed"),
-      className: "text-rose-400/90",
+      className: "text-danger/90",
     };
   }
   return {
     Icon: kind === "pr" ? GitPullRequest : CircleDot,
     label: translateUi("Open"),
-    className: "text-emerald-400/90",
+    className: "text-success/90",
   };
 }
 

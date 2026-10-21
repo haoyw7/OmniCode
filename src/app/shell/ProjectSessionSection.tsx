@@ -3,7 +3,7 @@ import { usePreferenceState } from "../../features/settings/model/usePreferenceS
 import { delegateDesktopSession } from "../../features/bots/model/delegateDesktopSession";
 import { AnimatedCollapse } from "../../shared/ui/AnimatedCollapse";
 import { useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";
-import { ListMotion } from "../../shared/ui/ListMotion";
+import { CollapsingVirtualRows } from "../../shared/ui/CollapsingVirtualRows";
 import { sessionRecencyAt } from "../../features/sessions/model/sessionActivity";
 import { SortableItem, SortableList } from "../../shared/ui/primitives/Sortable";
 import { mergeOrderedSubset, orderByIds } from "../../shared/lib/reorder";
@@ -56,7 +56,7 @@ import {
   sessionListNavigationIds,
   type SessionListEntry,
 } from "../../features/sessions/model/sessionFolders";
-import { LIST_PAGE_SIZE, listWindowSize } from "../../shared/lib/listWindow";
+import { listWindowSize } from "../../shared/lib/listWindow";
 import {
   filterSessionsByHarness,
   filterSessionsByStatus,
@@ -111,7 +111,7 @@ type ProjectSessionSectionProps = SidebarProps & {
   onRetry?: () => void;
   onClearQuery?: () => void;
 };
-const REMINDERS_COLOR = "#f59e0b";
+const REMINDERS_COLOR = "var(--color-warning)";
 const PROJECT_SESSION_SELECTION = "omnicode:project-session-selection";
 
 /** Initial preview and each "Show more" step in a project tree. */
@@ -417,10 +417,7 @@ function ProjectSessionSectionComponent({
   const [reminderSessionsCollapsed, setReminderSessionsCollapsed] = usePreferenceState(
     () => loadReminderSessionsCollapsed(cwd),
   );
-  const [sessionListLimit, setSessionListLimit] = useState(LIST_PAGE_SIZE);
   const [treeSessionLimit, setTreeSessionLimit] = useState(TREE_PREVIEW_COUNT);
-  const treeSessionWindow = useRef({ key: "", count: 0 });
-  const loadMoreRef = useRef<HTMLLIElement>(null);
   const busyIdsRef = useRef(busySessionIds);
   const focusedSessionIdRef = useRef(activeSessionId);
   const unseenFinishedLocalRef = useRef<Set<string>>(new Set());
@@ -514,9 +511,6 @@ function ProjectSessionSectionComponent({
   const ungroupedVisible = flatPins
     ? allUngrouped
     : allUngrouped.filter((session) => !session.pinned);
-  const activeUngroupedIndex = ungroupedVisible.findIndex(
-    (session) => session.id === activeListedSessionId,
-  );
   // Reveal five more chats per click, keeping other projects in view.
   const treePreview = !searchNarrowed;
   const previewUngroupedCount = listWindowSize(
@@ -532,32 +526,13 @@ function ProjectSessionSectionComponent({
         -1,
         TREE_PREVIEW_COUNT,
       )
-    : listWindowSize(
-        ungroupedVisible.length,
-        sessionListLimit,
-        activeUngroupedIndex,
-      );
+    : ungroupedVisible.length;
   const shownUngrouped = ungroupedVisible.slice(0, shownUngroupedCount);
   const shownUngroupedIds = new Set(
     shownUngrouped.map((session) => session.id),
   );
   const sessionListKey = `${cwd}\0${searchActive}\0${sessionFilters.showArchived}\0${sessionFilters.time}\0${sessionFilters.hiddenHarnesses.join(",")}\0${sessionFilters.status.working}\0${sessionFilters.status.needsApproval}\0${sessionFilters.status.done}\0${searchQuery}`;
-  if (treeSessionWindow.current.key !== sessionListKey)
-    treeSessionWindow.current = { key: sessionListKey, count: 0 };
-  // Keep revealed rows available for closing motion and prepare the next five
-  // collapsed rows so their shared disclosure animates when they open.
-  treeSessionWindow.current.count = treePreview
-    ? Math.min(
-        ungroupedVisible.length,
-        Math.max(
-          treeSessionWindow.current.count,
-          shownUngroupedCount + TREE_PREVIEW_COUNT,
-        ),
-      )
-    : 0;
-  const mountedUngrouped = treePreview
-    ? ungroupedVisible.slice(0, treeSessionWindow.current.count)
-    : shownUngrouped;
+  const mountedUngrouped = shownUngrouped;
   const fullSessionListEntries = buildSessionList(
     visibleSessions,
     [],
@@ -628,32 +603,14 @@ function ProjectSessionSectionComponent({
     );
   }, [cwd, tab, sessionNavigationKey]);
   const hiddenSessions = shownUngroupedCount < ungroupedVisible.length;
-  const hasMoreSessions = !treePreview && hiddenSessions;
   const treePreviewExpanded = shownUngroupedCount > previewUngroupedCount;
   const narrowedByUser = searchNarrowed || filtersActive;
   useEffect(() => {
     // Retained project/group content starts with five rows on its next opening.
     // Keep the mounted window intact so closing rows can finish their motion.
-    setSessionListLimit(LIST_PAGE_SIZE);
     setTreeSessionLimit(TREE_PREVIEW_COUNT);
     // The shared project tree owns its scroll position.
   }, [sessionListKey, sectionVisible]);
-
-  useEffect(() => {
-    if (tab !== "sessions" || !hasMoreSessions) return;
-    const sentinel = loadMoreRef.current;
-    const root = sessionsScrollRef.current;
-    if (!sentinel || !root) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry?.isIntersecting) return;
-        setSessionListLimit((current) => current + LIST_PAGE_SIZE);
-      },
-      { root, rootMargin: "240px" },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [tab, hasMoreSessions, shownUngroupedCount]);
 
   useEffect(() => {
     setPinnedSessionsCollapsed(loadPinnedSessionsCollapsed(cwd));
@@ -1159,7 +1116,7 @@ function ProjectSessionSectionComponent({
             <button
               type="button"
               onClick={onRetry}
-              className="ml-2 text-accent"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 ml-2 text-accent"
             >
               {uiT("Retry")}
             </button>
@@ -1202,7 +1159,7 @@ function ProjectSessionSectionComponent({
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="ml-2 text-accent"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 ml-2 text-accent"
                 >
                   {uiT("Retry")}
                 </button>
@@ -1233,17 +1190,18 @@ function ProjectSessionSectionComponent({
             <SortableList ids={sortableSessionIds} onReorder={reorderSessions} renderOverlay={() => uiT("Drag to move")}>
             <ul
               data-session-list
-              className={`flex flex-col ${dense ? "w-full gap-px px-0 py-px" : "gap-px px-1 pb-1"}`}
+              className={`flex flex-col ${dense ? "w-full px-0 py-px" : "px-1 pb-1"}`}
             >
-              <ListMotion>
-              {sessionListEntries.map((entry, index) => {
+              <CollapsingVirtualRows as="li" gap={1} items={sessionListEntries} getKey={entry => entry.kind === "session" ? entry.session.id : entry.kind} estimateSize={dense ? 32 : 71}
+                activeIndex={sessionListEntries.findIndex(entry => entry.kind === "session" ? entry.session.id === activeListedSessionId : (entry.kind === "pinned" || entry.kind === "reminders") && entry.sessions.some(session => session.id === activeListedSessionId))}>
+              {(entry, index) => {
                 if (entry.kind === "pinned" || entry.kind === "reminders") {
                   const isReminders = entry.kind === "reminders";
                   const expanded = searchNarrowed || !entry.collapsed;
                   const beforeUngrouped =
                     sessionListEntries[index + 1]?.kind === "session";
                   return (
-                    <li
+                    <div
                       key={`${entry.kind}-sessions`}
                       data-pinned-sessions={isReminders ? undefined : ""}
                       data-reminder-sessions={isReminders ? "" : undefined}
@@ -1290,9 +1248,10 @@ function ProjectSessionSectionComponent({
                         />
                         <AnimatedCollapse expanded={expanded} keepMounted>
                           <ul
-                            className={`flex flex-col ${dense ? "w-full gap-px px-0 pt-px" : "gap-px p-1"}`}
+                            className={`flex flex-col ${dense ? "w-full px-0 pt-px" : "p-1"}`}
                           >
                             <SessionGroupPreview
+                              activeId={activeListedSessionId ?? undefined}
                               sessions={entry.sessions}
                               resetKey={sessionListKey}
                               searchActive={searchNarrowed}
@@ -1303,32 +1262,25 @@ function ProjectSessionSectionComponent({
                           </ul>
                         </AnimatedCollapse>
                       </div>
-                    </li>
+                    </div>
                   );
                 }
                 if (entry.kind === "folder") return null;
                 return (
                   <SortableItem key={entry.session.id} id={entry.session.id} disabled={!sortableSessionIds.includes(entry.session.id)}>{sortable => (
                   <SessionListItem
+                    as="div"
                     session={entry.session}
                     cwd={cwd}
                     motion={sessionInsertMotion}
                     sortable={shortcutId ? undefined : sortable}
-                    expanded={
-                      treePreview
-                        ? shownUngroupedIds.has(entry.session.id)
-                        : undefined
-                    }
                   >
                     {renderSessionCard(entry.session)}
                   </SessionListItem>
                   )}</SortableItem>
                 );
-              })}
-              </ListMotion>
-              {hasMoreSessions ? (
-                <li ref={loadMoreRef} aria-hidden className="h-px list-none" />
-              ) : null}
+              }}
+              </CollapsingVirtualRows>
               {treePreview && (hiddenSessions || treePreviewExpanded) ? (
                 <li className="list-none">
                   <button
@@ -1343,7 +1295,7 @@ function ProjectSessionSectionComponent({
                           : TREE_PREVIEW_COUNT,
                       )
                     }
-                    className="flex h-8 w-full items-center rounded-lg pl-8 pr-2 text-left text-ui-caption text-content/45 hover:bg-surface-hover hover:text-content"
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 flex h-8 w-full items-center rounded-lg pl-8 pr-2 text-left text-ui-caption text-content/45 hover:bg-surface-hover hover:text-content"
                   >
                     {hiddenSessions ? uiT("Show more") : uiT("Show less")}
                   </button>

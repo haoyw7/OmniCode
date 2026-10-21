@@ -214,7 +214,7 @@ function DesktopMessageQueue({
               )}
               {message.blocked && (
                 <span
-                  className="shrink-0 text-xs text-red-400"
+                  className="shrink-0 text-xs text-danger"
                   title={t(message.blocked)}
                 >
                   {t("Blocked")}

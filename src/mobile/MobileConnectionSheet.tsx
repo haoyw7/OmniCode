@@ -91,7 +91,7 @@ export function MobileConnectionSheet({
       {pairedHost ? (
         <div className="mobile-pairing mobile-pairing-success">
           <div className="mobile-pairing-success-hero" aria-hidden="true">
-            <CheckCircle size={60} />
+            <CheckCircle />
           </div>
           <div role="status" className="mobile-pairing-confirmation">
             <strong>{t("Pairing successful")}</strong>
@@ -130,7 +130,7 @@ export function MobileConnectionSheet({
                 setMethod(id);
                 setScanError("");
                 scanned.current = "";
-              }}
+              }} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
             >
               {method === id && <motion.span layoutId={selectionId} className="mobile-segmented-selection" aria-hidden="true" transition={reduced ? immediateTransition : popTransition} />}
               <Icon size={16} />
@@ -222,7 +222,7 @@ export function MobileConnectionSheet({
                   {disabled ? (
                     <MobileSpinner size={16} className="mobile-spin" />
                   ) : (
-                    <Internet size={16} />
+                    <Internet />
                   )}
                   {t(disabled ? "Connecting…" : "Connect")}
                 </MobileSwap>

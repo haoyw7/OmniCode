@@ -8,7 +8,6 @@ import {
 } from "react";
 import {
   Folder,
-  IconArtworkContext,
   Maximize2,
   MessageSquare,
   PanelRight,
@@ -38,26 +37,6 @@ import { hasSessionUsage, usageSessionFor } from "../../providers/model/sessionU
 export type SessionSurfaceMode = "split" | "unified";
 
 /** Match the window toolbar's square silhouettes without resizing tool buttons. */
-const sessionToolIconArtwork = {
-  SquareMenu: (
-    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="4" width="16" height="16" rx="2" strokeWidth="1.5" />
-      <path d="M8 8h8M8 12h8M8 16h8" strokeWidth="1.5" />
-    </g>
-  ),
-  Terminal: (
-    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="4" width="16" height="16" rx="2" strokeWidth="1.5" />
-      <path d="m8 9 3 3-3 3m5 0h3" strokeWidth="1.5" />
-    </g>
-  ),
-  Folder: (
-    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 4h5l2 3h5a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" strokeWidth="1.5" />
-    </g>
-  ),
-};
-
 export function SessionSurfaceActions({
   mode,
   onModeChange,
@@ -303,7 +282,7 @@ function SessionToolToggles({ session }: { session: Session }) {
   const filesOpen = !!actions.filesSessionIds?.has(session.id);
   const terminalOpen = !!actions.terminalSessionIds?.has(session.id);
   return (
-    <IconArtworkContext.Provider value={sessionToolIconArtwork}>
+    <>
       <div className="flex shrink-0 items-stretch">
         {/* Account usage stays accessible before the first message. */}
         {session.blocks.length || hasSessionUsage(usageSessionFor(session)) ? (
@@ -356,6 +335,6 @@ function SessionToolToggles({ session }: { session: Session }) {
           </Button>
         ) : null}
       </div>
-    </IconArtworkContext.Provider>
+    </>
   );
 }

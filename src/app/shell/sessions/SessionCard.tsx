@@ -180,13 +180,13 @@ export const SessionCard = memo(function SessionCard({
   const waitingLabel =
     waitingFor === "input" ? uiT("Needs input") : uiT("Need approval");
   const statusClass = waitingFor
-    ? "text-amber-400"
+    ? "text-warning"
     : running
       ? "text-accent"
       : failed
         ? "text-destructive"
         : done
-          ? "text-sky-500"
+          ? "text-accent"
           : draft
             ? "text-content/55"
             : "text-content/45";
@@ -236,7 +236,7 @@ export const SessionCard = memo(function SessionCard({
   const denseStatus = waitingFor ? (
     <CircleAlert
       aria-label={waitingLabel}
-      className="size-3 shrink-0 text-amber-400"
+      className="size-3 shrink-0 text-warning"
     />
   ) : running ? (
     <span role="img" aria-label={uiT("Working...")} className="flex shrink-0">
@@ -260,7 +260,7 @@ export const SessionCard = memo(function SessionCard({
       role="img"
       aria-label={uiT("Unread reply")}
       title={uiT("Unread reply")}
-      className="size-1.5 shrink-0 rounded-full bg-sky-500"
+      className="size-1.5 shrink-0 rounded-full bg-accent"
     />
   ) : null;
   const linkedUpdateDot = linkedUpdate ? (
@@ -269,7 +269,7 @@ export const SessionCard = memo(function SessionCard({
         value0: String(linkedWorkItem?.kind === "pr" ? "PR" : "issue"),
       })}
       aria-label={uiT("Linked work item updated")}
-      className="size-1.5 shrink-0 rounded-full bg-sky-500"
+      className="size-1.5 shrink-0 rounded-full bg-accent"
     />
   ) : null;
   const workItemBadge = linkedWorkItem ? (
@@ -306,7 +306,7 @@ export const SessionCard = memo(function SessionCard({
         event.stopPropagation();
         void openUrl(linkedWorkItem.url).catch(() => undefined);
       }}
-      className="flex shrink-0 cursor-pointer items-center gap-0.5 rounded px-0.5 text-[11px] tabular-nums text-accent hover:underline"
+      className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 flex shrink-0 cursor-pointer items-center gap-0.5 rounded px-0.5 text-[11px] tabular-nums text-accent hover:underline"
     >
       {linkedWorkItem.kind === "pr" ? (
         <GitPullRequest className="size-3" />
@@ -492,7 +492,7 @@ export const SessionCard = memo(function SessionCard({
             const focused = event.currentTarget.ownerDocument.activeElement;
             if (focused instanceof HTMLElement) focused.blur();
           }}
-          className={`rounded-sm outline-none focus-visible:ring-1 focus-visible:ring-accent/50 ${dense ? "min-w-0 flex-1" : ""}`}
+          className={`hover:opacity-80 active:opacity-70 rounded-sm outline-none focus-visible:ring-1 focus-visible:ring-accent/50 ${dense ? "min-w-0 flex-1" : ""}`}
         >
           {dense || (compact && !orchestrationExpanded) ? null : (
             <span className="relative flex items-center gap-2">
@@ -657,7 +657,7 @@ export const SessionCard = memo(function SessionCard({
                 role="img"
                 title={uiT("Started by an automation")}
                 aria-label={uiT("Started by an automation")}
-                className="grid size-5 -mr-1 shrink-0 place-items-center text-amber-400"
+                className="grid size-5 -mr-1 shrink-0 place-items-center text-warning"
               >
                 <Zap className="size-3" />
               </span>
@@ -699,7 +699,7 @@ export const SessionCard = memo(function SessionCard({
                     setOrchestrationTooltipOpen(false);
                     onSelect(session.id, event);
                   }}
-                  className="grid size-5 shrink-0 place-items-center rounded-lg text-fuchsia-300/65 hover:bg-surface-hover hover:text-fuchsia-200/90"
+                  className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 grid size-5 shrink-0 place-items-center rounded-lg text-accent/65 hover:bg-surface-hover hover:text-accent/90"
                 >
                   <Share className="size-3" />
                 </button>
@@ -801,11 +801,11 @@ export const SessionCard = memo(function SessionCard({
                       task.status === "failed" ||
                       task.status === "blocked" ||
                       task.status === "interrupted"
-                        ? "text-amber-400"
+                        ? "text-warning"
                         : label === "Working"
                           ? "text-accent"
                           : task.status === "completed"
-                            ? "text-emerald-400"
+                            ? "text-success"
                             : "text-content/45"
                     }`}
                   >

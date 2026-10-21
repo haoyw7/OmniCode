@@ -557,7 +557,7 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"]
 }
 html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-send {
   background: var(--m-control-send);
-  color: #fff;
+  color: var(--color-accent-ink);
 }
 .assistant-chat[data-layout="mobile"] .mobile-assistant-send:disabled {
   background: var(--mobile-fill);
@@ -811,8 +811,8 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px #0002;
+  background: var(--color-accent-ink);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-shadow) 13.3%, transparent);
 }
 .assistant-settings[data-layout="mobile"]
   .assistant-check

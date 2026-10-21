@@ -78,7 +78,7 @@ export function UpdateAvailableDialog({
         <div className="flex items-center gap-4">
           <Omi compact
             aria-hidden
-            className="size-12 shrink-0 rounded-xl bg-neutral-900 text-white object-contain p-1.5"
+            className="size-12 shrink-0 rounded-xl bg-content text-white object-contain p-1.5"
           />
           <div className="min-w-0">
             <h3 className="desktop-pane-heading text-[16px] font-medium">

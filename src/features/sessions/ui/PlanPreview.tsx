@@ -186,7 +186,15 @@ export function PlanPreview({
       </div>
       <div
         ref={body}
-        className={cn("plan-card-body relative max-h-[220px] overflow-hidden px-4 pb-3", onOpen ? "cursor-pointer" : "")}
+        role={onOpen ? "button" : undefined}
+        tabIndex={onOpen ? 0 : undefined}
+        onKeyDown={event => {
+          if (onOpen && event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            onOpen();
+          }
+        }}
+        className={cn("plan-card-body relative max-h-[220px] overflow-hidden px-4 pb-3", onOpen && "cursor-pointer hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-selection")}
         onClick={(event) => {
           if (!onOpen) return;
           if ((event.target as HTMLElement).closest("a,button,summary")) return;
@@ -239,7 +247,6 @@ export function PlanDecision({
         <div className="flex shrink-0 items-center gap-1.5" data-question-header>
           <ListChecks
             className="size-3.5 shrink-0 text-content/45"
-            strokeWidth={1.75}
           />
           <span
             className="min-w-0 flex-1 truncate text-[11px] text-content/50"
@@ -299,7 +306,7 @@ export function PlanDecision({
               aria-invalid={!!form.formState.errors.feedback}
               placeholder={uiT("No, describe what to change")}
               aria-label={uiT("No, describe what to change")}
-              className="w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none placeholder:text-content/35 focus:border-content/30"
+              className="w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-content/30"
             />
           </div>
         </div>

@@ -139,7 +139,7 @@ function ProgressIcon({ model }: { model: SessionStatusPanelModel }) {
         />
       );
     case "plan":
-      return <FileScript size={24} />;
+      return <FileScript />;
     case "running": {
       const Icon =
         summary.agents && summary.background
@@ -150,11 +150,11 @@ function ProgressIcon({ model }: { model: SessionStatusPanelModel }) {
       return <Icon size={24} />;
     }
     case "agents":
-      return <Bot size={24} />;
+      return <Bot />;
     case "progress":
-      return <ListEnd size={24} />;
+      return <ListEnd />;
     default:
-      return <GitCompare size={24} />;
+      return <GitCompare />;
   }
 }
 
@@ -220,7 +220,7 @@ function ProgressSections({
     <div className="mobile-progress-sections">
       {sessionReview?.index && onSessionReview && (
         <Section
-          icon={<FileDiff size={16} />}
+          icon={<FileDiff />}
           title={t("Session changes")}
           meta={t(sessionReview.index.files.length === 1 ? "{count} file changed" : "{count} files changed", {
             count: sessionReview.index.files.length,
@@ -228,7 +228,7 @@ function ProgressSections({
         >
           <button
             type="button"
-            className="mobile-progress-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-progress-row"
             onClick={onSessionReview}
           >
             <span>
@@ -239,18 +239,18 @@ function ProgressSections({
                 />
               </span>
             </span>
-            <ChevronRight size={20} aria-hidden="true" />
+            <ChevronRight aria-hidden="true" />
           </button>
         </Section>
       )}
       {review && onReview && (
         <Section
-          icon={<GitCompare size={16} />}
+          icon={<GitCompare />}
           title={t("Uncommitted changes")}
         >
           <button
             type="button"
-            className="mobile-progress-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-progress-row"
             onClick={onReview}
           >
             <span>
@@ -266,13 +266,13 @@ function ProgressSections({
               </span>
               {review.error && <small>{t("Could not load changes.")}</small>}
             </span>
-            <ChevronRight size={20} aria-hidden="true" />
+            <ChevronRight aria-hidden="true" />
           </button>
         </Section>
       )}
       {tasks && span && (
         <Section
-          icon={<ListEnd size={16} />}
+          icon={<ListEnd />}
           title={t("Tasks")}
           meta={taskListProgressLabel(tasks, t)}
         >
@@ -287,7 +287,7 @@ function ProgressSections({
               </AnimatedCollapse>
               <button
                 type="button"
-                className="mobile-progress-more"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-progress-more"
                 aria-expanded={moreTasks}
                 onClick={() => setMoreTasks((value) => !value)}
               >
@@ -302,23 +302,23 @@ function ProgressSections({
         </Section>
       )}
       {model.plans.length > 0 && (
-        <Section icon={<FileScript size={16} />} title={t("Plans")}>
+        <Section icon={<FileScript />} title={t("Plans")}>
           {model.plans.map((plan) => (
             <button
               key={plan.blockId}
               type="button"
-              className="mobile-progress-row"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-progress-row"
               onClick={() => onNavigate("plan", plan.blockId)}
             >
               <span>{plan.title}</span>
-              <ChevronRight size={20} aria-hidden="true" />
+              <ChevronRight aria-hidden="true" />
             </button>
           ))}
         </Section>
       )}
       {model.subagents.length > 0 && (
         <Section
-          icon={<Bot size={16} />}
+          icon={<Bot />}
           title={t(model.subagents.length === 1 ? "{count} subagent" : "{count} subagents", { count: model.subagents.length })}
           expanded={agentsExpanded}
           onToggle={() => setAgentsExpanded((value) => !value)}
@@ -327,11 +327,11 @@ function ProgressSections({
             <button
               key={agent.blockId}
               type="button"
-              className="mobile-progress-row"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-progress-row"
               onClick={() => onNavigate("agent", agent.blockId)}
             >
               <span title={t(agent.state === "pending" ? "Running" : agent.state === "rejected" ? "Failed" : "Completed")}>
-                {agent.state === "rejected" ? <CircleAlert size={16} className="text-red-400" />
+                {agent.state === "rejected" ? <CircleAlert className="text-danger" />
                   : <TaskState status={agent.state === "pending" ? "in_progress" : "completed"} />}
               </span>
               <span>
@@ -341,13 +341,13 @@ function ProgressSections({
               <small className="shrink-0 whitespace-nowrap font-mono tabular-nums">
                 {t(agent.steps === 1 ? "{count} step" : "{count} steps", { count: agent.steps })}
               </small>
-              <ChevronRight size={20} aria-hidden="true" />
+              <ChevronRight aria-hidden="true" />
             </button>
           ))}
         </Section>
       )}
       {model.background.length > 0 && (
-        <Section icon={<Terminal size={16} />} title={t("Background")}>
+        <Section icon={<Terminal />} title={t("Background")}>
           {model.background.map((description, index) => (
             <div
               key={`${index}:${description}`}
@@ -410,7 +410,7 @@ function Section({
             type="button"
             aria-expanded={expanded}
             onClick={onToggle}
-            className="flex min-h-11 w-full items-center gap-2 text-left"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 flex min-h-11 w-full items-center gap-2 text-left"
           >
             {heading}
             <MotionChevronRight size={16} aria-hidden="true" className="zen-disclosure-chevron ml-auto shrink-0" animate={{ rotate: expanded ? motionGeometry.disclosureAngle : 0 }} transition={panelTransition} />

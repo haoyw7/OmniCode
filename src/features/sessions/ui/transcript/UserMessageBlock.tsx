@@ -293,7 +293,7 @@ export function UserMessageBlock({
                   className="flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-transform duration-150 active:scale-[0.97]"
                 >
                   {uiT("Send")}
-                  <ArrowUp className="size-3.5" strokeWidth={2.25} />
+                  <ArrowUp className="size-3.5" />
                 </Button>
               </span>
             </div>

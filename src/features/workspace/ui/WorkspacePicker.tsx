@@ -543,7 +543,7 @@ function WorkspaceModePicker({
           {pickError || loadError ? (
             <p
               role="alert"
-              className="border-t border-stroke px-2 py-2 text-[11px] text-red-400"
+              className="border-t border-stroke px-2 py-2 text-[11px] text-danger"
             >
               {pickError || loadError}
             </p>
@@ -782,7 +782,7 @@ export function WorktreeBasePicker({
                     dismiss();
                   }
                 }}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/40"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
               />
             </label>
             {desktop ? (

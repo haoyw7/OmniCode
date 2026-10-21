@@ -13,7 +13,7 @@ html[data-skin] [data-ui="checkbox"] {
   background-repeat: no-repeat;
   background-origin: border-box;
   background-size: 80% 80%;
-  color: #fff;
+  color: var(--color-accent-ink);
   vertical-align: middle;
   outline: none;
   box-shadow: none;
@@ -35,7 +35,7 @@ html[data-skin] [data-ui="checkbox"]:focus-visible {
 }
 html[data-skin] [data-ui="checkbox"]:disabled { opacity: .5; }
 html[data-skin] :is([data-slot="checkbox-checked-icon"], [data-slot="checkbox-indeterminate-icon"], [data-desktop-checkbox-mark]) {
-  color: #fff;
+  color: var(--color-accent-ink);
   width: calc(var(--desktop-checkbox-size) * .625);
   height: calc(var(--desktop-checkbox-size) * .625);
   flex-shrink: 0;

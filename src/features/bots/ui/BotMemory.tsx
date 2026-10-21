@@ -144,7 +144,7 @@ export function BotMemoryEditor({
                   {fact.date ?? ""}
                 </time>
                 <span className="assistant-memory-row-text">{fact.text}</span>
-                <ChevronRight size={16} aria-hidden="true" />
+                <ChevronRight aria-hidden="true" />
               </Button>
             </li>
           ))}

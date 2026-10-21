@@ -95,14 +95,14 @@ export function MobileProviderAccounts({ client, hostId, enabled }: {
         <p>{t("Accounts on {host}", { host: client.connection?.name ?? "Host" })}</p>
         <IconButton type="button" label={t("Refresh usage limits")}
           disabled={!connected || shown.loading || !visible} onClick={() => { refreshRequested.current = true; void accountsRead.refetch(); }}>
-          <RefreshCw size={24} className={shown.loading ? "animate-spin" : undefined} />
+          <RefreshCw className={shown.loading ? "animate-spin" : undefined} />
         </IconButton>
       </div>
       {!connected ? <p className="mobile-settings-footer">{t("Connect to a Host to view account usage.")}</p> : null}
       {shown.error ? <p className="mobile-form-error" role="alert">{t(shown.error)}</p> : null}
       {shown.accounts === null ? <p className="mobile-settings-footer">{t("Provider accounts are unavailable on this Host.")}</p>
         : shown.unsupported ? <div className="mobile-account-notice" role="status">
-          <Info size={16} aria-hidden />
+          <Info aria-hidden />
           <div><strong>{t("Host update required")}</strong>
             <p>{t("This Host does not support account usage yet. Update and restart it, then refresh.")}</p>
           </div>

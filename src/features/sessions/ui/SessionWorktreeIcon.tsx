@@ -17,7 +17,7 @@ export function SessionWorktreeIcon({
       title={`${t("Worktree")}\n${session.executionCwd || session.cwd || ""}`}
       className="inline-flex shrink-0 items-center text-content/45"
     >
-      <Split className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
+      <Split className="size-3.5" aria-hidden="true" />
     </span>
   );
 }

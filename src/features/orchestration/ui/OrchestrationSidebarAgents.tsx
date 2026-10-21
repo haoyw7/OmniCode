@@ -170,11 +170,11 @@ export function OrchestrationSidebarAgents({
                     task.status === "failed" ||
                     task.status === "blocked" ||
                     task.status === "interrupted"
-                      ? "text-amber-400"
+                      ? "text-warning"
                       : working
                         ? "text-accent"
                         : task.status === "completed"
-                          ? "text-emerald-400"
+                          ? "text-success"
                           : "text-content/45")}
                 >
                   {task.needsInput ||
@@ -185,7 +185,7 @@ export function OrchestrationSidebarAgents({
                   ) : working ? (
                     <TerminalSpinner className="inline-block w-3 select-none text-center text-[11px] leading-none text-accent" />
                   ) : task.status === "completed" ? (
-                    <Check className="size-3" strokeWidth={2.25} />
+                    <Check className="size-3" />
                   ) : null}
                   <span>{label}</span>
                 </span>
@@ -204,7 +204,7 @@ export function OrchestrationSidebarAgents({
                     <span className="min-w-0 truncate">{model}</span>
                   </p>
                   {live?.error && (
-                    <p className="text-[11px] text-red-400">{localizeOrchestrationMessage(live.error, uiT)}</p>
+                    <p className="text-[11px] text-danger">{localizeOrchestrationMessage(live.error, uiT)}</p>
                   )}
                   <div className="flex flex-wrap items-center gap-1">
                     {workers.openDetails && (
@@ -246,7 +246,7 @@ export function OrchestrationSidebarAgents({
         })}
       </div>
       {(error || run?.error) && (
-        <p role="alert" className="py-1 text-[11px] text-red-400">
+        <p role="alert" className="py-1 text-[11px] text-danger">
           {localizeOrchestrationMessage(error ?? run?.error ?? "", uiT)}
         </p>
       )}
@@ -266,7 +266,7 @@ export function OrchestrationSidebarAgents({
                   )}
           </p>
           {resumeBlocker && (
-            <p className="px-0.5 text-[11px] leading-relaxed text-amber-400">
+            <p className="px-0.5 text-[11px] leading-relaxed text-warning">
               {resumeBlocker.title || uiT("Another conversation")}{" "}
               {uiT("is still running in this project.")}
             </p>

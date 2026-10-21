@@ -87,7 +87,7 @@ function NavRow({
       type="button"
       onClick={onClick}
       aria-current={active ? "true" : undefined}
-      className={`settings-nav-item flex w-full items-center text-left ${
+      className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 settings-nav-item flex w-full items-center text-left ${
         active
           ? "bg-surface-hover text-content"
           : "text-foreground-subtle hover:bg-surface-hover hover:text-content"

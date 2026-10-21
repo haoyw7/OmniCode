@@ -80,11 +80,11 @@ html[data-mobile-skin] :is([data-ui="input"], [data-ui="select"]) { width: 100%;
   place-items: center;
   min-height: 168px;
   border-radius: 20px;
-  color: #fff;
+  color: var(--color-accent-ink);
   background:
-    radial-gradient(ellipse at 82% 18%, #c1b1ff 0%, transparent 52%),
-    radial-gradient(ellipse at 18% 85%, #54c9ff 0%, transparent 58%),
-    linear-gradient(135deg, #6985fb, #0967e9 60%, #579dff);
+    radial-gradient(ellipse at 82% 18%, var(--color-accent) 0%, transparent 52%),
+    radial-gradient(ellipse at 18% 85%, var(--color-accent) 0%, transparent 58%),
+    linear-gradient(135deg, var(--color-accent), var(--color-accent) 60%, var(--color-accent));
 }
 .mobile-pairing-confirmation {
   display: flex;
@@ -151,7 +151,7 @@ html[data-mobile-skin] :is([data-ui="input"], [data-ui="select"]) { width: 100%;
   aspect-ratio: 1;
   margin-inline: auto;
   overflow: hidden;
-  background: #111;
+  background: var(--color-background-base);
   border-radius: 20px;
 }
 .mobile-qr-scanner video {
@@ -192,15 +192,15 @@ html[data-mobile-skin] :is([data-ui="input"], [data-ui="select"]) { width: 100%;
 }
 .mobile-qr-overlay [data-ui="button"] {
   min-height: 38px;
-  color: #fff;
+  color: var(--color-accent-ink);
   background: rgb(255 255 255 / 0.16);
 }
 .mobile-qr-loading {
   gap: 20px;
   background: radial-gradient(
     circle at 50% 42%,
-    color-mix(in srgb, var(--mobile-accent) 10%, #111),
-    #111 70%
+    color-mix(in srgb, var(--mobile-accent) 10%, var(--color-background-base)),
+    var(--color-background-base) 70%
   );
 }
 .mobile-qr-loading-icon {

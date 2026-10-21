@@ -48,7 +48,7 @@ export function MobileSessionRow({
         <SessionWorktreeIcon session={session} />
       </strong>
       {session.pinned && (
-        <Pin size={14} className="mobile-home-session-pin" aria-label={t("Pinned")} />
+        <Pin className="mobile-home-session-pin" aria-label={t("Pinned")} />
       )}
       {hostName && <small className="mobile-home-session-host">{hostName}</small>}
       {state === "running" ? (
@@ -57,7 +57,7 @@ export function MobileSessionRow({
         </span>
       ) : state === "input" ? (
         <span className="mobile-home-session-state" role="img" aria-label={t("Needs input")}>
-          <TriangleAlert size={16} aria-hidden="true" />
+          <TriangleAlert aria-hidden="true" />
         </span>
       ) : (
         <time dateTime={new Date(sessionRecencyAt(session)).toISOString()}>

@@ -359,7 +359,7 @@ export function NativeSessionsPanel({
                           setQuery(event.target.value);
                           setShown(PAGE);
                         }}
-                        className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-content/35"
+                        className="min-w-0 flex-1 bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
                       />
                     </label>
                   ) : null}
@@ -431,14 +431,14 @@ export function NativeSessionsPanel({
       {state.error ? (
         <p
           role="alert"
-          className="mt-3 whitespace-pre-wrap text-[12px] text-red-500"
+          className="mt-3 whitespace-pre-wrap text-[12px] text-danger"
         >
           {state.error}
         </p>
       ) : null}
       {state.warnings.length ? (
         <details className="mt-3 text-[12px] text-content/45">
-          <summary className="cursor-default">
+          <summary className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 cursor-default">
             {t("Some native sessions could not be read ({count})", {
               count: state.warnings.length,
             })}

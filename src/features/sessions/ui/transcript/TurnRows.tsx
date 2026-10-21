@@ -124,8 +124,8 @@ export function WorkFoldLine({
       {label}
       {sheet && (sheet.additions > 0 || sheet.deletions > 0) ? (
         <span className="shrink-0 font-mono text-xs">
-          <span className="text-emerald-400">+{sheet.additions}</span>
-          <span className="ms-1 text-red-400">−{sheet.deletions}</span>
+          <span className="text-success">+{sheet.additions}</span>
+          <span className="ms-1 text-danger">−{sheet.deletions}</span>
         </span>
       ) : null}
       {sheet ? <ChevronRight className="size-3.5 shrink-0 text-foreground-subtlest" /> : null}

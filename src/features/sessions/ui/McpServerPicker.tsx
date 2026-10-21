@@ -120,7 +120,7 @@ export function McpServerPicker({
               if (server?.availability === "available") onPick(server);
             }
           }}
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/40"
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
           placeholder={uiT("Search MCP servers…")}
         />
         <Button variant="ghost" size="content"
@@ -145,7 +145,7 @@ export function McpServerPicker({
             {uiT("Checking MCP servers…")}
           </p>
         ) : error ? (
-          <p role="alert" className="px-2 py-2 text-[12px] text-red-400">
+          <p role="alert" className="px-2 py-2 text-[12px] text-danger">
             {error}
           </p>
         ) : servers.length === 0 ? (
@@ -193,7 +193,7 @@ export function McpServerPicker({
                   </span>
                 </span>
                 <span
-                  className={cn("max-w-[40%] shrink-0 truncate text-[11px]", server.availability === "authentication" ? "text-amber-400" : "text-content/45")}
+                  className={cn("max-w-[40%] shrink-0 truncate text-[11px]", server.availability === "authentication" ? "text-warning" : "text-content/45")}
                 >
                   {server.availability === "authentication"
                     ? uiT("Needs authentication")

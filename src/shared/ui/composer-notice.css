@@ -1,8 +1,8 @@
 /* Shared prompt bar above a composer (ComposerNotice.tsx), desktop and mobile.
  * Base rules sit in :where() so surfaces can still position and size them. */
 :where(.composer-notice) {
-  --composer-notice-tint: #e04844;
-  --composer-notice-text: #d75555;
+  --composer-notice-tint: var(--color-danger);
+  --composer-notice-text: var(--color-danger);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -16,8 +16,8 @@
   overflow-wrap: anywhere;
 }
 :where(.composer-notice[data-tone="warning"]) {
-  --composer-notice-tint: #f59e0b;
-  --composer-notice-text: #d99a1e;
+  --composer-notice-tint: var(--color-warning);
+  --composer-notice-text: var(--color-warning);
 }
 :where(.composer-notice[data-tone="info"]) {
   --composer-notice-tint: var(--color-accent);

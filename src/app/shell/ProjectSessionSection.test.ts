@@ -1069,7 +1069,8 @@ describe("named project/session tree", () => {
     );
     expect(lists).toHaveLength(2);
     for (const list of lists) {
-      expect(list.classList.contains("gap-px")).toBe(true);
+      expect(list.classList.contains("gap-px")).toBe(false);
+      expect(list.querySelector<HTMLElement>("[data-virtual-row]")?.style.paddingBottom).toBe("1px");
       if (list.hasAttribute("data-session-list")) {
         expect(list.classList.contains("py-px")).toBe(true);
       } else {
@@ -2937,7 +2938,7 @@ describe("project tree session preview", () => {
       );
       expect(toggle()?.getAttribute("aria-expanded")).toBe("true");
       expect(
-        project(A).querySelector("[data-session-list] > li[aria-hidden]"),
+        project(A).querySelector("[data-session-list] > li[aria-hidden]:not([data-virtual-spacer])"),
       ).toBeNull();
       expect(
         card(`s${count - 1}`)

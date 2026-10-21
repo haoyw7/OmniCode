@@ -240,7 +240,7 @@ html[data-mobile-skin] .mobile-composer [data-ui="message-input-field"]:focus-vi
   flex-shrink: 0;
   padding: 0;
   background: var(--m-control-send);
-  color: #fff;
+  color: var(--color-accent-ink);
   border: 0;
   border-radius: 50%;
   transition: background-color 150ms var(--m-ease), color 150ms var(--m-ease);

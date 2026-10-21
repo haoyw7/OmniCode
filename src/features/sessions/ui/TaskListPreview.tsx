@@ -68,9 +68,9 @@ export function TaskState({ status }: { status: TaskListItemStatus }) {
     return (
       <span
         aria-label={uiT("Completed")}
-        className="mt-px grid size-4 shrink-0 place-items-center rounded-full bg-emerald-400/20 text-emerald-300"
+        className="mt-px grid size-4 shrink-0 place-items-center rounded-full bg-success/20 text-success"
       >
-        <Check className="size-2.5" strokeWidth={2.5} />
+        <Check className="size-2.5" />
       </span>
     );
   }
@@ -78,7 +78,7 @@ export function TaskState({ status }: { status: TaskListItemStatus }) {
     return (
       <span
         aria-label={uiT("In progress")}
-        className="mt-px grid size-4 shrink-0 place-items-center text-sky-300"
+        className="mt-px grid size-4 shrink-0 place-items-center text-accent"
       >
         <Spinner className="size-4" strokeWidth={2} />
       </span>
@@ -90,7 +90,7 @@ export function TaskState({ status }: { status: TaskListItemStatus }) {
         aria-label={uiT("Cancelled")}
         className="mt-px grid size-4 shrink-0 place-items-center rounded-full bg-content/8 text-content/35"
       >
-        <Minus className="size-2.5" strokeWidth={2} />
+        <Minus className="size-2.5" />
       </span>
     );
   }

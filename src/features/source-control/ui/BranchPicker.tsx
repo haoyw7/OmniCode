@@ -466,7 +466,7 @@ export function BranchPicker({
             autoCorrect="off"
             autoCapitalize="off"
             disabled={busy}
-            className="min-w-0 flex-1 bg-transparent font-sans text-[13px] text-content outline-none placeholder:text-content/40 disabled:opacity-60"
+            className="min-w-0 flex-1 bg-transparent font-sans text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40 disabled:opacity-60"
             onChange={(e) => {
               setQuery(e.target.value);
               setActive(0);
@@ -484,7 +484,7 @@ export function BranchPicker({
           branchList
         )}
         {error ? (
-          <p className="max-h-16 shrink-0 overflow-y-auto whitespace-pre-wrap border-t border-stroke px-2.5 py-2 text-[11px] leading-4 text-red-400/90">
+          <p className="max-h-16 shrink-0 overflow-y-auto whitespace-pre-wrap border-t border-stroke px-2.5 py-2 text-[11px] leading-4 text-danger/90">
             {error}
           </p>
         ) : null}

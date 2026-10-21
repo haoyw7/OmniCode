@@ -122,8 +122,8 @@
   pointer-events: none;
   -webkit-backdrop-filter: blur(2px);
   backdrop-filter: blur(2px);
-  -webkit-mask-image: linear-gradient(transparent, #000 45%);
-  mask-image: linear-gradient(transparent, #000 45%);
+  -webkit-mask-image: linear-gradient(transparent, black 45%);
+  mask-image: linear-gradient(transparent, black 45%);
 }
 .mobile-desktop-transcript:is(
     :has(+ .mobile-composer-dock),

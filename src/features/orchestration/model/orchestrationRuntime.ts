@@ -1,4 +1,5 @@
 import { HARNESSES, type HarnessId, type Session, type TurnOrigin } from "../../sessions/model/session";
+import { createStore } from "zustand/vanilla";
 import { pathKey } from "../../../shared/lib/paths";
 import type { ApprovalDecision, HarnessEvent } from "../../../integrations/harness/core/types";
 import { pendingApprovalForSession } from "../../notifications/model/approvalToast";
@@ -257,7 +258,7 @@ const listed = (values: string[], max = 12) =>
 export class Orchestrator {
   private runs: OrchestrationRun[] = [];
   private closing = false;
-  private listeners = new Set<() => void>();
+  readonly state = createStore(() => ({ runs: [] as OrchestrationRun[] }));
   private loaded = new Set<string>();
   private deleted = new Set<string>();
   private persisted = new Map<string, OrchestrationRun>();
@@ -282,12 +283,9 @@ export class Orchestrator {
     this.host = host;
   }
   subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
+    return this.state.subscribe(listener);
   };
-  snapshot = () => this.runs;
+  snapshot = () => this.state.getState().runs;
   run(id: string) {
     return this.runs.find((run) => run.leadId === id);
   }
@@ -319,7 +317,7 @@ export class Orchestrator {
     return !!this.host?.session(leadId)?.busy;
   }
   private emit() {
-    for (const listener of this.listeners) listener();
+    this.state.setState({ runs: this.runs });
   }
   private async commit(run: OrchestrationRun) {
     run = normalizeOrchestrationRun(run);

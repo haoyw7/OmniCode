@@ -1,6 +1,6 @@
 .opus-welcome {
-  --opus-clay: #d97757;
-  --opus-note: #f4ede4;
+  --opus-clay: var(--color-accent);
+  --opus-note: var(--color-content);
   position: absolute;
   inset: 0;
   z-index: 40;
@@ -13,10 +13,10 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 82% 14%, #d9775724, transparent 46%),
-    radial-gradient(ellipse at 40% 18%, #d9775712, transparent 60%),
-    radial-gradient(ellipse at 10% 85%, #f4ede40c, transparent 55%);
-  box-shadow: inset 0 0 50px #d9775708;
+    radial-gradient(ellipse at 82% 14%, color-mix(in srgb, var(--color-accent) 14.1%, transparent), transparent 46%),
+    radial-gradient(ellipse at 40% 18%, color-mix(in srgb, var(--color-accent) 7.1%, transparent), transparent 60%),
+    radial-gradient(ellipse at 10% 85%, color-mix(in srgb, var(--color-content) 4.7%, transparent), transparent 55%);
+  box-shadow: inset 0 0 50px color-mix(in srgb, var(--color-accent) 3.1%, transparent);
 }
 
 /* Rising motes: small thoughts drifting up while the phrase is written. */
@@ -28,7 +28,7 @@
   height: var(--mote-size);
   border-radius: 50%;
   background: var(--opus-clay);
-  box-shadow: 0 0 6px #d9775780;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--color-accent) 50.2%, transparent);
   opacity: 0;
 }
 
@@ -36,7 +36,7 @@
   width: calc(var(--mote-size) * 2.2);
   height: calc(var(--mote-size) * 2.2);
   background: transparent;
-  border: 1px solid #d9775799;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 60%, transparent);
   box-shadow: none;
 }
 
@@ -60,7 +60,7 @@
   height: 100%;
   overflow: visible;
   /* A soft pen edge sweeps left to right, so each line writes itself. */
-  mask-image: linear-gradient(90deg, #000 42%, transparent 58%);
+  mask-image: linear-gradient(90deg, black 42%, transparent 58%);
   mask-size: 250% 100%;
   mask-repeat: no-repeat;
 }
@@ -93,8 +93,8 @@
   border-radius: 50%;
   background: var(--opus-note);
   box-shadow:
-    0 0 6px #d9775799,
-    0 0 14px #d9775740;
+    0 0 6px color-mix(in srgb, var(--color-accent) 60%, transparent),
+    0 0 14px color-mix(in srgb, var(--color-accent) 25.1%, transparent);
   transform: rotate(-22deg);
 }
 
@@ -128,13 +128,13 @@
 }
 
 html.theme-light .opus-welcome {
-  --opus-clay: #bd5d3a;
-  --opus-note: #8a4128;
+  --opus-clay: var(--color-accent);
+  --opus-note: var(--color-accent);
 }
 
 html.theme-light .opus-note-head,
 html.theme-light .opus-mote {
-  box-shadow: 0 0 5px #bd5d3a40;
+  box-shadow: 0 0 5px color-mix(in srgb, var(--color-accent) 25.1%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

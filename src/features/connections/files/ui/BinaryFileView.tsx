@@ -1,3 +1,4 @@
+import { cn } from "../../../../shared/lib/cn";
 import { Button } from "../../../../shared/ui/forms/Button";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient, invalidateAfterChange } from "../../../../shared/lib/queryClient";
@@ -84,7 +85,7 @@ export function BinaryFileView({ path, cwd }: Props) {
           value0: String(basename(path)),
         })}
         detail={state.message}
-        icon={<AlertCircle className="mx-auto mb-3 size-5 text-red-400" />}
+        icon={<AlertCircle className="mx-auto mb-3 size-5 text-danger" />}
         onRetry={reload}
       />
     );
@@ -172,6 +173,15 @@ function ImageView({
       >
         <img
           src={url}
+          role="button"
+          tabIndex={0}
+          aria-label={uiT("Zoom")}
+          onKeyDown={event => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              setZoom(value => value === "fit" ? 1 : "fit");
+            }
+          }}
           alt=""
           draggable={false}
           onLoad={(event) =>
@@ -191,9 +201,9 @@ function ImageView({
               : undefined
           }
           className={
-            zoom === "fit"
+            cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", zoom === "fit"
               ? "max-h-full max-w-full object-contain"
-              : "max-w-none object-contain"
+              : "max-w-none object-contain")
           }
           style={
             zoom === "fit" || !natural
@@ -215,7 +225,7 @@ function ImageView({
             onClick={copyOriginal}
           >
             {copied ? (
-              <Check className="size-3" strokeWidth={2} />
+              <Check className="size-3" />
             ) : (
               <Copy className="size-3" />
             )}

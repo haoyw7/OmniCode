@@ -1,4 +1,5 @@
-import { memo, useMemo, useSyncExternalStore } from "react";
+import { memo, useEffect, useMemo } from "react";
+import { create } from "zustand";
 
 type Props = {
   name: string;
@@ -16,28 +17,14 @@ type IconPack = typeof import("react-material-icon-theme");
  * first paint and hold a same-sized blank until it lands, so the app starts
  * without it and nothing reflows when it arrives.
  */
-let pack: IconPack | null = null;
+const useIconPack = create(() => ({ pack: null as IconPack | null }));
 let loading: Promise<void> | null = null;
-const listeners = new Set<() => void>();
 
 function loadPack() {
-  if (pack || loading) return;
+  if (useIconPack.getState().pack || loading) return;
   loading = import("react-material-icon-theme").then((mod) => {
-    pack = mod;
-    for (const listener of listeners) listener();
+    useIconPack.setState({ pack: mod });
   });
-}
-
-function subscribe(onStoreChange: () => void) {
-  listeners.add(onStoreChange);
-  loadPack();
-  return () => {
-    listeners.delete(onStoreChange);
-  };
-}
-
-function getSnapshot() {
-  return pack;
 }
 
 const MARKDOWN_FILE = /\.(md|markdown)$/i;
@@ -52,7 +39,8 @@ export const FileTypeIcon = memo(function FileTypeIcon({
   isRoot = false,
   size = 16,
 }: Props) {
-  const icons = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const icons = useIconPack(state => state.pack);
+  useEffect(loadPack, []);
 
   // The pack draws Markdown (and README.md) as an info glyph; use the M↓ mark.
   const markdown = !isDir && MARKDOWN_FILE.test(name);

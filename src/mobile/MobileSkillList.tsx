@@ -52,12 +52,12 @@ export function MobileSkillList({
       id={`${id}-${index}`}
       role="option"
       aria-selected={index === active}
-      className="mobile-sheet-row"
+      className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
       onPointerDown={(event) => event.preventDefault()}
       onMouseEnter={() => onActive(index)}
       onClick={() => onPick(skill)}
     >
-      <Sparkles size={20} />
+      <Sparkles />
       <span className="mobile-sheet-row-text">
         <strong>/{skill.invocation}</strong>
         {skill.description && (

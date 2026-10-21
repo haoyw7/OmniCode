@@ -8,7 +8,7 @@ import { SessionAccessNotice } from "../SessionAccessNotice";
 import { QuestionHistoryCard } from "../QuestionHistoryCard";
 import type { QuestionAnswer } from "../../model/userQuestion";
 import { memo, useContext } from "react";
-import { CircleAlert, TriangleAlert } from "lucide-react";
+import { CircleAlert, TriangleAlert } from "../../../../shared/ui/icons";
 import { GeneratedImage } from "../GeneratedImage";
 import { PlanPreview } from "../PlanPreview";
 import { localizeOrchestrationMessage } from "../../../orchestration/ui/orchestrationMessages";

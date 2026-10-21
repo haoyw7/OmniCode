@@ -259,7 +259,7 @@ export function MenuBar({
               onMouseEnter={() => {
                 if (activeMenu && activeMenu !== id) openMenu(id);
               }}
-              className={`rounded px-2 py-0.5 transition-colors ${
+              className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 rounded px-2 py-0.5 transition-colors ${
                 isActive
                   ? "bg-selection-hover text-content"
                   : "text-content/70 hover:bg-content/6 hover:text-content"

@@ -1,7 +1,7 @@
 .rolling-clock {
   display: inline-block;
   flex-shrink: 0;
-  color: color-mix(in srgb, var(--color-content, #fff) 65%, transparent);
+  color: color-mix(in srgb, var(--color-content, var(--color-accent-ink)) 65%, transparent);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   vertical-align: middle;
@@ -48,5 +48,5 @@
 }
 
 .rolling-clock[data-motion="roll"] .rolling-clock-digit {
-  mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(transparent, black 12%, black 88%, transparent);
 }

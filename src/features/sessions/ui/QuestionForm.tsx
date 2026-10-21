@@ -155,7 +155,7 @@ export function QuestionForm({
           noValidate onSubmit={form.handleSubmit(continueCurrent)}
         >
           <div className="flex shrink-0 items-center gap-2 text-content/55">
-            <CircleHelp className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+            <CircleHelp className="size-4 shrink-0" aria-hidden="true" />
             <span className="min-w-0 flex-1 truncate text-[13px]">
               {label}
             </span>
@@ -265,7 +265,6 @@ export function QuestionForm({
         <div className="flex shrink-0 items-center gap-1.5" data-question-header>
           <MessageSquare
             className="size-3.5 shrink-0 text-content/45"
-            strokeWidth={1.75}
           />
           <span
             className="min-w-0 flex-1 truncate text-[11px] text-content/50"
@@ -462,7 +461,7 @@ function QuestionFields({
             maxLength={question.input.maxLength}
             rows={5}
             aria-label={question.prompt}
-            className="mt-1.5 w-full resize-y rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none placeholder:text-content/35 focus:border-content/30"
+            className="mt-1.5 w-full resize-y rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-content/30"
           />
         ) : (
         <Input data-ui="input"
@@ -472,7 +471,7 @@ function QuestionFields({
           placeholder={question.input?.placeholder ?? uiT("Type your answer")}
           maxLength={question.input?.maxLength}
           aria-label={question.prompt}
-          className="mt-1.5 w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none placeholder:text-content/35 focus:border-content/30"
+          className="mt-1.5 w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-content/30"
         />
         )
       ) : (
@@ -504,7 +503,7 @@ function QuestionFields({
                         : "border-content/30")}
                   >
                     {active ? (
-                      <Check className="size-2.5" strokeWidth={2.5} />
+                      <Check className="size-2.5" />
                     ) : null}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -530,7 +529,7 @@ function QuestionFields({
                     aria-invalid={invalid}
                     onChange={(event) => onCustom(event.target.value)}
                     placeholder={uiT("Type your answer")}
-                    className="mt-1 w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none placeholder:text-content/35 focus:border-content/30"
+                    className="mt-1 w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-content/30"
                     onClick={(event) => event.stopPropagation()}
                     onFocus={() => {
                       if (!customSelected) onSelect(customId);
@@ -659,7 +658,7 @@ function DockQuestionFields({
     ? question.input?.placeholder ?? uiT("Type your answer")
     : uiT("Or write your own reply");
   const fieldClass =
-    "min-w-0 flex-1 bg-transparent py-1 text-[14px] leading-5 text-content outline-none placeholder:text-content/40";
+    "min-w-0 flex-1 bg-transparent py-1 text-[14px] leading-5 text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40";
 
   return (
     <>
@@ -729,7 +728,7 @@ function DockQuestionFields({
       <div className="mt-2 flex shrink-0 items-end gap-2">
         {replyField ? (
           <label className="flex min-w-0 flex-1 items-center gap-3 self-center">
-            <Pencil className="size-4 shrink-0 text-content/40" strokeWidth={1.75} aria-hidden="true" />
+            <Pencil className="size-4 shrink-0 text-content/40" aria-hidden="true" />
             {question.input?.kind === "multiline" ? (
               <Textarea variant="editor"
                 value={custom}

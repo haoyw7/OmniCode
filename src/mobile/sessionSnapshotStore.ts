@@ -1,4 +1,5 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
+import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
 import { subscribeWithSelector } from "zustand/middleware";
 import type { HostSession, RemoteProvider } from "../features/connections/model/protocol";
@@ -56,7 +57,7 @@ export function useSessionSnapshot<T>(
       return selected;
     };
   }, [store, select, equal]);
-  return useSyncExternalStore(store.subscribe, get, get);
+  return useStore(store.store, get);
 }
 
 /** Only metadata used by the shell; text, usage and progress belong to leaves. */

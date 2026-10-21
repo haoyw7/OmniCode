@@ -56,13 +56,13 @@ describe("InboxDetail layout", () => {
       item({ state: "closed", stateReason: "completed" }),
     );
     expect(completed.Icon.displayName).toBe("CheckCircle");
-    expect(completed.className).toBe("text-violet-400/90");
+    expect(completed.className).toBe("text-accent/90");
 
     const notPlanned = inboxStatusMark(
       item({ state: "closed", stateReason: "not_planned" }),
     );
     expect(notPlanned.Icon.displayName).toBe("CircleX");
-    expect(notPlanned.className).toBe("text-rose-400/90");
+    expect(notPlanned.className).toBe("text-danger/90");
   });
 
   it("renders a linked item as a standalone, closable side panel", () => {

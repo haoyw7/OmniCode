@@ -994,7 +994,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
           {paneDrag ? (
             <button {...paneDrag} type="button" aria-label={uiT("Drag to reorder pane")} className="cursor-grab rounded text-content/35 hover:text-content focus-visible:outline-2 focus-visible:outline-accent active:cursor-grabbing"
               onPointerDown={undefined} onTouchStart={paneDrag.onTouchStart}>
-              <GripVertical className="size-3.5 shrink-0" strokeWidth={1.75} />
+              <GripVertical className="size-3.5 shrink-0" />
             </button>
           ) : null}
           <span
@@ -1020,7 +1020,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
               onClose(session.id);
             }}
           >
-            <X className="size-3" strokeWidth={1.75} />
+            <X className="size-3" />
           </Button>
         </div>
       ) : null}

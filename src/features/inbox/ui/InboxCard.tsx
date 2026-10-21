@@ -47,7 +47,7 @@ export function inboxStatusMark(item: InboxItem): InboxStatusMark {
     };
   }
   if (label === "Merged") {
-    return { Icon: GitMerge, className: "text-violet-400/90", label };
+    return { Icon: GitMerge, className: "text-accent/90", label };
   }
   if (label === "Closed") {
     if (
@@ -55,17 +55,17 @@ export function inboxStatusMark(item: InboxItem): InboxStatusMark {
       item.kind === "issue" &&
       item.stateReason?.trim().toLowerCase() === "completed"
     ) {
-      return { Icon: CheckCircle, className: "text-violet-400/90", label };
+      return { Icon: CheckCircle, className: "text-accent/90", label };
     }
     return {
       Icon: pr ? GitPullRequestClosed : CircleX,
-      className: "text-rose-400/90",
+      className: "text-danger/90",
       label,
     };
   }
   return {
     Icon: pr ? GitPullRequest : CircleDot,
-    className: "text-emerald-400/90",
+    className: "text-success/90",
     label,
   };
 }

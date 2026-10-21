@@ -164,12 +164,12 @@ const BotMessageRow = memo(function BotMessageRow({
         >
           {mobile && message.kind === "assistant" && (
             <span className="assistant-swipe-reply" aria-hidden="true">
-              <CornerDownRight size={20} />
+              <CornerDownRight />
             </span>
           )}
           {reply && (
             <div className="assistant-message-reply-context" aria-label={t("Replying to")}>
-              <CornerDownRight size={15} aria-hidden="true" />
+              <CornerDownRight aria-hidden="true" />
               <span title={reply.quote}>{reply.quote}</span>
             </div>
           )}

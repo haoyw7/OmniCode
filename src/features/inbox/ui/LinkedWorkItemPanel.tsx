@@ -160,7 +160,7 @@ export function LinkedWorkItemPanel({
               />
             ) : error ? (
               <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
-                <CircleX className="size-5 text-rose-400/90" />
+                <CircleX className="size-5 text-danger/90" />
                 <p role="alert" className="max-w-sm text-[12px] text-content/55">
                   {error}
                 </p>

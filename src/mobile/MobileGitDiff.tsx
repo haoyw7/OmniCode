@@ -185,7 +185,7 @@ function MobileDiffContext({ lines, path, wrap }: {
     lines.reduce((total, line) => total + line.text.length + 1, 0) > 180_000;
   return (
     <div className="mobile-diff-context">
-      <button type="button" className="mobile-diff-context-toggle"
+      <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-diff-context-toggle"
         aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
         {t("{count} unmodified lines", { count: lines.length })}
         {" · "}{t(expanded ? "Collapse" : "Expand all")}

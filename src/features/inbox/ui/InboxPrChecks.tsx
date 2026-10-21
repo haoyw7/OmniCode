@@ -60,16 +60,16 @@ function overallMark(overall: GithubPrChecksOverall): {
     case "loading":
       return { Icon: LoaderCircle, className: "animate-spin text-content/45" };
     case "error":
-      return { Icon: AlertCircle, className: "text-rose-400/90" };
+      return { Icon: AlertCircle, className: "text-danger/90" };
     case "fail":
-      return { Icon: CircleX, className: "text-rose-400/90" };
+      return { Icon: CircleX, className: "text-danger/90" };
     case "pending":
       return {
         Icon: LoaderCircle,
-        className: "animate-spin text-amber-400/70",
+        className: "animate-spin text-warning/70",
       };
     case "pass":
-      return { Icon: CheckCircle, className: "text-emerald-400/90" };
+      return { Icon: CheckCircle, className: "text-success/90" };
     case "neutral":
       return { Icon: CircleDashed, className: "text-content/45" };
   }
@@ -81,9 +81,9 @@ function checkMark(state: GithubPrCheckState): {
 } {
   switch (state) {
     case "pass":
-      return { Icon: CheckCircle, className: "text-emerald-400/90" };
+      return { Icon: CheckCircle, className: "text-success/90" };
     case "fail":
-      return { Icon: CircleX, className: "text-rose-400/90" };
+      return { Icon: CircleX, className: "text-danger/90" };
     case "pending":
       return { Icon: LoaderCircle, className: "animate-spin text-content/55" };
     case "cancel":
@@ -293,7 +293,7 @@ function PrCheckRow({
     <li
       ref={rowRef}
       tabIndex={-1}
-      className={cn("min-w-0 rounded-xl outline-none", expanded ? "bg-content/[0.02]" : "")}
+      className={cn("min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring", expanded ? "bg-content/[0.02]" : "")}
     >
       <div className="group/check flex min-w-0 items-center gap-2 rounded-xl px-2 py-2 hover:bg-content/[0.02] @max-[420px]/checks:gap-1">
         {expandable ? (
@@ -451,7 +451,7 @@ function PrCheckRow({
                       return (
                         <li
                           key={index}
-                          className={cn("flex items-center gap-2 rounded px-2 py-1", step.state === "fail" ? "bg-rose-400/5" : "")}
+                          className={cn("flex items-center gap-2 rounded px-2 py-1", step.state === "fail" ? "bg-danger/5" : "")}
                         >
                           <stepMark.Icon
                             className={cn("size-4 shrink-0", stepMark.className)}

@@ -1,4 +1,5 @@
 import { errorMessage } from "../../../shared/lib/errorMessage";
+import { VirtualRows } from "../../../shared/ui/VirtualRows";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { projectSearchQuery, sessionSearchQuery } from "../model/searchQueries";
@@ -324,7 +325,7 @@ export function SearchView({
         {empty ? (
           <EmptyState />
         ) : error && hits.length === 0 ? (
-          <p className="px-2 py-1.5 text-[12px] text-red-400">{error}</p>
+          <p className="px-2 py-1.5 text-[12px] text-danger">{error}</p>
         ) : noResults ? (
           <>
             <p className="px-2 py-1.5 text-[12px] text-content/50">
@@ -413,7 +414,7 @@ function ResultList({
       return;
     }
     pointer.current.allow = false;
-    activeRef.current?.scrollIntoView({ block: "nearest" });
+    if (hits.length <= 80) activeRef.current?.scrollIntoView({ block: "nearest" });
   }, [active]);
 
   const onListMouseMove = (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -438,7 +439,7 @@ function ResultList({
       aria-label={uiT("Search results")}
       onMouseMove={onListMouseMove}
     >
-      {hits.map((hit, index) => {
+      <VirtualRows items={hits} getKey={hit => hit.id} activeIndex={active} scrollToActive={!fromPointer.current}>{(hit, index) => {
         const highlighted = index === active;
         const row = rowCopy(hit, query);
         return (
@@ -466,7 +467,7 @@ function ResultList({
             ) : null}
           </Button>
         );
-      })}
+      }}</VirtualRows>
     </div>
   );
 }

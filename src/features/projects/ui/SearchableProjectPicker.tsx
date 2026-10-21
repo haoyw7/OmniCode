@@ -320,7 +320,7 @@ export function SearchableProjectPicker({
                 setActive(0);
               }}
               placeholder={uiT("Search projects...")}
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
             />
           </label>
           <div
@@ -342,7 +342,7 @@ export function SearchableProjectPicker({
                     >
                       <span className="grid size-4 shrink-0 place-items-center">
                         {!inProject ? (
-                          <Check className="size-3.5" strokeWidth={2} />
+                          <Check className="size-3.5" />
                         ) : null}
                       </span>
                       <span>{uiT("All projects")}</span>
@@ -390,7 +390,7 @@ export function SearchableProjectPicker({
                   >
                     <span className="grid size-4 shrink-0 place-items-center">
                       {current ? (
-                        <Check className="size-3.5" strokeWidth={2} />
+                        <Check className="size-3.5" />
                       ) : itemLogo ? (
                         <ProjectLogoIcon
                           path={itemLogo}

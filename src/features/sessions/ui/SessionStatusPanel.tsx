@@ -377,7 +377,7 @@ function RailCards({
                 {agent.state === "pending" ? (
                   <TerminalSpinner className="grid size-4 shrink-0 place-items-center text-[11px] leading-none select-none" />
                 ) : agent.state === "rejected" ? (
-                  <CircleAlert className="text-red-400" />
+                  <CircleAlert className="text-danger" />
                 ) : (
                   <Check />
                 )}
@@ -479,9 +479,9 @@ function UsageRemaining({ limits }: { limits?: ProviderRateLimits }) {
   const window = shortest ? formatWindowLabel(shortest.windowMinutes) : null;
   const loading = limits?.status === "idle" || limits?.status === "fetching";
   const tone = remaining !== null && remaining <= 0
-    ? "text-red-400"
+    ? "text-danger"
     : remaining !== null && remaining <= LOW_HEADROOM_PERCENT
-      ? "text-amber-500"
+      ? "text-warning"
       : "text-content/55";
   return (
     <span
@@ -554,7 +554,7 @@ function EnvironmentRows({ cwd, branch }: { cwd: string; branch?: string }) {
 /** Usage level: blue while there is room, then the context ring's amber and red warnings. */
 function ContextBar({ percent }: { percent: number }) {
   const tone =
-    percent >= 90 ? "bg-red-400" : percent >= 75 ? "bg-amber-400" : "bg-blue-500";
+    percent >= 90 ? "bg-danger" : percent >= 75 ? "bg-warning" : "bg-accent";
   return (
     <span aria-hidden="true" className="relative h-1.5 w-7 overflow-hidden rounded-full bg-content/12">
       <span className={cn("absolute inset-y-0 left-0 rounded-full", tone)} style={{ width: `${percent}%` }} />
@@ -565,8 +565,8 @@ function ContextBar({ percent }: { percent: number }) {
 function DiffCounts({ additions, deletions }: { additions: number; deletions: number }) {
   return (
     <span className="inline-flex min-w-0 flex-1 items-baseline gap-2 font-mono text-[12px] font-medium tabular-nums">
-      <span className="text-emerald-500">+{additions.toLocaleString()}</span>
-      <span className="text-rose-500">−{deletions.toLocaleString()}</span>
+      <span className="text-success">+{additions.toLocaleString()}</span>
+      <span className="text-danger">−{deletions.toLocaleString()}</span>
     </span>
   );
 }

@@ -74,7 +74,7 @@ export function useSidebarListPreview(
             ),
           });
         }}
-        className={`flex min-h-8 w-full shrink-0 items-center justify-start rounded-md ${indented ? "pl-8" : "pl-2"} pr-2 text-[12px] text-content/45 hover:bg-content/3 hover:text-content`}
+        className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 flex min-h-8 w-full shrink-0 items-center justify-start rounded-md ${indented ? "pl-8" : "pl-2"} pr-2 text-[12px] text-content/45 hover:bg-content/3 hover:text-content`}
       >
         {t(hasMore ? "Show more items" : "Show less")}
       </button>

@@ -9,7 +9,6 @@ import {
   FolderOpen,
   FolderTree,
   ImagePlus,
-  IconArtworkContext,
   Pin,
   PinOff,
   Settings,
@@ -80,7 +79,6 @@ import { useProjectNotificationPreferences } from "../../features/notifications/
 import { useNotificationProjects } from "../../features/notifications/hooks/useNotificationProjects";
 import { updateNotificationPreferences } from "../../features/notifications/model/notificationPreferences";
 import type { ExplorerMenuItem } from "../../features/connections/files/ui/ExplorerMenu";
-import { desktopProjectMenuIconArtwork } from "../desktopIconArtwork";
 
 const REVEAL_LABEL = IS_MAC
   ? "Reveal in Finder"
@@ -410,7 +408,7 @@ export function useProjectMenu({
     const colors = loadTabGroupColors();
     const customColors = loadTabGroupCustomColors();
     return (
-      <IconArtworkContext.Provider value={desktopProjectMenuIconArtwork}>
+      <>
         <TabGroupMenu
           x={projectMenu.x}
           y={projectMenu.y}
@@ -470,14 +468,14 @@ export function useProjectMenu({
           )}
           footer={
             menuError ? (
-              <p role="alert" className="px-2 py-1 text-xs text-red-400">
+              <p role="alert" className="px-2 py-1 text-xs text-danger">
                 {menuError}
               </p>
             ) : null
           }
           onExtraPick={onPick}
         />
-      </IconArtworkContext.Provider>
+      </>
     );
   };
 

@@ -176,11 +176,11 @@ export function MobileToolSheet({
           <h3>{t(title)}</h3>
           <button
             type="button"
-            className="mobile-detail-copy"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-detail-copy"
             aria-label={t(copied === key ? "Copied" : "Copy")}
             onClick={() => copy(key, text)}
           >
-            {copied === key ? <Check size={16} /> : <Copy size={16} />}
+            {copied === key ? <Check /> : <Copy />}
           </button>
         </div>
         {notice}
@@ -209,7 +209,7 @@ export function MobileToolSheet({
               <div className="mobile-git-file-entry">
                 <button
                   type="button"
-                  className="mobile-git-file-row"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-git-file-row"
                   aria-expanded={diffExpanded}
                   aria-busy={diffExpanded && !diffReady || undefined}
                   aria-controls={diffId}
@@ -254,7 +254,7 @@ export function MobileToolSheet({
             className="mobile-detail-action"
             onClick={() => onOpenFile(path)}
           >
-            <FileIcon size={16} />
+            <FileIcon />
             {t("View file")}
           </Button>
         ) : null}
@@ -269,7 +269,7 @@ export function MobileToolSheet({
       aria-pressed={wrap}
       onClick={() => setWrap((value) => !value)}
     >
-      <WrapText size={24} />
+      <WrapText />
     </IconButton>
   ) : undefined };
   if (embedded) return (

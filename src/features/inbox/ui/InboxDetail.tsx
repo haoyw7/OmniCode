@@ -232,9 +232,9 @@ export function InboxDetail({
   const reviewLabel = githubReviewDecisionLabel(reviewDecision);
   const reviewClass =
     reviewDecision.toUpperCase() === "APPROVED"
-      ? "text-emerald-400/90"
+      ? "text-success/90"
       : reviewDecision.toUpperCase() === "CHANGES_REQUESTED"
-        ? "text-rose-400/90"
+        ? "text-danger/90"
         : "text-content/50";
   const baseRef =
     details?.baseRefName?.trim() || thread?.baseRefName?.trim() || "";
@@ -528,7 +528,7 @@ export function InboxDetail({
                 )}
               </div>
               {startError ? (
-                <p className="text-[12px] text-red-400/90">{startError}</p>
+                <p className="text-[12px] text-danger/90">{startError}</p>
               ) : null}
             </header>
             {isPr ? (

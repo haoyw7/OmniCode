@@ -293,7 +293,7 @@ function useMobileHomeController({
       <span className="mobile-home-project-activity">
         {state === "input" && (
           <span className="mobile-home-project-state" role="img" aria-label={t("Needs input")}>
-            <TriangleAlert size={16} aria-hidden="true" />
+            <TriangleAlert aria-hidden="true" />
           </span>
         )}
         {running && (
@@ -322,7 +322,7 @@ function useMobileHomeController({
         data-compact={overview ? true : undefined}
         onClick={onClick}
       >
-        <Folder size={24} />
+        <Folder />
         <span>
           <strong>{item.name}</strong>
           {!overview && <small>{item.machine?.kind === "wsl" ? `WSL · ${item.machine.distribution} · ${item.cwd}` : item.cwd}</small>}
@@ -343,7 +343,7 @@ function useMobileHomeController({
       data-compact={overview || undefined}
       onClick={onChats}
     >
-      <MessageSquare size={24} />
+      <MessageSquare />
       <span>
         <strong>{t("Chats")}</strong>
       </span>
@@ -476,10 +476,10 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
         )}
         {root && !needle && !hasProjects && !projectsPending && !projectsUnavailable && (
           <section className="mobile-home-projects" aria-label={t("Projects")}>
-            <MobileEmpty icon={<Folder size={40} />} title={t("Projects")}
+            <MobileEmpty icon={<Folder />} title={t("Projects")}
               action={<Button variant="secondary" type="button" className="mobile-home-add"
                 onClick={(event) => onAddProject(event.currentTarget)}>
-                <FolderPlus size={16} />{t("Open project")}
+                <FolderPlus />{t("Open project")}
               </Button>}>
               {t("Choose a project")}
             </MobileEmpty>
@@ -492,7 +492,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
             ) : <>{onChats && !needle && chatsRow(false)}<MobileListPreview key={needle} stateKey={needle ? undefined : "projects"} initialLimit={50} items={matchingProjects} renderItem={(item) =>
               projectRow(item, histories[item.id]?.sessions ?? [], () => onProject(item))} /></>}
             {!matchingProjects.length && !projectsPending && !projectsUnavailable && !projectsLoading && (
-              <MobileEmpty icon={needle ? <Search size={40} /> : <Folder size={40} />}
+              <MobileEmpty icon={needle ? <Search /> : <Folder />}
                 title={t(needle ? "No matching projects" : "Projects")}>
                 {!needle && t("Choose a project")}
               </MobileEmpty>
@@ -502,7 +502,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
         {overview && !!overviewProjects.length && (
           <section className="mobile-home-overview-projects" aria-label={t("Projects")}>
             <h2 className="mobile-home-section-head">
-              <button type="button" className="mobile-home-section-toggle" aria-expanded={projectsOpen}
+              <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-section-toggle" aria-expanded={projectsOpen}
                 onClick={() => setProjectsOpen((open) => !open)}>
                 <span>{t("Projects")}</span>
                 {projectActivity(sessions, true)}
@@ -518,7 +518,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
         {overview && !!pinned.length && (
           <section className="mobile-home-pinned" aria-label={t("Pinned")}>
             <h2 className="mobile-home-section-head">
-              <button type="button" className="mobile-home-section-toggle" aria-expanded={pinnedOpen}
+              <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-section-toggle" aria-expanded={pinnedOpen}
                 onClick={() => setPinnedOpen((open) => !open)}>
                 <span>{t("Pinned")}</span>
                 <MotionChevronDown size={16} aria-hidden="true" animate={{ rotate: pinnedOpen ? 0 : -motionGeometry.disclosureAngle }} transition={panelTransition} />
@@ -536,13 +536,13 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
               <button
                 ref={filterTrigger}
                 type="button"
-                className="mobile-home-filter"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-filter"
                 aria-haspopup="dialog"
                 aria-expanded={filterOpen}
                 onClick={() => setFilterOpen((open) => !open)}
               >
                 <span>{t(MOBILE_SESSION_FILTER_LABELS[filter])}</span>
-                <ChevronDown size={16} aria-hidden="true" />
+                <ChevronDown aria-hidden="true" />
               </button>
             </div>
           )}
@@ -551,7 +551,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
             <MobileListSkeleton kind="sessions" label={t("Loading conversations…")} />
           )}
           {!ordered.length && !loading && !failed.length && !projectsPending && !projectsUnavailable && (
-            <MobileEmpty icon={needle ? <Search size={40} /> : <MessageSquarePlus size={40} />}
+            <MobileEmpty icon={needle ? <Search /> : <MessageSquarePlus />}
               title={needle || activeFilter !== "all"
                 ? t("No matching conversations")
                 : t("No conversations yet")} />
@@ -564,7 +564,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
               </span>
               <button
                 type="button"
-                onClick={() => refresh()}
+                onClick={() => refresh()} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
               >
                 {t("Retry")}
               </button>
@@ -589,7 +589,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
               <button
                 key={option}
                 type="button"
-                className="mobile-sheet-row"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                 data-separated={option === "archived" || undefined}
                 role="menuitemradio"
                 aria-checked={filter === option}
@@ -600,7 +600,7 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
               >
                 <Icon size={20} />
                 <span className="flex-1">{t(MOBILE_SESSION_FILTER_LABELS[option])}</span>
-                {filter === option && <Check size={20} />}
+                {filter === option && <Check />}
               </button>
             );
           })}
@@ -610,11 +610,11 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
         <div className="mobile-home-dock">
           <button
             type="button"
-            className="mobile-home-new mobile-home-open-project"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-new mobile-home-open-project"
             aria-haspopup="dialog"
             onClick={(event) => onAddProject(event.currentTarget)}
           >
-            <FolderPlus size={24} />
+            <FolderPlus />
             <span>{t("Open project")}</span>
           </button>
         </div>
@@ -625,22 +625,22 @@ function MobileHomeView({ vm }: { vm: MobileHomeViewModel }) {
             onNewChat && (
               <button
                 type="button"
-                className="mobile-home-new"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-new"
                 aria-label={t("New chat")}
                 onClick={onNewChat}
               >
-                <MessageSquarePlus size={24} />
+                <MessageSquarePlus />
                 <span>{t("Projectless chat")}</span>
               </button>
             )
           ) : (
             <button
               type="button"
-              className="mobile-home-new"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-home-new"
               aria-label={t("New conversation")}
               onClick={onNewSession}
             >
-              {project ? <MessageSquarePlus size={24} /> : <Plus size={24} />}
+              {project ? <MessageSquarePlus /> : <Plus />}
               <span>{t(project ? "Chat" : "New conversation")}</span>
             </button>
           )}

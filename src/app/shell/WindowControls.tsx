@@ -77,7 +77,7 @@ export function WindowControls() {
         aria-label={uiT("Minimize window")}
         data-tauri-drag-region="false"
         onClick={handleMinimize}
-        className="grid size-7 place-items-center rounded-lg text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-content"
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 grid size-7 place-items-center rounded-lg text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-content"
       >
         <Minus className="size-3.5" />
       </button>
@@ -89,7 +89,7 @@ export function WindowControls() {
         }
         data-tauri-drag-region="false"
         onClick={handleToggleMaximize}
-        className="grid size-7 place-items-center rounded-lg text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-content"
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 grid size-7 place-items-center rounded-lg text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-content"
       >
         {isMaximized ? (
           <Copy className="size-3" />
@@ -103,7 +103,7 @@ export function WindowControls() {
         aria-label={uiT("Close window")}
         data-tauri-drag-region="false"
         onClick={handleClose}
-        className="grid size-7 place-items-center rounded-lg text-foreground-subtle transition-colors hover:bg-red-600 hover:text-white"
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 grid size-7 place-items-center rounded-lg text-foreground-subtle transition-colors hover:bg-danger hover:text-white"
       >
         <X className="size-3.5" />
       </button>

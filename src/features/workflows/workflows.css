@@ -345,12 +345,12 @@
 }
 .wf-ws-peek {
   -webkit-mask-image:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.35), #000 40%),
-    linear-gradient(90deg, #000 82%, transparent);
+    linear-gradient(180deg, rgba(0, 0, 0, 0.35), black 40%),
+    linear-gradient(90deg, black 82%, transparent);
   -webkit-mask-composite: source-in;
   mask-image:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.35), #000 40%),
-    linear-gradient(90deg, #000 82%, transparent);
+    linear-gradient(180deg, rgba(0, 0, 0, 0.35), black 40%),
+    linear-gradient(90deg, black 82%, transparent);
   mask-composite: intersect;
 }
 .wf-ws-rule {
@@ -392,8 +392,8 @@
   min-width: 20px;
   min-height: 20px;
   flex-shrink: 0;
-  --wf-face-body: #54b9a6;
-  --wf-face-eye: #ffffff;
+  --wf-face-body: var(--color-accent);
+  --wf-face-eye: var(--color-accent-ink);
   --wf-face-x: 0px;
   --wf-face-y: 0px;
 }

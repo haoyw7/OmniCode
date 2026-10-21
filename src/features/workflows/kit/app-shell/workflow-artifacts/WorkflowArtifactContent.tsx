@@ -55,7 +55,7 @@ export function WorkflowArtifactContent({ artifact, sessionId, runId, storedLoca
       <div className="flex flex-wrap items-center gap-2">
         {bytes.objectUrl && (
           <Button asChild variant="secondary" size="sm">
-            <a href={bytes.objectUrl} download={artifact.sourcePath?.split(/[\\/]/).pop() || artifact.title || artifact.id}>{t("Save as…")}</a>
+            <a href={bytes.objectUrl} download={artifact.sourcePath?.split(/[\\/]/).pop() || artifact.title || artifact.id} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70">{t("Save as…")}</a>
           </Button>
         )}
         {storedLocally && bytes.storedPath && onRevealStoredFile && (

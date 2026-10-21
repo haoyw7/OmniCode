@@ -61,7 +61,7 @@ export const MobileSessionContextRing = memo(function MobileSessionContextRing({
   const select = useCallback((snapshot: HostSession | undefined) => loading
     ? null : contextRatio(mobileContextUsage(snapshot?.session, catalog)), [catalog, loading]);
   const ratio = useSessionSnapshot(store, select);
-  return ratio === null ? <Computer size={24} /> : <MeterRing ratio={ratio} size={20} stroke={2.25} />;
+  return ratio === null ? <Computer /> : <MeterRing ratio={ratio} size={20} stroke={2.25} />;
 });
 
 export function MobileSnapshotActions({ store, currentSession, ...props }: Omit<

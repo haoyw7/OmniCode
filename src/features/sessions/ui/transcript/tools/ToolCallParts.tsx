@@ -51,7 +51,7 @@ export function ToolKindIcon({
     <Icon
       aria-hidden="true"
       strokeWidth={1.75}
-      className={cn("size-3.5 shrink-0", state === "rejected" ? "text-red-400" : "text-content/45", live && state === "pending" ? "zen-thinking-pulse" : "")}
+      className={cn("size-3.5 shrink-0", state === "rejected" ? "text-danger" : "text-content/45", live && state === "pending" ? "zen-thinking-pulse" : "")}
     />
   );
 }
@@ -59,7 +59,7 @@ export function ToolKindIcon({
 /** Failure stays marked. Running and success do not get a trailing icon. */
 export function ToolCallStatusIcon({ state }: { state: ToolCallState }) {
   if (state === "rejected") {
-    return <X className="size-3.5 shrink-0 text-red-400" strokeWidth={2} />;
+    return <X className="size-3.5 shrink-0 text-danger" />;
   }
   return null;
 }
@@ -88,7 +88,7 @@ export function ToolOpenRow({
       tabIndex={0}
       aria-label={uiT("Show tool details: {value0}", { value0: label })}
       data-tool-open-row=""
-      className={cn("group", className, "cursor-pointer")}
+      className={cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", cn("group", className, "cursor-pointer"))}
       onClick={() => onOpen(block)}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
@@ -129,7 +129,7 @@ export function ToolCallSummary({
   if (!action || !target) {
     return (
       <span
-        className={cn("min-w-0 flex-1 truncate font-mono text-ui-caption", failed ? "text-red-400" : chip ? "text-content/65" : "text-content/80")}
+        className={cn("min-w-0 flex-1 truncate font-mono text-ui-caption", failed ? "text-danger" : chip ? "text-content/65" : "text-content/80")}
         title={label}
       >
         {label}
@@ -141,9 +141,9 @@ export function ToolCallSummary({
       ? (onOpenDiff ?? onOpenFile)
       : onOpenFile;
   const canOpen = interactive && !!openFile && !!filePath;
-  const actionTone = failed ? "text-red-400" : "text-foreground-subtlest";
+  const actionTone = failed ? "text-danger" : "text-foreground-subtlest";
   const targetTone = failed
-    ? "text-red-400"
+    ? "text-danger"
     : chip
       ? "text-content/70"
       : "text-content/85";
@@ -158,7 +158,7 @@ export function ToolCallSummary({
           <Button variant="ghost" size="content"
             type="button"
             aria-label={uiT("Open {value0}", { value0: String(target) })}
-            className={cn("-my-px flex min-w-0 cursor-pointer items-center gap-1 rounded px-1 py-px leading-[1.2] text-left hover:text-sky-300 justify-start", chip
+            className={cn("-my-px flex min-w-0 cursor-pointer items-center gap-1 rounded px-1 py-px leading-[1.2] text-left hover:text-accent justify-start", chip
                 ? cn("max-w-full bg-content/6 hover:bg-content/10", targetTone)
                 : cn("flex-1 hover:underline", targetTone))}
             title={target}

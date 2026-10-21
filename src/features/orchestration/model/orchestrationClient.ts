@@ -1,4 +1,5 @@
 import type { Session } from "../../sessions/model/session";
+import { createStore } from "zustand/vanilla";
 import type {
   HostOrchestrationView,
   HostSession,
@@ -44,15 +45,12 @@ export class OrchestrationClient {
     }
   >();
   private shells = new Map<string, string>();
-  private listeners = new Set<() => void>();
   private runs: OrchestrationReadRun[] = [];
+  readonly state = createStore(() => ({ runs: [] as OrchestrationReadRun[] }));
   subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
+    return this.state.subscribe(listener);
   };
-  snapshot = () => this.runs;
+  snapshot = () => this.state.getState().runs;
 
   bindShell(source: OrchestrationSource, hostId: string, shellId: string) {
     const key = keyFor(source, hostId);
@@ -194,7 +192,7 @@ export class OrchestrationClient {
         })),
       };
     });
-    for (const listener of this.listeners) listener();
+    this.state.setState({ runs: this.runs });
   }
 }
 

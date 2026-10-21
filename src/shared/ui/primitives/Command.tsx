@@ -85,7 +85,7 @@ function CommandInput({
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          "min-w-0 flex-1 bg-transparent text-ui-base text-content outline-none placeholder:text-content/40 disabled:opacity-50",
+          "min-w-0 flex-1 bg-transparent text-ui-base text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40 disabled:opacity-50",
           className,
         )}
         {...props}
@@ -126,7 +126,7 @@ function CommandList({
       }}
       data-slot="command-list"
       className={cn(
-        "min-h-0 overflow-x-hidden overflow-y-auto overscroll-none outline-none",
+        "min-h-0 overflow-x-hidden overflow-y-auto overscroll-none outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}
       {...props}

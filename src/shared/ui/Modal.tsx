@@ -130,7 +130,7 @@ function PanelContent({
             }
           }}
           className={cn(
-            "modal-frame relative isolate flex flex-col overflow-hidden rounded-2xl border border-stroke shadow-md outline-none",
+            "modal-frame relative isolate flex flex-col overflow-hidden rounded-2xl border border-stroke shadow-md outline-none focus-visible:ring-2 focus-visible:ring-ring",
             fitViewport && "max-h-[calc(100dvh-32px)]",
             className,
           )}

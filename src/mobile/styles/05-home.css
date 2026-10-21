@@ -243,7 +243,7 @@
   border: 1px solid var(--color-stroke);
   border-radius: 30px;
   background: var(--mobile-card);
-  box-shadow: 0 6px 26px #0002;
+  box-shadow: 0 6px 26px color-mix(in srgb, var(--color-shadow) 13.3%, transparent);
   color: var(--color-m-ink);
   text-align: left;
 }

@@ -909,7 +909,7 @@ export function BotChat({
           </p>
         ) : supported === undefined || assistant === undefined ? (
           <div className="assistant-availability assistant-loading" role="status">
-            <Loader2 className="assistant-loading-spinner" size={22} aria-hidden="true" />
+            <Loader2 className="assistant-loading-spinner" aria-hidden="true" />
             <span>{t(supported ? "Loading messages…" : "Connecting…")}</span>
           </div>
         ) : (
@@ -1021,7 +1021,7 @@ export function BotChat({
                 {botsLayout && heading}
                 <Controls {...controls} />
                 {botsLayout && <AnimatedCollapse expanded={awayFromBottom && newMessages.length > 0} className="desktop-bots-new-messages">
-                  <div><Button variant="ghost" size="content" type="button" onClick={jumpToLatest}><ArrowUp size={14} />{t("{count} new messages", { count: retainedNewCount.current })}</Button><Button variant="ghost" size="content" type="button" aria-label={t("Dismiss")} onClick={() => setReadThrough(latestRevision)}><X size={13} /></Button></div>
+                  <div><Button variant="ghost" size="content" type="button" onClick={jumpToLatest}><ArrowUp />{t("{count} new messages", { count: retainedNewCount.current })}</Button><Button variant="ghost" size="content" type="button" aria-label={t("Dismiss")} onClick={() => setReadThrough(latestRevision)}><X /></Button></div>
                 </AnimatedCollapse>}
                 <div
                   ref={log}
@@ -1067,7 +1067,7 @@ export function BotChat({
                   {!messages.length && (
                     <div className="assistant-welcome mobile-assistant-welcome">
                       <span aria-hidden="true">
-                        <Sparkles size={28} />
+                        <Sparkles />
                       </span>
                       <h2>{t("How can I help?")}</h2>
                       <p>
@@ -1085,7 +1085,6 @@ export function BotChat({
                     >
                       <Loader2
                         className="assistant-loading-spinner"
-                        size={16}
                         aria-hidden="true"
                       />
                       <span>{t("Loading earlier messages…")}</span>

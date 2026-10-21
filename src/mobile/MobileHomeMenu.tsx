@@ -55,14 +55,14 @@ export function MobileHomeMenu({
         {orderedProjects.map((project) => (
           <button
             type="button"
-            className="mobile-sheet-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
             key={project.id}
             onClick={() => {
               onClose();
               onProject(project);
             }}
           >
-            <Folder size={20} />
+            <Folder />
             <span className="mobile-sheet-row-text">
               <strong>{project.name}</strong>
               <small>{project.machine?.kind === "wsl" ? `WSL · ${project.machine.distribution} · ${project.cwd}` : project.cwd}</small>

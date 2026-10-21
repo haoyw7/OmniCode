@@ -342,7 +342,7 @@ export function UsageProviderChip({
           ) : null}
 
           {limits.status === "error" && windows.length > 0 ? (
-            <p className="mb-2 rounded-lg bg-amber-400/10 px-2.5 py-2 text-[10px] leading-4 text-amber-700 dark:text-amber-300">
+            <p className="mb-2 rounded-lg bg-warning/10 px-2.5 py-2 text-[10px] leading-4 text-warning dark:text-warning">
               {uiT("Couldn’t refresh. Showing the last available snapshot.")}
             </p>
           ) : null}
@@ -617,7 +617,6 @@ function ProviderAccountPicker({
               {selected ? (
                 <Check
                   className="size-3.5 shrink-0 text-accent"
-                  strokeWidth={1.9}
                   aria-hidden
                 />
               ) : null}
@@ -666,11 +665,11 @@ function SwitchSuggestion({
     <section
       data-usage-switch-suggestion
       className={cn("mb-2.5 flex items-center gap-2 rounded-lg px-2.5 py-1.5 ring-1 ring-inset", exhausted
-          ? "bg-red-500/[0.07] ring-red-500/15"
-          : "bg-amber-400/10 ring-amber-400/20")}
+          ? "bg-danger/[0.07] ring-danger/15"
+          : "bg-warning/10 ring-warning/20")}
     >
       <span
-        className={cn("size-1.5 shrink-0 rounded-full", exhausted ? "bg-red-500" : "bg-amber-500")}
+        className={cn("size-1.5 shrink-0 rounded-full", exhausted ? "bg-danger" : "bg-warning")}
         aria-hidden
       />
       <p className="flex min-w-0 flex-1 items-center gap-1.5 text-[11px] leading-4">
@@ -756,7 +755,7 @@ function AddProviderAccount({
           aria-invalid={!!form.formState.errors.label}
           disabled={running}
           placeholder={uiT("Work or Personal")}
-          className="mt-1.5 h-8 w-full rounded-lg border border-content/10 bg-content/[0.04] px-2.5 text-[11px] text-content outline-none placeholder:text-content/25 focus:border-input-border-hover disabled:opacity-55"
+          className="mt-1.5 h-8 w-full rounded-lg border border-content/10 bg-content/[0.04] px-2.5 text-[11px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/25 focus:border-input-border-hover disabled:opacity-55"
         />
       </label>
       <Button variant="primary" size="content"
@@ -771,7 +770,7 @@ function AddProviderAccount({
       </Button>
       <FieldError errors={[form.formState.errors.label]} />
       {error ? (
-        <p className="mt-2 text-[10px] leading-4 text-red-500" role="status">
+        <p className="mt-2 text-[10px] leading-4 text-danger" role="status">
           {error}
         </p>
       ) : null}
@@ -1150,7 +1149,7 @@ function BankedResetRow({
         ) : isResetOutcome(action) || action === "error" ? (
           <span
             className={cn("shrink-0 text-[10px]", action === "reset"
-                ? "text-emerald-700 dark:text-emerald-300"
+                ? "text-success dark:text-success"
                 : "text-content/50")}
             role="status"
           >

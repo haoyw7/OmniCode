@@ -130,7 +130,7 @@ function CheckAnnotation({
           {excerpt.map((line, index) => (
             <div
               key={index}
-              className={cn("flex min-w-max gap-4 border-l-2 pr-3", firstLine + index === annotation.line ? "border-rose-400/40 bg-rose-400/[0.06] text-content/85" : "border-transparent text-content/45")}
+              className={cn("flex min-w-max gap-4 border-l-2 pr-3", firstLine + index === annotation.line ? "border-danger/40 bg-danger/[0.06] text-content/85" : "border-transparent text-content/45")}
             >
               <span className="w-8 shrink-0 select-none text-right tabular-nums text-content/30">
                 {firstLine + index}
@@ -144,7 +144,7 @@ function CheckAnnotation({
         className={cn("flex min-w-0 items-start gap-2 px-3 py-3", excerpt.length ? "border-t border-stroke" : "")}
       >
         <Mark
-          className={cn("mt-0.5 size-3 shrink-0", annotation.level === "failure" ? "text-rose-400/70" : "text-amber-400/70")}
+          className={cn("mt-0.5 size-3 shrink-0", annotation.level === "failure" ? "text-danger/70" : "text-warning/70")}
         />
         <div className="min-w-0 flex-1">
           <p className="max-h-32 overflow-auto whitespace-pre-wrap break-words text-[12px] text-content/75">

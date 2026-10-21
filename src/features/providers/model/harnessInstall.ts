@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { create } from "zustand";
 import {
   isHarnessAvailable,
   probeHarnessAvailability,
@@ -25,13 +25,11 @@ type InstallState =
   | { status: "failed"; action: "install" | "uninstall"; error: string };
 
 const idle: InstallState = { status: "idle" };
-let states: Partial<Record<HarnessId, InstallState>> = {};
-const listeners = new Set<() => void>();
+const useInstallStates = create<Partial<Record<HarnessId, InstallState>>>(() => ({}));
 let pending: Promise<void> | undefined;
 
 function setState(harness: HarnessId, state: InstallState): void {
-  states = { ...states, [harness]: state };
-  for (const listener of listeners) listener();
+  useInstallStates.setState({ [harness]: state });
 }
 
 export function harnessInstallUnavailableReason(harness: HarnessId): string | null {
@@ -46,15 +44,9 @@ export function harnessInstallUnavailableReason(harness: HarnessId): string | nu
   return null;
 }
 
-const subscribe = (listener: () => void) => {
-  listeners.add(listener);
-  return () => { listeners.delete(listener); };
-};
-const getSnapshot = () => states;
-
 /** Keep progress across settings navigation and prevent overlapping installs. */
 export function useHarnessInstall(harness: HarnessId) {
-  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const snapshot = useInstallStates();
   return {
     state: snapshot[harness] ?? idle,
     busy: Object.values(snapshot).some(

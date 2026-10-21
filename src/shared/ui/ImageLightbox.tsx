@@ -233,7 +233,7 @@ function ImageLightboxContent({
           onClick={onClose}
           className="image-lightbox-close absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full border border-white/15 bg-black/45 text-white/80 shadow-lg backdrop-blur-md hover:bg-black/65 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
         >
-          <X className="size-4" strokeWidth={2} />
+          <X className="size-4" />
         </Button>
       </motion.div>
     </Dialog.Content>

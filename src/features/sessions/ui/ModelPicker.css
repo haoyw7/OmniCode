@@ -45,21 +45,21 @@
     linear-gradient(
       to right,
       transparent,
-      #000 28px,
-      #000 calc(100% - 28px),
+      black 28px,
+      black calc(100% - 28px),
       transparent
     ),
-    linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+    linear-gradient(to bottom, transparent, black 35%, black 65%, transparent);
   -webkit-mask-composite: source-in;
   mask-image:
     linear-gradient(
       to right,
       transparent,
-      #000 28px,
-      #000 calc(100% - 28px),
+      black 28px,
+      black calc(100% - 28px),
       transparent
     ),
-    linear-gradient(to bottom, transparent, #000 35%, #000 65%, transparent);
+    linear-gradient(to bottom, transparent, black 35%, black 65%, transparent);
   mask-composite: intersect;
 }
 
@@ -80,11 +80,11 @@
 }
 
 .codex-effort-option[data-effort-tone="ultra"] {
-  --codex-effort-color: #a855f7;
+  --codex-effort-color: var(--color-accent);
 }
 
 .codex-effort-option[data-effort-tone="max"] {
-  --codex-effort-color: #f4b942;
+  --codex-effort-color: var(--color-warning);
 }
 
 .codex-effort-tile {

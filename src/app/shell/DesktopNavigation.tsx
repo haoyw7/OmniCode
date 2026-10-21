@@ -8,7 +8,6 @@ import {
   CodeXml,
   Folder,
   Inbox,
-  IconArtworkContext,
   Plus,
   StickyNote,
   Workflow,
@@ -19,7 +18,6 @@ import { useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";
 import { TabVisitNav } from "./WindowChrome";
 import type { DesktopMode } from "../model/desktopMode";
 import type { ActivityBarProps } from "./ActivityBar";
-import { desktopNavigationIconArtwork, desktopTitlebarIconArtwork } from "../desktopIconArtwork";
 import { useInlineBreakpoints } from "../../shared/hooks/useInlineBreakpoints";
 
 const TITLEBAR_NAVIGATION_BREAKPOINTS = [206];
@@ -37,7 +35,7 @@ export function DesktopTitlebarNavigation({
   const visible = useSurfaceVisibility();
   const navigationRef = useInlineBreakpoints(TITLEBAR_NAVIGATION_BREAKPOINTS);
   return (
-    <IconArtworkContext.Provider value={desktopTitlebarIconArtwork}>
+    <>
       <nav
         ref={navigationRef}
         className="desktop-titlebar-navigation"
@@ -54,7 +52,7 @@ export function DesktopTitlebarNavigation({
           </AnimatedCollapse>
         </div>
       </nav>
-    </IconArtworkContext.Provider>
+    </>
   );
 }
 
@@ -82,7 +80,7 @@ export function DesktopModeToggle({
             aria-label={t(value === "chat" ? "Chat" : "Code")}
             title={t(value === "chat" ? "Chat" : "Code")}
             aria-pressed={mode === value}
-            onClick={() => onChange(value)}
+            onClick={() => onChange(value)} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
           >
             <Icon strokeWidth={value === "chat" ? 1.5 : 2} />
           </button>
@@ -101,13 +99,13 @@ export function DesktopNewSessionAction({
 }) {
   const { t } = useTranslation();
   return (
-    <IconArtworkContext.Provider value={desktopNavigationIconArtwork}>
+    <>
       <div className="desktop-navigation" data-sidebar-primary-action>
         <NavigationItem icon={<Plus />} onClick={onNew}>
           {t(mode === "chat" ? "New chat" : "New task")}
         </NavigationItem>
       </div>
-    </IconArtworkContext.Provider>
+    </>
   );
 }
 
@@ -154,7 +152,7 @@ export function DesktopNavigation({
     },
   ];
   return (
-    <IconArtworkContext.Provider value={desktopNavigationIconArtwork}>
+    <>
       <nav className="desktop-navigation" aria-label={t("Main navigation")}>
         <NavigationItem icon={<Folder />} aria-current={projectsActive ? "page" : undefined} onClick={onProjects}>
           {t("Projects")}
@@ -179,6 +177,6 @@ export function DesktopNavigation({
           </div>
         </AnimatedCollapse>
       </nav>
-    </IconArtworkContext.Provider>
+    </>
   );
 }

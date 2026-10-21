@@ -161,7 +161,7 @@ export function ReviewSourceSelect({
   };
 
   const rowClass = (highlight: boolean) =>
-    cn("flex w-full shrink-0 items-center justify-start gap-2 rounded-lg text-left text-ui-base outline-none hover:bg-menu-hover", highlight && "bg-menu-hover");
+    cn("flex w-full shrink-0 items-center justify-start gap-2 rounded-lg text-left text-ui-base outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-menu-hover", highlight && "bg-menu-hover");
 
   return (
     <>

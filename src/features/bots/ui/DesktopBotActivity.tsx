@@ -26,7 +26,7 @@ function Activity({ scope, rpc }: { scope: BotScope; rpc: BotRpc }) {
   const refresh = () => query.refetch({ cancelRefetch: false });
   const more = () => loadMoreBotRuns(rpc, scope).catch(() => undefined);
   return <section className="desktop-bot-activity desktop-bot-page-body" aria-label={t("Bot activity")}>
-    <header><IconButton size="sm" label={t("Refresh")} onClick={() => void refresh()}><RefreshCw size={16} /></IconButton></header>
+    <header><IconButton size="sm" label={t("Refresh")} onClick={() => void refresh()}><RefreshCw /></IconButton></header>
     {error && <p className="desktop-bot-section-note" role="alert">{t(error)}</p>}
     {!runs.length && <p className="desktop-bot-section-note" role="status">{t(page ? "No runs yet." : "Loading activity…")}</p>}
     {runs.length > 0 && <ol className="desktop-bot-row-group">{runs.map(run => <Run key={run.id} run={run} />)}</ol>}
@@ -41,7 +41,7 @@ function Run({ run }: { run: BotRun }) {
       {run.config && <HarnessIcon harness={run.config.harness} className="size-4 shrink-0" />}
       <span className="desktop-bot-row-title">{t(statuses[run.status])}{run.config && <small>{run.config.model}</small>}</span>
       <time className="desktop-bot-row-meta" dateTime={date.toISOString()}>{date.toLocaleString()}</time>
-      <ChevronDown size={14} aria-hidden="true" />
+      <ChevronDown aria-hidden="true" />
     </Button>
     {run.error && <p className="desktop-bot-row-detail" role="alert">{t(run.error)}</p>}
     <AnimatedCollapse expanded={expanded}><dl className="desktop-bot-row-detail">

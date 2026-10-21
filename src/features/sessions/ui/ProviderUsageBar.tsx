@@ -339,7 +339,7 @@ function SessionChip({
       <HarnessIcon harness={session.harness} className="size-3 shrink-0" />
       <span>{HARNESS_LABEL[session.harness]}</span>
       {authRequired ? (
-        <span className="text-[10px] text-amber-600 dark:text-amber-300">
+        <span className="text-[10px] text-warning dark:text-warning">
           {uiT("sign in")}
         </span>
       ) : null}

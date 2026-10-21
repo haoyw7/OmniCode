@@ -280,13 +280,23 @@ function TouchTimelineScrollbar({
       aria-valuemax={100}
       aria-valuemin={0}
       aria-valuenow={Math.round((100 * Math.min(viewport.scrollLeft, range)) / range)}
-      className="wf-sb absolute inset-x-0 bottom-0 h-0.5 cursor-pointer rounded-full bg-border"
+      className="wf-sb absolute inset-x-0 bottom-0 h-0.5 cursor-pointer rounded-full bg-border hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-accent"
       data-dragging={dragging ? "true" : undefined}
       data-scrolling={viewport.scrolling ? "true" : undefined}
       data-testid="workflow-timeline-scrollbar"
       onClick={stopClick}
       onPointerDown={onTrackDown}
       role="scrollbar"
+      tabIndex={0}
+      onKeyDown={event => {
+        const element = scrollRef.current;
+        if (!element) return;
+        const delta = event.key === "ArrowRight" ? 40 : event.key === "ArrowLeft" ? -40 : event.key === "PageDown" ? viewport.clientWidth : event.key === "PageUp" ? -viewport.clientWidth : 0;
+        if (!delta && event.key !== "Home" && event.key !== "End") return;
+        event.preventDefault();
+        event.stopPropagation();
+        element.scrollLeft = event.key === "Home" ? 0 : event.key === "End" ? range : element.scrollLeft + delta;
+      }}
     >
       <span
         className="wf-sb-thumb absolute inset-y-0 rounded-full bg-foreground-subtlest"
@@ -294,6 +304,7 @@ function TouchTimelineScrollbar({
         onPointerDown={onThumbDown}
         onPointerMove={onThumbMove}
         onPointerUp={onThumbUp}
+        onPointerCancel={onThumbUp}
         style={{ left: thumb.left, width: thumb.width }}
       />
     </div>

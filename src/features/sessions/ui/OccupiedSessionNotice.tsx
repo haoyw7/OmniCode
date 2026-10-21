@@ -10,7 +10,7 @@ export function OccupiedSessionNotice({ onFork }: { onFork?: () => void }) {
   const retry = useMutation({ mutationFn: pollNativeSessionAccess }, queryClient);
   return (
     <div className="desktop-session-occupied" role="status">
-      <Lock size={16} aria-hidden="true" />
+      <Lock aria-hidden="true" />
       <div className="desktop-session-occupied-copy">
         <strong>{t("Open in another app")}</strong>
         <p>{t("Close the session there before continuing here.")}</p>

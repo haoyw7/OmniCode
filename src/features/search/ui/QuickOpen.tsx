@@ -3,6 +3,7 @@ import { queryClient } from "../../../shared/lib/queryClient";
 import { errorMessage } from "../../../shared/lib/errorMessage";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { FolderOpen, FolderPlus, Search, Zap } from "../../../shared/ui/icons";
+import { VirtualCommandItems } from "../../../shared/ui/primitives/VirtualCommandItems";
 import {
   useEffect,
   useMemo,
@@ -334,7 +335,7 @@ export function QuickOpen({
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
-            className="min-w-0 flex-1 bg-transparent text-[14px] text-content outline-none placeholder:text-content/40"
+            className="min-w-0 flex-1 bg-transparent text-[14px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
             onValueChange={(next) => {
               setQuery(next);
               setActive("");
@@ -385,6 +386,8 @@ export function QuickOpen({
                   : "Projects",
           )}
           items={items}
+          activeValue={activeValue}
+          onActive={setActive}
           onChoose={choose}
           render={(item) =>
             renderItem(item, {
@@ -564,11 +567,15 @@ function renderItem(
 function OptionList({
   label,
   items,
+  activeValue,
+  onActive,
   onChoose,
   render,
 }: {
   label: string;
   items: Item[];
+  activeValue: string;
+  onActive: (value: string) => void;
   onChoose: (item: Item) => void;
   render: (item: Item) => ReactNode;
 }) {
@@ -580,7 +587,7 @@ function OptionList({
       label={label}
       className="max-h-[min(520px,60vh)] overflow-y-auto overscroll-none px-1.5 pb-1.5"
     >
-      {items.map((item) => {
+      <VirtualCommandItems items={items} getKey={item => item.key} activeValue={activeValue} onActive={onActive} onSelect={onChoose}>{(item) => {
         return (
           <CommandItem
             key={item.key}
@@ -596,7 +603,7 @@ function OptionList({
             {render(item)}
           </CommandItem>
         );
-      })}
+      }}</VirtualCommandItems>
     </CommandList>
   );
 }

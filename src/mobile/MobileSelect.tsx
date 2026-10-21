@@ -37,7 +37,7 @@ export function MobileSelect<T extends string>({
         type="button"
         disabled={disabled}
         data-ui="select"
-        className="mobile-select-trigger"
+        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-select-trigger"
         aria-label={label}
         aria-haspopup="dialog"
         aria-expanded={open}
@@ -53,7 +53,7 @@ export function MobileSelect<T extends string>({
           {selected?.icon}
           <span>{selected?.label ?? value}</span>
         </span>
-        <ChevronDown size={16} />
+        <ChevronDown />
       </button>
       <MobileSheet
         open={open}

@@ -183,7 +183,7 @@ describe("FileTree render isolation", () => {
       },
     };
     act(() => render(1));
-    expect(row("first.ts").querySelector(".text-amber-400")).not.toBeNull();
+    expect(row("first.ts").querySelector(".text-warning")).not.toBeNull();
     act(() => row("first.ts").click());
     expect(onOpenFile).toHaveBeenCalledWith(`${cwd}/first.ts`, undefined, {
       exact: true,
@@ -207,6 +207,8 @@ describe("FileTree render isolation", () => {
       await vi.advanceTimersByTimeAsync(200);
     });
     expect(row("added.ts")).not.toBeNull();
+    expect(row("first.ts").closest("[inert]")).not.toBeNull();
+    await act(async () => vi.advanceTimersByTimeAsync(400));
     expect(row("first.ts")).toBeNull();
   });
 
@@ -275,10 +277,11 @@ describe("FileTree asynchronous expansion", () => {
       { name: "loaded.ts", path: `${path}/loaded.ts`, isDir: false },
     ]));
     expect(toggle.hasAttribute("aria-busy")).toBe(false);
-    expect(group.querySelector('[data-fold-state="opening"]')).not.toBeNull();
+    const loaded = row(target === "root" ? "loaded.ts" : "docs/loaded.ts");
+    expect(loaded.closest('[data-fold-state="opening"]')).not.toBeNull();
     expect(row(target === "root" ? "loaded.ts" : "docs/loaded.ts")).not.toBeNull();
     await act(async () => vi.advanceTimersByTimeAsync(400));
-    expect(group.querySelector(".zen-fold-item")?.getAttribute("data-fold-state")).toBe("open");
+    expect(loaded.closest(".zen-fold-item")?.getAttribute("data-fold-state")).toBe("open");
   });
 
   it("does not reopen after a pending load is cancelled, and reuses the loaded cache", async () => {
@@ -313,7 +316,7 @@ describe("FileTree asynchronous expansion", () => {
     await act(async () => toggle.click());
     await act(async () => reject(new Error("Cannot read directory")));
     expect(toggle.hasAttribute("aria-busy")).toBe(false);
-    expect(toggle.parentElement?.textContent).toContain("Cannot read directory");
+    expect(container.querySelector('[role="tree"]')?.textContent).toContain("Cannot read directory");
   });
 });
 
@@ -338,6 +341,8 @@ describe("FileTree excluded files", () => {
     expect(row("debug.log")).not.toBeNull();
 
     act(() => saveShowExcludedFiles(false));
+    expect(row("dist").closest("[inert]")).not.toBeNull();
+    await act(async () => new Promise(resolve => setTimeout(resolve, 400)));
     expect(row("dist")).toBeNull();
     expect(row("debug.log")).toBeNull();
     expect(row("first.ts")).not.toBeNull();
@@ -503,6 +508,32 @@ describe("FileTree starts Explorer file drags", () => {
 });
 
 describe("FileTree keyboard navigation", () => {
+  it("keeps the create input mounted after a large directory's folder rows", async () => {
+    directories.set(cwd, [folder("src")]);
+    directories.set(`${cwd}/src`, Array.from({ length: 300 }, (_, index) => ({ name: `dir-${index}`, path: `${cwd}/src/dir-${index}`, isDir: true })));
+    await refreshDir(cwd);
+    await listCachedDir(`${cwd}/src`);
+    saveExpanded(cwd, new Set([cwd, `${cwd}/src`]));
+    saveSelected(cwd, `${cwd}/src`);
+    await act(async () => render());
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="New File"]')!.click());
+    const input = container.querySelector<HTMLInputElement>("input");
+    expect(input).not.toBeNull();
+    expect(document.activeElement).toBe(input);
+    expect(container.querySelectorAll('[role="treeitem"]').length).toBeLessThan(60);
+  });
+  it("keeps a thousand files virtual and reaches the last row with End", async () => {
+    directories.set(cwd, Array.from({ length: 1000 }, (_, index) => file(`entry-${index}.ts`)));
+    await refreshDir(cwd);
+    await act(async () => render());
+    expect(container.querySelectorAll('[role="treeitem"]').length).toBeLessThan(60);
+    const rootRow = container.querySelector<HTMLButtonElement>("[data-explorer-root]")!;
+    await press(rootRow, { key: "End" });
+    await act(async () => new Promise(resolve => requestAnimationFrame(resolve)));
+    expect(document.activeElement).toBe(row("entry-999.ts"));
+    expect(row("entry-999.ts").getAttribute("aria-selected")).toBe("true");
+    expect(container.querySelectorAll('[role="treeitem"]').length).toBeLessThan(60);
+  });
   const selected = () =>
     container.querySelector<HTMLButtonElement>('[role="treeitem"].bg-selection')
       ?.title;

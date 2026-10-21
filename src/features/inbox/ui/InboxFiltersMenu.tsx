@@ -353,7 +353,7 @@ function FilterItem({
       {icon}
       <span data-menu-title className="min-w-0 flex-1 truncate">{label}</span>
       {checked ? (
-        <Check className="size-3.5 shrink-0" strokeWidth={2.25} />
+        <Check className="size-3.5 shrink-0" />
       ) : null}
     </Button>
   );

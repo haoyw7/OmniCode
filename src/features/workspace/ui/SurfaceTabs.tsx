@@ -448,8 +448,8 @@ export function SurfaceTabs({
                   data-code-label={!!commit || undefined}
                   className={cn("min-w-0 flex-1 truncate", file.preview ? "italic" : "", errors
                       ? active
-                        ? "text-red-400"
-                        : "text-red-400/75 group-hover:text-red-400"
+                        ? "text-danger"
+                        : "text-danger/75 group-hover:text-danger"
                       : "")}
                 >
                   {label}

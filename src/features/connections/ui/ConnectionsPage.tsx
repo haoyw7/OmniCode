@@ -148,7 +148,7 @@ function ControlThisComputer() {
             {t("The conversation service on this computer is not running.")}
           </p>
         ) : !devices && error ? (
-          <p role="alert" className="whitespace-pre-wrap break-words px-4 py-4 text-ui-base text-red-400">
+          <p role="alert" className="whitespace-pre-wrap break-words px-4 py-4 text-ui-base text-danger">
             {error}
           </p>
         ) : !devices ? (
@@ -219,7 +219,7 @@ function ControlThisComputer() {
         )}
       </div>
       {error && devices ? (
-        <p role="alert" className="whitespace-pre-wrap break-words text-ui-caption text-red-400">
+        <p role="alert" className="whitespace-pre-wrap break-words text-ui-caption text-danger">
           {error}
         </p>
       ) : null}
@@ -337,7 +337,7 @@ function AddDeviceDialog({
               </Button>
             </div>
           </div>
-          {error ? <p role="alert" className="break-words text-ui-caption text-red-400">{error}</p> : null}
+          {error ? <p role="alert" className="break-words text-ui-caption text-danger">{error}</p> : null}
           <ModalFooter>
             <Button variant="primary" onClick={onClose}>
               {t("Done")}
@@ -367,7 +367,7 @@ function AddDeviceDialog({
             <FieldError errors={[form.formState.errors.name]} />
           </label>
           {error ? (
-            <p role="alert" className="break-words text-ui-caption text-red-400">
+            <p role="alert" className="break-words text-ui-caption text-danger">
               {error}
             </p>
           ) : null}

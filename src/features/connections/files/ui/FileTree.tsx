@@ -75,13 +75,14 @@ import { useDraggableItem, useActiveDragPayload } from "../../../../shared/ui/pr
 import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
 import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
+import { CollapsingVirtualRows } from "../../../../shared/ui/CollapsingVirtualRows";
 import { Spinner } from "../../../../shared/ui/primitives/Spinner";
 
 const GIT_STATUS_COLOR: Record<string, string> = {
-  modified: "text-amber-400",
-  added: "text-emerald-400",
-  untracked: "text-emerald-400",
-  deleted: "text-red-400",
+  modified: "text-warning",
+  added: "text-success",
+  untracked: "text-success",
+  deleted: "text-danger",
 };
 
 type Props = {
@@ -297,6 +298,7 @@ export const FileTree = memo(function FileTree({
   const creatingRef = useRef(creating);
   creatingRef.current = creating;
   const rootRef = useRef<HTMLDivElement>(null);
+  const flatPaths = useRef<string[]>([]);
   const lockOverscroll = useLockOverscroll<HTMLDivElement>();
   const name = rootLabel?.trim() || basename(cwd);
   const rootOpen = (compact && !navigationOnly) || expanded.has(cwd);
@@ -605,30 +607,27 @@ export const FileTree = memo(function FileTree({
     openMenu({ path: cwd, isDir: true, isRoot: true }, e.clientX, e.clientY);
   };
 
-  const visibleRows = () =>
-    Array.from(
-      rootRef.current?.querySelectorAll<HTMLElement>(
-        "[data-explorer-root], [role='treeitem']",
-      ) ?? [],
-    ).filter((row) => !row.closest("[inert], [hidden], [aria-hidden='true']"));
+  const visibleRows = () => [
+    ...(!compact || navigationOnly ? [{ title: cwd }] : []),
+    ...(rootOpen ? flatPaths.current.map(title => ({ title })) : []),
+  ];
 
-  const focusRow = (row: HTMLElement | undefined) => {
-    if (
-      !row ||
-      !row.isConnected ||
-      row.closest("[inert], [hidden], [aria-hidden='true']")
-    ) {
-      return;
-    }
+  const focusRow = (row: { title: string } | undefined) => {
+    if (!row) return;
     onSelect(row.title);
-    row.focus({ preventScroll: true });
-    row.scrollIntoView?.({ block: "nearest" });
+    const focus = () => {
+      const element = Array.from(rootRef.current?.querySelectorAll<HTMLElement>("[data-explorer-root], [role='treeitem']") ?? [])
+        .find(element => element.title === row.title && !element.closest("[inert], [hidden], [aria-hidden='true']"));
+      element?.focus({ preventScroll: true });
+      element?.scrollIntoView?.({ block: "nearest" });
+      return !!element;
+    };
+    if (!focus()) requestAnimationFrame(focus);
   };
 
   const typeahead = useRef({ text: "", at: 0 });
 
-  // VS Code-style list navigation. Rows are read from the DOM so the order
-  // always matches what's rendered, excluding retained closing disclosure content.
+  // Navigate the full flattened model, including rows outside the viewport.
   const onNavigationKey = (
     e: ReactKeyboardEvent<HTMLDivElement>,
     path: string,
@@ -642,7 +641,7 @@ export const FileTree = memo(function FileTree({
     const open = path === cwd ? rootOpen : expanded.has(path);
     const pageSize = () => {
       const scroller = rootRef.current?.querySelector(".overflow-y-auto");
-      const rowHeight = rows[rows.length - 1]?.offsetHeight || 28;
+      const rowHeight = 28;
       return Math.max(
         1,
         Math.floor((scroller?.clientHeight ?? 0) / rowHeight) - 1,
@@ -928,7 +927,7 @@ export const FileTree = memo(function FileTree({
       <div
         ref={rootRef}
         tabIndex={-1}
-        className="flex h-full min-h-0 flex-col outline-none"
+        className="flex h-full min-h-0 flex-col outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onKeyDown={onKeyDown}
         onContextMenu={onBackgroundMenu}
       >
@@ -979,7 +978,7 @@ export const FileTree = memo(function FileTree({
           className="min-h-0 flex-1 overflow-y-auto overscroll-none"
         >
           {opError ? (
-            <p className="px-3 py-1 text-[12px] leading-4 text-red-400">
+            <p className="px-3 py-1 text-[12px] leading-4 text-danger">
               {opError}
             </p>
           ) : null}
@@ -998,6 +997,7 @@ export const FileTree = memo(function FileTree({
                   depth={navigationOnly ? 1 : 0}
                   entries={children}
                   error={error}
+                  onPaths={paths => { flatPaths.current = paths; }}
                 />
               </div>
             </AnimatedCollapse>
@@ -1055,53 +1055,62 @@ function TreeChildren({
   depth,
   entries,
   error,
+  onPaths,
 }: {
   parent: string;
   depth: number;
   entries: FsEntry[] | null;
   error: string | null;
+  onPaths: (paths: string[]) => void;
 }) {
   const ctx = useTree();
-  const creating = ctx.creating;
-  const show = creating?.parent === parent;
-  const row =
-    show && creating ? (
-      <NameRow
-        key={creating.id}
-        depth={depth}
-        isDir={creating.isDir}
-        siblings={(entries ?? []).map((entry) => entry.name)}
-        onCommit={(raw) => ctx.onCreateCommit(creating.id, raw)}
-        onCancel={() => ctx.onCreateCancel(creating.id)}
-      />
-    ) : null;
-  const visible = ctx.showExcludedFiles
-    ? entries
-    : entries?.filter((e) => !e.ignored);
-  const folders = visible?.filter((e) => e.isDir) ?? [];
-  const files = visible?.filter((e) => !e.isDir) ?? [];
-  const pad = { paddingLeft: 28 + depth * 12 };
-
-  return (
-    <>
-      {error ? (
-        <p className="truncate pr-2 text-[12px] text-content/50" style={pad}>
-          {error}
-        </p>
-      ) : null}
-      {show && ctx.creating?.isDir ? row : null}
-      {folders.map((child) => (
-        <TreeNode key={child.path} entry={child} depth={depth} />
-      ))}
-      {show && ctx.creating && !ctx.creating.isDir ? row : null}
-      {files.map((child) => (
-        <TreeNode key={child.path} entry={child} depth={depth} />
-      ))}
-    </>
-  );
+  const paths = [...ctx.expanded].filter(path => {
+    if (path === parent) return false;
+    let ancestor = parentPath(path);
+    while (ancestor !== parent) {
+      if (!ctx.expanded.has(ancestor)) return false;
+      const next = parentPath(ancestor);
+      if (next === ancestor) return false;
+      ancestor = next;
+    }
+    return true;
+  });
+  const listings = useQueries({ queries: paths.map(path => ({
+    ...directoryQuery(path, listDir),
+    refetchInterval: path.startsWith(REMOTE_PATH_PREFIX) ? 5000 : false as const,
+  })) }, queryClient);
+  const byPath = new Map(paths.map((path, index) => [path, listings[index]]));
+  type Row = { key: string; depth: number; entry?: FsEntry; creating?: Creating; siblings?: string[]; error?: string; loading?: boolean };
+  const rows: Row[] = [];
+  const flatten = (path: string, level: number, children: FsEntry[] | null, issue: string | null) => {
+    if (issue) rows.push({ key: `error:${path}`, depth: level, error: issue });
+    const creating = ctx.creating?.parent === path ? ctx.creating : null;
+    const addCreate = () => {
+      if (creating) rows.push({ key: `create:${creating.id}`, depth: level, creating, siblings: (children ?? []).map(entry => entry.name) });
+    };
+    const visible = (children ?? []).filter(entry => ctx.showExcludedFiles || !entry.ignored);
+    if (creating?.isDir) addCreate();
+    for (const entry of visible.filter(entry => entry.isDir)) {
+      const listing = byPath.get(entry.path);
+      rows.push({ key: entry.path, depth: level, entry, loading: listing?.isPending });
+      if (ctx.expanded.has(entry.path)) flatten(entry.path, level + 1, listing?.data ?? null, errorMessage(listing?.error) ?? null);
+    }
+    if (creating && !creating.isDir) addCreate();
+    for (const entry of visible.filter(entry => !entry.isDir)) rows.push({ key: entry.path, depth: level, entry });
+  };
+  flatten(parent, depth, entries, error);
+  onPaths(rows.flatMap(row => row.entry ? [row.entry.path] : []));
+  const focusKey = ctx.creating ? `create:${ctx.creating.id}` : ctx.renaming ?? ctx.selectedPath;
+  const active = rows.findIndex(row => row.key === focusKey);
+  return <CollapsingVirtualRows items={rows} getKey={row => row.key} estimateSize={28} activeIndex={active}>{row =>
+    row.entry ? <TreeNode entry={row.entry} depth={row.depth} loading={row.loading} /> : row.creating ?
+      <NameRow depth={row.depth} isDir={row.creating.isDir} siblings={row.siblings ?? []}
+        onCommit={raw => ctx.onCreateCommit(row.creating!.id, raw)} onCancel={() => ctx.onCreateCancel(row.creating!.id)} /> :
+      <p className="truncate pr-2 text-[12px] text-content/50" style={{ paddingLeft: 28 + row.depth * 12 }}>{row.error}</p>
+  }</CollapsingVirtualRows>;
 }
 
-function TreeNode({ entry, depth }: { entry: FsEntry; depth: number }) {
+function TreeNode({ entry, depth, loading }: { entry: FsEntry; depth: number; loading?: boolean }) {
   const {
     expanded,
     selectedPath,
@@ -1118,14 +1127,6 @@ function TreeNode({ entry, depth }: { entry: FsEntry; depth: number }) {
     onItemContextMenu,
   } = useTree();
   const open = expanded.has(entry.path);
-  const directoryOptions = entry.isDir ? [{
-    ...directoryQuery(entry.path, listDir), enabled: open,
-    refetchInterval: entry.path.startsWith(REMOTE_PATH_PREFIX) && open ? 5000 : false as const,
-  }] : [];
-  const [listing] = useQueries({ queries: directoryOptions }, queryClient);
-  const children = listing?.data ?? (listing?.isError ? [] : null);
-  const error = errorMessage(listing?.error) ?? null;
-  const loading = entry.isDir && open && listing?.isPending;
   const selected = selectedPath === entry.path;
   const editing = renaming === entry.path;
   const gitStatus = entry.isDir
@@ -1209,16 +1210,6 @@ function TreeNode({ entry, depth }: { entry: FsEntry; depth: number }) {
           </span>
         </Button>
       )}
-      {entry.isDir ? (
-        <AnimatedCollapse expanded={open && children !== null}>
-          <TreeChildren
-            parent={entry.path}
-            depth={depth + 1}
-            entries={children}
-            error={error}
-          />
-        </AnimatedCollapse>
-      ) : null}
     </div>
   );
 }
@@ -1334,7 +1325,7 @@ export function NameRow({
             }
           }}
           onBlur={() => finish(issue === null || issue.severity !== "error")}
-          className="h-5 min-w-0 flex-1 rounded-sm bg-content/10 px-1 text-[14px] leading-none text-content outline-none ring-1 ring-accent"
+          className="h-5 min-w-0 flex-1 rounded-sm bg-content/10 px-1 text-[14px] leading-none text-content outline-none focus-visible:ring-2 focus-visible:ring-ring ring-1 ring-accent"
         />
       </div>
       {showIssue ? (
@@ -1397,7 +1388,7 @@ function NameIssueView({
   const error = Boolean(fallback) || !issue || issue.severity === "error";
   return (
     <p
-      className={cn("pr-2 pb-1 text-[12px] leading-4", error ? "text-red-400" : "text-amber-400")}
+      className={cn("pr-2 pb-1 text-[12px] leading-4", error ? "text-danger" : "text-warning")}
       style={{ paddingLeft: 28 + depth * 12 }}
     >
       {body}

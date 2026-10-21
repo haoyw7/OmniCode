@@ -170,7 +170,7 @@ export function ProjectNotificationSettings({
         )}
       >
         {error ? (
-          <p role="alert" className="px-4 py-3.5 text-[12px] text-red-400">
+          <p role="alert" className="px-4 py-3.5 text-[12px] text-danger">
             {error}
           </p>
         ) : null}

@@ -50,9 +50,9 @@ export function BotIdentitySettings({ bot, busy: externalBusy, onSave, avatarSup
   })}>
     {avatarSupported ? <>
       <Button variant="ghost" size="content" ref={trigger} type="button" className="desktop-bot-avatar-trigger" aria-label={t("Edit avatar")} aria-haspopup="dialog" aria-expanded={editingAvatar} disabled={busy}
-        onClick={() => setEditingAvatar(true)}>
+        onClick={event => { event.currentTarget.focus({ preventScroll: true }); setEditingAvatar(true); }}>
         <BotAvatar bot={{ id: bot.id, avatar }} size={40} />
-        <span className="desktop-bot-avatar-edit-overlay" aria-hidden="true"><Pencil size={14} /></span>
+        <span className="desktop-bot-avatar-edit-overlay" aria-hidden="true"><Pencil /></span>
         <span className="desktop-bot-avatar-edit-hint" aria-hidden="true">{t("Edit avatar")}</span>
       </Button>
       <PresenceBoundary>{editingAvatar && visible ? <AvatarDialog bot={bot} name={name.trim() || bot.name} avatar={avatar} busy={busy} onCancel={closeEditor} onSave={saveAvatar} /> : null}</PresenceBoundary>

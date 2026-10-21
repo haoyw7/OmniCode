@@ -123,7 +123,7 @@ export function MobileWorkspaceControls({
               <button
                 type="button"
                 role="radio"
-                className="mobile-sheet-row"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                 aria-checked={workspace.mode === "current" && !workspace.cwd}
                 disabled={disabled}
                 onClick={() => {
@@ -131,59 +131,59 @@ export function MobileWorkspaceControls({
                   onClose();
                 }}
               >
-                <Folder size={20} />
+                <Folder />
                 <span className="mobile-sheet-row-text">
                   <strong>{t("Current checkout")}</strong>
                   {current && <small>{current}</small>}
                 </span>
-                {workspace.mode === "current" && !workspace.cwd && <Check size={20} />}
+                {workspace.mode === "current" && !workspace.cwd && <Check />}
               </button>
               <button
                 type="button"
                 role="radio"
-                className="mobile-sheet-row"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                 aria-checked={workspace.mode === "worktree"}
                 disabled={disabled}
                 onClick={() => onChange({ mode: "worktree", base: workspace.base ?? current ?? undefined })}
               >
-                <FolderTree size={20} />
+                <FolderTree />
                 <span className="mobile-sheet-row-text">
                   <strong>{t("New worktree")}</strong>
                   <small>{t("From {value0}", { value0: base })}</small>
                 </span>
-                {workspace.mode === "worktree" && <Check size={20} />}
+                {workspace.mode === "worktree" && <Check />}
               </button>
               <button
                 type="button"
                 role="radio"
-                className="mobile-sheet-row"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                 aria-checked={!!workspace.cwd}
                 disabled={disabled}
                 onClick={() => setPage("worktrees")}
               >
-                <FolderTree size={20} />
+                <FolderTree />
                 <span className="mobile-sheet-row-text">
                   <strong>{t("Existing worktree…")}</strong>
                   {workspace.cwd && <small>{folderName(workspace.cwd)}</small>}
                 </span>
-                <ChevronRight size={20} />
+                <ChevronRight />
               </button>
             </div>
             {workspace.mode === "worktree" && <>
               <div className="mobile-menu-divider" role="separator" />
               <button
                 type="button"
-                className="mobile-sheet-row"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                 disabled={disabled || branches.state === "failed"}
                 aria-busy={branches.state === "loading" || undefined}
                 onClick={() => setPage("base")}
               >
-                <GitBranch size={20} />
+                <GitBranch />
                 <span className="mobile-sheet-row-text mobile-sheet-row-inline">
                   <strong>{t("Branches")}</strong>
                   <small>{base}</small>
                 </span>
-                {branches.state === "loading" ? spinner : <ChevronRight size={20} />}
+                {branches.state === "loading" ? spinner : <ChevronRight />}
               </button>
               {branches.state === "failed" && failure("Could not load branches.", retryBranches)}
             </>}
@@ -216,7 +216,7 @@ export function MobileWorkspaceControls({
                   key={name}
                   type="button"
                   role="radio"
-                  className="mobile-sheet-row"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                   aria-checked={base === name}
                   disabled={disabled}
                   onClick={() => {
@@ -227,7 +227,7 @@ export function MobileWorkspaceControls({
                   <span className="mobile-sheet-row-text">
                     <strong>{name}</strong>
                   </span>
-                  {base === name && <Check size={20} />}
+                  {base === name && <Check />}
                 </button>
               );
               return (
@@ -265,7 +265,7 @@ export function MobileWorkspaceControls({
                       key={tree.path}
                       type="button"
                       role="radio"
-                      className="mobile-sheet-row"
+                      className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                       aria-checked={workspace.cwd === tree.path}
                       disabled={disabled}
                       title={tree.path}
@@ -274,14 +274,14 @@ export function MobileWorkspaceControls({
                         onClose();
                       }}
                     >
-                      <FolderTree size={20} />
+                      <FolderTree />
                       <span className="mobile-sheet-row-text">
                         <strong>{folderName(tree.path)}</strong>
                         <small>
                           {tree.branch ?? t("Detached {value0}", { value0: tree.head.slice(0, 7) })}
                         </small>
                       </span>
-                      {workspace.cwd === tree.path && <Check size={20} />}
+                      {workspace.cwd === tree.path && <Check />}
                     </button>
                   ))}
                 </div>

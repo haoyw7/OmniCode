@@ -369,7 +369,7 @@ function ChatBackgroundCard({
           </div>
         ) : null}
         {appearance.chatBackgroundError ? (
-          <p className="mt-2 text-[12px] text-red-400">
+          <p className="mt-2 text-[12px] text-danger">
             {appearance.chatBackgroundError}
           </p>
         ) : null}

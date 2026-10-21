@@ -116,7 +116,7 @@ function TaskRow({ task, expanded, onToggle, onStop }: {
   return <ListMotionItem data-background-task={task.id}>
     <div className="background-task-row">
       <Button variant="ghost" size="content" type="button" className="background-task-open" aria-expanded={expanded} aria-controls={detailsId} onClick={onToggle} title={task.title}>
-        {task.state === "failed" ? <CircleAlert className="size-3.5 shrink-0 text-red-400" aria-label={stateLabel} /> : null}
+        {task.state === "failed" ? <CircleAlert className="size-3.5 shrink-0 text-danger" aria-label={stateLabel} /> : null}
         <span className="min-w-0 flex-1 truncate">{task.title}</span>
         <span className="sr-only">{stateLabel}</span>
         <TaskElapsed task={task} />

@@ -169,7 +169,7 @@ export function LinkedWorkItemUpdateNotice({
             onClick={dismiss}
             className="grid size-6 shrink-0 place-items-center rounded-md text-content/40 hover:bg-content/6 hover:text-content"
           >
-            <X className="size-3" strokeWidth={2} />
+            <X className="size-3" />
           </Button>
         </div>
 
@@ -241,8 +241,8 @@ export function LinkedWorkItemUpdateNotice({
               <TerminalIcon
                 className={
                   terminalState === "pr_merged"
-                    ? "size-3.5 shrink-0 text-violet-400/90"
-                    : "size-3.5 shrink-0 text-emerald-400/90"
+                    ? "size-3.5 shrink-0 text-accent/90"
+                    : "size-3.5 shrink-0 text-success/90"
                 }
               />
               <span className="font-medium text-content/75">
@@ -274,7 +274,7 @@ export function LinkedWorkItemUpdateNotice({
                 title={uiT("Delete session")}
                 disabled={Boolean(cleanupAction) || !onDeleteSession}
                 onClick={() => void runCleanup("delete", onDeleteSession)}
-                className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden rounded-md px-2 py-1 text-[11px] text-red-300/90 hover:bg-red-500/15 disabled:opacity-40"
+                className="inline-flex min-w-0 items-center gap-1.5 overflow-hidden rounded-md px-2 py-1 text-[11px] text-danger/90 hover:bg-danger/15 disabled:opacity-40"
               >
                 {cleanupAction === "delete" ? (
                   <Spinner className="size-3 shrink-0" />

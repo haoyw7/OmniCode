@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
@@ -251,7 +252,7 @@ export function ProjectCard({
             tree.onToggleProject?.(item.path);
           }}
           data-project-tile
-          className="grid w-4 shrink-0 place-items-center rounded-sm text-content/55 outline-none hover:text-content"
+          className="active:opacity-70 grid w-4 shrink-0 place-items-center rounded-sm text-content/55 outline-none focus-visible:ring-2 focus-visible:ring-ring hover:text-content"
         >
           <span
             data-project-avatar
@@ -295,9 +296,9 @@ export function ProjectCard({
         onBlur={hover.triggerProps.onBlur}
         onKeyDown={(event) => { sortable?.handleProps.onKeyDown?.(event); if (!event.defaultPrevented) hover.triggerProps.onKeyDown(event); }}
         className={
-          compact
+          cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", compact
             ? "relative grid size-8 cursor-grab place-items-center"
-            : `flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left ${tree ? "pl-2 pr-14" : "pr-6"}`
+            : `flex min-w-0 flex-1 cursor-grab items-center gap-2 text-left ${tree ? "pl-2 pr-14" : "pr-6"}`)
         }
       >
         {compact ? (
@@ -343,7 +344,7 @@ export function ProjectCard({
                 role="img"
                 aria-label={uiT("Needs approval")}
                 title={uiT("Needs approval")}
-                className="size-1.5 shrink-0 rounded-full bg-amber-400"
+                className="size-1.5 shrink-0 rounded-full bg-warning"
               />
             ) : busy ? (
               <span role="img" aria-label={uiT("Working...")}>
@@ -359,7 +360,7 @@ export function ProjectCard({
               <span
                 role="img"
                 aria-label={uiT("Unread")}
-                className="size-1.5 shrink-0 rounded-full bg-sky-500"
+                className="size-1.5 shrink-0 rounded-full bg-accent"
               />
             ) : null}
           </>
@@ -382,7 +383,7 @@ export function ProjectCard({
               aria-hidden="true"
               className={`absolute right-0 bottom-0 size-1.5 rounded-full ring-1 ring-background-base ${
                 online
-                  ? "bg-emerald-400"
+                  ? "bg-success"
                   : disconnected
                     ? "bg-destructive"
                     : "bg-content/35"
@@ -400,8 +401,8 @@ export function ProjectCard({
             title={muteStatus}
             className={
               compact
-                ? "absolute right-0 top-0 grid size-3 place-items-center text-amber-400"
-                : "grid size-4 shrink-0 place-items-center text-amber-400"
+                ? "absolute right-0 top-0 grid size-3 place-items-center text-warning"
+                : "grid size-4 shrink-0 place-items-center text-warning"
             }
           >
             <BellOff
@@ -467,7 +468,7 @@ export function ProjectCard({
                 event.stopPropagation();
                 onTogglePin(item.path);
               }}
-              className="absolute left-2 top-1/2 grid size-4 -translate-y-1/2 place-items-center rounded-sm text-content/55 opacity-0 pointer-events-none transition-opacity hover:text-content group-hover:pointer-events-auto group-hover:opacity-100"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 absolute left-2 top-1/2 grid size-4 -translate-y-1/2 place-items-center rounded-sm text-content/55 opacity-0 pointer-events-none transition-opacity hover:text-content group-hover:pointer-events-auto group-hover:opacity-100"
             >
               {pinned ? (
                 <PinOff className="size-3.5" />
@@ -508,7 +509,7 @@ export function ProjectCard({
               if (hoverSummary.onPin) hoverSummary.onPin(item.path);
               else onTogglePin(item.path);
             }}
-            className="grid size-6 shrink-0 place-items-center rounded-lg text-content/45 hover:bg-surface-hover hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
+            className="active:opacity-70 grid size-6 shrink-0 place-items-center rounded-lg text-content/45 hover:bg-surface-hover hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
           >
             {pinned ? (
               <PinOff className="size-3.5" />
@@ -567,7 +568,7 @@ export function ProjectCard({
                     type="button"
                     aria-label={uiT("Retry")}
                     onClick={() => hoverSummary.onOpen?.(item.path)}
-                    className="shrink-0 rounded-lg px-1.5 py-0.5 text-content/65 hover:bg-surface-hover hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
+                    className="active:opacity-70 shrink-0 rounded-lg px-1.5 py-0.5 text-content/65 hover:bg-surface-hover hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
                   >
                     {uiT("Retry")}
                   </button>
@@ -611,7 +612,7 @@ export function ProjectCard({
               hover.close();
               onOpenMenu(item.path, rect.left, rect.bottom, trigger);
             }}
-            className="-mx-1 flex w-[calc(100%+8px)] items-center gap-2 rounded-lg px-1 py-1 text-left text-content/75 hover:bg-surface-hover hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
+            className="active:opacity-70 -mx-1 flex w-[calc(100%+8px)] items-center gap-2 rounded-lg px-1 py-1 text-left text-content/75 hover:bg-surface-hover hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent/50"
           >
             <Settings className="size-3.5 text-content/45" aria-hidden="true" />
             {uiT("Edit project")}
@@ -679,10 +680,10 @@ function ProjectDiffStat({
       className="flex shrink-0 items-center gap-1 font-sans text-[11px] font-semibold tabular-nums"
     >
       {additions > 0 ? (
-        <span className="text-emerald-400">+{formatInteger(additions)}</span>
+        <span className="text-success">+{formatInteger(additions)}</span>
       ) : null}
       {deletions > 0 ? (
-        <span className="text-red-400">-{formatInteger(deletions)}</span>
+        <span className="text-danger">-{formatInteger(deletions)}</span>
       ) : null}
     </span>
   );

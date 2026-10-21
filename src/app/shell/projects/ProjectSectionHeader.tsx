@@ -1,3 +1,4 @@
+import { cn } from "../../../shared/lib/cn";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { DisclosureChevron } from "../../../shared/ui/DisclosureChevron";
@@ -42,7 +43,7 @@ export function ProjectSectionHeader({
         aria-expanded={expanded}
         aria-controls={contentId}
         onClick={() => { if (!reorder?.item.consumeClick()) onToggleExpanded(); }}
-        className={`flex min-w-0 flex-1 items-center gap-1 px-1 py-0.5 text-left text-ui-base text-foreground-subtle hover:text-content ${reorder ? "touch-none cursor-grab" : ""}`}
+        className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 flex min-w-0 flex-1 items-center gap-1 px-1 py-0.5 text-left text-ui-base text-foreground-subtle hover:text-content ${reorder ? "touch-none cursor-grab" : ""}`}
       >
         <span className="min-w-0 truncate text-foreground-subtle transition-colors duration-150 group-hover/section:text-content motion-reduce:transition-none">
           {label}
@@ -114,7 +115,7 @@ export function AddProjectButton({
           <button
             type="button"
             role="menuitem"
-            className={item}
+            className={cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", item)}
             onClick={() => {
               setOpen(false);
               onOpenFolder();
@@ -127,7 +128,7 @@ export function AddProjectButton({
           <button
             type="button"
             role="menuitem"
-            className={item}
+            className={cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", item)}
             onClick={() => {
               setOpen(false);
               window.dispatchEvent(new Event(OPEN_REMOTE_PROJECT_EVENT));

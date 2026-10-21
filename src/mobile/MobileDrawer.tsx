@@ -511,11 +511,11 @@ function useMobileDrawerController({
           <small>
             {item.needsInput ? (
               <span className="mobile-session-attention">
-                <TriangleAlert size={14} aria-hidden="true" />
+                <TriangleAlert aria-hidden="true" />
                 {t("Needs input")}
               </span>
             ) : item.pinned && item.status !== "running" ? (
-              <Pin size={14} aria-label={t("Pin")} />
+              <Pin aria-label={t("Pin")} />
             ) : null}
             {tree.length > 1 && (
               <span className="mobile-drawer-session-project">{owner.name}</span>
@@ -651,16 +651,16 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
           <button
             ref={hostTrigger}
             type="button"
-            className="mobile-drawer-item mobile-drawer-device"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item mobile-drawer-device"
             aria-label={t("Switch device")}
             aria-haspopup="dialog"
             aria-expanded={covered}
             onClick={onHost}
           >
             <MobileHostStatus status={hostStatus} dotOnly />
-            <Computer size={24} />
+            <Computer />
             <span className="mobile-drawer-device-name">{hostName}</span>
-            <ChevronDown size={16} className="mobile-drawer-device-chevron" />
+            <ChevronDown className="mobile-drawer-device-chevron" />
           </button>
           <IconButton
             className="mobile-drawer-close"
@@ -677,13 +677,13 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
           {onAssistant && (
             <button
               type="button"
-              className="mobile-drawer-item mobile-drawer-assistant"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item mobile-drawer-assistant"
               aria-label={assistantUnreadCount > 0 ? t("{name}, {count} unread messages", {
                 name: t("Bots"), count: assistantUnreadCount,
               }) : undefined}
               onClick={onAssistant}
             >
-              <Bot size={24} />
+              <Bot />
               <span>{t("Bots")}</span>
               {assistantUnreadCount > 0 && (
                 <span className="mobile-drawer-assistant-badge" aria-hidden="true">
@@ -692,19 +692,19 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
               )}
             </button>
           )}
-          <button type="button" className="mobile-drawer-item" onClick={onHome}>
-            <Home size={24} />
+          <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item" onClick={onHome}>
+            <Home />
             <span>{t("Sessions")}</span>
           </button>
           <div>
             <button
               type="button"
-              className="mobile-drawer-item mobile-drawer-more-toggle"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item mobile-drawer-more-toggle"
               aria-expanded={moreOpen}
               aria-controls={moreId}
               onClick={() => setMoreOpen((value) => !value)}
             >
-              <MoreHorizontal size={24} />
+              <MoreHorizontal />
               <span>{t(moreOpen ? "Show less" : "More")}</span>
               <MotionChevronDown size={16} className="mobile-drawer-more-chevron" animate={{ rotate: moreOpen ? motionGeometry.flipAngle : 0 }} transition={panelTransition} />
             </button>
@@ -712,17 +712,17 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
               <AnimatedCollapse expanded={moreOpen}>
                 <div className="mobile-drawer-secondary">
                   {onNotes && (
-                    <button type="button" className="mobile-drawer-item" onClick={onNotes}>
-                      <File size={24} />
+                    <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item" onClick={onNotes}>
+                      <File />
                       <span>{t("Notes")}</span>
                     </button>
                   )}
                   <button
                     type="button"
-                    className="mobile-drawer-item mobile-drawer-all-projects"
+                    className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-item mobile-drawer-all-projects"
                     onClick={onAllProjects}
                   >
-                    <Folder size={24} />
+                    <Folder />
                     <span>{t("Projects")}</span>
                   </button>
                 </div>
@@ -771,7 +771,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
                 <button
                   key={item.id}
                   type="button"
-                  className="mobile-drawer-empty mobile-drawer-group-status"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-drawer-empty mobile-drawer-group-status"
                   onClick={() => readHistories([item.id])}
                 >
                   {t("Couldn’t load sessions")} · {item.name} · {t("Retry")}

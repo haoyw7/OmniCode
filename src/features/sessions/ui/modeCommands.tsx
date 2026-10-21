@@ -28,47 +28,47 @@ type ModeCommandStyle = {
 export const MODE_COMMAND_STYLES: Record<string, ModeCommandStyle> = {
   [PLAN_COMMAND.name]: {
     Icon: AiIdea,
-    className: "text-yellow-700 dark:text-yellow-200/90",
+    className: "text-warning dark:text-warning/90",
     pill: {
       label: "Plan",
       title: "Plan mode",
       className:
-        "bg-yellow-300/12 text-yellow-700 hover:bg-yellow-300/18 dark:text-yellow-200/90",
+        "bg-warning/12 text-warning hover:bg-warning/18 dark:text-warning/90",
     },
     menu: {
       label: "Plan mode",
       description: "Review a plan before building",
-      iconClassName: "text-yellow-300/80",
+      iconClassName: "text-warning/80",
     },
   },
   [OPERATOR_COMMAND.name]: {
     Icon: CursorMagicSelection,
-    className: "text-sky-700 dark:text-sky-200/90",
+    className: "text-accent dark:text-accent/90",
     pill: {
       label: "Operator",
       title: "Operator",
       className:
-        "bg-sky-500/15 font-medium text-sky-700 hover:bg-sky-500/20 dark:bg-sky-400/10 dark:text-sky-200/90 dark:hover:bg-sky-400/15",
+        "bg-accent/15 font-medium text-accent hover:bg-accent/20 dark:bg-accent/10 dark:text-accent/90 dark:hover:bg-accent/15",
     },
     menu: {
       label: "Operator",
       description: "Give this thread access to OmniCode",
-      iconClassName: "text-sky-300/80",
+      iconClassName: "text-accent/80",
     },
   },
   [ORCHESTRATOR_COMMAND.name]: {
     Icon: Share,
-    className: "text-fuchsia-700 dark:text-fuchsia-200/90",
+    className: "text-accent dark:text-accent/90",
     pill: {
       label: "Orchestrator",
       title: "Orchestrator mode",
       className:
-        "bg-fuchsia-500/15 font-medium text-fuchsia-700 hover:bg-fuchsia-500/20 dark:bg-fuchsia-400/10 dark:text-fuchsia-200/90 dark:hover:bg-fuchsia-400/15",
+        "bg-accent/15 font-medium text-accent hover:bg-accent/20 dark:bg-accent/10 dark:text-accent/90 dark:hover:bg-accent/15",
     },
     menu: {
       label: "Orchestrator",
       description: "Plan and coordinate agent work",
-      iconClassName: "text-fuchsia-300/65",
+      iconClassName: "text-accent/65",
     },
   },
   [DRAFT_COMMAND.name]: {
@@ -88,7 +88,7 @@ export const MODE_COMMAND_STYLES: Record<string, ModeCommandStyle> = {
   },
   [BTW_COMMAND.name]: {
     Icon: MessageSquare,
-    className: "text-emerald-700 dark:text-emerald-200/90",
+    className: "text-success dark:text-success/90",
   },
 };
 

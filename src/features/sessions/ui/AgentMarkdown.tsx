@@ -1,4 +1,5 @@
 import { cn } from "../../../shared/lib/cn";
+import { WrapText, Copy, Check } from "../../../shared/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { noteImageQuery } from "../model/transcriptImageQueries";
@@ -331,7 +332,7 @@ function MarkdownLink({
   return (
     <a
       href={href}
-      className={cn("font-medium text-[var(--link-color)] underline decoration-dotted underline-offset-4 hover:decoration-solid", className ?? "")}
+      className={cn("focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", cn("font-medium text-[var(--link-color)] underline decoration-dotted underline-offset-4 hover:decoration-solid", className ?? ""))}
       {...props}
       dir={dir ?? "auto"}
       onClick={(event) => {
@@ -388,7 +389,7 @@ function MarkdownCode({
       <code
         {...props}
         dir="ltr"
-        className={cn("inline-flex items-baseline gap-1 rounded-md bg-content/8 px-1.5 py-px leading-[1.2] max-w-full [overflow-wrap:anywhere] align-baseline font-mono text-[0.8em] text-content", open ? "cursor-pointer hover:text-sky-300 hover:underline" : "", className ?? "")}
+        className={cn("inline-flex items-baseline gap-1 rounded-md bg-content/8 px-1.5 py-px leading-[1.2] max-w-full [overflow-wrap:anywhere] align-baseline font-mono text-[0.8em] text-content", open ? "cursor-pointer hover:text-accent hover:underline" : "", className ?? "")}
         role={open ? "link" : undefined}
         tabIndex={open ? 0 : undefined}
         onClick={open}
@@ -546,12 +547,7 @@ function CodeWrapButton({
       className="markdown-code-wrap"
       onClick={onToggle}
     >
-      <svg viewBox="0 0 20 20" aria-hidden="true">
-        <path d="M4 5h12" />
-        <path d="M4 10h9.5a2.5 2.5 0 0 1 0 5H10" />
-        <path d="m11.5 13-2 2 2 2" />
-        <path d="M4 15h3" />
-      </svg>
+      <WrapText />
     </Button>
   );
 }
@@ -587,19 +583,10 @@ function CodeCopyButton({ code }: { code: string }) {
         );
       }}
     >
-      <svg viewBox="0 0 20 20" aria-hidden="true">
-        <motion.g className="markdown-code-copy-pages" initial={false} animate={{ opacity: copied ? 0 : 1, scale: copied ? motionGeometry.copyHiddenScale : 1, rotate: copied ? motionGeometry.copyTilt : 0 }} transition={reduced ? immediateTransition : popTransition}>
-          <path d="M12 4H6a2 2 0 0 0-2 2v6" />
-          <rect x="7" y="7" width="9" height="9" rx="1.5" />
-        </motion.g>
-        <motion.path
-          initial={false}
-          animate={{ opacity: copied ? 1 : 0, pathLength: copied ? 1 : 0, scale: copied ? 1 : motionGeometry.copyCheckScale, rotate: copied ? 0 : -motionGeometry.copyTilt }}
-          transition={reduced ? immediateTransition : popTransition}
-          className="markdown-code-copy-check"
-          d="M4.5 10.5 8.2 14 15.5 6.5"
-        />
-      </svg>
+      <span className="relative grid size-4 place-items-center">
+        <motion.span className="absolute" initial={false} animate={{ opacity: copied ? 0 : 1, scale: copied ? motionGeometry.copyHiddenScale : 1 }} transition={reduced ? immediateTransition : popTransition}><Copy /></motion.span>
+        <motion.span className="absolute" initial={false} animate={{ opacity: copied ? 1 : 0, scale: copied ? 1 : motionGeometry.copyCheckScale }} transition={reduced ? immediateTransition : popTransition}><Check /></motion.span>
+      </span>
     </Button>
   );
 }

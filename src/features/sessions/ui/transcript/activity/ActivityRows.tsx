@@ -33,7 +33,6 @@ export function ActivityStatusRow({ block }: { block: Block }) {
       <CircleAlert
         aria-hidden="true"
         className="size-3.5 shrink-0 text-content/45"
-        strokeWidth={1.75}
       />
       <span
         title={text}

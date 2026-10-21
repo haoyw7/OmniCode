@@ -52,12 +52,12 @@
   --gradient-blur-soft-mask: linear-gradient(
     to bottom,
     transparent 18%,
-    #000 60%
+    black 60%
   );
   --gradient-blur-strong-mask: linear-gradient(
     to bottom,
     transparent 28%,
-    #000 76%
+    black 76%
   );
   --gradient-blur-overlay: linear-gradient(
     to bottom,
@@ -68,7 +68,7 @@
   );
   --gradient-blur-mask: linear-gradient(
     to bottom,
-    #000 0 19%,
+    black 0 19%,
     rgb(0 0 0 / 94%) 30%,
     rgb(0 0 0 / 72%) 42%,
     rgb(0 0 0 / 42%) 54%,
@@ -144,19 +144,19 @@
   --gradient-blur-soft-mask: linear-gradient(
     to bottom,
     transparent 18%,
-    #000 70%
+    black 70%
   );
   --gradient-blur-strong-mask: linear-gradient(
     to bottom,
     transparent 22%,
-    #000 76%
+    black 76%
   );
   --gradient-blur-overlay: linear-gradient(
     to bottom,
     transparent 15%,
     color-mix(in srgb, var(--color-background-base) 70%, transparent) 76%
   );
-  --gradient-blur-mask: linear-gradient(to bottom, #000 0 18%, transparent 76%);
+  --gradient-blur-mask: linear-gradient(to bottom, black 0 18%, transparent 76%);
 }
 
 html.chat-background-gradient-blur
@@ -298,7 +298,7 @@ html.has-user-accent
  * its base, twinkling as they rise and fading out past the top edge.
  */
 .omnicode-sparkles {
-  --sparkle-color: #fde68a;
+  --sparkle-color: var(--color-warning);
   --sparkle-glow: rgb(251 191 36 / 0.9);
   position: absolute;
   inset: 0;
@@ -308,7 +308,7 @@ html.has-user-accent
 }
 
 html.theme-light .omnicode-sparkles {
-  --sparkle-color: #f59e0b;
+  --sparkle-color: var(--color-warning);
   --sparkle-glow: rgb(217 119 6 / 0.55);
 }
 
@@ -358,7 +358,7 @@ html.theme-light .omnicode-sparkles {
 
 .omnicode-sparkle-ember {
   border-radius: 9999px;
-  background: radial-gradient(circle, #fffbeb, var(--sparkle-color) 70%);
+  background: radial-gradient(circle, var(--color-content), var(--sparkle-color) 70%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -409,15 +409,15 @@ html.theme-light .omnicode-sparkles {
 }
 
 .plan-steps {
-  --mode-color: #fde047;
+  --mode-color: var(--color-warning);
   --mode-glow: rgb(250 204 21 / 0.85);
-  --mode-ink: #422006;
+  --mode-ink: var(--color-warning-foreground);
 }
 
 html.theme-light .plan-steps {
-  --mode-color: #ca8a04;
+  --mode-color: var(--color-warning);
   --mode-glow: rgb(202 138 4 / 0.55);
-  --mode-ink: #fff;
+  --mode-ink: var(--color-accent-ink);
 }
 
 .plan-step {
@@ -457,7 +457,6 @@ html.theme-light .plan-steps {
   height: 10px;
   fill: none;
   stroke: var(--mode-ink);
-  stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 10;
@@ -480,20 +479,20 @@ html.theme-light .plan-steps {
   width: var(--size);
   height: var(--size);
   border-radius: 9999px;
-  background: radial-gradient(circle, #fefce8, var(--mode-color) 70%);
+  background: radial-gradient(circle, var(--color-content), var(--mode-color) 70%);
   box-shadow: 0 0 5px var(--mode-glow);
 }
 
 .orchestrator-constellation {
-  --mode-color: #f0abfc;
+  --mode-color: var(--color-accent);
   --mode-glow: rgb(232 121 249 / 0.85);
-  --mode-spark: #fdf4ff;
+  --mode-spark: var(--color-content);
 }
 
 html.theme-light .orchestrator-constellation {
-  --mode-color: #c026d3;
+  --mode-color: var(--color-accent);
   --mode-glow: rgb(192 38 211 / 0.5);
-  --mode-spark: #f5d0fe;
+  --mode-spark: var(--color-accent);
 }
 
 .orchestrator-network {
@@ -860,13 +859,6 @@ input,
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 1.6;
-}
-
-.agent-markdown .markdown-code-copy-pages,
-.agent-markdown .markdown-code-copy-check {
-  transform-box: fill-box;
-  transform-origin: center;
 }
 
 .agent-markdown .markdown-code-icon {

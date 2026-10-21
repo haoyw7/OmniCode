@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { useSyncExternalStore } from "react";
+import { create } from "zustand";
 import { remoteRequest } from "./connections";
 import { sharedHostEnvironment, sharedHostMachineId } from "./remoteProjects";
 import type { HostConnectionDefinition, HostConnections } from "./hostState";
@@ -86,20 +86,15 @@ export class HostConnectionDirectory {
 }
 
 let directory: HostConnectionDirectory | undefined;
-let state: HostConnectionDirectoryState = { connections: [], pending: false, error: "" };
+export const useHostConnections = create<HostConnectionDirectoryState>(() => ({ connections: [], pending: false, error: "" }));
 let stop: (() => void) | undefined;
 let activation = 0;
-const subscribers = new Set<() => void>();
 function publish(error = "") {
   const next = { connections: directory?.connections ?? [], pending: directory?.pending ?? false, error };
-  if (JSON.stringify(next) === JSON.stringify(state)) return;
-  state = next;
-  for (const listener of subscribers) listener();
+  if (JSON.stringify(next) === JSON.stringify(useHostConnections.getState())) return;
+  useHostConnections.setState(next);
   window.dispatchEvent(new Event(HOST_CONNECTIONS_CHANGE));
 }
-const subscribe = (listener: () => void) => { subscribers.add(listener); return () => { subscribers.delete(listener); }; };
-const snapshot = () => state;
-export const useHostConnections = () => useSyncExternalStore(subscribe, snapshot, snapshot);
 
 export function stopHostConnections(): void {
   stop?.();

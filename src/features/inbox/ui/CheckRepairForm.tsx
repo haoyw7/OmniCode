@@ -225,7 +225,7 @@ export function CheckRepairForm({
               setSessionId(choices[active]?.id ?? "");
             }
           }}
-          className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
+          className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
         />
       </label>
       <div
@@ -279,7 +279,7 @@ export function CheckRepairForm({
       {error ? (
         <p
           role="alert"
-          className="px-3.5 pb-3 text-[12px] leading-4 text-rose-400"
+          className="px-3.5 pb-3 text-[12px] leading-4 text-danger"
         >
           {error}
         </p>

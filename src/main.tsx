@@ -44,10 +44,7 @@ import { WindowResizeHandles } from "./app/shell/WindowResizeHandles";
 import { WindowResizeObserver } from "./app/shell/WindowResizeObserver";
 import { BootRecovery } from "./app/shell/BootRecovery";
 import { Toaster } from "./shared/ui/primitives/Sonner";
-import { configureDefaultIconArtwork } from "./shared/ui/icons";
-import { desktopIconArtwork } from "./app/desktopIconArtwork";
 
-configureDefaultIconArtwork(desktopIconArtwork);
 
 performance.mark("omnicode:bootstrap");
 // Let local boot IPC overlap loading/evaluating the workspace UI.

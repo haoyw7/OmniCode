@@ -310,7 +310,7 @@ function EnvironmentForm({ kind, onClose, onOpen, onAddConnection }: {
             </div>
           </AnimatedCollapse>
         </div>
-        {error ? <p role="alert" className="whitespace-pre-wrap break-words text-ui-sm text-red-400">{error}</p> : null}
+        {error ? <p role="alert" className="whitespace-pre-wrap break-words text-ui-sm text-danger">{error}</p> : null}
       </div>
       <ModalFooter className="border-t border-border px-4 py-3">
         <Button type="button" variant="secondary" onClick={onClose}>{t("Cancel")}</Button>

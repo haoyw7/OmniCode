@@ -515,7 +515,7 @@ export function ConnectionsSettings() {
                         {" · "}
                         <span
                           className={
-                            state === "error" ? "text-red-400" : undefined
+                            state === "error" ? "text-danger" : undefined
                           }
                         >
                           {uiT(current?.note ?? "Checking connection…")}

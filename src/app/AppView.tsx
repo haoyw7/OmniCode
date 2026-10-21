@@ -450,7 +450,7 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
                           }
                           className={
                             appPage === kind
-                              ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden outline-none"
+                              ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               : "hidden"
                           }
                         >

@@ -26,8 +26,8 @@ import {
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 const TONE = {
-  danger: "text-red-400",
-  warn: "text-amber-400",
+  danger: "text-danger",
+  warn: "text-warning",
   muted: "text-content/35",
 };
 
@@ -189,7 +189,7 @@ export function DeleteWorktreeDialog({
           </div>
         )}
         {error && (
-          <p role="alert" className="break-words text-[12.5px] text-red-400">
+          <p role="alert" className="break-words text-[12.5px] text-danger">
             {error}
           </p>
         )}

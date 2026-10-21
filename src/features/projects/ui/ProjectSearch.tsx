@@ -156,7 +156,7 @@ export function ProjectSearch({
             placeholder={uiT("Search")}
             aria-label={uiT("Search")}
             spellCheck={false}
-            className="min-w-0 flex-1 bg-transparent py-1.5 text-[12px] text-content outline-none placeholder:text-content/35"
+            className="min-w-0 flex-1 bg-transparent py-1.5 text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
           />
           <Toggle
             label={uiT("Match case")}
@@ -186,7 +186,7 @@ export function ProjectSearch({
           placeholder={uiT("files to include")}
           aria-label={uiT("files to include")}
           spellCheck={false}
-          className="w-full rounded-md border border-content/10 bg-content/5 px-2 py-1.5 text-[11px] text-content outline-none placeholder:text-content/35"
+          className="w-full rounded-md border border-content/10 bg-content/5 px-2 py-1.5 text-[11px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
         />
         <Input data-ui="input"
           value={exclude}
@@ -194,7 +194,7 @@ export function ProjectSearch({
           placeholder={uiT("files to exclude")}
           aria-label={uiT("files to exclude")}
           spellCheck={false}
-          className="w-full rounded-md border border-content/10 bg-content/5 px-2 py-1.5 text-[11px] text-content outline-none placeholder:text-content/35"
+          className="w-full rounded-md border border-content/10 bg-content/5 px-2 py-1.5 text-[11px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
         />
       </div>
 
@@ -205,7 +205,7 @@ export function ProjectSearch({
             <span>{uiT("Searching…")}</span>
           </>
         ) : error ? (
-          <span className="text-red-400">{error}</span>
+          <span className="text-danger">{error}</span>
         ) : query.trim() ? (
           <span>
             {matchCount === 0

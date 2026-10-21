@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { ListFilter } from "../../shared/ui/icons";
 import {
   ExplorerMenu,
   type ExplorerMenuItem,
@@ -62,7 +63,7 @@ export function WindowMenuButton({
         ref={anchor}
         type="button"
         data-ui="icon-button"
-        className="desktop-window-menu"
+        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 desktop-window-menu"
         aria-label={t("Main menu")}
         title={t("Main menu")}
         aria-haspopup="menu"
@@ -70,16 +71,7 @@ export function WindowMenuButton({
         data-tauri-drag-region="false"
         onClick={() => setOpen((value) => !value)}
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.75"
-          strokeLinecap="round"
-          aria-hidden="true"
-        >
-          <path d="M4 4h16M4 12h12M4 20h8" />
-        </svg>
+        <ListFilter />
       </button>
       <PresenceBoundary>
         {open && anchor.current ? (

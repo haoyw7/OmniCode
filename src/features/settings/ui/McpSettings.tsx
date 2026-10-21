@@ -257,7 +257,7 @@ function AddServerModal({
           <Input data-ui="input"
             {...form.register("name")}
             aria-invalid={!!form.formState.errors.name}
-            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 text-sm text-content outline-none placeholder:text-content/35 focus:border-input-border-hover"
+            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 text-sm text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-input-border-hover"
             placeholder="my-server"
           />
           <FieldError errors={[form.formState.errors.name]} />
@@ -269,7 +269,7 @@ function AddServerModal({
             aria-invalid={!!form.formState.errors.config}
             rows={7}
             spellCheck={false}
-            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 font-mono text-xs text-content outline-none placeholder:text-content/35 focus:border-input-border-hover"
+            className="mt-1 block w-full rounded-md border border-stroke bg-content/5 px-2 py-1.5 font-mono text-xs text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-input-border-hover"
             placeholder={
               '{"mcpServers":{"my-server":{"command":"npx","args":["-y","example-mcp"]}}}'
             }
@@ -284,7 +284,7 @@ function AddServerModal({
         {error ? (
           <p
             role="alert"
-            className="rounded-md border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-400"
+            className="rounded-md border border-danger/30 bg-danger/10 p-2 text-xs text-danger"
           >
             {error}
           </p>
@@ -488,7 +488,7 @@ function McpConnections({
       {error ? (
         <p
           role="alert"
-          className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400"
+          className="rounded-md border border-danger/30 bg-danger/10 p-3 text-xs text-danger"
         >
           {error}
         </p>

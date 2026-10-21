@@ -308,10 +308,10 @@ function CommitSummary({
             ? uiT("{count} file changed", { count: stats.files })
             : uiT("{count} files changed", { count: stats.files })}
           {stats.additions ? (
-            <span className="ml-2 font-mono text-emerald-400">+{stats.additions}</span>
+            <span className="ml-2 font-mono text-success">+{stats.additions}</span>
           ) : null}
           {stats.deletions ? (
-            <span className="ml-1.5 font-mono text-rose-400">-{stats.deletions}</span>
+            <span className="ml-1.5 font-mono text-danger">-{stats.deletions}</span>
           ) : null}
         </div>
       ) : null}
@@ -392,7 +392,7 @@ function RefPill({ refInfo }: { refInfo: GraphRef }) {
       }
     >
       {local ? (
-        <GitBranch className="size-2.5 shrink-0" strokeWidth={2} />
+        <GitBranch className="size-2.5 shrink-0" />
       ) : null}
       <span data-code-label className="min-w-0 truncate">{refInfo.name}</span>
     </span>

@@ -273,7 +273,7 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
     requestAnimationFrame(() => workspace.current?.querySelector<HTMLButtonElement>('.desktop-bots-thread-surface:not([aria-hidden]) .desktop-bots-archive-entry')?.focus());
   };
   return <div ref={workspace} className="desktop-bots-host">
-    {(error || connectionError || collaborationError) && <div className="desktop-bots-error" role="alert">{t(error ?? connectionError ?? collaborationError!)}<Button variant="ghost" size="content" type="button" onClick={() => { setError(undefined); setDismissedAt(Date.now()); }} aria-label={t("Dismiss")}><X size={14} /></Button></div>}
+    {(error || connectionError || collaborationError) && <div className="desktop-bots-error" role="alert">{t(error ?? connectionError ?? collaborationError!)}<Button variant="ghost" size="content" type="button" onClick={() => { setError(undefined); setDismissedAt(Date.now()); }} aria-label={t("Dismiss")}><X /></Button></div>}
     {visited.map((scope) => {
       const thread = snapshot?.threads.find((thread) => thread.id === scope.threadId && thread.botId === scope.botId);
       const bot = snapshot?.bots.find((bot) => bot.id === scope.botId);
@@ -316,7 +316,7 @@ function MultiBotWorkspace(props: Props & { memorySupported: boolean; runtimeSup
           {props.teamsSupported && <div className="desktop-bot-management-surface" hidden={managementPanel !== "teams"} inert={managementPanel !== "teams"}><SurfaceVisibilityContext.Provider value={visible && draftShown && managementPanel === "teams"}><DesktopBotTeams teams={teams} bots={snapshot?.bots ?? []} rpc={props.rpc} onSaved={refreshCollaboration} /></SurfaceVisibilityContext.Provider></div>}
           {props.roomsSupported && <div className="desktop-bot-management-surface" hidden={managementPanel !== "rooms"} inert={managementPanel !== "rooms"}><SurfaceVisibilityContext.Provider value={visible && draftShown && managementPanel === "rooms"}><DesktopBotRooms rooms={rooms} bots={snapshot?.bots ?? []} rpc={props.rpc} onSaved={refreshCollaboration} onOpenRoom={openRoom} /></SurfaceVisibilityContext.Provider></div>}
           {managementPanel ? null : showArchive ? <BotArchive snapshot={snapshot} busy={busy} onRestore={restore} onClose={closeArchive} /> : recipientShown ? null : <div className="desktop-bots-empty">
-            <Bot size={30} aria-hidden="true" />
+            <Bot aria-hidden="true" />
             <h2>{t(snapshot ? "No bots yet" : "Loading…")}</h2>
             {snapshot && <Button variant="ghost" size="content" type="button" onClick={() => setRecipientOpen(true)}>{t("Create bot")}</Button>}
           </div>}
@@ -409,18 +409,18 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
     <header className="desktop-bots-navigation-header">
       <div className="desktop-bots-navigation-title"><h2>{t("Bots")}</h2><span className="desktop-bots-host-name" title={hostName}>{hostName}</span></div>
       <BotNavigationToggle />
-      <IconButton size="sm" onClick={onNewBot} label={t("New bot")}><Plus size={18} /></IconButton>
+      <IconButton size="sm" onClick={onNewBot} label={t("New bot")}><Plus /></IconButton>
     </header>
     <AnimatedCollapse expanded={expanded} keepMounted><div className="desktop-bots-search">
       <InputGroup>
-        <InputGroupAddon><Search size={15} aria-hidden="true" /></InputGroupAddon>
+        <InputGroupAddon><Search aria-hidden="true" /></InputGroupAddon>
         <InputGroupInput ref={searchRef} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === "Escape" && query) { event.preventDefault(); event.stopPropagation(); clearSearch(); } }} placeholder={t(roomsSupported ? "Search bots and rooms" : "Search bots")} aria-label={t("Search bots")} />
-        {query && <InputGroupAddon align="inline-end"><IconButton size="xs" label={t("Clear search")} onClick={clearSearch}><X size={14} /></IconButton></InputGroupAddon>}
+        {query && <InputGroupAddon align="inline-end"><IconButton size="xs" label={t("Clear search")} onClick={clearSearch}><X /></IconButton></InputGroupAddon>}
       </InputGroup>
     </div>
     </AnimatedCollapse>
     <AnimatedCollapse expanded={pinnedBots.length > 0} className="desktop-bots-pinned-collapse">
-      <div className="desktop-bots-section-label"><Pin size={12} aria-hidden="true" /><span>{t("Pinned bots")}</span><small>{pinnedBots.length || retainedPinned.current.length}</small></div>
+      <div className="desktop-bots-section-label"><Pin aria-hidden="true" /><span>{t("Pinned bots")}</span><small>{pinnedBots.length || retainedPinned.current.length}</small></div>
       <div className="desktop-bots-pinned" aria-label={t("Pinned bots")}>{(pinnedBots.length ? pinnedBots : retainedPinned.current).map(bot => { const unread = unreadFor(bot); return <Button variant="ghost" size="content" type="button" key={bot.id} onClick={() => onSelectBot(bot)} aria-label={unread ? t("{bot}, {count} unread messages", { bot: bot.name, count: unread }) : bot.name} title={bot.name} aria-current={isSelected(bot) || undefined}
         onContextMenu={event => { event.preventDefault(); if (visible) setMenu({ botId: bot.id, x: event.clientX, y: event.clientY, open: true }); }}
         onKeyDown={event => {
@@ -430,24 +430,24 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
         }}><BotAvatar bot={bot} size={expanded ? 40 : 36} />{unread > 0 && <span className="desktop-bots-unread" aria-hidden="true" />}<span>{bot.name}</span></Button>; })}</div>
     </AnimatedCollapse>
     <div className="desktop-bots-contacts">
-      <AnimatedCollapse expanded={draftOpen}><Button variant="ghost" size="content" type="button" className="desktop-bots-draft-row" aria-current="page" onClick={onNewBot}><Plus size={20} /><span>{t("New")}</span></Button></AnimatedCollapse>
-      {matchingRooms.length > 0 && <div className="desktop-bots-room-nav"><div className="desktop-bots-section-label"><span>{t("Rooms")}</span><small>{matchingRooms.length}</small></div>{matchingRooms.map(room => <Button variant="ghost" size="content" type="button" key={room.id} aria-label={room.name} title={room.name} aria-current={roomSelection === room.id ? "page" : undefined} onClick={() => onOpenRoom(room.id)}><MessageSquare size={16} /><span>{room.name}</span></Button>)}</div>}
+      <AnimatedCollapse expanded={draftOpen}><Button variant="ghost" size="content" type="button" className="desktop-bots-draft-row" aria-current="page" onClick={onNewBot}><Plus /><span>{t("New")}</span></Button></AnimatedCollapse>
+      {matchingRooms.length > 0 && <div className="desktop-bots-room-nav"><div className="desktop-bots-section-label"><span>{t("Rooms")}</span><small>{matchingRooms.length}</small></div>{matchingRooms.map(room => <Button variant="ghost" size="content" type="button" key={room.id} aria-label={room.name} title={room.name} aria-current={roomSelection === room.id ? "page" : undefined} onClick={() => onOpenRoom(room.id)}><MessageSquare /><span>{room.name}</span></Button>)}</div>}
       {groups.filter(group => !search || group.bots.length > 0).map(group => <div className="desktop-bots-team-group" key={group.id}>
-        {group.team ? <Button variant="ghost" size="content" type="button" className="desktop-bots-team-heading" aria-label={group.team.name} title={group.team.name} aria-expanded={!!search || !foldedTeams.has(group.id)} disabled={!!search} onClick={() => setFoldedTeams(current => { const next = new Set(current); if (next.has(group.id)) next.delete(group.id); else next.add(group.id); return next; })}><ChevronRight size={13} /><span>{group.team.name}</span><small>{group.bots.length}</small></Button>
+        {group.team ? <Button variant="ghost" size="content" type="button" className="desktop-bots-team-heading" aria-label={group.team.name} title={group.team.name} aria-expanded={!!search || !foldedTeams.has(group.id)} disabled={!!search} onClick={() => setFoldedTeams(current => { const next = new Set(current); if (next.has(group.id)) next.delete(group.id); else next.add(group.id); return next; })}><ChevronRight /><span>{group.team.name}</span><small>{group.bots.length}</small></Button>
           : group.bots.length > 0 && <div className="desktop-bots-section-label"><span>{t(activeTeams.length ? "Other bots" : "Bots")}</span><small>{group.bots.length}</small></div>}
         <AnimatedCollapse expanded={!expanded || !!search || !foldedTeams.has(group.id)}>{group.bots.map(bot => renderBot(bot, group.team?.chiefBotId === bot.id))}</AnimatedCollapse>
       </div>)}
-      {search && !bots.length && !pinnedBots.length && !matchingRooms.length && <div className="desktop-bots-no-results" role="status"><Search size={22} aria-hidden="true" /><p>{t(roomsSupported ? "No matching conversations" : "No matching bots")}</p><Button variant="ghost" size="content" type="button" onClick={clearSearch}>{t("Clear")}</Button></div>}
+      {search && !bots.length && !pinnedBots.length && !matchingRooms.length && <div className="desktop-bots-no-results" role="status"><Search aria-hidden="true" /><p>{t(roomsSupported ? "No matching conversations" : "No matching bots")}</p><Button variant="ghost" size="content" type="button" onClick={clearSearch}>{t("Clear")}</Button></div>}
     </div>
     {(teamsSupported || roomsSupported) && <div className="desktop-bots-collaboration-nav">
-      {teamsSupported && <Button variant="ghost" size="content" type="button" aria-label={t("Manage teams")} title={t("Manage teams")} onClick={() => onManage("teams")}><Bot size={16} /><span>{t("Teams")}</span></Button>}
-      {roomsSupported && <Button variant="ghost" size="content" type="button" aria-label={t("Manage rooms")} title={t("Manage rooms")} onClick={() => onManage("rooms")}><MessageSquare size={16} /><span>{t("Rooms")}</span></Button>}
+      {teamsSupported && <Button variant="ghost" size="content" type="button" aria-label={t("Manage teams")} title={t("Manage teams")} onClick={() => onManage("teams")}><Bot /><span>{t("Teams")}</span></Button>}
+      {roomsSupported && <Button variant="ghost" size="content" type="button" aria-label={t("Manage rooms")} title={t("Manage rooms")} onClick={() => onManage("rooms")}><MessageSquare /><span>{t("Rooms")}</span></Button>}
     </div>}
-    <Button variant="ghost" size="content" type="button" className="desktop-bots-archive-entry" onClick={onArchive} aria-label={t("Archived bots and threads")} title={t("Archived bots and threads")} aria-current={archiveOpen ? "page" : undefined}><Archive size={16} /><span>{t("Archived bots and threads")}</span></Button>
+    <Button variant="ghost" size="content" type="button" className="desktop-bots-archive-entry" onClick={onArchive} aria-label={t("Archived bots and threads")} title={t("Archived bots and threads")} aria-current={archiveOpen ? "page" : undefined}><Archive /><span>{t("Archived bots and threads")}</span></Button>
     <ResizableRegion targetRef={resizePane} property="--bots-sidebar-preference" size={navigationWidth} min={240} max={400} defaultSize={280}
       disabled={!visible || !expanded} label={t("Resize sidebar")} onCommit={onNavigationWidth} />
     <ExplorerMenu ownerId="bots-navigation" open={!!menu?.open && !!menuBot && visible} x={menu?.x ?? 0} y={menu?.y ?? 0} ariaLabel={t("Bot actions")}
-      items={[{ kind: "item", id: "pin", label: t(menuBot && pins.includes(menuBot.id) ? "Unpin Bot" : "Pin Bot"), icon: <Pin size={14} /> }]}
+      items={[{ kind: "item", id: "pin", label: t(menuBot && pins.includes(menuBot.id) ? "Unpin Bot" : "Pin Bot"), icon: <Pin /> }]}
       onPick={() => { if (menuBot) onTogglePin(menuBot.id); setMenu(current => current && { ...current, open: false }); }} onClose={() => setMenu(current => current && { ...current, open: false })} />
   </nav>;
 }
@@ -460,7 +460,7 @@ function BotArchive({ snapshot, busy, onRestore, onClose }: {
   useEffect(() => { heading.current?.focus(); }, []);
   const groups = snapshot?.bots.filter((bot) => bot.archivedAt || snapshot.threads.some((thread) => thread.botId === bot.id && thread.archivedAt)) ?? [];
   return <section className="desktop-bots-archive" aria-label={t("Archived bots and threads")} onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); onClose(); } }}>
-    <header><h2 ref={heading} tabIndex={-1}>{t("Archived bots and threads")}</h2><Button variant="ghost" size="content" type="button" onClick={onClose} aria-label={t("Close")}><X size={16} /></Button></header>
+    <header><h2 ref={heading} tabIndex={-1}>{t("Archived bots and threads")}</h2><Button variant="ghost" size="content" type="button" onClick={onClose} aria-label={t("Close")}><X /></Button></header>
     <div className="desktop-bots-archive-list">
       {!groups.length && <p>{t("No archived bots or threads")}</p>}
       {groups.map((bot) => <section key={bot.id} className="desktop-bots-archive-group">

@@ -115,6 +115,7 @@ function iconMarkup(element: ReactNode) {
   const svg = host.querySelector("svg")!;
   // Match the browser's CSS serialization when comparing client and server SVGs.
   svg.style.cssText = svg.style.cssText;
+  if (!svg.getAttribute("style")) svg.removeAttribute("style");
   return svg.outerHTML;
 }
 

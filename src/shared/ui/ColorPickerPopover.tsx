@@ -52,7 +52,7 @@ export function ColorSwatchRow({
             aria-pressed={selected}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onPickIndex(index)}
-            className="grid size-5 place-items-center rounded-full"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 grid size-5 place-items-center rounded-full"
           >
             <span
               className={`size-3.5 rounded-full ${
@@ -73,7 +73,7 @@ export function ColorSwatchRow({
         aria-pressed={customColor != null}
         onMouseDown={(event) => event.preventDefault()}
         onClick={onToggleCustom}
-        className="grid size-5 place-items-center rounded-full"
+        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 grid size-5 place-items-center rounded-full"
       >
         <span
           className={`grid size-3.5 place-items-center overflow-hidden rounded-full ${
@@ -93,7 +93,6 @@ export function ColorSwatchRow({
           {!customColor ? (
             <Pipette
               className="size-2 text-white drop-shadow-sm"
-              strokeWidth={2.25}
             />
           ) : null}
         </span>
@@ -198,7 +197,7 @@ export function ColorPickerPopover({ value, onChange }: Props) {
         aria-valuenow={Math.round(hsv.s)}
         className="relative h-28 w-full cursor-crosshair touch-none rounded-md"
         style={{
-          background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, ${hueColor})`,
+          background: `linear-gradient(to top, var(--color-picker-black), transparent), linear-gradient(to right, var(--color-picker-white), ${hueColor})`,
         }}
         onPointerDown={onSvPointer}
       >
@@ -222,7 +221,7 @@ export function ColorPickerPopover({ value, onChange }: Props) {
         className="relative mt-2 h-4 w-full cursor-ew-resize touch-none rounded-full"
         style={{
           background:
-            "linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)",
+            "var(--color-picker-spectrum)",
         }}
         onPointerDown={onHuePointer}
       >
@@ -247,7 +246,7 @@ export function ColorPickerPopover({ value, onChange }: Props) {
           spellCheck={false}
           aria-label={uiT("Hex color")}
           onChange={(e) => onHexInput(e.target.value)}
-          className="min-w-0 flex-1 rounded-md border border-content/10 bg-content/5 px-2 py-1 font-mono text-[12px] text-content outline-none ring-accent/40 focus:ring-1"
+          className="min-w-0 flex-1 rounded-md border border-content/10 bg-content/5 px-2 py-1 font-mono text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring ring-accent/40 focus:ring-1"
         />
       </div>
     </div>

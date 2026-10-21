@@ -87,7 +87,7 @@ export function ExternalSessions({
         type="button"
         aria-expanded={expanded}
         onClick={() => setExpanded((value) => !value)}
-        className="flex h-7 w-full items-center gap-1.5 rounded-md px-2 text-left text-xs text-content/50 hover:bg-content/3 hover:text-content/75"
+        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 flex h-7 w-full items-center gap-1.5 rounded-md px-2 text-left text-xs text-content/50 hover:bg-content/3 hover:text-content/75"
       >
         {expanded ? (
           <ChevronDown className="size-3" />
@@ -111,7 +111,7 @@ export function ExternalSessions({
                 disabled={!!pending}
                 title={`${nativeProviderLabel(file.provider)} · ${file.cwd}\n${file.providerSessionId}`}
                 onClick={() => void open(file)}
-                className="group flex h-7 items-center gap-2 rounded-md px-2 text-left text-sm text-content/55 hover:bg-content/3 hover:text-content/85 disabled:opacity-60"
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 group flex h-7 items-center gap-2 rounded-md px-2 text-left text-sm text-content/55 hover:bg-content/3 hover:text-content/85 disabled:opacity-60"
               >
                 <span className="shrink-0 rounded border border-content/15 px-1 text-[10px] leading-4 text-content/50">
                   {nativeProviderLabel(file.provider)}
@@ -129,13 +129,13 @@ export function ExternalSessions({
             <button
               type="button"
               onClick={() => setShown((value) => value + 10)}
-              className="h-6 rounded-md px-2 text-left text-xs text-content/45 hover:bg-content/3 hover:text-content/70"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 h-6 rounded-md px-2 text-left text-xs text-content/45 hover:bg-content/3 hover:text-content/70"
             >
               {t("Show more ({count})", { count: files.length - shown })}
             </button>
           ) : null}
           {error ? (
-            <p role="alert" className="px-2 py-1 text-xs text-red-500">
+            <p role="alert" className="px-2 py-1 text-xs text-danger">
               {error}
             </p>
           ) : null}

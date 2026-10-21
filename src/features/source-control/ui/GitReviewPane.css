@@ -1,23 +1,23 @@
 /* claude-ui-analysis: code-changes-open, font-styles and root-theme-variables.
    The code renderer has its own tokens because it lives in a shadow root. */
 .git-review-pane {
-  --review-added: #32d74b;
-  --review-removed: #ff2c56;
-  --review-bg: #1a1a19;
-  --review-secondary: #c3c2b7;
-  --review-muted: #898781;
-  --review-header: color-mix(in srgb, #fff 5%, var(--review-bg));
+  --review-added: var(--color-success);
+  --review-removed: var(--color-danger);
+  --review-bg: var(--color-background-base);
+  --review-secondary: var(--color-foreground-subtle);
+  --review-muted: var(--color-foreground-subtle);
+  --review-header: color-mix(in srgb, var(--color-accent-ink) 5%, var(--review-bg));
   --review-rail-width: 18rem;
-  --review-comment: #2f7ff0;
+  --review-comment: var(--color-accent);
   background: color-mix(in srgb, var(--review-bg) calc(var(--panel-opacity) * 100%), transparent);
 }
 
 .theme-light .git-review-pane {
-  --review-added: #1e9e3c;
-  --review-removed: #cd2054;
-  --review-bg: #fff;
-  --review-secondary: #52514e;
-  --review-header: color-mix(in srgb, #0b0b0b 5%, var(--review-bg));
+  --review-added: var(--color-success);
+  --review-removed: var(--color-danger);
+  --review-bg: var(--color-accent-ink);
+  --review-secondary: var(--color-foreground-subtle);
+  --review-header: color-mix(in srgb, var(--color-background-base) 5%, var(--review-bg));
 }
 
 .review-toolbar {
@@ -137,8 +137,8 @@ html[data-skin] .review-file-search [data-ui="select-option"] {
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  background: var(--review-comment, #2f7ff0);
-  color: #fff;
+  background: var(--review-comment, var(--color-accent));
+  color: var(--color-accent-ink);
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.28);
   cursor: pointer;
   transition: filter 160ms cubic-bezier(0.22, 1, 0.36, 1), scale 160ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -150,7 +150,7 @@ html[data-skin] .review-file-search [data-ui="select-option"] {
 }
 
 .review-comment-button:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--review-comment, #2f7ff0) 45%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--review-comment, var(--color-accent)) 45%, transparent);
   outline-offset: 1px;
 }
 

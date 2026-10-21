@@ -1,4 +1,5 @@
 import { QueryObserver } from "@tanstack/react-query";
+import { createStore } from "zustand/vanilla";
 import { queryClient } from "../../../shared/lib/queryClient";
 import { translate } from "../../../shared/i18n/language";
 import { isTauri } from "@tauri-apps/api/core";
@@ -47,20 +48,17 @@ let state: NativeSessionState = {
   bound: new Set(),
   autoSync: true,
 };
-const listeners = new Set<() => void>();
+export const nativeSessionStore = createStore<NativeSessionState>(() => state);
 const accessListeners = new Map<string, Set<() => void>>();
 const accessExpiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const ACCESS_MAX_AGE = 15_000;
-export const nativeSessionSnapshot = () => state;
+export const nativeSessionSnapshot = () => nativeSessionStore.getState();
 export const subscribeNativeSessions = (listener: () => void) => {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
+  return nativeSessionStore.subscribe(listener);
 };
 function publish(patch: Partial<NativeSessionState>) {
   state = { ...state, ...patch };
-  for (const listener of listeners) listener();
+  nativeSessionStore.setState(state, true);
 }
 const desktop = () => typeof isTauri === "function" && isTauri();
 /** The shared Host's native session manager. */

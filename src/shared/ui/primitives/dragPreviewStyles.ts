@@ -6,15 +6,17 @@ type SheetEntry = { source: CSSStyleSheet; count: number; copy: CSSStyleSheet };
 type Cache = { sheets: CSSStyleSheet[]; entries: SheetEntry[]; users: number; stop?: () => void };
 const caches = new WeakMap<Document, Cache>();
 
-function rewriteSelectors(rules: CSSRuleList) {
-  for (const rule of rules) {
+function rewriteSelectors(rules: CSSRuleList): string {
+  return [...rules].map(rule => {
     if (rule instanceof CSSStyleRule) {
       const selector = rule.selectorText.replace(/(?<!\\):root\b/g, "html")
         .replace(/(?<!\\):(hover|active|focus-visible|focus-within|focus)(?![\w-])/g, "[data-preview-$1]");
-      if (selector !== rule.selectorText) rule.selectorText = selector;
+      const nested = "cssRules" in rule ? rewriteSelectors((rule as CSSGroupingRule).cssRules) : "";
+      return `${selector} { ${rule.style.cssText} ${nested} }`;
     }
-    if ("cssRules" in rule) rewriteSelectors((rule as CSSGroupingRule).cssRules);
-  }
+    if ("cssRules" in rule) return `${rule.cssText.slice(0, rule.cssText.indexOf("{"))}{${rewriteSelectors((rule as CSSGroupingRule).cssRules)}}`;
+    return rule.cssText;
+  }).join("\n");
 }
 
 function refresh(document: Document, cache: Cache, dirty = new Set<CSSStyleSheet>()) {
@@ -30,8 +32,7 @@ function refresh(document: Document, cache: Cache, dirty = new Set<CSSStyleSheet
       continue;
     }
     const sheet = new CSSStyleSheet({ baseURL: original.href ?? document.baseURI, media: original.media.mediaText, disabled: original.disabled });
-    sheet.replaceSync([...original.cssRules].map(rule => rule.cssText).join("\n"));
-    rewriteSelectors(sheet.cssRules);
+    sheet.replaceSync(rewriteSelectors(original.cssRules));
     sheets.push(sheet);
     entries.push({ source: original, count: original.cssRules.length, copy: sheet });
   }

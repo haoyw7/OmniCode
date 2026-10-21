@@ -118,8 +118,8 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
       <SearchableSelect label={t("Memory file")} value={path} options={fileOptions} codeLabels className="desktop-bots-memory-file"
         searchPlaceholder={t("Search options…")} emptyLabel={t("No matching options")}
         onChange={(next) => drafts.update(botId, (value) => ({ ...value, path: next }))} />
-      <IconButton label={t("New topic")} active={newTopic} aria-expanded={newTopic} onClick={() => setNewTopic((value) => !value)}><Plus size={16} /></IconButton>
-      <IconButton label={t("Refresh")} disabled={loading || draft?.busy} onClick={() => void load()}><RefreshCw size={16} /></IconButton>
+      <IconButton label={t("New topic")} active={newTopic} aria-expanded={newTopic} onClick={() => setNewTopic((value) => !value)}><Plus /></IconButton>
+      <IconButton label={t("Refresh")} disabled={loading || draft?.busy} onClick={() => void load()}><RefreshCw /></IconButton>
     </div>
     <AnimatedCollapse expanded={newTopic}>
       <form className="desktop-bots-memory-new" noValidate onSubmit={openTopic}>
@@ -161,7 +161,7 @@ export function DesktopBotMemory({ botId, rpc, drafts }: { botId: string; rpc: B
       </div>
       <div className="desktop-bot-row-group"><section className="assistant-settings-section" data-open={historyOpen}>
         <Button variant="ghost" size="content" type="button" className="assistant-settings-disclosure" aria-expanded={historyOpen} onClick={() => setHistoryOpen((value) => !value)}>
-          <span className="assistant-settings-disclosure-title">{t("Change history")}</span><ChevronDown size={16} aria-hidden="true" />
+          <span className="assistant-settings-disclosure-title">{t("Change history")}</span><ChevronDown aria-hidden="true" />
         </Button>
         <AnimatedCollapse expanded={historyOpen}><div className="desktop-bots-memory-history">
             {historyError && <p role="alert">{t(historyError)} <Button size="sm" variant="secondary" type="button" onClick={() => void loadHistory()}>{t("Retry")}</Button></p>}

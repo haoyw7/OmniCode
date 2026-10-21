@@ -210,7 +210,7 @@ export function SkillPromptField({ value, harness, cwd, onChange, invalid }: Pro
         placeholder={uiT(
           "Tell the agent what to do when this automation runs…",
         )}
-        className="composer-field relative min-h-28 w-full resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent px-3 py-3 font-sans text-sm leading-5.5 outline-none placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap"
+        className="composer-field relative min-h-28 w-full resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent px-3 py-3 font-sans text-sm leading-5.5 outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap"
       />
     </div>
   );

@@ -20,9 +20,10 @@ export function PairingQrCode({ value, label }: { value: string; label: string }
       aria-label={label}
       viewBox={`0 0 ${size} ${size}`}
       shapeRendering="crispEdges"
-      className="size-48 rounded-lg bg-white"
+      className="size-48 rounded-lg"
+      style={{ background: "var(--color-qr-background)" }}
     >
-      <path d={path} fill="#000" />
+      <path d={path} fill="var(--color-qr-ink)" />
     </svg>
   );
 }

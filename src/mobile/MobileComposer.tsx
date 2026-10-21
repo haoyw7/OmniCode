@@ -309,19 +309,19 @@ function useMobileComposerController(props: Props) {
     props.running && !props.value.trim() && !props.attachments.length ? (
       <button
         type="button"
-        className="mobile-send"
+        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-send"
         data-stop="true"
         data-state={props.working ? "stopping" : "streaming"}
         disabled={!props.canStop || props.working}
         aria-label={t("Stop")}
         onClick={props.onStop}
       >
-        {props.working ? <MobileSpinner size={24} className="mobile-spin" /> : <Square size={16} fill="currentColor" />}
+        {props.working ? <MobileSpinner size={24} className="mobile-spin" /> : <Square fill="currentColor" />}
       </button>
     ) : (
       <button
         type="submit"
-        className="mobile-send"
+        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-send"
         data-state={props.working ? "sending" : "ready"}
         disabled={!props.canSend}
         aria-label={t("Send message")}
@@ -329,7 +329,7 @@ function useMobileComposerController(props: Props) {
         {props.working ? (
           <MobileSpinner size={20} className="mobile-spin" />
         ) : (
-          <ArrowUp size={20} />
+          <ArrowUp />
         )}
       </button>
     )
@@ -448,7 +448,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         {inlineOpen && <div className="mobile-sheet mobile-command-suggestions">
           <div className="mobile-skill-heading"><strong>{t("Skills and commands")}</strong>
             <IconButton type="button" label={t("Close suggestions")}
-              onPointerDown={event => event.preventDefault()} onClick={dismissSkills}><X size={24} /></IconButton>
+              onPointerDown={event => event.preventDefault()} onClick={dismissSkills}><X /></IconButton>
           </div>
           <MobileSkillList skills={options} loading={skillsState.loading} failed={!!skillsState.failed} error={skillsState.error}
             active={skillActive} id={skillListId} onPick={pickSkill} onActive={setSkillActive} onRetry={() => void skillsState.reload(true)} />
@@ -489,7 +489,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           >
             <button
               type="button"
-              className="mobile-composer-model"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-composer-model"
               title={[modelName, effort && t(effort)].filter(Boolean).join(" · ")}
               disabled={props.disabled || props.running}
               aria-label={t("Model and reasoning")}
@@ -509,13 +509,13 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
               {props.catalogLoading ? (
                 <MobileSpinner size={16} className="mobile-spin" role="status" aria-label={t("Loading…")} />
               ) : (
-                <ChevronsUpDown size={16} aria-hidden="true" />
+                <ChevronsUpDown aria-hidden="true" />
               )}
             </button>
             {workspace && (
               <button
                 type="button"
-                className="mobile-composer-workspace"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-composer-workspace"
                 data-worktree={workspace.value.mode === "worktree" || workspace.value.linkedWorktree || undefined}
                 title={workspace.value.cwd ?? workspaceName}
                 disabled={props.disabled || props.running || workspace.creating}
@@ -529,13 +529,13 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                 }}
               >
                 {workspace.value.mode === "worktree" || workspace.value.linkedWorktree
-                  ? <FolderTree size={16} aria-hidden="true" />
-                  : <Folder size={16} aria-hidden="true" />}
+                  ? <FolderTree aria-hidden="true" />
+                  : <Folder aria-hidden="true" />}
                 <span>{workspaceName}</span>
                 {workspace.creating ? (
                   <MobileSpinner size={16} className="mobile-spin" aria-hidden="true" />
                 ) : (
-                  <ChevronsUpDown size={16} aria-hidden="true" />
+                  <ChevronsUpDown aria-hidden="true" />
                 )}
               </button>
             )}
@@ -611,7 +611,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             <div className="mobile-composer-toolbar">
               <button
                 type="button"
-                className="mobile-composer-action mobile-composer-add"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-composer-action mobile-composer-add"
                 aria-label={t("Add to message")}
                 aria-haspopup="dialog"
                 aria-expanded={props.panel === "actions"}
@@ -622,13 +622,13 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                   props.onPanelChange("actions");
                 }}
               >
-                <Plus size={24} />
+                <Plus />
               </button>
               <div className="mobile-composer-controls">
                 {props.planMode && (
                   <button
                     type="button"
-                    className={`mobile-composer-plan ${planStyle.pill?.className ?? planStyle.className}`}
+                    className={`hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-composer-plan ${planStyle.pill?.className ?? planStyle.className}`}
                     disabled={props.disabled}
                     aria-label={t("Plan mode")}
                     title={t("Plan mode")}
@@ -644,7 +644,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                 )}
                 <button
                   type="button"
-                  className="mobile-composer-action mobile-composer-permissions"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-composer-action mobile-composer-permissions"
                   data-full-access={
                     props.configuration.runtimeMode === "full-access"
                   }
@@ -665,7 +665,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                     size={20}
                     className={
                       props.configuration.runtimeMode === "full-access"
-                        ? "text-amber-400/90"
+                        ? "text-warning/90"
                         : undefined
                     }
                   />
@@ -746,7 +746,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         {() => (
         <button
           type="button"
-          className="mobile-sheet-row"
+          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
           aria-label={t("Turn off plan mode")}
           disabled={props.disabled}
           onClick={() => {
@@ -754,7 +754,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             props.onPlanModeChange(false);
           }}
         >
-          <X size={20} />
+          <X />
           <span>{t("Turn off")}</span>
         </button>
         )}
@@ -774,7 +774,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             <button
               type="button"
               role="radio"
-              className="mobile-sheet-row"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
               key={mode}
               aria-checked={props.configuration.runtimeMode === mode}
               disabled={props.disabled}
@@ -791,7 +791,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                 size={20}
                 className={
                   mode === "full-access"
-                    ? "text-amber-400/90"
+                    ? "text-warning/90"
                     : "text-content/70"
                 }
               />
@@ -799,7 +799,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                 <strong>{t(RUNTIME_MODE_LABEL[mode])}</strong>
               </span>
               {props.configuration.runtimeMode === mode && (
-                <Check size={20} />
+                <Check />
               )}
             </button>
           ))}
@@ -819,43 +819,43 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         {() => <>
         <button
           type="button"
-          className="mobile-sheet-row"
+          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
           disabled={props.disabled || props.readingAttachments}
           onClick={() => openFilePicker(camera.current)}
         >
-          <Camera size={20} />
+          <Camera />
           <span>{t("Camera")}</span>
         </button>
         <button
           type="button"
-          className="mobile-sheet-row"
+          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
           disabled={props.disabled || props.readingAttachments}
           onClick={() => openFilePicker(photos.current)}
         >
-          <Images size={20} />
+          <Images />
           <span>{t("Gallery")}</span>
         </button>
         <button
           type="button"
-          className="mobile-sheet-row"
+          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
           disabled={props.disabled || props.readingAttachments}
           onClick={() => openFilePicker(files.current)}
         >
-          <File size={20} />
+          <File />
           <span>{t("Files")}</span>
         </button>
         <div className="mobile-menu-divider" role="separator" />
         {props.loadSkills && (
-          <button type="button" className="mobile-sheet-row" aria-haspopup="dialog"
+          <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row" aria-haspopup="dialog"
             disabled={props.disabled}
             onClick={() => { setSkillActive(0); props.onPanelChange("skills"); }}>
-            <Shapes size={20} />
+            <Shapes />
             <span>{t("Skills")}</span>
           </button>
         )}
         <button
           type="button"
-          className="mobile-sheet-row"
+          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
           role="switch"
           aria-checked={props.planMode}
           disabled={props.disabled}
@@ -864,15 +864,15 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             props.onPlanModeChange(!props.planMode);
           }}
         >
-          <AiIdea size={20} className="text-yellow-300/80" />
+          <AiIdea className="text-warning/80" />
           <span>{t("Plan mode")}</span>
-          {props.planMode && <Check size={20} />}
+          {props.planMode && <Check />}
         </button>
         {!props.lockedAgent && (
-          <button type="button" className="mobile-sheet-row" aria-label={t("Choose project")}
+          <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row" aria-label={t("Choose project")}
             disabled={props.disabled || props.running || !props.projects.length}
             onClick={() => props.onPanelChange("projects")}>
-            <Folder size={20} />
+            <Folder />
             <span>{t("Choose project")}</span>
           </button>
         )}
@@ -912,7 +912,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           {props.projects.map((project) => (
             <button
               type="button"
-              className="mobile-sheet-row"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
               role="radio"
               key={project.id}
               disabled={props.disabled}
@@ -923,12 +923,12 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                   props.onProjectChange(project);
               }}
             >
-              <Folder size={20} />
+              <Folder />
               <span className="mobile-sheet-row-text">
                 <strong>{project.name}</strong>
                 <small>{project.machine?.kind === "wsl" ? `WSL · ${project.machine.distribution} · ${project.cwd}` : project.cwd}</small>
               </span>
-              {project.id === props.project?.id && <Check size={20} />}
+              {project.id === props.project?.id && <Check />}
             </button>
           ))}
         </div>

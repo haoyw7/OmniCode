@@ -29,7 +29,7 @@ export function BotSettingsDialog({ title, summary, preview, open, busy, invalid
         <span className="desktop-bot-settings-entry-summary">{summary}</span>
         {preview && <span className="desktop-bot-settings-entry-preview">{preview}</span>}
       </span>
-      <ChevronRight size={16} aria-hidden="true" />
+      <ChevronRight aria-hidden="true" />
     </Button>
     <SurfaceAppearance.Provider value="settings">
       <PresenceBoundary>{open && visible ? <Modal title={title} description={t("Changes apply when you save settings.")} size={size} fitViewport className="desktop-bot-settings-dialog" onClose={onCancel}>

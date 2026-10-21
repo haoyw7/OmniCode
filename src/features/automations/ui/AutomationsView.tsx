@@ -357,7 +357,7 @@ function AutomationsContent({
               placeholder={uiT("Filter automations")}
               spellCheck={false}
               autoComplete="off"
-              className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] outline-none placeholder:text-content/40"
+              className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
             />
           </label>
           <Button variant="ghost" size="icon-sm"
@@ -426,7 +426,7 @@ function AutomationsContent({
 
       <main data-automation-detail className="flex min-h-0 min-w-0 flex-1 flex-col">
         {error ? (
-          <div className="m-4 flex shrink-0 items-start gap-2 rounded-lg border border-red-400/20 bg-red-400/8 px-3 py-2 text-[12px] text-red-300">
+          <div className="m-4 flex shrink-0 items-start gap-2 rounded-lg border border-danger/20 bg-danger/8 px-3 py-2 text-[12px] text-danger">
             <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
             <span>{error}</span>
           </div>
@@ -827,11 +827,11 @@ function runStatusLabel(status: AutomationRun["status"]): string {
 }
 
 function runStatusTone(status: AutomationRun["status"]): string {
-  if (status === "succeeded") return "bg-emerald-500/12 text-emerald-400";
-  if (status === "failed") return "bg-rose-500/12 text-rose-400";
-  if (status === "skipped") return "bg-amber-500/12 text-amber-400";
+  if (status === "succeeded") return "bg-success/12 text-success";
+  if (status === "failed") return "bg-danger/12 text-danger";
+  if (status === "skipped") return "bg-warning/12 text-warning";
   if (status === "cancelled") return "bg-content/8 text-content/50";
-  return "bg-blue-500/12 text-blue-400";
+  return "bg-accent/12 text-accent";
 }
 
 function runTriggerMeta(
@@ -985,7 +985,7 @@ function AutomationEditor({
                 value={draft.name}
                 onChange={(event) => update("name", event.target.value)}
                 placeholder={uiT("Untitled")}
-                className="min-w-0 flex-1 bg-transparent text-[20px] font-semibold leading-tight text-content outline-none placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[20px] font-semibold leading-tight text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
               />
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                 {!draft.id || dirty ? (
@@ -1210,7 +1210,7 @@ function AutomationEditor({
                       value={triggerQuery}
                       onChange={(event) => setTriggerQuery(event.target.value)}
                       placeholder={uiT("Search triggers")}
-                      className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35"
+                      className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
                     />
                   </label>
                   <div className="p-1">
@@ -1432,7 +1432,7 @@ function AutomationEditor({
             </section>
 
             <details className="rounded-md border border-content/10">
-              <summary className="flex min-h-14 cursor-default list-none items-center justify-between gap-3 px-4 active:opacity-75">
+              <summary className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring flex min-h-14 cursor-default list-none items-center justify-between gap-3 px-4 active:opacity-75">
                 <span>
                   <span className="block text-[13px] font-medium text-content/75">
                     {uiT("Advanced")}

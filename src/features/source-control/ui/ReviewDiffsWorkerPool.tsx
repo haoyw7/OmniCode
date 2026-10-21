@@ -1,5 +1,6 @@
 // Adapted from ZCode (Apache-2.0).
-import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { create } from "zustand";
 import { preloadHighlighter } from "@pierre/diffs";
 import { WorkerPoolContext } from "@pierre/diffs/react";
 import { WorkerPoolManager } from "@pierre/diffs/worker";
@@ -28,8 +29,8 @@ type PoolEntry = {
 let entry: PoolEntry | undefined;
 let users = 0;
 let idleTimer: number | undefined;
-const listeners = new Set<() => void>();
-const notify = () => listeners.forEach((listener) => listener());
+const usePool = create(() => ({ manager: undefined as WorkerPoolManager | undefined }));
+const notify = () => usePool.setState({ manager: entry?.ready ? entry.manager : undefined });
 
 function startPool(): PoolEntry {
   let stopped = false;
@@ -120,14 +121,8 @@ function release() {
   }, REVIEW_POOL_IDLE_MS);
 }
 
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-const snapshot = () => (entry?.ready ? entry.manager : undefined);
-
 export function ReviewDiffsWorkerPool({ children }: { children: ReactNode }) {
-  const pool = useSyncExternalStore(subscribe, snapshot, () => undefined);
+  const pool = usePool(state => state.manager);
   const themes = useCodeThemes();
   useEffect(() => {
     acquire();

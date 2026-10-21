@@ -114,7 +114,7 @@ export function MobileAgentDefaults({
         <button
           ref={trigger}
           type="button"
-          className="mobile-settings-row"
+          className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-settings-row"
           aria-haspopup="dialog"
           aria-expanded={panel === "agent-defaults"}
           disabled={unavailable || !resolved}
@@ -125,7 +125,7 @@ export function MobileAgentDefaults({
             <span>{t("Agent and model")}</span>
             <small>{summary}</small>
           </span>
-          <ChevronRight size={20} />
+          <ChevronRight />
         </button>
         <div className="mobile-settings-row mobile-settings-row-stacked">
           <span className="mobile-settings-icon" aria-hidden="true">

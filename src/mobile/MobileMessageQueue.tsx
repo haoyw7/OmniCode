@@ -107,14 +107,14 @@ function MobileQueueView({
       <div className="mobile-queue">
         {view.paused && (
           <div className="mobile-queue-paused">
-            <Pause size={16} aria-hidden="true" />
+            <Pause aria-hidden="true" />
             <span>{t("Queue paused")}</span>
             <button
               type="button"
               disabled={blocked || !view.canResume}
-              onClick={view.resumeQueue}
+              onClick={view.resumeQueue} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
             >
-              <Play size={16} aria-hidden="true" />
+              <Play aria-hidden="true" />
               {t("Resume")}
             </button>
           </div>
@@ -125,7 +125,7 @@ function MobileQueueView({
             onActiveChange={(active) => { setDragging(active); if (active) setMenuId(undefined); void lightImpact(); }}
             renderOverlay={(id) => {
               const message = messages.find(message => message.id === id)!;
-              return <><ListEnd size={16} /><span>{message.text.trim() || t("Queued attachments ({count})", { count: message.attachments.length })}</span><MoreHorizontal size={16} /></>;
+              return <><ListEnd /><span>{message.text.trim() || t("Queued attachments ({count})", { count: message.attachments.length })}</span><MoreHorizontal /></>;
             }}>
           {messages.map((message) => {
             const label =
@@ -141,7 +141,7 @@ function MobileQueueView({
                 style={item.style}
                 type="button"
                 key={message.id}
-                className="mobile-queue-pill"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-queue-pill"
                 data-queue-id={message.id}
                 data-sortable={sortable}
                 data-dragging={item.dragging}
@@ -162,11 +162,11 @@ function MobileQueueView({
                   setMenuId(message.id);
                 }}
               >
-                <ListEnd size={16} aria-hidden="true" />
+                <ListEnd aria-hidden="true" />
                 {message.origin?.kind === "assistant" && <small>{t("From {value0}", { value0: message.origin.assistantName || t("Assistant") })}</small>}
                 {message.blocked && <small title={t(message.blocked)}>{t("Blocked")}</small>}
                 <span>{label}</span>
-                <MoreHorizontal size={16} aria-hidden="true" />
+                <MoreHorizontal aria-hidden="true" />
               </motion.button>}</SortableItem>
             );
           })}
@@ -191,38 +191,38 @@ function MobileQueueView({
         >
           <button
             type="button"
-            className="mobile-sheet-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
             disabled={blocked || !view.canDelete}
             onClick={() => {
               view.runAction(() => onRestore(menuMessage));
               setMenuId(undefined);
             }}
           >
-            <Pencil size={20} />
+            <Pencil />
             <span>{t("Edit message")}</span>
           </button>
           <button
             type="button"
-            className="mobile-sheet-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
             disabled={blocked || !!menuMessage.blocked || !view.canSteer}
             onClick={() => {
               view.steerMessage(menuMessage.id);
               setMenuId(undefined);
             }}
           >
-            <CornerDownRight size={20} />
+            <CornerDownRight />
             <span>{t("Use as steering")}</span>
           </button>
           <button
             type="button"
-            className="mobile-sheet-row mobile-queue-remove"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row mobile-queue-remove"
             disabled={blocked || !view.canDelete}
             onClick={() => {
               view.deleteMessage(menuMessage.id);
               setMenuId(undefined);
             }}
           >
-            <Trash2 size={20} />
+            <Trash2 />
             <span>{t("Cancel message send")}</span>
           </button>
         </MobileSheet>

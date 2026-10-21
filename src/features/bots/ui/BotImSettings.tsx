@@ -154,7 +154,7 @@ export function BotImSettings({
           {t("Feishu")}
         </span>
         <small className="assistant-settings-summary">{summary}</small>
-        <ChevronDown size={18} aria-hidden="true" />
+        <ChevronDown aria-hidden="true" />
       </Button>
       <AnimatedCollapse expanded={open}>
         {!supported ? (

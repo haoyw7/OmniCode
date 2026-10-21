@@ -54,10 +54,6 @@ html[data-skin] [data-session-card] [data-session-avatar] {
   color: var(--color-ink);
 }
 
-html[data-skin] [data-session-dense] .bg-sky-500 {
-  background-color: var(--color-accent);
-}
-
 @media (prefers-reduced-motion: reduce) {
 html[data-skin] [data-session-dense] {
     transition: none;

@@ -360,7 +360,7 @@ export function FilePreviewSearch({
         >
           <div
             className={cn("flex h-[26px] min-w-0 flex-1 items-center rounded-md border bg-content/[0.06] px-2", (query && total === 0) || result.invalid
-                ? "border-red-400/55"
+                ? "border-danger/55"
                 : "border-content/10")}
           >
             <Input variant="inline"
@@ -374,12 +374,12 @@ export function FilePreviewSearch({
               autoCapitalize="off"
               spellCheck={false}
               onChange={(event) => updateQuery(event.currentTarget.value)}
-              className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[12px] text-content outline-none"
+              className="h-6 min-w-0 flex-1 border-0 bg-transparent p-0 font-mono text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
             <span
               aria-live="polite"
               className={cn("w-[13ch] shrink-0 overflow-hidden pl-2 text-right font-mono text-[11px] tabular-nums text-ellipsis whitespace-nowrap", (query && total === 0) || result.invalid
-                  ? "text-red-400"
+                  ? "text-danger"
                   : "text-content/45")}
             >
               {count}
@@ -656,7 +656,7 @@ function ensureHighlightStyles(document: Document | null | undefined) {
   style.textContent = `
     ::highlight(${MATCH_HIGHLIGHT}) {
       background-color: rgba(226, 192, 141, 0.46);
-      background-color: color-mix(in srgb, #e2c08d 46%, transparent);
+      background-color: color-mix(in srgb, var(--color-warning) 46%, transparent);
     }
     ::highlight(${CURRENT_HIGHLIGHT}) {
       background-color: rgba(69, 155, 247, 0.62);

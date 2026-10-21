@@ -1,3 +1,4 @@
+import { cn } from "../shared/lib/cn";
 import { useId, useRef, type ReactNode } from "react";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { useMobilePageState } from "./mobilePageState";
@@ -77,7 +78,7 @@ export function MobileListPreview<T>({
           {(hasMore || visibleLimit > previewLimit) && (
             <button
               type="button"
-              className={buttonClassName}
+              className={cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", buttonClassName)}
               aria-expanded={visibleLimit > previewLimit}
               aria-controls={id}
               onClick={() =>

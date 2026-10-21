@@ -4,6 +4,7 @@ import { isPaneResizing, subscribePaneResize } from "../lib/paneResize";
 import { immediateTransition, panelTransition } from "../motion/tokens";
 import { useMotionPreference } from "../motion/useMotionPreference";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "./SurfaceVisibility";
+import { cn } from "../lib/cn";
 
 export const ListMotionContext = createContext(true);
 
@@ -59,7 +60,7 @@ export const ListMotionButton = forwardRef<HTMLButtonElement, ComponentPropsWith
     const animation = useListMotion();
     const visible = useSurfaceVisibility();
     return <SurfaceVisibilityContext.Provider value={visible && !animation.inert}>
-      <motion.button {...animation} {...props} ref={ref} />
+      <motion.button {...animation} {...props} ref={ref} className={cn("hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70", props.className)} />
     </SurfaceVisibilityContext.Provider>;
   },
 );

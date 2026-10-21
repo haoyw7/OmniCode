@@ -284,8 +284,8 @@ function ActivityPhaseGroup({
         {label}
         {diff && (diff.additions > 0 || diff.deletions > 0) && (
           <span className="activity-diff-badge shrink-0 font-mono text-xs">
-            <span className="text-emerald-400">+{diff.additions}</span>
-            <span className="ms-1 text-red-400">−{diff.deletions}</span>
+            <span className="text-success">+{diff.additions}</span>
+            <span className="ms-1 text-danger">−{diff.deletions}</span>
           </span>
         )}
         {sheet && (
@@ -567,7 +567,7 @@ function SubagentPanel({
       ) : (
         <span
           className={cn("min-w-0 flex-1 truncate font-sans text-sm transition-colors duration-200", state === "rejected"
-              ? "text-red-400"
+              ? "text-danger"
               : "text-content/75 group-hover:text-content")}
         >
           {name}
@@ -645,7 +645,7 @@ function SubagentPanel({
               {report ? (
                 <div className="zen-phase-step py-1">
                   {failed ? (
-                    <pre className="min-w-0 whitespace-pre-wrap break-words font-mono text-ui-sm leading-5 text-red-400/80">
+                    <pre className="min-w-0 whitespace-pre-wrap break-words font-mono text-ui-sm leading-5 text-danger/80">
                       {report}
                     </pre>
                   ) : (

@@ -146,10 +146,10 @@ html[data-skin] {
   --desktop-focus-shadow: 0 0 0 2px var(--desktop-focus-gap), 0 0 0 3.5px var(--desktop-focus-info);
   --desktop-primary: var(--color-ink);
   --desktop-on-primary: var(--color-app);
-  --desktop-control-track: #ffffff26;
-  --desktop-control-checked: #4682d5;
-  --desktop-control-knob: #151515;
-  --desktop-control-disabled: #89878126;
+  --desktop-control-track: color-mix(in srgb, var(--color-accent-ink) 14.9%, transparent);
+  --desktop-control-checked: var(--color-accent);
+  --desktop-control-knob: var(--color-background-base);
+  --desktop-control-disabled: color-mix(in srgb, var(--color-foreground-subtle) 14.9%, transparent);
   --desktop-popup-x: 0px;
   --desktop-popup-y: 0px;
   --desktop-menu-row: 24px;
@@ -189,18 +189,18 @@ html[data-skin].theme-light {
   --cds-fill-ghost-hover: rgb(11 11 11 / 5%);
   --cds-fill-ghost-selected: rgb(11 11 11 / 10%);
   --shadow-panel: 0 0 0 0.5px var(--color-composer-ring), 0 8px 24px rgb(0 0 0 / 8%);
-  --desktop-control-knob: #ffffff;
-  --desktop-control-disabled: #8987811a;
+  --desktop-control-knob: var(--color-accent-ink);
+  --desktop-control-disabled: color-mix(in srgb, var(--color-foreground-subtle) 10.2%, transparent);
   --shadow-sheet: 0 0 0 0.5px var(--color-composer-ring), 0 2px 8px rgb(0 0 0 / 5%);
   --desktop-shadow-composer: 0 2px 8px rgb(0 0 0 / 8%);
-  --desktop-primary: #141413;
-  --desktop-on-primary: #ffffff;
-  --desktop-danger: #b53333;
-  --desktop-on-danger: #ffffff;
-  --desktop-control-ink: #141413;
-  --desktop-control-placeholder: #73726c;
+  --desktop-primary: var(--color-background-base);
+  --desktop-on-primary: var(--color-accent-ink);
+  --desktop-danger: var(--color-danger);
+  --desktop-on-danger: var(--color-accent-ink);
+  --desktop-control-ink: var(--color-background-base);
+  --desktop-control-placeholder: var(--color-foreground-subtle);
   --desktop-control-border: rgb(31 30 29 / 30%);
-  --desktop-control-track: #faf9f5;
+  --desktop-control-track: var(--color-background-base);
   --desktop-focus-info: rgb(50 102 173 / 50%);
 }
 

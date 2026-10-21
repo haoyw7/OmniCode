@@ -79,6 +79,21 @@
 /* Tokens no utility generates, kept outside @theme so they are never
    tree-shaken and skins may redeclare them. */
 :root {
+  --color-shadow: #000000;
+  --color-picker-black: #000000;
+  --color-picker-white: #ffffff;
+  --color-picker-spectrum: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  --color-qr-ink: #000000;
+  --color-qr-background: #ffffff;
+  --color-agent-teal: #54b9a6;
+  --color-agent-amber: #f19d38;
+  --color-agent-indigo: #6464ef;
+  --color-agent-violet: #885cf5;
+  --color-agent-blue: #3c82f6;
+  --color-agent-orange: #ed712e;
+  --color-agent-pink: #eb4699;
+  --color-agent-green: #5bc67a;
+  --color-agent-red: #ea4045;
   --m-hit: 44px;
   --m-control: 36px;
   --m-pill: 28px;

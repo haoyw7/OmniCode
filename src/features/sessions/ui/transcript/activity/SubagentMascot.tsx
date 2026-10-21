@@ -29,7 +29,7 @@ export function SubagentMascot({
       project={name}
       active={active}
       className={cn("size-3.5 shrink-0", state === "rejected"
-          ? "text-red-400"
+          ? "text-danger"
           : state === "pending"
             ? "text-content/70"
             : "text-content/45")}

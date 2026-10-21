@@ -44,5 +44,5 @@ export function BotNavigationToggle({ className }: { className?: string }) {
   const { t } = useTranslation();
   if (!navigation) return null;
   return <IconButton data-bots-navigation-toggle className={className} size="sm" label={t(navigation.expanded ? "Collapse bots list" : "Expand bots list")}
-    aria-expanded={navigation.expanded} onClick={navigation.toggle}><PanelLeft size={17} /></IconButton>;
+    aria-expanded={navigation.expanded} onClick={navigation.toggle}><PanelLeft /></IconButton>;
 }

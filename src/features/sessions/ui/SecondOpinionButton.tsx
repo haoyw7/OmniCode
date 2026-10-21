@@ -553,7 +553,6 @@ export function SecondOpinionButton({
                     {model.id === preferred ? (
                       <Check
                         className="size-3 shrink-0 text-content/45"
-                        strokeWidth={2}
                       />
                     ) : null}
                     {modelEffortSetting(model)?.options.length ? (
@@ -605,7 +604,6 @@ export function SecondOpinionButton({
                     {selected ? (
                       <Check
                         className="size-3.5 shrink-0 text-content/50"
-                        strokeWidth={2}
                       />
                     ) : null}
                   </Button>

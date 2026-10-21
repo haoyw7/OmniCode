@@ -126,7 +126,7 @@ function TabsContent({
       <TabsPrimitive.Content
         {...props}
         data-slot="tabs-content"
-        className={cn("flex-1 text-ui-base outline-none", className)}
+        className={cn("flex-1 text-ui-base outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}
       >
         {children}
       </TabsPrimitive.Content>
@@ -138,7 +138,7 @@ function TabsContent({
         forceMount
         asChild
         data-slot="tabs-content"
-        className={cn("flex-1 text-ui-base outline-none", className)}
+        className={cn("flex-1 text-ui-base outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}
       >
         <motion.div
           layout="position"

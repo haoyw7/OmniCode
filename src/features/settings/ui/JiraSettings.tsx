@@ -135,7 +135,7 @@ export function JiraSettings() {
                 disabled={busy}
                 autoComplete="off"
                 spellCheck={false}
-                className="h-8 w-full rounded-md border border-content/10 bg-transparent px-2 text-content outline-none focus:border-content/20"
+                className="h-8 w-full rounded-md border border-content/10 bg-transparent px-2 text-content outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-content/20"
               />
               <FieldError errors={[form.formState.errors[field.name]]} />
             </label>
@@ -162,7 +162,7 @@ export function JiraSettings() {
         </form>
       )}
       {error ? (
-        <p role="alert" className="mt-3 text-[12px] text-red-400/90">
+        <p role="alert" className="mt-3 text-[12px] text-danger/90">
           {error}
         </p>
       ) : null}

@@ -123,7 +123,7 @@ export function MobileProjectPicker({
               disabled={blocked}
               onClick={close}
             >
-              <X size={24} />
+              <X />
             </IconButton>
           </header>
           <div className="mobile-project-picker-navigation">
@@ -133,7 +133,7 @@ export function MobileProjectPicker({
               disabled={blocked}
               onClick={() => void browse()}
             >
-              <Computer size={16} />
+              <Computer />
               <span>{t("Home folder")}</span>
             </Button>
             <Button variant="secondary"
@@ -144,7 +144,7 @@ export function MobileProjectPicker({
                 if (parent) void browse(parent);
               }}
             >
-              <ArrowUp size={16} />
+              <ArrowUp />
               <span>{t("Parent folder")}</span>
             </Button>
           </div>
@@ -177,7 +177,7 @@ export function MobileProjectPicker({
               title={t("Go to folder")}
               disabled={blocked || loading || !path.trim()}
             >
-              <ChevronRight size={20} />
+              <ChevronRight />
             </Button>
             <FieldError errors={[form.formState.errors.path]} />
           </form>
@@ -208,16 +208,16 @@ export function MobileProjectPicker({
                 <button
                   type="button"
                   key={entry.path}
-                  className="mobile-sheet-row"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                   disabled={blocked}
                   title={entry.path}
                   onClick={() => void browse(entry.path)}
                 >
-                  <Folder size={20} />
+                  <Folder />
                   <span className="mobile-project-picker-folder-name">
                     {entry.name}
                   </span>
-                  <ChevronRight size={20} />
+                  <ChevronRight />
                 </button>
               ))
             ) : directory ? (

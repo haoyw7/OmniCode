@@ -77,7 +77,7 @@ function DesktopBotsLegacyHeader({
     <header className="assistant-header">
       <div className="assistant-header-profile">
         <span className="assistant-avatar" aria-hidden="true">
-          <Sparkles size={20} />
+          <Sparkles />
         </span>
         <div className="assistant-identity">
           <strong>{name}</strong>
@@ -99,7 +99,7 @@ function DesktopBotsLegacyHeader({
               disabled={busy}
               onClick={controls.onToggle}
             >
-              {controls.continuable ? <Play size={18} /> : <Pause size={18} />}
+              {controls.continuable ? <Play /> : <Pause />}
             </IconButton>
             <IconButton
               type="button"
@@ -108,7 +108,7 @@ function DesktopBotsLegacyHeader({
               disabled={busy || !controls.enabled}
               onClick={controls.onDisable}
             >
-              <Square size={16} />
+              <Square />
             </IconButton>
           </>
         )}
@@ -121,7 +121,7 @@ function DesktopBotsLegacyHeader({
             disabled={busy}
             onClick={onSettings}
           >
-            <Settings size={18} />
+            <Settings />
           </IconButton>
         )}
         {onClose && (
@@ -131,7 +131,7 @@ function DesktopBotsLegacyHeader({
             label={t("Close")}
             onClick={onClose}
           >
-            <X size={18} />
+            <X />
           </IconButton>
         )}
       </div>
@@ -209,7 +209,7 @@ function DesktopBotsLegacySettingsPanel({
             onClick={onClose}
             label={t("Back")}
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft />
           </IconButton>
         )}
         <strong>{title}</strong>
@@ -346,7 +346,7 @@ export function DesktopBotsComposer({
             disabled={attachDisabled}
             onClick={() => files.current?.click()}
           >
-            <Plus size={18} />
+            <Plus />
           </IconButton>
           <input
             ref={files}
@@ -373,7 +373,7 @@ export function DesktopBotsComposer({
               disabled={busy}
               onClick={onStop}
             >
-              <Square size={14} fill="currentColor" aria-hidden="true" />
+              <Square fill="currentColor" aria-hidden="true" />
             </IconButton>
           ) : <IconButton shape="round"
             type="submit"
@@ -385,7 +385,7 @@ export function DesktopBotsComposer({
             {sending ? (
               <Spinner className="size-[18px]" aria-hidden="true" />
             ) : (
-              <ArrowUp size={18} aria-hidden="true" />
+              <ArrowUp aria-hidden="true" />
             )}
           </IconButton>}
         </div>

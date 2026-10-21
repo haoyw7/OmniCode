@@ -72,12 +72,12 @@ export function DesktopBotDetails({ identity, memory, runtime, activity, automat
       {runtime && <DetailPage active={selected === "runtime"} id={`${scope}-runtime`} labelledBy={`${scope}-runtime-tab`}>{runtime}</DetailPage>}
       <DetailPage active={selected === "settings"} id={`${scope}-settings`} labelledBy={`${scope}-settings-tab`}>
         <nav aria-label={t("Bot details")} className="desktop-bot-settings-links desktop-bot-row-group">
-          {pages.map(({ key, label, icon: Icon }) => <Button variant="ghost" type="button" className="desktop-bot-row-group-link" key={key} onClick={() => setSelected(key)}><span className="desktop-bot-row-group-link-label"><Icon size={16} aria-hidden="true" /><span>{t(label)}</span></span><ChevronRight size={16} /></Button>)}
+          {pages.map(({ key, label, icon: Icon }) => <Button variant="ghost" type="button" className="desktop-bot-row-group-link" key={key} onClick={() => setSelected(key)}><span className="desktop-bot-row-group-link-label"><Icon size={16} aria-hidden="true" /><span>{t(label)}</span></span><ChevronRight /></Button>)}
         </nav>
       </DetailPage>
       {pages.map(page => <DetailPage key={page.key} active={selected === page.key} id={`${scope}-${page.key}`} labelledBy={`${scope}-settings-tab`}>
         <header className="desktop-bot-details-heading">
-          <IconButton type="button" className="assistant-icon-button" label={t("Back to settings")} onClick={() => setSelected("settings")}><ChevronLeft size={18} /></IconButton>
+          <IconButton type="button" className="assistant-icon-button" label={t("Back to settings")} onClick={() => setSelected("settings")}><ChevronLeft /></IconButton>
           <h3 ref={selected === page.key ? heading : undefined} tabIndex={-1}>{t(page.label)}</h3>
         </header>
         {page.content}

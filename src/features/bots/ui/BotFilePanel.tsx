@@ -259,7 +259,7 @@ export function BotFilePanel({
 
           onClick={() => setExpanded(true)}
         >
-          <PanelRight size={15} />
+          <PanelRight />
           <span>{shownPane.files.length}</span>
         </motionElement.button>
       ) : null}

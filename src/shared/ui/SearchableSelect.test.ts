@@ -8,6 +8,21 @@ import { SearchableSelect } from "./SearchableSelect";
 let root: Root;
 let container: HTMLDivElement;
 
+it("virtualizes a large menu and navigates to unmounted options", async () => {
+  const onChange = vi.fn();
+  const options = Array.from({ length: 1000 }, (_, index) => ({ value: String(index), label: `Option ${index}`, disabled: index === 999 }));
+  await act(async () => root.render(createElement(SearchableSelect, { label: "Large menu", value: "0", options, onChange })));
+  await act(async () => container.querySelector<HTMLButtonElement>("button")!.click());
+  const input = document.body.querySelector<HTMLInputElement>("[cmdk-input]")!;
+  expect(document.body.querySelectorAll("[cmdk-item]").length).toBeLessThan(60);
+  await act(async () => input.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true, cancelable: true })));
+  const selected = document.body.querySelector<HTMLElement>('[cmdk-item][aria-selected="true"]');
+  expect(selected?.textContent).toContain("Option 998");
+  expect(input.getAttribute("aria-activedescendant")).toBe(selected?.id);
+  await act(async () => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true })));
+  expect(onChange).toHaveBeenCalledWith("998");
+});
+
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal(

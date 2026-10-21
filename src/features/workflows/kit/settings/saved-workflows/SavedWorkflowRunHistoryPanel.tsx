@@ -126,7 +126,6 @@ export function SavedWorkflowRunHistory({
         icon = (
           <CircleCheck
             className="size-4"
-            strokeWidth={1.33}
             aria-hidden="true"
           />
         );
@@ -136,7 +135,6 @@ export function SavedWorkflowRunHistory({
         icon = (
           <TriangleAlert
             className="size-4"
-            strokeWidth={1.33}
             aria-hidden="true"
           />
         );
@@ -149,7 +147,7 @@ export function SavedWorkflowRunHistory({
         statusClass = "text-warning";
         break;
       default:
-        icon = <Ban className="size-4" strokeWidth={1.33} aria-hidden="true" />;
+        icon = <Ban className="size-4" aria-hidden="true" />;
         statusClass = "text-foreground-subtle";
     }
 

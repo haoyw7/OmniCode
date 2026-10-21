@@ -82,7 +82,7 @@ export function ReminderNotices({
         className="fixed top-3 right-3 w-[min(320px,calc(100vw-24px))] overflow-hidden rounded-xl border border-content/15 bg-background-base/95 text-content shadow-xl backdrop-blur-xl"
       >
         <div className="flex items-center gap-2 border-b border-stroke px-3 py-2.5">
-          <Clock className="size-3.5 text-amber-400" />
+          <Clock className="size-3.5 text-warning" />
           <span className="flex-1 text-[12px] font-semibold">
             {uiT("Due reminders")}
           </span>

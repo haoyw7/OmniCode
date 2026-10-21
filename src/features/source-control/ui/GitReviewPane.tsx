@@ -609,7 +609,7 @@ export function GitReviewPane({
               {actionError ? (
                 <div
                   role="alert"
-                  className="flex items-center gap-2 border-b border-content/8 px-3 py-2 text-[12px] text-red-400"
+                  className="flex items-center gap-2 border-b border-content/8 px-3 py-2 text-[12px] text-danger"
                 >
                   <span className="flex-1">{actionError}</span>
                   <ReviewIconButton

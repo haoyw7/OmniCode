@@ -87,7 +87,7 @@ function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Pro
   const saved = async () => { await onSaved(); await refresh(); };
   const name = (id: string) => bots.find(bot => bot.id === id)?.name ?? t("Unavailable Bot");
   return <section className="desktop-bot-room-chat" aria-label={state.room.name}>
-    <header className="desktop-bot-room-header"><div><h2>{state.room.name}</h2><small>{state.room.archivedAt ? t("Archived") : t("Room")}</small></div><Button variant="ghost" type="button" aria-label={t("Room settings")} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(value => !value)}><Settings size={16} /></Button></header>
+    <header className="desktop-bot-room-header"><div><h2>{state.room.name}</h2><small>{state.room.archivedAt ? t("Archived") : t("Room")}</small></div><Button variant="ghost" type="button" aria-label={t("Room settings")} aria-expanded={settingsOpen} onClick={() => setSettingsOpen(value => !value)}><Settings /></Button></header>
     <p className="desktop-bot-room-privacy">{t("Private threads are not automatically included in rooms.")}</p>
     <AnimatedCollapse expanded={settingsOpen} keepMounted className="desktop-bot-room-settings"><DesktopRoomEditor room={state.room} bots={bots} rpc={rpc} onSaved={saved} /></AnimatedCollapse>
     {!!state.rounds.length && <div className="desktop-bot-room-rounds"><Button variant="ghost" type="button" aria-expanded={roundsOpen} onClick={() => setRoundsOpen(value => !value)}>{t("Room rounds")}</Button>
@@ -102,7 +102,7 @@ function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Pro
         const bot = bots.find(bot => bot.id === message.botId);
         return <Fragment key={message.id}><BotDateSeparator createdAt={message.createdAt} previousCreatedAt={messages[index - 1]?.createdAt} />
           <article className="desktop-bot-room-message" data-kind={message.kind}>
-            <header>{message.botId && <span className="desktop-bots-avatar" aria-hidden="true">{bot?.avatar || <Bot size={16} />}</span>}<strong>{message.botId ? name(message.botId) : t("You")}</strong>{bot && <HarnessIcon harness={bot.harness} className="size-3.5" />}{message.status && <small>{t(statuses[message.status])}</small>}</header>
+            <header>{message.botId && <span className="desktop-bots-avatar" aria-hidden="true">{bot?.avatar || <Bot />}</span>}<strong>{message.botId ? name(message.botId) : t("You")}</strong>{bot && <HarnessIcon harness={bot.harness} className="size-3.5" />}{message.status && <small>{t(statuses[message.status])}</small>}</header>
             {message.kind === "assistant" ? <AgentMarkdown text={message.text} className="assistant-markdown" hardBreaks /> : <p>{message.kind === "status" ? t(message.text) : message.text}</p>}
             {message.botId && message.threadId && <Button variant="secondary" type="button" onClick={() => onOpenThread({ botId: message.botId!, threadId: message.threadId! })}>{t("Open member thread")}</Button>}
           </article>
@@ -114,7 +114,7 @@ function RoomChat({ environmentId, room, bots, rpc, onSaved, onOpenThread }: Pro
       {(error || pollError) && <p role="alert">{t(error ?? pollError!)} <Button variant="secondary" type="button" onClick={() => void refresh()}>{t("Refresh")}</Button></p>}
       <Button variant="ghost" type="button" aria-expanded={orderOpen} onClick={() => setOrderOpen(value => !value)}>{t("This round's speakers")}</Button>
       <AnimatedCollapse expanded={orderOpen} keepMounted><div className="desktop-bot-room-order"><label><Checkbox data-ui="checkbox"  checked={!customOrder} onCheckedChange={(checked) => setCustomOrder(!(checked === true))} />{t("Use room member order")}</label><AnimatedCollapse expanded={customOrder}><DesktopBotMembers bots={bots.filter(bot => state.room.memberIds.includes(bot.id))} ids={members} ordered onChange={setMembers} disabled={sending} /></AnimatedCollapse></div></AnimatedCollapse>
-      <form noValidate onSubmit={send}><Textarea variant="editor" aria-label={t("Message room")} placeholder={t("Message room")} {...form.register("draft")} aria-invalid={!!form.formState.errors.draft} disabled={sending || !!state.room.archivedAt} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} /><Button variant="primary" size="icon" type="submit" aria-label={t("Send")} disabled={sending || !!state.room.archivedAt || !draft.trim() || (customOrder && !members.length)}><ArrowUp size={17} /></Button><FieldError errors={[form.formState.errors.draft, form.formState.errors.members]} /></form>
+      <form noValidate onSubmit={send}><Textarea variant="editor" aria-label={t("Message room")} placeholder={t("Message room")} {...form.register("draft")} aria-invalid={!!form.formState.errors.draft} disabled={sending || !!state.room.archivedAt} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} /><Button variant="primary" size="icon" type="submit" aria-label={t("Send")} disabled={sending || !!state.room.archivedAt || !draft.trim() || (customOrder && !members.length)}><ArrowUp /></Button><FieldError errors={[form.formState.errors.draft, form.formState.errors.members]} /></form>
     </div>
   </section>;
 }

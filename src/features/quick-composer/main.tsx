@@ -35,10 +35,7 @@ import { subscribeSharedPreferences } from "../settings/model/sharedPreferences"
 import { Toaster } from "../../shared/ui/primitives/Sonner";
 import { initProviderAccountPublishing } from "../providers/model/providerAccountCredentials";
 import { initSounds } from "../settings/model/sounds";
-import { configureDefaultIconArtwork } from "../../shared/ui/icons";
-import { desktopIconArtwork } from "../../app/desktopIconArtwork";
 
-configureDefaultIconArtwork(desktopIconArtwork);
 
 /**
  * Only the theme, not the workspace's glass, backgrounds, or scale: the panel

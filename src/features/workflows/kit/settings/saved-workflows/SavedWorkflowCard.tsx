@@ -54,11 +54,11 @@ function SavedWorkflowLastRunBadge({
   let className: string;
   switch (kind) {
     case "completed":
-      icon = <CircleCheck className="size-4" strokeWidth={1.33} aria-hidden="true" />;
+      icon = <CircleCheck className="size-4" aria-hidden="true" />;
       className = "rounded-lg bg-success/10 text-success";
       break;
     case "errored":
-      icon = <TriangleAlert className="size-4" strokeWidth={1.33} aria-hidden="true" />;
+      icon = <TriangleAlert className="size-4" aria-hidden="true" />;
       className = "text-destructive";
       break;
     case "running":
@@ -67,7 +67,7 @@ function SavedWorkflowLastRunBadge({
       className = "rounded-lg bg-warning/10 text-warning";
       break;
     case "stopped":
-      icon = <Ban className="size-4" strokeWidth={1.33} aria-hidden="true" />;
+      icon = <Ban className="size-4" aria-hidden="true" />;
       className = "text-foreground-subtle";
       break;
   }
@@ -136,7 +136,7 @@ export const SavedWorkflowCard = memo(function SavedWorkflowCard({
           onOpen(entry);
         }
       }}
-      className="desktop-card group relative flex h-full min-h-0 cursor-pointer gap-3 overflow-hidden rounded-xl border border-card-border bg-background p-3 text-left transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-input-border-focused"
+      className="active:opacity-70 desktop-card group relative flex h-full min-h-0 cursor-pointer gap-3 overflow-hidden rounded-xl border border-card-border bg-background p-3 text-left transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-input-border-focused"
     >
       <div className="flex h-full min-w-0 flex-1 flex-col gap-3">
         <span className="block truncate pr-28 text-ui-base font-medium leading-5 text-foreground">

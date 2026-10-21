@@ -89,7 +89,7 @@ export function ToolRow({
   const summary =
     renderer === "question" ? (
       <span
-        className={cn("min-w-0 flex-1 truncate font-sans text-sm", failed ? "text-red-400" : "text-foreground-subtlest")}
+        className={cn("min-w-0 flex-1 truncate font-sans text-sm", failed ? "text-danger" : "text-foreground-subtlest")}
       >
         {t("Asked a question")}
       </span>
@@ -133,7 +133,12 @@ export function ToolRow({
       >
         {icon}
         {expandable ? (
-          <div className="flex min-w-0 flex-1 cursor-pointer" onClick={toggle}>
+          <div role="button" tabIndex={0} aria-expanded={open} className="flex min-w-0 flex-1 cursor-pointer rounded hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-selection" onClick={toggle} onKeyDown={event => {
+            if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+              event.preventDefault();
+              toggle();
+            }
+          }}>
             {summary}
           </div>
         ) : (
@@ -158,7 +163,7 @@ export function ToolRow({
           >
             <DisclosureChevron
               expanded={open}
-              className={cn("zen-disclosure-chevron size-3.5", failed ? "text-red-400/60" : "", open ? "opacity-100" : "")}
+              className={cn("zen-disclosure-chevron size-3.5", failed ? "text-danger/60" : "", open ? "opacity-100" : "")}
             />
           </Button>
         ) : null}

@@ -148,7 +148,7 @@ export function MobileModelControls({
   const selectedSetting = settings.find((setting) => setting.id === settingId);
   const rowIndicator = loading ? (
     <MobileSpinner size={20} className="mobile-spin" role="status" aria-label={t("Loading…")} />
-  ) : <ChevronRight size={20} />;
+  ) : <ChevronRight />;
   const providers = REMOTE_PROVIDERS.filter(
     (provider) =>
       catalog?.models[provider] ||
@@ -187,7 +187,7 @@ export function MobileModelControls({
             <div>
               <button
                 type="button"
-                className="mobile-sheet-row"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                 disabled={disabled || agentLocked || (loading && !catalog)}
                 aria-busy={loading || undefined}
                 onClick={() => setPage("agents")}
@@ -201,12 +201,12 @@ export function MobileModelControls({
               </button>
               <button
                 type="button"
-                className="mobile-sheet-row"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                 disabled={disabled || loading || !models.length}
                 aria-busy={loading || undefined}
                 onClick={() => setPage("models")}
               >
-                <Sparkles size={20} />
+                <Sparkles />
                 <span className="mobile-sheet-row-text mobile-sheet-row-inline">
                   <strong>{t("Model")}</strong>
                   <small>
@@ -219,11 +219,11 @@ export function MobileModelControls({
               {!settings.some((setting) => isEffortSettingId(setting.id)) && (
                 <button
                   type="button"
-                  className="mobile-sheet-row"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                   disabled
                   aria-busy={loading || undefined}
                 >
-                  <SlidersHorizontal size={20} />
+                  <SlidersHorizontal />
                   <span className="mobile-sheet-row-text mobile-sheet-row-inline">
                     <strong>{t("Reasoning effort")}</strong>
                     <small>{t(loading ? "Loading…" : "Unavailable")}</small>
@@ -241,7 +241,7 @@ export function MobileModelControls({
                   <button
                     key={setting.id}
                     type="button"
-                    className="mobile-sheet-row"
+                    className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                     disabled={disabled || loading || !setting.options.length}
                     aria-busy={loading || undefined}
                     onClick={() => {
@@ -250,9 +250,9 @@ export function MobileModelControls({
                     }}
                   >
                     {setting.id === "serviceTier" ? (
-                      <Gauge size={20} />
+                      <Gauge />
                     ) : (
-                      <SlidersHorizontal size={20} />
+                      <SlidersHorizontal />
                     )}
                     <span className="mobile-sheet-row-text mobile-sheet-row-inline">
                       <strong>{t(modelSettingTitle(setting))}</strong>
@@ -287,7 +287,7 @@ export function MobileModelControls({
                 <button
                   key={option.value}
                   type="button"
-                  className="mobile-sheet-row"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                   role="radio"
                   aria-checked={selected}
                   disabled={disabled}
@@ -304,7 +304,7 @@ export function MobileModelControls({
                   <span className="mobile-sheet-row-text">
                     <strong>{t(option.label)}</strong>
                   </span>
-                  {selected && <Check size={20} />}
+                  {selected && <Check />}
                 </button>
               );
             })}
@@ -326,7 +326,7 @@ export function MobileModelControls({
                 {group.models.map(({ item: model }) => (
                   <button
                     type="button"
-                    className="mobile-sheet-row"
+                    className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                     role="radio"
                     key={model.id}
                     aria-label={`${model.name}, ${model.provider?.name ?? HARNESS_TITLE[model.harness]}`}
@@ -349,7 +349,7 @@ export function MobileModelControls({
                       <strong>{model.name}</strong>
                     </span>
                     {(controls.model?.id === model.id ||
-                      configuration.model === model.id) && <Check size={20} />}
+                      configuration.model === model.id) && <Check />}
                   </button>
                 ))}
               </div>
@@ -364,7 +364,7 @@ export function MobileModelControls({
             {providers.map((provider) => (
               <button
                 type="button"
-                className="mobile-sheet-row"
+                className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                 role="radio"
                 key={provider}
                 aria-checked={configuration.harness === provider}
@@ -390,7 +390,7 @@ export function MobileModelControls({
                 </span>
                 {catalog?.pending?.includes(provider) && !catalog.models[provider]?.length
                   ? <MobileSpinner size={20} className="mobile-spin" role="status" aria-label={t("Loading…")} />
-                  : configuration.harness === provider && <Check size={20} />}
+                  : configuration.harness === provider && <Check />}
               </button>
             ))}
           </div>

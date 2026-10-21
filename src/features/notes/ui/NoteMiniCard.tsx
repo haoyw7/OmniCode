@@ -85,7 +85,7 @@ export function NoteMiniCard({ card, onDismiss, embedded = false }: Props) {
           onClick={onDismiss}
           className="absolute right-1.5 top-1.5"
         >
-          <X className="size-3" strokeWidth={2} />
+          <X className="size-3" />
         </Button>
       ) : null}
     </div>

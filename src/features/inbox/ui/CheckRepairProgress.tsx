@@ -167,9 +167,9 @@ export function useCheckRepairs(
 }
 
 const neutral = "text-content/55";
-const positive = "text-emerald-700 dark:text-emerald-400";
-const negative = "text-rose-700 dark:text-rose-400";
-const active = "text-amber-700 dark:text-amber-400";
+const positive = "text-success dark:text-success";
+const negative = "text-danger dark:text-danger";
+const active = "text-warning dark:text-warning";
 const states: Record<
   RepairState,
   { label: string; summary: string; Icon: IconComponent; color: string }

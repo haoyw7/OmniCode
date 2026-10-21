@@ -2,7 +2,6 @@ import {
   useEffect,
   useRef,
   useState,
-  useSyncExternalStore,
   type Dispatch,
   type RefObject,
   type SetStateAction,
@@ -19,6 +18,7 @@ import {
 } from "../../features/sessions/data/sessionStore";
 import type { Session } from "../../features/sessions/model/session";
 import { WorkspaceSessionData } from "../model/workspaceSessionData";
+import { useStore } from "zustand";
 
 export function useWorkspaceSessionData(options: {
   sessionsRef: RefObject<Session[]>;
@@ -48,11 +48,7 @@ export function useWorkspaceSessionData(options: {
         historyCwd: options.historyCwd,
       }),
   );
-  const snapshot = useSyncExternalStore(
-    data.subscribe,
-    data.snapshot,
-    data.snapshot,
-  );
+  const snapshot = useStore(data.store);
   useEffect(() => {
     data.start();
     return data.stop;

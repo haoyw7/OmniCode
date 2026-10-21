@@ -1,4 +1,5 @@
 import { queryClient } from "../../shared/lib/queryClient";
+import { createStore, type StoreApi } from "zustand/vanilla";
 import {
   isRemoteProjectPath,
   sameProjectPath,
@@ -49,8 +50,8 @@ const SAVE_MAX_WAIT_MS = 5_000;
 let sessionDataQueryId = 0;
 
 export class WorkspaceSessionData {
-  private state: WorkspaceSessionSnapshot;
-  private listeners = new Set<() => void>();
+  readonly store: StoreApi<WorkspaceSessionSnapshot>;
+  private get state() { return this.store.getState(); }
   private readonly queryScope = ["workspaceSessions", ++sessionDataQueryId] as const;
   private retainedKey(id: string) { return [...this.queryScope, "retained", id]; }
   private readKey(id: string) { return [...this.queryScope, "read", id, this.readVersions.get(id) ?? 0]; }
@@ -89,14 +90,14 @@ export class WorkspaceSessionData {
 
   constructor(private options: Options) {
     const history = options.history ?? [];
-    this.state = {
+    this.store = createStore<WorkspaceSessionSnapshot>(() => ({
       history,
       storedLinkedSessions: history.filter((session) => session.linkedWorkItem),
       loadedProjects: new Set(
         options.historyCwd ? [pathKey(options.historyCwd)] : [],
       ),
       failedProjectPaths: new Set(),
-    };
+    }));
     this.historyLoader = createProjectHistoryLoader({
       list: options.storage.list,
       start: (cwd) => {
@@ -153,14 +154,10 @@ export class WorkspaceSessionData {
 
   snapshot = () => this.state;
   subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
+    return this.store.subscribe(listener);
   };
   private publish(patch: Partial<WorkspaceSessionSnapshot>) {
-    this.state = { ...this.state, ...patch };
-    for (const listener of this.listeners) listener();
+    this.store.setState(patch);
   }
   private changed(id: string) {
     this.summaryChanges.set(id, ++this.summaryVersion);

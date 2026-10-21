@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useStore } from "zustand";
+import { createStore, type StoreApi } from "zustand/vanilla";
 import type { HostSessionSummary } from "../features/connections/model/protocol";
 
 export interface MobileProjectHistory {
@@ -9,7 +11,8 @@ export interface MobileProjectHistory {
 }
 type LoadSessions = (projectId: string) => Promise<HostSessionSummary[]>;
 type CachedSessions = (projectId: string) => HostSessionSummary[] | undefined;
-interface Subscription { ids: readonly string[]; changed: () => void; fast: boolean; seen: Map<string, MobileProjectHistory | undefined> }
+type HistoryState = { histories: Record<string, MobileProjectHistory> };
+interface Subscription { ids: readonly string[]; view: StoreApi<HistoryState>; fast: boolean; seen: Map<string, MobileProjectHistory | undefined> }
 interface Entry { settledAt: number; generation: number; pending?: Promise<void> }
 
 /** One scheduler per Host-scoped loader, shared by all visible list surfaces. */
@@ -28,7 +31,7 @@ export function createSessionListStore(load: LoadSessions) {
       // partial replies for at most one frame, even if another project hangs.
       if (!partial && item.ids.some((id) => entries.get(id)?.pending)) { waiting = true; continue; }
       item.seen = new Map(item.ids.map((id) => [id, histories[id]]));
-      item.changed();
+      item.view.setState({ histories });
     }
     if (waiting && notification === undefined) notification = setTimeout(() => publish(true), 16);
     if (!waiting) { clearTimeout(notification); notification = undefined; }
@@ -87,7 +90,26 @@ export function createSessionListStore(load: LoadSessions) {
     }
     if (Number.isFinite(delay)) timer = setTimeout(schedule, delay);
   };
+  const observe = (ids: readonly string[], fast = false) => {
+    const view = createStore<HistoryState>(() => ({ histories }));
+    const subscription: Subscription = { ids, view, fast, seen: new Map(ids.map(id => [id, histories[id]])) };
+    return {
+      view,
+      connect() {
+        subscription.seen = new Map(ids.map(id => [id, histories[id]]));
+        view.setState({ histories });
+        subscriptions.add(subscription);
+        schedule();
+        return () => {
+          subscriptions.delete(subscription);
+          if (!subscriptions.size) { clearTimeout(notification); notification = undefined; }
+          schedule();
+        };
+      },
+    };
+  };
   return {
+    observe,
     getSnapshot: () => histories,
     seed(ids: readonly string[], cached?: CachedSessions, overwrite = false) {
       const before = histories;
@@ -99,13 +121,12 @@ export function createSessionListStore(load: LoadSessions) {
       if (histories !== before) publish();
     },
     subscribe(ids: readonly string[], changed: () => void, fast = false) {
-      const subscription: Subscription = { ids, changed, fast, seen: new Map(ids.map((id) => [id, histories[id]])) };
-      subscriptions.add(subscription);
-      schedule();
+      const observation = observe(ids, fast);
+      const disconnect = observation.connect();
+      const unsubscribe = observation.view.subscribe(changed);
       return () => {
-        subscriptions.delete(subscription);
-        if (!subscriptions.size) { clearTimeout(notification); notification = undefined; }
-        schedule();
+        unsubscribe();
+        disconnect();
       };
     },
     refresh(ids: readonly string[]) {
@@ -138,15 +159,17 @@ export function useMobileSessionLists({ idsKey, enabled, visible = enabled, load
 }) {
   const ids = useMemo<readonly string[]>(() => JSON.parse(idsKey), [idsKey]);
   const store = useMemo(() => sessionListStore(loadSessions), [loadSessions]);
-  const subscribe = useCallback((changed: () => void) => enabled ? store.subscribe(ids, changed) : () => {}, [store, ids, enabled]);
-  const histories = useSyncExternalStore(subscribe, store.getSnapshot, store.getSnapshot);
+  const observation = useMemo(() => store.observe(ids), [store, ids]);
+  const histories = useStore(observation.view, state => state.histories);
+  useEffect(() => enabled ? observation.connect() : undefined, [observation, enabled]);
   const previousSeed = useRef({ store, enabled, visible, refreshKey });
   useLayoutEffect(() => {
     const previous = previousSeed.current;
     store.seed(ids, cachedSessions, previous.store === store &&
       ((!previous.enabled && enabled) || (!previous.visible && visible) || previous.refreshKey !== refreshKey));
+    observation.view.setState({ histories: store.getSnapshot() });
     previousSeed.current = { store, enabled, visible, refreshKey };
-  }, [store, ids, enabled, visible, cachedSessions, refreshKey]);
+  }, [store, observation, ids, enabled, visible, cachedSessions, refreshKey]);
   const previousRefresh = useRef({ store, refreshKey });
   useEffect(() => {
     if (previousRefresh.current.store === store && previousRefresh.current.refreshKey !== refreshKey) store.refresh(ids);

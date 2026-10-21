@@ -2245,7 +2245,7 @@ export function Composer({
             onClick={exitEditMode}
             className="edit-last-turn-button flex h-6.5 shrink-0 items-center gap-1 rounded-md border border-current/20 px-2 text-[11px] font-medium transition-[background-color,color,border-color] hover:border-current/35 hover:bg-content/10 hover:text-content focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
           >
-            <X className="size-3" strokeWidth={1.8} />
+            <X className="size-3" />
             <span>{uiT("Cancel edit")}</span>
           </Button>
         ) : null}
@@ -2428,7 +2428,7 @@ export function Composer({
             {pasteError ? (
               <p
                 role="alert"
-                className="composer-paste-error px-3 pt-2 text-xs text-red-400"
+                className="composer-paste-error px-3 pt-2 text-xs text-danger"
               >
                 {pasteError}
               </p>
@@ -2497,7 +2497,7 @@ export function Composer({
                 }
                 aria-label={inputAriaLabel}
                 disabled={disabled}
-                className={cn("composer-field scrollbar-none relative max-h-40 w-full resize-none overflow-x-hidden whitespace-pre-wrap wrap-break-word bg-transparent px-3 text-sm leading-5.5 outline-none placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap font-sans", shell ? "py-4" : "py-3")}
+                className={cn("composer-field scrollbar-none relative max-h-40 w-full resize-none overflow-x-hidden whitespace-pre-wrap wrap-break-word bg-transparent px-3 text-sm leading-5.5 outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:overflow-hidden placeholder:text-ellipsis placeholder:whitespace-nowrap font-sans", shell ? "py-4" : "py-3")}
                 onFocus={onFocus}
                 onKeyDown={onKeyDown}
                 onPaste={onPaste}
@@ -2654,7 +2654,7 @@ export function Composer({
                       className="relative isolate flex w-full items-start gap-2.5 rounded-lg text-left text-content hover:bg-content/6 justify-start"
                     >
                       <MenuHover />
-                      <AiIdea className="mt-0.5 size-4 shrink-0 text-yellow-300/80" />
+                      <AiIdea className="mt-0.5 size-4 shrink-0 text-warning/80" />
                       <span className="min-w-0 flex-1">
                         <span data-menu-title className="block text-[13px]">
                           {uiT("Plan mode")}
@@ -2688,7 +2688,7 @@ export function Composer({
                       className="relative isolate flex w-full items-start gap-2.5 rounded-lg text-left text-content hover:bg-content/6 justify-start"
                     >
                       <MenuHover />
-                      <CursorMagicSelection className="mt-0.5 size-4 shrink-0 text-sky-300/80" />
+                      <CursorMagicSelection className="mt-0.5 size-4 shrink-0 text-accent/80" />
                       <span className="min-w-0 flex-1">
                         <span data-menu-title className="block text-[13px]">
                           {uiT("Operator")}
@@ -2698,7 +2698,7 @@ export function Composer({
                         </span>
                       </span>
                       {operatorActive ? (
-                        <Check data-menu-check className="mt-0.5 size-3.5 shrink-0 text-sky-300/80" />
+                        <Check data-menu-check className="mt-0.5 size-3.5 shrink-0 text-accent/80" />
                       ) : null}
                     </Button>
                   ) : null}
@@ -2724,13 +2724,13 @@ export function Composer({
                         className="relative isolate flex w-full items-start gap-2.5 rounded-lg text-left text-content hover:bg-content/6 justify-start"
                       >
                         <MenuHover />
-                        <Share className="mt-0.5 size-4 shrink-0 text-fuchsia-300/65" />
+                        <Share className="mt-0.5 size-4 shrink-0 text-accent/65" />
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-1.5">
                             <span data-menu-title className="text-[13px]">
                               {uiT("Orchestrator")}
                             </span>
-                            <span className="rounded-full bg-fuchsia-300/10 px-1.5 py-0.5 text-[9px] font-medium leading-none tracking-wide text-fuchsia-200/55 mb-px">
+                            <span className="rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] font-medium leading-none tracking-wide text-accent/55 mb-px">
                               v1
                             </span>
                           </span>
@@ -2739,7 +2739,7 @@ export function Composer({
                           </span>
                         </span>
                         {orchestrationActive && (
-                          <Check data-menu-check className="mt-0.5 size-3.5 shrink-0 text-fuchsia-300/80" />
+                          <Check data-menu-check className="mt-0.5 size-3.5 shrink-0 text-accent/80" />
                         )}
                       </Button>
                     )}

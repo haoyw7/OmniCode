@@ -48,13 +48,13 @@ export function IconButton({
       data-active={active || undefined}
       data-size={size}
       data-shape={shape}
-      className={cn(
+      className={cn("active:opacity-70", cn(
         "inline-flex shrink-0 items-center justify-center text-ink-secondary enabled:hover:bg-selection-hover enabled:hover:text-ink data-[active]:bg-raised data-[active]:text-ink",
         ({ xs: "size-5 [&_svg]:size-3", sm: "size-7 [&_svg]:size-3.5", md: "size-8 [&_svg]:size-4", lg: "size-10 [&_svg]:size-6" })[size],
         shape === "round" ? "rounded-full" : "rounded-lg",
         "transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none",
         className,
-      )}
+      ))}
     >
       <MenuHover />
       {children}

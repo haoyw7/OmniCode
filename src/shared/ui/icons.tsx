@@ -1,4 +1,4 @@
-/** Default chrome glyphs. Platform artwork is supplied through IconArtworkContext. */
+/** Shared Lucide chrome glyphs. */
 import {
   AudioLines as AudioLinesIcon,
   Bell as BellIcon,
@@ -153,87 +153,19 @@ import {
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
-import {
-  createContext,
-  forwardRef,
-  useContext,
-  type CSSProperties,
-  type ReactNode,
-  type Ref,
-} from "react";
+import { forwardRef, type Ref } from "react";
 
-let defaultIconArtwork: Readonly<Record<string, ReactNode>> = {};
-
-/** Configure before mounting UI, including independently mounted toast roots. */
-export function configureDefaultIconArtwork(artwork: Readonly<Record<string, ReactNode>>) {
-  defaultIconArtwork = artwork;
-}
-
-/** Optional, theme-aware artwork on a 24px grid; unspecified icons use the default glyph. */
-export const IconArtworkContext = createContext<
-  Readonly<Record<string, ReactNode>> | null
->(null);
-
-/** Props shared by every chrome icon. */
 export type IconProps = LucideProps;
-
 export type IconComponent = ReturnType<typeof wrap>;
 
 function wrap(Glyph: LucideIcon, name: string) {
   const Component = forwardRef(function Icon(
-    { strokeWidth = 2, style, ...props }: IconProps,
+    { size = 16, color = "currentColor", strokeWidth = 2, ...props }: IconProps,
     ref: Ref<SVGSVGElement>,
   ) {
-    const artwork = (useContext(IconArtworkContext) ?? defaultIconArtwork)[name];
-    if (artwork) {
-      const {
-        size = 24,
-        color = "currentColor",
-        absoluteStrokeWidth: _absoluteStrokeWidth,
-        children,
-        ...svgProps
-      } = props;
-      return (
-        <svg
-          ref={ref}
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="none"
-          color={color}
-          aria-hidden={
-            props["aria-label"] || props["aria-labelledby"] || props.role
-              ? undefined
-              : true
-          }
-          focusable="false"
-          {...svgProps}
-          data-ui-icon={name}
-          data-ui-icon-artwork=""
-          style={style}
-        >
-          {artwork}
-          {children}
-        </svg>
-      );
-    }
-    return (
-      <Glyph
-        ref={ref}
-        strokeWidth={strokeWidth}
-        {...props}
-        data-ui-icon={name}
-        style={
-          {
-            "--ui-icon-stroke-width": props.absoluteStrokeWidth
-              ? (Number(strokeWidth) * 24) / Number(props.size ?? 24)
-              : strokeWidth,
-            ...style,
-          } as CSSProperties
-        }
-      />
-    );
+    return <Glyph ref={ref} size={size} color={color} strokeWidth={strokeWidth}
+      aria-hidden={props["aria-label"] || props["aria-labelledby"] || props.role ? undefined : true}
+      focusable="false" {...props} data-ui-icon={name} />;
   });
   Component.displayName = name;
   return Component;

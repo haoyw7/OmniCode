@@ -417,9 +417,9 @@ function compactQuestion(text: string | undefined): string {
 }
 
 function statusClass(status: BtwThread["status"]): string {
-  if (status === "running") return "bg-amber-300";
-  if (status === "error") return "bg-red-300";
-  return "bg-emerald-300";
+  if (status === "running") return "bg-warning";
+  if (status === "error") return "bg-danger";
+  return "bg-success";
 }
 
 /** An element's box relative to a host element. */
@@ -736,10 +736,10 @@ export function BtwSheet({
             <div className="btw-sheet-body shrink-0 px-5 pb-3">
               <div className="btw-error" role="alert">
                 <div className="min-w-0">
-                  <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-red-200/70">
+                  <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-danger/70">
                     {uiT("Couldn’t finish")}
                   </div>
-                  <div className="mt-1 text-[12px] leading-4.5 text-red-100/75">
+                  <div className="mt-1 text-[12px] leading-4.5 text-danger/75">
                     {persisted.error ||
                       uiT("{value0} could not answer this side question.", {
                         value0: String(HARNESS_TITLE[harness]),
@@ -749,7 +749,7 @@ export function BtwSheet({
                 <Button variant="ghost" size="content"
                   type="button"
                   onClick={btw.retry}
-                  className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-red-100/80 transition-colors hover:bg-red-200/10 hover:text-red-50 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-red-200/60"
+                  className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-danger/80 transition-colors hover:bg-danger/10 hover:text-danger focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-danger/60"
                 >
                   <RefreshCw className="size-3" />
                   {uiT("Retry")}

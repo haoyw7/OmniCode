@@ -241,14 +241,14 @@ export default function ReadonlyTextEditor({
         <button
           type="button"
           aria-pressed={wrap}
-          onClick={() => setWrap((value) => !value)}
+          onClick={() => setWrap((value) => !value)} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
         >
           {t("Wrap lines")}
         </button>
-        <button type="button" onClick={() => jump(false)}>
+        <button type="button" onClick={() => jump(false)} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70">
           {t("Go to start")}
         </button>
-        <button type="button" onClick={() => jump(true)}>
+        <button type="button" onClick={() => jump(true)} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70">
           {t("Go to end")}
         </button>
         {onCopy ? (
@@ -263,7 +263,7 @@ export default function ReadonlyTextEditor({
                 },
                 () => {},
               );
-            }}
+            }} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
           >
             {t(copied ? "Copied" : "Copy all")}
           </button>

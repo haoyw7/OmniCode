@@ -117,8 +117,8 @@ export function DesktopBotThreadSettings({ bot, thread, defaultBotId, rpc, onSav
         <section className="desktop-bot-section">
           <h3 className="desktop-bot-section-title">{t("Archive")}</h3>
           <div className="desktop-bot-row-group">
-            <Button variant="ghost" size="content" type="button" className="desktop-bot-row" data-tone="danger" disabled={busy || thread.id === bot.defaultThreadId} onClick={() => void archive(onArchiveThread)}><Archive size={16} aria-hidden="true" /><span className="desktop-bot-row-title">{t("Archive thread")}</span></Button>
-            <Button variant="ghost" size="content" type="button" className="desktop-bot-row" data-tone="danger" disabled={busy || bot.id === defaultBotId} onClick={() => void archive(onArchiveBot)}><Archive size={16} aria-hidden="true" /><span className="desktop-bot-row-title">{t("Archive bot")}</span></Button>
+            <Button variant="ghost" size="content" type="button" className="desktop-bot-row" data-tone="danger" disabled={busy || thread.id === bot.defaultThreadId} onClick={() => void archive(onArchiveThread)}><Archive aria-hidden="true" /><span className="desktop-bot-row-title">{t("Archive thread")}</span></Button>
+            <Button variant="ghost" size="content" type="button" className="desktop-bot-row" data-tone="danger" disabled={busy || bot.id === defaultBotId} onClick={() => void archive(onArchiveBot)}><Archive aria-hidden="true" /><span className="desktop-bot-row-title">{t("Archive bot")}</span></Button>
           </div>
           <p className="desktop-bot-section-note">{t("Archiving stops current work. Restoring keeps the conversation history.")}
             {thread.id === bot.defaultThreadId && <> {t("Default thread cannot be archived")}</>}

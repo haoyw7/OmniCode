@@ -431,7 +431,7 @@ const FileSection = memo(function FileSection({
             onClick={() => onStageFile(file.id)}
             className="grid size-4 place-items-center rounded-[3px] bg-content text-background-base hover:opacity-80 disabled:opacity-40"
           >
-            <Check className="size-2.5" strokeWidth={2.5} />
+            <Check className="size-2.5" />
           </Button>
         ) : null}
       </header>
@@ -890,7 +890,7 @@ function FoldBar({
         onClick={() => onReveal("up")}
         className="grid size-5 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
       >
-        <ChevronUp className="size-3" strokeWidth={2} />
+        <ChevronUp className="size-3" />
       </Button>
       <Button variant="ghost" size="content"
         type="button"
@@ -899,7 +899,7 @@ function FoldBar({
         onClick={() => onReveal("down")}
         className="grid size-5 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
       >
-        <ChevronDown className="size-3" strokeWidth={2} />
+        <ChevronDown className="size-3" />
       </Button>
       <Button variant="ghost" size="content"
         type="button"
@@ -948,16 +948,16 @@ const DiffLineRow = memo(function DiffLineRow({
   const added = line.kind === "add";
   const deleted = line.kind === "del";
   const number = deleted ? line.oldNumber : line.newNumber;
-  const row = added ? "bg-emerald-500/15" : deleted ? "bg-rose-500/15" : "";
+  const row = added ? "bg-success/15" : deleted ? "bg-danger/15" : "";
   const gutterTint = added
-    ? "bg-emerald-500/25"
+    ? "bg-success/25"
     : deleted
-      ? "bg-rose-500/25"
+      ? "bg-danger/25"
       : "";
   const gutterText = added
-    ? "text-emerald-300"
+    ? "text-success"
     : deleted
-      ? "text-rose-300"
+      ? "text-danger"
       : "text-content/35";
 
   if (lane === "gutter") {
@@ -988,7 +988,7 @@ const DiffLineRow = memo(function DiffLineRow({
                 ? "opacity-100"
                 : "pointer-events-none opacity-0")}
           >
-            <MessageSquarePlus className="size-2.5" strokeWidth={2} />
+            <MessageSquarePlus className="size-2.5" />
           </Button>
         ) : null}
         {onStage ? (
@@ -1054,10 +1054,10 @@ function DiffCounts({
   return (
     <span className="flex shrink-0 items-center gap-1.5 font-sans text-[11px] font-semibold tabular-nums">
       {additions > 0 ? (
-        <span className="text-emerald-400">+{formatInteger(additions)}</span>
+        <span className="text-success">+{formatInteger(additions)}</span>
       ) : null}
       {deletions > 0 ? (
-        <span className="text-red-400">-{formatInteger(deletions)}</span>
+        <span className="text-danger">-{formatInteger(deletions)}</span>
       ) : null}
     </span>
   );

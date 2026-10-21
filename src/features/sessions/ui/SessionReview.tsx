@@ -235,10 +235,10 @@ export function SessionReview({
               )}
             </div>
             <div className="flex items-center gap-1.5 font-sans text-[11px] font-semibold tabular-nums -mt-0.5">
-              <span className="text-emerald-400">
+              <span className="text-success">
                 +{formatInteger(totals.additions)}
               </span>
-              <span className="text-red-400">
+              <span className="text-danger">
                 -{formatInteger(totals.deletions)}
               </span>
             </div>
@@ -420,8 +420,8 @@ function sumChanges(files: CheckpointFile[]) {
 function DiffCounts({ file }: { file: Pick<CheckpointFile, "additions" | "deletions"> }) {
   return (
     <span className="flex shrink-0 gap-2 font-sans text-[11px] font-semibold tabular-nums">
-      <span className="text-emerald-400">+{formatInteger(file.additions)}</span>
-      <span className="text-red-400">-{formatInteger(file.deletions)}</span>
+      <span className="text-success">+{formatInteger(file.additions)}</span>
+      <span className="text-danger">-{formatInteger(file.deletions)}</span>
     </span>
   );
 }

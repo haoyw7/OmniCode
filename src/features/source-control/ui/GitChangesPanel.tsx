@@ -287,7 +287,7 @@ export const GitChangesPanel = memo(function GitChangesPanel({
               {busy === "pull" ? (
                 <Spinner />
               ) : (
-                <MoreHorizontal strokeWidth={2} />
+                <MoreHorizontal />
               )}
             </IconButton>
             {branchMenuOpen ? (
@@ -820,7 +820,7 @@ function ChangedFiles({
                   />
                 </>
               ) : (
-                <WandSparkles className="size-3" strokeWidth={1} />
+                <WandSparkles className="size-3" />
               )}
             </IconButton>
           </div>
@@ -853,7 +853,7 @@ function ChangedFiles({
                   onClick={() => void commit(false)}
                   className="min-w-0 flex-1"
                 >
-                  <Check className="size-3.5" strokeWidth={2} />
+                  <Check className="size-3.5" />
                   <span className="min-w-0 truncate">
                     {amend ? uiT("Amend Commit") : uiT("Commit")}
                   </span>
@@ -868,7 +868,7 @@ function ChangedFiles({
                   disabled={!canOpenMenu}
                   onClick={() => setMenuOpen((open) => !open)}
                 >
-                  <ChevronDown className="size-3.5" strokeWidth={2} />
+                  <ChevronDown className="size-3.5" />
                 </Button>
                 {composerExpanded && menuOpen ? (
                   <div
@@ -910,7 +910,7 @@ function ChangedFiles({
                         <span data-menu-title>{uiT("Amend Last Commit")}</span>
                         <span className="grid size-3.5 shrink-0 place-items-center">
                           {amend ? (
-                            <Check className="size-3.5" strokeWidth={2} />
+                            <Check className="size-3.5" />
                           ) : null}
                         </span>
                       </Button>
@@ -1602,8 +1602,8 @@ function ChangeRow({
         </div>
         {file.additions || file.deletions ? (
           <span data-git-change-stats className="flex shrink-0 gap-1 font-mono text-[11px] tabular-nums">
-            {file.additions ? <span className="text-emerald-400">+{file.additions}</span> : null}
-            {file.deletions ? <span className="text-red-400">-{file.deletions}</span> : null}
+            {file.additions ? <span className="text-success">+{file.additions}</span> : null}
+            {file.deletions ? <span className="text-danger">-{file.deletions}</span> : null}
           </span>
         ) : null}
         <span
@@ -1624,10 +1624,10 @@ function statusLetter(status: string): string {
 }
 
 function statusColor(status: string): string {
-  if (status === "untracked") return "text-sky-400";
-  if (status === "added") return "text-emerald-400";
-  if (status === "deleted") return "text-red-400";
-  return "text-amber-400";
+  if (status === "untracked") return "text-accent";
+  if (status === "added") return "text-success";
+  if (status === "deleted") return "text-danger";
+  return "text-warning";
 }
 
 function useDiffIndex(

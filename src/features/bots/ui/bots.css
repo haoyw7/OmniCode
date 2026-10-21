@@ -337,7 +337,7 @@
   background: var(--assistant-fill-strong);
 }
 :is(.assistant-chat, .assistant-settings) .assistant-danger:not(:disabled):hover {
-  color: #e04b44;
+  color: var(--color-danger);
 }
 
 /* Header */
@@ -403,7 +403,7 @@
   background: color-mix(in srgb, currentColor 40%, transparent);
 }
 .assistant-status[data-lifecycle="idle"]::before {
-  background: #34c759;
+  background: var(--color-success);
 }
 .assistant-status[data-lifecycle="running"]::before {
   background: var(--color-accent);
@@ -413,13 +413,13 @@
     [data-lifecycle="failed"],
     [data-lifecycle="interrupted"]
   )::before {
-  background: #e04b44;
+  background: var(--color-danger);
 }
 .assistant-status:is(
     [data-lifecycle="paused"],
     [data-lifecycle="backoff"]
   )::before {
-  background: #f5a623;
+  background: var(--color-warning);
 }
 @keyframes assistant-pulse {
   50% {
@@ -745,18 +745,18 @@
   text-transform: none;
 }
 .assistant-card[data-status="completed"] .assistant-pill {
-  color: #218c48;
+  color: var(--color-success);
 }
 .assistant-card[data-status="running"] .assistant-pill {
   color: var(--color-accent);
 }
 .assistant-card:is([data-status="failed"], [data-status="unknown"])
   .assistant-pill {
-  color: #e04b44;
+  color: var(--color-danger);
 }
 .assistant-card > p {
   font-size: var(--text-ui-sm);
-  color: #d75555;
+  color: var(--color-danger);
 }
 .assistant-chat[data-layout="desktop"] .assistant-card {
   width: 88%;
@@ -896,7 +896,7 @@
   font: inherit;
 }
 :is(.assistant-chat, .assistant-settings) :is(input, select, textarea)[aria-invalid="true"] {
-  border-color: #e04b44;
+  border-color: var(--color-danger);
 }
 :is(.assistant-chat, .assistant-settings) select option {
   color: black;
@@ -1236,7 +1236,7 @@
   background: color-mix(in srgb, var(--color-accent) 16%, transparent);
 }
 .assistant-field-error {
-  color: #e04b44;
+  color: var(--color-danger);
 }
 :is(.assistant-chat, .assistant-settings) small.assistant-field-error {
   opacity: 1;
@@ -1307,7 +1307,7 @@
   align-items: center;
   gap: 8px;
   font-size: var(--text-ui-sm);
-  color: #e04b44;
+  color: var(--color-danger);
 }
 .assistant-session-chips {
   max-height: 160px;
@@ -1720,7 +1720,7 @@
   opacity: 0.7;
 }
 .assistant-habit-summary > small[data-outcome="failed"] {
-  color: #e04b44;
+  color: var(--color-danger);
   opacity: 1;
 }
 .assistant-habit-actions {

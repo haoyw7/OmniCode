@@ -4,9 +4,9 @@ import type { ReactNode } from "react";
 export type ConnectionState = "online" | "offline" | "error" | "checking";
 
 const DOT: Record<ConnectionState, string> = {
-  online: "bg-emerald-500",
+  online: "bg-success",
   offline: "bg-content/30",
-  error: "bg-red-500",
+  error: "bg-danger",
   checking: "bg-content/20 animate-pulse motion-reduce:animate-none",
 };
 

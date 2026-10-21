@@ -35,10 +35,10 @@ export function MobileErrorNotice({ message, onRetry, retrying }: {
     <div className="mobile-error" role="alert">
       <span>{message}</span>
       {onRetry && <IconButton label={t("Reconnect")} disabled={retrying} onClick={onRetry}>
-        <RefreshCw size={20} />
+        <RefreshCw />
       </IconButton>}
       <IconButton label={t("Dismiss")} onClick={() => setDismissed(message)}>
-        <X size={20} />
+        <X />
       </IconButton>
     </div>
   );

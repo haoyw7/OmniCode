@@ -344,7 +344,7 @@ export function GitGraphDialog({
         {error || worktrees.error ? (
           <p
             role="alert"
-            className="shrink-0 border-b border-stroke px-4 py-2 text-ui-sm text-rose-400"
+            className="shrink-0 border-b border-stroke px-4 py-2 text-ui-sm text-danger"
           >
             {error
               ? t("Could not load Git graph")

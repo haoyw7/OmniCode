@@ -30,6 +30,21 @@
 }
 
 :root {
+  --color-shadow: #000000;
+  --color-picker-black: #000000;
+  --color-picker-white: #ffffff;
+  --color-picker-spectrum: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  --color-qr-ink: #000000;
+  --color-qr-background: #ffffff;
+  --color-agent-teal: #54b9a6;
+  --color-agent-amber: #f19d38;
+  --color-agent-indigo: #6464ef;
+  --color-agent-violet: #885cf5;
+  --color-agent-blue: #3c82f6;
+  --color-agent-orange: #ed712e;
+  --color-agent-pink: #eb4699;
+  --color-agent-green: #5bc67a;
+  --color-agent-red: #ea4045;
   --context-usage-messages: #2f80ed;
   --context-usage-tools: #f27337;
   --context-usage-mcp: #18ad81;
@@ -596,4 +611,30 @@ html.has-user-accent[data-skin] {
   --color-accent-text: var(--user-accent-color);
   --color-accent-ink: var(--user-accent-foreground);
   --color-focus: var(--user-accent-color);
+}
+
+:root {
+  --theme-default-destructive: #ef4444;
+  --theme-default-skill: #e8c547;
+  --theme-default-mention: #38bdf8;
+  --theme-default-accent-foreground: var(--accent-foreground, #ffffff);
+  --theme-default-destructive-foreground: #ffffff;
+  --theme-default-success: #16a34a;
+  --theme-default-success-foreground: #ffffff;
+  --theme-default-warning: #d97706;
+  --theme-default-warning-foreground: #ffffff;
+  --brand-color: #ffffff;
+  --brand-foreground: #000000;
+  --accent-color: #4099ff;
+  --link-color: #4099ff;
+  --color-skill: #e8c547;
+  --color-mention: #38bdf8;
+}
+html.theme-light {
+  --brand-color: #000000;
+  --brand-foreground: #ffffff;
+  --accent-color: #0066dd;
+  --link-color: #0066dd;
+  --color-skill: #a07c10;
+  --color-mention: #0284c7;
 }

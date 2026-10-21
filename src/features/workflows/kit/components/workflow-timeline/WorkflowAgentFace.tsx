@@ -9,15 +9,15 @@ import type { StepRunStatus } from "../workflow-graph/types.js";
 
 /** Omi expression and color preserve stable subagent identity. */
 export const FACE_COLORS = [
-  "#54B9A6",
-  "#F19D38",
-  "#6464EF",
-  "#885CF5",
-  "#3C82F6",
-  "#ED712E",
-  "#EB4699",
-  "#5BC67A",
-  "#EA4045",
+  "var(--color-agent-teal)",
+  "var(--color-agent-amber)",
+  "var(--color-agent-indigo)",
+  "var(--color-agent-violet)",
+  "var(--color-agent-blue)",
+  "var(--color-agent-orange)",
+  "var(--color-agent-pink)",
+  "var(--color-agent-green)",
+  "var(--color-agent-red)",
 ] as const;
 
 /** 名字散列选色（31 进制取模 360 后映射到九色板）；只在没有 `avatarIndex` 时兜底。 */

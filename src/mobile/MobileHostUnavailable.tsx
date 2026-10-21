@@ -31,7 +31,7 @@ export function MobileHostUnavailable({ failed, retrying, lastOnline, now, onRet
         <span>{t("Last online: {time}", { time: formatLastOnline(lastOnline, now, language) })}</span>
       )}
       {failed && (
-        <button type="button" disabled={retrying} onClick={onRetry}>{t("Retry")}</button>
+        <button type="button" disabled={retrying} onClick={onRetry} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70">{t("Retry")}</button>
       )}
     </div>
   );

@@ -21,15 +21,15 @@ const RetainedCollapseContent = memo(
 const NESTED_FOLD_MOTION = '[data-fold-state="opening"], [data-fold-state="closing"]';
 
 /** Shared Motion lifetime for disclosures and grid-sized panels. */
-export function useCollapseMotion(expanded: boolean, durationMs = duration.collapse * 1000) {
+export function useCollapseMotion(expanded: boolean, durationMs = duration.collapse * 1000, initiallyCollapsed = false) {
   const reduced = useMotionPreference();
   const progress = useMotionValue(expanded ? 1 : 0);
   const [foldState, setFoldState] = useState<"open" | "opening" | "closing" | "closed">(
-    expanded ? "open" : "closed",
+    expanded && !initiallyCollapsed ? "open" : "closed",
   );
   const latest = useRef(expanded);
   latest.current = expanded;
-  const previous = useRef(expanded);
+  const previous = useRef(expanded && !initiallyCollapsed);
   const finish = useCallback(() => {
     progress.jump(latest.current ? 1 : 0);
     setFoldState(latest.current ? "open" : "closed");
@@ -63,17 +63,19 @@ type CollapseProps = {
   animateContentResize?: boolean;
   keepMounted?: boolean;
   onEntered?: () => void;
+  onExited?: () => void;
+  initiallyCollapsed?: boolean;
   children: ReactNode | (() => ReactNode);
 };
 
 export function AnimatedCollapse({
   expanded: requestedExpanded, ready = true, className, durationMs, animateContentResize = false,
-  keepMounted = false, onEntered, children,
+  keepMounted = false, onEntered, onExited, initiallyCollapsed = false, children,
 }: CollapseProps) {
   const expanded = requestedExpanded && ready;
   const parentVisible = useSurfaceVisibility();
   const reduced = useMotionPreference();
-  const lifetime = useCollapseMotion(expanded, durationMs);
+  const lifetime = useCollapseMotion(expanded, durationMs, initiallyCollapsed);
   const hasOpened = useRef(expanded);
   const entered = useRef(expanded);
   if (expanded) hasOpened.current = true;
@@ -102,7 +104,7 @@ export function AnimatedCollapse({
         >{children}</CollapseBody>
       );
   return (
-    <AnimatePresence onExitComplete={lifetime.finish}>{content}</AnimatePresence>
+    <AnimatePresence onExitComplete={() => { lifetime.finish(); onExited?.(); }}>{content}</AnimatePresence>
   );
 }
 

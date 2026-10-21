@@ -124,7 +124,7 @@ export function AttachmentChip({ attachment, onRemove, tile = false, onOpen, pre
             }}
             className="attachment-chip-remove absolute -right-1 -top-1 grid size-5 shrink-0 place-items-center rounded-full bg-content/20 text-content/70 opacity-100 shadow-sm backdrop-blur-sm hover:bg-content/15 hover:text-content"
           >
-            <X className="size-3" strokeWidth={2} />
+            <X className="size-3" />
           </Button>
         ) : null}
       </div>

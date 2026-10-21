@@ -32,7 +32,7 @@ export function Omi({ expression = "ready", shape = "original", variant = "outli
   if (variant === "filled") {
     // Fill implicitly closes the interior; the open stroke retains Omi's notch.
     markup = markup.replace(/<path\b[^>]*>/, path => path.replace('fill="none"', 'fill="currentColor"'));
-    const ink = "var(--omi-face-color, var(--color-omi-face, #ffffff))";
+    const ink = "var(--omi-face-color, var(--color-omi-face))";
     face = face.replace("<g ", `<g fill="${ink}" stroke="${ink}" `);
   }
   if (contour.faceTransform) face = `<g transform="${contour.faceTransform}">${face}</g>`;

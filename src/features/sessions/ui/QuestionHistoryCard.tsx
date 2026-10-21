@@ -96,7 +96,7 @@ export function QuestionHistoryCard({
       >
         <span
           className={cn("mt-px grid size-6 shrink-0 place-items-center rounded-full", answered
-              ? "bg-emerald-500/10 text-emerald-500"
+              ? "bg-success/10 text-success"
               : answerable
                 ? "bg-accent/10 text-accent"
                 : "bg-content/[0.06] text-content/50")}
@@ -114,7 +114,7 @@ export function QuestionHistoryCard({
           </span>
           {summary ? (
             <span className="mt-1.5 flex min-w-0 items-start gap-1.5 text-[12px] leading-[18px] text-content/60">
-              <Check className="mt-0.5 size-3 shrink-0 text-emerald-500" />
+              <Check className="mt-0.5 size-3 shrink-0 text-success" />
               <span className="line-clamp-2 min-w-0 break-words">{summary}</span>
             </span>
           ) : null}

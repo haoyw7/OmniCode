@@ -1,10 +1,10 @@
 import { motion } from "motion/react";
+import { Check } from "../../../shared/ui/icons";
 import { panelTransition } from "../../../shared/motion/tokens";
 import { useMemo, useRef, type CSSProperties } from "react";
 import { useCelebrationBox, useTurnCelebration } from "./turnCelebration";
 
 const EMBER_COUNT = 6;
-const CHECK_PATH = "M3.2 6.3 5.1 8.2 8.8 4.2";
 
 /** Roomy bubbles get more steps; a one-word prompt still gets a short plan. */
 export function planStepCount(width: number): number {
@@ -56,9 +56,7 @@ export function PlanStepsBurst({
             >
               <span className="plan-step-dot">
                 <span className="plan-step-number">{index + 1}</span>
-                <svg viewBox="0 0 12 12" className="plan-step-check">
-                  <path d={CHECK_PATH} />
-                </svg>
+                <Check className="plan-step-check" />
               </span>
             </motion.span>
           ))}

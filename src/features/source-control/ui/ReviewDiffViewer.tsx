@@ -287,7 +287,7 @@ export const ReviewDiffViewer = memo(function ReviewDiffViewer({
                 });
             }}
           >
-            <Plus className="size-3.5" strokeWidth={2.5} />
+            <Plus className="size-3.5" />
           </Button>
         )}
       />

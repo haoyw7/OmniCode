@@ -30,7 +30,7 @@ html[data-mobile-skin] [data-ui="button"][data-variant="primary"] {
 html[data-mobile-skin] [data-ui="button"][data-variant="danger"] {
   border-color: transparent;
   background: var(--m-control-danger);
-  color: #fff;
+  color: var(--color-accent-ink);
 }
 html[data-mobile-skin] [data-ui="button"]:is([data-variant="ghost"], [data-variant="link"]) { border-color: transparent; }
 html[data-mobile-skin] [data-ui="button"][data-variant="link"] { text-decoration: underline; }
@@ -125,7 +125,7 @@ html[data-mobile-skin] [data-ui="switch"] [data-slot="switch-thumb"] {
   height: var(--m-switch-thumb-height);
   border: 0;
   border-radius: var(--m-control-pill);
-  background: #fff;
+  background: var(--color-accent-ink);
   box-shadow: none;
 }
 html[data-mobile-skin] :is([data-ui="radio"], [data-ui="checkbox"]) {
@@ -158,7 +158,7 @@ html[data-mobile-skin] input[data-ui="checkbox"]:checked::after {
   top: 7px;
   width: 5px;
   height: 8px;
-  border: solid #fff;
+  border: solid var(--color-accent-ink);
   border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
 }

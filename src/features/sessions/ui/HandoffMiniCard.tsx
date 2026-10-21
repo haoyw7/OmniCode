@@ -66,7 +66,7 @@ export function HandoffMiniCard({ card, onDismiss }: Props) {
             onClick={onDismiss}
             className="absolute right-1.5 top-1.5 grid size-5 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
           >
-            <X className="size-3" strokeWidth={2} />
+            <X className="size-3" />
           </Button>
         ) : null}
       </div>

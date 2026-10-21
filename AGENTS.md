@@ -51,7 +51,7 @@ are not prerequisites for local work.
 - 品牌色以 CSS 变量为准：`--background #071018`、`--accent #3dcdb4`、
   `--muted #e7eef4`、`--primary #0d3c42`，由 `desktop-theme.css` 的「涟漪」皮肤提供。
 - 所有可点击区域必须有 hover/focus-visible/active 状态与正确的 aria/键盘支持；
-  必须支持暗色模式。旧实现按迁移阶段替换，不得为旧实现新增调用点。
+  必须支持暗色模式；不得重新引入已移除的旧组件实现。
 
 ## UI architecture
 
@@ -128,7 +128,7 @@ are not prerequisites for local work.
 
 - 可调整面板使用 react-resizable-panels（共享封装见
   `src/shared/ui/primitives/Resizable.tsx`），`paneResize` 继续提供全局 resize 状态。
-  尚未迁移的分隔线沿用 `ResizeHandle`/`useDragResize`。临时尺寸放在 ref 中，移动时直接写 DOM 的 `flex`、`width` 或布局使用的 CSS
+  临时尺寸由面板组件管理，移动时直接更新布局使用的 DOM 样式和 CSS
   属性；松手后才提交 React 布局状态和持久化。不得在每次移动时更新上层业务
   store 或重渲染聊天、文件树、审查列表。React 重渲染不得覆盖正在拖动的尺寸。
 - 按下时缓存起始坐标、容器尺寸、比例和尺寸约束；移动路径以计算和必要的样式

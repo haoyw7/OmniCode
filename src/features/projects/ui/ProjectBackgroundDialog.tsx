@@ -186,7 +186,7 @@ export function ProjectBackgroundDialog({ project, name, onClose }: Props) {
                 )}
           </p>
           {error ? (
-            <p className="mt-1.5 text-[12px] text-red-400">{error}</p>
+            <p className="mt-1.5 text-[12px] text-danger">{error}</p>
           ) : null}
         </div>
 

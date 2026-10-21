@@ -197,7 +197,7 @@ export function WorkflowRunDigest({
       ref={pauseOffscreen}
       aria-label={kind}
       className={cn(
-        "wf-motion  flex w-full min-w-0 flex-col gap-1 rounded-xl border border-border/70 bg-card/70 px-3.5 pb-2 pt-1.5 outline-none",
+        "wf-motion  flex w-full min-w-0 flex-col gap-1 rounded-xl border border-border/70 bg-card/70 px-3.5 pb-2 pt-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring",
         hasRail && "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring/40",
       )}
       data-expanded={hasRail ? String(expanded) : undefined}

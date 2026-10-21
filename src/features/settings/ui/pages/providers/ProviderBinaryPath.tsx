@@ -162,7 +162,7 @@ export function ProviderBinaryPath({
               <span
                 role="alert"
                 title={error ?? undefined}
-                className="mt-1 block max-h-20 overflow-y-auto whitespace-pre-wrap break-words text-[11px] leading-4 text-red-400"
+                className="mt-1 block max-h-20 overflow-y-auto whitespace-pre-wrap break-words text-[11px] leading-4 text-danger"
               >
                 {error}
               </span>
@@ -170,7 +170,7 @@ export function ProviderBinaryPath({
             {revealError ? (
               <span
                 role="alert"
-                className="mt-1 block whitespace-pre-wrap break-words text-[11px] leading-4 text-red-400"
+                className="mt-1 block whitespace-pre-wrap break-words text-[11px] leading-4 text-danger"
               >
                 {uiT("Could not open the CLI location: ")}
                 {revealError}
@@ -262,7 +262,7 @@ export function ProviderBinaryPath({
             placeholder={inspection?.path ?? uiT("Auto-detected path")}
             disabled={working || form.formState.isSubmitting}
             autoFocus
-            className="mt-1.5 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2 font-mono text-[11px] text-content outline-none placeholder:font-sans placeholder:text-content/35 focus:border-input-border-hover disabled:opacity-50"
+            className="mt-1.5 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2 font-mono text-[11px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:font-sans placeholder:text-content/35 focus:border-input-border-hover disabled:opacity-50"
           />
           <p className="mt-1.5 text-[11px] text-content/40">
             {uiT(

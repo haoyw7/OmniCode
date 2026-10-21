@@ -36,7 +36,7 @@ export function MobileDeviceChips({
   if (connections.length < 2) return null;
   return (
     <div className="mobile-device-chips" role="radiogroup" aria-label={t("Devices")}>
-      <button type="button" className="mobile-device-chip" role="radio"
+      <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-device-chip" role="radio"
         aria-checked={scope === "all"} onClick={() => onScope("all")}>
         {t("All")}
       </button>
@@ -76,7 +76,7 @@ function Chip({ connection, active, selected, status, probing, disabled, probe, 
       data-device-endpoint={connection.endpoint}
       disabled={disabled && !active} onClick={onSelect}>
       <MobileHostStatus status={active ? status : observed} dotOnly />
-      <Computer size={16} aria-hidden="true" />
+      <Computer aria-hidden="true" />
       <span>{name}</span>
     </ListMotionButton>
   );

@@ -72,7 +72,7 @@ export function GithubSettings() {
         </Button>
       </Row>
       {error ? (
-        <p className="border-b border-content/5 px-4 pb-3 text-[12px] text-red-400/90 last:border-b-0">
+        <p className="border-b border-content/5 px-4 pb-3 text-[12px] text-danger/90 last:border-b-0">
           {error}
         </p>
       ) : null}
@@ -147,7 +147,7 @@ export function GitlabSettings() {
                 aria-label={uiT("GitLab URL")}
                 autoComplete="url"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
               />
             </label>
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
@@ -159,7 +159,7 @@ export function GitlabSettings() {
                 aria-label={uiT("GitLab access token")}
                 autoComplete="off"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
               />
             </label>
             <Button variant="secondary"
@@ -173,7 +173,7 @@ export function GitlabSettings() {
         )}
       </Row>
       {error ? (
-        <p className="border-b border-content/5 px-4 pb-3 text-[12px] text-red-400/90 last:border-b-0">
+        <p className="border-b border-content/5 px-4 pb-3 text-[12px] text-danger/90 last:border-b-0">
           {error}
         </p>
       ) : null}
@@ -248,7 +248,7 @@ export function AzureDevOpsSettings() {
                 aria-label={uiT("Azure DevOps organization URL")}
                 autoComplete="url"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
               />
             </label>
             <label data-ui="input-group" className="flex h-7 w-52 max-w-full shrink-0 items-center rounded-md border border-content/10 px-2 focus-within:border-content/20">
@@ -260,7 +260,7 @@ export function AzureDevOpsSettings() {
                 aria-label={uiT("Azure DevOps personal access token")}
                 autoComplete="off"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
               />
             </label>
             <Button variant="secondary"
@@ -274,7 +274,7 @@ export function AzureDevOpsSettings() {
         )}
       </Row>
       {error ? (
-        <p className="border-b border-content/5 px-4 pb-3 text-[12px] text-red-400/90 last:border-b-0">
+        <p className="border-b border-content/5 px-4 pb-3 text-[12px] text-danger/90 last:border-b-0">
           {error}
         </p>
       ) : null}
@@ -351,7 +351,7 @@ export function LinearSettings() {
                 aria-label={uiT("Linear API key")}
                 autoComplete="off"
                 spellCheck={false}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
               />
             </label>
             <Button variant="secondary"
@@ -365,7 +365,7 @@ export function LinearSettings() {
         )}
       </Row>
       {error ? (
-        <p className="border-b border-content/5 px-4 pb-3 text-[12px] text-red-400/90 last:border-b-0">
+        <p className="border-b border-content/5 px-4 pb-3 text-[12px] text-danger/90 last:border-b-0">
           {error}
         </p>
       ) : null}
@@ -394,7 +394,7 @@ export function LinearSettings() {
                     ) : null}
                   </span>
                   {checked ? (
-                    <Check className="size-3.5 shrink-0" strokeWidth={2.25} />
+                    <Check className="size-3.5 shrink-0" />
                   ) : null}
                 </Button>
               );

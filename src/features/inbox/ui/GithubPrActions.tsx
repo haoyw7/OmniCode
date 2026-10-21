@@ -248,7 +248,7 @@ export function GithubPrActions({
           type="button"
           disabled={busy}
           onClick={(event) => askToRun("close", event.currentTarget)}
-          variant="secondary" size="md" className={cn("hover:text-rose-400")}
+          variant="secondary" size="md" className={cn("hover:text-danger")}
         >
           <GitPullRequestClosed className="size-3.5" />
           {uiT("Close pull request")}
@@ -301,7 +301,7 @@ export function GithubPrActions({
               <span
                 aria-hidden
                 className={cn("mt-1 size-1.5 shrink-0 rounded-full", option.action === mergeAction
-                    ? "bg-emerald-400"
+                    ? "bg-success"
                     : "bg-content/20")}
               />
               <span className="min-w-0">
@@ -339,7 +339,7 @@ export function GithubPrActions({
           {actionError ? (
             <p
               role="alert"
-              className="mt-2 break-words text-[11px] leading-snug text-rose-400"
+              className="mt-2 break-words text-[11px] leading-snug text-danger"
             >
               {actionError}
             </p>

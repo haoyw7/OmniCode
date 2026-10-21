@@ -96,7 +96,7 @@ export function ProviderAccounts({
       ) : null}
       {error ? (
         <p
-          className="border-t border-content/5 px-4 py-2.5 text-[11px] leading-4 text-red-400"
+          className="border-t border-content/5 px-4 py-2.5 text-[11px] leading-4 text-danger"
           role="alert"
         >
           {uiT(error)}
@@ -180,7 +180,7 @@ function AccountList({
       {defaultsReady &&
         sharedDefault !== "default" &&
         !accounts.some((account) => account.id === sharedDefault) && (
-          <p role="alert" className="px-4 py-2 text-[11px] text-amber-400/90">
+          <p role="alert" className="px-4 py-2 text-[11px] text-warning/90">
             {uiT("Unavailable account ({account})", { account: sharedDefault })}
           </p>
         )}
@@ -477,7 +477,7 @@ function ProviderAccountEditor({
               value0: String(adding ? "New" : "Rename"),
               value1: String(HARNESS_TITLE[editor.provider]),
             })}
-            className="h-full w-full bg-transparent px-2.5 text-[12px] text-content outline-none placeholder:text-content/25 disabled:opacity-50"
+            className="h-full w-full bg-transparent px-2.5 text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/25 disabled:opacity-50"
           />
         </label>
         <Button variant="secondary" size="sm" disabled={working} onClick={onCancel}>
@@ -510,7 +510,7 @@ function ProviderAccountEditor({
           placeholder={editor.accountId === "default"
             ? (editor.provider === "codex" ? "~/.codex" : "~/.claude")
             : (editor.provider === "codex" ? "~/.codex-work" : "~/.claude-work")}
-          className="mt-1 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 font-mono text-[12px] text-content outline-none focus:border-input-border-hover disabled:opacity-50"
+          className="mt-1 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 font-mono text-[12px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring focus:border-input-border-hover disabled:opacity-50"
         />
         <span className="mt-1 block text-[10px] text-content/40">
           {uiT(editor.accountId

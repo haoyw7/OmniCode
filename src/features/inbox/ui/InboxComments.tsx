@@ -325,7 +325,7 @@ export function InboxCommentForm({
               : uiT("Leave a comment ({value0}↩)", { value0: String(MOD) })
           }
           onKeyDown={onKeyDown}
-          className="max-h-40 w-full resize-none overflow-y-auto bg-transparent px-3 py-2 text-[13px] leading-5 text-content outline-none placeholder:text-content/35 disabled:opacity-40"
+          className="max-h-40 w-full resize-none overflow-y-auto bg-transparent px-3 py-2 text-[13px] leading-5 text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 disabled:opacity-40"
         />
         <div className="flex items-center justify-end px-2 pb-2">
           <Button
@@ -342,7 +342,7 @@ export function InboxCommentForm({
         </div>
       </div>
       <FieldError errors={[form.formState.errors.body]} />
-      {error ? <p className="text-[12px] text-red-400/90">{error}</p> : null}
+      {error ? <p className="text-[12px] text-danger/90">{error}</p> : null}
     </form>
   );
 }
@@ -435,11 +435,11 @@ function InboxComment({
               <span
                 className={
                   comment.state === "APPROVED"
-                    ? "text-emerald-400/90"
+                    ? "text-success/90"
                     : comment.state === "CHANGES_REQUESTED"
-                      ? "text-rose-400/90"
+                      ? "text-danger/90"
                       : comment.resolved && part === "Resolved"
-                        ? "text-emerald-400/80"
+                        ? "text-success/80"
                         : "min-w-0 truncate"
                 }
               >
@@ -677,9 +677,9 @@ function InboxTimelineComment({
         node={
           <Icon
             className={cn("size-4", state === "APPROVED"
-                ? "text-emerald-400/90"
+                ? "text-success/90"
                 : state === "CHANGES_REQUESTED"
-                  ? "text-rose-400/90"
+                  ? "text-danger/90"
                   : "text-content/45")}
           />
         }

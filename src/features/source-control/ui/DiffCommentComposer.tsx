@@ -85,7 +85,7 @@ export function DiffCommentComposer({
             }
           }}
           placeholder={uiT("Leave a comment…")}
-          className="max-h-40 min-h-18 w-full resize-y rounded-lg border border-content/10 bg-background-base/70 px-2.5 py-2 text-[13px] leading-5 text-content outline-none placeholder:text-content/35 focus:border-content/20"
+          className="max-h-40 min-h-18 w-full resize-y rounded-lg border border-content/10 bg-background-base/70 px-2.5 py-2 text-[13px] leading-5 text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-content/20"
         />
         <FieldError errors={[form.formState.errors.comment]} />
         <div className="mt-2 flex items-center justify-between gap-3">

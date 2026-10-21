@@ -255,7 +255,7 @@ function AssignmentModel({
                 setInEffort(false);
               }}
               onKeyDown={onSearchKey}
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/40"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/40"
             />
           </label>
           <div
@@ -307,7 +307,6 @@ function AssignmentModel({
                 {choice === selected && (
                   <Check
                     className="size-3.5 shrink-0 text-content/55"
-                    strokeWidth={2}
                   />
                 )}
                 {effortForChoice(choice)?.options.length ? (
@@ -367,7 +366,6 @@ function AssignmentModel({
                 {selectedOption ? (
                   <Check
                     className="size-3.5 shrink-0 text-content/50"
-                    strokeWidth={2}
                   />
                 ) : null}
               </Button>
@@ -512,7 +510,7 @@ export function OrchestrationPreview({
     });
   };
   const field =
-    "w-full rounded-md border border-content/12 bg-background-base/40 px-2 py-1.5 text-[12px] leading-5 text-content outline-none placeholder:text-content/35 focus:border-content/30";
+    "w-full rounded-md border border-content/12 bg-background-base/40 px-2 py-1.5 text-[12px] leading-5 text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35 focus:border-content/30";
   const fieldLabel = "mb-1 block text-[11px] leading-tight text-content/45";
   return (
     <div
@@ -771,7 +769,7 @@ export function OrchestrationPreview({
         </Button>
       )}
       {(error || proposal.error) && (
-        <p role="alert" className="px-3 py-2 text-[12px] text-red-400">
+        <p role="alert" className="px-3 py-2 text-[12px] text-danger">
           {localizeOrchestrationMessage(error ?? proposal.error ?? "", uiT)}
         </p>
       )}

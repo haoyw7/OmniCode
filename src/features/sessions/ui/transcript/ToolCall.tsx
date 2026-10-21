@@ -52,19 +52,19 @@ export function OmniCodeCallRow({
     <>
       <OmniCodeMark className="size-3.5" />
       <span
-        className={cn("shrink-0 font-sans text-sm", state === "rejected" ? "text-red-400" : "text-foreground-subtlest")}
+        className={cn("shrink-0 font-sans text-sm", state === "rejected" ? "text-danger" : "text-foreground-subtlest")}
       >
         {verb}
       </span>
       <span
-        className={cn("flex min-w-0 max-w-full items-center gap-1 rounded bg-content/6 px-1 font-mono text-ui-caption", state === "rejected" ? "text-red-400" : "text-content/70")}
+        className={cn("flex min-w-0 max-w-full items-center gap-1 rounded bg-content/6 px-1 font-mono text-ui-caption", state === "rejected" ? "text-danger" : "text-content/70")}
         title={command}
       >
         <span className="min-w-0 truncate">{command}</span>
       </span>
       <ToolCallStatusIcon state={state} />
       {hasError ? (
-        <DisclosureChevron expanded={errorOpen} className="size-3.5 shrink-0 text-red-400/60" />
+        <DisclosureChevron expanded={errorOpen} className="size-3.5 shrink-0 text-danger/60" />
       ) : null}
     </>
   );
@@ -92,7 +92,7 @@ export function OmniCodeCallRow({
         <div className="flex min-w-0 items-center gap-1.5 py-1">{summary}</div>
       )}
       <AnimatedCollapse expanded={errorOpen && hasError}>
-        <pre className="zen-detail-panel whitespace-pre-wrap break-words text-red-400/80">
+        <pre className="zen-detail-panel whitespace-pre-wrap break-words text-danger/80">
           {output}
         </pre>
       </AnimatedCollapse>

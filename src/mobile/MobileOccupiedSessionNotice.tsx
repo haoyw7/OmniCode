@@ -18,7 +18,7 @@ export function MobileOccupiedSessionNotice({
   return (
     <div className="mobile-composer-dock" ref={dock}>
       <div className="mobile-session-occupied" role="status">
-        <Lock size={16} aria-hidden="true" />
+        <Lock aria-hidden="true" />
         <div className="mobile-session-occupied-copy">
           <strong>{t("Open in another app")}</strong>
           <p>{t("Close the session there before continuing here.")}</p>

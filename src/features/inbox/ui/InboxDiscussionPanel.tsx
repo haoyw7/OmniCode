@@ -92,7 +92,7 @@ export function InboxDiscussionPanel({
         </IconButton>
       </header>
       {error ? (
-        <p role="alert" className="p-3 text-xs text-red-400">
+        <p role="alert" className="p-3 text-xs text-danger">
           {error}
         </p>
       ) : null}

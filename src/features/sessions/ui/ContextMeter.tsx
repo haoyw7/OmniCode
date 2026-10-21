@@ -15,8 +15,8 @@ const STROKE = 2;
 
 /** Ring turns amber then red as the window fills. */
 function ringClass(ratio: number): string {
-  if (ratio >= 0.9) return "text-red-400";
-  if (ratio >= 0.75) return "text-amber-400";
+  if (ratio >= 0.9) return "text-danger";
+  if (ratio >= 0.75) return "text-warning";
   return "text-content/45";
 }
 

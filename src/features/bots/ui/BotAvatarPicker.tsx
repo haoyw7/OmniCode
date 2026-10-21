@@ -69,8 +69,8 @@ function OptionRow({ legend, children }: { legend: string; children: ReactNode }
     <div className="desktop-bot-avatar-options-header">
       <span aria-hidden="true">{legend}</span>
       <span>
-        <IconButton size="sm" tooltip={false} label={t("Previous")} disabled={edges.start} onClick={() => page(-1)}><ChevronLeft size={16} /></IconButton>
-        <IconButton size="sm" tooltip={false} label={t("Next")} disabled={edges.end} onClick={() => page(1)}><ChevronRight size={16} /></IconButton>
+        <IconButton size="sm" tooltip={false} label={t("Previous")} disabled={edges.start} onClick={() => page(-1)}><ChevronLeft /></IconButton>
+        <IconButton size="sm" tooltip={false} label={t("Next")} disabled={edges.end} onClick={() => page(1)}><ChevronRight /></IconButton>
       </span>
     </div>
     <div ref={track} className="desktop-bot-avatar-option-grid" onScroll={measure}>{children}</div>

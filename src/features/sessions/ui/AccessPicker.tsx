@@ -2,7 +2,7 @@ import { Button } from "../../../shared/ui/forms/Button";
 import { cn } from "../../../shared/lib/cn";
 import { MenuPanel } from "../../../shared/ui/primitives/MenuPanel";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
-import { ChevronDown, IconArtworkContext, type IconProps } from "../../../shared/ui/icons";
+import { ChevronDown } from "../../../shared/ui/icons";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { RuntimeModeIcon } from "./RuntimeModeIcon";
 import {
@@ -27,39 +27,6 @@ type Props = {
 };
 
 const MENU_WIDTH = 288;
-
-const accessIconArtwork = {
-  Lock: (
-    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="10" width="16" height="10" rx="2" strokeWidth="1.5" />
-      <path d="M8 10V8a4 4 0 0 1 8 0v2M12 14v3" strokeWidth="1.5" />
-    </g>
-  ),
-  Pencil: (
-    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m4 20 1-5L16 4l4 4L9 19l-5 1ZM13 7l4 4" strokeWidth="1.5" />
-    </g>
-  ),
-  Sparkles: (
-    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m10 8 1.5 4.5L16 14l-4.5 1.5L10 20l-1.5-4.5L4 14l4.5-1.5L10 8ZM17 4v6m-3-3h6" strokeWidth="1.5" />
-    </g>
-  ),
-  Shield: (
-    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 4 4 7v6c0 3 4 5.5 8 7 4-1.5 8-4 8-7V7l-8-3Z" strokeWidth="1.5" />
-    </g>
-  ),
-};
-
-/** Keep the desktop picker artwork local; mobile retains its own icon presentation. */
-function AccessModeIcon(props: IconProps & { mode: RuntimeMode }) {
-  return (
-    <IconArtworkContext.Provider value={accessIconArtwork}>
-      <RuntimeModeIcon {...props} />
-    </IconArtworkContext.Provider>
-  );
-}
 
 export function AccessPicker({
   value,
@@ -131,9 +98,9 @@ export function AccessPicker({
             ? "bg-selection text-content"
             : "bg-selection text-content hover:bg-selection-hover")}
       >
-        <AccessModeIcon
+        <RuntimeModeIcon
           mode={value}
-          className={cn("size-3.5 shrink-0", value === "full-access" ? "text-amber-400/90" : "")}
+          className={cn("size-3.5 shrink-0", value === "full-access" ? "text-warning/90" : "")}
         />
         <span className="min-w-0 truncate text-[11px]">
           {uiT(RUNTIME_MODE_LABEL[value])}
@@ -177,9 +144,9 @@ export function AccessPicker({
                   : "text-content hover:bg-content/3")}
             >
               <MenuHover />
-              <AccessModeIcon
+              <RuntimeModeIcon
                 mode={mode}
-                className={cn("mt-0.5 size-3.5 shrink-0", mode === "full-access" ? "text-amber-400/90" : "text-content/70")}
+                className={cn("mt-0.5 size-3.5 shrink-0", mode === "full-access" ? "text-warning/90" : "text-content/70")}
               />
               <span className="min-w-0">
                 <span data-menu-title className={cn("block text-[13px] leading-5", appearance === "composer" ? "font-normal" : "font-medium")}>

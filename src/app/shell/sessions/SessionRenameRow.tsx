@@ -70,7 +70,7 @@ export function SessionRenameRow({
       data-session-layout={dense && projectLabel !== undefined ? "two-line" : undefined}
       className={`flex w-full rounded-lg ${dense ? `h-8 items-center ${compact ? "pl-[46px] pr-2" : "pl-6 pr-2"}` : "flex-col px-2.5 py-2"} ${
         needsApproval
-          ? "bg-amber-400/10 text-content"
+          ? "bg-warning/10 text-content"
           : isActive
             ? "bg-selection text-content"
             : "text-content/80"
@@ -82,7 +82,7 @@ export function SessionRenameRow({
         onChange={(e) => setValue(e.target.value)}
         onBlur={() => finish(true)}
         onKeyDown={onKeyDown}
-        className="w-full rounded bg-content/10 px-2 py-1 text-ui-caption font-semibold leading-snug text-content outline-none ring-1 ring-accent/40"
+        className="w-full rounded bg-content/10 px-2 py-1 text-ui-caption font-semibold leading-snug text-content outline-none focus-visible:ring-2 focus-visible:ring-ring ring-1 ring-accent/40"
       />
       {dense && projectLabel !== undefined ? (
         <span data-session-project>{projectLabel}</span>

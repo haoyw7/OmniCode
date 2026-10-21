@@ -118,7 +118,7 @@ describe("file tab context menu", () => {
     expect(tab.querySelector("[data-harness]")).toBeNull();
     const avatar = tab.querySelector<HTMLElement>("[data-subagent-avatar]")!;
     expect(avatar).not.toBeNull();
-    expect(avatar.style.color).toBe("#EA4045");
+    expect(avatar.style.color).toBe("var(--color-agent-red)");
     expect(avatar.dataset.faceState).toBe("content");
     expect(tab.textContent).toContain("Researcher");
   });

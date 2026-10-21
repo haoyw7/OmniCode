@@ -89,7 +89,7 @@ function ConnectionRow({
     <li className="mobile-settings-row mobile-connection-row mobile-connection-device">
       <button
         type="button"
-        className="mobile-connection-details"
+        className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-connection-details"
         aria-label={active
           ? t("Connection options for {host}", { host: name })
           : t("Switch to {host}", { host: name })}
@@ -260,7 +260,7 @@ export function MobileConnections({
         disabled={disabled}
         onClick={close}
       >
-        <X size={24} />
+        <X />
       </IconButton>
     </div>
   );
@@ -299,7 +299,7 @@ export function MobileConnections({
           <p className="mobile-connection-menu-name">{name}</p>
           <button
             type="button"
-            className="mobile-sheet-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
             disabled={disabled}
             onClick={() => {
               close();
@@ -307,28 +307,28 @@ export function MobileConnections({
               else if (details) onSwitch(details.endpoint);
             }}
           >
-            <RefreshCw size={20} />
+            <RefreshCw />
             <span>{t("Reconnect")}</span>
           </button>
           <button
             type="button"
-            className="mobile-sheet-row"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
             disabled={disabled}
             onClick={edit}
           >
-            <Pencil size={20} />
+            <Pencil />
             <span>{t("Edit")}</span>
           </button>
           <button
             type="button"
-            className="mobile-sheet-row mobile-menu-danger"
+            className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row mobile-menu-danger"
             disabled={disabled}
             onClick={() => {
               setError("");
               onPanelChange("connection-delete");
             }}
           >
-            <Trash2 size={20} />
+            <Trash2 />
             <span>{t("Delete")}</span>
           </button>
         </div>
@@ -375,7 +375,7 @@ export function MobileConnections({
                   aria-label={t(iconNames[icon])}
                   aria-pressed={draft.icon === icon}
                   disabled={disabled}
-                  onClick={() => form.setValue("icon", icon, { shouldDirty: true })}
+                  onClick={() => form.setValue("icon", icon, { shouldDirty: true })} className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70"
                 >
                   <MobileSettingsGlyph name={icon} />
                 </button>

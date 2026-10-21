@@ -128,7 +128,7 @@ export function InboxNotificationMenu({
             })}
           </p>
           {saveError ? (
-            <p role="alert" className="text-xs text-red-400">
+            <p role="alert" className="text-xs text-danger">
               {saveError}
             </p>
           ) : null}

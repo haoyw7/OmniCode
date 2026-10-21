@@ -2,7 +2,7 @@
  * on valid ::highlight() selectors. Vite's CSS pipeline preserves these rules.
  * https://github.com/parcel-bundler/lightningcss/issues/1300 */
 ::highlight(omnicode-transcript-search-match) {
-  background-color: color-mix(in srgb, #e2c08d 46%, transparent);
+  background-color: color-mix(in srgb, var(--color-warning) 46%, transparent);
 }
 
 ::highlight(omnicode-transcript-search-current) {

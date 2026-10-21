@@ -193,7 +193,7 @@ export function MobileAppUpdates({
                 {checking ? (
                   <MobileSpinner size={16} className="mobile-spin" />
                 ) : (
-                  <RefreshCw size={16} />
+                  <RefreshCw />
                 )}
                 {t(checking ? "Checking for updates…" : "Check for updates")}
               </MobileSwap>
@@ -209,7 +209,7 @@ export function MobileAppUpdates({
                   {installing ? (
                     <MobileSpinner size={16} className="mobile-spin" />
                   ) : (
-                    <ArrowDownCircle size={16} />
+                    <ArrowDownCircle />
                   )}
                   {installing
                     ? t("Downloading… {percent}%", { percent: progress })

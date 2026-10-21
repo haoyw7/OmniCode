@@ -645,12 +645,12 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
               : undefined
           }
           spellCheck
-          className="composer-field scrollbar-none relative block w-full resize-none bg-transparent pl-5 pr-9 pt-4 pb-2 text-[16px] leading-6 outline-none select-text"
+          className="composer-field scrollbar-none relative block w-full resize-none bg-transparent pl-5 pr-9 pt-4 pb-2 text-[16px] leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring select-text"
         />
       </div>
 
       {attachments.files.length && !attachmentsSupported ? (
-        <p role="alert" className="px-5 pb-2 text-xs text-amber-400">
+        <p role="alert" className="px-5 pb-2 text-xs text-warning">
           {uiT(
             "Choose a provider that supports attachments, or remove the attached files.",
           )}
@@ -672,7 +672,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
           onClick={() => openPicker("attachments")}
           className={cn("grid size-6.5 shrink-0 place-items-center rounded-md disabled:opacity-40", picker === "attachments" ? "bg-selection-emphasis text-content" : "text-content/70 hover:bg-selection-hover hover:text-content")}
         >
-          <Plus className="size-3.5" strokeWidth={1.5} />
+          <Plus className="size-3.5" />
         </Button>
         <Button variant="ghost" size="content"
           type="button"
@@ -709,7 +709,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
           {attachments.loading ? (
             <span role="status">{uiT("Adding attachment…")}</span>
           ) : error ? (
-            <span className="max-w-72 truncate text-red-400" title={error}>
+            <span className="max-w-72 truncate text-danger" title={error}>
               {error}
             </span>
           ) : (
@@ -865,7 +865,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
                   aria-label={uiT("Find a project")}
                   spellCheck={false}
                   autoComplete="off"
-                  className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35"
+                  className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-content/35"
                 />
               </label>
               <div

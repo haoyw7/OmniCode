@@ -50,7 +50,7 @@ export function QuestionHistoryForm({
         }}
       />
       {error ? (
-        <p role="alert" className="px-3 pb-3 text-[12px] text-red-400">
+        <p role="alert" className="px-3 pb-3 text-[12px] text-danger">
           {error}
         </p>
       ) : null}

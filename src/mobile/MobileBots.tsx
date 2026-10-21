@@ -129,12 +129,12 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
   <main className="mobile-bots" inert={!visible} aria-hidden={!visible || undefined}
     onKeyDown={event => { if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); back(); } }}>
     <header className="mobile-header mobile-bots-header">
-      <IconButton label={t("Back")} onClick={props.onClose}><ArrowLeft size={24} /></IconButton>
+      <IconButton label={t("Back")} onClick={props.onClose}><ArrowLeft /></IconButton>
       <h1 className="sr-only">{t("Bots")}</h1>
       <div className="mobile-bots-header-actions">
         <IconButton ref={searchButton} label={t("Search bots")} shape="round" aria-expanded={searching} aria-controls="mobile-bots-search"
-          onClick={() => searching ? closeSearch() : setSearching(true)}>{searching ? <X size={24} /> : <Search size={24} />}</IconButton>
-        <IconButton label={t("New bot")} shape="round" disabled={!canCreate} onClick={() => setCreating(true)}><Plus size={24} /></IconButton>
+          onClick={() => searching ? closeSearch() : setSearching(true)}>{searching ? <X /> : <Search />}</IconButton>
+        <IconButton label={t("New bot")} shape="round" disabled={!canCreate} onClick={() => setCreating(true)}><Plus /></IconButton>
       </div>
     </header>
     <AnimatedCollapse expanded={searching} onEntered={() => searchInput.current?.focus()}>
@@ -172,11 +172,11 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
     </nav>
     <MobileSheet open={!!menu && listVisible} title="Bot options" onClose={() => setMenu(undefined)}
       header={{ title: menu?.name }}>
-      <button type="button" className="mobile-sheet-row" onClick={() => {
+      <button type="button" className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row" onClick={() => {
         if (!menu) return;
         const next = pins.includes(menu.id) ? pins.filter(id => id !== menu.id) : [...pins, menu.id];
         setPinsByHost(current => ({ ...current, [props.hostKey]: next })); writeBotPins(props.hostKey, next); setMenu(undefined);
-      }}><Pin size={20} /><span>{t(menu && pins.includes(menu.id) ? "Unpin" : "Pin")}</span></button>
+      }}><Pin /><span>{t(menu && pins.includes(menu.id) ? "Unpin" : "Pin")}</span></button>
     </MobileSheet>
   </main>}
   </MobilePageTransition>;

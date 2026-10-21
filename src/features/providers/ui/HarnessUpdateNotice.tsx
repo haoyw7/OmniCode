@@ -212,7 +212,7 @@ export function HarnessUpdateNotice({
             disabled={busy}
             onClick={dismiss}
           >
-            <X className="size-3" strokeWidth={2} />
+            <X className="size-3" />
           </Button>
         </div>
         <div className="divide-y divide-stroke">
@@ -254,7 +254,7 @@ function HarnessUpdateRow({
           {HARNESS_TITLE[update.harness]}
         </span>
         {state.status === "updated" ? (
-          <span className="flex shrink-0 items-center gap-1 text-[11px] text-emerald-400">
+          <span className="flex shrink-0 items-center gap-1 text-[11px] text-success">
             <Check className="size-3.5" />
             {uiT("Updated to ")}
             {state.version}
@@ -286,7 +286,7 @@ function HarnessUpdateRow({
       {state.status === "failed" ? (
         <p
           role="alert"
-          className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-red-300/90"
+          className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-danger/90"
           title={state.error}
         >
           {state.error}

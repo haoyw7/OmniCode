@@ -133,18 +133,18 @@ export function MobileSessionActions({
             {session && (
               <>
                 {onDelegate && (
-                  <button className="mobile-sheet-row" disabled={blocked} onClick={() => void run(onDelegate)}>
-                    <Bot size={20} />
+                  <button className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row" disabled={blocked} onClick={() => void run(onDelegate)}>
+                    <Bot />
                     <span>{t("Hand over to assistant")}</span>
                   </button>
                 )}
                 {branch && (
                   <button
-                    className="mobile-sheet-row"
+                    className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                     disabled={blocked}
                     onClick={() => copy(branch)}
                   >
-                    <GitBranch size={20} />
+                    <GitBranch />
                     <span className="mobile-sheet-row-text">
                       <span>{t("Copy branch")}</span>
                       <small>{branch}</small>
@@ -155,38 +155,38 @@ export function MobileSessionActions({
                   <div className="mobile-menu-divider" role="separator" />
                 )}
                 <button
-                  className="mobile-sheet-row"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                   disabled={blocked}
                   onClick={() =>
                     void run(() => onUpdate({ pinned: !pinned }))
                   }
                 >
-                  <Pin size={20} />
+                  <Pin />
                   <span>{t(pinned ? "Unpin" : "Pin")}</span>
                 </button>
                 {onMarkUnread && (
                   <button
-                    className="mobile-sheet-row"
+                    className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                     disabled={blocked}
                     onClick={() => void run(onMarkUnread)}
                   >
-                    <CircleDot size={20} />
+                    <CircleDot />
                     <span>{t("Mark as unread")}</span>
                   </button>
                 )}
                 <button
-                  className="mobile-sheet-row"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                   disabled={blocked}
                   onClick={() =>
                     summary ? copy(session.id) : setPage("copy")
                   }
                 >
-                  <Copy size={20} />
+                  <Copy />
                   <span>{t("Copy session ID")}</span>
-                  {!summary && <ChevronRight size={20} />}
+                  {!summary && <ChevronRight />}
                 </button>
                 <button
-                  className="mobile-sheet-row"
+                  className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
                   disabled={blocked}
                   onClick={() => {
                     setTitle(
@@ -195,18 +195,18 @@ export function MobileSessionActions({
                     setPage("rename");
                   }}
                 >
-                  <Pencil size={20} />
+                  <Pencil />
                   <span>{t("Rename")}</span>
                 </button>
                 <div className="mobile-menu-divider" role="separator" />
                 <button
-                  className={`mobile-sheet-row${archived ? "" : " mobile-menu-danger"}`}
+                  className={`hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row${archived ? "" : " mobile-menu-danger"}`}
                   disabled={blocked}
                   onClick={() =>
                     void run(() => onUpdate({ archived: !archived }))
                   }
                 >
-                  <Archive size={20} />
+                  <Archive />
                   <span>{t(archived ? "Unarchive" : "Archive")}</span>
                 </button>
               </>
@@ -215,7 +215,7 @@ export function MobileSessionActions({
         ) : page === "copy" && session ? (
           <>
             <button
-              className="mobile-sheet-row"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
               disabled={blocked || !session.providerSessionId}
               onClick={() =>
                 session.providerSessionId && copy(session.providerSessionId)
@@ -224,7 +224,7 @@ export function MobileSessionActions({
               <span>{t("Harness session ID")}</span>
             </button>
             <button
-              className="mobile-sheet-row"
+              className="hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:opacity-70 mobile-sheet-row"
               disabled={blocked}
               onClick={() => copy(session.id)}
             >

@@ -1,4 +1,5 @@
 import { queryClient } from "../shared/lib/queryClient";
+import { createStore } from "zustand/vanilla";
 import { readMobileDeviceInfo } from "./deviceInfo";
 import { ModelCatalogLoad } from "../features/connections/model/modelCatalogLoad";
 import { readMobileInstallationId } from "./deviceIdentity";
@@ -209,15 +210,12 @@ export class MobileClient {
   hasCapability(capability: string): boolean {
     return this.capabilities.includes(capability);
   }
-  private connectionStatus: HostConnectionStatus = { state: "disconnected" };
-  private statusListeners = new Set<() => void>();
+  readonly connectionState = createStore(() => ({ status: { state: "disconnected" } as HostConnectionStatus }));
+  private get connectionStatus() { return this.connectionState.getState().status; }
   private verificationEpoch = 0;
   getConnectionStatus = () => this.connectionStatus;
   subscribeConnectionStatus = (listener: () => void) => {
-    this.statusListeners.add(listener);
-    return () => {
-      this.statusListeners.delete(listener);
-    };
+    return this.connectionState.subscribe(listener);
   };
   private setConnectionStatus(status: HostConnectionStatus, force = false) {
     const previous = this.connectionStatus;
@@ -227,8 +225,7 @@ export class MobileClient {
       previous.detail === status.detail
     )
       return;
-    this.connectionStatus = status;
-    for (const listener of this.statusListeners) listener();
+    this.connectionState.setState({ status });
   }
   private connectionFailed(
     error: unknown,

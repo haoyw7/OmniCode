@@ -6,7 +6,7 @@ html[data-skin]:not(.has-user-accent) .primary-action:not(:disabled):hover {
 html[data-skin]:not(.has-user-accent) .primary-action:not(.composer-send):not(.composer-stop):not(:disabled) {
   border-color: transparent;
   background: var(--color-accent);
-  color: var(--color-accent-ink, #fff);
+  color: var(--color-accent-ink, var(--color-accent-ink));
 }
 
 html[data-skin]:not(.has-user-accent) :where(.user-message-row:not(.mobile-desktop-transcript *)) .user-message-bubble:not([data-draft="true"]) {
@@ -630,8 +630,8 @@ html[data-skin][data-desktop-mode] [data-transcript-viewport] .agent-transcript 
   --transcript-edge-mask: linear-gradient(
     to bottom,
     transparent,
-    #000 var(--desktop-transcript-edge-height),
-    #000 calc(100% - var(--desktop-transcript-edge-height)),
+    black var(--desktop-transcript-edge-height),
+    black calc(100% - var(--desktop-transcript-edge-height)),
     transparent
   );
   -webkit-mask-image: var(--transcript-edge-mask);
