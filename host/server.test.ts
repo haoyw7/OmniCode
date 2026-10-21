@@ -1080,6 +1080,45 @@ describe("remote host API", () => {
       expect(piModelProbe).toHaveBeenCalledTimes(attempts + 1);
     }
   });
+  it.each(["resolve", "reject"] as const)("finishes progressive catalog polling after slow binary resolution (%s)", async (outcome) => {
+    const s = await setup();
+    const binary = join(s.directory, "slow-provider-cli");
+    writeFileSync(binary, "");
+    binaries.codex = binary;
+    const resolve = HostChildBackend.prototype.resolve;
+    const resolver = vi.spyOn(HostChildBackend.prototype, "resolve").mockImplementation(async function (provider) {
+      await new Promise(done => setTimeout(done, 300));
+      return resolve.call(this, provider);
+    });
+    cleanups.push(async () => {
+      resolver.mockRestore();
+      delete binaries.codex;
+      modelProbe.mockReset();
+    });
+    const rows = [{ id: "codex:slow-path", harness: "codex", name: "Slow path" }];
+    modelProbe.mockReset();
+    if (outcome === "resolve") modelProbe.mockResolvedValue(rows);
+    else modelProbe.mockRejectedValue(new Error("Login required"));
+
+    const first = (await s.call("models.list", { projectId: s.project.id, progressive: true })).value.result;
+    expect(first.pending).toEqual(["codex"]);
+    // Poll while path resolution is still running; it must join that work.
+    await s.call("models.list", {
+      projectId: s.project.id, progressive: true, providers: first.pending,
+    });
+    await vi.waitFor(() => expect(modelProbe).toHaveBeenCalledOnce());
+    const last = (await s.call("models.list", {
+      projectId: s.project.id, progressive: true, providers: first.pending,
+    })).value.result;
+    expect(last.pending).toEqual([]);
+    if (outcome === "resolve") expect(last.models.codex).toEqual(rows);
+    else expect(last.errors.codex).toBe("Login required");
+    expect(resolver).toHaveBeenCalledOnce();
+
+    // A new discovery still checks the installed binary, including CLI updates.
+    await s.call("models.list", { projectId: s.project.id });
+    expect(resolver).toHaveBeenCalledTimes(2);
+  });
   it("retries model discovery after a provider becomes available", async () => {
     const s = await setup();
     modelProbe.mockRejectedValueOnce(new Error("Login required"));

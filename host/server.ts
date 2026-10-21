@@ -301,7 +301,7 @@ export function createHostServer(
   // Cached per project and provider so one failing or slow CLI never forces
   // every other provider to be probed again. An expired list keeps answering
   // while its replacement is discovered in the background.
-  const providerModels = async (cwd: string, provider: RemoteProvider, retainFailure = false) => {
+  const readProviderModels = async (cwd: string, provider: RemoteProvider, retainFailure: boolean) => {
     const key = `${cwd}\n${provider}`;
     const binary = await providerBinary(provider);
     const cached = catalogs.get(key);
@@ -325,6 +325,25 @@ export function createHostServer(
       () => { entry.failedAt = Date.now(); },
     );
     return entry.models;
+  };
+  // Progressive polls continue the original read, including binary resolution.
+  // Re-resolving a CLI on every poll can always exceed the 150ms response budget,
+  // leaving even a completed catalog permanently reported as pending.
+  const catalogReads = new Map<string, Promise<AgentModel[]>>();
+  const providerModels = (cwd: string, provider: RemoteProvider, retainFailure = false) => {
+    const key = `${cwd}\n${provider}`;
+    const reading = catalogReads.get(key);
+    if (reading) return reading;
+    const cached = catalogs.get(key);
+    if (retainFailure && cached &&
+        (!cached.failedAt || Date.now() - cached.failedAt < 15_000)) {
+      return cached.models;
+    }
+    const read = readProviderModels(cwd, provider, retainFailure);
+    catalogReads.set(key, read);
+    const done = () => { if (catalogReads.get(key) === read) catalogReads.delete(key); };
+    void read.then(done, done);
+    return read;
   };
   const models = async (projectId?: unknown, progressive = false, requested?: unknown) => {
     const cwd = engine.modelCatalogDirectory(typeof projectId === "string" ? projectId : undefined);
