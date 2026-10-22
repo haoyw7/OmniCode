@@ -45,6 +45,7 @@ export type PopoverDismissReason = "outside" | "escape";
 
 type Props = Omit<ComponentPropsWithoutRef<"div">, "style"> & {
   open?: boolean;
+  animated?: boolean;
   onExitComplete?: () => void;
   frameProps?: Pick<
     ComponentPropsWithoutRef<"div">,
@@ -104,14 +105,15 @@ export function Popover({ open, onExitComplete, ...props }: Props) {
 function PresentPopover(props: Omit<Props, "open">) {
   const [present, safeToRemove] = usePresence();
   const reduced = useMotionPreference();
+  const immediate = reduced || props.animated === false;
   const visible = useSurfaceVisibility();
   useLayoutEffect(() => {
-    if ((reduced || !visible) && !present) safeToRemove?.();
-  }, [reduced, visible, present, safeToRemove]);
+    if ((immediate || !visible) && !present) safeToRemove?.();
+  }, [immediate, visible, present, safeToRemove]);
   useEffect(() => {
-    if ((reduced || !visible) && !present) safeToRemove?.();
-  }, [reduced, visible, present, safeToRemove]);
-  if (!visible || (reduced && !present)) return null;
+    if ((immediate || !visible) && !present) safeToRemove?.();
+  }, [immediate, visible, present, safeToRemove]);
+  if (!visible || (immediate && !present)) return null;
   return (
     <PopoverSurface
       {...props}
@@ -241,6 +243,7 @@ function PopoverSurface({
 
 function PopoverFrame({
   contentProps: {
+    animated = true,
     frameProps,
     bare,
     className,
@@ -268,14 +271,15 @@ function PopoverFrame({
   heightLimit?: string;
 }) {
   const reduced = useMotionPreference();
+  const immediate = reduced || !animated;
   return (
     <motion.div
       {...(radixProps as HTMLMotionProps<"div">)}
       {...frameProps}
-      initial={reduced ? false : { opacity: popInitial.opacity }}
+      initial={immediate ? false : { opacity: popInitial.opacity }}
       animate={{ opacity: popAnimate.opacity }}
       exit={{ opacity: popExit.opacity }}
-      transition={reduced ? immediateTransition : popTransition}
+      transition={immediate ? immediateTransition : popTransition}
       onAnimationComplete={onPresenceComplete}
       ref={(element) => {
         if (typeof ref === "function") ref(element);
@@ -303,10 +307,10 @@ function PopoverFrame({
           if (typeof contentRef === "function") contentRef(element);
           else if (contentRef) contentRef.current = element;
         }}
-        initial={reduced ? false : popInitial}
+        initial={immediate ? false : popInitial}
         animate={popAnimate}
         exit={popExit}
-        transition={reduced ? immediateTransition : popTransition}
+        transition={immediate ? immediateTransition : popTransition}
         data-popover-side={radixProps["data-side"]}
         data-dialog-popover
         inert={!present || contentProps.inert}

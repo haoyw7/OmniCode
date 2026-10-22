@@ -93,14 +93,17 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
-it("opens, ignores touch, and retains direct pointer transfer until dismissal completes", () => {
+it("opens and closes immediately, ignores touch, and retains direct pointer transfer", () => {
   pointer(trigger(), "pointerover", "touch");
   expect(panel()).toBeNull();
   pointer(trigger(), "pointerover");
   expect(panel()).not.toBeNull();
-  expect(panel()!.style.animation).toBe("none");
   expect(onOpen).toHaveBeenCalledTimes(1);
-  pointer(trigger(), "pointerout", "mouse", document.body);
+  act(() => trigger().dispatchEvent(new PointerEvent("pointerout", {
+    bubbles: true,
+    pointerType: "mouse",
+    relatedTarget: document.body,
+  })));
   expect(panel()).toBeNull();
   pointer(trigger(), "pointerover");
   expect(panel()).not.toBeNull();
@@ -185,11 +188,14 @@ it("allows scrolling card contents but dismisses on list scroll and outside clic
   expect(panel()).toBeNull();
   expect(document.activeElement).toBe(trigger());
   pointer(trigger(), "pointerover");
-  act(() =>
+  act(() => vi.advanceTimersByTime(0));
+  act(() => {
     document.body.dispatchEvent(
       new PointerEvent("pointerdown", { bubbles: true }),
-    ),
-  );
+    );
+    document.body.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+    document.body.click();
+  });
   finishClosing();
   expect(panel()).toBeNull();
 });

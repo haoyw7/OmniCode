@@ -258,7 +258,7 @@ export function HoverSummary({
       // timer, including when placement flips.
       gap={-1}
       width={width}
-      style={{ animation: "none" }}
+      animated={false}
       role={role}
       id={hover.id}
       aria-label={label}
