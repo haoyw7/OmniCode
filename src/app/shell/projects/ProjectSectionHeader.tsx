@@ -43,7 +43,7 @@ export function ProjectSectionHeader({
         aria-expanded={expanded}
         aria-controls={contentId}
         onClick={() => { if (!reorder?.item.consumeClick()) onToggleExpanded(); }}
-        className={`focus-visible:focus-fill active:opacity-70 flex min-w-0 flex-1 items-center gap-1 px-1 py-0.5 text-left text-ui-base text-foreground-subtle hover:text-content ${reorder ? "touch-none cursor-grab" : ""}`}
+        className={`active:opacity-70 flex min-w-0 flex-1 items-center gap-1 px-1 py-0.5 text-left text-ui-base text-foreground-subtle hover:text-content ${reorder ? "touch-none cursor-grab" : ""}`}
       >
         <span className="min-w-0 truncate text-foreground-subtle transition-colors duration-150 group-hover/section:text-content motion-reduce:transition-none">
           {label}
@@ -115,27 +115,27 @@ export function AddProjectButton({
           <button
             type="button"
             role="menuitem"
-            className={cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", item)}
+            className={cn("hover:opacity-80 active:opacity-70", item)}
             onClick={() => {
               setOpen(false);
               onOpenFolder();
             }}
           >
             <MenuHover />
-            <FolderPlus className="size-3.5 shrink-0" />
+            <FolderPlus className="size-4 shrink-0" />
             {uiT("Open folder…")}
           </button>
           <button
             type="button"
             role="menuitem"
-            className={cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", item)}
+            className={cn("hover:opacity-80 active:opacity-70", item)}
             onClick={() => {
               setOpen(false);
               window.dispatchEvent(new Event(OPEN_REMOTE_PROJECT_EVENT));
             }}
           >
             <MenuHover />
-            <Internet className="size-3.5 shrink-0" />
+            <Internet className="size-4 shrink-0" />
             {uiT("Open folder on a machine…")}
           </button>
         </Popover>

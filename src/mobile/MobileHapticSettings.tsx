@@ -45,7 +45,7 @@ export function MobileHapticSettings() {
         options={[{ value: "gentle", label: t("Gentle") }, { value: "standard", label: t("Standard") }]}
         onChange={(strength) => saveHapticPreferences({ ...preferences, strength })} />
     </div>
-    <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row mobile-settings-action" disabled={!preferences.output} onClick={() => {
+    <button type="button" className="hover:opacity-80 active:opacity-70 mobile-settings-row mobile-settings-action" disabled={!preferences.output} onClick={() => {
       stopPreview.current?.();
       stopPreview.current = previewOutputHaptics(setPreviewResult);
     }}>

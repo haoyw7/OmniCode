@@ -72,7 +72,7 @@ export function StationHead({
   ) : (
     <motionElement.button {...workflowFold(foldClass.includes("wf-folded"))} inert={foldClass.includes("wf-folded")}
       className={cn(
-        "wf-station wf-station-open flex h-6 min-w-0 shrink cursor-pointer items-center gap-2 rounded-md text-left outline-none hover:text-foreground focus-visible:focus-fill",
+        "wf-station wf-station-open flex h-6 min-w-0 shrink cursor-pointer items-center gap-2 rounded-md text-left outline-none hover:text-foreground",
         foldClass,
       )}
       onClick={onSelect}

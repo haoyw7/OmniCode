@@ -140,7 +140,7 @@ export function WorkflowLedge({
         ) : null}
         <Button variant="ghost" size="content"
           aria-label={label}
-          className="wf-ledge-lamp relative flex shrink-0 cursor-pointer items-center justify-center rounded-full outline-none before:absolute before:-inset-1 before:content-[''] focus-visible:focus-fill"
+          className="wf-ledge-lamp relative flex shrink-0 cursor-pointer items-center justify-center rounded-full outline-none before:absolute before:-inset-1 before:content-['']"
           data-station-index={index}
           data-testid="workflow-timeline-ledge-lamp"
           onClick={() => onSelect(index)}
@@ -280,7 +280,7 @@ function TouchTimelineScrollbar({
       aria-valuemax={100}
       aria-valuemin={0}
       aria-valuenow={Math.round((100 * Math.min(viewport.scrollLeft, range)) / range)}
-      className="wf-sb absolute inset-x-0 bottom-0 h-0.5 cursor-pointer rounded-full bg-border hover:bg-accent focus-visible:focus-fill active:bg-accent"
+      className="wf-sb absolute inset-x-0 bottom-0 h-0.5 cursor-pointer rounded-full bg-border hover:bg-accent active:bg-accent"
       data-dragging={dragging ? "true" : undefined}
       data-scrolling={viewport.scrolling ? "true" : undefined}
       data-testid="workflow-timeline-scrollbar"

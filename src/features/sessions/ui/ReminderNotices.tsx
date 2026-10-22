@@ -15,7 +15,7 @@ import {
   reminderTime,
   type SessionReminder,
 } from "../model/sessionReminders";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { ActionMenu } from "../../../shared/ui/primitives/ActionMenu";
 import { Clock } from "../../../shared/ui/icons";
 import { sessionReminderPresets } from "./sessionReminderPresets";
 
@@ -163,7 +163,7 @@ export function ReminderNotices({
           reminder.sessionId === snooze.reminder.sessionId &&
           reminder.dueAt === snooze.reminder.dueAt,
       ) ? (
-        <ExplorerMenu
+        <ActionMenu
           x={snooze.x}
           y={snooze.y}
           items={sessionReminderPresets()}

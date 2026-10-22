@@ -19,6 +19,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ReactNode,
 } from "react";
 import { Popover } from "../../../shared/ui/Popover";
 import { SettingsNav } from "../../../app/shell/SettingsRail";
@@ -61,9 +62,10 @@ const settingsPages = {
   worktrees: lazySurface(async () => ({ default: (await import("../../source-control/ui/WorktreesPage")).WorktreesPage }), pageOptions),
   inbox: lazySurface(async () => ({ default: (await import("./pages/InboxPage")).InboxPage }), pageOptions),
   archive: lazySurface(async () => ({ default: (await import("./pages/ArchivePage")).ArchivePage }), pageOptions),
-} satisfies Record<SettingsSectionId, { preload: () => Promise<unknown> }>;
+} satisfies Record<Exclude<SettingsSectionId, "usage">, { preload: () => Promise<unknown> }>;
 
 export function preloadSettingsSection(section: SettingsSectionId) {
+  if (section === "usage") return Promise.resolve();
   return settingsPages[section].preload();
 }
 
@@ -102,6 +104,7 @@ type Props = {
   cwd: string;
   sessions: SessionSummary[];
   liveSessions?: Session[];
+  usagePage?: ReactNode;
   onRemoveWorktree?: RemoveWorktree;
   onCheckWorktreeRemoval?: RemoveWorktree;
   onDeleteWorktreeSessions?: (
@@ -128,6 +131,7 @@ export function SettingsView({
   cwd,
   sessions,
   liveSessions,
+  usagePage,
   onRemoveWorktree = removeWorktree,
   onCheckWorktreeRemoval,
   onDeleteWorktreeSessions,
@@ -285,7 +289,7 @@ export function SettingsView({
                     <SettingsPage key={`${section}:${pageVisit.current.generation}`} reduced={reduced}>
                   <PageHeader
                     title={settingsSectionLabel(section)}
-                    description={settingsSectionDescription(section)}
+                    description={section === "usage" ? "" : settingsSectionDescription(section)}
                   />
                   {section === "general" ? (
                     <GeneralPage onOpenWhatsNew={onOpenWhatsNew} />
@@ -298,6 +302,7 @@ export function SettingsView({
                   ) : null}
                   {section === "chat" ? <ChatPage /> : null}
                   {section === "keybindings" ? <KeybindingsPage /> : null}
+                  {section === "usage" ? usagePage : null}
                   {section === "import" ? (
                     <NativeSessionsPanel onOpenSession={onOpenSession} />
                   ) : null}

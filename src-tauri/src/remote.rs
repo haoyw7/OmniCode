@@ -162,6 +162,8 @@ fn rpc_payload(environment_id: Option<&str>, method: &str, mut params: Value) ->
 fn rpc_timeout(method: &str) -> std::time::Duration {
     std::time::Duration::from_secs(if method == "git.worktreeName" {
         150
+    } else if matches!(method, "usage.summary" | "usage.limits") {
+        120
     } else {
         30
     })
@@ -464,6 +466,11 @@ fn supported_remote_method(method: &str) -> bool {
             | "providerAccounts.list"
             | "providerAccounts.read"
             | "providerAccounts.usage"
+            | "usage.summary"
+            | "usage.progress"
+            | "usage.limits"
+            | "usage.limits.reset"
+            | "usage.settings.update"
             | "providerAccounts.deepseek"
             | "providerAccounts.save"
             | "providerAccounts.remove"
@@ -880,6 +887,11 @@ mod tests {
             "providerAccounts.list",
             "providerAccounts.read",
             "providerAccounts.usage",
+            "usage.summary",
+            "usage.progress",
+            "usage.limits",
+            "usage.limits.reset",
+            "usage.settings.update",
             "providerAccounts.deepseek",
             "providerAccounts.save",
             "providerAccounts.remove",
@@ -956,6 +968,10 @@ mod tests {
             assert!(supported_remote_method(method), "{method}");
         }
         assert!(!supported_remote_method("git.arbitrary"));
+        assert!(!supported_remote_method("usage.arbitrary"));
+        assert_eq!(rpc_timeout("usage.summary").as_secs(), 120);
+        assert_eq!(rpc_timeout("usage.limits").as_secs(), 120);
+        assert_eq!(rpc_timeout("usage.settings.update").as_secs(), 30);
         assert!(!supported_remote_method("bots.arbitrary"));
         assert!(!supported_remote_method("botThreads.arbitrary"));
         assert!(!supported_remote_method("botMemory.arbitrary"));

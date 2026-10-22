@@ -34,7 +34,7 @@ import { OrchestrationActions, OrchestrationRuntimeContext } from "./Orchestrati
 import { useModelSource } from "../../sessions/ui/modelSource";
 import { OrchestrationSidebarAgents } from "./OrchestrationSidebarAgents";
 import { localizeOrchestrationMessage } from "./orchestrationMessages";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { Popover } from "../../../shared/ui/Popover";
 import {
   Check,
@@ -255,7 +255,7 @@ function AssignmentModel({
                 setInEffort(false);
               }}
               onKeyDown={onSearchKey}
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/40"
             />
           </label>
           <div
@@ -306,12 +306,12 @@ function AssignmentModel({
                 </span>
                 {choice === selected && (
                   <Check
-                    className="size-3.5 shrink-0 text-content/55"
+                    className="size-4 shrink-0 text-content/55"
                   />
                 )}
                 {effortForChoice(choice)?.options.length ? (
                   <ChevronRight
-                    className="size-3.5 shrink-0 text-content/40"
+                    className="size-4 shrink-0 text-content/40"
                   />
                 ) : null}
               </Button>
@@ -365,7 +365,7 @@ function AssignmentModel({
                 <span className="min-w-0 flex-1 truncate">{option.label}</span>
                 {selectedOption ? (
                   <Check
-                    className="size-3.5 shrink-0 text-content/50"
+                    className="size-4 shrink-0 text-content/50"
                   />
                 ) : null}
               </Button>
@@ -510,7 +510,7 @@ export function OrchestrationPreview({
     });
   };
   const field =
-    "w-full rounded-md border border-content/12 bg-background-base/40 px-2 py-1.5 text-[12px] leading-5 text-content outline-none focus-visible:focus-fill placeholder:text-content/35";
+    "w-full rounded-md border border-content/12 bg-background-base/40 px-2 py-1.5 text-[12px] leading-5 text-content outline-none placeholder:text-content/35";
   const fieldLabel = "mb-1 block text-[11px] leading-tight text-content/45";
   return (
     <div

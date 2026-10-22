@@ -185,7 +185,7 @@ export function WorktreePicker({
           className="flex flex-col overflow-hidden"
         >
           <label className="flex shrink-0 items-center gap-2 border-b border-stroke px-3 py-2">
-            <Search className="size-3.5 text-content/40" />
+            <Search className="size-4 text-content/40" />
             <Input variant="inline"
               ref={search}
               aria-label={uiT("Search working copies")}
@@ -212,7 +212,7 @@ export function WorktreePicker({
                   void select(rows[active]);
                 }
               }}
-              className="min-w-0 flex-1 bg-transparent text-[12px] outline-none focus-visible:focus-fill"
+              className="min-w-0 flex-1 bg-transparent text-[12px] outline-none"
             />
           </label>
           {worktreeRemoved && (
@@ -234,7 +234,7 @@ export function WorktreePicker({
           >
             {!data && !loadError && (
               <div className="flex items-center gap-2 p-2 text-[12px] text-content/50">
-                <Spinner className="size-3.5" />
+                <Spinner className="size-4" />
                 {uiT("Loading working copies…")}
               </div>
             )}
@@ -255,9 +255,9 @@ export function WorktreePicker({
                 className={cn("flex w-full items-center gap-2 rounded-md text-left disabled:opacity-40 justify-start", active === index ? "bg-selection" : "hover:bg-content/3")}
               >
                 {tree.isMain ? (
-                  <GitBranch className="size-3.5 shrink-0 text-content/50" />
+                  <GitBranch className="size-4 shrink-0 text-content/50" />
                 ) : (
-                  <FolderTree className="size-3.5 shrink-0 text-content/50" />
+                  <FolderTree className="size-4 shrink-0 text-content/50" />
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[12px]">
@@ -273,7 +273,7 @@ export function WorktreePicker({
                 </span>
                 {!worktreeRemoved &&
                   pathKey(tree.path) === pathKey(executionCwd) && (
-                    <Check className="size-3.5" />
+                    <Check className="size-4" />
                   )}
               </Button>
             ))}
@@ -298,7 +298,7 @@ export function WorktreePicker({
               }}
               className="flex w-full items-center gap-2 rounded-md text-left hover:bg-content/5 justify-start"
             >
-              <Plus className="size-3.5" />
+              <Plus className="size-4" />
               {uiT("Create worktree…")}
             </Button>
             <Button data-menu-row="single" variant="ghost" size="content"
@@ -310,7 +310,7 @@ export function WorktreePicker({
               }}
               className="flex w-full items-center gap-2 rounded-md text-left text-content/55 hover:bg-content/5 disabled:opacity-40 justify-start"
             >
-              <GitBranch className="size-3.5" />
+              <GitBranch className="size-4" />
               {uiT("Switch branch in this working copy…")}
             </Button>
             {onManage && (
@@ -323,7 +323,7 @@ export function WorktreePicker({
                 }}
                 className="flex w-full items-center gap-2 rounded-md text-left text-content/55 hover:bg-content/5 justify-start"
               >
-                <Settings className="size-3.5" />
+                <Settings className="size-4" />
                 {uiT("Manage worktrees…")}
               </Button>
             )}

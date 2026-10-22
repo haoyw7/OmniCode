@@ -18,7 +18,7 @@ import {
   peekTranscriptJump,
   subscribeTranscriptJump,
 } from "../model/transcriptJump";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { findModel } from "../model/models";
 import {
   HARNESS_TITLE,

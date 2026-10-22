@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mcpInvoke = vi.hoisted(() => vi.fn());
+vi.mock("../../usage/model/desktopUsageTransport", () => ({ desktopUsageNoticeSource: () => ({ sourceKey: "desktop-command-fixture", limits: async () => [{ id: "claude:work", provider: "claude", label: "Work", status: "ok", windows: [{ id: "session", label: "5h", usedPercent: 42 }] }] }) }));
 vi.mock("../../../platform/tauri/wsl", () => ({
   listWslDistributions: vi.fn().mockResolvedValue(["Ubuntu", "Debian"]),
   pickWslFolder: vi.fn(),
@@ -329,6 +330,22 @@ describe("Composer question focus", () => {
     expect(input.disabled).toBe(false);
     await act(async () => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
     expect(submit).toHaveBeenCalledWith(props.initialDraft, [], expect.any(Object));
+  });
+
+  it("handles /usage-limits locally in an existing desktop conversation", async () => {
+    const onSubmit = vi.fn();
+    await act(async () => root.render(createElement(Composer, {
+      sessionId: "usage-command", startedSession: true, focused: true, harness: "claude", model: "claude-sonnet", runtimeMode: "supervised",
+      executionCwd: "/repo", initialDraft: "/usage-limits", hideProjectPicker: true, hideBranchPicker: true,
+      onFocus: vi.fn(), onCwdChange: vi.fn(), onModelChange: vi.fn(), onRuntimeModeChange: vi.fn(), onSubmit,
+    })));
+    const input = container.querySelector("textarea")!;
+    await act(async () => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+    await vi.waitFor(() => expect(container.textContent).toContain("42%"));
+    expect(onSubmit).not.toHaveBeenCalled(); expect(input.value).toBe("");
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Close usage limits"]')!.click());
+    expect(container.querySelector('[aria-label="Usage limits snapshot"]')?.closest('[inert]')).not.toBeNull();
+    clearComposerDraft("usage-command");
   });
 
   async function renderComposer(

@@ -8,9 +8,10 @@ import type { Connection } from "./client";
 import { translate } from "../shared/i18n/language";
 import type { BotNotificationActivity as AssistantNotificationActivity } from "../features/bots/model/botNotifications";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
-import { HARNESS_ICONS } from "../features/sessions/ui/HarnessIcon";
+import { HARNESS_ICONS } from "../shared/ui/branding/HarnessIcon";
 import { notificationText } from "./notificationText";
 import type { NativeActivityRow } from "./nativeActivitySync";
+import { notificationDefaults, type MobileNotificationPreferences } from "./notificationPreferences";
 
 export type MobileNotificationPermission =
   "prompt" | "granted" | "denied" | "unsupported";
@@ -21,12 +22,15 @@ export type MobileNotificationTarget = { environmentId: string; kind: "assistant
   sessionId: string;
 };
 type ActivityResult = { environmentId: string; unreadIds: string[] };
+export type MobileNotificationStatus = { display: MobileNotificationPermission; channelBlocked?: boolean };
 export interface MobileNotificationsPlugin {
-  checkPermissions(): Promise<{ display: MobileNotificationPermission }>;
-  requestPermissions(): Promise<{ display: MobileNotificationPermission }>;
+  checkPermissions(): Promise<MobileNotificationStatus>;
+  requestPermissions(): Promise<MobileNotificationStatus>;
+  configure(options: { preferences: MobileNotificationPreferences }): Promise<void>;
   openSettings(): Promise<void>;
   start(options: Connection & {
     enabled?: boolean;
+    preferences?: MobileNotificationPreferences;
     texts: Record<string, string>;
   }): Promise<void>;
   stop(): Promise<void>;
@@ -83,24 +87,18 @@ export function mobileNotificationTexts(host = ""): Record<string, string> {
     reconnecting: translate("Reconnecting to {host}", { host }),
   };
 }
-export async function mobileNotificationPermission(
-  request = false,
-): Promise<MobileNotificationPermission> {
+export async function mobileNotificationStatus(request = false): Promise<MobileNotificationStatus> {
   try {
     if (nativeActivityNotifications())
-      return (
-        await (request
-          ? MobileNotifications.requestPermissions()
-          : MobileNotifications.checkPermissions())
-      ).display;
+      return await (request ? MobileNotifications.requestPermissions() : MobileNotifications.checkPermissions());
     if (Capacitor.isNativePlatform() || typeof Notification === "undefined")
-      return "unsupported";
+      return { display: "unsupported" };
     const permission = request
       ? await Notification.requestPermission()
       : Notification.permission;
-    return permission === "default" ? "prompt" : permission;
+    return { display: permission === "default" ? "prompt" : permission };
   } catch {
-    return "unsupported";
+    return { display: "unsupported" };
   }
 }
 export function showBrowserActivityNotification(
@@ -108,8 +106,10 @@ export function showBrowserActivityNotification(
   kind: "reply" | "input",
   environmentId: string,
   onOpen: (target: MobileNotificationTarget) => void,
+  preferences: MobileNotificationPreferences = notificationDefaults,
 ): void {
   if (
+    !preferences[kind === "input" ? "input" : "replies"] ||
     typeof Notification === "undefined" ||
     Notification.permission !== "granted"
   )
@@ -118,7 +118,7 @@ export function showBrowserActivityNotification(
     const notification = new Notification(sessionDisplayTitle(session.title, session.harness) || "OmniCode", {
       icon: HARNESS_ICONS[session.harness],
       body:
-        notificationText(session.notificationPreview?.[kind]) ||
+        (preferences.preview && notificationText(session.notificationPreview?.[kind])) ||
         mobileNotificationTexts()[kind],
       tag: `${environmentId}:${session.id}`,
     });
@@ -139,11 +139,13 @@ export function showBrowserAssistantNotification(
   activity: AssistantNotificationActivity,
   environmentId: string,
   onOpen: (target: MobileNotificationTarget) => void,
+  preferences: MobileNotificationPreferences = notificationDefaults,
 ): void {
   if (!activity.latest || typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  if (!preferences[activity.latest.kind === "input" ? "botInput" : "botReplies"]) return;
   try {
     const notification = new Notification(activity.name || translate("Assistant"), {
-      body: notificationText(activity.latest.text) || mobileNotificationTexts()[activity.latest.kind],
+      body: (preferences.preview && notificationText(activity.latest.text)) || mobileNotificationTexts()[activity.latest.kind],
       tag: `${environmentId}:assistant`,
     });
     notification.onclick = () => {

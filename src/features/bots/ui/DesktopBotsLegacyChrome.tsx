@@ -36,7 +36,7 @@ import {
   X,
 } from "../../../shared/ui/icons";
 import { ComposerNotice, ComposerNoticeButton } from "../../../shared/ui/ComposerNotice";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { ActionMenu } from "../../../shared/ui/primitives/ActionMenu";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
@@ -49,7 +49,7 @@ export function DesktopBotsMessageMenu({
 }: BotMessageMenuProps) {
   const { t } = useTranslation();
   return <PresenceBoundary propagate>{open && point ? (
-    <ExplorerMenu
+    <ActionMenu
       x={point.x}
       y={point.y}
       ariaLabel={t("Reply")}

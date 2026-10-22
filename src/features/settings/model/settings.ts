@@ -27,6 +27,7 @@ export type SettingsSectionId =
   | "keybindings"
   | "chat"
   | "providers"
+  | "usage"
   | "import"
   | "mcp"
   | "skills"
@@ -113,6 +114,13 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
       "Bring conversations from other AI coding apps into OmniCode, follow them live, and continue them here.",
     keywords:
       "import native sessions claude code codex pi omp opencode history sync resume 导入 同步 会话 历史",
+  },
+  {
+    id: "usage",
+    group: "agents",
+    label: "Usage",
+    description: "Historical usage, API-equivalent cost, and subscription limits.",
+    keywords: "tokens cost billing usage limits prices history 用量 费用 账单 限额",
   },
   {
     id: "mcp",
@@ -1018,6 +1026,7 @@ export type KeybindingRow = {
  */
 export const KEYBINDINGS: KeybindingRow[] = [
   { command: "App: Settings", keys: `${MOD},`, when: "Always" },
+  { command: "View: Usage", keys: `${MOD}U`, when: "Terminal not focused" },
   { command: "App: Search", keys: `${MOD}K`, when: "Always" },
   { command: "App: Go to File", keys: `${MOD}P`, when: "Always" },
   { command: "App: Command Palette", keys: `${MOD}${SHIFT}P`, when: "Always" },

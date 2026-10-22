@@ -36,7 +36,7 @@ export function MobileDeviceChips({
   if (connections.length < 2) return null;
   return (
     <div className="mobile-device-chips" role="radiogroup" aria-label={t("Devices")}>
-      <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-device-chip" role="radio"
+      <button type="button" className="hover:opacity-80 active:opacity-70 mobile-device-chip" role="radio"
         aria-checked={scope === "all"} onClick={() => onScope("all")}>
         {t("All")}
       </button>

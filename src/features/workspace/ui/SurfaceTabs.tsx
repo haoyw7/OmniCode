@@ -45,12 +45,12 @@ import { SortableItem, SortableList } from "../../../shared/ui/primitives/Sortab
 import { useTabCloseMotion } from "../hooks/useTabCloseMotion";
 import { TabWidthMotion } from "../../../app/shell/ClosingTab";
 import {
-  ExplorerMenu,
-  type ExplorerMenuItem,
-} from "../../connections/files/ui/ExplorerMenu";
+  ActionMenu,
+  type ActionMenuItem,
+} from "../../../shared/ui/primitives/ActionMenu";
 import { FileActionError } from "../../connections/files/ui/FileActionError";
 import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { useWorkflowAgentAvatar } from "../../workflows/model/useWorkflowAgentAvatar";
 import { WorkflowAgentFace } from "../../workflows/kit/components/workflow-timeline/WorkflowAgentFace";
 import { ArtifactKindIcon } from "../../workflows/kit/app-shell/workflow-artifacts/artifactPresentation";
@@ -102,13 +102,13 @@ const REVEAL_LABEL = IS_MAC
 export function surfaceTabMenuItems(
   file: FilePaneTab,
   canCloseOthers = true,
-): ExplorerMenuItem[] {
-  const close: ExplorerMenuItem = {
+): ActionMenuItem[] {
+  const close: ActionMenuItem = {
     kind: "item",
     id: "close",
     label: translateUi("Close"),
   };
-  const closeOthers: ExplorerMenuItem = {
+  const closeOthers: ActionMenuItem = {
     kind: "item",
     id: "close-others",
     label: translateUi("Close Others"),
@@ -341,7 +341,7 @@ export function SurfaceTabs({
             title={uiT("Drag to reorder pane")}
             aria-label={uiT("Drag to reorder pane")}
             data-tauri-drag-region="false"
-            className="grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded-md text-content/35 hover:bg-content/3 hover:text-content/70 focus-visible:focus-fill active:cursor-grabbing touch-none"
+            className="grid h-7 w-5 shrink-0 cursor-grab place-items-center rounded-md text-content/35 hover:bg-content/3 hover:text-content/70 active:cursor-grabbing touch-none"
           >
             <GripVertical className="size-3.5" />
           </div>
@@ -508,7 +508,7 @@ export function SurfaceTabs({
       </div>
       {trailing}
       <PresenceBoundary propagate>{menu && menuFile ? (
-        <ExplorerMenu
+        <ActionMenu
           density="compact"
           x={menu.x}
           y={menu.y}

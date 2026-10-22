@@ -52,7 +52,7 @@ import { orchestrationTaskLabel } from "../../../features/orchestration/model/or
 import type { PaneEdge } from "../../../features/workspace/model/layout";
 import { InsidePinnedSectionContext, SidebarPinDropContext } from "../sidebarPinDrop";
 import type { SessionSummary } from "../../../features/sessions/data/sessionStore";
-import { HarnessIcon } from "../../../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { useSessionPageCount } from "./sessionPageCounts";
 import { SessionWorktreeIcon } from "../../../features/sessions/ui/SessionWorktreeIcon";
 import { TerminalSpinner } from "../../../features/sessions/ui/TerminalSpinner";
@@ -306,7 +306,7 @@ export const SessionCard = memo(function SessionCard({
         event.stopPropagation();
         void openUrl(linkedWorkItem.url).catch(() => undefined);
       }}
-      className="focus-visible:focus-fill active:opacity-70 flex shrink-0 cursor-pointer items-center gap-0.5 rounded px-0.5 text-[11px] tabular-nums text-accent hover:underline"
+      className="active:opacity-70 flex shrink-0 cursor-pointer items-center gap-0.5 rounded px-0.5 text-[11px] tabular-nums text-accent hover:underline"
     >
       {linkedWorkItem.kind === "pr" ? (
         <GitPullRequest className="size-3" />
@@ -492,7 +492,7 @@ export const SessionCard = memo(function SessionCard({
             const focused = event.currentTarget.ownerDocument.activeElement;
             if (focused instanceof HTMLElement) focused.blur();
           }}
-          className={`hover:opacity-80 active:opacity-70 rounded-sm outline-none focus-visible:focus-fill ${dense ? "min-w-0 flex-1" : ""}`}
+          className={`hover:opacity-80 active:opacity-70 rounded-sm outline-none ${dense ? "min-w-0 flex-1" : ""}`}
         >
           {dense || (compact && !orchestrationExpanded) ? null : (
             <span className="relative flex items-center gap-2">
@@ -699,7 +699,7 @@ export const SessionCard = memo(function SessionCard({
                     setOrchestrationTooltipOpen(false);
                     onSelect(session.id, event);
                   }}
-                  className="focus-visible:focus-fill active:opacity-70 grid size-5 shrink-0 place-items-center rounded-lg text-accent/65 hover:bg-surface-hover hover:text-accent/90"
+                  className="active:opacity-70 grid size-5 shrink-0 place-items-center rounded-lg text-accent/65 hover:bg-surface-hover hover:text-accent/90"
                 >
                   <Share className="size-3" />
                 </button>

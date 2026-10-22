@@ -314,9 +314,9 @@ export const GitChangesPanel = memo(function GitChangesPanel({
                   >
                     <MenuHover />
                     {busy === "pull" ? (
-                      <Spinner className="size-3.5" />
+                      <Spinner className="size-4" />
                     ) : (
-                      <RefreshCw className="size-3.5" />
+                      <RefreshCw className="size-4" />
                     )}
                     <span data-menu-title>{busy === "pull" ? uiT("Pulling…") : uiT("Pull")}</span>
                   </Button>
@@ -910,7 +910,7 @@ function ChangedFiles({
                         <span data-menu-title>{uiT("Amend Last Commit")}</span>
                         <span className="grid size-3.5 shrink-0 place-items-center">
                           {amend ? (
-                            <Check className="size-3.5" />
+                            <Check className="size-4" />
                           ) : null}
                         </span>
                       </Button>

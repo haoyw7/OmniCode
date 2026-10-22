@@ -122,7 +122,6 @@ type Options = {
     | "automations"
     | "workflows"
     | "assistant"
-    | "projects"
     | undefined
   >;
   paletteOpenRef: RefObject<boolean>;

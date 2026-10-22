@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ListFilter } from "../../shared/ui/icons";
 import {
-  ExplorerMenu,
-  type ExplorerMenuItem,
-} from "../../features/connections/files/ui/ExplorerMenu";
+  ActionMenu,
+  type ActionMenuItem,
+} from "../../shared/ui/primitives/ActionMenu";
 import {
   loadAutosave,
   loadKeybindingOverrides,
@@ -42,7 +42,7 @@ export function WindowMenuButton({
     () => subscribeKeybindings(() => refreshShortcuts(loadKeybindingOverrides())),
     [],
   );
-  const items: ExplorerMenuItem[] = MENUS.flatMap(({ id, label }) => {
+  const items: ActionMenuItem[] = MENUS.flatMap(({ id, label }) => {
     const submenu = menuItems(id, {
       handlers,
       translate: t,
@@ -63,7 +63,7 @@ export function WindowMenuButton({
         ref={anchor}
         type="button"
         data-ui="icon-button"
-        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 desktop-window-menu"
+        className="hover:opacity-80 active:opacity-70 desktop-window-menu"
         aria-label={t("Main menu")}
         title={t("Main menu")}
         aria-haspopup="menu"
@@ -75,7 +75,7 @@ export function WindowMenuButton({
       </button>
       <PresenceBoundary>
         {open && anchor.current ? (
-          <ExplorerMenu
+          <ActionMenu
             anchor={anchor.current}
             side="bottom"
             align="start"

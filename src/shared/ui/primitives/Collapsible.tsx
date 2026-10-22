@@ -49,7 +49,7 @@ function CollapsibleTrigger({ onClick, ...props }: ComponentProps<"button">) {
         onClick?.(event);
         if (!event.defaultPrevented) setOpen(!open);
       }}
-      {...props} className={cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", props.className)}
+      {...props} className={cn("hover:opacity-80 active:opacity-70", props.className)}
     />
   );
 }

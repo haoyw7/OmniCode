@@ -61,7 +61,7 @@ vi.mock("@tauri-apps/api/event", () => ({
     },
   ),
 }));
-vi.mock("../../sessions/ui/HarnessIcon", () => ({ HarnessIcon: () => null }));
+vi.mock("../../../shared/ui/branding/HarnessIcon", () => ({ HarnessIcon: () => null }));
 
 describe("HarnessUpdateNotice", () => {
   beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));

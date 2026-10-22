@@ -91,6 +91,3 @@ html[data-skin] [data-ui="message-input-actions"] {
   min-height: 56px;
   padding: 12px;
 }
-html[data-skin] [data-ui="message-input"]:has(:focus-visible) {
-  box-shadow: var(--focus-fill-shadow);
-}

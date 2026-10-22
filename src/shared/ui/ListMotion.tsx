@@ -60,7 +60,7 @@ export const ListMotionButton = forwardRef<HTMLButtonElement, ComponentPropsWith
     const animation = useListMotion();
     const visible = useSurfaceVisibility();
     return <SurfaceVisibilityContext.Provider value={visible && !animation.inert}>
-      <motion.button {...animation} {...props} ref={ref} className={cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", props.className)} />
+      <motion.button {...animation} {...props} ref={ref} className={cn("hover:opacity-80 active:opacity-70", props.className)} />
     </SurfaceVisibilityContext.Provider>;
   },
 );

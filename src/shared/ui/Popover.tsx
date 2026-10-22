@@ -328,7 +328,7 @@ function PopoverFrame({
           ...contentStyle,
         }}
         className={cn(
-          "relative z-[1] outline-none focus-visible:focus-fill",
+          "relative z-[1] outline-none",
           native && "w-full",
           className,
         )}

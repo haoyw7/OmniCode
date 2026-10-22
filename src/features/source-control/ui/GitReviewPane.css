@@ -149,11 +149,6 @@ html[data-skin] .review-file-search [data-ui="select-option"] {
   scale: 1.06;
 }
 
-.review-comment-button:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-fill-shadow);
-}
-
 .review-comment-button:disabled {
   opacity: 0.4;
   cursor: default;

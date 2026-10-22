@@ -5,6 +5,8 @@ import { TOOL_CONTENT_CAPABILITY, TOOL_CONTENT_MODE } from "../src/integrations/
 import { SESSION_CAPABILITIES_V1 } from "../src/integrations/harness/core/capabilities";
 import { dirname, join } from "node:path";
 import { HostProviderUsage } from "./provider-usage";
+import { HostUsageService } from "./usage/service";
+import { USAGE_CAPABILITY } from "../src/integrations/harness/core/usage";
 import {
   createServer,
   type IncomingMessage,
@@ -158,6 +160,7 @@ export function createHostServer(
   const preferenceAssets = new HostPreferenceAssets(engine.store);
   const accounts = new HostAccountManagement(dirname(engine.store.attachmentDir), (provider, accountId) => engine.stopProviderAccount(provider, accountId));
   const providerUsage = new HostProviderUsage(join(dirname(engine.store.attachmentDir), "desktop-owner.json"));
+  const usage = new HostUsageService(join(dirname(engine.store.attachmentDir), "usage"), join(dirname(engine.store.attachmentDir), "desktop-owner.json"));
   let discovering: Promise<RemoteProvider[]> | undefined;
   const availableProviders = () => {
     if (!discoverProviders) return Promise.resolve(providers);
@@ -200,6 +203,7 @@ export function createHostServer(
       "providerAccounts.defaults",
       "providerAccounts.manage.v1",
       "providerAccounts.usage.v1",
+      USAGE_CAPABILITY,
       "providerAccounts.deepseek.v1",
       "skills.list",
       "notes.v1",
@@ -572,6 +576,21 @@ export function createHostServer(
             break;
           case "providerAccounts.usage":
             result = await providerUsage.read(params);
+            break;
+          case "usage.summary":
+            result = await usage.read(params);
+            break;
+          case "usage.progress":
+            result = usage.readProgress();
+            break;
+          case "usage.limits":
+            result = await usage.readLimits(params);
+            break;
+          case "usage.limits.reset":
+            result = await usage.resetLimits(params);
+            break;
+          case "usage.settings.update":
+            result = await usage.update(params);
             break;
           case "providerAccounts.deepseek": {
             const client = params.client as DeepseekAccountClient | undefined;

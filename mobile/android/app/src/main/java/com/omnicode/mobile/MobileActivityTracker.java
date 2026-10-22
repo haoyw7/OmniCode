@@ -33,6 +33,29 @@ final class MobileActivityTracker {
     static SharedPreferences preferences(Context context) {
         return context.getSharedPreferences("omnicode-session-activity", Context.MODE_PRIVATE);
     }
+    private static NotificationPreferences notificationPreferences(Context context) {
+        SharedPreferences saved = preferences(context);
+        return new NotificationPreferences(saved.getBoolean("notifications.replies", true),
+            saved.getBoolean("notifications.input", true), saved.getBoolean("notifications.botReplies", true),
+            saved.getBoolean("notifications.botInput", true), saved.getBoolean("notifications.preview", true));
+    }
+    static synchronized void configureNotifications(Context context, JSONObject options) {
+        if (options == null) return;
+        NotificationPreferences previous = notificationPreferences(context);
+        SharedPreferences.Editor editor = preferences(context).edit();
+        for (String key : new String[] { "replies", "input", "botReplies", "botInput", "preview" })
+            editor.putBoolean("notifications." + key, options.optBoolean(key, true));
+        if (!editor.commit()) throw new IllegalStateException("Unable to save notification preferences");
+        NotificationPreferences next = notificationPreferences(context);
+        NotificationManager manager = context.getSystemService(NotificationManager.class);
+        for (android.service.notification.StatusBarNotification notice : manager.getActiveNotifications()) {
+            if (notice.getId() != 1 || notice.getTag() == null) continue;
+            android.os.Bundle extras = notice.getNotification().extras;
+            if ((previous.preview && !next.preview) || (extras.containsKey("omnicodeBot")
+                && !next.allows(extras.getBoolean("omnicodeBot"), extras.getBoolean("omnicodeInput"))))
+                manager.cancel(notice.getTag(), notice.getId());
+        }
+    }
     private static SessionActivityState read(Context context, String environmentId) {
         SessionActivityState state = new SessionActivityState();
         try {
@@ -157,16 +180,18 @@ final class MobileActivityTracker {
             || !NotificationManagerCompat.from(context).areNotificationsEnabled()) return;
         channels(context, texts);
         String kind = latest.optString("kind", "reply");
-        String body = NotificationPresentation.plainText(latest.optString("text"));
-        if (body.isEmpty()) body = texts.optString(kind, "input".equals(kind)
-            ? "This conversation needs your input." : "A new reply is ready.");
+        NotificationPreferences options = notificationPreferences(context);
+        boolean needsInput = "input".equals(kind);
+        if (!options.allows(true, needsInput)) return;
+        String body = options.body(latest.optString("text"), texts.optString(kind, needsInput
+            ? "This conversation needs your input." : "A new reply is ready."));
         String title = activity.optString("name");
         if (title.isEmpty()) title = texts.optString("assistant", "Assistant");
         Intent intent = new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .setData(new Uri.Builder().scheme("omnicode-notification").authority("assistant").appendPath(environmentId).build())
             .putExtra("omnicodeEnvironment", environmentId).putExtra("omnicodeAssistant", true);
         PendingIntent open = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        showNotice(context, environmentId + ":assistant", title, body, open, null);
+        showNotice(context, environmentId + ":assistant", title, body, open, null, true, needsInput);
     }
     static void channels(Context context, JSONObject texts) {
         clearMonitoringNotification(context);
@@ -192,18 +217,24 @@ final class MobileActivityTracker {
         return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
     private static void show(Context context, String environmentId, SessionActivityState.Notice notice, JSONObject texts) {
-        String body = notice.body(texts.optString(notice.input ? "input" : "reply", notice.input ? "This conversation needs your input." : "A new reply is ready."));
+        NotificationPreferences options = notificationPreferences(context);
+        if (!options.allows(false, notice.input)) return;
+        String fallback = texts.optString(notice.input ? "input" : "reply", notice.input ? "This conversation needs your input." : "A new reply is ready.");
+        String body = options.preview ? notice.body(fallback) : fallback;
         showNotice(context, environmentId + ":" + notice.activity.id,
             NotificationPresentation.displayTitle(notice.activity.title, notice.activity.harness, texts.optString("newSession", "New session")), body,
-            openIntent(context, environmentId, notice.activity.projectId, notice.activity.id), notice.activity.harness);
+            openIntent(context, environmentId, notice.activity.projectId, notice.activity.id), notice.activity.harness, false, notice.input);
     }
-    private static void showNotice(Context context, String tag, String title, String body, PendingIntent open, String harness) {
+    private static void showNotice(Context context, String tag, String title, String body, PendingIntent open, String harness, boolean bot, boolean input) {
+        android.os.Bundle extras = new android.os.Bundle();
+        extras.putBoolean("omnicodeBot", bot);
+        extras.putBoolean("omnicodeInput", input);
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context, REPLIES)
             .setSmallIcon(R.drawable.ic_stat_omnicode).setContentTitle(title)
             .setContentText(body).setStyle(new NotificationCompat.BigTextStyle().bigText(body))
             .setCategory(NotificationCompat.CATEGORY_MESSAGE).setPriority(NotificationCompat.PRIORITY_HIGH)
             .setDefaults(NotificationCompat.DEFAULT_SOUND | NotificationCompat.DEFAULT_VIBRATE)
-            .setAutoCancel(true).setContentIntent(open);
+            .setAutoCancel(true).setContentIntent(open).addExtras(extras);
         int icon = harnessIcon(harness);
         if (icon != 0) notification.setLargeIcon(BitmapFactory.decodeResource(context.getResources(), icon));
         try { NotificationManagerCompat.from(context).notify(tag, 1, notification.build()); }

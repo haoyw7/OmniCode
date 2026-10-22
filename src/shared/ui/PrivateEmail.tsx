@@ -33,7 +33,7 @@ export function PrivateEmail({ email, masked }: { email: string; masked: boolean
       aria-label={action}
       aria-pressed={revealed}
       title={action}
-      className="hover:opacity-80 active:opacity-70 pointer-events-auto relative min-w-0 truncate rounded-sm text-left focus-visible:focus-fill"
+      className="hover:opacity-80 active:opacity-70 pointer-events-auto relative min-w-0 truncate rounded-sm text-left"
       onClick={(event) => {
         event.stopPropagation();
         setRevealed((value) => !value);

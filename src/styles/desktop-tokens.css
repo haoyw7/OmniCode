@@ -158,8 +158,7 @@ html[data-skin] {
   --desktop-menu-pad-y: 2px;
   --desktop-menu-pad-x: 10px;
   --desktop-menu-radius: 8px;
-  --desktop-menu-icon: 20px;
-  --desktop-project-menu-icon: 16px;
+  --desktop-menu-icon: var(--desktop-sidebar-icon);
   --desktop-menu-gap: 8px;
   --desktop-menu-panel-radius: 12px;
   --cds-fill-ghost-hover: rgb(255 255 255 / 7.5%);

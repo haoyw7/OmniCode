@@ -6,7 +6,7 @@ import { ChevronRight } from "../../../../shared/ui/icons";
 import { useEffect, useState, type ReactNode } from "react";
 import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
 import { type HarnessId } from "../../model/session";
-import { HarnessIcon } from "../HarnessIcon";
+import { HarnessIcon } from "../../../../shared/ui/branding/HarnessIcon";
 import { type ActivityPhaseKind, type TurnItem } from "../../model/transcriptActivity";
 import { ActivityPhaseIcon } from "./activity/ActivityPhaseIcon";
 

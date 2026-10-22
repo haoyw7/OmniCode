@@ -18,7 +18,7 @@ import {
   sessionDisplayTitle,
   type Session,
 } from "../model/session";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 
 type Notice = PendingApprovalNotice & { session: Session };
 

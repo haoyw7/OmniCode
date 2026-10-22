@@ -173,7 +173,7 @@ export function MenuSubmenu({
             </span>
             <ChevronRight
               data-menu-arrow
-              className="size-3.5 shrink-0 text-content/45"
+              className="size-4 shrink-0 text-content/45"
             />
           </>
         )}

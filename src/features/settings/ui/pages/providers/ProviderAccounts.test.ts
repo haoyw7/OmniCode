@@ -9,6 +9,7 @@ import { configureSharedHost } from "../../../../connections/model/remoteProject
 import { refreshUiLanguage, UI_LANGUAGE_KEY } from "../../../../../shared/i18n/language";
 import type { DeepseekAccount } from "../../../../../integrations/harness/providers/deepseek/deepseekAccount";
 import { SurfaceVisibilityContext } from "../../../../../shared/ui/SurfaceVisibility";
+import { queryClient } from "../../../../../shared/lib/queryClient";
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), convertFileSrc: (path: string) => path, isTauri: () => false }));
 vi.mock("@tauri-apps/api/window", () => ({ getCurrentWindow: () => ({ label: "main" }) }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ ask: vi.fn(async () => true) }));
@@ -23,6 +24,7 @@ let deepseek: DeepseekAccount;
 let deepseekSupported: boolean;
 let deepseekFailed: boolean;
 beforeEach(() => {
+  queryClient.clear();
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   localStorage.clear(); localStorage.setItem(UI_LANGUAGE_KEY, "en"); refreshUiLanguage();
   configureSharedHost("env", [], "shared-machine");
@@ -50,7 +52,12 @@ beforeEach(() => {
   });
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
 });
-afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
+afterEach(async () => {
+  await act(async () => root.unmount());
+  queryClient.clear();
+  container.remove();
+  vi.unstubAllGlobals();
+});
 /** Settings shares one account controller between the Codex and DeepSeek details. */
 function ProviderAccountsSettings() {
   const controller = useProviderAccounts();

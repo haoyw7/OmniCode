@@ -112,7 +112,7 @@ function MobileQueueView({
             <button
               type="button"
               disabled={blocked || !view.canResume}
-              onClick={view.resumeQueue} className="hover:opacity-80 focus-visible:focus-fill active:opacity-70"
+              onClick={view.resumeQueue} className="hover:opacity-80 active:opacity-70"
             >
               <Play aria-hidden="true" />
               {t("Resume")}
@@ -141,7 +141,7 @@ function MobileQueueView({
                 style={item.style}
                 type="button"
                 key={message.id}
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-queue-pill"
+                className="hover:opacity-80 active:opacity-70 mobile-queue-pill"
                 data-queue-id={message.id}
                 data-sortable={sortable}
                 data-dragging={item.dragging}
@@ -191,7 +191,7 @@ function MobileQueueView({
         >
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+            className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
             disabled={blocked || !view.canDelete}
             onClick={() => {
               view.runAction(() => onRestore(menuMessage));
@@ -203,7 +203,7 @@ function MobileQueueView({
           </button>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+            className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
             disabled={blocked || !!menuMessage.blocked || !view.canSteer}
             onClick={() => {
               view.steerMessage(menuMessage.id);
@@ -215,7 +215,7 @@ function MobileQueueView({
           </button>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row mobile-queue-remove"
+            className="hover:opacity-80 active:opacity-70 mobile-sheet-row mobile-queue-remove"
             disabled={blocked || !view.canDelete}
             onClick={() => {
               view.deleteMessage(menuMessage.id);

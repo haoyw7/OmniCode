@@ -63,7 +63,7 @@ import { useModelSource, type ModelSource } from "./modelSource";
 import { modelGroups } from "../model/modelGroups";
 import { HARNESSES, HARNESS_TITLE, type HarnessId } from "../model/session";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import type { PopoverAlign } from "../../../shared/lib/popover";
 import { MOD } from "../../../platform/tauri/platform";
 import { keybindingPressed } from "../../settings/model/settings";
@@ -784,10 +784,10 @@ export function ModelPicker({
           </span>
         ) : null}
         {triggerLoading ? (
-          <Spinner className="size-3 shrink-0 text-content/50" aria-label={uiT("Loading models…")} />
+          <Spinner className="size-4 shrink-0 text-content/50" aria-label={uiT("Loading models…")} />
         ) : (
           <ChevronDown
-            className={cn("size-3 shrink-0 text-content/50", open ? "rotate-180" : "")}
+            className={cn("size-4 shrink-0 text-content/50", open ? "rotate-180" : "")}
           />
         )}
       </Button>
@@ -982,7 +982,7 @@ export function ModelPicker({
                       {selected ? (
                         <Check
                           data-menu-check
-                          className="size-3.5 shrink-0 text-content/50"
+                          className="size-4 shrink-0 text-content/50"
                         />
                       ) : null}
                     </Button>
@@ -1051,7 +1051,7 @@ export function ModelPicker({
               {selected ? (
                 <Check
                   data-menu-check
-                  className="size-3.5 shrink-0 text-content/55"
+                  className="size-4 shrink-0 text-content/55"
                 />
               ) : null}
             </Button>
@@ -1230,12 +1230,12 @@ function SelectPill({
             : "bg-selection text-content hover:bg-selection-hover")}
       >
         {isEffortSetting(setting) ? (
-          <Gauge className="size-3.5 shrink-0" />
+          <Gauge className="size-4 shrink-0" />
         ) : setting.id === "serviceTier" ? (
-          <Zap className="size-3.5 shrink-0" />
+          <Zap className="size-4 shrink-0" />
         ) : null}
         <span className="min-w-0 truncate text-[11px]">{valueLabel}</span>
-        <RotatingIcon icon={ChevronDown} angle={open ? motionGeometry.flipAngle : 0} className="size-3 shrink-0 text-content/50" />
+        <RotatingIcon icon={ChevronDown} angle={open ? motionGeometry.flipAngle : 0} className="size-4 shrink-0 text-content/50" />
       </Button>
 
       <MenuPanel
@@ -1320,7 +1320,7 @@ function SelectPill({
                     {selected ? (
                       <Check
                         data-menu-check
-                        className="size-3.5 shrink-0 text-content/50"
+                        className="size-4 shrink-0 text-content/50"
                       />
                     ) : null}
                   </Button>
@@ -1508,19 +1508,19 @@ function ModelBrowser({
     >
 
       <label className="flex shrink-0 items-center gap-2 border-b border-stroke px-3 py-2 text-content/50">
-        <Search className="size-3.5 shrink-0" />
+        <Search className="size-4 shrink-0" />
         <Input variant="inline"
           ref={searchRef}
           type="text"
           value={query}
           placeholder={uiT("Search models")}
           aria-label={uiT("Search models")}
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40"
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/40"
           onChange={(event) => onQuery(event.target.value)}
           onKeyDown={onSearchKey}
         />
         {tabLoading ? (
-          <Spinner className="size-3.5 shrink-0" aria-label={uiT("Loading models…")} />
+          <Spinner className="size-4 shrink-0" aria-label={uiT("Loading models…")} />
         ) : null}
       </label>
 
@@ -1580,7 +1580,7 @@ function ModelBrowser({
                 : tabLoading && !query.trim()
                   ? (
                       <span className="flex items-center gap-2">
-                        <Spinner className="size-3.5 shrink-0" />
+                        <Spinner className="size-4 shrink-0" />
                         {uiT("Loading models…")}
                       </span>
                     )
@@ -1677,7 +1677,7 @@ function ModelBrowser({
                           : "text-content/35 opacity-0 group-hover:opacity-100 focus:opacity-100")}
                     >
                       <Star
-                        className="size-3.5"
+                        className="size-4"
                         fill={favorited ? "currentColor" : "none"}
                       />
                     </Button>
@@ -1689,7 +1689,7 @@ function ModelBrowser({
                       >
                         <Check
                           data-menu-check
-                          className="size-3.5 text-content/55"
+                          className="size-4 text-content/55"
                         />
                       </span>
                     ) : null}

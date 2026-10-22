@@ -6,7 +6,7 @@ import { errorMessage } from "../../../shared/lib/errorMessage";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { RefreshCw } from "../../../shared/ui/icons";
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { Popover, type PopoverDismissReason } from "../../../shared/ui/Popover";
 import { consumeCodexRateLimitResetCredit } from "../../providers/model/rateLimitsFetch";
 import {
@@ -323,7 +323,7 @@ function SessionChip({
       <Button variant="ghost" size="content"
       ref={trigger}
       type="button"
-      className="flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content focus-visible:focus-fill"
+      className="flex min-h-7 min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content"
       aria-label={uiT("{value0} sign-in required", {
         value0: String(HARNESS_TITLE[session.harness]),
       })}

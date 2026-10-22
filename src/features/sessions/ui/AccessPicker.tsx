@@ -106,7 +106,7 @@ export function AccessPicker({
           {uiT(RUNTIME_MODE_LABEL[value])}
         </span>
         <ChevronDown
-          className={cn("size-3 shrink-0 text-content/50", open ? "rotate-180" : "")}
+          className={cn("size-4 shrink-0 text-content/50", open ? "rotate-180" : "")}
         />
       </Button>
       <MenuPanel

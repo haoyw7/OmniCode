@@ -12,7 +12,6 @@ import { SidebarMain } from "../../src/app/shell/SidebarMain";
 import { WindowDragBar } from "../../src/app/shell/WindowChrome";
 import { WindowMenuButton } from "../../src/app/shell/WindowMenuButton";
 import { ActivityBar } from "../../src/app/shell/ActivityBar";
-import { ProjectsPage } from "../../src/features/projects/ui/ProjectsPage";
 import { PaneTree } from "../../src/features/workspace/ui/PaneTree";
 import { TranscriptPool, TranscriptPoolOutlet } from "../../src/features/sessions/ui/TranscriptPool";
 import { stashComposerAttachments } from "../../src/features/sessions/model/draftCache";
@@ -145,7 +144,6 @@ function DesktopWorkspaceFixture() {
   const [state, setState] = useState(query.get("state") ?? "empty");
   const [sidebar, setSidebar] = useState(true);
   const [composerFocused, setComposerFocused] = useState(false);
-  const [page, setPage] = useState(query.get("view") === "projects" ? "projects" : "workspace");
   const [sessions, setSessions] = useState(() => ({ chat: fixtureSession("chat", query.get("state") ?? "empty"), code: fixtureSession("code", query.get("state") ?? "empty") }));
   const [pool] = useState(() => new TranscriptPool());
   const interactions = useRef<{ kind: "approval" | "question" | "submit" | "stop"; sessionId: string; requestId?: number; value: unknown }[]>([]);
@@ -155,7 +153,6 @@ function DesktopWorkspaceFixture() {
     Object.assign(window, { desktopFixture: {
       setMode, setSidebar,
       setState: (next: string) => { setState(next); setSessions(current => ({ ...current, [mode]: fixtureSession(mode, next) })); },
-      setPage,
       interactions: interactions.current,
       getSession: () => sessions[mode],
       setBlocks: (blocks: Block[]) => setSessions(current => ({ ...current, [mode]: { ...current[mode], blocks } })),
@@ -196,21 +193,20 @@ function DesktopWorkspaceFixture() {
     interactions.current.push({ kind: "stop", sessionId, value: "idle" });
     setSessions(current => ({ ...current, [mode]: { ...current[mode], busy: false, blocks: current[mode].blocks.map(block => ({ ...block, streaming: false })) } }));
   };
-  const newConversation = () => { setPage("workspace"); setState("empty"); setSessions(current => ({ ...current, [mode]: fixtureSession(mode, "empty") })); };
+  const newConversation = () => { setState("empty"); setSessions(current => ({ ...current, [mode]: fixtureSession(mode, "empty") })); };
   const titlebar = <DesktopTitlebarNavigation menu={<WindowMenuButton handlers={{ "Tab: New": newConversation }} dispatch={id => { if (id !== "Tab: New") return false; newConversation(); return true; }} />} modeToggle={<DesktopModeToggle mode={mode} onChange={setMode} />} canGoBack onGoBack={noop} panelActive={sidebar} onTogglePanel={() => setSidebar(value => !value)} />;
   return <MotionConfig reducedMotion="user"><div className="app-shell-root desktop-workspace" data-desktop-mode={mode} data-fixture-state={state} style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
     <div data-window-chrome className="relative shrink-0" style={{ zIndex: 95 }}>
       <WindowDragBar windowNavigation={titlebar} />
     </div>
     <div style={{ flex: 1, minHeight: 0, display: "flex" }}>
-      <Sidebar desktopMode={mode} open={sidebar} cwd={active.cwd} recents={recents} sessions={summaries} projectHistory={summaries} loadedProjectPaths={new Set([CODE_CWD, active.cwd])} busySessionIds={new Set(active.busy ? [active.id] : [])} approvalSessionIds={new Set(active.blocks.some(block => block.approval && !block.approval.decided) ? [active.id] : [])} questionSessionIds={new Set(active.pendingQuestion ? [active.id] : [])} activeSessionId={active.id} visibleSessionId={page === "workspace" ? active.id : null} pending={false} status="idle" tab="sessions" onTabChange={noop} filesSearchOpen={false} onFilesSearchOpenChange={noop} onOpenFile={noop} onSelectSession={() => { setPage("workspace"); setState("conversation"); setSessions(current => ({ ...current, [mode]: fixtureSession(mode, "conversation") })); }} onNew={newConversation} onNewChat={newConversation} onOpenProject={noop} onSelectProject={noop} onToggleSidebar={() => setSidebar(value => !value)} chromeInMenuBar navigation={{ primary: <DesktopNewSessionAction mode={mode} onNew={newConversation} />, scrollable: <DesktopNavigation onProjects={() => setPage("projects")} projectsActive={page === "projects"} onBots={noop} botsActive={false} activity={activity} /> }} footer={<ActivityBar layout="sidebar-footer" {...activity} />} />
+      <Sidebar desktopMode={mode} open={sidebar} cwd={active.cwd} recents={recents} sessions={summaries} projectHistory={summaries} loadedProjectPaths={new Set([CODE_CWD, active.cwd])} busySessionIds={new Set(active.busy ? [active.id] : [])} approvalSessionIds={new Set(active.blocks.some(block => block.approval && !block.approval.decided) ? [active.id] : [])} questionSessionIds={new Set(active.pendingQuestion ? [active.id] : [])} activeSessionId={active.id} visibleSessionId={active.id} pending={false} status="idle" tab="sessions" onTabChange={noop} filesSearchOpen={false} onFilesSearchOpenChange={noop} onOpenFile={noop} onSelectSession={() => { setState("conversation"); setSessions(current => ({ ...current, [mode]: fixtureSession(mode, "conversation") })); }} onNew={newConversation} onNewChat={newConversation} onOpenProject={noop} onSelectProject={noop} onToggleSidebar={() => setSidebar(value => !value)} chromeInMenuBar navigation={{ primary: <DesktopNewSessionAction mode={mode} onNew={newConversation} />, scrollable: <DesktopNavigation onBots={noop} botsActive={false} activity={activity} /> }} footer={<ActivityBar layout="sidebar-footer" {...activity} />} />
       <SidebarMain open={sidebar}><main className="desktop-workspace" style={{ display: "flex", flex: 1, minHeight: 0, minWidth: 0 }}>
-        <div hidden={page !== "projects"} style={{ display: page === "projects" ? "flex" : "none", minWidth: 0, flex: 1 }}><ProjectsPage mode={mode} cwd={active.cwd} recents={recents} onSelect={noop} onOpen={noop} onNewChat={newConversation} onArchive={noop} onRestore={noop} /></div>
         {(["chat", "code"] as const).map(value => {
           const session = sessions[value];
           const second = { ...session, id: `${session.id}-second`, title: "Implementation notes", blocks: [{ id: "second-reply", role: "assistant" as const, text: "This second pane keeps its own draft when the layout changes." }] };
           const split = value === "code" && state === "split";
-          const visible = mode === value && page === "workspace";
+          const visible = mode === value;
           const props: ComponentProps<typeof PaneTree> = { ...paneHandlers, visible, layout: split ? { type: "split", id: "fixture-split", dir: "right", children: [{ type: "leaf", id: session.id }, { type: "leaf", id: second.id }], sizes: [0.6, 0.4] } : { type: "leaf", id: session.id }, sessions: split ? [session, second] : [session], editorPanes: [], dirtyFileIds: new Set(), fileErrorCounts: new Map(), focusedId: session.id, surfaceMode: "split", composerFocused: visible && composerFocused, recents, transcriptPool: pool, hideProjectPicker: false, onApproval, onQuestionReply, onSubmit: submit, onStop: stop, onCompactContext: () => true };
           return <div key={value} hidden={!visible} aria-hidden={!visible} inert={!visible || undefined} data-fixture-main-card className="pane-card" style={{ display: visible ? "flex" : "none", minWidth: 0, minHeight: 0, flex: 1 }}><SurfaceVisibilityContext.Provider value={visible}><PaneTree {...props} /></SurfaceVisibilityContext.Provider></div>;
         })}

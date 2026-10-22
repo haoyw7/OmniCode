@@ -12,7 +12,7 @@ import {
 } from "../../../shared/ui/icons";
 import { MenuHover } from "../../../shared/ui/MenuHover";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { ActionMenu } from "../../../shared/ui/primitives/ActionMenu";
 import type { Session } from "../../sessions/model/session";
 import { useSessionHeaderActions } from "./SessionHeaderActions";
 import { delegateDesktopSession } from "../../bots/model/delegateDesktopSession";
@@ -64,7 +64,7 @@ export function SessionOverflowMenu({
         <MoreHorizontal className="size-4" />
       </Button>
       <PresenceBoundary propagate>{visible && open && button.current ? (
-        <ExplorerMenu
+        <ActionMenu
           anchor={button.current}
           ownerId={session.id}
           side="bottom"

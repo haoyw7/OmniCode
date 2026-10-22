@@ -133,14 +133,14 @@ export function MobileSessionActions({
             {session && (
               <>
                 {onDelegate && (
-                  <button className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row" disabled={blocked} onClick={() => void run(onDelegate)}>
+                  <button className="hover:opacity-80 active:opacity-70 mobile-sheet-row" disabled={blocked} onClick={() => void run(onDelegate)}>
                     <Bot />
                     <span>{t("Hand over to assistant")}</span>
                   </button>
                 )}
                 {branch && (
                   <button
-                    className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                    className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                     disabled={blocked}
                     onClick={() => copy(branch)}
                   >
@@ -155,7 +155,7 @@ export function MobileSessionActions({
                   <div className="mobile-menu-divider" role="separator" />
                 )}
                 <button
-                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                  className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                   disabled={blocked}
                   onClick={() =>
                     void run(() => onUpdate({ pinned: !pinned }))
@@ -166,7 +166,7 @@ export function MobileSessionActions({
                 </button>
                 {onMarkUnread && (
                   <button
-                    className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                    className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                     disabled={blocked}
                     onClick={() => void run(onMarkUnread)}
                   >
@@ -175,7 +175,7 @@ export function MobileSessionActions({
                   </button>
                 )}
                 <button
-                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                  className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                   disabled={blocked}
                   onClick={() =>
                     summary ? copy(session.id) : setPage("copy")
@@ -186,7 +186,7 @@ export function MobileSessionActions({
                   {!summary && <ChevronRight />}
                 </button>
                 <button
-                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                  className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                   disabled={blocked}
                   onClick={() => {
                     setTitle(
@@ -200,7 +200,7 @@ export function MobileSessionActions({
                 </button>
                 <div className="mobile-menu-divider" role="separator" />
                 <button
-                  className={`hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row${archived ? "" : " mobile-menu-danger"}`}
+                  className={`hover:opacity-80 active:opacity-70 mobile-sheet-row${archived ? "" : " mobile-menu-danger"}`}
                   disabled={blocked}
                   onClick={() =>
                     void run(() => onUpdate({ archived: !archived }))
@@ -215,7 +215,7 @@ export function MobileSessionActions({
         ) : page === "copy" && session ? (
           <>
             <button
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+              className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
               disabled={blocked || !session.providerSessionId}
               onClick={() =>
                 session.providerSessionId && copy(session.providerSessionId)
@@ -224,7 +224,7 @@ export function MobileSessionActions({
               <span>{t("Harness session ID")}</span>
             </button>
             <button
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+              className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
               disabled={blocked}
               onClick={() => copy(session.id)}
             >

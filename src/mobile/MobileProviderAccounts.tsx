@@ -8,7 +8,7 @@ import { accountStatus } from "../features/providers/model/accountUsageStatus";
 import { fetchingRateLimits, errorRateLimits } from "../features/providers/model/rateLimits";
 import { AccountStatusLabel, meterWindows, UsageMeter } from "../features/providers/ui/ProviderAccountUsage";
 import { HARNESS_TITLE } from "../features/sessions/model/session";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../shared/ui/branding/HarnessIcon";
 import { useNow } from "../shared/hooks/useNow";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { Info, RefreshCw } from "../shared/ui/icons";

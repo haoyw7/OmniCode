@@ -231,7 +231,7 @@ function ImageLightboxContent({
           aria-label={uiT("Close image preview")}
           title={uiT("Close")}
           onClick={onClose}
-          className="image-lightbox-close absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full border border-white/15 bg-black/45 text-white/80 shadow-lg backdrop-blur-md hover:bg-black/65 hover:text-white focus-visible:focus-fill"
+          className="image-lightbox-close absolute right-4 top-4 z-10 grid size-9 place-items-center rounded-full border border-white/15 bg-black/45 text-white/80 shadow-lg backdrop-blur-md hover:bg-black/65 hover:text-white"
         >
           <X className="size-4" />
         </Button>

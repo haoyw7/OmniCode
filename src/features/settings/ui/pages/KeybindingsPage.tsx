@@ -175,7 +175,7 @@ function ShortcutEditor({
           onFocus={beginRecording}
           onClick={beginRecording}
           onBlur={() => setRecording(false)}
-          className={cn("h-6 w-28 shrink-0 truncate rounded-md border bg-transparent px-1.5 py-0 font-mono text-[11px] leading-none outline-none focus-visible:focus-fill", busy ? "opacity-50" : "", display === null
+          className={cn("h-6 w-28 shrink-0 truncate rounded-md border bg-transparent px-1.5 py-0 font-mono text-[11px] leading-none outline-none", busy ? "opacity-50" : "", display === null
               ? "border-dashed border-content/15 text-content/35"
               : "border-content/15 text-content/80 hover:bg-content/6")}
         />
@@ -313,7 +313,7 @@ export function KeybindingsPage() {
           <span className="shrink-0 text-[12px] text-content/40 tabular-nums">
             {rows.length} {rows.length === 1 ? uiT("binding") : uiT("bindings")}
           </span>
-          <label className="flex h-7 w-44 shrink-0 items-center gap-2 rounded-md border border-content/10 px-2 text-content/45 has-[:focus-visible]:focus-fill">
+          <label className="flex h-7 w-44 shrink-0 items-center gap-2 rounded-md border border-content/10 px-2 text-content/45">
             <Search className="size-3.5 shrink-0" />
             <Input variant="inline"
               value={query}
@@ -322,7 +322,7 @@ export function KeybindingsPage() {
               aria-label={uiT("Filter keybindings")}
               spellCheck={false}
               autoComplete="off"
-              className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+              className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
             />
           </label>
         </div>

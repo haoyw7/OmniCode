@@ -16,7 +16,7 @@ import {
   Plus,
   RotateCcw,
 } from "../../../../shared/ui/icons";
-import { ExplorerMenu } from "./ExplorerMenu";
+import { ActionMenu } from "../../../../shared/ui/primitives/ActionMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
 import { copyText } from "../../../../platform/tauri/clipboard";
 import { formatFileSize, sniffImageMime } from "../model/filePreview";
@@ -201,7 +201,7 @@ function ImageView({
               : undefined
           }
           className={
-            cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", zoom === "fit"
+            cn("hover:opacity-80 active:opacity-70", zoom === "fit"
               ? "max-h-full max-w-full object-contain"
               : "max-w-none object-contain")
           }
@@ -257,7 +257,7 @@ function ImageView({
         </ZoomButton>
       </footer>
       <PresenceBoundary propagate>{menu ? (
-        <ExplorerMenu
+        <ActionMenu
           x={menu.x}
           y={menu.y}
           items={[

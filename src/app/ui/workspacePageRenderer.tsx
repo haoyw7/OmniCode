@@ -11,7 +11,6 @@ import type { InboxProvider } from "../../features/inbox/model/githubTasks";
 import { type InboxItem } from "../../features/inbox/model/githubTasks";
 import type { InboxSessionPortal } from "../../features/inbox/ui/InboxDiscussionPanel";
 import type { RecentProject } from "../../features/projects/model/recents";
-import { ProjectsPage } from "../../features/projects/ui/ProjectsPage";
 import { type OpenFileFn } from "../../features/search/model/search";
 import { type SessionSummary } from "../../features/sessions/data/sessionStore";
 import {
@@ -19,26 +18,24 @@ import {
   type Session,
 } from "../../features/sessions/model/session";
 import { requestTranscriptJump } from "../../features/sessions/model/transcriptJump";
+import { HarnessIcon } from "../../shared/ui/branding/HarnessIcon";
 import { type SettingsSectionId } from "../../features/settings/model/settings";
 import { WorkflowsView } from "../../features/workflows/ui/WorkflowsView";
 import { type AppViewRenderer } from "../../features/workspace/ui/AppViewHost";
-import { type DesktopMode } from "../model/desktopMode";
 import {
   AutomationsView,
   InboxView,
   NotesView,
   SearchView,
   SettingsView,
+  UsagePage,
 } from "../ui/workspaceSurfaces";
 
 type Options = {
-  desktopMode: DesktopMode;
   sidebarCwd: string;
   recents: RecentProject[];
   closeAppPage: () => void;
   onSelectProject: (path: string) => void;
-  pickProject: () => Promise<void>;
-  onNewChat: () => void;
   onRemoveProject: (path: string, options: { purgeData: boolean }) => void;
   onRestoreProject: (path: string) => void;
   assistantMachineId: string | undefined;
@@ -118,13 +115,10 @@ type Options = {
 };
 
 export function createWorkspacePageRenderer({
-  desktopMode,
   sidebarCwd,
   recents,
   closeAppPage,
   onSelectProject,
-  pickProject,
-  onNewChat,
   onRemoveProject,
   onRestoreProject,
   assistantMachineId,
@@ -170,22 +164,6 @@ export function createWorkspacePageRenderer({
 }: Options) {
   const renderAppView: AppViewRenderer = (kind, active) => {
     switch (kind) {
-      case "projects":
-        return (
-          <ProjectsPage
-            mode={desktopMode}
-            cwd={sidebarCwd}
-            recents={recents}
-            onSelect={(path) => {
-              closeAppPage();
-              onSelectProject(path);
-            }}
-            onOpen={pickProject}
-            onNewChat={onNewChat}
-            onArchive={(path) => onRemoveProject(path, { purgeData: false })}
-            onRestore={onRestoreProject}
-          />
-        );
       case "assistant":
         return (
           <BotModelPickerContext.Provider value={DesktopBotModelPicker}>
@@ -280,6 +258,7 @@ export function createWorkspacePageRenderer({
       case "settings":
         return (
           <SettingsView
+            usagePage={<UsagePage active={active} icon={provider => <HarnessIcon harness={provider} />} />}
             active={active}
             section={settingsSection}
             anchor={settingsAnchor}

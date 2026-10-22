@@ -2,6 +2,7 @@ import { useTranslation } from "../../shared/i18n/useTranslation";
 import {
   Archive,
   Bot,
+  ChartLine,
   FileImport,
   Inbox,
   FolderTree,
@@ -27,6 +28,7 @@ const SECTION_ICONS: Record<SettingsSectionId, IconComponent> = {
   keybindings: Keyboard,
   chat: MessageSquare,
   providers: Bot,
+  usage: ChartLine,
   import: FileImport,
   mcp: Globe,
   skills: Sparkles,
@@ -87,7 +89,7 @@ function NavRow({
       type="button"
       onClick={onClick}
       aria-current={active ? "true" : undefined}
-      className={`focus-visible:focus-fill active:opacity-70 settings-nav-item flex w-full items-center text-left ${
+      className={`active:opacity-70 settings-nav-item flex w-full items-center text-left ${
         active
           ? "bg-surface-hover text-content"
           : "text-foreground-subtle hover:bg-surface-hover hover:text-content"

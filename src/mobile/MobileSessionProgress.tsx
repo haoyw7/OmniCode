@@ -228,7 +228,7 @@ function ProgressSections({
         >
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-progress-row"
+            className="hover:opacity-80 active:opacity-70 mobile-progress-row"
             onClick={onSessionReview}
           >
             <span>
@@ -250,7 +250,7 @@ function ProgressSections({
         >
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-progress-row"
+            className="hover:opacity-80 active:opacity-70 mobile-progress-row"
             onClick={onReview}
           >
             <span>
@@ -287,7 +287,7 @@ function ProgressSections({
               </AnimatedCollapse>
               <button
                 type="button"
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-progress-more"
+                className="hover:opacity-80 active:opacity-70 mobile-progress-more"
                 aria-expanded={moreTasks}
                 onClick={() => setMoreTasks((value) => !value)}
               >
@@ -307,7 +307,7 @@ function ProgressSections({
             <button
               key={plan.blockId}
               type="button"
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-progress-row"
+              className="hover:opacity-80 active:opacity-70 mobile-progress-row"
               onClick={() => onNavigate("plan", plan.blockId)}
             >
               <span>{plan.title}</span>
@@ -327,7 +327,7 @@ function ProgressSections({
             <button
               key={agent.blockId}
               type="button"
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-progress-row"
+              className="hover:opacity-80 active:opacity-70 mobile-progress-row"
               onClick={() => onNavigate("agent", agent.blockId)}
             >
               <span title={t(agent.state === "pending" ? "Running" : agent.state === "rejected" ? "Failed" : "Completed")}>
@@ -410,7 +410,7 @@ function Section({
             type="button"
             aria-expanded={expanded}
             onClick={onToggle}
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 flex min-h-11 w-full items-center gap-2 text-left"
+            className="hover:opacity-80 active:opacity-70 flex min-h-11 w-full items-center gap-2 text-left"
           >
             {heading}
             <MotionChevronRight size={16} aria-hidden="true" className="zen-disclosure-chevron ml-auto shrink-0" animate={{ rotate: expanded ? motionGeometry.disclosureAngle : 0 }} transition={panelTransition} />

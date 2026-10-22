@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { queryClient } from "../shared/lib/queryClient";
 import { mobileSourceKey } from "./mobileQueries";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,20 +16,21 @@ import {
 import { playCue } from "../features/settings/model/sounds";
 import {
   MobileNotifications,
-  mobileNotificationPermission,
+  mobileNotificationStatus,
   mobileNotificationTexts,
   nativeActivityNotifications,
   showBrowserActivityNotification,
   showBrowserAssistantNotification,
-  type MobileNotificationPermission,
   type MobileNotificationTarget,
 } from "./notifications";
 import { translate } from "../shared/i18n/language";
 import { NativeActivitySync } from "./nativeActivitySync";
 import type { HostSessionSummary } from "../features/connections/model/protocol";
 import type { BotNotificationActivity as AssistantNotificationActivity } from "../features/bots/model/botNotifications";
-
-const ENABLED_KEY = "omnicode.mobileNotifications";
+import {
+  useMobileNotificationPreferences, saveMobileNotificationPreferences, saveMobileNotificationsEnabled,
+  type MobileNotificationPreferences,
+} from "./notificationPreferences";
 
 /** One cue per poll, however many conversations changed at once. */
 function playActivityCue(notices: readonly ActivityNotice[]) {
@@ -111,21 +113,34 @@ export function useMobileActivity(
       return next.size === previous.size && [...next].every((id) => previous.has(id)) ? previous : next;
     });
   }, []);
-  const [enabled, setEnabled] = useState(() => {
-    try {
-      return localStorage.getItem(ENABLED_KEY) !== "0";
-    } catch {
-      return true;
-    }
-  });
-  const [permission, setPermission] =
-    useState<MobileNotificationPermission>("prompt");
+  const { enabled, preferences } = useMobileNotificationPreferences();
+  const permissionKey = ["mobile", "notification-permission"] as const;
+  const permissionQuery = useQuery({
+    queryKey: permissionKey, queryFn: () => mobileNotificationStatus(),
+    enabled: foreground, gcTime: 0, retry: false,
+  }, queryClient);
+  const permission = permissionQuery.data?.display ?? "prompt";
+  const permissionRequest = useMutation({
+    mutationFn: () => mobileNotificationStatus(true),
+    onSuccess: value => queryClient.setQueryData(permissionKey, value),
+  }, queryClient);
+  const preferenceChange = useMutation({
+    mutationFn: async (next: MobileNotificationPreferences) => {
+      if (nativeActivityNotifications()) await MobileNotifications.configure({ preferences: next });
+      saveMobileNotificationPreferences(next);
+    },
+    onError: () => toast.error(translate("Unable to save notification preferences. Install the latest APK and try again.")),
+  }, queryClient);
+  const settingsRequest = useMutation({
+    mutationFn: () => MobileNotifications.openSettings(),
+    onError: () => toast.error(translate("Unable to open system notification settings.")),
+  }, queryClient);
   const [notificationError, setNotificationError] = useState("");
   const hadConnection = useRef(false);
   const activity = useRef<MobileActivity | undefined>(undefined);
   const nativeSync = useRef(new NativeActivitySync());
-  const current = useRef({ ...options, environmentId, enabled, permission });
-  current.current = { ...options, environmentId, enabled, permission };
+  const current = useRef({ ...options, environmentId, enabled, permission, preferences });
+  current.current = { ...options, environmentId, enabled, permission, preferences };
   const readVisibleSession = useCallback(() => {
     const { visibleSession: visible, snapshots: source } = current.current;
     if (!visible || !source) return visible;
@@ -188,24 +203,6 @@ export function useMobileActivity(
   }, [environmentId]);
 
   useEffect(() => {
-    if (!foreground) return;
-    let live = true;
-    void (async () => {
-      let next = await mobileNotificationPermission();
-      if (
-        next === "prompt" &&
-        connected &&
-        nativeActivityNotifications()
-      )
-        next = await mobileNotificationPermission(true);
-      if (live) setPermission(next);
-    })();
-    return () => {
-      live = false;
-    };
-  }, [connected, enabled, foreground]);
-
-  useEffect(() => {
     if (!nativeActivityNotifications()) return;
     // Initial restoration and permission checks may run while a native service
     // from the previous activity is still receiving updates.
@@ -222,6 +219,7 @@ export function useMobileActivity(
       void MobileNotifications.start({
         ...client.connection,
         enabled,
+        preferences,
         texts: mobileNotificationTexts(client.connection.name),
       })
         .then(() => setNotificationError(""))
@@ -235,6 +233,7 @@ export function useMobileActivity(
     connected,
     environmentId,
     enabled,
+    preferences,
     permission,
     foreground,
     language,
@@ -351,7 +350,7 @@ export function useMobileActivity(
           const assistantNotice = takeAssistantNotification(environmentId, result.assistant ?? null);
           if (assistantNotice && result.assistant && !current.current.assistantVisible &&
             current.current.enabled && current.current.permission === "granted")
-            showBrowserAssistantNotification(result.assistant, environmentId, onOpen);
+            showBrowserAssistantNotification(result.assistant, environmentId, onOpen, current.current.preferences);
           const notices = activity.current.observe(
             result.sessions,
             readVisibleSession()?.id,
@@ -375,6 +374,7 @@ export function useMobileActivity(
                 notice.kind,
                 environmentId,
                 onOpen,
+                current.current.preferences,
               );
         }
 
@@ -387,17 +387,11 @@ export function useMobileActivity(
   useEffect(() => { if (!foreground) void queryClient.cancelQueries({ queryKey: activityKey }); }, [foreground, environmentId, client]);
 
   const setNotificationsEnabled = async (next: boolean) => {
-    try {
-      localStorage.setItem(ENABLED_KEY, next ? "1" : "0");
-    } catch {
-      /* Runtime preference remains effective. */
-    }
-    setEnabled(next);
-    if (next) setPermission(await mobileNotificationPermission(true));
+    saveMobileNotificationsEnabled(next);
+    if (next && permission === "prompt") permissionRequest.mutate();
   };
-  const requestPermission = async () =>
-    setPermission(await mobileNotificationPermission(true));
-  const openSettings = () => MobileNotifications.openSettings().catch(() => {});
+  const requestPermission = () => permissionRequest.mutate();
+  const openSettings = () => settingsRequest.mutate();
   const markUnread = (id: string, revision: number) => {
     if (!environmentId || !activity.current) return;
     activity.current.markUnread(id, revision);
@@ -409,6 +403,11 @@ export function useMobileActivity(
     markUnread,
     enabled,
     permission,
+    channelBlocked: permissionQuery.data?.channelBlocked ?? false,
+    permissionPending: permissionQuery.isPending || permissionRequest.isPending || settingsRequest.isPending,
+    preferences,
+    preferencesPending: preferenceChange.isPending,
+    setNotificationPreferences: preferenceChange.mutate,
     notificationError,
     setNotificationsEnabled,
     requestPermission,

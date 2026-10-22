@@ -189,8 +189,8 @@ export function saveMobileAgentDefaults(
   });
 }
 
-/** Project-specific desktop choices override global defaults for a new mobile draft. */
-export function loadMobileProjectDefaults(host: MobileDefaultsHost | undefined, projectId: string): MobileAgentDefaults {
+/** Resolve the global new-conversation policy without changing the saved defaults. */
+export function loadMobileConversationDefaults(host: MobileDefaultsHost | undefined): MobileAgentDefaults {
   let defaults = loadMobileAgentDefaults(host);
   const hostId = host && sharedHostId(host);
   if (!hostId || activePreferenceStore()?.hostId !== hostId) return defaults;
@@ -202,6 +202,14 @@ export function loadMobileProjectDefaults(host: MobileDefaultsHost | undefined, 
       [harness]: { ...defaults.agents?.[harness], model: selected.model },
     } };
   }
+  return defaults;
+}
+
+/** Project-specific desktop choices override global defaults for a new mobile draft. */
+export function loadMobileProjectDefaults(host: MobileDefaultsHost | undefined, projectId: string): MobileAgentDefaults {
+  const defaults = loadMobileConversationDefaults(host);
+  const hostId = host && sharedHostId(host);
+  if (!hostId || activePreferenceStore()?.hostId !== hostId) return defaults;
   const identity = `@project:${encodeURIComponent(hostId)}:${encodeURIComponent(projectId)}`;
   try {
     const project = JSON.parse(preferenceStorage.getItem("omnicode.projectProviderSettings.v1") ?? "{}")[identity];

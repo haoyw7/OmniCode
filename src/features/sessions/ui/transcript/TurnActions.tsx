@@ -89,7 +89,7 @@ export function EditLastTurnButton({
         event.stopPropagation();
         onEdit();
       }}
-      className={cn("rounded-md p-1 transition-[background-color,color] duration-150 focus-visible:focus-fill", editing
+      className={cn("rounded-md p-1 transition-[background-color,color] duration-150", editing
           ? "edit-last-turn-button"
           : "text-content/40 hover:bg-content/5 hover:text-content/70")}
     >

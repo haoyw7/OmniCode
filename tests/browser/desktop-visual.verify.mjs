@@ -239,23 +239,6 @@ try {
   results.checks.push('real Chat/Code empty and conversation panes share sidebar, input and menu geometry in both themes; sidebar256, input13/22, header32, model menus242');
   results.checks.push('real Code split panes in both themes; running, question and attachment fixture states captured with inert native/provider IO');
 
-  for (const theme of ['light', 'dark']) {
-    await page.setViewportSize({ width:1280, height:932 });
-    await page.goto(`${fixture}?page=workspace&mode=code&view=projects&theme=${theme}`);
-    await ready('.desktop-project-card');
-    const heading = await measure('.desktop-collection-header h1');
-    const project = await measure('.desktop-project-card');
-    const toggle = await measure('.desktop-mode-toggle');
-    const main = await measure('.body-glass');
-    expect(main.background).toBe(theme === 'light' ? 'rgb(249, 249, 247)' : 'rgb(36, 36, 35)');
-    near(heading.x,296,1); near(heading.y,72,1);
-    near(project.x,heading.x,1); expect(project.y).toBeGreaterThan(heading.y + heading.height); near(project.width,460,1); expect(project.height).toBeGreaterThanOrEqual(148);
-    near(toggle.x,168,1); near(toggle.y,10,1); near(toggle.width,70,1); near(toggle.height,28,1);
-    results.geometry[`projects-${theme}`] = {heading,project,toggle,main};
-    await capture(`projects-${theme}-1280`);
-  }
-  results.checks.push('real Projects light/dark: header296/72, aligned460px cards of at least148px, mode switch168/10/70x28');
-
   await page.goto(`${fixture}?theme=light`);
   await ready();
   results.fonts = await page.evaluate(() => ({ body: getComputedStyle(document.body).fontFamily, weight: getComputedStyle(document.body).fontWeight, faces: [...document.fonts].map(face => ({ family: face.family, weight: face.weight, status: face.status })) }));

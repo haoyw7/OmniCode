@@ -65,7 +65,7 @@ export function WorkflowMoreRow({
         "wf-pill wf-agent-pill wf-more-row  flex h-8 min-w-0 items-center gap-2 rounded-full pl-2 pr-2.5 text-ui-sm",
         door?.open === true ? "bg-surface-hover" : "bg-surface",
         onOpen !== undefined &&
-          "wf-pill-open cursor-pointer text-left outline-none focus-visible:focus-fill",
+          "wf-pill-open cursor-pointer text-left outline-none",
       )}
       data-door={door === undefined ? undefined : door.open ? "open" : "closed"}
       data-more-count={more.count}

@@ -304,7 +304,7 @@ export function ProjectNotificationSettings({
                     key={project.id}
                     ref={project.id === targetId ? targetCard : undefined}
                     tabIndex={-1}
-                    className="min-w-0 border-b border-content/5 outline-none last:border-b-0 focus-visible:focus-fill"
+                    className="min-w-0 border-b border-content/5 outline-none last:border-b-0"
                   >
                     <legend className="sr-only">{project.name}</legend>
                     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-2.5">
@@ -335,7 +335,7 @@ export function ProjectNotificationSettings({
                           onClick={() =>
                             setExpanded(isExpanded ? null : project.id)
                           }
-                          className="group flex min-w-0 flex-1 items-center gap-3 rounded-md text-left focus-visible:focus-fill"
+                          className="group flex min-w-0 flex-1 items-center gap-3 rounded-md text-left"
                         >
                           <span className="grid size-4 shrink-0 place-items-center">
                             {logoPath ? (

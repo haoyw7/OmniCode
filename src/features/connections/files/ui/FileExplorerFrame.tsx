@@ -45,7 +45,7 @@ import {
 } from "../model/editorPreferences";
 import { FileTree } from "./FileTree";
 import { FileTypeIcon } from "./FileTypeIcon";
-import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
+import { ActionMenu, type ActionMenuItem } from "../../../../shared/ui/primitives/ActionMenu";
 
 export function FileExplorerFrame({
   cwd,
@@ -168,7 +168,7 @@ export function FileExplorerFrame({
     filter.trim() && files
       ? rankProjectFiles(files, filter.trim(), [], 500)
       : [];
-  const items: ExplorerMenuItem[] = [
+  const items: ActionMenuItem[] = [
     {
       kind: "item",
       id: "tree",
@@ -390,7 +390,7 @@ export function FileExplorerFrame({
         </div>
       </div>
       {menu && visible ? (
-        <ExplorerMenu
+        <ActionMenu
           anchor={menu}
           side="bottom"
           align="end"

@@ -301,7 +301,7 @@ export function PromptOutline({
             }}
             onClick={() => jumpTo(prompt.id)}
             style={{ height: BAR_HEIGHT_PX + stack.gap }}
-            className="flex w-full shrink-0 items-center justify-end outline-none focus-visible:focus-fill"
+            className="flex w-full shrink-0 items-center justify-end outline-none"
           >
             <motion.span
               aria-hidden="true"

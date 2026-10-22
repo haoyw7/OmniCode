@@ -71,14 +71,12 @@ function DropdownMenuContent({
             align={align}
             className={cn(
               // 共享菜单栈需要行距，且与 tooltip 同层时不能被辅助提示覆盖。
-              // 菜单刚打开时根节点持有焦点；全局 focus reset 会清除普通 shadow-md，
-              // 因此用 important focus 声明保证阴影从首帧到 item hover 始终一致。
               // 宽度不能用 w-(...) 绑定触发器宽度变量 --radix-dropdown-menu-trigger-width：图标按钮触发器只有
               // ~28px，实际宽度被 min-w-32 卡死在 128px，「恢复 User 默认」等较长菜单项被迫折行，
               // 全仓 40+ 处调用因此各自传 w-*/min-w-* 兜底。菜单不是 Select，宽度应按内容撑开
               // （Radix popper 外层是 min-width:max-content），只保留 min-w-32 下限，并用可用宽度
               // 变量做上限，窄屏 Web 端长文案才回退折行而不是撑出视口。
-              "z-[60] flex flex-col gap-0.5 max-h-(--radix-dropdown-menu-content-available-height) max-w-(--radix-dropdown-menu-content-available-width) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-popover-border panel-menu p-1 text-foreground !shadow-md focus:!shadow-md focus-visible:!shadow-md      data-[state=closed]:overflow-hidden      ",
+              "z-[60] flex flex-col gap-0.5 max-h-(--radix-dropdown-menu-content-available-height) max-w-(--radix-dropdown-menu-content-available-width) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-popover-border panel-menu p-1 text-foreground !shadow-md      data-[state=closed]:overflow-hidden      ",
               className,
             )}
             {...props}

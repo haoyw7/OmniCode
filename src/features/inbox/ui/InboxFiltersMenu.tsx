@@ -60,12 +60,12 @@ const KIND_OPTIONS: {
   {
     id: "issue",
     label: "Issues",
-    icon: <CircleDot className="size-3.5 shrink-0" />,
+    icon: <CircleDot className="size-4 shrink-0" />,
   },
   {
     id: "pr",
     label: "Pull requests",
-    icon: <GitPullRequest className="size-3.5 shrink-0" />,
+    icon: <GitPullRequest className="size-4 shrink-0" />,
   },
 ];
 
@@ -353,7 +353,7 @@ function FilterItem({
       {icon}
       <span data-menu-title className="min-w-0 flex-1 truncate">{label}</span>
       {checked ? (
-        <Check className="size-3.5 shrink-0" />
+        <Check className="size-4 shrink-0" />
       ) : null}
     </Button>
   );

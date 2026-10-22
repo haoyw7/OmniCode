@@ -5,7 +5,7 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, Search, Settings } from "../../../shared/ui/icons";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import {
   MCP_PROVIDER_LABELS,
   type McpConnection,
@@ -87,7 +87,7 @@ export function McpServerPicker({
       className="overflow-hidden rounded-lg border border-content/10 bg-content/5 shadow-xl backdrop-blur-xl"
     >
       <div className="flex items-center gap-2 border-b border-content/10 px-3 py-2">
-        <Search className="size-3.5 shrink-0 text-content/45" />
+        <Search className="size-4 shrink-0 text-content/45" />
         <Input variant="inline"
           ref={search}
           role="combobox"
@@ -120,7 +120,7 @@ export function McpServerPicker({
               if (server?.availability === "available") onPick(server);
             }
           }}
-          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40"
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/40"
           placeholder={uiT("Search MCP servers…")}
         />
         <Button variant="ghost" size="content"
@@ -128,7 +128,7 @@ export function McpServerPicker({
           aria-label={uiT("Close MCP picker")}
           title={uiT("Back to the conversation (Esc)")}
           onClick={() => onDismiss("escape")}
-          className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content focus-visible:focus-fill"
+          className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content"
         >
           <ChevronDown className="size-4" />
         </Button>
@@ -174,7 +174,7 @@ export function McpServerPicker({
                   if (available) setActive(index);
                 }}
                 onClick={() => onPick(server)}
-                className={cn("flex w-full items-center gap-2 rounded-md text-left focus-visible:focus-fill justify-start", available ? (active === index ? "bg-selection text-content" : "text-content hover:bg-content/3") : "cursor-default text-content/40")}
+                className={cn("flex w-full items-center gap-2 rounded-md text-left justify-start", available ? (active === index ? "bg-selection text-content" : "text-content hover:bg-content/3") : "cursor-default text-content/40")}
               >
                 <HarnessIcon
                   harness={
@@ -211,7 +211,7 @@ export function McpServerPicker({
         onClick={onManage}
         className="flex w-full items-center gap-2 border-t border-content/10 px-3 py-2 text-left text-[12px] text-content/65 hover:bg-content/3 hover:text-content justify-start"
       >
-        <Settings className="size-3.5" />
+        <Settings className="size-4" />
         {uiT("Manage MCP Servers…")}
       </Button>
     </div>

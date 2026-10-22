@@ -27,7 +27,7 @@ import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";
 
 const fieldClass =
-  "h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35 disabled:opacity-50";
+  "h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 text-[12px] text-content outline-none placeholder:text-content/35 disabled:opacity-50";
 
 export function TitleModelSettings({
   revealed = false,
@@ -47,7 +47,7 @@ export function TitleModelSettings({
         aria-expanded={expanded}
         aria-controls={contentId}
         onClick={() => setExpanded((value) => !value)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-[13px] font-medium text-content transition-colors hover:bg-surface-hover focus-visible:focus-fill"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left text-[13px] font-medium text-content transition-colors hover:bg-surface-hover"
       >
         {t("Model API configuration")}
         <DisclosureChevron expanded={expanded} direction="down"

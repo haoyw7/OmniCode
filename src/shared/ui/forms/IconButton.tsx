@@ -52,7 +52,7 @@ export function IconButton({
         "inline-flex shrink-0 items-center justify-center text-ink-secondary enabled:hover:bg-selection-hover enabled:hover:text-ink data-[active]:bg-raised data-[active]:text-ink",
         ({ xs: "size-5 [&_svg]:size-3", sm: "size-7 [&_svg]:size-3.5", md: "size-8 [&_svg]:size-4", lg: "size-10 [&_svg]:size-6" })[size],
         shape === "round" ? "rounded-full" : "rounded-lg",
-        "transition-colors focus-visible:focus-fill disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none",
+        "transition-colors disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none",
         className,
       ))}
     >

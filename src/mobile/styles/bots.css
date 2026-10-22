@@ -703,10 +703,6 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
   transition: border-color 160ms ease, background-color 160ms ease;
 }
 .assistant-settings[data-layout="mobile"]
-  :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea):focus {
-  background: color-mix(in srgb, var(--color-m-ink) 6%, var(--mobile-fill));
-}
-.assistant-settings[data-layout="mobile"]
   :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea)[aria-invalid="true"] {
   border-color: var(--color-m-danger);
 }
@@ -899,10 +895,6 @@ html[data-mobile-skin] .assistant-chat[data-layout="mobile"] .mobile-assistant-s
 }
 .mobile-assistant-select-trigger:disabled {
   opacity: 0.5;
-}
-.mobile-assistant-select-trigger:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-fill-shadow);
 }
 .mobile-assistant-select-label {
   flex-shrink: 0;

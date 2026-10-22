@@ -31,7 +31,7 @@ import type {
   HostSessionSummary,
 } from "../features/connections/model/protocol";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../shared/ui/branding/HarnessIcon";
 import { AnimatedCollapse, useCollapseMotion } from "../shared/ui/AnimatedCollapse";
 import { IconButton } from "../shared/ui/forms/IconButton";
 import { SurfaceVisibilityContext, useSurfaceVisibility } from "../shared/ui/SurfaceVisibility";
@@ -46,7 +46,7 @@ import { ListMotion, ListMotionButton } from "../shared/ui/ListMotion";
 import type { MobileSheetPoint } from "./MobileSheet";
 import { animate, motion, useDragControls, useMotionValue, useTransform, type AnimationPlaybackControls } from "motion/react";
 import { useMotionPreference } from "../shared/motion/useMotionPreference";
-import { motionGeometry, immediateTransition, springs, panelTransition } from "../shared/motion/tokens";
+import { motionGeometry, immediateTransition, panelTransition } from "../shared/motion/tokens";
 import {
   canPullDrawerFrom,
   canPushDrawerFrom,
@@ -230,11 +230,11 @@ function useMobileDrawerController({
   const [dragging, setDragging] = useState(false);
   const reduced = useMotionPreference();
   const controls = useDragControls();
+  const dragConstraints = useRef({ left: 0, right: 0 }).current;
   const x = useMotionValue(0);
   const drawerWidth = useMotionValue(1);
   const progress = useTransform(() => Math.max(0, Math.min(1, 1 + x.get() / drawerWidth.get())));
   const release = useRef<AnimationPlaybackControls | undefined>(undefined);
-  const releaseVelocity = useRef<number | undefined>(undefined);
   const { foldState, finish } = useCollapseMotion(open || dragging);
   const settledClosed = !open && !dragging && foldState === "closed";
   useLayoutEffect(() => {
@@ -254,9 +254,8 @@ function useMobileDrawerController({
     if (reduced) { x.jump(target); finish(); return; }
     if (open && x.get() === target) { finish(); return; }
     release.current = animate(x, target, {
-      ...(reduced ? immediateTransition : springs.drawer), velocity: releaseVelocity.current, onComplete: finish,
+      ...panelTransition, onComplete: finish,
     });
-    releaseVelocity.current = undefined;
     return () => release.current?.stop();
   }, [open, dragging, reduced, x, drawerWidth, finish]);
   const latest = useRef({ open, onOpenChange });
@@ -295,7 +294,7 @@ function useMobileDrawerController({
       const { open } = latest.current;
       if (!(open ? canPushDrawerFrom : canPullDrawerFrom)(event.target)) return;
       const width = element.offsetWidth;
-      release.current?.stop();
+      dragConstraints.left = -width;
       drawerWidth.set(Math.max(1, width));
       const target = event.target instanceof Element ? event.target : undefined;
       target?.addEventListener("touchmove", holdTouch, { capture: true, passive: false });
@@ -332,6 +331,8 @@ function useMobileDrawerController({
           clearSwipe();
           return;
         }
+        release.current?.stop();
+        current.origin = clampDrawer(x.get(), current.width);
         current.dragging = true;
         // Session rows (including their status label) can be replaced mid-drag.
         // Route the pointer stream through the stable drawer panel instead.
@@ -351,16 +352,19 @@ function useMobileDrawerController({
         current.velocity = (event.clientX - current.last.x) / elapsed;
       current.last = { x: event.clientX, t: event.timeStamp };
     };
-    const end = (event: PointerEvent) => {
+    const end = (event?: PointerEvent) => {
       const current = swipe.current;
-      if (!current || current.id !== event.pointerId) return;
+      if (!current || (event && current.id !== event.pointerId)) return;
+      if (event?.type === "lostpointercapture" && event.target !== panel.current) return;
+      const cancelled = event?.type !== "pointerup";
+      if (cancelled) cancelHold();
       if (!current.dragging) {
         clearSwipe();
         return;
       }
       // A cancelled pointer may carry no coordinates. Keep the last actual
-      // touch, and flush pending input before the spring takes over.
-      if (event.type !== "pointercancel") current.last.x = event.clientX;
+      // touch, and flush pending input before settling.
+      if (!cancelled && event) current.last.x = event.clientX;
       controls.cancel();
       clearSwipe();
       // A drag may start on a button; the click that follows must not land.
@@ -370,15 +374,13 @@ function useMobileDrawerController({
         current.width,
       );
       const open =
-        event.type === "pointercancel"
+        cancelled
           ? latest.current.open
           : settleDrawerOpen(translate, current.width, current.velocity);
       x.set(translate);
-      releaseVelocity.current = event.type === "pointercancel" ? 0 : current.velocity * 1000;
       release.current?.stop();
       release.current = animate(x, open ? 0 : -current.width, {
-        ...(reduced ? immediateTransition : springs.drawer),
-        velocity: event.type === "pointercancel" ? 0 : current.velocity * 1000,
+        ...(reduced ? immediateTransition : panelTransition),
         onComplete: finish,
       });
       setDragging(false);
@@ -386,6 +388,13 @@ function useMobileDrawerController({
         void lightImpact();
         latest.current.onOpenChange(open);
       }
+    };
+    const cancel = () => end();
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || !swipe.current) return;
+      event.stopPropagation();
+      cancel();
+      latest.current.onOpenChange(false);
     };
     const swallowClick = (event: MouseEvent) => {
       if (Date.now() >= dragClickUntil.current) return;
@@ -405,6 +414,9 @@ function useMobileDrawerController({
     document.addEventListener("pointermove", move, true);
     document.addEventListener("pointerup", end, true);
     document.addEventListener("pointercancel", end, true);
+    document.addEventListener("lostpointercapture", end, true);
+    document.addEventListener("keydown", escape, true);
+    window.addEventListener("blur", cancel);
     return () => {
       document.removeEventListener("pointerdown", begin, true);
       document.removeEventListener("touchmove", holdTouch, true);
@@ -412,9 +424,13 @@ function useMobileDrawerController({
       document.removeEventListener("pointermove", move, true);
       document.removeEventListener("pointerup", end, true);
       document.removeEventListener("pointercancel", end, true);
+      document.removeEventListener("lostpointercapture", end, true);
+      document.removeEventListener("keydown", escape, true);
+      window.removeEventListener("blur", cancel);
       clearSwipe();
+      controls.cancel();
     };
-  }, [active, covered, controls, x, drawerWidth, reduced, finish]);
+  }, [active, covered, controls, dragConstraints, x, drawerWidth, reduced, finish]);
 
   const tree = useMemo(() => sortMobileProjects(treeProjects, (id) =>
     id === project?.id ? sessions : (histories[id]?.sessions ?? []),
@@ -568,7 +584,7 @@ function useMobileDrawerController({
     row,
     setMoreOpen,
     settledClosed,
-    controls, x, progress,
+    controls, dragConstraints, x, progress,
     surfaceVisible,
     t,
     tree,
@@ -610,7 +626,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
     row,
     setMoreOpen,
     settledClosed,
-    controls, x, progress,
+    controls, dragConstraints, x, progress,
     surfaceVisible,
     t,
     tree,
@@ -635,6 +651,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
         drag="x"
         dragListener={false}
         dragControls={controls}
+        dragConstraints={dragConstraints}
         dragMomentum={false}
         dragElastic={false}
         style={{ x }}
@@ -651,7 +668,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
           <button
             ref={hostTrigger}
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item mobile-drawer-device"
+            className="hover:opacity-80 active:opacity-70 mobile-drawer-item mobile-drawer-device"
             aria-label={t("Switch device")}
             aria-haspopup="dialog"
             aria-expanded={covered}
@@ -677,7 +694,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
           {onAssistant && (
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item mobile-drawer-assistant"
+              className="hover:opacity-80 active:opacity-70 mobile-drawer-item mobile-drawer-assistant"
               aria-label={assistantUnreadCount > 0 ? t("{name}, {count} unread messages", {
                 name: t("Bots"), count: assistantUnreadCount,
               }) : undefined}
@@ -692,14 +709,14 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
               )}
             </button>
           )}
-          <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item" onClick={onHome}>
+          <button type="button" className="hover:opacity-80 active:opacity-70 mobile-drawer-item" onClick={onHome}>
             <Home />
             <span>{t("Sessions")}</span>
           </button>
           <div>
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item mobile-drawer-more-toggle"
+              className="hover:opacity-80 active:opacity-70 mobile-drawer-item mobile-drawer-more-toggle"
               aria-expanded={moreOpen}
               aria-controls={moreId}
               onClick={() => setMoreOpen((value) => !value)}
@@ -712,14 +729,14 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
               <AnimatedCollapse expanded={moreOpen}>
                 <div className="mobile-drawer-secondary">
                   {onNotes && (
-                    <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item" onClick={onNotes}>
+                    <button type="button" className="hover:opacity-80 active:opacity-70 mobile-drawer-item" onClick={onNotes}>
                       <File />
                       <span>{t("Notes")}</span>
                     </button>
                   )}
                   <button
                     type="button"
-                    className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-item mobile-drawer-all-projects"
+                    className="hover:opacity-80 active:opacity-70 mobile-drawer-item mobile-drawer-all-projects"
                     onClick={onAllProjects}
                   >
                     <Folder />
@@ -771,7 +788,7 @@ function MobileDrawerView({ vm }: { vm: MobileDrawerViewModel }) {
                 <button
                   key={item.id}
                   type="button"
-                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-drawer-empty mobile-drawer-group-status"
+                  className="hover:opacity-80 active:opacity-70 mobile-drawer-empty mobile-drawer-group-status"
                   onClick={() => readHistories([item.id])}
                 >
                   {t("Couldn’t load sessions")} · {item.name} · {t("Retry")}

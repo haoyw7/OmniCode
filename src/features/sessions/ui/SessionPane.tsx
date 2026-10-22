@@ -1017,7 +1017,7 @@ const LocalSessionPane = memo(function LocalSessionPane({
           }}
         >
           {paneDrag ? (
-            <button {...paneDrag} type="button" aria-label={uiT("Drag to reorder pane")} className="cursor-grab rounded text-content/35 hover:text-content focus-visible:focus-fill active:cursor-grabbing"
+            <button {...paneDrag} type="button" aria-label={uiT("Drag to reorder pane")} className="cursor-grab rounded text-content/35 hover:text-content active:cursor-grabbing"
               onPointerDown={undefined} onTouchStart={paneDrag.onTouchStart}>
               <GripVertical className="size-3.5 shrink-0" />
             </button>

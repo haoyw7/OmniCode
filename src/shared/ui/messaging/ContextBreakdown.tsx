@@ -53,7 +53,7 @@ function ToolGroup({ name, rows }: { name: string; rows: ContextBreakdownRow[] }
   const [expanded, setExpanded] = useState(false);
   const id = useId();
   return <div className="context-breakdown-group">
-    <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 context-breakdown-toggle" aria-expanded={expanded}
+    <button type="button" className="hover:opacity-80 active:opacity-70 context-breakdown-toggle" aria-expanded={expanded}
       aria-controls={id} onClick={() => setExpanded((value) => !value)}>
       <DisclosureChevron expanded={expanded} className="size-3 shrink-0" />
       <span>{name}</span><span>{rows.length}</span>

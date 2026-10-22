@@ -24,6 +24,7 @@ import type { SendTurnInput } from "../src/integrations/harness/core/types";
 import type { RemoteProvider } from "../src/features/connections/model/protocol";
 import { checkoutPath, withCheckoutRemoval } from "./checkout-guards";
 import { importDesktopSessions } from "./desktop-import";
+import { HostUsageService } from "./usage/service";
 
 const modelProbe = vi.hoisted(() => vi.fn());
 const piModelProbe = vi.hoisted(() => vi.fn());
@@ -441,6 +442,24 @@ describe("remote host API", () => {
     expect(JSON.stringify(result.value)).not.toContain(s.directory);
     expect((await s.call("providerAccounts.usage", { provider: "codex", accountId: "removed" })).status).toBe(400);
     expect((await s.call("providerAccounts.usage", { provider: "pi", accountId: "default" })).status).toBe(400);
+  });
+
+  it("exposes unified usage only through authenticated RPC", async () => {
+    const s = await setup();
+    const summary = vi.spyOn(HostUsageService.prototype, "read").mockResolvedValue({ contractVersion: 1, buckets: [] } as never);
+    const limits = vi.spyOn(HostUsageService.prototype, "readLimits").mockResolvedValue([]);
+    try {
+      expect((await s.call("environment.describe")).value.result.capabilities).toContain("usage.v1");
+      for (const method of ["usage.summary", "usage.progress", "usage.limits", "usage.limits.reset", "usage.settings.update"]) expect((await s.call(method, {}, "wrong-token")).status).toBe(401);
+      expect(summary).not.toHaveBeenCalled(); expect(limits).not.toHaveBeenCalled();
+      expect((await s.call("usage.summary", { sinceDay: "2026-10-01", untilDay: "2026-10-31", timeZone: "UTC" })).value.result).toMatchObject({ contractVersion: 1 });
+      expect((await s.call("usage.limits", { refresh: true })).value.result).toEqual([]);
+      const saved = await s.call("usage.settings.update", { cursorKeychainEnabled: true });
+      expect(saved.status).toBe(200);
+      expect(saved.value.result.cursorKeychainEnabled).toBe(true);
+      expect((await s.call("usage.settings.update", { model: "test-model", price: { inputCostPerMillionTokens: 1, outputCostPerMillionTokens: 2 } })).status).toBe(400);
+      expect((await s.call("usage.settings.update", { model: "test-model", mapTo: "public-model" })).status).toBe(400);
+    } finally { summary.mockRestore(); limits.mockRestore(); }
   });
 
   it("authenticates IM management and never returns a configured bot secret", async () => {

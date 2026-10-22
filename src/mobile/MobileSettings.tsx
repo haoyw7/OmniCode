@@ -1,7 +1,8 @@
 import { cn } from "../shared/lib/cn";
-import { Button } from "../shared/ui/forms/Button";
 import { Switch } from "../shared/ui/forms/Switch";
+import { MobileNotificationSettings } from "./MobileNotificationSettings";
 import { MobileHapticSettings } from "./MobileHapticSettings";
+import { MobileTextSizeSettings } from "./MobileTextSizeSettings";
 import { MobileSettingsIcon as SettingsIcon, MobileSettingsGlyph } from "./MobileSettingsIcon";
 import { useCallback, useRef, type CSSProperties, type ReactNode, type RefObject } from "react";
 import {
@@ -190,6 +191,7 @@ function useMobileSettingsController({
   archive,
   agentDefaults,
   providerAccounts,
+  usage,
   glass,
   onGlassChange,
   preferencePanel,
@@ -236,6 +238,7 @@ function useMobileSettingsController({
   archive: ReactNode;
   agentDefaults?: ReactNode;
   providerAccounts?: ReactNode;
+  usage?: ReactNode;
   glass: GlassSettings;
   onGlassChange: (glass: GlassSettings) => void;
   preferencePanel: MobilePreferencePanel;
@@ -253,7 +256,7 @@ function useMobileSettingsController({
   }, [connectionTrigger]);
   const addConnectionRow = (className: string) => (
     <button
-      className={cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", className)}
+      className={cn("hover:opacity-80 active:opacity-70", className)}
       ref={setConnectionButton}
       type="button"
       aria-label={t("Add connection")}
@@ -311,6 +314,7 @@ function useMobileSettingsController({
     page,
     preferencePanel,
     providerAccounts,
+    usage,
     sharedConnections,
     skin,
     soundsEnabled,
@@ -352,6 +356,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
     page,
     preferencePanel,
     providerAccounts,
+    usage,
     sharedConnections,
     skin,
     soundsEnabled,
@@ -439,6 +444,13 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
       </main>
     );
 
+  if (page === "text-size")
+    return (
+      <main key="text-size" className="mobile-content mobile-settings">
+        <MobileTextSizeSettings />
+      </main>
+    );
+
   if (page === "skin")
     return (
       <main key="skin" className="mobile-content mobile-settings">
@@ -448,6 +460,9 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
 
   if (page === "accounts")
     return <main key="accounts" className="mobile-content mobile-settings mobile-settings-accounts">{providerAccounts}</main>;
+
+  if (page === "usage")
+    return <main key="usage" className="mobile-content mobile-settings mobile-settings-usage">{usage}</main>;
 
   if (page === "agents")
     return (
@@ -459,85 +474,16 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
   if (page === "notifications")
     return (
       <main key="notifications" className="mobile-content mobile-settings">
-        <Group title="Notifications" hideTitle>
+        <MobileNotificationSettings activity={activity} />
+        <Group title="Sounds and haptics">
           <div className="mobile-settings-row mobile-settings-notifications">
             <SettingsIcon name="sounds" />
             <label className="mobile-settings-label">
               <span>{t("Sounds")}</span>
-              <Switch
-
-
-
-                checked={soundsEnabled}
-                onCheckedChange={(checked) =>
-                  onSoundsEnabledChange(checked)
-                }
-              />
+              <Switch checked={soundsEnabled} onCheckedChange={onSoundsEnabledChange} />
             </label>
           </div>
           <MobileHapticSettings />
-          <div className="mobile-settings-row mobile-settings-notifications">
-            <SettingsIcon name="notifications" />
-            <label className="mobile-settings-label">
-              <span>{t("System notifications")}</span>
-              <Switch
-
-
-
-                checked={activity.enabled}
-                disabled={activity.permission === "unsupported"}
-                onCheckedChange={(checked) =>
-                  void activity.setNotificationsEnabled(
-                    checked,
-                  )
-                }
-              />
-            </label>
-          </div>
-          {(activity.enabled || activity.canOpenSettings) &&
-          activity.permission === "prompt" ? (
-            <button
-              type="button"
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row mobile-settings-action"
-              onClick={() => void activity.requestPermission()}
-            >
-              <SettingsIcon name="notifications" />
-              <span className="mobile-settings-label">{t("Allow notifications")}</span>
-            </button>
-          ) : (activity.enabled || activity.canOpenSettings) &&
-            activity.permission === "denied" ? (
-            <div className="mobile-settings-row mobile-settings-note">
-              <span className="mobile-muted">
-                {t("Notifications are blocked in system settings.")}
-              </span>
-              {activity.canOpenSettings ? (
-                <Button variant="secondary"
-
-                  onClick={() => void activity.openSettings()}
-                >
-                  {t("Open settings")}
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-          {activity.enabled &&
-          activity.permission === "granted" &&
-          activity.canOpenSettings ? (
-            <button
-              type="button"
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
-              onClick={() => void activity.openSettings()}
-            >
-              <SettingsIcon name="notifications" />
-              <span className="mobile-settings-label">{t("Notification settings…")}</span>
-              <ChevronRight aria-hidden="true" />
-            </button>
-          ) : null}
-          {activity.notificationError ? (
-            <p className="mobile-form-error mobile-settings-note" role="status">
-              {activity.notificationError}
-            </p>
-          ) : null}
         </Group>
       </main>
     );
@@ -613,7 +559,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
         <div className="mobile-settings-card">
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
+            className="hover:opacity-80 active:opacity-70 mobile-settings-row"
             aria-label={t("Connections")}
             onClick={() => onPageChange("connections")}
           >
@@ -631,7 +577,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           {agentDefaults ? (
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
+              className="hover:opacity-80 active:opacity-70 mobile-settings-row"
               aria-label={t("New conversations")}
               onClick={() => onPageChange("agents")}
             >
@@ -641,16 +587,19 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
             </button>
           ) : null}
           {providerAccounts ? (
-            <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row" aria-label={t("Accounts and usage")}
+            <button type="button" className="hover:opacity-80 active:opacity-70 mobile-settings-row" aria-label={t("Accounts and usage")}
               onClick={() => onPageChange("accounts")}>
               <SettingsIcon name="account" />
               <span className="mobile-settings-label">{t("Accounts and usage")}</span>
               <ChevronRight />
             </button>
           ) : null}
+          {usage ? <button type="button" className="hover:opacity-80 active:opacity-70 mobile-settings-row" aria-label={t("Usage")} onClick={() => onPageChange("usage")}>
+            <SettingsIcon name="usage" /><span className="mobile-settings-label">{t("Usage")}</span><ChevronRight />
+          </button> : null}
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
+            className="hover:opacity-80 active:opacity-70 mobile-settings-row"
             aria-label={t("Notifications")}
             onClick={() => onPageChange("notifications")}
           >
@@ -663,7 +612,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           </button>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
+            className="hover:opacity-80 active:opacity-70 mobile-settings-row"
             aria-label={t("Message composer")}
             onClick={() => onPageChange("chat")}
           >
@@ -679,7 +628,16 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
       <Group title="Appearance">
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
+          className="hover:opacity-80 active:opacity-70 mobile-settings-row"
+          onClick={() => onPageChange("text-size")}
+        >
+          <SettingsIcon name="textSize" />
+          <span className="mobile-settings-label">{t("Text size")}</span>
+          <ChevronRight aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="hover:opacity-80 active:opacity-70 mobile-settings-row"
           aria-label={t("Skin")}
           onClick={() => onPageChange("skin")}
         >
@@ -752,7 +710,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
         </div>
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
+          className="hover:opacity-80 active:opacity-70 mobile-settings-row"
           aria-label={t("Glass")}
           onClick={() => onPageChange("glass")}
         >
@@ -771,7 +729,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
         <div className="mobile-settings-card">
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
+            className="hover:opacity-80 active:opacity-70 mobile-settings-row"
             onClick={() => onPageChange("archive")}
           >
             <SettingsIcon name="archive" />
@@ -782,7 +740,7 @@ function MobileSettingsView({ vm }: { vm: MobileSettingsViewModel }) {
           </button>
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
+            className="hover:opacity-80 active:opacity-70 mobile-settings-row"
             aria-label={t("App updates")}
             onClick={() => onPageChange("updates")}
           >
@@ -844,6 +802,7 @@ export function MobileSettings(props: {
   archive: ReactNode;
   agentDefaults?: ReactNode;
   providerAccounts?: ReactNode;
+  usage?: ReactNode;
   glass: GlassSettings;
   onGlassChange: (glass: GlassSettings) => void;
   preferencePanel: MobilePreferencePanel;

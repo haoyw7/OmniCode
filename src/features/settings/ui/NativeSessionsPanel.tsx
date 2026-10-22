@@ -18,7 +18,7 @@ import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { RefreshCw, Search } from "../../../shared/ui/icons";
 import { withToast } from "../../../shared/ui/primitives/Sonner";
 import { toast } from "sonner";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import {
   discoverNativeSessions,
   importNativeSession,
@@ -359,7 +359,7 @@ export function NativeSessionsPanel({
                           setQuery(event.target.value);
                           setShown(PAGE);
                         }}
-                        className="min-w-0 flex-1 bg-transparent outline-none focus-visible:focus-fill placeholder:text-content/35"
+                        className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-content/35"
                       />
                     </label>
                   ) : null}
@@ -438,7 +438,7 @@ export function NativeSessionsPanel({
       ) : null}
       {state.warnings.length ? (
         <details className="mt-3 text-[12px] text-content/45">
-          <summary className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 cursor-default">
+          <summary className="hover:opacity-80 active:opacity-70 cursor-default">
             {t("Some native sessions could not be read ({count})", {
               count: state.warnings.length,
             })}

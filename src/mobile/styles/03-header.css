@@ -321,5 +321,5 @@
 
 
 html[data-mobile-skin] .mobile-header-search [data-ui="input"] { min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-/* The caret marks focus; the field and its capsule draw no focus frame. */
-html[data-mobile-skin] .mobile-header-search [data-ui="input"]:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
+/* Show keyboard focus on the capsule, without filling the inner text rectangle. */
+html[data-mobile-skin] .mobile-header-search [data-ui="input"]:focus-visible:not([aria-invalid="true"]) { outline: none; box-shadow: none; }

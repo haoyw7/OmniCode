@@ -16,7 +16,7 @@ import {
   toolCallState,
 } from "../model/transcriptActivity";
 import { AgentTranscript } from "./AgentTranscript";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { useOpenSubagent } from "./SubagentTabsContext";
 
 export function SubagentTabView({

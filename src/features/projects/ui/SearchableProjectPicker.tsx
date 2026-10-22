@@ -290,7 +290,7 @@ export function SearchableProjectPicker({
             <span className="min-w-0 truncate font-medium text-content/90">
               {inProject ? label : uiT(label)}
             </span>
-            <RotatingIcon icon={ChevronDown} angle={open ? motionGeometry.flipAngle : 0} className="size-3 shrink-0 text-content/45" aria-hidden="true" />
+            <RotatingIcon icon={ChevronDown} angle={open ? motionGeometry.flipAngle : 0} className="size-4 shrink-0 text-content/45" aria-hidden="true" />
           </>
         )}
       </Button>
@@ -320,7 +320,7 @@ export function SearchableProjectPicker({
                 setActive(0);
               }}
               placeholder={uiT("Search projects...")}
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35"
             />
           </label>
           <div
@@ -342,7 +342,7 @@ export function SearchableProjectPicker({
                     >
                       <span className="grid size-4 shrink-0 place-items-center">
                         {!inProject ? (
-                          <Check className="size-3.5" />
+                          <Check className="size-4" />
                         ) : null}
                       </span>
                       <span>{uiT("All projects")}</span>
@@ -390,7 +390,7 @@ export function SearchableProjectPicker({
                   >
                     <span className="grid size-4 shrink-0 place-items-center">
                       {current ? (
-                        <Check className="size-3.5" />
+                        <Check className="size-4" />
                       ) : itemLogo ? (
                         <ProjectLogoIcon
                           path={itemLogo}

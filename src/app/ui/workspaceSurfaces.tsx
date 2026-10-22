@@ -5,6 +5,8 @@ import { loadSettingsSection } from "../../features/settings/model/settings";
 import { lazySurface } from "../../shared/ui/lazySurface";
 import { preloadNavigationWhenIdle } from "../model/preloadNavigation";
 
+export const UsagePage = lazySurface(async () => ({ default: (await import("../../features/usage/ui/UsagePage")).UsagePage }));
+
 export const SearchView = lazySurface(
   async () => {
     const module = await import("../../features/search/ui/SearchView");

@@ -191,7 +191,7 @@ export function WorkspaceIdentity({
       aria-label={uiT("Workspace {value0}", { value0: String(label) })}
       className="-ml-1.5 flex h-6 min-w-0 shrink-0 items-center gap-1.5 px-1.5 text-[12px] text-content/45"
     >
-      <Icon className="size-3.5 shrink-0" />
+      <Icon className="size-4 shrink-0" />
       <span data-code-label={worktree && !!name || undefined} className="truncate">{label}</span>
     </div>
   );
@@ -352,7 +352,7 @@ function WorkspaceModePicker({
           onClick={toggle}
           className="composer-workspace-mode-trigger -ml-1.5 flex h-6 min-w-0 max-w-48 items-center gap-1.5 rounded-md px-1.5 text-[12px] text-content/55 hover:bg-content/5 hover:text-content aria-expanded:bg-content/8 aria-expanded:text-content disabled:opacity-40 disabled:hover:bg-transparent active:scale-[0.97]"
         >
-          <Icon className="size-3.5 shrink-0" />
+          <Icon className="size-4 shrink-0" />
           <span className="truncate">{label}</span>
         </Button>
       ) : null}
@@ -368,7 +368,7 @@ function WorkspaceModePicker({
           onClick={toggle}
           className="composer-worktree-menu-trigger hidden items-center justify-center rounded-md text-content/55 hover:bg-content/5 hover:text-content aria-expanded:bg-content/8 aria-expanded:text-content disabled:opacity-40 disabled:hover:bg-transparent"
         >
-          <FolderPlus className="size-3.5 shrink-0" />
+          <FolderPlus className="size-4 shrink-0" />
         </Button>
       ) : null}
       <PresenceBoundary propagate>{open ? (
@@ -415,7 +415,7 @@ function WorkspaceModePicker({
               <MenuHover />
               <RowIcon className="size-4 shrink-0 text-content/55" />
               <span data-menu-title className="flex-1">{text}</span>
-              {mode === value ? <Check className="size-3.5" /> : null}
+              {mode === value ? <Check className="size-4" /> : null}
             </Button>
           ))}
           {onSelectWorktree ? (
@@ -446,7 +446,7 @@ function WorkspaceModePicker({
               <MenuHover />
               <FolderTree className="size-4 shrink-0 text-content/55" />
               <span data-menu-title className="flex-1">{uiT("Existing worktree…")}</span>
-              <ChevronRight data-menu-arrow className="size-3.5 shrink-0 text-content/45" />
+              <ChevronRight data-menu-arrow className="size-4 shrink-0 text-content/45" />
             </Button>
           ) : null}
           {onOpenSettings ? (
@@ -498,7 +498,7 @@ function WorkspaceModePicker({
         >
           {!data && !loadError ? (
             <p className="flex items-center gap-2 px-2 py-3 text-[12px] text-content/50">
-              <Spinner className="size-3.5" />
+              <Spinner className="size-4" />
               {uiT("Loading worktrees…")}
             </p>
           ) : null}
@@ -684,9 +684,9 @@ export function WorktreeBasePicker({
                 : "text-content/80")}
           >
             {selectedRow ? (
-              <Check className="branch-menu-check size-3.5 shrink-0" />
+              <Check className="branch-menu-check size-4 shrink-0" />
             ) : (
-              <GitBranch className="branch-menu-icon size-3.5 shrink-0 text-content/45" />
+              <GitBranch className="branch-menu-icon size-4 shrink-0 text-content/45" />
             )}
             <span
               className={cn("branch-menu-name min-w-0 flex-1 truncate", selectedRow ? "font-medium" : "")}
@@ -748,7 +748,7 @@ export function WorktreeBasePicker({
             className="branch-menu flex flex-col overflow-hidden"
           >
             <label className="branch-menu-search flex shrink-0 items-center gap-2 border-b border-stroke px-2 py-2.5 text-content/50">
-              <Search className="size-3.5 shrink-0" />
+              <Search className="size-4 shrink-0" />
               <Input variant="inline"
                 ref={search}
                 value={query}
@@ -782,7 +782,7 @@ export function WorktreeBasePicker({
                     dismiss();
                   }
                 }}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/40"
               />
             </label>
             {desktop ? (

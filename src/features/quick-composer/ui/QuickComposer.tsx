@@ -63,7 +63,7 @@ import { Popover } from "../../../shared/ui/Popover";
 import { AttachmentChip } from "../../sessions/ui/AttachmentChip";
 import { quickLaunchAttachments } from "../model/quickAttachments";
 import { useQuickAttachments } from "./useQuickAttachments";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { QuickModelSelector } from "./QuickModelSelector";
 import { QuickPermissionIcon, QuickPermissions } from "./QuickPermissions";
 import { useQuickPickerMotion } from "./useQuickPickerMotion";
@@ -645,7 +645,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
               : undefined
           }
           spellCheck
-          className="composer-field scrollbar-none relative block w-full resize-none bg-transparent pl-5 pr-9 pt-4 pb-2 text-[16px] leading-6 outline-none focus-visible:focus-fill select-text"
+          className="composer-field scrollbar-none relative block w-full resize-none bg-transparent pl-5 pr-9 pt-4 pb-2 text-[16px] leading-6 outline-none select-text"
         />
       </div>
 
@@ -865,7 +865,7 @@ export function QuickComposer({ onShown }: { onShown: () => void }) {
                   aria-label={uiT("Find a project")}
                   spellCheck={false}
                   autoComplete="off"
-                  className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+                  className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35"
                 />
               </label>
               <div

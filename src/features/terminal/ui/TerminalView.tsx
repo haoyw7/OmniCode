@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { copyText } from "../../../platform/tauri/clipboard";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { ActionMenu } from "../../../shared/ui/primitives/ActionMenu";
 import { pasteTerminalClipboard } from "../model/terminalClipboard";
 import {
   getPtyStatus,
@@ -648,7 +648,7 @@ export function TerminalView({ id, cwd, active, onMetaChange }: Props) {
         </div>
       )}
       <PresenceBoundary propagate>{menu && active && visible && (
-        <ExplorerMenu
+        <ActionMenu
           x={menu.x}
           y={menu.y}
           ariaLabel={t("Terminal")}

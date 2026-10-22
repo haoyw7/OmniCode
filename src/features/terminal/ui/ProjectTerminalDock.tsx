@@ -16,7 +16,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { ActionMenu } from "../../../shared/ui/primitives/ActionMenu";
 import { SurfaceTabs } from "../../workspace/ui/SurfaceTabs";
 import { IconButton } from "../../../shared/ui/forms/IconButton";
 import {
@@ -211,7 +211,7 @@ export function ProjectTerminalDock({
         </>}</div>}
       </div>
       <PresenceBoundary propagate>{menu ? (
-        <ExplorerMenu
+        <ActionMenu
           x={menu.x}
           y={menu.y}
           ariaLabel={uiT("Move terminal")}

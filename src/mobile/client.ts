@@ -786,6 +786,18 @@ export class MobileClient {
       return result;
     });
   }
+  /** Usage can inspect paired environments without switching the active conversation. */
+  async usageRequest<T>(connection: Connection, method: "usage.summary" | "usage.progress" | "usage.limits" | "usage.settings.update" | "usage.limits.reset", params: object): Promise<T> {
+    if (connection.disabled) throw new Error("Connect to a Host first.");
+    const descriptor = await queryClient.fetchQuery({ queryKey: ["mobileUsageDescriptor", this.queryId, connection.environmentId, connection.endpoint], staleTime: 60_000,
+      queryFn: async () => {
+        const value = requireHostDescriptor(await this.requestWith<HostDescriptor>(connection, "environment.describe", { supportedProviders: REMOTE_PROVIDERS }, undefined, false));
+        if (value.environmentId !== connection.environmentId) throw new Error("Host identity changed. Connect to this machine again explicitly.");
+        return value;
+      } });
+    if (!descriptor.capabilities.includes("usage.v1")) throw new Error("This Host does not support usage yet. Update and restart it, then refresh.");
+    return this.requestWith<T>(connection, method, params, { timeoutMs: 120_000 }, false);
+  }
   branches(projectId: string, cwd?: string) {
     return this.rpc<MobileBranches>("git.branches", { projectId, ...(cwd ? { cwd } : {}) });
   }

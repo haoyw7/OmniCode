@@ -48,7 +48,6 @@ type Options = {
   tabs: WorkspaceTab[];
   activeTabId: string;
   notesEnabled: boolean;
-  initialPage: AppPageKind | null;
   context: () => {
     tabs: WorkspaceTab[];
     sessions: Session[];
@@ -85,9 +84,7 @@ export function useWorkspaceAppViews(options: Options) {
     setComposerFocused,
   } = options;
   const [searchViewFocusToken, setSearchViewFocusToken] = useState(0);
-  const [appPage, setAppPage] = useState<AppPageKind | null>(
-    () => options.initialPage,
-  );
+  const [appPage, setAppPage] = useState<AppPageKind | null>(null);
   const closeAppPage = useCallback(() => {
     setAppPage(null);
     setComposerFocused(true);
@@ -360,7 +357,6 @@ export function useWorkspaceAppViews(options: Options) {
     onVisitBack,
     onVisitForward,
     previousTabs,
-    openAppView,
     onOpenSearch,
     onSearchEverywhere,
     onLeaveSearch,

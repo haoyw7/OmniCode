@@ -190,7 +190,7 @@ export function WorkflowAgentPill({
           ? "h-6 gap-1.5 pl-1 pr-1.5 text-ui-sm"
           : "h-8 gap-2 bg-surface pl-2 pr-2.5 text-ui-sm",
         open !== undefined &&
-          "wf-pill-open cursor-pointer text-left outline-none focus-visible:focus-fill",
+          "wf-pill-open cursor-pointer text-left outline-none",
         className,
       )}
       data-agent-open={open === undefined ? undefined : "true"}

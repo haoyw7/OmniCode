@@ -293,7 +293,7 @@ function PrCheckRow({
     <li
       ref={rowRef}
       tabIndex={-1}
-      className={cn("min-w-0 rounded-xl outline-none focus-visible:focus-fill", expanded ? "bg-content/[0.02]" : "")}
+      className={cn("min-w-0 rounded-xl outline-none", expanded ? "bg-content/[0.02]" : "")}
     >
       <div className="group/check flex min-w-0 items-center gap-2 rounded-xl px-2 py-2 hover:bg-content/[0.02] @max-[420px]/checks:gap-1">
         {expandable ? (
@@ -303,7 +303,7 @@ function PrCheckRow({
             aria-expanded={expanded}
             aria-controls={detailsId}
             onClick={() => setExpanded(!expanded)}
-            className={cn(className, "min-w-0 flex-1 focus-visible:focus-fill")}
+            className={cn(className, "min-w-0 flex-1")}
           >
             {body}
           </Button>
@@ -350,7 +350,7 @@ function PrCheckRow({
               value0: String(check.name),
             })}
             title={uiT("Fix with AI")}
-            className="grid size-7 shrink-0 place-items-center rounded-lg bg-content/[0.03] text-content/65 hover:bg-selection hover:text-content focus-visible:focus-fill"
+            className="grid size-7 shrink-0 place-items-center rounded-lg bg-content/[0.03] text-content/65 hover:bg-selection hover:text-content"
           >
             <Sparkles className="size-3.5" />
           </Button>
@@ -367,7 +367,7 @@ function PrCheckRow({
             aria-expanded={expanded}
             aria-controls={detailsId}
             onClick={() => setExpanded(!expanded)}
-            className="grid size-7 shrink-0 place-items-center rounded-lg text-content/40 hover:bg-content/3 hover:text-content focus-visible:focus-fill"
+            className="grid size-7 shrink-0 place-items-center rounded-lg text-content/40 hover:bg-content/3 hover:text-content"
           >
             <DisclosureChevron expanded={expanded}
               className="size-3"
@@ -431,7 +431,7 @@ function PrCheckRow({
               ) : null}
               {details.steps.length ? (
                 <div>
-                  <Button variant="ghost" size="content" type="button" aria-expanded={stepsOpen} aria-controls={stepsId} aria-label={uiT("View run steps")} onClick={() => setStepsOpen(value => !value)} className="flex w-full items-center gap-1 text-[11px] text-content/50 hover:text-content focus-visible:focus-fill active:bg-content/5">
+                  <Button variant="ghost" size="content" type="button" aria-expanded={stepsOpen} aria-controls={stepsId} aria-label={uiT("View run steps")} onClick={() => setStepsOpen(value => !value)} className="flex w-full items-center gap-1 text-[11px] text-content/50 hover:text-content active:bg-content/5">
                     <DisclosureChevron expanded={stepsOpen} className="size-3" />
                     {uiT("View run steps")}
                     <span className="ml-auto pl-2 text-right text-[10px] text-content/35 @max-[420px]/checks:hidden">
@@ -638,7 +638,7 @@ export function InboxPrChecks({
               aria-expanded={Boolean(
                 selection && selection.anchor === allFixRef.current,
               )}
-              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium focus-visible:focus-fill"
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium"
             >
               <Sparkles className="size-3.5" />
               {uiT("Fix all failed")}

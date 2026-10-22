@@ -20,7 +20,7 @@ import {
   type ReactNode,
 } from "react";
 import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { MatchText } from "../../../shared/ui/MatchText";
 import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
 import { useLockOverscroll } from "../../../shared/hooks/useLockOverscroll";

@@ -256,7 +256,7 @@ export function GitGraphDialog({
                 title={[commit.subject, commit.body]
                   .filter(Boolean)
                   .join("\n\n")}
-                className="min-w-20 flex-1 truncate rounded py-2 text-left text-content focus-visible:focus-fill justify-start"
+                className="min-w-20 flex-1 truncate rounded py-2 text-left text-content justify-start"
               >
                 {commit.subject || commit.shortSha}
               </Button>
@@ -331,7 +331,7 @@ export function GitGraphDialog({
             disabled={loading || refreshing}
             aria-label={t("Refresh Git graph")}
             title={t("Refresh Git graph")}
-            className="grid size-7 shrink-0 place-items-center rounded-lg text-content/55 hover:bg-content/3 hover:text-content focus-visible:focus-fill disabled:opacity-50"
+            className="grid size-7 shrink-0 place-items-center rounded-lg text-content/55 hover:bg-content/3 hover:text-content disabled:opacity-50"
           >
             <RefreshCw
               className={cn(
@@ -385,7 +385,7 @@ export function GitGraphDialog({
                 }
               },
               className: cn(
-                "git-history-item cursor-pointer border-0 outline-none focus-visible:focus-fill active:bg-content/10",
+                "git-history-item cursor-pointer border-0 outline-none active:bg-content/10",
                 commit.head && "is-head",
                 commit.sha === selectedSha
                   ? "is-selected bg-selection"
@@ -431,7 +431,7 @@ export function GitGraphDialog({
               type="button"
               onClick={() => void loadMore()}
               disabled={loading || loadingMore}
-              className="h-10 w-full text-center text-ui-sm text-content/45 hover:text-content focus-visible:focus-fill disabled:opacity-50"
+              className="h-10 w-full text-center text-ui-sm text-content/45 hover:text-content disabled:opacity-50"
             >
               {loadingMore ? t("Loading…") : t("Load more commits")}
             </Button>

@@ -312,7 +312,7 @@ export function InboxCommentForm({
           </Button>
         </div>
       ) : null}
-      <div className="rounded-md border border-content/10 bg-content/5 has-[:focus-visible]:focus-fill">
+      <div className="rounded-md border border-content/10 bg-content/5">
         <Textarea variant="editor"
           {...form.register("body")}
           ref={(node) => { form.register("body").ref(node); field.current = node; }}
@@ -325,7 +325,7 @@ export function InboxCommentForm({
               : uiT("Leave a comment ({value0}↩)", { value0: String(MOD) })
           }
           onKeyDown={onKeyDown}
-          className="max-h-40 w-full resize-none overflow-y-auto bg-transparent px-3 py-2 text-[13px] leading-5 text-content outline-none focus-visible:focus-fill placeholder:text-content/35 disabled:opacity-40"
+          className="max-h-40 w-full resize-none overflow-y-auto bg-transparent px-3 py-2 text-[13px] leading-5 text-content outline-none placeholder:text-content/35 disabled:opacity-40"
         />
         <div className="flex items-center justify-end px-2 pb-2">
           <Button

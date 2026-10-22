@@ -450,7 +450,7 @@ export function BranchPicker({
         className="branch-menu flex flex-col overflow-hidden"
       >
         <label className="branch-menu-search flex shrink-0 items-center gap-2 border-b border-stroke px-3 py-2.5 text-content/50">
-          <Search className="size-3.5 shrink-0" />
+          <Search className="size-4 shrink-0" />
           <Input variant="inline"
             ref={search}
             type="text"
@@ -466,7 +466,7 @@ export function BranchPicker({
             autoCorrect="off"
             autoCapitalize="off"
             disabled={busy}
-            className="min-w-0 flex-1 bg-transparent font-sans text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/40 disabled:opacity-60"
+            className="min-w-0 flex-1 bg-transparent font-sans text-[13px] text-content outline-none placeholder:text-content/40 disabled:opacity-60"
             onChange={(e) => {
               setQuery(e.target.value);
               setActive(0);
@@ -565,9 +565,9 @@ function BranchList({
                 : "text-content hover:bg-content/3")}
           >
             {selected ? (
-              <Check className="branch-menu-check size-3.5 shrink-0" />
+              <Check className="branch-menu-check size-4 shrink-0" />
             ) : (
-              <GitBranch className="branch-menu-icon size-3.5 shrink-0 text-content/50" />
+              <GitBranch className="branch-menu-icon size-4 shrink-0 text-content/50" />
             )}
             <span
               data-code-label

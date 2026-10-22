@@ -8,7 +8,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { ExplorerMenu } from "../../features/connections/files/ui/ExplorerMenu";
+import { ActionMenu } from "../../shared/ui/primitives/ActionMenu";
 import {
   loadAutosave,
   loadKeybindingOverrides,
@@ -259,7 +259,7 @@ export function MenuBar({
               onMouseEnter={() => {
                 if (activeMenu && activeMenu !== id) openMenu(id);
               }}
-              className={`focus-visible:focus-fill active:opacity-70 rounded px-2 py-0.5 transition-colors ${
+              className={`active:opacity-70 rounded px-2 py-0.5 transition-colors ${
                 isActive
                   ? "bg-selection-hover text-content"
                   : "text-content/70 hover:bg-content/6 hover:text-content"
@@ -294,7 +294,7 @@ export function MenuBar({
       ) : null}
 
       <PresenceBoundary propagate>{activeMenu && menuAnchor ? (
-        <ExplorerMenu
+        <ActionMenu
           key={activeMenu}
           x={menuAnchor.x}
           y={menuAnchor.y}

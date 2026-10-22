@@ -3,6 +3,7 @@ import { Omi } from "../../shared/ui/branding/Omi";
 import { Button } from "../../shared/ui/forms/Button";
 import { IconButton } from "../../shared/ui/forms/IconButton";
 import { MobileSpinner } from "../MobileSpinner";
+import { mobileSourceKey } from "../mobileQueries";
 import { saveConnectionAppearance } from "../connectionAppearance";
 import { delegateSession } from "../../features/bots/model/delegateSession";
 import { MobileEmpty } from "../MobileEmpty";
@@ -57,6 +58,7 @@ const MobileNotes = lazyMobilePage(async () => ({ default: (await import("../Mob
 const MobileBots = lazyMobilePage(async () => ({ default: (await import("../MobileBots")).MobileBots }));
 const MobileAgentDefaults = lazyMobilePage(async () => ({ default: (await import("../MobileAgentDefaults")).MobileAgentDefaults }));
 const MobileProviderAccounts = lazyMobilePage(async () => ({ default: (await import("../MobileProviderAccounts")).MobileProviderAccounts }));
+const MobileUsage = lazyMobilePage(async () => ({ default: (await import("../MobileUsage")).MobileUsage }));
 const MobileSharedConnections = lazyMobilePage(async () => ({ default: (await import("../MobileSharedConnections")).MobileSharedConnections }));
 const MobileArchive = lazyMobilePage(async () => ({ default: (await import("../MobileArchive")).MobileArchive }));
 const MobileConnectionSheet = lazyMobileSheet(async () => ({ default: (await import("../MobileConnectionSheet")).MobileConnectionSheet }));
@@ -305,6 +307,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
     worktreeCreation,
   } = vm;
   const projectlessChat = !!project && isChatFolder(project.cwd);
+  const usageConnection = client.connection;
   const syncError = useMobileSyncError();
   const noticeError = !addingConnection && !homeUnavailable && hostStatus.state === "connected"
     ? error || sharedStateError || syncError || (view !== "chat" ? hostError || pollError : "")
@@ -394,7 +397,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
           <button
             ref={homeMenuTrigger}
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-header-title"
+            className="hover:opacity-80 active:opacity-70 mobile-header-title"
             data-capsule="false"
             inert={searchOpen}
             aria-hidden={searchOpen || undefined}
@@ -467,7 +470,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               <MoreVertical />
             </IconButton>
           </div>
-        ) : view === "settings" && settingsPage === "root" ? (
+        ) : view === "settings" && settingsPage === "usage" ? <div id="mobile-usage-actions" className="mobile-header-actions" /> : view === "settings" && settingsPage === "root" ? (
           <IconButton ref={aboutTrigger} label={t("About")} onClick={() => setAboutOpen((open) => !open)}>
             <Info />
           </IconButton>
@@ -617,6 +620,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
               enabled={connected && hostStatus.state === "connected"}
             />
           }
+          usage={<MobileUsage client={client} enabled={connected && hostStatus.state === "connected"} />}
           preferencePanel={preferencePanel}
           onPreferencePanelChange={setPreferencePanel}
           activity={activity}
@@ -770,6 +774,10 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
             onRetry={onRetryNativeAccess}
             onFork={onForkNativeSession}
           /> : project && <MobileDraftComposer
+            usageLimits={usageConnection ? { sessionKey: sessionId, messageKey: snapshot?.lastUserMessageId, source: {
+              sourceKey: JSON.stringify(["mobile", mobileSourceKey(client), usageConnection.environmentId, usageConnection.endpoint]),
+              limits: refresh => client.usageRequest(usageConnection, "usage.limits", { refresh }),
+            } } : undefined}
             context={draftFork ? <p className="mobile-fork-context">
               {t("History summary attached: {title}", { title: draftFork.title })}
             </p> : undefined}
@@ -958,7 +966,7 @@ export function MobileAppView({ vm }: { vm: MobileAppViewModel }) {
         </p>
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+          className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
           onClick={() => {
             setAboutOpen(false);
             changeSettingsPage("updates");

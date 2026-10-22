@@ -53,7 +53,7 @@ type Options = {
   setComposerFocused: Dispatch<SetStateAction<boolean>>;
   activeTabId: string;
   notesEnabled: boolean;
-  appPage: "inbox" | "notes" | "automations" | "workflows" | "projects" | null;
+  appPage: "inbox" | "notes" | "automations" | "workflows" | null;
   closeAppPage: () => void;
   tabs: WorkspaceTab[];
   tabWorkspace: (tab: WorkspaceTab, list: readonly Session[]) => string | null;

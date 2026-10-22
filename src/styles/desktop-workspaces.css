@@ -317,8 +317,6 @@ html[data-skin] [data-ui="provider-list"] [data-ui="navigation-icon"] { width: 2
   border-radius: var(--desktop-radius-card);
   cursor: pointer;
 }
-.desktop-skin-option:has(:focus-visible) {
-  box-shadow: var(--focus-fill-shadow); }
 .desktop-skin-preview {
   display: block;
   height: 100px;

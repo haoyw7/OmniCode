@@ -355,7 +355,7 @@ function UpdateBadge({
       aria-expanded={expanded}
       onClick={onClick}
       className={
-        cn("focus-visible:focus-fill active:opacity-70", row
+        cn("active:opacity-70", row
           ? `absolute right-1 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md transition-colors ${expanded ? "bg-selection text-content" : "text-accent hover:bg-surface-hover"}`
           : `absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-surface text-accent shadow-sm ring-1 ring-border transition-colors hover:bg-surface-hover`)
       }
@@ -445,7 +445,7 @@ function ActivityAction({
           : undefined
       }
       className={
-        cn("focus-visible:focus-fill active:opacity-70", row
+        cn("active:opacity-70", row
           ? `relative flex ${horizontal ? "h-7 w-auto gap-1.5 px-2 text-ui-sm" : "h-8 w-full gap-2 px-2.5 text-ui-base"} shrink-0 items-center rounded-lg text-left transition-colors ${active ? "bg-selection text-content" : "text-content hover:bg-surface-hover"} disabled:cursor-default disabled:opacity-35`
           : `relative grid size-8 shrink-0 place-items-center rounded-lg transition-colors ${active ? "bg-selection text-content" : "text-foreground-subtle hover:bg-surface-hover hover:text-content"} disabled:cursor-default disabled:opacity-35`)
       }

@@ -2,7 +2,7 @@ import type { KeyboardEvent } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { NavigationItem } from "../../../../../shared/ui/messaging/NavigationItem";
 import { SearchableSelect } from "../../../../../shared/ui/SearchableSelect";
-import { HarnessIcon } from "../../../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../../../shared/ui/branding/HarnessIcon";
 import { useHarnessInstall } from "../../../../providers/model/harnessInstall";
 import { HARNESS_TITLE, type HarnessId } from "../../../../sessions/model/session";
 import { PROVIDER_DETAIL_ID } from "./ProviderDetail";

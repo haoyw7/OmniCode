@@ -45,7 +45,6 @@ type Options = {
     | "automations"
     | "workflows"
     | "assistant"
-    | "projects"
     | undefined
   >;
   paletteOpenRef: RefObject<boolean>;
@@ -215,6 +214,7 @@ export function useWorkspaceShortcuts({
       }
       const shortcut = resolveAppShortcut(e);
       if (shortcut) {
+        if (shortcut === "View: Usage" && e.target instanceof Element && e.target.closest(".omnicode-terminal")) return;
         if (
           shortcut === "App: Search" &&
           e.target instanceof Element &&

@@ -15,7 +15,7 @@ import type { BotModelOverride, BotThread, BotView } from "../model/bots";
 import type { HostModelCatalog, RemoteProvider } from "../../connections/model/protocol";
 import { carryModelSettings, findRemoteModel, remoteModelControls } from "../../connections/model/remoteModels";
 import { HARNESS_TITLE } from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { Archive } from "../../../shared/ui/icons";
 import { Switch } from "../../../shared/ui/forms/Switch";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";

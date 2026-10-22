@@ -11,6 +11,9 @@
 //   `no-preference` queries are handled the same way in reverse.
 
 const SCALABLE_FONT_SIZE = /^(-?\d*\.?\d+px|var\(--(?:text-[\w-]+|mobile-font-(?:xs|sm|md|lg|xl))\))$/;
+// Mobile overlays add a fixed reading-size step. Scale the whole absolute sum;
+// em-based sums already inherit their parent's scale and must stay untouched.
+const SCALABLE_POPUP_FONT_SIZE = /^calc\((?:-?\d*\.?\d+px|var\(--mobile-font-(?:xs|sm|md|lg|xl)\))\s*\+\s*var\(--mobile-popup-font-step(?:,\s*-?\d*\.?\d+px)?\)\)$/;
 const MOTION_QUERY =
   /^\(\s*prefers-reduced-motion\s*:\s*(reduce|no-preference)\s*\)$/;
 const ALREADY_SCALED = "var(--font-scale";
@@ -32,7 +35,7 @@ export function scaleFontSize(value) {
   if (trimmed.includes(ALREADY_SCALED)) return value;
   const important = /\s*!important$/i.exec(trimmed);
   const core = important ? trimmed.slice(0, important.index) : trimmed;
-  if (!SCALABLE_FONT_SIZE.test(core)) return value;
+  if (!SCALABLE_FONT_SIZE.test(core) && !SCALABLE_POPUP_FONT_SIZE.test(core)) return value;
   return `calc(${core} * var(--font-scale, 1))`;
 }
 

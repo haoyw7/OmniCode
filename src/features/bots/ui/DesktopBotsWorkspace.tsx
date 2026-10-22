@@ -17,7 +17,7 @@ import { BOT_SELECTION_EVENT, readBotSelection, selectBotThread } from "../model
 import { useBotUnread } from "../model/useBotUnread";
 import { readBotPins, writeBotPins } from "../model/botPins";
 import { BotRecipientPicker } from "./BotRecipientPicker";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { ActionMenu } from "../../../shared/ui/primitives/ActionMenu";
 import { BotAvatar } from "./BotAvatar";
 import { BotNavigationProvider, BotNavigationToggle, useBotNavigationExpanded, useBotNavigationLayout } from "./BotNavigationLayout";
 import { BotMemoryDrafts } from "../model/botMemoryDrafts";
@@ -43,7 +43,7 @@ import { Modal } from "../../../shared/ui/Modal";
 import { PresenceBoundary } from "../../../shared/ui/PresenceBoundary";
 import { SurfaceAppearance } from "../../../shared/ui/SurfaceAppearance";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../../../shared/ui/forms/InputGroup";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { sessionDisplayTitle } from "../../sessions/model/session";
 import { Archive, Bot, ChevronRight, Pin, Plus, Search, MessageSquare, X } from "../../../shared/ui/icons";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
@@ -446,7 +446,7 @@ function BotNavigation({ navigationWidth, onNavigationWidth, pins, onTogglePin, 
     <Button variant="ghost" size="content" type="button" className="desktop-bots-archive-entry" onClick={onArchive} aria-label={t("Archived bots and threads")} title={t("Archived bots and threads")} aria-current={archiveOpen ? "page" : undefined}><Archive /><span>{t("Archived bots and threads")}</span></Button>
     <ResizableRegion targetRef={resizePane} property="--bots-sidebar-preference" size={navigationWidth} min={240} max={400} defaultSize={280}
       disabled={!visible || !expanded} label={t("Resize sidebar")} onCommit={onNavigationWidth} />
-    <ExplorerMenu ownerId="bots-navigation" open={!!menu?.open && !!menuBot && visible} x={menu?.x ?? 0} y={menu?.y ?? 0} ariaLabel={t("Bot actions")}
+    <ActionMenu ownerId="bots-navigation" open={!!menu?.open && !!menuBot && visible} x={menu?.x ?? 0} y={menu?.y ?? 0} ariaLabel={t("Bot actions")}
       items={[{ kind: "item", id: "pin", label: t(menuBot && pins.includes(menuBot.id) ? "Unpin Bot" : "Pin Bot"), icon: <Pin /> }]}
       onPick={() => { if (menuBot) onTogglePin(menuBot.id); setMenu(current => current && { ...current, open: false }); }} onClose={() => setMenu(current => current && { ...current, open: false })} />
   </nav>;

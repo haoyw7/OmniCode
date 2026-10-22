@@ -34,7 +34,7 @@ import {
   HARNESS_TITLE,
   type HarnessId,
 } from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { modelGroups } from "../../sessions/model/modelGroups";
 import {
   filterQuickModels,
@@ -230,7 +230,7 @@ export function QuickModelSelector({
       </nav>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <label className="flex h-10 shrink-0 items-center gap-2 border-b border-stroke px-4 text-content/40">
-          <Search className="size-3.5 shrink-0" />
+          <Search className="size-4 shrink-0" />
           <Input variant="inline"
             ref={searchRef}
             value={query}
@@ -249,7 +249,7 @@ export function QuickModelSelector({
             placeholder={uiT("Search models…")}
             autoComplete="off"
             spellCheck={false}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35"
             onKeyDown={(event) => {
               if (event.nativeEvent.isComposing) return;
               if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -317,7 +317,7 @@ export function QuickModelSelector({
                         </span>
                       ) : null}
                       {item.id === model.id ? (
-                        <Check className="ml-auto size-3.5 shrink-0 text-accent" />
+                        <Check className="ml-auto size-4 shrink-0 text-accent" />
                       ) : null}
                     </Button>
                     <Button variant="ghost" size="icon-xs"
@@ -345,7 +345,7 @@ export function QuickModelSelector({
                       }}
                     >
                       <Star
-                        className="size-3.5"
+                        className="size-4"
                         fill={
                           favorites.includes(item.id) ? "currentColor" : "none"
                         }

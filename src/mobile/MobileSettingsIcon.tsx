@@ -4,6 +4,8 @@ import {
   AudioLines,
   Bell,
   Bot,
+  CaseSensitive,
+  ChartLine,
   CodeXml,
   Computer,
   Eye,
@@ -26,7 +28,9 @@ import {
 const glyphs = {
   agent: Bot,
   account: UserRound,
+  usage: ChartLine,
   appearance: SunMoon,
+  textSize: CaseSensitive,
   language: Globe,
   notifications: Bell,
   followUp: SquarePen,

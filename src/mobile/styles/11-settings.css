@@ -34,6 +34,44 @@
 .mobile-settings-card > * {
   position: relative;
 }
+.mobile-text-size-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 20px;
+}
+.mobile-text-size-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--color-m-ink-secondary);
+  font-size: var(--mobile-font-md);
+}
+.mobile-text-size-heading > span:last-child { font-size: var(--text-heading-xl); }
+.mobile-text-size-heading output { font-variant-numeric: tabular-nums; }
+.mobile-text-size-preview {
+  --font-scale: var(--content-font-scale, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-block: 12px;
+  font-family: var(--font-content);
+  font-size: 15px;
+  font-weight: var(--content-font-weight, 400);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.mobile-text-size-preview p { margin: 0; }
+.mobile-text-size-question {
+  align-self: flex-end;
+  max-width: 90%;
+  padding: 10px 16px;
+  border-radius: 24px 24px 8px 24px;
+  background: var(--m-input-fill);
+  color: var(--color-m-ink);
+}
+.mobile-text-size-card > [data-ui="button"] { align-self: center; }
 .mobile-connection-list {
   display: flex;
   flex-direction: column;
@@ -89,7 +127,6 @@
   -webkit-touch-callout: none;
 }
 .mobile-connection-details > svg { flex-shrink: 0; }
-.mobile-connection-details:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 .mobile-connection-menu-name {
   margin: 4px 12px 10px;
   color: var(--color-m-ink-tertiary);
@@ -214,8 +251,6 @@
 .mobile-defaults-status-issues small { width: 100%; font-size: inherit; color: var(--color-m-ink-secondary); }
 .mobile-defaults-status-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
 .mobile-defaults-status-details { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--color-m-ink-secondary); }
-
-.mobile-defaults-status-details:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 .mobile-defaults-status-raw { display: grid; gap: 12px; margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--mobile-separator); }
 .mobile-defaults-status-raw dt { font-weight: var(--font-weight-medium); }
 .mobile-defaults-status-raw dd { margin: 2px 0 0; white-space: pre-wrap; color: var(--color-m-ink-secondary); }
@@ -321,6 +356,17 @@ button.mobile-settings-row:active {
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 16px;
   align-items: center;
+}
+.mobile-notification-status,
+.mobile-notification-option {
+  padding-block: 20px;
+}
+.mobile-notification-option > [data-ui="switch"] {
+  flex-shrink: 0;
+}
+.mobile-notification-option > .mobile-settings-label,
+.mobile-notification-status > .mobile-settings-label {
+  gap: 6px;
 }
 .mobile-settings-notifications label > small {
   grid-row: 2;

@@ -14,9 +14,9 @@ import {
 } from "../../notifications/model/notificationPreferences";
 import { useNotificationProjects } from "../../notifications/hooks/useNotificationProjects";
 import {
-  ExplorerMenu,
-  type ExplorerMenuItem,
-} from "../../connections/files/ui/ExplorerMenu";
+  ActionMenu,
+  type ActionMenuItem,
+} from "../../../shared/ui/primitives/ActionMenu";
 import { NotificationMuteDatePicker } from "../../notifications/ui/NotificationMuteDatePicker";
 import { Popover } from "../../../shared/ui/Popover";
 import {
@@ -56,7 +56,7 @@ export function InboxNotificationMenu({
   const mutedIds = allIds.filter((id) =>
     isProjectMuted(preferences[id] ?? { disabled: [] }),
   );
-  const items: ExplorerMenuItem[] = [
+  const items: ActionMenuItem[] = [
     {
       kind: "item",
       id: "read-all",
@@ -109,7 +109,7 @@ export function InboxNotificationMenu({
         />
       </Popover>
     ) : (
-    <ExplorerMenu
+    <ActionMenu
       key="notification-options"
       x={x}
       y={y}

@@ -5,7 +5,7 @@ import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../../../../shared/ui/AnimatedCollapse";
 import { Button } from "../../../../../shared/ui/forms/Button";
 import { ArrowDownCircle, Trash2 } from "../../../../../shared/ui/icons";
-import { HarnessIcon } from "../../../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../../../shared/ui/branding/HarnessIcon";
 import {
   hasHarnessUpdate,
   type HarnessVersionInfo,
@@ -17,7 +17,7 @@ import {
 import {
   runHarnessUpdate,
   type HarnessUpdateState,
-} from "../../../../providers/ui/HarnessUpdateNotice";
+} from "../../../../providers/model/harnessUpdateAction";
 import { harnessUnavailableHint } from "../../../../../integrations/harness/core/availability";
 import { inspectHarnessBinary } from "../../../../../integrations/harness/core/child";
 import {

@@ -51,3 +51,24 @@ it("rejects a pending usage response after changing the Host", async () => {
   finish(parseCodexRateLimits({}));
   await rejected;
 });
+
+it("reads a paired environment without switching the active conversation", async () => {
+  const send = vi.fn<RpcTransport>(async (url, _token, request) => {
+    if ((request as { method: string }).method === "environment.describe") return { ...descriptor, environmentId: url.includes("other") ? "host-b" : "host-a", capabilities: ["usage.v1"] };
+    return [];
+  });
+  const client = new MobileClient(storage(), send);
+  await client.connect("https://computer.test", "token-a");
+  const paired = { ...client.connection!, endpoint: "https://other.test", environmentId: "host-b", token: "token-b" };
+  expect(await client.usageRequest(paired, "usage.limits", { refresh: true })).toEqual([]);
+  expect(client.connection!.environmentId).toBe("host-a");
+  expect(send.mock.calls.at(-1)).toMatchObject(["https://other.test", "token-b", { method: "usage.limits", params: { refresh: true } }, { timeoutMs: 120_000 }]);
+});
+it("refuses unified usage on older Hosts or when a paired Host changes identity", async () => {
+  const send = vi.fn<RpcTransport>(async () => descriptor);
+  const client = new MobileClient(storage(), send);
+  await client.connect("https://computer.test", "token");
+  await expect(client.usageRequest(client.connection!, "usage.limits", {})).rejects.toThrow("does not support usage");
+  await expect(client.usageRequest({ ...client.connection!, endpoint: "https://other.test", environmentId: "host-b" }, "usage.summary", {})).rejects.toThrow("identity changed");
+  expect(send.mock.calls.every(call => (call[2] as { method: string }).method === "environment.describe")).toBe(true);
+});

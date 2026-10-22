@@ -52,7 +52,7 @@ export function ColorSwatchRow({
             aria-pressed={selected}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onPickIndex(index)}
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 grid size-5 place-items-center rounded-full"
+            className="hover:opacity-80 active:opacity-70 grid size-5 place-items-center rounded-full"
           >
             <span
               className={`size-3.5 rounded-full ${
@@ -73,7 +73,7 @@ export function ColorSwatchRow({
         aria-pressed={customColor != null}
         onMouseDown={(event) => event.preventDefault()}
         onClick={onToggleCustom}
-        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 grid size-5 place-items-center rounded-full"
+        className="hover:opacity-80 active:opacity-70 grid size-5 place-items-center rounded-full"
       >
         <span
           className={`grid size-3.5 place-items-center overflow-hidden rounded-full ${
@@ -92,7 +92,7 @@ export function ColorSwatchRow({
         >
           {!customColor ? (
             <Pipette
-              className="size-2 text-white drop-shadow-sm"
+              className="size-4 text-white drop-shadow-sm"
             />
           ) : null}
         </span>
@@ -246,7 +246,7 @@ export function ColorPickerPopover({ value, onChange }: Props) {
           spellCheck={false}
           aria-label={uiT("Hex color")}
           onChange={(e) => onHexInput(e.target.value)}
-          className="min-w-0 flex-1 rounded-md border border-content/10 bg-content/5 px-2 py-1 font-mono text-[12px] text-content outline-none focus-visible:focus-fill ring-accent/40"
+          className="min-w-0 flex-1 rounded-md border border-content/10 bg-content/5 px-2 py-1 font-mono text-[12px] text-content outline-none ring-accent/40"
         />
       </div>
     </div>

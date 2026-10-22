@@ -166,9 +166,9 @@ export function ModeCommandPill({
       onClick={onClear}
       className={cn("flex h-6.5 shrink-0 items-center gap-1 rounded-md px-1.5 text-[11px]", pill.className)}
     >
-      <Icon className="size-3.5" />
+      <Icon className="size-4" />
       <span className="composer-mode-shimmer">{uiT(pill.label)}</span>
-      <X className="size-3" />
+      <X className="size-4" />
     </Button>
   );
 }

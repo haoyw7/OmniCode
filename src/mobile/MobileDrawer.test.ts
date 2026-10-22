@@ -337,6 +337,7 @@ describe("mobile sidebar sessions", async () => {
   it("coalesces Motion drag updates and returns to the open stop after cancellation", async () => {
     const { onOpenChange } = render();
     const panel = node.querySelector<HTMLElement>(".mobile-drawer")!;
+    Object.defineProperty(panel, "offsetWidth", { value: 300 });
     touch("pointerdown", 100, 250);
     touch("pointermove", 100, 200);
     touch("pointermove", 100, 100);
@@ -348,6 +349,81 @@ describe("mobile sidebar sessions", async () => {
     expect(panel.style.transform).toBe("none");
     expect(onOpenChange).not.toHaveBeenCalled();
   });
+  it.each([true, false])("clamps both edges throughout a drag and reversal (open=%s)", async (open) => {
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockReturnValue(300);
+    const { onOpenChange } = render(open);
+    await settle();
+    const panel = node.querySelector<HTMLElement>(".mobile-drawer")!;
+    const chat = document.createElement("main");
+    chat.className = "mobile-chat";
+    document.body.append(chat);
+    const target = open ? row() : chat;
+    try {
+      touch("pointerdown", 100, open ? 250 : 20, target);
+      touch("pointermove", 100, open ? 200 : 80, target);
+      touch("pointermove", 100, open ? -100 : 400, target);
+      frame();
+      expect(panel.style.transform).toBe(open ? "translateX(-300px)" : "none");
+      touch("pointermove", 100, open ? 350 : -100, target);
+      frame();
+      expect(panel.style.transform).toBe(open ? "none" : "translateX(-300px)");
+      touch("pointermove", 100, open ? 100 : 170, target);
+      frame();
+      expect(panel.style.transform).toBe("translateX(-150px)");
+      touch("pointercancel", 0, 0, target);
+      await settle();
+      expect(panel.style.transform).toBe(open ? "none" : "translateX(-300px)");
+      expect(onOpenChange).not.toHaveBeenCalled();
+    } finally {
+      chat.remove();
+    }
+  });
+  it.each(["tap", "scroll", "pointercancel"])(
+    "finishes settling when a second touch becomes %s",
+    async (gesture) => {
+      render();
+      const panel = node.querySelector<HTMLElement>(".mobile-drawer")!;
+      Object.defineProperty(panel, "offsetWidth", { value: 300 });
+      touch("pointerdown", 100, 250);
+      touch("pointermove", 100, 200);
+      touch("pointermove", 100, 150);
+      frame();
+      touch("pointercancel", 0, 0);
+      frame();
+      expect(panel.style.transform).not.toBe("none");
+      touch("pointerdown", 100, 200);
+      if (gesture === "scroll") touch("pointermove", 160, 200);
+      touch(gesture === "pointercancel" ? "pointercancel" : "pointerup", 160, 200);
+      await settle();
+      expect(panel.style.transform).toBe("none");
+      expect(panel.parentElement!.dataset.dragging).toBeUndefined();
+    },
+  );
+  it.each(["lostpointercapture", "blur"])(
+    "settles and allows another drag after %s",
+    async (exit) => {
+      const { onOpenChange } = render();
+      const panel = node.querySelector<HTMLElement>(".mobile-drawer")!;
+      Object.defineProperty(panel, "offsetWidth", { value: 300 });
+      const captured = captureOn(panel);
+      touch("pointerdown", 100, 250);
+      touch("pointermove", 100, 200);
+      touch("pointermove", 100, 150);
+      frame();
+      if (exit === "blur") act(() => window.dispatchEvent(new Event("blur")));
+      else touch(exit, 0, 0, panel);
+      await settle();
+      expect(panel.style.transform).toBe("none");
+      expect(captured.size).toBe(0);
+      expect(touchMove(row())).toBe(false);
+      expect(onOpenChange).not.toHaveBeenCalled();
+      touch("pointerdown", 100, 250);
+      touch("pointermove", 100, 200);
+      touch("pointermove", 100, 20);
+      touch("pointerup", 100, 20);
+      expect(onOpenChange).toHaveBeenCalledExactlyOnceWith(false);
+    },
+  );
   it("discards a pending drag frame when a covering surface takes ownership", async () => {
     render();
     const panel = node.querySelector<HTMLElement>(".mobile-drawer")!;
@@ -413,6 +489,8 @@ describe("mobile sidebar sessions", async () => {
     const target = row().querySelector("small > span")!;
     touch("pointerdown", 100, 250, target);
     touch("pointermove", 100, 200, target);
+    expect(captured.has(1)).toBe(true);
+    touch("lostpointercapture", 100, 200, target);
     expect(captured.has(1)).toBe(true);
 
     render(true, { sessions: [{ ...summary, status: "running", revision: 2 }], onOpenChange });

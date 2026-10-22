@@ -1,19 +1,20 @@
 import { NavigationItem } from "../../shared/ui/messaging/NavigationItem";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { AnimatedCollapse } from "../../shared/ui/AnimatedCollapse";
+import { ActionMenu } from "../../shared/ui/primitives/ActionMenu";
+import { PresenceBoundary } from "../../shared/ui/PresenceBoundary";
 import {
   Bot,
-  ChevronRight,
   Chatting,
   CodeXml,
-  Folder,
   Inbox,
+  MoreHorizontal,
   Plus,
   StickyNote,
   Workflow,
   Zap,
 } from "../../shared/ui/icons";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useSurfaceVisibility } from "../../shared/ui/SurfaceVisibility";
 import { TabVisitNav } from "./WindowChrome";
 import type { DesktopMode } from "../model/desktopMode";
@@ -80,7 +81,7 @@ export function DesktopModeToggle({
             aria-label={t(value === "chat" ? "Chat" : "Code")}
             title={t(value === "chat" ? "Chat" : "Code")}
             aria-pressed={mode === value}
-            onClick={() => onChange(value)} className="hover:opacity-80 focus-visible:focus-fill active:opacity-70"
+            onClick={() => onChange(value)} className="hover:opacity-80 active:opacity-70"
           >
             <Icon strokeWidth={value === "chat" ? 1.5 : 2} />
           </button>
@@ -110,20 +111,24 @@ export function DesktopNewSessionAction({
 }
 
 export function DesktopNavigation({
-  onProjects,
-  projectsActive,
   onBots,
   botsActive,
   activity,
 }: {
-  onProjects: () => void;
-  projectsActive: boolean;
   onBots: () => void;
   botsActive: boolean;
   activity: ActivityBarProps;
 }) {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(false);
+  const visible = useSurfaceVisibility();
+  const [moreMenu, setMoreMenu] = useState<{
+    anchor: HTMLButtonElement;
+    initialHighlight?: "first" | "last";
+  } | null>(null);
+  useEffect(() => {
+    if (!visible || !activity.onOpenAutomations) setMoreMenu(null);
+  }, [visible, activity.onOpenAutomations]);
+  const moreOpen = visible && !!moreMenu && !!activity.onOpenAutomations;
   const entries = [
     {
       label: "Inbox",
@@ -139,12 +144,6 @@ export function DesktopNavigation({
       active: activity.notesActive,
     },
     {
-      label: "Automations",
-      icon: Zap,
-      onClick: activity.onOpenAutomations,
-      active: activity.automationsActive,
-    },
-    {
       label: "Workflows",
       icon: Workflow,
       onClick: activity.onOpenWorkflows,
@@ -154,29 +153,52 @@ export function DesktopNavigation({
   return (
     <>
       <nav className="desktop-navigation" aria-label={t("Main navigation")}>
-        <NavigationItem icon={<Folder />} aria-current={projectsActive ? "page" : undefined} onClick={onProjects}>
-          {t("Projects")}
-        </NavigationItem>
         <NavigationItem icon={<Bot />} aria-current={botsActive ? "page" : undefined} onClick={onBots}>
           {t("Bots")}
         </NavigationItem>
-        <NavigationItem icon={<ChevronRight style={{ rotate: expanded ? "90deg" : "0deg" }} />}
-          aria-expanded={expanded} aria-controls="desktop-more-navigation" onClick={() => setExpanded(value => !value)}>
-          {t("More")}
-        </NavigationItem>
-        <AnimatedCollapse expanded={expanded} keepMounted>
-          <div id="desktop-more-navigation" className="desktop-more-navigation">
-            {entries
-              .filter((entry) => entry.onClick)
-              .map(({ label, icon: Icon, onClick, active, dot }) => (
-                <NavigationItem key={label} icon={<Icon />} aria-current={active ? "page" : undefined} onClick={onClick}
-                  trailing={dot ? <span data-ui="navigation-dot" aria-hidden="true" /> : undefined}>
-                  {t(label)}
-                </NavigationItem>
-              ))}
-          </div>
-        </AnimatedCollapse>
+        {entries
+          .filter((entry) => entry.onClick)
+          .map(({ label, icon: Icon, onClick, active, dot }) => (
+            <NavigationItem key={label} icon={<Icon />} aria-current={active ? "page" : undefined} onClick={onClick}
+              trailing={dot ? <span data-ui="navigation-dot" aria-hidden="true" /> : undefined}>
+              {t(label)}
+            </NavigationItem>
+          ))}
+        {activity.onOpenAutomations ? (
+          <NavigationItem
+            icon={<MoreHorizontal />}
+            aria-haspopup="menu"
+            aria-expanded={moreOpen}
+            aria-current={activity.automationsActive ? "page" : undefined}
+            onClick={(event) => setMoreMenu(moreOpen ? null : { anchor: event.currentTarget })}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault();
+                setMoreMenu({ anchor: event.currentTarget, initialHighlight: event.key === "ArrowDown" ? "first" : "last" });
+              }
+            }}
+          >
+            {t("More")}
+          </NavigationItem>
+        ) : null}
       </nav>
+      <PresenceBoundary>
+        {moreOpen ? (
+          <ActionMenu
+            anchor={moreMenu.anchor}
+            initialHighlight={moreMenu.initialHighlight}
+            side="right"
+            align="start"
+            ariaLabel={t("More")}
+            items={[{ kind: "item", id: "automations", label: t("Automations"), icon: <Zap /> }]}
+            onPick={() => {
+              setMoreMenu(null);
+              activity.onOpenAutomations?.();
+            }}
+            onClose={() => setMoreMenu(null)}
+          />
+        ) : null}
+      </PresenceBoundary>
     </>
   );
 }

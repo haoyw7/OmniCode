@@ -295,27 +295,6 @@
   opacity: 0.45;
   cursor: default;
 }
-:is(.assistant-chat, .assistant-settings)
-  :where(
-    .assistant-icon-button,
-    .assistant-primary,
-    .assistant-send,
-    .assistant-link-button,
-    .assistant-settings-disclosure,
-    .assistant-availability-actions > button,
-    .assistant-card > button,
-    .assistant-input-actions > button,
-    .assistant-message-meta > button,
-    .assistant-settings-footer > button,
-    .assistant-worker > header > button,
-    .assistant-memory-add > button,
-    .assistant-habit-add,
-    .assistant-habit-editor-actions > button
-  ):focus-visible,
-.assistant-chip > :is([data-ui="radio"], [data-ui="checkbox"]):focus-visible ~ span {
-  outline: none;
-  box-shadow: var(--focus-fill-shadow);
-}
 :is(.assistant-chat, .assistant-settings) .assistant-primary {
   background: var(--color-brand);
   color: var(--color-brand-foreground);
@@ -1504,8 +1483,12 @@
 }
 :is(.assistant-chat, .assistant-settings)
   .assistant-watched-session
-  > button:is(:hover, :focus-visible) {
+  > button:is(:hover) {
   background: var(--assistant-fill-strong);
+}
+:is(.assistant-chat, .assistant-settings)
+  .assistant-watched-session
+  > button:is(:hover, :focus-visible) {
   opacity: 1;
 }
 :is(.assistant-chat, .assistant-settings) .assistant-watched-more {

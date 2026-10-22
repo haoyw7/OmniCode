@@ -7,7 +7,7 @@ import { rateLimitsSnapshot } from "../../providers/model/rateLimitsQueries";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { RefreshCw } from "../../../shared/ui/icons";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import {
   piBillingProvider,
   piUsageProvider,
@@ -80,7 +80,7 @@ function PiProviderUsage({
         title={uiT("Refresh Pi usage")}
         disabled={fetching}
         onClick={() => refresh()}
-        className="grid size-6 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content disabled:opacity-50 focus-visible:focus-fill"
+        className="grid size-6 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content disabled:opacity-50"
       >
         <RefreshCw
           className={cn("size-2.5", fetching ? "motion-safe:animate-spin" : "")}

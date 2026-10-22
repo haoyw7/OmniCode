@@ -11,7 +11,7 @@ import {
   type SessionTimeFilter,
 } from "../model/sessionFilters";
 import { HARNESS_TITLE, type HarnessId } from "../model/session";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 
 const MENU_WIDTH = 228;
 
@@ -178,7 +178,7 @@ function FilterItem({
       {icon}
       <span data-menu-title className="min-w-0 flex-1 truncate leading-label">{label}</span>
       {checked ? (
-        <Check className="size-3.5 shrink-0" />
+        <Check className="size-4 shrink-0" />
       ) : null}
     </Button>
   );

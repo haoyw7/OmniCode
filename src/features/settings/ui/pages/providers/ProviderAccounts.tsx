@@ -19,15 +19,15 @@ import {
   identityKey,
   identityOrganizationTag,
 } from "../../../../providers/model/providerAccountIdentity";
-import { ProviderAccountSubtitle } from "../../../../providers/ui/ProviderAccountSubtitle";
 import { accountStatus, accountUsageKey } from "../../../../providers/model/accountUsage";
 import {
+  ProviderAccountSubtitle,
   AccountStatusLabel,
   AccountUsageRefresh,
   meterWindows,
   UsageMeter,
-} from "../../../../providers/ui/ProviderAccountUsage";
-import { ExplorerMenu, type ExplorerMenuItem } from "../../../../connections/files/ui/ExplorerMenu";
+} from "../../../../providers";
+import { ActionMenu, type ActionMenuItem } from "../../../../../shared/ui/primitives/ActionMenu";
 import type { DeepseekAccountState } from "../../../../providers/model/deepseekAccount";
 import { RevealedSetting, settingDomId } from "../../settingsLayout";
 import {
@@ -336,7 +336,7 @@ function ProviderAccountMenu({
     if (!visible || disabled) setOpen(false);
   }, [visible, disabled]);
 
-  const items: ExplorerMenuItem[] = [];
+  const items: ActionMenuItem[] = [];
   if (canSignIn) {
     items.push({ kind: "item", id: "sign-in", label: uiT("Sign in again") });
   }
@@ -390,7 +390,7 @@ function ProviderAccountMenu({
         )}
       </Button>
       <PresenceBoundary propagate>{visible && open && button.current ? (
-        <ExplorerMenu
+        <ActionMenu
           anchor={button.current}
           side="bottom"
           align="end"
@@ -451,7 +451,7 @@ function ProviderAccountEditor({
     >
       <div
         data-provider-account-editor-field
-        className="flex items-center pr-1 h-8 min-w-0 flex-1 overflow-hidden rounded-md border border-content/10 bg-content/[0.04] has-[:focus-visible]:focus-fill"
+        className="flex items-center pr-1 h-8 min-w-0 flex-1 overflow-hidden rounded-md border border-content/10 bg-content/[0.04]"
       >
         <label className="h-full min-w-0 flex-1">
           <span className="sr-only">{uiT("Account name")}</span>
@@ -467,7 +467,7 @@ function ProviderAccountEditor({
               value0: String(adding ? "New" : "Rename"),
               value1: String(HARNESS_TITLE[editor.provider]),
             })}
-            className="h-full w-full bg-transparent px-2.5 text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/25 disabled:opacity-50"
+            className="h-full w-full bg-transparent px-2.5 text-[12px] text-content outline-none placeholder:text-content/25 disabled:opacity-50"
           />
         </label>
         <Button variant="secondary" size="sm" disabled={working} onClick={onCancel}>
@@ -500,7 +500,7 @@ function ProviderAccountEditor({
           placeholder={editor.accountId === "default"
             ? (editor.provider === "codex" ? "~/.codex" : "~/.claude")
             : (editor.provider === "codex" ? "~/.codex-work" : "~/.claude-work")}
-          className="mt-1 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 font-mono text-[12px] text-content outline-none focus-visible:focus-fill disabled:opacity-50"
+          className="mt-1 h-8 w-full rounded-md border border-content/10 bg-content/[0.04] px-2.5 font-mono text-[12px] text-content outline-none disabled:opacity-50"
         />
         <span className="mt-1 block text-[10px] text-content/40">
           {uiT(editor.accountId

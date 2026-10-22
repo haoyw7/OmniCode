@@ -32,6 +32,7 @@ export type RateLimitResetCredits = {
 
 export type ProviderRateLimits = {
   provider: RateLimitProvider;
+  modelScopedWindows?: { id: string; model: string; window: RateLimitWindow }[];
   session: RateLimitWindow | null;
   weekly: RateLimitWindow | null;
   monthly: RateLimitWindow | null;
@@ -286,8 +287,20 @@ export function parseClaudeOAuthUsage(body: string): ProviderRateLimits {
   if (!rec) {
     return errorRateLimits("claude", "Claude usage response was empty");
   }
+  const scoped = new Map<string, { id: string; model: string; window: RateLimitWindow }>();
+  for (const model of ["Opus", "Sonnet"]) {
+    const id = `seven_day_${model.toLowerCase()}`, window = mapUsageWindow(rec[id], WEEKLY_WINDOW_MINUTES);
+    if (window) scoped.set(id, { id, model, window });
+  }
+  for (const raw of Array.isArray(rec.model_scoped) ? rec.model_scoped : []) {
+    const item = asRecord(raw), model = item?.display_name;
+    if (typeof model !== "string" || !model.trim()) continue;
+    const id = `seven_day_${model.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`, window = mapUsageWindow(item, WEEKLY_WINDOW_MINUTES);
+    if (window) scoped.set(id, { id, model, window });
+  }
   return {
     provider: "claude",
+    ...(scoped.size ? { modelScopedWindows: [...scoped.values()] } : {}),
     session: mapUsageWindow(rec.five_hour, SESSION_WINDOW_MINUTES),
     weekly: mapUsageWindow(rec.seven_day, WEEKLY_WINDOW_MINUTES),
     monthly: null,

@@ -2,6 +2,7 @@ import { startMotionClock, stopMotionClock, advanceMotionTimers } from "./motion
 // @vitest-environment happy-dom
 import { act, createElement, Fragment } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { NuqsAdapter } from "nuqs/adapters/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileApp } from "./MobileApp";
 import { Capacitor } from "@capacitor/core";
@@ -51,6 +52,7 @@ const host = vi.hoisted(() => ({
   models: vi.fn(async () => ({ models: {}, errors: {} })),
   cachedModels: () => undefined,
   providerAccounts: vi.fn(async () => ({})),
+  usageRequest: vi.fn(async () => []),
   activity: vi.fn(async () => ({ environmentId: "host", sessions: [] })),
 }));
 vi.mock("./client", async (importOriginal) => ({
@@ -101,7 +103,7 @@ afterEach(() => {
 });
 async function render() {
   await act(async () => {
-    root.render(createElement(MobileApp));
+    root.render(createElement(NuqsAdapter, null, createElement(MobileApp)));
   });
   await act(async () => vi.dynamicImportSettled());
 }
@@ -259,6 +261,18 @@ describe("mobile connection settings", () => {
     expect(active("header strong")?.textContent).toBe("Connections");
   }
 
+  it("opens unified Usage from Settings at Limits and puts filters in the header", async () => {
+    await openConnectedSettings();
+    await act(async () => button("Usage").click());
+    await act(async () => vi.dynamicImportSettled());
+    await vi.waitFor(() => expect(active('[role="tab"][data-state="active"]')?.textContent).toBe("Limits"));
+    expect(active("header strong")?.textContent).toBe("Usage");
+    expect(active('#mobile-usage-actions [aria-label="Filter environments"]')).not.toBeNull();
+    expect(host.usageRequest).toHaveBeenCalledWith(host.connection, "usage.limits", { refresh: false });
+    await act(async () => button("Back").click());
+    expect(active("header strong")?.textContent).toBe("OmniCode");
+  });
+
   it("opens Accounts and usage from Settings and returns with native Back", async () => {
     vi.spyOn(Capacitor, "isNativePlatform").mockReturnValue(true);
     await openConnectedSettings();
@@ -329,7 +343,9 @@ describe("mobile connection settings", () => {
     expect(button("Save").disabled).toBe(true);
     input(".mobile-connection-name-field input", "Workstation");
     act(() => button("Terminal").click());
-    act(() => active(".mobile-connection-editor")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+    await act(async () => {
+      active(".mobile-connection-editor")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
     expect(active(".mobile-connection-name")!.textContent).toBe("Workstation");
     expect(active(".mobile-header-title")!.textContent).toBe("Connections");
     expect(host.connection.name).toBe("My computer");
@@ -370,7 +386,9 @@ describe("mobile connection settings", () => {
     act(() => details.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true })));
     act(() => button("Edit").click());
     input(".mobile-connection-name-field input", "Tailnet");
-    act(() => active(".mobile-connection-editor")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+    await act(async () => {
+      active(".mobile-connection-editor")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
     expect(JSON.parse(localStorage.getItem("omnicode.mobile.connectionAppearance:http://100.64.0.1:3774/")!)).toMatchObject({ displayName: "Tailnet" });
     expect(localStorage.getItem("omnicode.mobile.connectionAppearance:http://computer:3774")).toBeNull();
     expect(rows()[1].querySelector(".mobile-connection-name")!.textContent).toBe("Tailnet");
@@ -574,7 +592,7 @@ describe("mobile connection settings", () => {
     act(() => button("Connections").click());
     act(() => button("Add connection").click());
     await act(async () => vi.dynamicImportSettled());
-    act(() => {
+    await act(async () => {
       button("Scan test QR code").click();
       button("Scan test QR code").click();
     });

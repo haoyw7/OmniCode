@@ -53,6 +53,25 @@ describe("postcss font scale", () => {
     );
   });
 
+  it("scales mobile sheet and popup absolute sums exactly once", async () => {
+    const css = await run(
+      ".sheet{font-size:calc(var(--mobile-font-md) + var(--mobile-popup-font-step))}" +
+      ".caption{font-size:calc(12.5px + var(--mobile-popup-font-step, 0px))!important}" +
+      ".row{font-size:calc(var(--mobile-font-lg) + var(--mobile-popup-font-step, 0px))}",
+    );
+    expect(css).toContain(".sheet{font-size:calc(calc(var(--mobile-font-md) + var(--mobile-popup-font-step)) * var(--font-scale, 1))}");
+    expect(css).toContain(".caption{font-size:calc(calc(12.5px + var(--mobile-popup-font-step, 0px)) * var(--font-scale, 1))!important}");
+    expect(css).toContain(".row{font-size:calc(calc(var(--mobile-font-lg) + var(--mobile-popup-font-step, 0px)) * var(--font-scale, 1))}");
+    expect(await run(css)).toBe(css);
+  });
+
+  it("does not multiply inherited sizes or an explicitly scaled popup step again", async () => {
+    const css = ".relative{font-size:calc(1em + var(--mobile-popup-font-step))}" +
+      ".portal{font-size:calc(1em + var(--mobile-popup-font-step) * var(--font-scale, 1))}" +
+      ".body{font-size:calc(1rem * var(--font-scale, 1))}";
+    expect(await run(css)).toBe(css);
+  });
+
   it("leaves keyframe steps inside motion queries alone", async () => {
     const css = await run(
       "@media (prefers-reduced-motion: reduce){@keyframes k{from{opacity:0}}}",

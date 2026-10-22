@@ -1,4 +1,4 @@
-import type { ExplorerMenuItem } from "../../connections/files/ui/ExplorerMenu";
+import type { ActionMenuItem } from "../../../shared/ui/primitives/ActionMenu";
 import { reminderTime } from "../model/sessionReminders";
 
 export function sessionReminderPresets(now = new Date()) {
@@ -22,5 +22,5 @@ export function sessionReminderPresets(now = new Date()) {
     },
     { kind: "item", id: "reminder:tomorrow", label: "Tomorrow (9:00)" },
     { kind: "item", id: "reminder:next-week", label: "Next week (Mon 9:00)" },
-  ] satisfies ExplorerMenuItem[];
+  ] satisfies ActionMenuItem[];
 }

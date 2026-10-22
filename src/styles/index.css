@@ -136,10 +136,8 @@
   --color-popover-foreground: var(--color-foreground);
   --color-popover-border: var(--color-stroke);
   --color-input: var(--card-color);
-  --color-input-focused: var(--card-color);
   --color-input-border: var(--color-stroke);
   --color-input-border-hover: var(--color-border-hover);
-  --color-input-border-focused: var(--color-focus);
   --color-ring: var(--color-focus);
   --color-primary: var(--color-content);
   --color-primary-foreground: var(--color-background-base);
@@ -859,10 +857,6 @@ html.theme-light {
   border-color: var(--composer-border-hover);
 }
 
-[data-composer-layout="desktop"] [data-ui="message-input"]:has(:focus-visible) {
-  box-shadow: var(--focus-fill-shadow);
-}
-
 [data-composer-layout="desktop"]
   [data-ui="message-input"][data-composer-file-drag] {
   border-color: var(--user-accent-color, var(--color-accent));
@@ -1044,8 +1038,8 @@ html.theme-light {
     button[data-model-control]
   )
   > svg:last-child {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 
 [data-composer-layout="desktop"]
@@ -1185,8 +1179,8 @@ html.theme-light {
 }
 
 .composer-popover[data-access-picker] > button > svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .composer-popover[data-access-picker] > button > span > span:first-child {
@@ -1197,11 +1191,6 @@ html.theme-light {
 .composer-popover[data-access-picker] > button > span > span:last-child {
   font-size: 12px;
   line-height: 16px;
-}
-
-[data-composer-layout="desktop"] .composer-footer button:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-fill-shadow);
 }
 
 :is(.composer-surface, .composer-toolbar)[data-inline-below~="480"] .composer-leading-controls [data-access-picker-trigger] > span,

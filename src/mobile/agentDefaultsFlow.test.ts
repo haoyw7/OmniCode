@@ -9,7 +9,8 @@ import type {
   HostSession,
 } from "../features/connections/model/protocol";
 import { HARNESS_TITLE } from "../features/sessions/model/session";
-import { lastSelectedModelId } from "../features/sessions/model/models";
+import { lastSelectedModelId, loadUseLastSelection, saveLastSelectedModel } from "../features/sessions/model/models";
+import { activatePreferenceStore, SharedPreferenceStore } from "../features/settings/model/sharedPreferences";
 import { setUiLanguage } from "../shared/i18n/language";
 import { MobileApp } from "./MobileApp";
 // Load the real settings module during collection, before timing interactions.
@@ -186,6 +187,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   act(() => root.unmount());
+  activatePreferenceStore(undefined);
   node.remove();
   localStorage.clear();
   vi.unstubAllGlobals();
@@ -282,6 +284,45 @@ function saveChosen(hostId = COMPUTER) {
 }
 
 describe("mobile Agent defaults settings and new conversations", () => {
+  it("enables Last selection from model settings, restores fixed defaults, and applies it to a new conversation", async () => {
+    await render();
+    await act(async () => {
+      activatePreferenceStore(new SharedPreferenceStore(host.connection.environmentId, localStorage, async () => { throw new Error("offline"); }));
+      saveChosen(host.connection.environmentId);
+      saveLastSelectedModel("claude", "claude:test");
+    });
+    await settings();
+    await defaultsPanel();
+    await click("Last selection", dialog());
+    expect(loadUseLastSelection()).toBe(true);
+    expect(dialog().querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("true");
+    expect(dialog().textContent).toContain("Claude model");
+    const modelButton = () => [...dialog().querySelectorAll<HTMLButtonElement>("button")]
+      .find(button => button.querySelector("strong")?.textContent === "Model")!;
+    expect(modelButton().disabled).toBe(true);
+    expect(loadMobileAgentDefaults(host.connection).harness).toBe("codex");
+    await dismiss();
+    await defaultsPanel();
+    expect(dialog().querySelector('[role="switch"]')?.getAttribute("aria-checked")).toBe("true");
+    await click("Last selection", dialog());
+    expect(loadUseLastSelection()).toBe(false);
+    expect(modelButton().disabled).toBe(false);
+    expect(dialog().textContent).toContain("Chosen");
+    await click("Last selection", dialog());
+    await act(async () => setUiLanguage("zh-CN"));
+    expect(dialog().querySelector('[role="switch"]')?.getAttribute("aria-label")).toBe("上次选择");
+    await act(async () => setUiLanguage("en"));
+    await dismiss();
+    await leaveSettings();
+    await click("New conversation", current(".mobile-home")!);
+    await input("Use the last selected model");
+    await send();
+    expect(host.dispatch).toHaveBeenCalledWith(expect.objectContaining({
+      type: "create", harness: "claude", model: "claude:test",
+      providerAccountId: "personal", runtimeMode: "full-access",
+    }), { text: "Use the last selected model" });
+  });
+
   it("configures without projects, remembers each Agent, localizes labels and preserves account names", async () => {
     host.projects.mockResolvedValue([]);
     await render();

@@ -47,7 +47,7 @@ import {
   type HarnessId,
   type ModelTarget,
 } from "../model/session";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { Popover } from "../../../shared/ui/Popover";
 
 type Props = {
@@ -481,7 +481,7 @@ export function SecondOpinionButton({
                     </span>
                     {modelsFor(harness).length > 0 ? (
                       <ChevronRight
-                        className="size-3.5 shrink-0 text-content/40"
+                        className="size-4 shrink-0 text-content/40"
                       />
                     ) : null}
                   </Button>
@@ -552,12 +552,12 @@ export function SecondOpinionButton({
                     </span>
                     {model.id === preferred ? (
                       <Check
-                        className="size-3 shrink-0 text-content/45"
+                        className="size-4 shrink-0 text-content/45"
                       />
                     ) : null}
                     {modelEffortSetting(model)?.options.length ? (
                       <ChevronRight
-                        className="size-3.5 shrink-0 text-content/40"
+                        className="size-4 shrink-0 text-content/40"
                       />
                     ) : null}
                   </Button>
@@ -603,7 +603,7 @@ export function SecondOpinionButton({
                     </span>
                     {selected ? (
                       <Check
-                        className="size-3.5 shrink-0 text-content/50"
+                        className="size-4 shrink-0 text-content/50"
                       />
                     ) : null}
                   </Button>

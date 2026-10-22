@@ -574,7 +574,6 @@ html[data-skin] {
 .desktop-skin-option { border-color: var(--color-hairline); }
 .desktop-skin-option:hover { background: var(--color-hover-fill); }
 .desktop-skin-option:has(:checked) { border-color: var(--color-focus); box-shadow: 0 0 0 1px var(--color-focus); }
-.desktop-skin-option:has(:focus-visible) { outline: none; box-shadow: var(--focus-fill-shadow); }
 .desktop-skin-preview { border-color: var(--color-hairline); }
 .desktop-skin-scene { background: var(--color-app); }
 .desktop-skin-scene-sidebar { background: var(--color-sidebar); }

@@ -3,7 +3,7 @@ import { Button } from "../../../shared/ui/forms/Button";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ChevronRight, Replace, X } from "../../../shared/ui/icons";
 import { HARNESS_TITLE, type HarnessId } from "../model/session";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 
 type Card = {
   from: HarnessId;

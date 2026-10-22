@@ -85,7 +85,7 @@ function CommandInput({
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          "min-w-0 flex-1 bg-transparent text-ui-base text-content outline-none focus-visible:focus-fill placeholder:text-content/40 disabled:opacity-50",
+          "min-w-0 flex-1 bg-transparent text-ui-base text-content outline-none placeholder:text-content/40 disabled:opacity-50",
           className,
         )}
         {...props}
@@ -126,7 +126,7 @@ function CommandList({
       }}
       data-slot="command-list"
       className={cn(
-        "min-h-0 overflow-x-hidden overflow-y-auto overscroll-none outline-none focus-visible:focus-fill",
+        "min-h-0 overflow-x-hidden overflow-y-auto overscroll-none outline-none",
         className,
       )}
       {...props}
@@ -220,7 +220,7 @@ function CommandItem({
       ref={localRef}
       data-slot="command-item"
       className={cn(
-        "relative flex cursor-default select-none items-center gap-2 rounded-md px-2 text-left text-ui-base text-content outline-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-45 data-[selected=true]:bg-selection hover:bg-content/3 focus-visible:bg-selection active:bg-selection",
+        "relative flex cursor-default select-none items-center gap-2 rounded-md px-2 text-left text-ui-base text-content outline-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-45 data-[selected=true]:bg-selection hover:bg-content/3 active:bg-selection",
         className,
       )}
       {...props}

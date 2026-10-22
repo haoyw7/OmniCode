@@ -130,7 +130,7 @@ function PanelContent({
             }
           }}
           className={cn(
-            "modal-frame relative isolate flex flex-col overflow-hidden rounded-2xl border border-stroke shadow-md outline-none focus-visible:focus-fill",
+            "modal-frame relative isolate flex flex-col overflow-hidden rounded-2xl border border-stroke shadow-md outline-none",
             fitViewport && "max-h-[calc(100dvh-32px)]",
             className,
           )}
@@ -169,7 +169,7 @@ function PanelContent({
                 aria-label={uiT("Close")}
                 onClick={onClose}
                 data-ui="icon-button"
-                className="desktop-modal-close grid size-7 shrink-0 place-items-center rounded-lg text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-content focus-visible:focus-fill"
+                className="desktop-modal-close grid size-7 shrink-0 place-items-center rounded-lg text-foreground-subtle transition-colors hover:bg-surface-hover hover:text-content"
               >
                 <X className="size-3.5" />
               </Button>

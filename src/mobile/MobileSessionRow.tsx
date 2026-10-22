@@ -4,7 +4,7 @@ import { ListMotionButton } from "../shared/ui/ListMotion";
 import type { HostSessionSummary } from "../features/connections/model/protocol";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
 import { sessionRecencyAt } from "../features/sessions/model/sessionActivity";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../shared/ui/branding/HarnessIcon";
 import { SessionWorktreeIcon } from "../features/sessions/ui/SessionWorktreeIcon";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { Pin, TriangleAlert } from "../shared/ui/icons";

@@ -123,7 +123,7 @@ export function MobileWorkspaceControls({
               <button
                 type="button"
                 role="radio"
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                 aria-checked={workspace.mode === "current" && !workspace.cwd}
                 disabled={disabled}
                 onClick={() => {
@@ -141,7 +141,7 @@ export function MobileWorkspaceControls({
               <button
                 type="button"
                 role="radio"
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                 aria-checked={workspace.mode === "worktree"}
                 disabled={disabled}
                 onClick={() => onChange({ mode: "worktree", base: workspace.base ?? current ?? undefined })}
@@ -156,7 +156,7 @@ export function MobileWorkspaceControls({
               <button
                 type="button"
                 role="radio"
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                 aria-checked={!!workspace.cwd}
                 disabled={disabled}
                 onClick={() => setPage("worktrees")}
@@ -173,7 +173,7 @@ export function MobileWorkspaceControls({
               <div className="mobile-menu-divider" role="separator" />
               <button
                 type="button"
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                 disabled={disabled || branches.state === "failed"}
                 aria-busy={branches.state === "loading" || undefined}
                 onClick={() => setPage("base")}
@@ -216,7 +216,7 @@ export function MobileWorkspaceControls({
                   key={name}
                   type="button"
                   role="radio"
-                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                  className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                   aria-checked={base === name}
                   disabled={disabled}
                   onClick={() => {
@@ -265,7 +265,7 @@ export function MobileWorkspaceControls({
                       key={tree.path}
                       type="button"
                       role="radio"
-                      className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                      className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                       aria-checked={workspace.cwd === tree.path}
                       disabled={disabled}
                       title={tree.path}

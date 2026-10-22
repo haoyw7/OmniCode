@@ -21,7 +21,7 @@ import {
   ChevronUp,
   CircleAlert,
 } from "../../../shared/ui/icons";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { TerminalSpinner } from "./TerminalSpinner";
 import { useNow } from "../../../shared/hooks/useNow";

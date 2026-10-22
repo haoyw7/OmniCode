@@ -39,7 +39,7 @@ import {
   resolveTabGroupColor,
   resolveTabGroupMascot,
 } from "../../workspace/model/tabGroups";
-import { HarnessIcon } from "./HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import {
   ArrowLeft,
   Check,
@@ -320,7 +320,7 @@ export function UsageProviderChip({
               {/* Keep account switching separate from email revelation. */}
               <Button variant="ghost" size="content"
                 type="button"
-                className="pointer-events-auto absolute inset-0 rounded-lg hover:bg-content/[0.05] focus-visible:focus-fill"
+                className="pointer-events-auto absolute inset-0 rounded-lg hover:bg-content/[0.05]"
                 aria-label={uiT("Switch {value0} account", {
                   value0: String(providerLabel),
                 })}
@@ -403,7 +403,7 @@ export function UsageProviderChip({
           ref={trigger}
           type="button"
           data-ui="session-usage-trigger"
-          className="absolute inset-0 size-full justify-start gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content focus-visible:focus-fill"
+          className="absolute inset-0 size-full justify-start gap-1.5 rounded-lg px-2 whitespace-nowrap text-content/55 hover:bg-content/6 hover:text-content"
           aria-label={uiT("{value0} usage details", {
             value0: String(providerLabel),
           })}
@@ -571,7 +571,7 @@ function ProviderAccountPicker({
                 aria-pressed={selected}
                 aria-label={account.label}
                 aria-describedby={`${statusId}-${account.id}`}
-                className="pointer-events-auto absolute inset-0 rounded-lg hover:bg-content/[0.04] focus-visible:focus-fill"
+                className="pointer-events-auto absolute inset-0 rounded-lg hover:bg-content/[0.04]"
                 onClick={() => onSelect(account.id)}
               />
               <span className="min-w-0 flex-1 py-0.5">
@@ -755,7 +755,7 @@ function AddProviderAccount({
           aria-invalid={!!form.formState.errors.label}
           disabled={running}
           placeholder={uiT("Work or Personal")}
-          className="mt-1.5 h-8 w-full rounded-lg border border-content/10 bg-content/[0.04] px-2.5 text-[11px] text-content outline-none focus-visible:focus-fill placeholder:text-content/25 disabled:opacity-55"
+          className="mt-1.5 h-8 w-full rounded-lg border border-content/10 bg-content/[0.04] px-2.5 text-[11px] text-content outline-none placeholder:text-content/25 disabled:opacity-55"
         />
       </label>
       <Button variant="primary" size="content"

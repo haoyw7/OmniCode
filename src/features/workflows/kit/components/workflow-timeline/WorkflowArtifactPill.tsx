@@ -116,7 +116,7 @@ export function WorkflowArtifactPill({
           ? "h-8 gap-2 rounded-[9px] pl-2 pr-2.5 text-ui-sm"
           : "h-6 gap-1.5 rounded-md pl-1.5 pr-2 text-ui-xs",
         openable
-          ? "wf-pill-open cursor-pointer outline-none focus-visible:focus-fill"
+          ? "wf-pill-open cursor-pointer outline-none"
           : "cursor-default",
         fill && "w-full",
         className,

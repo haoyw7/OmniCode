@@ -589,7 +589,6 @@ export function useWorkspaceController({
     onVisitBack,
     onVisitForward,
     previousTabs,
-    openAppView,
     onOpenSearch,
     onSearchEverywhere,
     onLeaveSearch,
@@ -621,13 +620,6 @@ export function useWorkspaceController({
     tabs,
     activeTabId,
     notesEnabled,
-    initialPage:
-      !resumed &&
-      !windowTransfer &&
-      !lastProjectPath() &&
-      desktopStartup.mode === "code"
-        ? "projects"
-        : null,
     context: () => ({
       tabs: tabsRef.current,
       sessions: sessionsRef.current,
@@ -3865,6 +3857,7 @@ export function useWorkspaceController({
     "Pane: Split Down": appPage ? undefined : () => onSplit("down"),
     "View: Inbox": onOpenInbox,
     "View: Notes": notesEnabled ? onOpenNotes : undefined,
+    "View: Usage": () => openSettings("usage"),
     "View: Automations": onOpenAutomations,
     "View: Workflows": onOpenWorkflows,
     "App: Settings": () => openSettings(),
@@ -4108,12 +4101,10 @@ export function useWorkspaceController({
 
   const onDesktopModeChange = useCallback((mode: DesktopMode) => {
     const request = ++desktopModeRequestRef.current;
-    if (mode === desktopMode && workspaceVisible && !activeAppView) return;
+    if (mode === desktopMode && workspaceVisible && !activeAppView && !paletteOpen) return;
     workspaceNavigation.cancel();
     setPaletteOpen(false);
     closeAppDialog();
-    setDesktopMode(mode);
-    saveDesktopMode(mode, desktopLocationsRef.current);
     const target = desktopModeTarget(mode, desktopLocationsRef.current, tabsRef.current, sessionsRef.current);
     if (target) {
       setProjectCwd(target.cwd);
@@ -4124,7 +4115,7 @@ export function useWorkspaceController({
     const remembered = desktopLocationsRef.current[mode];
     const fallback = () => {
       if (mode === "chat") onNewChat();
-      else { openAppView("projects"); setComposerFocused(false); }
+      else { showWorkspace(); openPalette("@"); setComposerFocused(false); }
     };
     if (remembered?.sessionId && history.some(session => session.id === remembered.sessionId)) {
       const originTab = activeTabIdRef.current;
@@ -4142,25 +4133,22 @@ export function useWorkspaceController({
         }
       })();
     } else fallback();
-  }, [desktopMode, workspaceVisible, activeAppView, workspaceNavigation.cancel, activateTab, history, ensureOpenSession, onSelectHistorySession, onNewChat, closeAppDialog, showWorkspace, openAppView]);
+  }, [desktopMode, workspaceVisible, activeAppView, paletteOpen, workspaceNavigation.cancel, activateTab, history, ensureOpenSession, onSelectHistorySession, onNewChat, closeAppDialog, showWorkspace, openPalette]);
   const onNewDesktopSession = useCallback(() => {
     if (desktopMode === "chat") onNewChat();
     else if (desktopModeForCwd(sidebarCwd) === "code") onNew();
     else {
       const cwd = desktopLocationsRef.current.code?.cwd;
       if (cwd) onNewInProject(cwd);
-      else openAppView("projects");
+      else openPalette("@");
     }
-  }, [desktopMode, sidebarCwd, onNewChat, onNew, onNewInProject, openAppView]);
+  }, [desktopMode, sidebarCwd, onNewChat, onNew, onNewInProject, openPalette]);
 
   const renderAppView = createWorkspacePageRenderer({
-    desktopMode,
     sidebarCwd,
     recents,
     closeAppPage,
     onSelectProject,
-    pickProject,
-    onNewChat,
     onRemoveProject,
     onRestoreProject,
     assistantMachineId,
@@ -4244,7 +4232,6 @@ export function useWorkspaceController({
     onOpenWhatsNew,
     setUpdateNotice,
     onNewDesktopSession,
-    openAppView,
     onSelectHistorySession,
   });
   return {

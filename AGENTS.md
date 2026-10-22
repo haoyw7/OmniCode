@@ -111,11 +111,11 @@ are not prerequisites for local work.
 - 禁止任何颜色的额外焦点边框、外圈和 outline，不只是蓝色；鼠标聚焦
   不额外画圈。禁止 `outline: auto`、`focus:ring-*`、`focus:border-*`
   及对应的 `focus-visible` 外圈样式。
-- 输入框、搜索框、按钮和其他交互组件统一使用共享 `focus-visible:focus-fill`
-  背景提示（`src/shared/styles/focus.css`）；平台控件复用 `--focus-fill-shadow`。
-  检查并替换 shadcn/ui、Radix UI 等第三方组件的默认焦点样式。
-- 保留键盘 Tab 操作时清晰可感知的轻微背景变化，支持明暗主题和强制颜色；
-  不得仅移除外圈而丢失键盘焦点提示。普通边框、选中及错误状态不作为焦点外圈。
+- 不得恢复全局焦点背景填充，也不强制组件使用 `focus-visible:focus-fill`
+  或 `--focus-fill-shadow`；聚焦不应统一叠加灰底或强制颜色背景。
+- 检查 shadcn/ui、Radix UI 等第三方组件的默认焦点样式，避免重新引入上述
+  外圈或全局背景填充。保留键盘 Tab 导航和组件的焦点管理；普通边框、选中及
+  错误状态不作为焦点外圈。
 
 ## 动画
 

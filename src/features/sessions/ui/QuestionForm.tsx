@@ -179,7 +179,7 @@ export function QuestionForm({
                   title={uiT("Previous question")}
                   disabled={index === 0}
                   onClick={goBack}
-                  className="grid size-6 place-items-center rounded-md hover:bg-content/6 hover:text-content focus-visible:focus-fill disabled:pointer-events-none disabled:opacity-30"
+                  className="grid size-6 place-items-center rounded-md hover:bg-content/6 hover:text-content disabled:pointer-events-none disabled:opacity-30"
                 >
                   <ChevronLeft className="size-3.5" aria-hidden="true" />
                 </Button>
@@ -193,7 +193,7 @@ export function QuestionForm({
                   title={uiT("Next question")}
                   disabled={last}
                   onClick={goForward}
-                  className="grid size-6 place-items-center rounded-md hover:bg-content/6 hover:text-content focus-visible:focus-fill disabled:pointer-events-none disabled:opacity-30"
+                  className="grid size-6 place-items-center rounded-md hover:bg-content/6 hover:text-content disabled:pointer-events-none disabled:opacity-30"
                 >
                   <ChevronRight className="size-3.5" aria-hidden="true" />
                 </Button>
@@ -204,7 +204,7 @@ export function QuestionForm({
                 type="button"
                 aria-label={uiT("Collapse question")}
                 title={uiT("Collapse question")}
-                className="-mr-1 grid size-7 shrink-0 place-items-center rounded-full hover:bg-content/6 hover:text-content focus-visible:focus-fill"
+                className="-mr-1 grid size-7 shrink-0 place-items-center rounded-full hover:bg-content/6 hover:text-content"
                 onClick={onCollapse}
               >
                 <X className="size-4" aria-hidden="true" />
@@ -283,7 +283,7 @@ export function QuestionForm({
                 title={uiT("Previous question")}
                 disabled={index === 0}
                 onClick={goBack}
-                className="grid size-6 place-items-center rounded-md text-content/55 hover:bg-content/6 hover:text-content focus-visible:focus-fill disabled:pointer-events-none disabled:opacity-30"
+                className="grid size-6 place-items-center rounded-md text-content/55 hover:bg-content/6 hover:text-content disabled:pointer-events-none disabled:opacity-30"
               >
                 <ChevronLeft className="size-3.5" aria-hidden="true" />
               </Button>
@@ -300,7 +300,7 @@ export function QuestionForm({
                 title={uiT("Next question")}
                 disabled={last}
                 onClick={goForward}
-                className="grid size-6 place-items-center rounded-md text-content/55 hover:bg-content/6 hover:text-content focus-visible:focus-fill disabled:pointer-events-none disabled:opacity-30"
+                className="grid size-6 place-items-center rounded-md text-content/55 hover:bg-content/6 hover:text-content disabled:pointer-events-none disabled:opacity-30"
               >
                 <ChevronRight className="size-3.5" aria-hidden="true" />
               </Button>
@@ -319,7 +319,7 @@ export function QuestionForm({
               type="button"
               aria-label={uiT("Collapse question")}
               title={uiT("Collapse question")}
-              className="grid size-6 shrink-0 place-items-center rounded-md text-content/55 hover:bg-content/6 hover:text-content focus-visible:focus-fill"
+              className="grid size-6 shrink-0 place-items-center rounded-md text-content/55 hover:bg-content/6 hover:text-content"
               data-question-collapse
               onClick={onCollapse}
             >
@@ -461,7 +461,7 @@ function QuestionFields({
             maxLength={question.input.maxLength}
             rows={5}
             aria-label={question.prompt}
-            className="mt-1.5 w-full resize-y rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+            className="mt-1.5 w-full resize-y rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none placeholder:text-content/35"
           />
         ) : (
         <Input data-ui="input"
@@ -471,7 +471,7 @@ function QuestionFields({
           placeholder={question.input?.placeholder ?? uiT("Type your answer")}
           maxLength={question.input?.maxLength}
           aria-label={question.prompt}
-          className="mt-1.5 w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+          className="mt-1.5 w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none placeholder:text-content/35"
         />
         )
       ) : (
@@ -491,7 +491,7 @@ function QuestionFields({
                   type="button"
                   aria-pressed={active}
                   data-question-option
-                  className={cn("flex w-full items-start gap-2 rounded-md border px-2 py-1.5 text-left focus-visible:focus-fill justify-start", active
+                  className={cn("flex w-full items-start gap-2 rounded-md border px-2 py-1.5 text-left justify-start", active
                       ? "border-content/35 bg-selection"
                       : "border-content/10 hover:bg-content/3")}
                 >
@@ -529,7 +529,7 @@ function QuestionFields({
                     aria-invalid={invalid}
                     onChange={(event) => onCustom(event.target.value)}
                     placeholder={uiT("Type your answer")}
-                    className="mt-1 w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+                    className="mt-1 w-full rounded-md border border-content/15 bg-transparent px-2 py-1 text-[12px] text-content outline-none placeholder:text-content/35"
                     onClick={(event) => event.stopPropagation()}
                     onFocus={() => {
                       if (!customSelected) onSelect(customId);
@@ -658,7 +658,7 @@ function DockQuestionFields({
     ? question.input?.placeholder ?? uiT("Type your answer")
     : uiT("Or write your own reply");
   const fieldClass =
-    "min-w-0 flex-1 bg-transparent py-1 text-[14px] leading-5 text-content outline-none focus-visible:focus-fill placeholder:text-content/40";
+    "min-w-0 flex-1 bg-transparent py-1 text-[14px] leading-5 text-content outline-none placeholder:text-content/40";
 
   return (
     <>
@@ -694,7 +694,7 @@ function DockQuestionFields({
                     type="button"
                     aria-pressed={active}
                     data-question-dock-option
-                    className="flex w-full items-center gap-3 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-content/4 focus-visible:focus-fill motion-reduce:transition-none justify-start"
+                    className="flex w-full items-center gap-3 rounded-lg px-1.5 py-1.5 text-left transition-colors hover:bg-content/4 motion-reduce:transition-none justify-start"
                   >
                     <span
                       aria-hidden

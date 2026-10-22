@@ -107,3 +107,15 @@ it("does not substitute saved credentials for environment auth or a missing prof
   expect(await service.read({ provider: "codex", accountId: "work" })).toMatchObject({ status: "unavailable" });
   expect(runCodexAccountRequest).not.toHaveBeenCalled();
 });
+
+it("validates a reset request, scopes it to the account and returns only its outcome", async () => {
+  const service = new HostProviderUsage(owner);
+  const request = { accountId: "work", idempotencyKey: "12345678-1234-1234-1234-123456789012" };
+  await expect(service.consumeReset({ ...request, idempotencyKey: "bad" })).rejects.toThrow("Invalid reset request");
+  expect(runCodexAccountRequest).not.toHaveBeenCalled();
+  vi.mocked(runCodexAccountRequest).mockResolvedValue({ outcome: "reset", extra: "private" });
+  expect(await service.consumeReset(request)).toEqual({ outcome: "reset" });
+  expect(runCodexAccountRequest).toHaveBeenLastCalledWith("/bin/codex", expect.any(String), "account/rateLimitResetCredit/consume", { idempotencyKey: request.idempotencyKey }, "work", expect.any(String));
+  vi.mocked(runCodexAccountRequest).mockResolvedValue({ outcome: "unknown" });
+  await expect(service.consumeReset(request)).rejects.toThrow("Unexpected usage reset response");
+});

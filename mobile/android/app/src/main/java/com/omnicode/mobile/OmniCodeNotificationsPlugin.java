@@ -1,6 +1,8 @@
 package com.omnicode.mobile;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -42,6 +44,10 @@ public final class OmniCodeNotificationsPlugin extends Plugin {
             display = Build.VERSION.SDK_INT >= 33 && state == PermissionState.PROMPT ? "prompt" : "denied";
         }
         result.put("display", display);
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationChannel channel = getContext().getSystemService(NotificationManager.class).getNotificationChannel(MobileActivityTracker.REPLIES);
+            result.put("channelBlocked", channel != null && channel.getImportance() == NotificationManager.IMPORTANCE_NONE);
+        }
         return result;
     }
     @Override @PluginMethod public void checkPermissions(PluginCall call) { call.resolve(permission()); }
@@ -52,6 +58,14 @@ public final class OmniCodeNotificationsPlugin extends Plugin {
         else call.resolve(permission());
     }
     @PermissionCallback private void permissionResult(PluginCall call) { call.resolve(permission()); }
+    @PluginMethod public void configure(PluginCall call) {
+        try {
+            JSONObject options = call.getObject("preferences");
+            if (options == null) { call.reject("Missing notification preferences"); return; }
+            MobileActivityTracker.configureNotifications(getContext(), options);
+            call.resolve();
+        } catch (Exception error) { call.reject("Unable to save notification preferences", error); }
+    }
     @PluginMethod public void openSettings(PluginCall call) {
         Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, getContext().getPackageName());
         if (Build.VERSION.SDK_INT >= 26 && NotificationManagerCompat.from(getContext()).areNotificationsEnabled()) {
@@ -64,6 +78,8 @@ public final class OmniCodeNotificationsPlugin extends Plugin {
         getActivity().startActivity(intent); call.resolve();
     }
     @PluginMethod public void start(PluginCall call) {
+        try { MobileActivityTracker.configureNotifications(getContext(), call.getObject("preferences")); }
+        catch (Exception error) { call.reject("Unable to save notification preferences", error); return; }
         Intent intent = new Intent(getContext(), OmniCodeNotificationService.class)
             .putExtra("endpoint", call.getString("endpoint")).putExtra("token", call.getString("token"))
             .putExtra("name", call.getString("name")).putExtra("enabled", call.getBoolean("enabled", true))

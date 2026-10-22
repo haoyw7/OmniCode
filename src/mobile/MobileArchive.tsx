@@ -6,7 +6,7 @@ import type {
   HostSessionSummary,
 } from "../features/connections/model/protocol";
 import { sessionDisplayTitle } from "../features/sessions/model/session";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../shared/ui/branding/HarnessIcon";
 import { SessionWorktreeIcon } from "../features/sessions/ui/SessionWorktreeIcon";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { formatMobileRelativeTime } from "./relativeTime";
@@ -87,7 +87,7 @@ export function MobileArchive({
                 </span>
                 <button
                   type="button"
-                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-action mobile-archive-restore"
+                  className="hover:opacity-80 active:opacity-70 mobile-settings-action mobile-archive-restore"
                   aria-label={t("Restore {title}", {
                     title:
                       sessionDisplayTitle(session.title, session.harness) ||

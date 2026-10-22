@@ -1,6 +1,6 @@
 import { MobileSpinner } from "./MobileSpinner";
 import { sessionComposerConfiguration } from "../features/sessions/model/composerConfiguration";
-import { useLayoutEffect, useState, type RefObject } from "react";
+import { useLayoutEffect, useState, type ReactNode, type RefObject } from "react";
 import {
   Check,
   ChevronRight,
@@ -14,7 +14,7 @@ import {
   HARNESS_TITLE,
   type RuntimeMode,
 } from "../features/sessions/model/session";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../shared/ui/branding/HarnessIcon";
 import { modelGroups } from "../features/sessions/model/modelGroups";
 import {
   isEffortSettingId,
@@ -106,6 +106,7 @@ export function MobileModelControls({
   anchor,
   preserveFocus,
   agentConfiguration,
+  settingsHeader,
 }: {
   open?: boolean;
   catalog?: HostModelCatalog;
@@ -120,6 +121,8 @@ export function MobileModelControls({
   anchor?: RefObject<HTMLElement | null>;
   preserveFocus?: RefObject<HTMLElement | null>;
   agentConfiguration?: (provider: RemoteProvider) => MobileConfiguration | undefined;
+  /** Settings-owned policy controls stay interactive when model editing is disabled. */
+  settingsHeader?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [page, setPage] = useState<
@@ -184,10 +187,11 @@ export function MobileModelControls({
       {() =>
         page === "settings" ? (
           <div className="mobile-model-options">
+            {settingsHeader}
             <div>
               <button
                 type="button"
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                 disabled={disabled || agentLocked || (loading && !catalog)}
                 aria-busy={loading || undefined}
                 onClick={() => setPage("agents")}
@@ -201,7 +205,7 @@ export function MobileModelControls({
               </button>
               <button
                 type="button"
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                 disabled={disabled || loading || !models.length}
                 aria-busy={loading || undefined}
                 onClick={() => setPage("models")}
@@ -219,7 +223,7 @@ export function MobileModelControls({
               {!settings.some((setting) => isEffortSettingId(setting.id)) && (
                 <button
                   type="button"
-                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                  className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                   disabled
                   aria-busy={loading || undefined}
                 >
@@ -241,7 +245,7 @@ export function MobileModelControls({
                   <button
                     key={setting.id}
                     type="button"
-                    className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                    className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                     disabled={disabled || loading || !setting.options.length}
                     aria-busy={loading || undefined}
                     onClick={() => {
@@ -287,7 +291,7 @@ export function MobileModelControls({
                 <button
                   key={option.value}
                   type="button"
-                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                  className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                   role="radio"
                   aria-checked={selected}
                   disabled={disabled}
@@ -326,7 +330,7 @@ export function MobileModelControls({
                 {group.models.map(({ item: model }) => (
                   <button
                     type="button"
-                    className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                    className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                     role="radio"
                     key={model.id}
                     aria-label={`${model.name}, ${model.provider?.name ?? HARNESS_TITLE[model.harness]}`}
@@ -364,7 +368,7 @@ export function MobileModelControls({
             {providers.map((provider) => (
               <button
                 type="button"
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+                className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
                 role="radio"
                 key={provider}
                 aria-checked={configuration.harness === provider}

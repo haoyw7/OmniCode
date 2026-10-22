@@ -2,7 +2,7 @@ import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
 import { usePreferenceState } from "../../model/usePreferenceState";
 import { useTranslation } from "../../../../shared/i18n/useTranslation";
 import { useEffect, useMemo, useState } from "react";
-import { HarnessIcon } from "../../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../../shared/ui/branding/HarnessIcon";
 import { Button } from "../../../../shared/ui/forms/Button";
 import { RemoveProjectDialog } from "../../../projects/ui/RemoveProjectDialog";
 import { prettyCwd, projectKey, projectName } from "../../../../shared/lib/paths";

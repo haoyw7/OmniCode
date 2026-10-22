@@ -68,9 +68,9 @@ import type { LinkedWorkItem } from "../../features/sessions/model/session";
 import type { SessionSummary } from "../../features/sessions/data/sessionStore";
 import { isRemoteProjectPath } from "../../features/projects/model/recents";
 import {
-  ExplorerMenu,
-  type ExplorerMenuItem,
-} from "../../features/connections/files/ui/ExplorerMenu";
+  ActionMenu,
+  type ActionMenuItem,
+} from "../../shared/ui/primitives/ActionMenu";
 import { LinkSessionWorkItemDialog } from "../../features/sessions/ui/LinkSessionWorkItemDialog";
 import { sessionReminderPresets } from "../../features/sessions/ui/sessionReminderPresets";
 import {
@@ -714,7 +714,7 @@ function ProjectSessionSectionComponent({
   const allMenuSessionsArchived =
     menuSessions.length > 0 &&
     menuSessions.every((session) => session.archived);
-  const sessionMenuItems: ExplorerMenuItem[] = [
+  const sessionMenuItems: ActionMenuItem[] = [
     ...(!multipleMenuSessions && remoteProjectFor(cwd) ? [{
       kind: "item" as const,
       id: "delegate-assistant",
@@ -1116,7 +1116,7 @@ function ProjectSessionSectionComponent({
             <button
               type="button"
               onClick={onRetry}
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 ml-2 text-accent"
+              className="hover:opacity-80 active:opacity-70 ml-2 text-accent"
             >
               {uiT("Retry")}
             </button>
@@ -1159,7 +1159,7 @@ function ProjectSessionSectionComponent({
                 <button
                   type="button"
                   onClick={onRetry}
-                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 ml-2 text-accent"
+                  className="hover:opacity-80 active:opacity-70 ml-2 text-accent"
                 >
                   {uiT("Retry")}
                 </button>
@@ -1295,7 +1295,7 @@ function ProjectSessionSectionComponent({
                           : TREE_PREVIEW_COUNT,
                       )
                     }
-                    className="focus-visible:focus-fill active:opacity-70 flex h-8 w-full items-center rounded-lg pl-8 pr-2 text-left text-ui-caption text-content/45 hover:bg-surface-hover hover:text-content"
+                    className="active:opacity-70 flex h-8 w-full items-center rounded-lg pl-8 pr-2 text-left text-ui-caption text-content/45 hover:bg-surface-hover hover:text-content"
                   >
                     {hiddenSessions ? uiT("Show more") : uiT("Show less")}
                   </button>
@@ -1307,7 +1307,7 @@ function ProjectSessionSectionComponent({
         </div>
       )}{" "}
       <PresenceBoundary propagate>{sessionMenu ? (
-        <ExplorerMenu
+        <ActionMenu
           x={sessionMenu.x}
           y={sessionMenu.y}
           items={sessionMenuItems}

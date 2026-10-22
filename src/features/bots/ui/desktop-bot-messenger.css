@@ -6,7 +6,7 @@
 /* Disclosure state should not give the sidebar toggle a persistent selected fill. */
 html[data-skin] .desktop-bots-workspace [data-ui="icon-button"][data-bots-navigation-toggle],
 html[data-skin] .desktop-bots-workspace [data-ui="icon-button"][data-bots-navigation-toggle] > [data-menu-hover] { background: transparent; }
-html[data-skin] .desktop-bots-workspace [data-ui="icon-button"][data-bots-navigation-toggle]:is(:hover, :focus-visible, :active):not(:disabled, [aria-disabled="true"]) { background: var(--cds-fill-ghost-hover); }
+html[data-skin] .desktop-bots-workspace [data-ui="icon-button"][data-bots-navigation-toggle]:is(:hover, :active):not(:disabled, [aria-disabled="true"]) { background: var(--cds-fill-ghost-hover); }
 .assistant-chat.desktop-bots-workspace .desktop-bots-navigation-title { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 2px; }
 .assistant-chat.desktop-bots-workspace .desktop-bots-navigation-title h2 { font-size: var(--text-heading-sm); font-weight: var(--font-weight-semibold); }
 .assistant-chat.desktop-bots-workspace .desktop-bots-section-label { display: flex; align-items: center; gap: 6px; padding: 10px 8px 6px; color: var(--color-foreground-subtle); font-size: var(--text-ui-xs); font-weight: var(--font-weight-medium); }
@@ -106,7 +106,6 @@ html[data-skin] .assistant-chat.desktop-bots-workspace [data-ui="icon-button"].a
 .desktop-bot-avatar-dialog .desktop-bot-avatar-tabs { display: inline-flex; justify-self: start; gap: 2px; padding: 2px; border-radius: 999px; background: var(--color-card); }
 .desktop-bot-avatar-dialog .desktop-bot-avatar-tabs button { padding: 4px 14px; border: 0; border-radius: 999px; background: transparent; color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); cursor: pointer; }
 .desktop-bot-avatar-dialog .desktop-bot-avatar-tabs button[aria-selected="true"] { background: var(--color-background-base); color: var(--color-foreground); font-weight: var(--font-weight-medium); }
-.desktop-bot-avatar-dialog .desktop-bot-avatar-tabs button:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 .desktop-bot-avatar-dialog .desktop-bot-avatar-tab-panel:not([hidden]) { display: grid; gap: 12px; min-width: 0; }
 .desktop-bot-avatar-dialog .desktop-bot-avatar-tab-panel small { color: var(--color-foreground-subtle); font-size: var(--text-ui-sm); }
 .desktop-bot-avatar-dialog .desktop-bot-avatar-tab-panel textarea { display: block; width: 100%; min-width: 0; min-height: 120px; resize: none; }
@@ -123,7 +122,6 @@ html[data-skin] .assistant-chat.desktop-bots-workspace [data-ui="icon-button"].a
 .desktop-bot-avatar-dialog .desktop-bot-avatar-option:hover .desktop-bot-avatar-option-content { background: var(--color-surface-hover); }
 .desktop-bot-avatar-dialog .desktop-bot-avatar-options[data-part="tone"] .desktop-bot-avatar-option:hover .desktop-bot-avatar-option-content { background: transparent; }
 .desktop-bot-avatar-dialog .desktop-bot-avatar-option [data-ui="radio"]:checked + .desktop-bot-avatar-option-content { border-color: var(--color-foreground); }
-.desktop-bot-avatar-dialog .desktop-bot-avatar-option [data-ui="radio"]:focus-visible + .desktop-bot-avatar-option-content { outline: none; box-shadow: var(--focus-fill-shadow); }
 .desktop-bot-avatar-dialog .desktop-bot-avatar-option [data-ui="radio"]:disabled + .desktop-bot-avatar-option-content { opacity: .5; cursor: default; }
 .desktop-bot-avatar-dialog-preview { display: flex; flex-direction: column; align-items: center; gap: 24px; min-width: 0; padding: 56px 24px 24px; border-left: var(--desktop-border) solid var(--color-stroke); background: color-mix(in srgb, var(--color-card) 60%, transparent); }
 .desktop-bot-avatar-dialog-name { width: 100%; margin: 0; padding: 14px 12px; overflow: hidden; border-radius: 12px; background: var(--color-card); color: var(--color-foreground); font-size: var(--text-heading-xl); font-weight: var(--font-weight-semibold); text-align: center; text-overflow: ellipsis; white-space: nowrap; }
@@ -233,7 +231,6 @@ html[data-skin] .assistant-chat.desktop-bots-workspace [data-ui="icon-button"].a
 /* Question and approval cards sit with the Bot's replies instead of spanning the transcript. */
 .assistant-chat.desktop-bots-workspace .assistant-input { align-self: flex-start; width: min(88%, 560px); }
 .assistant-chat.desktop-bots-workspace .assistant-card[data-status="failed"] { border-color: var(--color-destructive); }
-.assistant-chat.desktop-bots-workspace :is(button, input, textarea, select):not([data-ui]):focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 /* Keep the composer's resting frame without an extra ring on the editor. */
 .assistant-chat.desktop-bots-workspace .assistant-compose [data-ui="textarea"]:focus-visible { outline: none; box-shadow: none; }
 .assistant-chat.desktop-bots-workspace :is(button, input, textarea, select):not([data-ui]):disabled { cursor: not-allowed; opacity: .45; }

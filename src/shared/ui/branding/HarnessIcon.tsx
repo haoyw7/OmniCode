@@ -1,4 +1,4 @@
-import { cn } from "../../../shared/lib/cn";
+import { cn } from "../../lib/cn";
 import type { ReactNode } from "react";
 import claude from "../../../assets/providers/claude.svg";
 import deepseek from "../../../assets/providers/deepseek.svg";
@@ -11,9 +11,8 @@ import omp from "../../../assets/providers/omp.svg";
 import opencode from "../../../assets/providers/opencode.svg";
 import pi from "../../../assets/providers/pi.svg";
 import antigravity from "../../../assets/providers/antigravity.svg";
-import type { HarnessId } from "../model/session";
 
-export const HARNESS_ICONS: Record<HarnessId, string> = {
+export const HARNESS_ICONS = {
   deepseek,
   claude,
   codex,
@@ -27,8 +26,10 @@ export const HARNESS_ICONS: Record<HarnessId, string> = {
   antigravity,
 };
 
+type HarnessIconId = keyof typeof HARNESS_ICONS;
+
 /** White marks that must follow `currentColor` so they stay visible in light mode. */
-export const MONOCHROME_HARNESSES = new Set<HarnessId>([
+export const MONOCHROME_HARNESSES = new Set<HarnessIconId>([
   "deepseek",
   "cursor",
   "grok",
@@ -63,7 +64,7 @@ export function HarnessIcon({
   harness,
   className = "size-3.5",
 }: {
-  harness: HarnessId;
+  harness: HarnessIconId;
   className?: string;
 }) {
   if (harness === "cursor") {

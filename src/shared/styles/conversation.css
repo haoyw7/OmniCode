@@ -838,7 +838,6 @@ input,
 }
 
 .agent-markdown :is(.markdown-code-copy, .markdown-code-wrap):focus-visible {
-  background: color-mix(in srgb, var(--color-content) 10%, transparent);
   color: var(--color-content);
 }
 

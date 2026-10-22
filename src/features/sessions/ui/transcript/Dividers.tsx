@@ -6,7 +6,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { TerminalSpinner } from "../TerminalSpinner";
 import { Shimmer } from "../../../../shared/ui/Shimmer";
 import { HARNESS_TITLE, type Block, type InterjectionMeta } from "../../model/session";
-import { HarnessIcon } from "../HarnessIcon";
+import { HarnessIcon } from "../../../../shared/ui/branding/HarnessIcon";
 
 
 

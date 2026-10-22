@@ -34,7 +34,7 @@ vi.mock("../../workflows/model/workflowSessionWatch", () => ({
     release: () => {},
   }),
 }));
-vi.mock("../../sessions/ui/HarnessIcon", () => ({
+vi.mock("../../../shared/ui/branding/HarnessIcon", () => ({
   HarnessIcon: ({ harness }: { harness: string }) => createElement("span", { "data-harness": harness }),
 }));
 

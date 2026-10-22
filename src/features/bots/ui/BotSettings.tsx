@@ -61,7 +61,7 @@ import { BotImSettings } from "./BotImSettings";
 import { BotHabits, type HabitControl } from "./BotHabits";
 import type { BotHabit } from "../model/botHabits";
 import type { BotRpc } from "../model/botRpc";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { isEffortSettingId } from "../../sessions/model/models";
 import { carryModelSettings, findRemoteModel, remoteModelControls } from "../../connections/model/remoteModels";
 import { SearchableSelect } from "../../../shared/ui/SearchableSelect";

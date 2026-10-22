@@ -133,7 +133,7 @@ export function SidebarWorktreeSwitcher({
         </span>
       </span>
       <OpenTabs stats={tabStats?.get(pathKey(path))} />
-      {selected ? <Check className="size-3.5 shrink-0" /> : null}
+      {selected ? <Check className="size-4 shrink-0" /> : null}
     </Button>
   );
 

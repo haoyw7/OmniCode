@@ -182,14 +182,14 @@ export function useSheetDrag(
     }
     prepareContent();
   };
-  const onDragEnd = (event: PointerEvent, info: PanInfo) => {
+  const settle = (cancelled: boolean, velocity: number, fromContent = false) => {
     const element = sheet.current;
     const state = geometry.current;
     if (!element || !current.current.enabled) return;
     stopWatching.current?.();
     y.stop();
-    const settled = event.type === "pointercancel" ? state.detent
-      : settleDetent(y.get(), info.velocity.y / 1000, state.halfTop, state.halfHeight, state.detent);
+    const settled = cancelled ? state.detent
+      : settleDetent(y.get(), velocity / 1000, state.halfTop, state.halfHeight, state.detent);
     if (settled === "dismiss") {
       state.closing = true;
       current.current.onDismissStart?.();
@@ -215,9 +215,104 @@ export function useSheetDrag(
     };
     if (current.current.reduced) { y.set(target); finish(); }
     else release.current = animate(y, target, {
-      ...(settled === "dismiss" ? popTransition : { ...springs.sheet, velocity: info.velocity.y }),
+      ...(settled === "dismiss" || fromContent ? popTransition : { ...springs.sheet, velocity }),
       onComplete: finish,
     });
   };
+  const onDragEnd = (event: PointerEvent, info: PanInfo) => settle(event.type === "pointercancel", info.velocity.y);
+
+  useLayoutEffect(() => {
+    const element = sheet.current;
+    if (!element || !enabled || !detents) return;
+    let gesture: {
+      id: number; x: number; y: number; origin: number; claimed: boolean;
+      scrollables: HTMLElement[]; samples: { y: number; time: number }[];
+    } | undefined;
+    let suppressClick = false;
+    const cancel = () => {
+      const claimed = gesture?.claimed;
+      gesture = undefined;
+      if (claimed) settle(true, 0, true);
+    };
+    const touchStart = (event: TouchEvent) => {
+      suppressClick = false;
+      if (event.touches.length !== 1) { cancel(); return; }
+      const target = event.target;
+      if (!(target instanceof Element) || target.closest(".mobile-sheet") !== element ||
+        target.closest(".mobile-sheet-grip, .mobile-sheet-header, input, textarea, select, [contenteditable]")) return;
+      if (geometry.current.closing || target.closest('[inert], [aria-hidden="true"]')) return;
+      const scrollables: HTMLElement[] = [];
+      for (let node = target as HTMLElement; node && node !== element; node = node.parentElement!) {
+        if (node.scrollHeight > node.clientHeight && /auto|scroll/.test(getComputedStyle(node).overflowY)) scrollables.push(node);
+      }
+      const touch = event.touches[0];
+      gesture = { id: touch.identifier, x: touch.clientX, y: touch.clientY, origin: y.get(), claimed: false,
+        scrollables, samples: [{ y: touch.clientY, time: event.timeStamp }] };
+    };
+    const touchMove = (event: TouchEvent) => {
+      if (!gesture) return;
+      if (event.touches.length !== 1) { cancel(); return; }
+      const touch = Array.from(event.touches).find(item => item.identifier === gesture!.id);
+      if (!touch) return;
+      const distance = touch.clientY - gesture.y;
+      if (!gesture.claimed) {
+        if (Math.max(Math.abs(distance), Math.abs(touch.clientX - gesture.x)) < SLOP_PX) return;
+        if (Math.abs(touch.clientX - gesture.x) >= Math.abs(distance) ||
+          (distance < 0 && geometry.current.detent === "full" && y.get() <= 0) ||
+          (distance > 0 && gesture.scrollables.some(node => node.scrollTop > 0)) || !event.cancelable) {
+          gesture = undefined;
+          return;
+        }
+        release.current?.stop();
+        gesture.origin = y.get();
+        gesture.claimed = true;
+        suppressClick = true;
+        watchGeometry();
+      }
+      if (!event.cancelable) { cancel(); return; }
+      event.preventDefault();
+      y.set(Math.max(0, gesture.origin + distance));
+      prepareContent();
+      gesture.samples.push({ y: touch.clientY, time: event.timeStamp });
+      gesture.samples = gesture.samples.filter(sample => event.timeStamp - sample.time <= 100);
+    };
+    const touchEnd = (event: TouchEvent) => {
+      const ended = gesture;
+      if (!ended) return;
+      if (event.touches.length) { cancel(); return; }
+      gesture = undefined;
+      if (!ended.claimed) return;
+      const touch = Array.from(event.changedTouches).find(item => item.identifier === ended.id);
+      const sample = ended.samples.find(item => event.timeStamp - item.time <= 100);
+      const elapsed = sample ? event.timeStamp - sample.time : 0;
+      const velocity = sample && touch && elapsed > 0 ? (touch.clientY - sample.y) * 1000 / elapsed : 0;
+      settle(event.type === "touchcancel", velocity, true);
+    };
+    const click = (event: MouseEvent) => {
+      if (!suppressClick) return;
+      suppressClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    const allowClick = () => { suppressClick = false; };
+    element.addEventListener("pointerdown", allowClick);
+    element.addEventListener("touchstart", touchStart, { passive: true });
+    element.addEventListener("touchmove", touchMove, { passive: false });
+    element.addEventListener("touchend", touchEnd);
+    element.addEventListener("touchcancel", touchEnd);
+    element.addEventListener("click", click, true);
+    window.addEventListener("blur", cancel);
+    return () => {
+      gesture = undefined;
+      stopWatching.current?.();
+      element.removeEventListener("pointerdown", allowClick);
+      element.removeEventListener("touchstart", touchStart);
+      element.removeEventListener("touchmove", touchMove);
+      element.removeEventListener("touchend", touchEnd);
+      element.removeEventListener("touchcancel", touchEnd);
+      element.removeEventListener("click", click, true);
+      window.removeEventListener("blur", cancel);
+    };
+  }, [sheet, enabled, detents]);
   return { y, opacity, start, controls, onDrag, onDragEnd };
 }

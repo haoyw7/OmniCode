@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../../../../shared/lib/queryClient";
 import { sharedHostMachineId } from "../../../../connections/model/remoteProjects";
-import { ask } from "@tauri-apps/plugin-dialog";
+import { confirmAction } from "../../../../../platform/tauri/dialog";
 import { useEffect, useState } from "react";
 import { useTranslation } from "../../../../../shared/i18n/useTranslation";
 import { withToast } from "../../../../../shared/ui/primitives/Sonner";
@@ -212,7 +212,7 @@ export function useProviderAccounts() {
 
   const removeAccount = async (account: ProviderAccount) => {
     if (account.isDefault || working) return;
-    const confirmed = await ask(
+    const confirmed = await confirmAction(
       uiT("Remove “{account}”? Running turns will stop. Host-managed credentials will be deleted; custom Data Homes will be kept.", { account: account.label }),
       {
         title: `Remove ${HARNESS_TITLE[account.provider]} account`,

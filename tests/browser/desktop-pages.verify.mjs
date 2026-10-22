@@ -63,7 +63,7 @@ try {
         await page.getByRole('textbox', { name: 'Search', exact: true }).fill('layout');
         const conversation = page.getByRole('option').filter({ hasText: 'Desktop layout review' }).first();
         await expect(conversation).toBeVisible();
-        const claudeIcon = await page.evaluate(async () => (await import('/src/features/sessions/ui/HarnessIcon.tsx')).HARNESS_ICONS.claude);
+        const claudeIcon = await page.evaluate(async () => (await import('/src/shared/ui/branding/HarnessIcon.tsx')).HARNESS_ICONS.claude);
         await expect(conversation.locator('img')).toHaveAttribute('src', claudeIcon);
         await expect(conversation).not.toContainText('claude ·');
         await page.waitForTimeout(300);

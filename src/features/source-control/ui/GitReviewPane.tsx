@@ -455,7 +455,7 @@ export function GitReviewPane({
         new Set([...current].filter((id) => !id.startsWith(`${scopeKey}:`))),
     );
   const toolbarButton =
-    "review-toolbar-action grid size-8 shrink-0 place-items-center rounded-lg text-foreground-subtle outline-none hover:bg-surface-hover focus-visible:bg-surface-hover aria-pressed:bg-surface-hover aria-pressed:text-content aria-expanded:bg-surface-hover disabled:opacity-40";
+    "review-toolbar-action grid size-8 shrink-0 place-items-center rounded-lg text-foreground-subtle outline-none hover:bg-surface-hover aria-pressed:bg-surface-hover aria-pressed:text-content aria-expanded:bg-surface-hover disabled:opacity-40";
   const checkItem = (label: string, checked: boolean, onToggle: () => void) => (
     <DropdownMenuItem
       role="menuitemcheckbox"
@@ -466,7 +466,7 @@ export function GitReviewPane({
       }}
     >
       <span className="flex-1">{label}</span>
-      <Check className={cn("size-3.5", checked ? "" : "invisible")} />
+      <Check className={cn("size-4", checked ? "" : "invisible")} />
     </DropdownMenuItem>
   );
 

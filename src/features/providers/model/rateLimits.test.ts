@@ -361,3 +361,8 @@ describe("rateLimitWindowTooltip", () => {
     },
   );
 });
+
+it("keeps Claude model weekly limits separate and preserves provider display names", () => {
+  const parsed = parseClaudeOAuthUsage(JSON.stringify({ seven_day_opus: { utilization: 20 }, model_scoped: [{ display_name: "Opus", utilization: 30, resets_at: null }, { display_name: "Provider Model 5", utilization: 10 }] }));
+  expect(parsed.modelScopedWindows?.map(value => [value.id, value.model, value.window.usedPercent])).toEqual([["seven_day_opus", "Opus", 30], ["seven_day_provider_model_5", "Provider Model 5", 10]]);
+});

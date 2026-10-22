@@ -11,7 +11,7 @@ import {
   type OrchestrationSummary,
 } from "../model/orchestrationSummary";
 import { HARNESS_TITLE } from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import {
   OrchestrationActions,
   OrchestrationWorkers,

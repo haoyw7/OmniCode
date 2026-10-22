@@ -19,6 +19,7 @@ const APP_SHORTCUTS: [string, string, boolean][] = [
   ["View: Reload", "r", true],
   ["App: Search", "k", false],
   ["App: Settings", ",", false],
+  ["View: Usage", "u", false],
   ["App: Find in Files", "f", true],
 ];
 

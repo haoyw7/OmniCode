@@ -135,7 +135,7 @@ export function JiraSettings() {
                 disabled={busy}
                 autoComplete="off"
                 spellCheck={false}
-                className="h-8 w-full rounded-md border border-content/10 bg-transparent px-2 text-content outline-none focus-visible:focus-fill"
+                className="h-8 w-full rounded-md border border-content/10 bg-transparent px-2 text-content outline-none"
               />
               <FieldError errors={[form.formState.errors[field.name]]} />
             </label>

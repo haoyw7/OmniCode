@@ -53,6 +53,20 @@ export class HostProviderUsage {
 
   constructor(private readonly owner: string, private readonly probe = query) {}
 
+  async consumeReset(params: { accountId?: unknown; creditId?: unknown; idempotencyKey?: unknown }): Promise<unknown> {
+    const profile = providerUsageProfile(this.owner, "codex", params.accountId);
+    if (profile.environmentAuth) throw new Error("Usage resets require a supported provider login.");
+    if (params.creditId !== undefined && (typeof params.creditId !== "string" || params.creditId.length > 200)) throw new Error("Invalid reset credit");
+    if (typeof params.idempotencyKey !== "string" || !/^[A-Za-z0-9-]{16,80}$/.test(params.idempotencyKey)) throw new Error("Invalid reset request");
+    const path = (await resolveCodexBinary()).path;
+    const result = await runCodexAccountRequest<{ outcome?: string }>(path, homedir(), "account/rateLimitResetCredit/consume", {
+      idempotencyKey: params.idempotencyKey, ...(params.creditId ? { creditId: params.creditId } : {}),
+    }, profile.accountId, `omnicode-host-reset-${randomUUID()}`);
+    this.entries.delete(`codex:${profile.accountId}`);
+    if (!result || !["reset", "noCredit", "nothingToReset", "alreadyRedeemed"].includes(result.outcome ?? "")) throw new Error("Unexpected usage reset response.");
+    return { outcome: result.outcome };
+  }
+
   read(params: { provider?: unknown; accountId?: unknown; refresh?: unknown }): Promise<ProviderRateLimits> {
     if (params.refresh !== undefined && typeof params.refresh !== "boolean")
       throw new Error("Invalid usage refresh option");

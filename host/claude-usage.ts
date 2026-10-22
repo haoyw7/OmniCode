@@ -64,7 +64,7 @@ export async function fetchHostClaudeUsage(home: string, selector?: string) {
         : "Claude usage request failed");
     }
     const parsed = parseClaudeOAuthUsage(await response.text());
-    return parsed.session || parsed.weekly ? parsed
+    return parsed.session || parsed.weekly || parsed.modelScopedWindows?.length ? parsed
       : errorRateLimits("claude", "Claude usage response was unexpected");
   } catch {
     // Never send credential-bearing request objects or raw responses to clients.

@@ -82,22 +82,20 @@
   box-shadow: inset 0 0 0 1px
     color-mix(in oklab, var(--wf-avatar, var(--color-border-hover)) 35%, transparent);
 }
-.wf-pill-open:focus-visible {
-  background-color: var(--color-surface-hover);
-  box-shadow: var(--focus-fill-shadow);
-}
 /* 代理胶囊仅用底色反馈悬停，避免彩色描边抢占状态层级。 */
 .wf-agent-pill:hover {
   box-shadow: none;
 }
-.wf-pill-open:hover .wf-pill-avatar,
-.wf-pill-open:focus-visible .wf-pill-avatar {
-  transform: scale(1.08);
+.wf-pill-open:hover .wf-pill-avatar {
   background-color: color-mix(
     in oklab,
     var(--wf-avatar, var(--color-border-hover)) 30%,
     transparent
   );
+}
+.wf-pill-open:hover .wf-pill-avatar,
+.wf-pill-open:focus-visible .wf-pill-avatar {
+  transform: scale(1.08);
 }
 .wf-pill-open:hover .wf-pill-name,
 .wf-pill-open:focus-visible .wf-pill-name {
@@ -121,9 +119,11 @@
   transition:
     background-color var(--wf-t-base) var(--wf-ease), color var(--wf-t-base) var(--wf-ease);
 }
+.wf-pill-open:hover .wf-pill-tile {
+  background-color: var(--color-hover);
+}
 .wf-pill-open:hover .wf-pill-tile,
 .wf-pill-open:focus-visible .wf-pill-tile {
-  background-color: var(--color-hover);
   color: var(--color-foreground);
 }
 /* 尾槽里 ↗ 顶替状态标记：标记缩出、箭头缩入，同一格、同一拍。 */
@@ -168,7 +168,6 @@
 .wf-tile:has(.wf-tile-hit:focus-visible) {
   outline: none;
   border-radius: 0.5rem;
-  box-shadow: var(--focus-fill-shadow);
 }
 .wf-tile-frame {
   transition:
@@ -177,12 +176,11 @@
 .wf-tile:has(.wf-tile-open:hover) .wf-tile-frame {
   border-color: var(--color-border-hover);
 }
-.wf-tile:has(.wf-tile-open:focus-visible) .wf-tile-frame {
-  box-shadow: var(--focus-fill-shadow);
+.wf-tile-open:hover .wf-pill-tile {
+  background-color: var(--color-hover);
 }
 .wf-tile-open:hover .wf-pill-tile,
 .wf-tile-open:focus-visible .wf-pill-tile {
-  background-color: var(--color-hover);
   color: var(--color-foreground);
 }
 .wf-tile-open:hover .wf-pill-go,
@@ -210,8 +208,7 @@
 .wf-line-icon {
   transition: color var(--wf-t-base) var(--wf-ease);
 }
-.wf-line-open:hover,
-.wf-line-open:focus-visible {
+.wf-line-open:hover {
   background-color: var(--color-surface-hover);
 }
 .wf-line-open:hover .wf-line-icon,

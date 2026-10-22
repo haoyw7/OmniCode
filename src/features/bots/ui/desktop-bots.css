@@ -155,7 +155,6 @@
 .assistant-chat.desktop-bots-workspace :is(.desktop-bots-contact-main, .desktop-bots-thread, .desktop-bots-thread-toggle):focus-visible {
   outline: none;
   border-radius: 8px;
-  box-shadow: var(--focus-fill-shadow);
 }
 .assistant-chat.desktop-bots-workspace .desktop-bots-no-results {
   padding: 14px 8px;
@@ -528,10 +527,6 @@ html[data-reduced-motion="on"] .assistant-chat.desktop-bots-workspace .assistant
   line-height: 1.55;
   font-size: var(--text-ui-sm);
   tab-size: 2;
-}
-.desktop-bots-workspace .desktop-bots-memory :is(button, input, select, textarea):not([data-ui]):focus-visible {
-  outline: none;
-  box-shadow: var(--focus-fill-shadow);
 }
 .desktop-bots-workspace .desktop-bots-memory-toolbar {
   display: flex;

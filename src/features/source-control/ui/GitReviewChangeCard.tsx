@@ -142,7 +142,7 @@ export const GitReviewChangeCard = memo(function GitReviewChangeCard({
             setMenu({ x: rect.left + 12, y: rect.bottom });
           }}
           title={file.relative}
-          className={cn("review-file-toggle flex h-8 w-full min-w-0 items-center gap-0.5 px-2 text-left transition-colors focus-visible:focus-fill motion-reduce:transition-none justify-start", focused ? "ring-1 ring-inset ring-accent/30" : "")}
+          className={cn("review-file-toggle flex h-8 w-full min-w-0 items-center gap-0.5 px-2 text-left transition-colors motion-reduce:transition-none justify-start", focused ? "ring-1 ring-inset ring-accent/30" : "")}
         >
           {loading || preparing ? (
             <Spinner className="review-file-chevron size-4 shrink-0" aria-hidden="true" />
@@ -292,7 +292,7 @@ function MenuItem({
       disabled={disabled}
       title={children}
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-md text-left text-ui-base text-content outline-none hover:bg-menu-hover focus-visible:bg-menu-hover disabled:opacity-40 justify-start"
+      className="flex w-full items-center gap-2 rounded-md text-left text-ui-base text-content outline-none hover:bg-menu-hover disabled:opacity-40 justify-start"
     >
       <MenuHover />
       {icon}

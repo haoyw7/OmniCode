@@ -8,7 +8,7 @@ import {
   notificationMuteStatus,
 } from "./notificationMuteActions";
 import { NotificationMuteDatePicker } from "./NotificationMuteDatePicker";
-import { ExplorerMenu } from "../../connections/files/ui/ExplorerMenu";
+import { ActionMenu } from "../../../shared/ui/primitives/ActionMenu";
 import { Popover } from "../../../shared/ui/Popover";
 import { Button } from "../../../shared/ui/forms/Button";
 import { BellOff, ChevronDown } from "../../../shared/ui/icons";
@@ -64,7 +64,7 @@ export function NotificationMuteControl({ projectIds, onChanged }: Props) {
       {muted.length ? (
         <Button variant="ghost" size="sm"
           type="button"
-          className="rounded-md px-2 py-1.5 text-xs text-content/70 hover:bg-content/3 hover:text-content focus-visible:focus-fill"
+          className="rounded-md px-2 py-1.5 text-xs text-content/70 hover:bg-content/3 hover:text-content"
           onClick={() => change(undefined)}
         >
           {uiT("Resume notifications")}
@@ -94,7 +94,7 @@ export function NotificationMuteControl({ projectIds, onChanged }: Props) {
         </p>
       ) : null}
       <PresenceBoundary propagate>{trigger.current ? (
-        <ExplorerMenu
+        <ActionMenu
           open={open === "menu"}
           anchor={trigger.current}
           side="bottom"

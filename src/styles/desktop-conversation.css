@@ -225,7 +225,6 @@ html[data-skin] [data-ui="workflow-card-header"] [data-ui="button"][data-size^="
   text-align: left;
 }
 .background-task-open:hover { background: var(--color-surface-hover); }
-.background-task-open:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 .background-task-elapsed { flex-shrink: 0; color: var(--color-foreground-subtle); font-size: 11px; font-variant-numeric: tabular-nums; }
 .background-task-stop { position: relative; flex-shrink: 0; }
 .background-task-stop-error { position: absolute; right: 0; top: 100%; z-index: 1; width: max-content; padding: 4px 8px; background: var(--color-card); color: var(--color-content); border: 1px solid var(--color-hairline); border-radius: 6px; }
@@ -608,7 +607,7 @@ html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.compose
   box-shadow: none;
 }
 
-html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.composer-send, .composer-stop):not(:disabled):is(:hover, :focus-visible) {
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(.composer-send, .composer-stop):not(:disabled):is(:hover) {
   background: var(--color-control);
 }
 
@@ -937,7 +936,7 @@ html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-en
   line-height: 1.4;
   box-shadow: none;
 }
-html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-environment-badge svg { width: 14px; height: 14px; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-environment-badge svg { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 html[data-skin][data-desktop-mode] .composer-environment-menu [data-ui="select-option"] {
   font-size: 14px;
 }
@@ -1008,8 +1007,8 @@ html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-gi
   opacity: 0;
   pointer-events: none;
 }
-html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls :is(.composer-current-branch > div > button, .composer-worktree-base > button):not(:disabled):is(:hover, :focus-visible)::before,
-html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox:has([data-ui="checkbox"]:enabled):is(:hover, :has([data-ui="checkbox"]:focus-visible))::before { opacity: 1; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-git-controls :is(.composer-current-branch > div > button, .composer-worktree-base > button):not(:disabled):hover::before,
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-checkbox:has([data-ui="checkbox"]:enabled):hover::before { opacity: 1; }
 html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-menu-trigger {
   display: grid;
   order: 2;
@@ -1023,7 +1022,7 @@ html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-wo
   color: var(--color-ink-secondary);
   background: transparent;
 }
-html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-menu-trigger svg { width: 14px; height: 14px; }
+html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-worktree-menu-trigger svg { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-model-controls { margin-left: auto; }
 
 html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-leading-controls { flex-wrap: nowrap;
@@ -1074,7 +1073,6 @@ html[data-skin][data-desktop-mode] .composer-popover {
   --desktop-menu-pad-y: 2.5px;
   --desktop-menu-pad-x: 8px;
   --desktop-menu-radius: 6px;
-  --desktop-menu-icon: 16px;
   --desktop-menu-gap: 6px;
   --desktop-menu-panel-radius: 10px;
 }
@@ -1143,7 +1141,7 @@ html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] :is(
   .composer-meta button[data-model-control],
   .composer-meta [data-access-picker-trigger],
   .composer-plus
-):not(:disabled, [aria-disabled="true"]):is(:hover, :focus-visible, [aria-expanded="true"]) {
+):not(:disabled, [aria-disabled="true"]):is(:hover, [aria-expanded="true"]) {
   background: var(--color-control);
 }
 
@@ -1195,7 +1193,7 @@ html[data-skin][data-desktop-mode] [data-composer-layout="desktop"] .composer-se
 [data-session-status] [data-tone="free"] { background: var(--context-usage-free); }
 [data-session-status] .context-breakdown-toggle { display: flex; align-items: center; width: 100%; gap: 6px; padding: 8px 0; text-align: left; }
 [data-session-status] .context-breakdown-toggle > :last-child { margin-left: auto; color: var(--color-foreground-subtle); }
-[data-session-status] .context-breakdown-toggle:focus-visible { outline: none; border-radius: 4px; box-shadow: var(--focus-fill-shadow); }
+[data-session-status] .context-breakdown-toggle:focus-visible { outline: none; border-radius: 4px; }
 [data-session-status] .context-breakdown-tool-list { max-height: 220px; overflow-y: auto; }
 [data-session-status] .context-breakdown-tool-list .context-breakdown-row { font-size: 0.9em; }
 [data-session-status] .context-breakdown-footer { margin-top: 8px; font-size: 0.9em; }

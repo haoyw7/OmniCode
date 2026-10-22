@@ -72,7 +72,7 @@ import { IS_MAC, IS_WIN, MOD, SHIFT } from "../../../../platform/tauri/platform"
 import type { OpenFileFn } from "../../../search/model/search";
 import type { GitStatusMap } from "../../../source-control/hooks/useGitFileStatuses";
 import { useDraggableItem, useActiveDragPayload } from "../../../../shared/ui/primitives/Sortable";
-import { ExplorerMenu, type ExplorerMenuItem } from "./ExplorerMenu";
+import { ActionMenu, type ActionMenuItem } from "../../../../shared/ui/primitives/ActionMenu";
 import { FileTypeIcon } from "./FileTypeIcon";
 import { AnimatedCollapse } from "../../../../shared/ui/AnimatedCollapse";
 import { CollapsingVirtualRows } from "../../../../shared/ui/CollapsingVirtualRows";
@@ -177,7 +177,7 @@ function explorerItems(
   target: MenuTarget,
   clip: Clip | null,
   canOpenTerminal: boolean,
-): ExplorerMenuItem[] {
+): ActionMenuItem[] {
   const pasteParent = target.isDir ? target.path : parentPath(target.path);
   const pasteBlocked =
     !!clip?.isDir &&
@@ -886,7 +886,7 @@ export const FileTree = memo(function FileTree({
             e.clientY,
           );
         }}
-        className={cn("flex min-w-0 flex-1 items-center justify-start gap-1 h-full rounded-lg pl-2 text-left outline-none focus-visible:focus-fill  hover:bg-surface-hover", dragOverPath === cwd || (navigationOnly && selectedPath === cwd) ? "bg-selection" : "")}
+        className={cn("flex min-w-0 flex-1 items-center justify-start gap-1 h-full rounded-lg pl-2 text-left outline-none  hover:bg-surface-hover", dragOverPath === cwd || (navigationOnly && selectedPath === cwd) ? "bg-selection" : "")}
       >
         <span className="grid size-4 shrink-0 place-items-center text-content/50">
           {rootLoading ? (
@@ -927,7 +927,7 @@ export const FileTree = memo(function FileTree({
       <div
         ref={rootRef}
         tabIndex={-1}
-        className="flex h-full min-h-0 flex-col outline-none focus-visible:focus-fill"
+        className="flex h-full min-h-0 flex-col outline-none"
         onKeyDown={onKeyDown}
         onContextMenu={onBackgroundMenu}
       >
@@ -1005,7 +1005,7 @@ export const FileTree = memo(function FileTree({
         </div>
       </div>
       <PresenceBoundary propagate>{menu ? (
-        <ExplorerMenu
+        <ActionMenu
           x={menu.x}
           y={menu.y}
           items={explorerItems(menu.target, clip, !!onOpenTerminal)}
@@ -1184,7 +1184,7 @@ function TreeNode({ entry, depth, loading }: { entry: FsEntry; depth: number; lo
           }}
           onContextMenu={(e) => onItemContextMenu(entry, e)}
           style={{ paddingLeft: 8 + depth * 12 }}
-          className={cn("flex h-7 w-full cursor-default items-center justify-start gap-1 rounded-lg pr-2 text-left text-ui-base outline-none focus-visible:focus-fill  leading-none touch-none data-[explorer-dragging]:opacity-50", selected
+          className={cn("flex h-7 w-full cursor-default items-center justify-start gap-1 rounded-lg pr-2 text-left text-ui-base outline-none  leading-none touch-none data-[explorer-dragging]:opacity-50", selected
               ? "bg-selection text-content"
               : "text-content hover:bg-surface-hover", cutPath === entry.path ? "opacity-50" : "", dragOverPath === entry.path ? "bg-selection" : "")}
         >
@@ -1325,7 +1325,7 @@ export function NameRow({
             }
           }}
           onBlur={() => finish(issue === null || issue.severity !== "error")}
-          className="h-5 min-w-0 flex-1 rounded-sm bg-content/10 px-1 text-[14px] leading-none text-content outline-none focus-visible:focus-fill ring-1 ring-accent"
+          className="h-5 min-w-0 flex-1 rounded-sm bg-content/10 px-1 text-[14px] leading-none text-content outline-none ring-1 ring-accent"
         />
       </div>
       {showIssue ? (

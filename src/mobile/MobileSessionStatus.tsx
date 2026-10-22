@@ -23,7 +23,7 @@ import { ContextUsageDetails } from "../features/sessions/ui/ContextUsageDetails
 import { ContextBreakdownBar } from "../shared/ui/messaging/ContextBreakdown";
 import { AnimatedCollapse } from "../shared/ui/AnimatedCollapse";
 import { DisclosureChevron } from "../shared/ui/DisclosureChevron";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../shared/ui/branding/HarnessIcon";
 import { HARNESS_TITLE } from "../features/sessions/model/session";
 import {
   configurationForSession,
@@ -59,7 +59,7 @@ function StatusField({
         {copyable && (
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-status-copy"
+            className="hover:opacity-80 active:opacity-70 mobile-status-copy"
             aria-label={t(copied ? "Copied" : "Copy")}
             title={t(copied ? "Copied" : "Copy")}
             onClick={() =>
@@ -162,7 +162,7 @@ export function MobileSessionStatus({
         <section className="mobile-status-context">
           <button
             type="button"
-            className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-status-context-toggle"
+            className="hover:opacity-80 active:opacity-70 mobile-status-context-toggle"
             aria-expanded={contextExpanded}
             aria-controls={contextDetailsId}
             onClick={() => setContextExpanded((value) => !value)}

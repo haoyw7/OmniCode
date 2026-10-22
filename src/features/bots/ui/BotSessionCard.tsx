@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import type { BotMessage, SessionReference } from "../model/botView";
 import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { ArrowUpRight, ChevronRight, ListChecks } from "../../../shared/ui/icons";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { HARNESS_TITLE, sessionDisplayTitle } from "../../sessions/model/session";
 import { Button } from "../../../shared/ui/forms/Button";
 import { IconButton } from "../../../shared/ui/forms/IconButton";

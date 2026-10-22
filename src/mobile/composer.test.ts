@@ -911,3 +911,28 @@ describe("mobile composer card", () => {
     await expect(readMobileAttachments([file])).rejects.toThrow("20 MB");
   });
 });
+
+it("handles /usage-limits locally, filters the active provider and dismisses on the next message", async () => {
+  const limits = vi.fn(async () => [
+    { id: "codex:a", provider: "codex", label: "Account snapshot", status: "ok", windows: [{ id: "session", label: "5h", usedPercent: 42 }] },
+    { id: "claude:a", provider: "claude", label: "Other provider snapshot", status: "ok", windows: [] },
+  ]);
+  const onChange = vi.fn();
+  const source = { sourceKey: "mobile-command-fixture", limits };
+  const view = render({ value: "/usage-limits", canSend: false, onChange, usageLimits: { source, sessionKey: "thread", messageKey: "before" } });
+  act(() => view.node.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+  await act(async () => { await Promise.resolve(); });
+  await vi.waitFor(() => expect(view.node.textContent).toContain("42%"));
+  expect(view.node.textContent).not.toContain("Other provider snapshot");
+  expect(view.onSend).not.toHaveBeenCalled();
+  expect(onChange).toHaveBeenCalledWith("");
+  view.rerender({ value: "Next message", usageLimits: { source, sessionKey: "thread", messageKey: "after" } });
+  await finishMotion();
+  expect(view.node.querySelector('[aria-label="Usage limits snapshot"]')).toBeNull();
+});
+it("keeps /usage-limits out of a new task draft's agent send path", () => {
+  const limits = vi.fn(async () => []);
+  const view = render({ value: "/usage-limits", usageLimits: { source: { sourceKey: "new-task", limits } } });
+  act(() => view.node.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+  expect(view.onSend).not.toHaveBeenCalled(); expect(limits).not.toHaveBeenCalled();
+});

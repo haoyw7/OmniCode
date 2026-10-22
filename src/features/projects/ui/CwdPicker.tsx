@@ -264,7 +264,7 @@ export function CwdPicker({
           }}
           className="cwd-picker-clear flex shrink-0 items-center justify-center text-content/50 hover:text-content"
         >
-          <X aria-hidden="true" className="size-3.5" />
+          <X aria-hidden="true" className="size-4" />
         </Button>
       ) : null}
       <Button variant="ghost" size="content"
@@ -307,7 +307,7 @@ export function CwdPicker({
         )}
         {chevron ? (
           <ChevronDown
-            className={cn("size-3 shrink-0 text-content/50", open ? "rotate-180" : "")}
+            className={cn("size-4 shrink-0 text-content/50", open ? "rotate-180" : "")}
           />
         ) : null}
       </Button>
@@ -348,7 +348,7 @@ export function CwdPicker({
                 >
                   <MenuHover />
                   <span data-menu-title className="text-[13px]">{uiT("No folder")}</span>
-                  {!inProject ? <Check className="size-3.5 shrink-0 text-accent" /> : null}
+                  {!inProject ? <Check className="size-4 shrink-0 text-accent" /> : null}
                 </Button>
                 <div role="separator" className="my-1 h-px bg-stroke" />
               </>
@@ -388,7 +388,7 @@ export function CwdPicker({
                       <span data-menu-title className="min-w-0 truncate text-[13px]">
                         {renderProjectLabel?.(item.path) ?? basename(item.path)}
                       </span>
-                      {current ? <Check className="size-3.5 shrink-0 text-accent" /> : null}
+                      {current ? <Check className="size-4 shrink-0 text-accent" /> : null}
                     </Button>
                   );
                 })}
@@ -417,7 +417,7 @@ export function CwdPicker({
                 <MenuHover />
                 <span data-menu-title className="text-[13px]">{uiT("More Projects")}</span>
                 <ChevronRight
-                  className="size-3.5 shrink-0"
+                  className="size-4 shrink-0"
                 />
               </Button>
             ) : null}

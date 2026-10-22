@@ -155,7 +155,7 @@ export function WorkflowRunDigest({
       </motionElement.span>
     ) : (
       <motionElement.button {...workflowEntry()}
-        className=" flex shrink-0 cursor-pointer items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--color-warning)_12%,transparent)] py-0.5 pl-1.5 pr-2 text-ui-xs font-medium text-warning outline-none transition-colors hover:bg-[color-mix(in_oklab,var(--color-warning)_20%,transparent)] focus-visible:focus-fill"
+        className=" flex shrink-0 cursor-pointer items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--color-warning)_12%,transparent)] py-0.5 pl-1.5 pr-2 text-ui-xs font-medium text-warning outline-none transition-colors hover:bg-[color-mix(in_oklab,var(--color-warning)_20%,transparent)]"
         data-testid="workflow-digest-questions"
         onClick={() => onOpenRun()}
         type="button"
@@ -197,8 +197,8 @@ export function WorkflowRunDigest({
       ref={pauseOffscreen}
       aria-label={kind}
       className={cn(
-        "wf-motion  flex w-full min-w-0 flex-col gap-1 rounded-xl border border-border/70 bg-card/70 px-3.5 pb-2 pt-1.5 outline-none focus-visible:focus-fill",
-        hasRail && "cursor-pointer focus-visible:focus-fill",
+        "wf-motion  flex w-full min-w-0 flex-col gap-1 rounded-xl border border-border/70 bg-card/70 px-3.5 pb-2 pt-1.5 outline-none",
+        hasRail && "cursor-pointer",
       )}
       data-expanded={hasRail ? String(expanded) : undefined}
       data-testid={testId(TID_CHAT_WORKFLOW_RUN_DIGEST, testIdKey)}

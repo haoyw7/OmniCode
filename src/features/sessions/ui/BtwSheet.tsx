@@ -668,7 +668,7 @@ export function BtwSheet({
                       aria-selected={selected}
                       title={tab.question}
                       onClick={() => btw.selectTab(tab.id)}
-                      className="flex h-full min-w-0 items-center gap-1.5 rounded-md pr-1 pl-2.5 text-xs focus-visible:focus-fill"
+                      className="flex h-full min-w-0 items-center gap-1.5 rounded-md pr-1 pl-2.5 text-xs"
                     >
                       {tab.status ? (
                         <span
@@ -687,7 +687,7 @@ export function BtwSheet({
                       }
                       title={tab.thread ? uiT("Delete") : uiT("Discard")}
                       onClick={() => btw.closeTab(tab)}
-                      className="mr-1 grid size-5 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content focus-visible:focus-fill"
+                      className="mr-1 grid size-5 shrink-0 place-items-center rounded text-content/40 hover:bg-content/6 hover:text-content"
                     >
                       <X className="size-3" />
                     </Button>
@@ -701,7 +701,7 @@ export function BtwSheet({
                 aria-label={uiT("New side question")}
                 title={uiT("New side question")}
                 onClick={btw.startDraft}
-                className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content focus-visible:focus-fill"
+                className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content"
               >
                 <Plus className="size-3.5" />
               </Button>
@@ -711,7 +711,7 @@ export function BtwSheet({
               aria-label={uiT("Back to the conversation")}
               title={uiT("Back to the conversation (Esc)")}
               onClick={btw.close}
-              className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content focus-visible:focus-fill"
+              className="grid size-7 shrink-0 place-items-center rounded-md text-content/45 transition-colors hover:bg-content/5 hover:text-content"
             >
               <ChevronDown className="size-4" />
             </Button>
@@ -749,7 +749,7 @@ export function BtwSheet({
                 <Button variant="ghost" size="content"
                   type="button"
                   onClick={btw.retry}
-                  className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-danger/80 transition-colors hover:bg-danger/10 hover:text-danger focus-visible:focus-fill"
+                  className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-medium text-danger/80 transition-colors hover:bg-danger/10 hover:text-danger"
                 >
                   <RefreshCw className="size-3" />
                   {uiT("Retry")}

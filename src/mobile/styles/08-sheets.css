@@ -43,8 +43,8 @@
 .mobile-sheet[data-surface="solid"]::before {
   display: none;
 }
-/* Bottom sheets rise in and can be pulled by the grip or title header;
-   their content keeps native scrolling in both directions. See sheetDrag.ts. */
+/* Bottom sheets follow the grip/title or a content swipe at a scroll boundary.
+   sheetDrag.ts claims touch movement only when it should resize the sheet. */
 /* Forms reserve space after the keyboard rises and restore it immediately on
    dismissal. Moving the backdrop bottom every frame exposes the page below it
    and repeatedly lays out the form, so the sheet rides the keyboard on a
@@ -513,7 +513,7 @@
 .mobile-status .context-breakdown-toggle { display: flex; align-items: center; width: 100%; gap: 6px; min-height: 44px; text-align: left; }
 .mobile-status .context-breakdown-toggle > :last-child { margin-left: auto; color: var(--color-m-ink-secondary); }
 .mobile-status-context-toggle:focus-visible,
-.mobile-status .context-breakdown-toggle:focus-visible { outline: none; border-radius: 4px; box-shadow: var(--focus-fill-shadow); }
+.mobile-status .context-breakdown-toggle:focus-visible { outline: none; border-radius: 4px; }
 .mobile-status .context-breakdown-tool-list { max-height: 240px; overflow-y: auto; }
 .mobile-status .context-breakdown-tool-list .context-breakdown-row { font-size: 0.9em; }
 .mobile-status .context-breakdown-footer { margin-top: 8px; font-size: 0.9em; }

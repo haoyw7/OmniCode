@@ -69,6 +69,10 @@ export function selectSessionShell(snapshot: Snapshot, outgoing?: OutgoingMessag
   const configuration = sessionComposerConfiguration(session);
   const view = withOutgoing(snapshot, outgoing);
   const native = session.nativeSession;
+  let lastUserMessageId: string | undefined;
+  for (let index = session.blocks.length - 1; index >= 0; index--) {
+    if (session.blocks[index].role === "user") { lastUserMessageId = session.blocks[index].id; break; }
+  }
   return {
     projectId: snapshot.projectId,
     archived: snapshot.archived,
@@ -84,6 +88,7 @@ export function selectSessionShell(snapshot: Snapshot, outgoing?: OutgoingMessag
     } : undefined,
     lastCompletedRunId: snapshot.lastCompletedRunId,
     hasBlocks: view.session.blocks.length > 0,
+    lastUserMessageId,
     pendingInputKey: pendingSessionInputKey(session, snapshot.runId),
     // The existing plan hook owns skipped decisions. This key wakes the shell
     // when an idle plan appears/changes without subscribing it to all text.

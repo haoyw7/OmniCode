@@ -77,7 +77,7 @@ function GenericLinkPreview({ link }: { link: UserLink }) {
       data-user-link-preview
       title={link.url}
       aria-label={uiT("Open {value0}", { value0: String(title) })}
-      className="focus-visible:focus-fill active:opacity-70 user-link-preview group mx-0.5 text-accent/90 hover:text-accent hover:underline"
+      className="active:opacity-70 user-link-preview group mx-0.5 text-accent/90 hover:text-accent hover:underline"
       onClick={(event) => openExternalLink(event, link.url)}
     >
       <span className="mr-1 inline-flex size-4 items-center justify-center overflow-hidden rounded bg-background-base/50 align-[-0.125em] text-[9px] font-semibold uppercase text-content/55">
@@ -193,7 +193,7 @@ function GithubWorkItemPreview({
           value3: String(itemTitle ? `: ${itemTitle}` : ""),
         })}
         aria-describedby={open ? tooltipId : undefined}
-        className={cn("group mx-px inline-flex max-w-full items-center gap-1 rounded-md border-0 bg-transparent p-0 text-content/70 no-underline shadow-none outline-none transition-[color,transform] duration-[140ms] ease-[var(--motion-ease-out)] hover:text-content focus-visible:focus-fill active:scale-[0.98] motion-reduce:transition-none pb-px", compact
+        className={cn("group mx-px inline-flex max-w-full items-center gap-1 rounded-md border-0 bg-transparent p-0 text-content/70 no-underline shadow-none outline-none transition-[color,transform] duration-[140ms] ease-[var(--motion-ease-out)] hover:text-content active:scale-[0.98] motion-reduce:transition-none pb-px", compact
             ? "align-middle text-xs leading-4"
             : "align-[-0.25em] text-[11px] leading-4")}
         onMouseEnter={showAfterDelay}

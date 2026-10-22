@@ -579,6 +579,7 @@ describe("settings navigation", () => {
       "chat",
       "providers",
       "import",
+      "usage",
       "mcp",
       "skills",
       "inbox",

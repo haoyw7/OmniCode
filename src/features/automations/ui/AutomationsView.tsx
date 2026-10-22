@@ -34,7 +34,7 @@ import {
   type ReactNode,
 } from "react";
 import { AccessPicker } from "../../sessions/ui/AccessPicker";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import {
   AlertCircle,
   CheckCircle,
@@ -357,7 +357,7 @@ function AutomationsContent({
               placeholder={uiT("Filter automations")}
               spellCheck={false}
               autoComplete="off"
-              className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] outline-none focus-visible:focus-fill placeholder:text-content/40"
+              className="h-7 w-full rounded-md bg-transparent pl-7 pr-2 text-[12px] outline-none placeholder:text-content/40"
             />
           </label>
           <Button variant="ghost" size="icon-sm"
@@ -750,7 +750,7 @@ function AutomationRunsTable({
       estimateRowHeight={44}
       headClassName="h-10 px-4 text-[11px] font-normal text-content/40"
       cellClassName="h-11 truncate py-0 pl-4 pr-0 last:pr-4"
-      rowClassName="border-content/8 hover:bg-content/3 focus-within:bg-content/3 active:bg-content/6"
+      rowClassName="border-content/8 hover:bg-content/3 active:bg-content/6"
       rowProps={({ original: run }) => ({
         className: run.sessionId ? "cursor-pointer" : undefined,
         onClick: (event) => {
@@ -985,7 +985,7 @@ function AutomationEditor({
                 value={draft.name}
                 onChange={(event) => update("name", event.target.value)}
                 placeholder={uiT("Untitled")}
-                className="min-w-0 flex-1 bg-transparent text-[20px] font-semibold leading-tight text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+                className="min-w-0 flex-1 bg-transparent text-[20px] font-semibold leading-tight text-content outline-none placeholder:text-content/35"
               />
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                 {!draft.id || dirty ? (
@@ -1090,7 +1090,7 @@ function AutomationEditor({
                         className="w-full justify-start text-left"
                       >
                         <MenuHover />
-                        <Trash2 className="size-3.5" />
+                        <Trash2 className="size-4" />
                         {uiT("Delete automation")}
                       </Button>
                     </Popover>
@@ -1210,7 +1210,7 @@ function AutomationEditor({
                       value={triggerQuery}
                       onChange={(event) => setTriggerQuery(event.target.value)}
                       placeholder={uiT("Search triggers")}
-                      className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+                      className="min-w-0 flex-1 bg-transparent text-[13px] text-content outline-none placeholder:text-content/35"
                     />
                   </label>
                   <div className="p-1">
@@ -1265,7 +1265,7 @@ function AutomationEditor({
                             {uiT(option.label)}
                           </span>
                           {ready ? (
-                            <ChevronRight className="size-3.5 text-content/45" />
+                            <ChevronRight className="size-4 text-content/45" />
                           ) : (
                             <span className="shrink-0 text-[11px] text-content/35">
                               {uiT("Not connected")}
@@ -1329,7 +1329,7 @@ function AutomationEditor({
 
             <section>
               <SectionTitle>{uiT("Instructions")}</SectionTitle>
-              <div className="relative mt-3 rounded-md border border-content/10 bg-content/3 backdrop-blur-sm has-focus:focus-fill">
+              <div className="relative mt-3 rounded-md border border-content/10 bg-content/3 backdrop-blur-sm">
                 <PromptField
                   invalid={!!errors?.prompt}
                   value={draft.prompt}
@@ -1432,7 +1432,7 @@ function AutomationEditor({
             </section>
 
             <details className="rounded-md border border-content/10">
-              <summary className="hover:opacity-80 focus-visible:focus-fill flex min-h-14 cursor-default list-none items-center justify-between gap-3 px-4 active:opacity-75">
+              <summary className="hover:opacity-80 flex min-h-14 cursor-default list-none items-center justify-between gap-3 px-4 active:opacity-75">
                 <span>
                   <span className="block text-[13px] font-medium text-content/75">
                     {uiT("Advanced")}

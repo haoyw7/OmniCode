@@ -7,7 +7,7 @@ import { useRef, useState } from "react";
 import { HandoffButton, SecondOpinionButton } from "../SecondOpinionButton";
 import { Popover } from "../../../../shared/ui/Popover";
 import { type HarnessId, type ModelTarget, type TurnMetrics } from "../../model/session";
-import { HarnessIcon } from "../HarnessIcon";
+import { HarnessIcon } from "../../../../shared/ui/branding/HarnessIcon";
 import { CopyTurnButton } from "../CopyTurnButton";
 import { formatClockTime, formatElapsed, formatWorkingDuration } from "./transcriptClock";
 import { SaveNoteButton } from "./TurnActions";
@@ -172,7 +172,7 @@ export function TurnMetricsBadge({ metrics }: { metrics?: TurnMetrics }) {
         tabIndex={0}
         aria-label={uiT("Turn metrics: {value0}", { value0: String(label) })}
         title={uiT("Turn metrics")}
-        className="grid rounded-md p-1 text-content/40 outline-none hover:bg-content/5 hover:text-content/70 focus-visible:focus-fill"
+        className="grid rounded-md p-1 text-content/40 outline-none hover:bg-content/5 hover:text-content/70"
       >
         <ChartBreakoutSquare className="size-3.5" />
       </span>

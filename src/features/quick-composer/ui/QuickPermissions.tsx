@@ -66,7 +66,7 @@ export function QuickPermissions({
       aria-label={uiT("Permissions")}
       aria-activedescendant={`${id}-${active}`}
       tabIndex={-1}
-      className="min-h-0 overflow-y-auto overscroll-none border-t border-stroke p-2 outline-none focus-visible:focus-fill"
+      className="min-h-0 overflow-y-auto overscroll-none border-t border-stroke p-2 outline-none"
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -113,7 +113,7 @@ export function QuickPermissions({
             </span>
           </span>
           {value === mode ? (
-            <Check className="size-3.5 shrink-0 text-accent" />
+            <Check className="size-4 shrink-0 text-accent" />
           ) : null}
         </Button>
       ))}

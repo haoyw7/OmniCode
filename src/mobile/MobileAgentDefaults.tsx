@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "../shared/lib/queryClient";
 import { mobileSourceKey } from "./mobileQueries";
 import { useEffect, useRef } from "react";
-import { ChevronRight } from "../shared/ui/icons";
+import { ChevronRight, RotateCcw } from "../shared/ui/icons";
+import { Switch } from "../shared/ui/forms/Switch";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import {
   DEFAULT_RUNTIME_MODE,
@@ -29,6 +30,7 @@ import {
   confirmLegacyAccounts,
   defaultConfiguration,
   loadMobileAgentDefaults,
+  loadMobileConversationDefaults,
   saveMobileAgentDefaults,
   withDefaultAccount,
   withDefaultConfiguration,
@@ -39,6 +41,7 @@ import type { MobilePreferencePanel } from "./mobileSettingsRoutes";
 import type { MobileClient } from "./client";
 import { MobileAgentDefaultsStatus } from "./MobileAgentDefaultsStatus";
 import { usePreferenceState } from "../features/settings/model/usePreferenceState";
+import { loadUseLastSelection, saveUseLastSelection } from "../features/sessions/model/models";
 
 /** Mounted in Settings only; discovery never holds up Home or a conversation. */
 export function MobileAgentDefaults({
@@ -58,6 +61,7 @@ export function MobileAgentDefaults({
   const [defaults, setDefaults] = usePreferenceState<Defaults>(() =>
     loadMobileAgentDefaults(hostId),
   );
+  const [followLastSelection, setFollowLastSelection] = usePreferenceState(loadUseLastSelection);
   const trigger = useRef<HTMLButtonElement>(null);
   const hostKey = typeof hostId === "object"
     ? `${hostId.endpoint}\n${hostId.environmentId ?? ""}`
@@ -80,6 +84,7 @@ export function MobileAgentDefaults({
     const confirmed = accounts ? confirmLegacyAccounts(saved, accounts) : saved;
     if (hostId && confirmed !== saved) saveMobileAgentDefaults(hostId, confirmed);
     setDefaults(confirmed);
+    setFollowLastSelection(loadUseLastSelection());
   }, [hostKey, accounts]);
   const reload = () => { retry.current = true; void catalogRead.refetch(); void accountsRead.refetch(); };
   const change = (next: Defaults) => {
@@ -87,13 +92,14 @@ export function MobileAgentDefaults({
     saveMobileAgentDefaults(hostId, next);
     setDefaults(next);
   };
-  const saved = defaults.harness
-    ? defaults.agents?.[defaults.harness]
+  const effectiveDefaults = followLastSelection ? loadMobileConversationDefaults(hostId) : defaults;
+  const saved = effectiveDefaults.harness
+    ? effectiveDefaults.agents?.[effectiveDefaults.harness]
     : undefined;
   const runtimeMode = defaults.runtimeMode ?? DEFAULT_RUNTIME_MODE;
-  const resolved = catalog && defaultConfiguration(catalog, defaults);
+  const resolved = catalog && defaultConfiguration(catalog, effectiveDefaults);
   const configuration: MobileConfiguration = resolved ?? {
-    harness: defaults.harness ?? "codex",
+    harness: effectiveDefaults.harness ?? "codex",
     model: saved?.model ?? "",
     modelSettings: saved?.modelSettings ?? {},
     runtimeMode,
@@ -114,16 +120,16 @@ export function MobileAgentDefaults({
         <button
           ref={trigger}
           type="button"
-          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-settings-row"
+          className="hover:opacity-80 active:opacity-70 mobile-settings-row"
           aria-haspopup="dialog"
           aria-expanded={panel === "agent-defaults"}
-          disabled={unavailable || !resolved}
+          disabled={unavailable}
           onClick={() => onPanelChange("agent-defaults")}
         >
           <SettingsIcon name="agent" />
           <span className="mobile-settings-label">
             <span>{t("Agent and model")}</span>
-            <small>{summary}</small>
+            <small>{followLastSelection ? `${t("Last selection")} · ${summary}` : summary}</small>
           </span>
           <ChevronRight />
         </button>
@@ -260,7 +266,32 @@ export function MobileAgentDefaults({
         loading={catalogLoading}
         configuration={configuration}
         lockedAgent={false}
-        disabled={unavailable}
+        disabled={unavailable || followLastSelection}
+        settingsHeader={
+          <div>
+            <div className="mobile-sheet-row">
+              <RotateCcw aria-hidden="true" />
+              <label className="mobile-sheet-row-text" htmlFor="mobile-use-last-selection">
+                <strong>{t("Last selection")}</strong>
+              </label>
+              <Switch
+                id="mobile-use-last-selection"
+                aria-label={t("Last selection")}
+                aria-describedby="mobile-use-last-selection-description"
+                checked={followLastSelection}
+                disabled={unavailable}
+                onCheckedChange={(checked) => {
+                  if (unavailable) return;
+                  saveUseLastSelection(checked);
+                  setFollowLastSelection(checked);
+                }}
+              />
+            </div>
+            <p id="mobile-use-last-selection-description" className="mobile-settings-footer">
+              {t("New conversations use the provider and model you last selected. Project overrides still apply.")}
+            </p>
+          </div>
+        }
         agentConfiguration={(agent) =>
           catalog && configurationForAgent(catalog, defaults, agent)
         }

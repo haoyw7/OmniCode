@@ -21,7 +21,7 @@ import {
 } from "../shared/ui/icons";
 import { useTranslation } from "../shared/i18n/useTranslation";
 import { AnimatedCollapse, useCollapseMotion } from "../shared/ui/AnimatedCollapse";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../shared/ui/branding/HarnessIcon";
 import { AttachmentList } from "../features/sessions/ui/AttachmentList";
 import { AnimatePresence, motion, usePresence } from "motion/react";
 import { immediateTransition, panelTransition, popTransition } from "../shared/motion/tokens";
@@ -60,6 +60,8 @@ import { preserveInputFocus, usePreserveInputFocusOnTouch } from "./inputFocus";
 import { useMobileTextareaAutosize } from "./useMobileTextareaAutosize";
 import { lightImpact } from "./haptics";
 import { keyboardHeight, keyboardTracked } from "./keyboardMotion";
+import { USAGE_LIMITS_COMMAND, isUsageLimitsCommand, useUsageLimitsNotice, type UsageLimitsNoticeSource } from "../features/usage/model/usageLimitsNotice";
+import { UsageLimitsSnapshot } from "../features/sessions/ui/UsageLimitsSnapshot";
 
 export type MobileComposerPanel =
   | "actions"
@@ -72,6 +74,7 @@ export type MobileComposerPanel =
   | null;
 const planStyle = MODE_COMMAND_STYLES[PLAN_COMMAND.name];
 type Props = {
+  usageLimits?: { source: UsageLimitsNoticeSource; sessionKey?: string; messageKey?: string | number };
   context?: ReactNode;
   queue?: ReactNode;
   /** Receives the slot beside the model picker for the session progress capsule. */
@@ -160,6 +163,7 @@ function MobileComposerAttachments({ attachments, onRemove }: {
 
 function useMobileComposerController(props: Props) {
   const { t } = useTranslation();
+  const limitsNotice = useUsageLimitsNotice(props.usageLimits?.source, props.usageLimits?.sessionKey, props.configuration.harness, props.usageLimits?.messageKey);
   const area = useRef<HTMLTextAreaElement>(null);
   const form = useRef<HTMLFormElement>(null);
   const dock = useRef<HTMLDivElement>(null);
@@ -183,9 +187,9 @@ function useMobileComposerController(props: Props) {
   const inlineOpen = !!slash && props.panel === null && !props.disabled;
   const skillsState = useMobileSkills(skillsKey, props.loadSkills, inlineOpen || props.panel === "actions" || props.panel === "skills", nativeGuess);
   const native = skillsState.catalog?.native ?? nativeGuess;
-  const commands = useMemo(() => [PLAN_COMMAND,
+  const commands = useMemo(() => [PLAN_COMMAND, USAGE_LIMITS_COMMAND,
     ...(props.canCompact && (skillsState.catalog?.canCompact ?? true) ? [COMPACT_COMMAND] : []),
-    ...(skillsState.catalog?.skills ?? []).filter(skill => !["operator", "mono", "omnicode"].includes(skill.name) &&
+    ...(skillsState.catalog?.skills ?? []).filter(skill => !["operator", "mono", "omnicode", "usage-limits"].includes(skill.name) &&
       (skill.kind === "native" || !["plan", "compact", "orchestrator", "draft", "btw", "mcp", "add-to-folder"].includes(skill.name))),
   ], [props.canCompact, skillsState.catalog]);
   const options = rankSkills(commands, inlineOpen ? slash?.query ?? "" : "");
@@ -299,6 +303,10 @@ function useMobileComposerController(props: Props) {
     if (launching && !props.working) setLaunching(false);
   }, [launching, props.working]);
   const launch = () => {
+    if (isUsageLimitsCommand(props.value)) {
+      limitsNotice.show(); props.onChange(""); setSlash(null); props.onPanelChange(null); return;
+    }
+    limitsNotice.close();
     if (props.value.trim() || props.attachments.length) {
       void lightImpact();
       setLaunching(true);
@@ -309,7 +317,7 @@ function useMobileComposerController(props: Props) {
     props.running && !props.value.trim() && !props.attachments.length ? (
       <button
         type="button"
-        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-send"
+        className="hover:opacity-80 active:opacity-70 mobile-send"
         data-stop="true"
         data-state={props.working ? "stopping" : "streaming"}
         disabled={!props.canStop || props.working}
@@ -321,9 +329,9 @@ function useMobileComposerController(props: Props) {
     ) : (
       <button
         type="submit"
-        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-send"
+        className="hover:opacity-80 active:opacity-70 mobile-send"
         data-state={props.working ? "sending" : "ready"}
-        disabled={!props.canSend}
+        disabled={!props.canSend && (props.disabled || !isUsageLimitsCommand(props.value))}
         aria-label={t("Send message")}
       >
         {props.working ? (
@@ -387,6 +395,7 @@ function useMobileComposerController(props: Props) {
     inlineOpen,
     launch,
     launching,
+    limitsNotice,
     modelName,
     openFilePicker,
     options,
@@ -424,6 +433,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
     inlineOpen,
     launch,
     launching,
+    limitsNotice,
     modelName,
     openFilePicker,
     options,
@@ -454,6 +464,9 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             active={skillActive} id={skillListId} onPick={pickSkill} onActive={setSkillActive} onRetry={() => void skillsState.reload(true)} />
         </div>}
         {props.context}
+        <AnimatedCollapse expanded={limitsNotice.open}>
+          <UsageLimitsSnapshot sources={limitsNotice.sources} loading={limitsNotice.loading} error={limitsNotice.error} onClose={limitsNotice.close} />
+        </AnimatedCollapse>
         {props.queue ? <div className="mobile-message-queue">{props.queue}</div> : null}
         <motion.form
           layout
@@ -477,7 +490,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           }}
           onSubmit={(event) => {
             event.preventDefault();
-            if (props.canSend) launch();
+            if (props.canSend || (!props.disabled && isUsageLimitsCommand(props.value))) launch();
           }}
         >
           <motion.div
@@ -489,7 +502,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           >
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-composer-model"
+              className="hover:opacity-80 active:opacity-70 mobile-composer-model"
               title={[modelName, effort && t(effort)].filter(Boolean).join(" · ")}
               disabled={props.disabled || props.running}
               aria-label={t("Model and reasoning")}
@@ -515,7 +528,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             {workspace && (
               <button
                 type="button"
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-composer-workspace"
+                className="hover:opacity-80 active:opacity-70 mobile-composer-workspace"
                 data-worktree={workspace.value.mode === "worktree" || workspace.value.linkedWorktree || undefined}
                 title={workspace.value.cwd ?? workspaceName}
                 disabled={props.disabled || props.running || workspace.creating}
@@ -585,7 +598,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                   event.key === "Enter" &&
                   (event.metaKey || event.ctrlKey) &&
                   !event.nativeEvent.isComposing &&
-                  props.canSend
+                  (props.canSend || (!props.disabled && isUsageLimitsCommand(props.value)))
                 ) {
                   event.preventDefault();
                   launch();
@@ -611,7 +624,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             <div className="mobile-composer-toolbar">
               <button
                 type="button"
-                className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-composer-action mobile-composer-add"
+                className="hover:opacity-80 active:opacity-70 mobile-composer-action mobile-composer-add"
                 aria-label={t("Add to message")}
                 aria-haspopup="dialog"
                 aria-expanded={props.panel === "actions"}
@@ -628,7 +641,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                 {props.planMode && (
                   <button
                     type="button"
-                    className={`hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-composer-plan ${planStyle.pill?.className ?? planStyle.className}`}
+                    className={`hover:opacity-80 active:opacity-70 mobile-composer-plan ${planStyle.pill?.className ?? planStyle.className}`}
                     disabled={props.disabled}
                     aria-label={t("Plan mode")}
                     title={t("Plan mode")}
@@ -644,7 +657,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
                 )}
                 <button
                   type="button"
-                  className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-composer-action mobile-composer-permissions"
+                  className="hover:opacity-80 active:opacity-70 mobile-composer-action mobile-composer-permissions"
                   data-full-access={
                     props.configuration.runtimeMode === "full-access"
                   }
@@ -746,7 +759,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         {() => (
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+          className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
           aria-label={t("Turn off plan mode")}
           disabled={props.disabled}
           onClick={() => {
@@ -774,7 +787,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
             <button
               type="button"
               role="radio"
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+              className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
               key={mode}
               aria-checked={props.configuration.runtimeMode === mode}
               disabled={props.disabled}
@@ -819,7 +832,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         {() => <>
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+          className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
           disabled={props.disabled || props.readingAttachments}
           onClick={() => openFilePicker(camera.current)}
         >
@@ -828,7 +841,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         </button>
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+          className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
           disabled={props.disabled || props.readingAttachments}
           onClick={() => openFilePicker(photos.current)}
         >
@@ -837,7 +850,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         </button>
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+          className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
           disabled={props.disabled || props.readingAttachments}
           onClick={() => openFilePicker(files.current)}
         >
@@ -846,7 +859,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         </button>
         <div className="mobile-menu-divider" role="separator" />
         {props.loadSkills && (
-          <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row" aria-haspopup="dialog"
+          <button type="button" className="hover:opacity-80 active:opacity-70 mobile-sheet-row" aria-haspopup="dialog"
             disabled={props.disabled}
             onClick={() => { setSkillActive(0); props.onPanelChange("skills"); }}>
             <Shapes />
@@ -855,7 +868,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
         )}
         <button
           type="button"
-          className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+          className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
           role="switch"
           aria-checked={props.planMode}
           disabled={props.disabled}
@@ -869,7 +882,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           {props.planMode && <Check />}
         </button>
         {!props.lockedAgent && (
-          <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row" aria-label={t("Choose project")}
+          <button type="button" className="hover:opacity-80 active:opacity-70 mobile-sheet-row" aria-label={t("Choose project")}
             disabled={props.disabled || props.running || !props.projects.length}
             onClick={() => props.onPanelChange("projects")}>
             <Folder />
@@ -912,7 +925,7 @@ function MobileComposerView({ vm }: { vm: MobileComposerViewModel }) {
           {props.projects.map((project) => (
             <button
               type="button"
-              className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+              className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
               role="radio"
               key={project.id}
               disabled={props.disabled}

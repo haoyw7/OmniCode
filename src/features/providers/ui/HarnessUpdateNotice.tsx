@@ -9,15 +9,7 @@ import {
   isHarnessAvailable,
   probeHarnessAvailability,
 } from "../../../integrations/harness/core/availability";
-import {
-  inspectHarnessBinary,
-  updateHarnessCli,
-} from "../../../integrations/harness/core/child";
-import {
-  compareSemver,
-  parseOpenCodeVersion,
-} from "../../../integrations/harness/providers/opencode/opencodeProtocol";
-import { refreshHarnessCatalogs } from "../../../integrations/harness/core/registry";
+import { inspectHarnessBinary } from "../../../integrations/harness/core/child";
 import { LAYER } from "../../../shared/lib/layers";
 import { Check, X } from "../../../shared/ui/icons";
 import { isPickerProviderVisible } from "../../sessions/model/models";
@@ -26,9 +18,8 @@ import {
   HARNESSES,
   type HarnessId,
 } from "../../sessions/model/session";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import {
-  announceHarnessUpdated,
   claimLaunchHarnessUpdateCheck,
   fetchHarnessInstall,
   fetchLatestHarnessVersion,
@@ -37,7 +28,7 @@ import {
   type HarnessUpdate,
 } from "../model/harnessUpdates";
 import { useHarnessRefreshSync } from "../model/harnessRefreshSync";
-import { harnessUpdateError } from "../model/harnessUpdateErrors";
+import { runHarnessUpdate, type HarnessUpdateState } from "../model/harnessUpdateAction";
 import { Spinner } from "../../../shared/ui/primitives/Spinner";
 
 /**
@@ -74,41 +65,6 @@ async function runLaunchCheck(): Promise<HarnessUpdate[]> {
     ),
   );
   return updates.filter((_, index) => updatable[index]);
-}
-
-export type HarnessUpdateState =
-  | { status: "idle" }
-  | { status: "updating" }
-  | { status: "updated"; version: string }
-  | { status: "failed"; error: string };
-
-/**
- * Some updaters exit cleanly without installing anything, so success is the
- * version the CLI reports afterwards, not the exit code. Its models are
- * reloaded before the row says so, so the picker is current by then.
- */
-export async function runHarnessUpdate(
-  update: HarnessUpdate,
-): Promise<HarnessUpdateState> {
-  try {
-    await updateHarnessCli(update.harness);
-    const after = await inspectHarnessBinary(update.harness);
-    const version = parseOpenCodeVersion(after.version ?? "");
-    if (version && compareSemver(version, update.latest) >= 0) {
-      await refreshHarnessCatalogs([update.harness], { force: true });
-      void announceHarnessUpdated(update.harness).catch(() => undefined);
-      return { status: "updated", version };
-    }
-    return {
-      status: "failed",
-      error: `Still on ${version ?? update.installed} after updating.`,
-    };
-  } catch (error) {
-    return {
-      status: "failed",
-      error: harnessUpdateError(error),
-    };
-  }
 }
 
 const NO_UPDATES: HarnessUpdate[] = [];

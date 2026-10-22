@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "./branding/HarnessIcon";
 import { FilePlus, FoldVertical, UnfoldVertical } from "./icons";
 
 const SRC = fileURLToPath(new URL("../..", import.meta.url));

@@ -1,6 +1,7 @@
 /** Account presentation shared with conversation usage surfaces. */
 export {
   AccountStatusLabel,
+  AccountUsageRefresh,
   barClass,
   meterWindows,
   UsageMeter,

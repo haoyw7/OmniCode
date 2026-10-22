@@ -52,7 +52,7 @@ export function MobileSkillList({
       id={`${id}-${index}`}
       role="option"
       aria-selected={index === active}
-      className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row"
+      className="hover:opacity-80 active:opacity-70 mobile-sheet-row"
       onPointerDown={(event) => event.preventDefault()}
       onMouseEnter={() => onActive(index)}
       onClick={() => onPick(skill)}

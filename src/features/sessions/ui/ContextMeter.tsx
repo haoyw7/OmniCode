@@ -63,7 +63,7 @@ export function ContextMeter({
           })}
           aria-expanded={actionsOpen}
           onClick={() => setOpen((value) => !value)}
-          className="-m-1 grid rounded-sm p-1 outline-none focus-visible:focus-fill"
+          className="-m-1 grid rounded-sm p-1 outline-none"
         >
           <MeterRing ratio={ratio} />
         </Button>

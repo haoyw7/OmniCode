@@ -27,6 +27,7 @@ import {
 } from "../features/settings/model/appearance";
 import { initSounds } from "../features/settings/model/sounds";
 import { initTypography } from "../features/settings/model/typography";
+import { applyMobileTextSize, subscribeMobileTextSize } from "./textSize";
 import { subscribeSharedPreferences } from "../features/settings/model/sharedPreferences";
 import { parsePreferenceAsset } from "../features/settings/model/preferenceAssets";
 import { applyMobileSkin, loadMobileSkin, paintMobileSkin, resolveMobileSkin, MOBILE_SKIN_KEY } from "./theme/skin";
@@ -43,6 +44,9 @@ const applyMobilePalette = (scheme: ColorScheme) => paintMobileSkin(resolveMobil
 syncMobileTheme();
 initSounds();
 initTypography();
+applyMobileTextSize();
+const stopTextSizeSubscription = subscribeMobileTextSize(applyMobileTextSize);
+if (import.meta.hot) import.meta.hot.dispose(stopTextSizeSubscription);
 const applyBackground = () => {
   const path = loadChatBackgroundPath();
   applyChatBackground(path && parsePreferenceAsset(path) ? path : null);
@@ -53,6 +57,7 @@ subscribeSharedPreferences(() => {
   syncMobileTheme();
   refreshUiLanguage();
   initTypography();
+  applyMobileTextSize();
   initSounds();
   applyAccentColor(loadAccentColor());
   applyThemeTint(loadThemeHue(), loadThemeSaturation());

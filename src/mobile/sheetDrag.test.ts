@@ -92,6 +92,159 @@ describe("MobileSheet drag", () => {
     await rest();
     return { sheet, onClose };
   }
+  function touch(target: Element, type: string, y: number, x = 100, count = 1) {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    const point = { identifier: 1, clientX: x, clientY: y };
+    Object.defineProperties(event, {
+      touches: { value: type === "touchend" || type === "touchcancel" ? [] : Array.from({ length: count }, () => point) },
+      changedTouches: { value: [point] },
+      timeStamp: { value: performance.now() },
+    });
+    act(() => { target.dispatchEvent(event); });
+    return event;
+  }
+  async function swipe(target: Element, from: number, to: number) {
+    touch(target, "touchstart", from);
+    await step(16);
+    const move = touch(target, "touchmove", to);
+    await step(150);
+    touch(target, "touchend", to);
+    return move;
+  }
+
+  it("follows content touches before release, then expands, lowers and dismisses", async () => {
+    const { sheet, onClose } = await open(true);
+    const body = sheet.querySelector(".body")!;
+    touch(body, "touchstart", 600);
+    await step();
+    expect(touch(body, "touchmove", 550).defaultPrevented).toBe(true);
+    await step();
+    expect(offset(sheet)).toBe(250);
+    touch(body, "touchmove", 450);
+    await step();
+    expect(offset(sheet)).toBe(150);
+    touch(body, "touchmove", 390);
+    await step(150);
+    touch(body, "touchend", 390);
+    await rest();
+    expect(sheet.dataset.detent).toBe("full");
+    expect(offset(sheet)).toBe(0);
+    await swipe(body, 200, 400);
+    await rest();
+    expect(sheet.dataset.detent).toBe("half");
+    expect(offset(sheet)).toBe(300);
+    expect(onClose).not.toHaveBeenCalled();
+    await swipe(body, 500, 700);
+    await rest();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("leaves upward full-height swipes and downward scrolled swipes to native scrolling", async () => {
+    const { sheet, onClose } = await open(true);
+    const body = sheet.querySelector(".body")!;
+    const content = sheet.querySelector<HTMLElement>(".mobile-sheet-content")!;
+    content.style.overflowY = "auto";
+    Object.defineProperties(content, { scrollHeight: { value: 1500 }, clientHeight: { value: 400 } });
+    content.scrollTop = 80;
+    expect((await swipe(body, 500, 700)).defaultPrevented).toBe(false);
+    expect(offset(sheet)).toBe(300);
+    expect((await swipe(body, 600, 350)).defaultPrevented).toBe(true);
+    await rest();
+    expect(sheet.dataset.detent).toBe("full");
+    expect((await swipe(body, 500, 200)).defaultPrevented).toBe(false);
+    expect((await swipe(body, 200, 500)).defaultPrevented).toBe(false);
+    content.scrollTop = 0;
+    expect((await swipe(body, 200, 450)).defaultPrevented).toBe(true);
+    await rest();
+    expect(sheet.dataset.detent).toBe("half");
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("preserves nested scrolling, horizontal swipes, input gestures and button taps", async () => {
+    const { sheet } = await open(true);
+    const body = sheet.querySelector<HTMLElement>(".body")!;
+    body.style.overflowY = "auto";
+    Object.defineProperties(body, { scrollHeight: { value: 600 }, clientHeight: { value: 200 } });
+    body.scrollTop = 50;
+    expect((await swipe(body, 400, 600)).defaultPrevented).toBe(false);
+    touch(body, "touchstart", 600);
+    expect(touch(body, "touchmove", 550, 250).defaultPrevented).toBe(false);
+    touch(body, "touchend", 550, 250);
+    const input = document.createElement("input");
+    body.appendChild(input);
+    expect((await swipe(input, 600, 350)).defaultPrevented).toBe(false);
+    const button = document.createElement("button");
+    const click = vi.fn();
+    button.onclick = click;
+    body.appendChild(button);
+    touch(button, "touchstart", 500);
+    touch(button, "touchend", 500);
+    button.click();
+    expect(click).toHaveBeenCalledOnce();
+    await rest();
+    expect(offset(sheet)).toBe(300);
+  });
+
+  it.each(["touchcancel", "blur", "multitouch"])("restores the previous stop after %s during a content drag", async cancellation => {
+    const { sheet, onClose } = await open(true);
+    const body = sheet.querySelector(".body")!;
+    touch(body, "touchstart", 600);
+    touch(body, "touchmove", 400);
+    await step();
+    expect(offset(sheet)).toBe(100);
+    if (cancellation === "blur") act(() => window.dispatchEvent(new Event("blur")));
+    else if (cancellation === "multitouch") touch(body, "touchstart", 400, 100, 2);
+    else touch(body, "touchcancel", 400);
+    await rest();
+    expect(offset(sheet)).toBe(300);
+    expect(onClose).not.toHaveBeenCalled();
+    await swipe(body, 600, 350);
+    await rest();
+    expect(offset(sheet)).toBe(0);
+  });
+
+  it("settles content drags immediately with reduced motion and cancels their animation on unmount", async () => {
+    vi.mocked(window.matchMedia).mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() } as unknown as MediaQueryList);
+    const { sheet, onClose } = await open(true);
+    await swipe(sheet.querySelector(".body")!, 600, 350);
+    await step();
+    expect(offset(sheet)).toBe(0);
+    act(() => root.render(null));
+    await rest();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("catches a settling content sheet at its current position and follows reversal immediately", async () => {
+    const { sheet } = await open(true);
+    const body = sheet.querySelector(".body")!;
+    await swipe(body, 600, 350);
+    expect(sheet.dataset.detent).toBe("full");
+    touch(body, "touchstart", 350);
+    touch(body, "touchmove", 330);
+    await step();
+    expect(offset(sheet)).toBe(30);
+    touch(body, "touchmove", 390);
+    await step();
+    expect(offset(sheet)).toBe(90);
+    touch(body, "touchcancel", 390);
+    await rest();
+    expect(offset(sheet)).toBe(0);
+  });
+
+  it("only drags the innermost sheet from nested content", async () => {
+    act(() => root.render(createElement(MobileSheet, { title: "Outer", onClose: vi.fn(), detents: true },
+      createElement(MobileSheet, { title: "Inner", onClose: vi.fn(), detents: true },
+        createElement("p", { className: "body" }, "Inner body")))));
+    const outer = node.querySelector<HTMLElement>('[aria-label="Outer"]')!;
+    const inner = node.querySelector<HTMLElement>('[aria-label="Inner"]')!;
+    await rest();
+    const before = offset(outer);
+    await swipe(inner.querySelector(".body")!, 600, 350);
+    await rest();
+    expect(inner.dataset.detent).toBe("full");
+    expect(offset(outer)).toBe(before);
+    expect(outer.dataset.detent).toBe("half");
+  });
 
   it("opens and closes within the popup duration and reverses without resetting its position", async () => {
     const exited = vi.fn();
@@ -220,7 +373,7 @@ describe("MobileSheet drag", () => {
     await rest();
     expect(onClose).toHaveBeenCalledOnce();
   });
-  it.each(["half", "full"])("leaves all content swipes to native scrolling at the %s stop", async detent => {
+  it.each(["half", "full"])("does not start Motion pointer dragging inside content at the %s stop", async detent => {
     const { sheet, onClose } = await open(true);
     if (detent === "full") { await pull(sheet, 600, 400, ".mobile-sheet-header strong", "touch"); await rest(); }
     const position = offset(sheet);

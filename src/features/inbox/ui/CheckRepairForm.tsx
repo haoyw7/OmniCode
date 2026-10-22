@@ -225,7 +225,7 @@ export function CheckRepairForm({
               setSessionId(choices[active]?.id ?? "");
             }
           }}
-          className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+          className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
         />
       </label>
       <div
@@ -254,7 +254,7 @@ export function CheckRepairForm({
               className={cn("flex w-full items-center gap-2.5 rounded-lg text-left text-[12px] disabled:opacity-50 justify-start", index === active ? "bg-selection text-content" : "text-content/70 hover:bg-content/3 hover:text-content")}
             >
               <Icon
-                className="size-3.5 shrink-0 text-content/50"
+                className="size-4 shrink-0 text-content/50"
               />
               <span
                 className="min-w-0 flex-1 truncate"
@@ -264,7 +264,7 @@ export function CheckRepairForm({
               </span>
               {selected ? (
                 <Check
-                  className="size-3.5 shrink-0 text-content/75"
+                  className="size-4 shrink-0 text-content/75"
                 />
               ) : null}
             </Button>
@@ -303,7 +303,7 @@ export function CheckRepairForm({
           type="button"
           disabled={busy || blocked}
           onClick={() => void start()}
-          className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-selection px-2.5 text-[12px] font-medium text-content hover:bg-selection-hover disabled:opacity-50 focus-visible:focus-fill"
+          className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-selection px-2.5 text-[12px] font-medium text-content hover:bg-selection-hover disabled:opacity-50"
         >
           {busy ? (
             <Spinner className="size-3.5" />

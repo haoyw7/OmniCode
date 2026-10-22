@@ -1110,10 +1110,6 @@ const gitTheme = EditorView.theme({
     backgroundColor:
       "color-mix(in srgb, var(--color-content) 12%, transparent)",
   },
-  ".cm-gitHunkBtn:focus-visible": {
-    outline: "1px solid var(--color-accent)",
-    outlineOffset: "-1px",
-  },
 });
 
 const UNDO_SVG =

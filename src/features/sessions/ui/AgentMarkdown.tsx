@@ -40,9 +40,9 @@ import {
 } from "streamdown";
 import type { PluggableList } from "unified";
 import {
-  ExplorerMenu,
-  type ExplorerMenuItem,
-} from "../../connections/files/ui/ExplorerMenu";
+  ActionMenu,
+  type ActionMenuItem,
+} from "../../../shared/ui/primitives/ActionMenu";
 import { FileActionError } from "../../connections/files/ui/FileActionError";
 import { FileTypeIcon } from "../../connections/files/ui/FileTypeIcon";
 import { boundedCode } from "../../connections/files/editor/codeHighlightPlugin";
@@ -158,7 +158,7 @@ const REVEAL_LABEL = IS_MAC
 function fileLinkMenuItems(
   canOpenInOmniCode: boolean,
   canCopyRelativePath: boolean,
-): ExplorerMenuItem[] {
+): ActionMenuItem[] {
   return [
     {
       kind: "item",
@@ -332,7 +332,7 @@ function MarkdownLink({
   return (
     <a
       href={href}
-      className={cn("focus-visible:focus-fill active:opacity-70", cn("font-medium text-[var(--link-color)] underline decoration-dotted underline-offset-4 hover:decoration-solid", className ?? ""))}
+      className={cn("active:opacity-70", cn("font-medium text-[var(--link-color)] underline decoration-dotted underline-offset-4 hover:decoration-solid", className ?? ""))}
       {...props}
       dir={dir ?? "auto"}
       onClick={(event) => {
@@ -802,7 +802,7 @@ export const AgentMarkdown = memo(function AgentMarkdown({
             </Streamdown>
           </MarkdownFadeContext.Provider>
           <PresenceBoundary propagate>{fileMenu ? (
-            <ExplorerMenu
+            <ActionMenu
               x={fileMenu.x}
               y={fileMenu.y}
               items={fileLinkMenuItems(!!onOpenFile, !!cwd)}

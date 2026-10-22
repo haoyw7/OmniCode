@@ -40,7 +40,7 @@ import {
 commandShortcutLabel,paletteCommands
 } from "./commands/registry";
 import { QuickOpen } from "../features/search/ui/QuickOpen";
-import { HarnessIcon } from "../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../shared/ui/branding/HarnessIcon";
 import {
 DeleteSessionDialog
 } from "../features/sessions/ui/DeleteSessionDialog";
@@ -459,7 +459,7 @@ export function AppView({ vm }: { vm: WorkspaceViewModel }) {
                           }
                           className={
                             appPage === kind
-                              ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden outline-none focus-visible:focus-fill"
+                              ? "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden outline-none"
                               : "hidden"
                           }
                         >

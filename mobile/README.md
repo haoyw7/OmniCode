@@ -101,9 +101,22 @@ Opening and successfully loading the conversation in the foreground clears it.
 Outgoing messages, renaming, queue edits and tool progress do not create a dot;
 the first connection baselines historical messages without flooding notifications.
 
-On Android, **Connections → System notifications** enables notifications for
-completed replies and new questions/approvals across all projects. Allow the
-system permission when requested. The current visible conversation stays quiet;
+On Android, **Settings → Notifications** shows the system permission and whether
+the conversation notification channel is blocked. **Allow notifications** asks
+for permission or opens the relevant system settings; returning to the app
+refreshes that status. Permission is requested when the user enables it.
+
+The master switch controls alerts across all projects. Separate device-local
+switches control conversation replies, conversation questions/approvals, Bots
+replies (including task results), and Bots questions/approvals. Category choices
+survive turning the master switch off and on. Muted events still update unread
+state and do not replay when enabled again. Android's background receiver uses
+the same persisted choices. **Show notification previews** can hide reply and
+request text while retaining the title and a general alert; disabling it also
+clears existing conversation/Bots banners so their text is no longer displayed.
+These native controls require an updated APK.
+
+The current visible conversation stays quiet;
 tapping a reply notification opens its project and conversation. Repeated polls
 do not repeat a banner, including when another queued turn immediately starts.
 Disabling notifications or denying permission preserves unread dots.

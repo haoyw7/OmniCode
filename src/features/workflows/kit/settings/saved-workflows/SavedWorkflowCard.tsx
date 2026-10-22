@@ -136,7 +136,7 @@ export const SavedWorkflowCard = memo(function SavedWorkflowCard({
           onOpen(entry);
         }
       }}
-      className="active:opacity-70 desktop-card group relative flex h-full min-h-0 cursor-pointer gap-3 overflow-hidden rounded-xl border border-card-border bg-background p-3 text-left transition-colors hover:bg-hover focus-visible:focus-fill"
+      className="active:opacity-70 desktop-card group relative flex h-full min-h-0 cursor-pointer gap-3 overflow-hidden rounded-xl border border-card-border bg-background p-3 text-left transition-colors hover:bg-hover"
     >
       <div className="flex h-full min-w-0 flex-1 flex-col gap-3">
         <span className="block truncate pr-28 text-ui-base font-medium leading-5 text-foreground">

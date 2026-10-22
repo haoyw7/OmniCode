@@ -40,7 +40,7 @@ export function JumpToBottomButton({
       }}
       data-ui="jump-to-bottom"
       data-jump-to-bottom
-      className={cn("focus-visible:focus-fill active:opacity-70", cn("pointer-events-auto grid size-6 place-items-center rounded-md border border-content/15 bg-content/10 text-content shadow-md hover:bg-content/5 backdrop-blur-md", className))}
+      className={cn("active:opacity-70", cn("pointer-events-auto grid size-6 place-items-center rounded-md border border-content/15 bg-content/10 text-content shadow-md hover:bg-content/5 backdrop-blur-md", className))}
     >
       {busy ? (
         <TypingDots className="text-accent" />

@@ -147,7 +147,7 @@ export function MobileActivitySheet({
                       const diff = workDiffStats([block]);
                       return (
                         <TranscriptContentMotion as="li" key={block.id} className="mobile-activity-step" arrive={arrives(block.id)}>
-                          <button type="button" onClick={() => onStep(block)} className="hover:opacity-80 focus-visible:focus-fill active:opacity-70">
+                          <button type="button" onClick={() => onStep(block)} className="hover:opacity-80 active:opacity-70">
                             <span className="mobile-activity-icon">
                               <StepIcon block={block} />
                             </span>

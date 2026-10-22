@@ -22,9 +22,6 @@ html[data-skin] .popover-open {
 }
 
 /* Density belongs to the menu, including portal menus, rather than the app mode. */
-html[data-skin] [data-ui="tab-group-menu"] {
-  --desktop-menu-icon: var(--desktop-project-menu-icon);
-}
 html[data-skin] :is([data-menu-density="compact"], .popover-frame:has([data-menu-density="compact"])) {
   --desktop-menu-row: 24px;
   --desktop-menu-font: 13px;
@@ -32,7 +29,6 @@ html[data-skin] :is([data-menu-density="compact"], .popover-frame:has([data-menu
   --desktop-menu-pad-y: 2.5px;
   --desktop-menu-pad-x: 8px;
   --desktop-menu-radius: 6px;
-  --desktop-menu-icon: 16px;
   --desktop-menu-gap: 6px;
   --desktop-menu-panel-radius: 10px;
 }
@@ -148,11 +144,10 @@ html[data-skin] [role="menu"].panel-menu { border-radius: var(--desktop-menu-pan
 html[data-skin] [data-desktop-select-option] > span { line-height: inherit; }
 /* The check column keeps one width whether or not the row is selected. */
 html[data-skin] [data-desktop-select-option] > :is([data-ui="select-check-slot"], span:has(> svg)) { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
-html[data-skin][data-desktop-mode] .desktop-project-menu [role="menuitem"] svg { width: 20px; height: 20px; }
 html[data-skin] :is([data-slot="select-item"], [data-slot^="dropdown-menu-"]) svg { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 /* File glyphs keep the size requested by their label, including inside menus. */
 html[data-skin] [data-ui="file-type-icon"] > svg { max-width: 100%; max-height: 100%; }
-html[data-skin] :is(.popover-frame, .composer-popover, [data-slot^="dropdown-menu-"]) svg[data-menu-arrow] { width: 16px; height: 16px; }
+html[data-skin] :is(.popover-frame, .composer-popover, [data-slot^="dropdown-menu-"]) svg[data-menu-arrow] { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 html[data-skin] [data-slot="dropdown-menu-separator"] { margin-inline: 0; flex-shrink: 0; }
 html[data-skin] [data-slot="select-separator"] { height: 1px; margin-block: 4px; background: var(--color-hairline); flex-shrink: 0; }
 
@@ -172,15 +167,11 @@ html[data-skin] [data-menu-hover] {
   background: transparent;
   transition: background-color var(--desktop-feedback) var(--desktop-popup-ease);
 }
-html[data-skin] :is(:hover, :focus-visible, [data-highlighted]:not([data-highlighted="false"]), .bg-selection, [data-state="open"]):not(:disabled, [aria-disabled="true"], [data-disabled]) > [data-menu-hover] { background: var(--cds-fill-ghost-hover); }
+html[data-skin] :is(:hover, [data-highlighted]:not([data-highlighted="false"]), .bg-selection, [data-state="open"]):not(:disabled, [aria-disabled="true"], [data-disabled]) > [data-menu-hover] { background: var(--cds-fill-ghost-hover); }
 html[data-skin] button:is([aria-expanded="true"], [data-active="true"]):not(:disabled, [aria-disabled="true"]) > [data-menu-hover] { background: var(--cds-fill-ghost-selected); }
 /* Some consumers paint their row directly instead of using MenuHover. */
-html[data-skin] :is(.popover-frame, .composer-popover, .panel-menu, [data-slot="select-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"]) :is([role^="menuitem"], [role="option"], [data-menu-row]):not(:has(> [data-menu-hover]), [data-menu-option], [data-variant="destructive"]):is(:hover, :focus-visible, .bg-selection, [data-highlighted]:not([data-highlighted="false"])):not(:disabled, [aria-disabled="true"], [data-disabled]) {
+html[data-skin] :is(.popover-frame, .composer-popover, .panel-menu, [data-slot="select-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"]) :is([role^="menuitem"], [role="option"], [data-menu-row]):not(:has(> [data-menu-hover]), [data-menu-option], [data-variant="destructive"]):is(:hover, .bg-selection, [data-highlighted]:not([data-highlighted="false"])):not(:disabled, [aria-disabled="true"], [data-disabled]) {
   background: var(--cds-fill-ghost-hover);
-}
-html[data-skin] :is([data-menu-row], [data-desktop-select-option], [role^="menuitem"]):focus-visible {
-  outline: none;
-  box-shadow: var(--focus-fill-shadow);
 }
 html[data-skin] [data-desktop-select-trigger]:not(:disabled, [aria-disabled="true"]):hover {
   background: var(--cds-fill-ghost-hover);
@@ -188,22 +179,18 @@ html[data-skin] [data-desktop-select-trigger]:not(:disabled, [aria-disabled="tru
 html[data-skin] [data-desktop-select-trigger][aria-expanded="true"]:not(:disabled, [aria-disabled="true"]) {
   background: var(--cds-fill-ghost-selected);
 }
-html[data-skin] :is([data-desktop-select-trigger], [data-menu-trigger], [data-slot="dropdown-menu-trigger"]):focus-visible:not([aria-invalid="true"]) {
-  outline: none;
-  box-shadow: var(--focus-fill-shadow);
-}
 html[data-skin] button[data-menu-trigger="sidebar"] { width: var(--desktop-icon-sm); height: var(--desktop-icon-sm); border-radius: 6px; position: absolute; }
-html[data-skin] button[data-menu-trigger="sidebar"] svg { width: 16px; height: 16px; }
+html[data-skin] button[data-menu-trigger="sidebar"] svg { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 html[data-skin] button[data-menu-trigger="session"] { width: var(--desktop-icon-sm); height: var(--desktop-icon-sm); border-radius: 6px; }
-html[data-skin] button[data-menu-trigger="session"] svg { width: 16px; height: 16px; }
+html[data-skin] button[data-menu-trigger="session"] svg { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 html[data-skin] button[data-menu-trigger="settings"] { width: var(--desktop-icon-md); height: var(--desktop-icon-md); border-radius: var(--desktop-radius-field); }
-html[data-skin] button[data-menu-trigger="settings"] svg { width: 20px; height: 20px; }
+html[data-skin] button[data-menu-trigger="settings"] svg { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 html[data-skin][data-desktop-mode] button[data-menu-trigger="project"] { position: absolute; width: var(--desktop-icon-md); height: var(--desktop-icon-md); border-radius: var(--desktop-radius-field); }
-html[data-skin][data-desktop-mode] button[data-menu-trigger="project"] svg { width: 20px; height: 20px; }
+html[data-skin][data-desktop-mode] button[data-menu-trigger="project"] svg { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 html[data-skin] [role^="menuitem"][data-variant="destructive"]:not(:disabled, [aria-disabled="true"], [data-disabled]) { color: var(--color-danger); }
-html[data-skin] [role^="menuitem"][data-variant="destructive"]:is(:hover, :focus-visible, [data-highlighted]:not([data-highlighted="false"])):not(:disabled, [aria-disabled="true"], [data-disabled]) { color: var(--color-danger-ink); }
-html[data-skin] [role^="menuitem"][data-variant="destructive"]:is(:hover, :focus-visible, [data-highlighted]:not([data-highlighted="false"])):not(:disabled, [aria-disabled="true"], [data-disabled]) > [data-menu-hover],
-html[data-skin] [role^="menuitem"][data-variant="destructive"]:not(:has(> [data-menu-hover])):is(:hover, :focus-visible, [data-highlighted]:not([data-highlighted="false"])):not(:disabled, [aria-disabled="true"], [data-disabled]) { background: var(--color-danger); }
+html[data-skin] [role^="menuitem"][data-variant="destructive"]:is(:hover, [data-highlighted]:not([data-highlighted="false"])):not(:disabled, [aria-disabled="true"], [data-disabled]) { color: var(--color-danger-ink); }
+html[data-skin] [role^="menuitem"][data-variant="destructive"]:is(:hover, [data-highlighted]:not([data-highlighted="false"])):not(:disabled, [aria-disabled="true"], [data-disabled]) > [data-menu-hover],
+html[data-skin] [role^="menuitem"][data-variant="destructive"]:not(:has(> [data-menu-hover])):is(:hover, [data-highlighted]:not([data-highlighted="false"])):not(:disabled, [aria-disabled="true"], [data-disabled]) { background: var(--color-danger); }
 
 html[data-skin] .popover-frame:has(.settings-font-select-menu) { width: 224px !important; }
 html[data-skin] .settings-font-select-menu { padding: 4px; }
@@ -217,7 +204,6 @@ html[data-skin] .settings-font-select-menu [data-ui="select-option"] {
   font-size: 14px;
   line-height: 20px;
 }
-html[data-skin] .settings-font-select-menu [data-ui="select-check"] { width: 20px; height: 20px; }
 
 @media (prefers-reduced-motion: reduce) {
   html[data-skin] :is([data-menu-hover], [data-ui="button"], [data-ui="icon-button"], [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"], [data-slot="input-group"], [data-ui="switch"]) { transition: none; }
@@ -282,8 +268,8 @@ html[data-skin] .branch-menu-name { font-weight: var(--font-weight-normal); }
 html[data-skin] .branch-menu-icon { display: none; }
 html[data-skin] .branch-menu .branch-menu-option .branch-menu-check {
   order: 2;
-  width: 14px;
-  height: 14px;
+  width: var(--desktop-menu-icon);
+  height: var(--desktop-menu-icon);
   color: var(--color-accent);
 }
 html[data-skin] .branch-menu-create { padding: 4px; border-color: var(--color-hairline); }
@@ -306,10 +292,7 @@ html[data-skin] .branch-menu-search {
   color: var(--color-content);
   background: color-mix(in srgb, var(--color-content) 4%, var(--color-menu));
 }
-html[data-skin] .branch-menu-search:has(:focus-visible) {
-  box-shadow: var(--focus-fill-shadow);
-}
-html[data-skin] .branch-menu-search > svg { width: 12px; height: 12px; }
+html[data-skin] .branch-menu-search > svg { width: var(--desktop-menu-icon); height: var(--desktop-menu-icon); }
 html[data-skin] .branch-menu-search > input { padding: 0; font-size: 13px; line-height: 19px; }
 /* Submenus opened beside a row lead with a plain search field, like menu rows. */
 html[data-skin] .branch-menu[data-submenu="true"] .branch-menu-search {

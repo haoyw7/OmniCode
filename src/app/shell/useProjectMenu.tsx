@@ -78,7 +78,7 @@ import {
 import { useProjectNotificationPreferences } from "../../features/notifications/hooks/useProjectNotificationPreferences";
 import { useNotificationProjects } from "../../features/notifications/hooks/useNotificationProjects";
 import { updateNotificationPreferences } from "../../features/notifications/model/notificationPreferences";
-import type { ExplorerMenuItem } from "../../features/connections/files/ui/ExplorerMenu";
+import type { ActionMenuItem } from "../../shared/ui/primitives/ActionMenu";
 
 const REVEAL_LABEL = IS_MAC
   ? "Reveal in Finder"
@@ -95,7 +95,7 @@ function projectMenuExtraItems(
   projectGroups: ProjectGroup[],
   currentProjectGroupId?: string,
 ): TabGroupMenuExtraItem[] {
-  const groupSubmenu: ExplorerMenuItem[] = [
+  const groupSubmenu: ActionMenuItem[] = [
     { kind: "item", id: "project-group:new", label: translateUi("New group…") },
     ...(projectGroups.length > 0 ? [{ kind: "sep" } as const] : []),
     ...projectGroups.map((group) => ({

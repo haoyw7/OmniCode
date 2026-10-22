@@ -172,7 +172,7 @@ export function MobileBots({ ref, initialSelection, onOpen, ...props }: Props) {
     </nav>
     <MobileSheet open={!!menu && listVisible} title="Bot options" onClose={() => setMenu(undefined)}
       header={{ title: menu?.name }}>
-      <button type="button" className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-sheet-row" onClick={() => {
+      <button type="button" className="hover:opacity-80 active:opacity-70 mobile-sheet-row" onClick={() => {
         if (!menu) return;
         const next = pins.includes(menu.id) ? pins.filter(id => id !== menu.id) : [...pins, menu.id];
         setPinsByHost(current => ({ ...current, [props.hostKey]: next })); writeBotPins(props.hostKey, next); setMenu(undefined);

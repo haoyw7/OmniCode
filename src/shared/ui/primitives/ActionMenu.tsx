@@ -1,6 +1,6 @@
-import { Button } from "../../../../shared/ui/forms/Button";
-import { cn } from "../../../../shared/lib/cn";
-import { PresenceBoundary } from "../../../../shared/ui/PresenceBoundary";
+import { Button } from "../forms/Button";
+import { cn } from "../../lib/cn";
+import { PresenceBoundary } from "../PresenceBoundary";
 import {
   useEffect,
   useId,
@@ -10,11 +10,11 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { LAYER } from "../../../../shared/lib/layers";
-import { Check, ChevronRight } from "../../../../shared/ui/icons";
-import { Popover } from "../../../../shared/ui/Popover";
-import { MenuHover } from "../../../../shared/ui/MenuHover";
-import type { PopoverAlign, PopoverSide } from "../../../../shared/lib/popover";
+import { LAYER } from "../../lib/layers";
+import { Check, ChevronRight } from "../icons";
+import { Popover } from "../Popover";
+import { MenuHover } from "../MenuHover";
+import type { PopoverAlign, PopoverSide } from "../../lib/popover";
 
 type MenuAction = {
   kind: "item";
@@ -28,7 +28,7 @@ type MenuAction = {
   checked?: boolean;
 };
 
-export type ExplorerMenuItem =
+export type ActionMenuItem =
   { kind: "sep" } | (MenuAction & { submenu?: MenuAction[] });
 
 type Props = (
@@ -36,10 +36,12 @@ type Props = (
   | { anchor: HTMLElement; x?: never; y?: never }
 ) & {
   open?: boolean;
+  /** Direction-key triggers can highlight an edge item when opening the menu. */
+  initialHighlight?: "first" | "last";
   density?: "normal" | "compact";
   ownerId?: string;
   onBack?: () => void;
-  items: ExplorerMenuItem[];
+  items: ActionMenuItem[];
   ariaLabel?: string;
   header?: ReactNode;
   width?: number;
@@ -55,7 +57,7 @@ type Props = (
 const MENU_WIDTH = 228;
 
 function itemIndexAt(
-  items: ExplorerMenuItem[],
+  items: ActionMenuItem[],
   start: number,
   dir: 1 | -1,
 ): number {
@@ -65,11 +67,12 @@ function itemIndexAt(
     if (item?.kind === "item") return i;
     i += dir;
   }
-  return start;
+  return -1;
 }
 
-export function ExplorerMenu({
+export function ActionMenu({
   open,
+  initialHighlight,
   density = "normal",
   x,
   y,
@@ -92,7 +95,9 @@ export function ExplorerMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const submenuRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [active, setActive] = useState(() => itemIndexAt(items, 0, 1));
+  const [active, setActive] = useState(() => initialHighlight
+    ? itemIndexAt(items, initialHighlight === "first" ? 0 : items.length - 1, initialHighlight === "first" ? 1 : -1)
+    : -1);
   const [submenu, setSubmenu] = useState<{
     index: number;
     anchor: HTMLButtonElement;
@@ -122,6 +127,14 @@ export function ExplorerMenu({
   };
 
   useEffect(() => cancelClose, []);
+  useEffect(() => {
+    if (open === false) {
+      cancelClose();
+      setActive(-1);
+      setSubmenu(null);
+      setSubmenuActive(-1);
+    }
+  }, [open]);
 
   const ids = useMemo(
     () =>
@@ -135,7 +148,9 @@ export function ExplorerMenu({
 
   const move = (dir: 1 | -1) => {
     const from = ids.findIndex((item) => item.index === active);
-    const next = ids[(from + dir + ids.length) % ids.length];
+    const next = ids[from < 0
+      ? dir === 1 ? 0 : ids.length - 1
+      : (from + dir + ids.length) % ids.length];
     if (next) setActive(next.index);
   };
 
@@ -244,7 +259,7 @@ export function ExplorerMenu({
           if (hasSubmenu) {
             cancelClose();
             setSubmenu({ index, anchor: e.currentTarget });
-            setSubmenuActive(0);
+            setSubmenuActive(-1);
             submenuRef.current?.focus();
           } else {
             onPick(item.id);
@@ -266,9 +281,9 @@ export function ExplorerMenu({
             </span>
           ) : null}
         </span>
-        {item.checked ? <Check data-menu-check className="size-3.5 shrink-0" /> : null}
+        {item.checked ? <Check data-menu-check className="size-4 shrink-0" /> : null}
         {item.shortcut ? <span className="shrink-0 text-[11px] text-content/40">{item.shortcut}</span> : null}
-        {hasSubmenu ? <ChevronRight data-menu-arrow className="size-3.5 shrink-0 text-content/50" /> : null}
+        {hasSubmenu ? <ChevronRight data-menu-arrow className="size-4 shrink-0 text-content/50" /> : null}
       </Button>
     );
   };
@@ -296,7 +311,7 @@ export function ExplorerMenu({
         role="menu"
         tabIndex={-1}
         aria-label={ariaLabel}
-        aria-activedescendant={`${menuId}-${active}`}
+        aria-activedescendant={items[active]?.kind === "item" ? `${menuId}-${active}` : undefined}
         onKeyDown={onMenuKey}
         onContextMenu={(e) => e.preventDefault()}
         onMouseEnter={() => {

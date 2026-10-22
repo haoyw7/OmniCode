@@ -26,7 +26,7 @@ export const MarkdownDocumentPreview = memo(function MarkdownDocumentPreview({
       header={
         document.metadata !== null ? (
           <details className="group/metadata mb-6 rounded-lg border border-content/10 bg-content/[0.03]">
-            <summary className="active:opacity-70 flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] text-content/60 hover:text-content focus-visible:focus-fill [&::-webkit-details-marker]:hidden">
+            <summary className="active:opacity-70 flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-3 py-2 text-[12px] text-content/60 hover:text-content [&::-webkit-details-marker]:hidden">
               <ChevronRight
                 aria-hidden="true"
                 className="size-3.5 shrink-0 text-content/50 group-open/metadata:hidden"

@@ -54,6 +54,7 @@ vi.mock("./client", () => ({
       return null;
     };
     cachedModels = () => undefined;
+    toolContentSource = () => undefined;
     cachedSession = () => undefined;
     sessionPreviews = async () => undefined;
     updateSession = mocked.updateSession;
@@ -92,7 +93,7 @@ vi.mock("./notifications", () => ({
     stop: async () => {},
     openSettings: mocked.openSettings,
   },
-  mobileNotificationPermission: async () => mocked.permission,
+  mobileNotificationStatus: async () => ({ display: mocked.permission }),
   mobileNotificationTexts: () => ({}),
   showBrowserActivityNotification: mocked.notify,
 }));

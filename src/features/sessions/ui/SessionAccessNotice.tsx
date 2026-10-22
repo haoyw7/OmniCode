@@ -54,7 +54,7 @@ export function SessionAccessNotice({
         </p>
       ) : null}
       <details className="mt-2 text-content/50">
-        <summary className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 cursor-pointer select-none">
+        <summary className="hover:opacity-80 active:opacity-70 cursor-pointer select-none">
           {t("Original provider error")}
         </summary>
         <pre className="mt-1 min-w-0 whitespace-pre-wrap break-words text-xs">

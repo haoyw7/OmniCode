@@ -37,7 +37,7 @@ export function MobileSelect<T extends string>({
         type="button"
         disabled={disabled}
         data-ui="select"
-        className="hover:opacity-80 focus-visible:focus-fill active:opacity-70 mobile-select-trigger"
+        className="hover:opacity-80 active:opacity-70 mobile-select-trigger"
         aria-label={label}
         aria-haspopup="dialog"
         aria-expanded={open}

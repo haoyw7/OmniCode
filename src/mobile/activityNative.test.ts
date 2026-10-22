@@ -6,10 +6,14 @@ import { useMobileActivity } from "./useMobileActivity";
 import type { MobileClient } from "./client";
 import type { HostSession } from "../features/connections/model/protocol";
 import { createSessionSnapshotStore } from "./sessionSnapshotStore";
+import { notificationDefaults } from "./notificationPreferences";
+import { queryClient } from "../shared/lib/queryClient";
 import { loadMobileActivity } from "./activity";
 
 const native = vi.hoisted(() => ({
   permission: "granted",
+  configure: vi.fn(async () => {}),
+  permissionCheck: vi.fn(async (_request = false): Promise<{ display: string; channelBlocked: boolean }> => ({ display: "granted", channelBlocked: false })),
   unread: ["one"],
   callbacks: new Map<string, (value: any) => void>(),
   start: vi.fn(async () => {}),
@@ -21,9 +25,10 @@ const native = vi.hoisted(() => ({
 }));
 vi.mock("./notifications", () => ({
   nativeActivityNotifications: () => true,
-  mobileNotificationPermission: async () => native.permission,
+  mobileNotificationStatus: native.permissionCheck,
   mobileNotificationTexts: () => ({ reply: "A new reply is ready." }),
   MobileNotifications: {
+    configure: native.configure,
     start: native.start,
     stop: native.stop,
     state: native.state,
@@ -50,10 +55,13 @@ beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   localStorage.clear();
+  queryClient.clear();
   vi.clearAllMocks();
   native.callbacks.clear();
   native.permission = "granted";
   native.start.mockResolvedValue(undefined);
+  native.configure.mockResolvedValue(undefined);
+  native.permissionCheck.mockImplementation(async () => ({ display: native.permission, channelBlocked: false }));
   client = {
     connection: {
       environmentId: "host",
@@ -89,6 +97,43 @@ async function render() {
   });
 }
 describe("Android activity notification bridge", () => {
+  it("persists category changes to Android before applying them and retains unread state", async () => {
+    await render();
+    const preferences = { ...notificationDefaults, replies: false, preview: false };
+    await act(async () => latest.setNotificationPreferences(preferences));
+    await act(async () => vi.advanceTimersByTimeAsync(10));
+    expect(native.configure).toHaveBeenLastCalledWith({ preferences });
+    expect(latest.preferences).toEqual(preferences);
+    expect(latest.unreadIds.has("one")).toBe(true);
+    expect(native.start).toHaveBeenLastCalledWith(expect.objectContaining({ preferences }));
+    await act(async () => root.render(null));
+    await render();
+    expect(latest.preferences).toEqual(preferences);
+  });
+  it("does not claim a category change succeeded when the native shell rejects it", async () => {
+    await render();
+    native.configure.mockRejectedValue(new Error("Old native shell"));
+    await act(async () => latest.setNotificationPreferences({ ...notificationDefaults, input: false }));
+    await act(async () => vi.advanceTimersByTimeAsync(10));
+    expect(latest.preferences.input).toBe(true);
+  });
+  it("requests permission only on demand and refreshes the channel state after returning from settings", async () => {
+    native.permission = "prompt";
+    await render();
+    expect(native.permissionCheck.mock.calls.some(([request]) => request)).toBe(false);
+    native.permission = "granted";
+    await act(async () => latest.requestPermission());
+    await act(async () => vi.advanceTimersByTimeAsync(10));
+    expect(latest.permission).toBe("granted");
+    expect(native.permissionCheck).toHaveBeenCalledWith(true);
+    options = { ...options, foreground: false };
+    await render();
+    native.permissionCheck.mockResolvedValue({ display: "granted", channelBlocked: true });
+    options = { ...options, foreground: true };
+    await render();
+    await act(async () => vi.advanceTimersByTimeAsync(10));
+    expect(latest.channelBlocked).toBe(true);
+  });
   it.each(["background", "disconnect"] as const)("does not clear unread state when a transcript commits during %s", async (change) => {
     const initial: HostSession = { projectId: "project", revision: 1, updatedAt: 1, status: "running",
       session: { id: "one", cwd: "/project", title: "One", harness: "codex", model: "codex:model",
@@ -164,6 +209,7 @@ describe("Android activity notification bridge", () => {
       ...client.connection,
       enabled: true,
       texts: { reply: "A new reply is ready." },
+      preferences: notificationDefaults,
     });
     const stops = native.stop.mock.calls.length;
     options = { ...options, foreground: false };
@@ -225,6 +271,7 @@ describe("Android activity notification bridge", () => {
       ...client.connection,
       enabled: false,
       texts: { reply: "A new reply is ready." },
+      preferences: notificationDefaults,
     });
     expect(localStorage.getItem("omnicode.mobileNotifications")).toBe("0");
     expect(latest.unreadIds.has("one")).toBe(true);

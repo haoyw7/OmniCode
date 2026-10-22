@@ -161,7 +161,7 @@ export function ReviewSourceSelect({
   };
 
   const rowClass = (highlight: boolean) =>
-    cn("flex w-full shrink-0 items-center justify-start gap-2 rounded-lg text-left text-ui-base outline-none focus-visible:focus-fill hover:bg-menu-hover", highlight && "bg-menu-hover");
+    cn("flex w-full shrink-0 items-center justify-start gap-2 rounded-lg text-left text-ui-base outline-none hover:bg-menu-hover", highlight && "bg-menu-hover");
 
   return (
     <>
@@ -179,12 +179,12 @@ export function ReviewSourceSelect({
           event.preventDefault();
           if (!open) openMenu(true);
         }}
-        className="review-source-select flex h-8 min-w-0 shrink items-center gap-1.5 rounded-lg border pr-2 pl-3 text-left text-ui-base outline-none focus-visible:focus-fill justify-start"
+        className="review-source-select flex h-8 min-w-0 shrink items-center gap-1.5 rounded-lg border pr-2 pl-3 text-left text-ui-base outline-none justify-start"
       >
         <span className="min-w-0 truncate" title={selectedLabel}>
           {selectedLabel}
         </span>
-        <ChevronDown className="size-3.5 shrink-0 text-foreground-subtle" />
+        <ChevronDown className="size-4 shrink-0 text-foreground-subtle" />
         {trailing}
       </Button>
       {visible ? (

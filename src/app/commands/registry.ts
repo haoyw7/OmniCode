@@ -1,4 +1,4 @@
-import type { ExplorerMenuItem } from "../../features/connections/files/ui/ExplorerMenu";
+import type { ActionMenuItem } from "../../shared/ui/primitives/ActionMenu";
 import { quickComposerShortcutLabel } from "../../features/quick-composer/model/quickComposerShortcut";
 import {
   KEYBINDINGS,
@@ -195,6 +195,10 @@ export const APP_COMMANDS: CommandSpec[] = [
     title: "Notes",
     nativeEvent: "open_notes",
     menu: { id: "view", group: 3 },
+  },
+  {
+    id: "View: Usage",
+    title: "Usage",
   },
   {
     id: "View: Automations",
@@ -414,7 +418,7 @@ export type MenuState = {
 };
 
 /** Menu rows for one menu, skipping commands this window cannot run. */
-export function menuItems(menu: MenuId, state: MenuState): ExplorerMenuItem[] {
+export function menuItems(menu: MenuId, state: MenuState): ActionMenuItem[] {
   const specs =
     menu === "terminal"
       ? [
@@ -425,7 +429,7 @@ export function menuItems(menu: MenuId, state: MenuState): ExplorerMenuItem[] {
           ...APP_COMMANDS.filter((spec) => spec.menu?.id === "terminal"),
         ]
       : APP_COMMANDS.filter((spec) => spec.menu?.id === menu);
-  const items: ExplorerMenuItem[] = [];
+  const items: ActionMenuItem[] = [];
   let group: number | undefined;
   for (const spec of specs) {
     if (!state.handlers[spec.id]) continue;

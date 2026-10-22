@@ -4,7 +4,7 @@ import { DesktopBotsButton } from "../../features/bots/ui/DesktopBotsButton";
 import type { RecentProject } from "../../features/projects/model/recents";
 import { type Session } from "../../features/sessions/model/session";
 import { WorkflowSidebarSection } from "../../features/workflows/ui/WorkflowSidebarSection";
-import { HarnessIcon } from "../../features/sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../shared/ui/branding/HarnessIcon";
 import { TerminalSpinner } from "../../features/sessions/ui/TerminalSpinner";
 import {
   leafIds,
@@ -33,7 +33,6 @@ type Options = {
     | "automations"
     | "workflows"
     | "assistant"
-    | "projects"
     | undefined;
   assistantMachineId: string | undefined;
   onOpenAssistant: (machineId?: string | undefined) => void;
@@ -47,24 +46,13 @@ type Options = {
   onOpenSettings: () => void;
   onOpenAutomations: () => void;
   onOpenWorkflows: () => void;
-  appPage: "inbox" | "notes" | "automations" | "workflows" | "projects" | null;
+  appPage: "inbox" | "notes" | "automations" | "workflows" | null;
   inboxUnseen: boolean;
   onOpenNotificationSettings: (path?: string | undefined) => void;
   updateNotice: InstalledUpdate | null;
   onOpenWhatsNew: (version: string) => void;
   setUpdateNotice: Dispatch<SetStateAction<InstalledUpdate | null>>;
   onNewDesktopSession: () => void;
-  openAppView: (
-    kind:
-      | "settings"
-      | "search"
-      | "inbox"
-      | "notes"
-      | "automations"
-      | "workflows"
-      | "assistant"
-      | "projects",
-  ) => void;
   onSelectHistorySession: (
     sessionId: string,
     project?: string | undefined,
@@ -104,7 +92,6 @@ export function useWorkspaceChrome({
   onOpenWhatsNew,
   setUpdateNotice,
   onNewDesktopSession,
-  openAppView,
   onSelectHistorySession,
 }: Options) {
   const desktopModeToggle = (
@@ -207,8 +194,6 @@ export function useWorkspaceChrome({
   const sidebarNavigation = {
     primary: <DesktopNewSessionAction mode={desktopMode} onNew={onNewDesktopSession} />,
     scrollable: <DesktopNavigation
-      onProjects={() => openAppView("projects")}
-      projectsActive={appPage === "projects"}
       onBots={() => onOpenAssistant()}
       botsActive={activeAppView === "assistant"}
       activity={activityBarProps}

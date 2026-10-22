@@ -38,7 +38,6 @@ html[data-mobile-skin] [data-ui="button"]:is([data-variant="ghost"], [data-varia
 html[data-mobile-skin] [data-ui="button"][data-variant="link"] { text-decoration: underline; }
 html[data-mobile-skin] :is([data-ui="button"], [data-ui="icon-button"]):active:not(:disabled, [aria-disabled="true"]) { filter: brightness(.92); }
 html[data-mobile-skin] :is([data-ui="button"], [data-ui="icon-button"], [data-ui="input"], [data-ui="textarea"], [data-ui="select"], [data-ui="switch"], [data-ui="checkbox"], [data-ui="radio"]):is(:disabled, [aria-disabled="true"]) { opacity: .5; cursor: default; }
-html[data-mobile-skin] [data-ui]:focus-visible { outline: none; box-shadow: var(--focus-fill-shadow); }
 html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]) {
   min-width: 0;
   min-height: var(--m-control-height);
@@ -57,18 +56,9 @@ html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="se
 html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"])::placeholder { color: var(--m-control-placeholder); opacity: 1; }
 html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]):focus-visible {
   outline: none;
-  background: var(--m-input-fill-focus);
-}
-html[data-mobile-skin] :is([data-ui="input"], [data-ui="textarea"], [data-ui="select"]):focus-visible:not([aria-invalid="true"]) {
-  box-shadow: var(--focus-fill-shadow), var(--m-control-shadow);
-}
-html[data-mobile-skin] :is([data-slot="select-trigger"], [data-desktop-select-trigger], [data-menu-trigger], [data-slot="dropdown-menu-trigger"]):focus-visible:not([aria-invalid="true"]) {
-  outline: none;
-  box-shadow: var(--focus-fill-shadow);
 }
 html[data-mobile-skin] [data-ui="input-group"]:has(:focus-visible):not(:has([aria-invalid="true"])) {
   outline: none;
-  box-shadow: var(--focus-fill-shadow), var(--m-control-shadow);
 }
 html[data-mobile-skin] [data-ui="input-group-control"]:focus-visible {
   outline: none;
@@ -163,9 +153,51 @@ html[data-mobile-skin] input[data-ui="checkbox"]:checked::after {
 }
 html[data-mobile-skin] [data-slot="checkbox-indicator"] { position: relative; width: 24px; height: 24px; color: white; }
 html[data-mobile-skin] [data-slot="checkbox-indicator"] svg { width: 12px; height: 12px; }
+html[data-mobile-skin] [data-ui="slider"] {
+  min-height: 44px;
+}
+html[data-mobile-skin] [data-ui="slider"] [data-slot="slider-track"] {
+  height: 16px;
+  background: var(--m-input-fill);
+}
+html[data-mobile-skin] [data-ui="slider"] [data-slot="slider-range"] {
+  background: var(--m-control-ink);
+}
+html[data-mobile-skin] [data-ui="slider"] [data-slot="slider-thumb"] {
+  width: 6px;
+  height: 40px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--m-control-ink);
+  box-shadow: none;
+  outline: none;
+}
+html[data-mobile-skin] [data-ui="slider"] [data-slot="slider-thumb"]::after {
+  inset: -2px -19px;
+  border-radius: var(--m-control-radius);
+}
+html[data-mobile-skin] [data-ui="slider"] [data-slot="slider-thumb"]:is(:hover, :active)::after {
+  background: var(--m-control-active);
+}
 @media (prefers-reduced-motion: reduce) {
   html[data-mobile-skin] [data-ui] { transition: none; }
 }
 html[data-mobile-skin][data-reduced-motion="on"] [data-ui] { transition: none; }
 
 html[data-mobile-skin] [data-ui="switch"]:dir(rtl) { --switch-travel: calc(0px - var(--m-switch-travel)); }
+
+/* Shared segmented controls retain Radix focus/keyboard behavior on phones. */
+html[data-mobile-skin] [data-ui="tabs-list"][data-variant="default"] {
+  background: var(--mobile-fill);
+  color: var(--color-m-ink-secondary);
+  min-height: var(--m-control-small);
+}
+html[data-mobile-skin] [data-ui="tabs-trigger"] {
+  color: var(--color-m-ink-secondary);
+  font-size: var(--mobile-font-md);
+}
+html[data-mobile-skin] [data-ui="tabs-trigger"]:is(:hover, [data-state="active"]) {
+  color: var(--color-m-ink);
+}
+html[data-mobile-skin] [data-ui="tabs-trigger"]:active { opacity: .7; }
+html[data-mobile-skin] [data-ui="tabs-indicator"] { background: var(--mobile-selected); }

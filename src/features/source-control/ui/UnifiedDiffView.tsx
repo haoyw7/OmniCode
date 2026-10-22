@@ -984,7 +984,7 @@ const DiffLineRow = memo(function DiffLineRow({
             onClick={(event) =>
               onComment(event.currentTarget.getBoundingClientRect())
             }
-            className={cn("absolute top-0.5 left-0.5 z-10 grid size-4 place-items-center rounded-[3px] bg-content text-background-base outline-none transition-opacity hover:opacity-80 focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:focus-fill", hovered || commenting
+            className={cn("absolute top-0.5 left-0.5 z-10 grid size-4 place-items-center rounded-[3px] bg-content text-background-base outline-none transition-opacity hover:opacity-80 focus-visible:pointer-events-auto focus-visible:opacity-100", hovered || commenting
                 ? "opacity-100"
                 : "pointer-events-none opacity-0")}
           >

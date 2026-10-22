@@ -94,7 +94,7 @@
     color-mix(in srgb, var(--codex-effort-color) 32%, transparent);
 }
 
-.codex-effort-option:is(:hover, :focus-visible, .bg-selection)
+.codex-effort-option:is(:hover, .bg-selection)
   .codex-effort-tile--filled {
   background-color: color-mix(in srgb, var(--codex-effort-color) 32%, transparent);
 }
@@ -122,10 +122,14 @@
     will-change: auto;
   }
 
+  .codex-effort-option:is(:hover, .bg-selection)
+    .codex-effort-tile--filled {
+    background-color: var(--codex-effort-color);
+  }
+
   .codex-effort-option:is(:hover, :focus-visible, .bg-selection)
     .codex-effort-tile--filled {
     animation: none;
-    background-color: var(--codex-effort-color);
     will-change: auto;
   }
 }

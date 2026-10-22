@@ -203,6 +203,9 @@ import { useComposerMentionCatalog } from "./useComposerMentionCatalog";
 import { useSendKick } from "./useSendKick";
 import { ComposerHighlight } from "./ComposerHighlight";
 import { ComposerAction, ToolButton } from "./ComposerAction";
+import { USAGE_LIMITS_COMMAND, isUsageLimitsCommand, useUsageLimitsNotice } from "../../usage/model/usageLimitsNotice";
+import { desktopUsageNoticeSource } from "../../usage/model/desktopUsageTransport";
+import { UsageLimitsSnapshot } from "./UsageLimitsSnapshot";
 
 const COMPOSER_BREAKPOINTS = [220, 280, 360, 480] as const;
 
@@ -417,6 +420,8 @@ export function Composer({
   children,
 }: Props) {
   const { t: uiT } = useTranslation();
+  const limitsSource = desktopUsageNoticeSource(cwd ?? executionCwd);
+  const limitsNotice = useUsageLimitsNotice(limitsSource, startedSession ? sessionId : undefined, harness, queueLastUserMessageId);
   const composerEnvironment = useComposerEnvironment(sessionId, cwd ?? executionCwd, onCwdChange);
   const needsEnvironmentProject = !remoteSession && !startedSession && composerEnvironment.needsProject;
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -593,6 +598,7 @@ export function Composer({
     () =>
       hostManaged
         ? [
+            USAGE_LIMITS_COMMAND,
             ...(hostFeatures?.orchestration && !hideTopBar
               ? [ORCHESTRATOR_COMMAND]
               : []),
@@ -600,6 +606,7 @@ export function Composer({
             COMPACT_COMMAND,
           ]
         : [
+            USAGE_LIMITS_COMMAND,
             MCP_COMMAND,
             OPERATOR_COMMAND,
             ...(hideTopBar || !orchestrationAvailable
@@ -611,6 +618,7 @@ export function Composer({
             ...(supportsBtwHarness(harness) ? [BTW_COMMAND] : []),
             ...skills.filter(
               (skill) =>
+                skill.name !== USAGE_LIMITS_COMMAND.name &&
                 ![OPERATOR_COMMAND.name, "mono", "omnicode"].includes(
                   skill.name,
                 ) &&
@@ -1345,7 +1353,7 @@ export function Composer({
   }, [editLastTurnSupported, onRecallLastTurnReady, recallLastTurn]);
 
   const submit = (value: string) => {
-    if (!sendSupported) return;
+    if (!sendSupported && !isUsageLimitsCommand(value)) return;
     if (disabled || worktreeRemoved || submitLockRef.current) return;
     submitLockRef.current = true;
     void completeSubmit(value).finally(() => {
@@ -1362,6 +1370,12 @@ export function Composer({
       pending = pasteFlightRef.current;
     }
     const value = ref.current?.value ?? submittedValue;
+    if (isUsageLimitsCommand(value)) {
+      limitsNotice.show();
+      if (ref.current) { ref.current.value = ""; resizeComposer(ref.current); }
+      setDraft(""); onDraftChange?.(""); setSlash(null); setPlusOpen(false); syncHasValue("", attachmentsRef.current);
+      return;
+    }
     if (disabled || worktreeRemoved) return;
     if (!fileDropStateRef.current.attachmentsSupported && attachmentsRef.current.length > 0) {
       toast.error(uiT("Choose a provider that supports attachments, or remove the attached files."));
@@ -1518,6 +1532,7 @@ export function Composer({
       restoreDraft(value, files);
       return;
     }
+    limitsNotice.close();
     pasteGenerationRef.current += 1;
     setSendKick(true);
     if (ref.current) {
@@ -2148,12 +2163,16 @@ export function Composer({
         <AnimatedCollapse expanded={!!composerNotice}>
           {composerNotice}
         </AnimatedCollapse>
+        <AnimatedCollapse expanded={limitsNotice.open}>
+          <UsageLimitsSnapshot sources={limitsNotice.sources} loading={limitsNotice.loading} error={limitsNotice.error} onClose={limitsNotice.close} />
+        </AnimatedCollapse>
       </>
     ),
     [
       busy,
       children,
       composerNotice,
+      limitsNotice.open, limitsNotice.sources, limitsNotice.loading, limitsNotice.error,
       disabled,
       messageQueue,
       onDeleteQueuedMessage,
@@ -2249,7 +2268,7 @@ export function Composer({
             aria-label={uiT("Stop editing last message")}
             onMouseDown={(event) => event.preventDefault()}
             onClick={exitEditMode}
-            className="edit-last-turn-button flex h-6.5 shrink-0 items-center gap-1 rounded-md border border-current/20 px-2 text-[11px] font-medium transition-[background-color,color,border-color] hover:border-current/35 hover:bg-content/10 hover:text-content focus-visible:focus-fill"
+            className="edit-last-turn-button flex h-6.5 shrink-0 items-center gap-1 rounded-md border border-current/20 px-2 text-[11px] font-medium transition-[background-color,color,border-color] hover:border-current/35 hover:bg-content/10 hover:text-content"
           >
             <X className="size-3" />
             <span>{uiT("Cancel edit")}</span>
@@ -2416,7 +2435,7 @@ export function Composer({
             data-composer-file-drag={(fileDrag || explorerDrop.isOver) || undefined}
             className={cn("z-10 border bg-content/3 backdrop-blur-sm", resendEdited
                 ? "edit-last-turn-composer rounded-lg"
-                : "rounded-lg border-content/10 has-focus:focus-fill", (fileDrag || explorerDrop.isOver) ? "border-accent/60" : "")}
+                : "rounded-lg border-content/10", (fileDrag || explorerDrop.isOver) ? "border-accent/60" : "")}
           >
             {compact ? workspaceBar : null}
             {(fileDrag || explorerDrop.isOver) ? (
@@ -2791,7 +2810,7 @@ export function Composer({
               >
                 <ComposerAction
                   busy={busy}
-                  disabled={disabled || ((!busy || (hasValue && allowBusySubmit)) && !sendSupported)}
+                  disabled={disabled || ((!busy || (hasValue && allowBusySubmit)) && !sendSupported && !isUsageLimitsCommand(draft))}
                   hasValue={hasValue && !worktreeRemoved}
                   allowBusySubmit={allowBusySubmit}
                   label={draftActive ? uiT("Save draft") : uiT("Send")}

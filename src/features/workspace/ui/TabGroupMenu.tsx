@@ -43,9 +43,9 @@ import { ProjectLogoIcon } from "../../projects/ui/ProjectLogoIcon";
 import { ProjectMascot } from "../../projects/ui/ProjectMascot";
 import { MOD } from "../../../platform/tauri/platform";
 import {
-  ExplorerMenu,
-  type ExplorerMenuItem,
-} from "../../connections/files/ui/ExplorerMenu";
+  ActionMenu,
+  type ActionMenuItem,
+} from "../../../shared/ui/primitives/ActionMenu";
 
 export type TabGroupMenuAction =
   "new-tab" | "new-window" | "close-group" | "ungroup" | "delete-group";
@@ -58,7 +58,7 @@ export type TabGroupMenuExtraItem = {
   danger?: boolean;
   sepBefore?: boolean;
   disabled?: boolean;
-  submenu?: ExplorerMenuItem[];
+  submenu?: ActionMenuItem[];
 };
 
 type Props = {
@@ -252,7 +252,7 @@ export function TabGroupMenu({
           onChange={(e) => setName(e.target.value)}
           onBlur={commitName}
           aria-label={uiT("Group name")}
-          className="mb-2 w-full rounded-lg border border-content/10 bg-content/5 px-2.5 py-1.5 text-[13px] text-content outline-none focus-visible:focus-fill ring-accent/40"
+          className="mb-2 w-full rounded-lg border border-content/10 bg-content/5 px-2.5 py-1.5 text-[13px] text-content outline-none ring-accent/40"
         />
 
         {logoProject ? (
@@ -311,7 +311,7 @@ export function TabGroupMenu({
                 }}
                 className="grid size-7 shrink-0 place-items-center rounded-md text-content/50 hover:bg-content/6 hover:text-content"
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="size-4" />
               </Button>
             ) : null}
           </div>
@@ -423,7 +423,7 @@ export function TabGroupMenu({
         {footer}
       </Popover>
       <PresenceBoundary propagate>{submenu?.item.submenu ? (
-        <ExplorerMenu
+        <ActionMenu
           anchor={submenu.anchor}
           ownerId={menuId}
           ariaLabel={submenu.item.label}
@@ -504,7 +504,7 @@ function MenuRow({
       className="flex w-full items-center justify-start text-left"
     >
       <MenuHover />
-      <Icon className="size-3.5 shrink-0 text-content/55" />
+      <Icon className="size-4 shrink-0 text-content/55" />
       <span
         data-menu-title
         className={cn("min-w-0 flex-1 leading-label", item.description ? "py-2" : "truncate")}
@@ -519,7 +519,7 @@ function MenuRow({
       {item.submenu ? (
         <ChevronRight
           data-menu-arrow
-          className="size-3.5 shrink-0 text-content/50"
+          className="size-4 shrink-0 text-content/50"
         />
       ) : null}
       {item.shortcut ? (

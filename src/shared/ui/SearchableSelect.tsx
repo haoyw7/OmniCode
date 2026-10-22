@@ -283,16 +283,16 @@ export function SearchableSelect({
           className={cn(
             triggerClassName,
             iconOnly
-              ? "grid place-items-center outline-none focus-visible:focus-fill disabled:opacity-50"
+              ? "grid place-items-center outline-none disabled:opacity-50"
               : variant === "row"
-                ? "inline-flex h-7 max-w-full items-center gap-1 rounded-md bg-content/10 py-0 pr-1.5 pl-2 text-left text-[12px] outline-none hover:bg-content/[0.14] focus-visible:bg-content/[0.14] disabled:opacity-50"
+                ? "inline-flex h-7 max-w-full items-center gap-1 rounded-md bg-content/10 py-0 pr-1.5 pl-2 text-left text-[12px] outline-none hover:bg-content/[0.14] disabled:opacity-50"
                 : variant === "panel"
-                  ? "flex h-14 w-full items-center justify-end gap-3 rounded-xl border border-content/6 bg-content/6 px-4 text-right text-[14px] font-medium outline-none focus-visible:focus-fill hover:bg-content/8 focus:bg-content/8 disabled:opacity-50 active:scale-[0.995]"
+                  ? "flex h-14 w-full items-center justify-end gap-3 rounded-xl border border-content/6 bg-content/6 px-4 text-right text-[14px] font-medium outline-none hover:bg-content/8 disabled:opacity-50 active:scale-[0.995]"
                   : variant === "pill"
-                    ? "inline-flex h-7 max-w-full items-center gap-1 rounded-md bg-content/10 py-0 pr-1.5 pl-2 text-left text-[12px] outline-none hover:bg-content/[0.14] focus-visible:bg-content/[0.14] disabled:opacity-50"
+                    ? "inline-flex h-7 max-w-full items-center gap-1 rounded-md bg-content/10 py-0 pr-1.5 pl-2 text-left text-[12px] outline-none hover:bg-content/[0.14] disabled:opacity-50"
                     : variant === "transparent"
-                      ? "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-content/10 bg-transparent px-2.5 text-left text-[13px] outline-none focus-visible:focus-fill hover:border-content/20 disabled:opacity-50 active:scale-[0.99]"
-                      : "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-content/10 bg-background-base px-2.5 text-left text-[13px] outline-none focus-visible:focus-fill hover:border-content/20 disabled:opacity-50 active:scale-[0.99]",
+                      ? "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-content/10 bg-transparent px-2.5 text-left text-[13px] outline-none hover:border-content/20 disabled:opacity-50 active:scale-[0.99]"
+                      : "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-content/10 bg-background-base px-2.5 text-left text-[13px] outline-none hover:border-content/20 disabled:opacity-50 active:scale-[0.99]",
           )}
         >
           {iconOnly ? (
@@ -324,12 +324,7 @@ export function SearchableSelect({
                 className="shrink-0"
               >
                 <ChevronDown
-                  className={cn(
-                    "desktop-select-arrow text-content/45",
-                    variant === "pill" || variant === "row"
-                      ? "size-3"
-                      : "size-3.5",
-                  )}
+                  className="desktop-select-arrow size-4 text-content/45"
                 />
               </motion.span>
             </>
@@ -380,14 +375,14 @@ export function SearchableSelect({
                 setQuery(next);
                 setActive(0);
               }}
-              className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none focus-visible:focus-fill placeholder:text-content/35"
+              className="min-w-0 flex-1 bg-transparent text-[12px] text-content outline-none placeholder:text-content/35"
             />
           ) : null}
           <CommandList
             ref={list}
             data-ui="select-list"
             label={label}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-none p-1 outline-none focus-visible:focus-fill"
+            className="min-h-0 flex-1 overflow-y-auto overscroll-none p-1 outline-none"
           >
             {shown.length > 0 ? (
               <VirtualCommandItems
@@ -425,12 +420,12 @@ export function SearchableSelect({
                     {checkPosition === "start" ? (
                       <span
                         data-ui="select-check-slot"
-                        className="grid size-3.5 shrink-0 place-items-center"
+                        className="grid size-4 shrink-0 place-items-center"
                       >
                         {isSelected ? (
                           <Check
                             data-ui="select-check"
-                            className="size-3"
+                            className="size-4"
                           />
                         ) : null}
                       </span>

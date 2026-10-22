@@ -44,7 +44,7 @@ function Fixture() {
         onSessionActions={noop} onNewSession={noop} onSettings={noop}/>
       <MobileSheetPresence open={sheet}><MobileSheet key="sheet" title="Motion sheet" onClose={()=>setSheet(false)} detents
         header={{title:"Tool details",subtitle:"Drag down to dismiss or up to expand"}}>
-        <div style={{padding:20}}><h2>Retained sheet content</h2><p>Pull a short distance to spring back, or pass the existing threshold to close.</p>
+        <div data-testid="sheet-swipe-area" style={{padding:20}}><div data-testid="sheet-drag-surface" style={{height:80}} /><h2>Retained sheet content</h2><p>Pull a short distance to spring back, or pass the existing threshold to close.</p>
         <input data-ui="input" aria-label="Retained sheet input" defaultValue="Draft stays mounted"/><p style={{height:120}}>Native content scrolling stays available.</p></div>
       </MobileSheet></MobileSheetPresence>
       <MobileSheetPresence open={popup !== null}>

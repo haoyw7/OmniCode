@@ -63,7 +63,7 @@ export function AttachmentChip({ attachment, onRemove, tile = false, onOpen, pre
               event.stopPropagation();
               setPreviewOpen(true);
             }}
-            className="shrink-0 cursor-zoom-in rounded-lg focus-visible:focus-fill"
+            className="shrink-0 cursor-zoom-in rounded-lg"
           >
             <img
               src={preview}
@@ -83,7 +83,7 @@ export function AttachmentChip({ attachment, onRemove, tile = false, onOpen, pre
               event.stopPropagation();
               onOpen?.();
             }}
-            className="attachment-chip-card enabled:cursor-pointer focus-visible:focus-fill"
+            className="attachment-chip-card enabled:cursor-pointer"
           >
             <span className="attachment-chip-card-icon">
               <FileTypeIcon

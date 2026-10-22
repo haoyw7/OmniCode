@@ -148,9 +148,9 @@ export function ResizableHandle({ className, disabled, onPointerDown, ...props }
   return <Separator {...props} data-ui="resizable-handle" data-tauri-drag-region="false" disabled={disabled || !visible} disableDoubleClick
     onPointerDown={(event) => { begin(event); onPointerDown?.(event); }}
     className={cn(
-      "relative z-10 flex w-px shrink-0 items-center justify-center bg-transparent cursor-col-resize focus-visible:focus-fill aria-disabled:cursor-default",
+      "relative z-10 flex w-px shrink-0 items-center justify-center bg-transparent cursor-col-resize aria-disabled:cursor-default",
       "before:pointer-events-none before:absolute before:left-1/2 before:top-1/2 before:h-10 before:w-0.75 before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full before:bg-border before:opacity-0",
-      "hover:before:opacity-100 data-[separator=hover]:before:opacity-100 focus-visible:before:opacity-100 focus-visible:before:bg-accent focus-visible:before:focus-fill active:before:opacity-100 active:before:bg-accent data-[separator=active]:before:opacity-100 data-[separator=active]:before:bg-accent aria-disabled:before:hidden",
+      "hover:before:opacity-100 data-[separator=hover]:before:opacity-100 focus-visible:before:opacity-100 active:before:opacity-100 active:before:bg-accent data-[separator=active]:before:opacity-100 data-[separator=active]:before:bg-accent aria-disabled:before:hidden",
       "after:absolute after:inset-y-0 after:left-1/2 after:w-2.5 after:-translate-x-1/2",
       "aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:cursor-row-resize aria-[orientation=horizontal]:before:h-0.75 aria-[orientation=horizontal]:before:w-10 aria-[orientation=horizontal]:after:inset-x-0 aria-[orientation=horizontal]:after:top-1/2 aria-[orientation=horizontal]:after:h-2.5 aria-[orientation=horizontal]:after:w-full aria-[orientation=horizontal]:after:translate-x-0 aria-[orientation=horizontal]:after:-translate-y-1/2",
       className,

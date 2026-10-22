@@ -18,7 +18,7 @@ import { useTranslation } from "../../../shared/i18n/useTranslation";
 import { useSurfaceVisibility } from "../../../shared/ui/SurfaceVisibility";
 import { AnimatedCollapse } from "../../../shared/ui/AnimatedCollapse";
 import { AgentMarkdown } from "../../sessions/ui/AgentMarkdown";
-import { HarnessIcon } from "../../sessions/ui/HarnessIcon";
+import { HarnessIcon } from "../../../shared/ui/branding/HarnessIcon";
 import { BotDateSeparator } from "./BotDateSeparator";
 import { DesktopBotMembers } from "./DesktopBotMembers";
 import { DesktopRoomEditor } from "./DesktopBotRooms";

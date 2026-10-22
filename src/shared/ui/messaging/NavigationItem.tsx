@@ -11,7 +11,7 @@ export function NavigationItem({
 }) {
   return (
     <button {...props} type={type} data-ui="navigation-item" data-compact={compact || undefined}
-      className={cn("hover:opacity-80 active:opacity-70", cn("relative flex min-w-0 shrink-0 items-center rounded-lg text-left disabled:opacity-50 focus-visible:focus-fill", className))}>
+      className={cn("hover:opacity-80 active:opacity-70", cn("relative flex min-w-0 shrink-0 items-center rounded-lg text-left disabled:opacity-50", className))}>
       <span data-ui="navigation-icon" aria-hidden="true">{icon}</span>
       <span data-ui="navigation-label" className={compact ? "sr-only" : "min-w-0 flex-1 truncate"}>{children}</span>
       {trailing}

@@ -2,9 +2,10 @@
 import { afterEach, expect, it, vi } from "vitest";
 import type { HostSessionSummary } from "../features/connections/model/protocol";
 import { setUiLanguage } from "../shared/i18n/language";
-import { HARNESS_ICONS } from "../features/sessions/ui/HarnessIcon";
+import { HARNESS_ICONS } from "../shared/ui/branding/HarnessIcon";
 import { notificationText } from "./notificationText";
 import { mobileNotificationTexts, showBrowserActivityNotification, showBrowserAssistantNotification } from "./notifications";
+import { notificationDefaults } from "./notificationPreferences";
 
 afterEach(() => {
   setUiLanguage("en");
@@ -45,6 +46,37 @@ function session(): HostSessionSummary {
     notificationPreview: { reply: "Login now works.", input: "Which environment should I deploy to?" },
   };
 }
+
+it("filters reply and input categories independently for conversations and Bots", () => {
+  const { notification } = browserNotification();
+  const preferences = { ...notificationDefaults, replies: false, botInput: false };
+  showBrowserActivityNotification(session(), "reply", "host", vi.fn(), preferences);
+  expect(notification).not.toHaveBeenCalled();
+  showBrowserActivityNotification(session(), "input", "host", vi.fn(), preferences);
+  expect(notification).toHaveBeenCalledTimes(1);
+  const bot = { id: "bot", name: "Bot", revision: 2,
+    latest: { id: "notice", revision: 2, kind: "input" as const, text: "Approve?" } };
+  showBrowserAssistantNotification(bot, "host", vi.fn(), preferences);
+  expect(notification).toHaveBeenCalledTimes(1);
+  showBrowserAssistantNotification({ ...bot, latest: { ...bot.latest, kind: "reply" } }, "host", vi.fn(), preferences);
+  expect(notification).toHaveBeenCalledTimes(2);
+});
+
+it("hides both kinds of preview without losing notification titles or click navigation", () => {
+  const { notification, banner } = browserNotification();
+  const open = vi.fn();
+  const preferences = { ...notificationDefaults, preview: false };
+  for (const kind of ["reply", "input"] as const) {
+    showBrowserActivityNotification(session(), kind, "host", open, preferences);
+    expect(notification.mock.calls.at(-1)?.[1]?.body).toBe(mobileNotificationTexts()[kind]);
+    expect(notification.mock.calls.at(-1)?.[0]).toBe(session().title);
+    banner.onclick?.();
+    expect(open).toHaveBeenLastCalledWith({ environmentId: "host", projectId: "project", sessionId: "conversation" });
+    showBrowserAssistantNotification({ id: "bot", name: "Bot", revision: 2,
+      latest: { id: "notice", revision: 2, kind, text: "Private content" } }, "host", open, preferences);
+    expect(notification.mock.calls.at(-1)?.[1]?.body).toBe(mobileNotificationTexts()[kind]);
+  }
+});
 
 it("uses each conversation's latest reply and keeps click navigation tied to that conversation", () => {
   const { notification, banner, close } = browserNotification();

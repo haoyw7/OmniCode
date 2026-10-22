@@ -6,6 +6,10 @@ body,
 #root {
   overflow: clip;
 }
+/* Body portals inherit the UI scale too; rem stays tied to the unscaled root. */
+body {
+  font-size: calc(1rem * var(--font-scale, 1));
+}
 /* Root tokens also reach sheets and previews that portal outside the shell. */
 :root {
   --scrollbar-scale: 1;
@@ -137,7 +141,7 @@ body,
 }
 :where([role="dialog"]:not([data-popover-side] [role="dialog"],
     [role="dialog"] [role="dialog"]), body > [data-popover-side]) {
-  font-size: calc(1em + var(--mobile-popup-font-step));
+  font-size: calc(1em + var(--mobile-popup-font-step) * var(--font-scale, 1));
 }
 /* Shared components also use fixed Tailwind sizes. The fallback keeps text
    outside popups at its existing size. */
@@ -174,12 +178,6 @@ body,
 .mobile-app button:disabled {
   cursor: default;
   opacity: 0.4;
-}
-.mobile-app button:focus-visible,
-.mobile-app a:focus-visible,
-.mobile-app input:is([type="checkbox"], [type="radio"], [type="range"]):focus-visible {
-  outline: none;
-  box-shadow: var(--focus-fill-shadow);
 }
 /* Text fields show their rounded fill as the boundary; a rectangular ring
    would cut across pill and card shapes. */

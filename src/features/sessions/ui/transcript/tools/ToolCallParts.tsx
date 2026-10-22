@@ -88,7 +88,7 @@ export function ToolOpenRow({
       tabIndex={0}
       aria-label={uiT("Show tool details: {value0}", { value0: label })}
       data-tool-open-row=""
-      className={cn("hover:opacity-80 focus-visible:focus-fill active:opacity-70", cn("group", className, "cursor-pointer"))}
+      className={cn("hover:opacity-80 active:opacity-70", cn("group", className, "cursor-pointer"))}
       onClick={() => onOpen(block)}
       onKeyDown={(event) => {
         if (event.target !== event.currentTarget) return;
