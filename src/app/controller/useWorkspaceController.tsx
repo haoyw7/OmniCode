@@ -7,9 +7,7 @@ import { createWorkspaceUiStore } from "../model/workspaceUiStore";
 import { resolveBotOrigin } from "../../features/bots/model/botOrigin";
 import { selectBotThread } from "../../features/bots/model/botSelection";
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { message } from "@tauri-apps/plugin-dialog";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   useCallback,
   useEffect,
@@ -45,12 +43,10 @@ import {
   appendReadyHandoff,
   buildDeterministicHandoff,
   buildHandoffComposerCard,
-  completeHandoff,
   isPreparingHandoff,
   sessionChildHarnesses,
   sessionThroughTurn,
 } from "../../features/sessions/model/handoff";
-import { generateConfiguredSessionTitle } from "../../features/sessions/model/titleModelClient";
 import { type SessionDeleteChoice } from "../../features/sessions/ui/DeleteSessionDialog";
 import { loadSharedAgentDefaults } from "../../features/settings/model/agentPreferences";
 import {
@@ -62,14 +58,6 @@ import {
   loadProjectSidebarTab,
   saveProjectSidebarTab,
 } from "../../features/settings/model/projectSidebarTab";
-import {
-  UI_SCALE_DEFAULT,
-  applyUiScale,
-  loadUiScale,
-  saveUiScale,
-  zoomInUiScale,
-  zoomOutUiScale,
-} from "../../features/settings/model/uiScale";
 import { usePreferenceState } from "../../features/settings/model/usePreferenceState";
 import { useProjectBranches } from "../../features/source-control/hooks/useProjectBranches";
 import {
@@ -94,40 +82,25 @@ import {
 } from "../../features/workspace/model/layout";
 import { insertTabBesideActive } from "../../features/workspace/model/tabGroups";
 import {
-  applyHarnessEvent,
   applyHarnessEvents,
   bindHarnessSession,
-  canCompactHarnessContext,
   cancelHarnessTurn,
-  compactHarnessContext,
   forgetHarnessSession,
   isLiveHarness,
-  keepHarnessQuestionOpen,
   latestTurnNeedsHarnessLogin,
   probeHarnessAvailability,
   refreshHarnessCatalogs,
   registerBuiltinHarnesses,
-  respondHarnessApproval,
-  respondHarnessQuestion,
-  startHarnessBridge,
   stopHarnessSession,
-  stopStreaming,
-  type ApprovalDecision,
-  type UserQuestionReply,
 } from "../../integrations/harness";
 import { supportsHarnessLogin } from "../../integrations/harness/core/authSupport";
 import { isHarnessAvailable } from "../../integrations/harness/core/availability";
-import { readHarnessSessionTitle } from "../../integrations/harness/core/registry";
-import { SessionTitleCoordinator } from "../../integrations/harness/core/titleCoordinator";
-import { notifyGitChanged } from "../../platform/tauri/fs";
 import { IS_LINUX, IS_MAC, IS_WIN } from "../../platform/tauri/platform";
 import { translate } from "../../shared/i18n/language";
 import { useTranslation } from "../../shared/i18n/useTranslation";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../shared/lib/queryClient";
 import { withToast } from "../../shared/ui/primitives/Sonner";
-import { HELP_URLS, type CommandHandlers } from "../commands/registry";
-import { useCommandDispatcher } from "../commands/useCommandDispatcher";
 import { useEmptySessionCleanup } from "../hooks/useEmptySessionCleanup";
 import { useIdleSessionDetach } from "../hooks/useIdleSessionDetach";
 import { useWorkspaceNavigation } from "../hooks/useWorkspaceNavigation";
@@ -148,16 +121,13 @@ import {
 } from "../model/emptySessionCleanup";
 import { HarnessEventQueue } from "../model/harnessFlush";
 import { releaseNotesForVersion } from "../model/releaseNotes";
-import { nudgeWorkspace } from "../model/sessionEditTracking";
 import {
   providerSignInRequestKey,
   sameSettings,
 } from "../model/sessionTransforms";
 import { useTraySessions } from "../model/traySessions";
-import { readAppVersion, runUpdateFlow } from "../model/updater";
 import {
   openSessionIds,
-  sameWorktreeTabStats,
   tabProjectName,
 } from "../model/workspaceSelectors";
 import { useWorkspaceChrome } from "../shell/useWorkspaceChrome";
@@ -184,12 +154,9 @@ import type {
   LinkedWorkItemPanelState,
   Submit,
 } from "./workspaceTypes";
-
 import { notifyDirsChanged } from "../../features/connections/files/model/fileTree";
-import { nudgeWatchedFiles } from "../../features/connections/files/model/fileWatch";
 import {
   finishSessionTurn,
-  notifyReviewChanged,
 } from "../../features/sessions/model/checkpoint";
 import { createEditedResendCoordinator } from "../../features/sessions/model/editLastTurn";
 import {
@@ -197,7 +164,6 @@ import {
   mergeModelSettings,
   resolveModel,
 } from "../../features/sessions/model/models";
-
 import {
   rebaseProjectData,
   removeProjectData,
@@ -215,7 +181,6 @@ import {
   loadRecents,
   looksLikeProject,
   normalizeProjectPath,
-  projectRailItems,
   rememberImportedProject,
   rememberProject,
   replaceProjectPath,
@@ -223,8 +188,6 @@ import {
 } from "../../features/projects/model/recents";
 import {
   conversationProviderAccountId,
-  selectedProviderAccountId,
-  supportsProviderAccounts,
   type ProviderAccountProvider,
 } from "../../features/providers/model/providerAccounts";
 import { applyAddToChatRequest } from "../../features/sessions/model/addChatToWorkspace";
@@ -233,7 +196,6 @@ import {
   type AddToChatRequest,
 } from "../../features/sessions/model/quoteDraft";
 import {
-  HARNESS_TITLE,
   formatSessionTitle,
   isReusableDraftSession,
   newDefaultSession,
@@ -258,7 +220,6 @@ import {
 import { type SessionHeaderActions } from "../../features/workspace/ui/SessionHeaderActions";
 import { pathKey, projectName } from "../../shared/lib/paths";
 import { newWorkspaceSession } from "../model/newWorkspaceSession";
-
 import {
   ADD_NOTE_TO_CHAT_EVENT,
   type NoteComposerCard,
@@ -270,12 +231,9 @@ import { syncDockBadge } from "../../features/notifications/model/dockBadge";
 import {
   loadNotificationsEnabled,
   probeNotificationPermission,
-  setWindowFocused,
 } from "../../features/notifications/model/notifications";
 import {
   deleteSession,
-  replaceInFlightSessions,
-  saveWorkspaceSnapshot,
   shouldPersistSession,
   upsertSession,
 } from "../../features/sessions/data/sessionStore";
@@ -290,17 +248,6 @@ import {
 import { nativeSkillContextForSession } from "../../features/sessions/model/sessionSkills";
 import { TranscriptPool } from "../../features/sessions/ui/TranscriptPool";
 import { warmNativeSkills } from "../../features/skills/model/skills";
-import {
-  adjacentItemId,
-  deferUnhandledEscape,
-  focusedBusyAgentSessionId,
-  shouldStopFocusedTurnOnEscape,
-} from "../../features/workspace/model/tabKeys";
-
-import {
-  openFindInActiveEditor,
-  openReplaceInActiveEditor,
-} from "../../features/connections/files/editor/editorSearch";
 import {
   REMOTE_HISTORY_UPDATED,
   cachedRemoteSessionSummary,
@@ -348,44 +295,31 @@ import {
 import type { InboxSessionPortal } from "../../features/inbox/ui/InboxDiscussionPanel";
 import { linkedWorkItemFromInboxItem } from "../../features/sessions/model/sessionWorkItem";
 import {
-  loadAutosave,
-  loadCloseToTray,
   loadLiveAgentsEnabled,
   loadMenuBarVisible,
   loadNotesEnabled,
-  saveAutosave,
-  saveMenuBarVisible,
   subscribeLiveAgentsEnabled,
   subscribeMenuBarVisible,
   subscribeNotesEnabled,
 } from "../../features/settings/model/settings";
-
 import {
   CONTINUE_PROMPT,
   canAutoContinue,
-  inFlightRefs,
-  inFlightSnapshotKey,
-  shouldWriteInFlightSnapshot,
 } from "../../features/sessions/model/inFlight";
 import {
-  collectWorkspaceSnapshot,
-  workspaceSnapshotKey,
-} from "../../features/workspace/model/workspaceSnapshot";
-import {
-  bindResumedSessions,
-  closeBusyWindow,
-  closeCurrentWindow,
   confirmReload,
-  hasInFlightSessions,
-  hideCurrentWindow,
-  isAppQuitting,
-  persistLiveTranscripts,
-  persistQuitState,
-  reapWindowRuntime,
-  setQuitWorkspace,
 } from "../model/appLifecycle";
 import { useWorkflowRequests } from "./useWorkflowRequests";
 import { useWorkspaceSummaries } from "./useWorkspaceSummaries";
+import { useSessionTitles } from "./useSessionTitles";
+import { useWorkspacePersistence } from "./useWorkspacePersistence";
+import { useWorkspaceTabNavigation } from "./useWorkspaceTabNavigation";
+import { useSessionRuntimeActions } from "./useSessionRuntimeActions";
+import { useWorkspaceListNavigation } from "./useWorkspaceListNavigation";
+import { useWorkspaceRuntimeLifecycle } from "./useWorkspaceRuntimeLifecycle";
+import { useWorkspaceCommands } from "./useWorkspaceCommands";
+import { useWorkspaceWindowFocus } from "./useWorkspaceWindowFocus";
+import { useWorkspaceWindowClose } from "./useWorkspaceWindowClose";
 
 function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
   if (a.size !== b.size) return false;
@@ -393,10 +327,6 @@ function setsEqual<T>(a: Set<T>, b: Set<T>): boolean {
     if (!b.has(value)) return false;
   }
   return true;
-}
-
-function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
-  return a.length === b.length && a.every((item, index) => item === b[index]);
 }
 
 // Register capabilities before composer hooks choose their discovery strategy.
@@ -661,44 +591,11 @@ export function useWorkspaceController({
     return () => window.removeEventListener(REMOTE_HISTORY_UPDATED, updated);
   }, []);
 
-  const titleCoordinator = useRef<SessionTitleCoordinator | null>(null);
-  if (!titleCoordinator.current)
-    titleCoordinator.current = new SessionTitleCoordinator({
-      get: (id) => sessionsRef.current.find((session) => session.id === id),
-      update: (id, change) => {
-        const previous = sessionsRef.current;
-        const next = previous.map((session) =>
-          session.id === id ? change(session) : session,
-        );
-        if (!next.some((session, index) => session !== previous[index])) return;
-        sessionsRef.current = next;
-        setSessions((current) =>
-          current.map((session) =>
-            session.id === id ? change(session) : session,
-          ),
-        );
-      },
-      read: readHarnessSessionTitle,
-      generate: (session, message) =>
-        generateConfiguredSessionTitle(session.cwd, message),
-    });
-  useEffect(() => () => titleCoordinator.current?.close(), []);
-  const titleBindings = useRef(new Map<string, string>());
-  useEffect(() => {
-    const present = new Set(sessions.map((session) => session.id));
-    for (const id of titleBindings.current.keys())
-      if (!present.has(id)) {
-        titleBindings.current.delete(id);
-        titleCoordinator.current!.cancel(id);
-      }
-    for (const session of sessions) {
-      if (!session.providerSessionId || sessionUsesHost(session)) continue;
-      const binding = `${session.harness}:${session.providerAccountId ?? "default"}:${session.providerSessionId}`;
-      if (titleBindings.current.get(session.id) === binding) continue;
-      titleBindings.current.set(session.id, binding);
-      void titleCoordinator.current!.read(session.id);
-    }
-  }, [sessions]);
+  const { titleCoordinator } = useSessionTitles({
+    sessions,
+    sessionsRef,
+    setSessions,
+  });
 
   const linkedSessionUpdatesRef = useRef<
     ReadonlyMap<string, LinkedSessionUpdate>
@@ -821,8 +718,6 @@ export function useWorkspaceController({
     workspaceVisible,
     inboxSessionId: inboxVisible ? inboxAskPortal?.sessionId : undefined,
   };
-  const sessionNavigationIdsRef = useRef<readonly string[]>([]);
-  const sessionNavigationProjectRef = useRef<string | null>(null);
   const paletteOpenRef = useRef(paletteOpen);
   paletteOpenRef.current = paletteOpen;
   const whatsNewVersionRef = useRef(whatsNewVersion);
@@ -832,10 +727,6 @@ export function useWorkspaceController({
 
   const turnGen = useRef(new Map<string, number>());
   const editedResends = useRef(createEditedResendCoordinator()).current;
-  const inFlightSyncKey = useRef<string | null>(null);
-  const sawInFlight = useRef(false);
-  const workspaceSyncKey = useRef<string | null>(null);
-  const workspaceSaveTimer = useRef<number | undefined>(undefined);
   const [transcriptPool] = useState(() => new TranscriptPool());
   // Visible output advances per frame; hidden streams keep their own cadence.
   const [harnessEvents] = useState(
@@ -915,37 +806,17 @@ export function useWorkspaceController({
 
   const enqueueHarnessEvent = harnessEvents.enqueue;
 
-  useEffect(() => {
-    if (resumed?.sessions.length) bindResumedSessions(resumed.sessions);
-    const stopBridge = startHarnessBridge();
-    const reap = () => {
-      if (isAppQuitting()) return;
-      void persistQuitState(
-        sessionsRef.current,
-        tabsRef.current,
-        activeTabIdRef.current,
-        projectCwdRef.current,
-        readProjectReturnMemory(),
-        "unload",
-        projectTerminalsRef.current,
-        lastDockSideRef.current ?? undefined,
-      ).finally(() => {
-        void reapWindowRuntime(
-          sessionsRef.current,
-          tabsRef.current,
-          projectTerminalsRef.current,
-        );
-      });
-    };
-    window.addEventListener("pagehide", reap);
-    window.addEventListener("beforeunload", reap);
-    return () => {
-      window.removeEventListener("pagehide", reap);
-      window.removeEventListener("beforeunload", reap);
-      stopBridge();
-      harnessEvents.cancelScheduled();
-    };
-  }, [resumed, readProjectReturnMemory, harnessEvents]);
+  useWorkspaceRuntimeLifecycle({
+    resumed,
+    sessionsRef,
+    tabsRef,
+    activeTabIdRef,
+    projectCwdRef,
+    projectTerminalsRef,
+    lastDockSideRef,
+    readProjectReturnMemory,
+    harnessEvents,
+  });
 
   useEffect(() => {
     // The next new session's harness also loads at boot, so its picker is
@@ -1292,57 +1163,20 @@ export function useWorkspaceController({
   const [reminderNoticesHeight, setReminderNoticesHeight] = useState(0);
   const [harnessUpdateHeight, setHarnessUpdateHeight] = useState(0);
 
-  useEffect(() => {
-    syncDockBadge(sessions);
-  }, [sessions]);
-
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    void getCurrentWindow()
-      .onFocusChanged(({ payload: focused }) => {
-        setWindowFocused(focused);
-        if (focused) {
-          flushForegroundHarnessEvents();
-          syncDockBadge(sessionsRef.current);
-          if (
-            document.activeElement === document.body &&
-            !projectTerminalFocusedRef.current &&
-            !appViewFocusedRef.current
-          ) {
-            setComposerFocused(true);
-            setComposerFocusToken((token) => token + 1);
-          }
-        }
-      })
-      .then((fn) => {
-        unlisten = fn;
-      });
-    return () => {
-      unlisten?.();
-    };
-  }, [flushForegroundHarnessEvents]);
-
-  useEffect(() => {
-    const onVisible = () => {
-      // Flush on hiding too: WebKit can suspend a pending animation frame,
-      // leaving the last output stranded until another event or activation.
-      flushHarnessEvents();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [flushHarnessEvents]);
-
-  useLayoutEffect(() => {
-    // Catch up only the newly visible panes before paint. Other streams keep
-    // their background timer instead of adding work to this tab switch.
-    flushForegroundHarnessEvents();
-  }, [
+  useWorkspaceWindowFocus({
+    sessions,
+    sessionsRef,
+    projectTerminalFocusedRef,
+    appViewFocusedRef,
+    setComposerFocused,
+    setComposerFocusToken,
     activeTabId,
     inboxVisible,
-    inboxAskPortal?.sessionId,
+    inboxSessionId: inboxAskPortal?.sessionId,
     activeAppView,
+    flushHarnessEvents,
     flushForegroundHarnessEvents,
-  ]);
+  });
 
   // The tray lists the shared Host's conversations; the one this window
   // shows counts as read.
@@ -1364,58 +1198,17 @@ export function useWorkspaceController({
     activeSessionId ? remoteSessionFor(activeSessionId) : undefined,
   );
 
-  useEffect(() => {
-    let unlistenClose: (() => void) | undefined;
-    const releaseQuit = setQuitWorkspace(
-      () => sessionsRef.current,
-      () => tabsRef.current,
-      () => activeTabIdRef.current,
-      () => projectCwdRef.current,
-      () => projectTerminalsRef.current,
-      readProjectReturnMemory,
-      flushHarnessEvents,
-      () => lastDockSideRef.current,
-      keepWorkspaceTab,
-    );
-    void getCurrentWindow()
-      .onCloseRequested((event) => {
-        // Listening here makes close our job. Letting the default path run
-        // calls JS `window.destroy`, which Tauri denies without a permission.
-        event.preventDefault();
-        const toTray = loadCloseToTray();
-        if (hasInFlightSessions(sessionsRef.current)) {
-          flushHarnessEvents();
-          if (!toTray && !IS_MAC) {
-            void closeBusyWindow();
-            return;
-          }
-          // Not `persistQuitState`: that marks the live turns interrupted.
-          void persistLiveTranscripts(sessionsRef.current);
-          void hideCurrentWindow();
-          return;
-        }
-        void persistQuitState(
-          sessionsRef.current,
-          tabsRef.current,
-          activeTabIdRef.current,
-          projectCwdRef.current,
-          readProjectReturnMemory(),
-          "unload",
-          projectTerminalsRef.current,
-          lastDockSideRef.current ?? undefined,
-          keepWorkspaceTab,
-        ).finally(() => {
-          void (toTray ? hideCurrentWindow() : closeCurrentWindow());
-        });
-      })
-      .then((fn) => {
-        unlistenClose = fn;
-      });
-    return () => {
-      releaseQuit();
-      unlistenClose?.();
-    };
-  }, [flushHarnessEvents, keepWorkspaceTab, readProjectReturnMemory]);
+  useWorkspaceWindowClose({
+    sessionsRef,
+    tabsRef,
+    activeTabIdRef,
+    projectCwdRef,
+    projectTerminalsRef,
+    lastDockSideRef,
+    readProjectReturnMemory,
+    flushHarnessEvents,
+    keepWorkspaceTab,
+  });
 
   useEffect(() => {
     void refreshHistory(sidebarCwd);
@@ -1434,55 +1227,9 @@ export function useWorkspaceController({
     sessionData.observe(sessions, openSessionIds(tabsRef.current));
   }, [sessions, sessionData]);
 
-  useEffect(() => {
-    const refs = inFlightRefs(sessions, tabs);
-    if (refs.length > 0) sawInFlight.current = true;
-    const key = inFlightSnapshotKey(refs);
-    if (
-      !shouldWriteInFlightSnapshot(
-        key,
-        refs,
-        inFlightSyncKey.current,
-        sawInFlight.current,
-      )
-    ) {
-      return;
-    }
-    inFlightSyncKey.current = key;
-    void replaceInFlightSessions(refs).catch(() => undefined);
-  }, [sessions, tabs]);
-
-  useEffect(() => {
-    if (windowTransfer) return;
-    const snapshot = collectWorkspaceSnapshot(
-      tabs,
-      sessions,
-      activeTabId,
-      projectCwd,
-      readProjectReturnMemory({
-        project: projectCwd,
-        tabs,
-        sessions,
-        activeTabId,
-      }),
-      projectTerminals,
-      lastDockSide ?? undefined,
-      keepWorkspaceTab,
-    );
-    const key = workspaceSnapshotKey(snapshot);
-    if (workspaceSyncKey.current === key) return;
-    workspaceSyncKey.current = key;
-    // The key is recorded as soon as a save is scheduled, so an unrelated
-    // re-render (every streamed frame) must not cancel it. Only a newer
-    // snapshot replaces the pending one.
-    window.clearTimeout(workspaceSaveTimer.current);
-    workspaceSaveTimer.current = window.setTimeout(() => {
-      workspaceSaveTimer.current = undefined;
-      void saveWorkspaceSnapshot(snapshot).catch(() => undefined);
-    }, 250);
-  }, [
-    tabs,
+  useWorkspacePersistence({
     sessions,
+    tabs,
     activeTabId,
     projectCwd,
     projectTerminals,
@@ -1490,9 +1237,9 @@ export function useWorkspaceController({
     windowTransfer,
     keepWorkspaceTab,
     readProjectReturnMemory,
-    projectWorktree?.path,
-    workspaceNavigation.revision,
-  ]);
+    projectWorktreePath: projectWorktree?.path,
+    navigationRevision: workspaceNavigation.revision,
+  });
 
   useEffect(() => {
     // A restored workspace or explicit Chat launch already owns its location.
@@ -2129,93 +1876,18 @@ export function useWorkspaceController({
     activeTab,
   });
 
-  /** Open tabs per workspace in the sidebar's project, keyed by worktree
-   * path, so the switcher can show what each worktree still has open. */
-  const nextWorktreeTabStats = useMemo(() => {
-    const stats = new Map<string, { tabs: number; busy: boolean }>();
-    if (!sidebarCwd || sidebarCwd === "~" || isRemoteProjectPath(sidebarCwd))
-      return stats;
-    for (const tab of filterTabsForProject(tabs, sessions, sidebarCwd)) {
-      if (isAppViewOnlyTab(tab)) continue;
-      const workspace = tabWorkspace(tab, sessions) ?? sidebarCwd;
-      const key = pathKey(workspace);
-      const entry = stats.get(key) ?? { tabs: 0, busy: false };
-      entry.tabs += 1;
-      entry.busy ||= leafIds(tab.layout).some(
-        (id) => sessions.find((session) => session.id === id)?.busy,
-      );
-      stats.set(key, entry);
-    }
-    return stats;
-  }, [tabs, sessions, sidebarCwd, tabWorkspace, workspaceNavigation.revision]);
-  // Rebuilt on every streamed frame; the sidebar only cares when counts move.
-  const worktreeTabStatsRef = useRef(nextWorktreeTabStats);
-  if (
-    !sameWorktreeTabStats(worktreeTabStatsRef.current, nextWorktreeTabStats)
-  ) {
-    worktreeTabStatsRef.current = nextWorktreeTabStats;
-  }
-  const worktreeTabStats = worktreeTabStatsRef.current;
-  const nextDeckProjectTabs = useMemo(() => {
-    // A projectless session belongs to no project, so it stands on its own
-    // rather than trailing the last project's tabs.
-    const active = tabs.find((tab) => tab.id === activeTabId);
-    if (
-      active &&
-      !isAppViewOnlyTab(active) &&
-      !workspaceTabCwd(active, sessions)
-    )
-      return [active, ...tabs.filter(isAppViewOnlyTab)];
-    // Each worktree keeps its own tabs; the others stay open, just hidden.
-    const worktree = projectWorktree?.path ?? projectCwd;
-    return filterTabsForProject(tabs, sessions, projectCwd).filter((tab) => {
-      if (tab.id === activeTabId) return true;
-      const workspace = tabWorkspace(tab, sessions);
-      return !workspace || sameProjectPath(workspace, worktree);
+  const { worktreeTabStats, deckProjectTabs, onNext, onPrev, onActivate } =
+    useWorkspaceTabNavigation({
+      tabs,
+      sessions,
+      sidebarCwd,
+      activeTabId,
+      projectCwd,
+      projectWorktreePath: projectWorktree?.path,
+      tabWorkspace,
+      navigationRevision: workspaceNavigation.revision,
+      activateTab,
     });
-  }, [
-    activeTabId,
-    tabs,
-    sessions,
-    projectCwd,
-    projectWorktree?.path,
-    tabWorkspace,
-    workspaceNavigation.revision,
-  ]);
-  // Rebuilt on every streamed frame; tab navigation callbacks key off it.
-  const deckProjectTabsRef = useRef(nextDeckProjectTabs);
-  if (!sameItems(deckProjectTabsRef.current, nextDeckProjectTabs)) {
-    deckProjectTabsRef.current = nextDeckProjectTabs;
-  }
-  const deckProjectTabs = deckProjectTabsRef.current;
-
-  const onNext = useCallback(() => {
-    const index = deckProjectTabs.findIndex((t) => t.id === activeTabId);
-    if (index >= 0)
-      activateTab(deckProjectTabs[(index + 1) % deckProjectTabs.length].id);
-  }, [activateTab, activeTabId, deckProjectTabs]);
-
-  const onPrev = useCallback(() => {
-    const index = deckProjectTabs.findIndex((t) => t.id === activeTabId);
-    if (index >= 0) {
-      activateTab(
-        deckProjectTabs[
-          (index - 1 + deckProjectTabs.length) % deckProjectTabs.length
-        ].id,
-      );
-    }
-  }, [activateTab, activeTabId, deckProjectTabs]);
-
-  const onActivate = useCallback(
-    (slot: number) => {
-      const tab =
-        slot < 0
-          ? deckProjectTabs[deckProjectTabs.length - 1]
-          : deckProjectTabs[slot];
-      if (tab) activateTab(tab.id);
-    },
-    [activateTab, deckProjectTabs],
-  );
 
   const onToggleChanges = useCallback(() => {
     setSidebarTab("changes");
@@ -3132,231 +2804,23 @@ export function useWorkspaceController({
     return () => window.clearTimeout(timer);
   }, [autoContinueKey, onSubmit]);
 
-  const onCompactContext = useCallback(
-    (sessionId: string) => {
-      const current = sessionsRef.current.find(
-        (session) => session.id === sessionId,
-      );
-      if (current && sessionUsesHost(current))
-        return remoteSessionActions(sessionId)?.compact() ?? false;
-      if (!current || current.busy || current.worktreeRemoved) return false;
-      if (!canCompactHarnessContext(current.harness)) {
-        const unsupported = sessionsRef.current.map((session) =>
-          session.id === sessionId
-            ? applyHarnessEvent(session, {
-                type: "status",
-                text: `${HARNESS_TITLE[current.harness]} does not support manual context compaction.`,
-              })
-            : session,
-        );
-        sessionsRef.current = unsupported;
-        syncDockBadge(unsupported);
-        setSessions(unsupported);
-        return true;
-      }
-
-      const gen = (turnGen.current.get(sessionId) ?? 0) + 1;
-      turnGen.current.set(sessionId, gen);
-      const workCwd = sessionExecutionCwd(current);
-      const started = sessionsRef.current.map((session) =>
-        session.id === sessionId
-          ? applyHarnessEvent(
-              { ...session, busy: true },
-              { type: "status", text: "Compacting context…" },
-            )
-          : session,
-      );
-      sessionsRef.current = started;
-      syncDockBadge(started);
-      setSessions(started);
-
-      void (async () => {
-        try {
-          await compactHarnessContext({
-            harness: current.harness,
-            nativeSession: current.nativeSession,
-            sessionId,
-            cwd: workCwd,
-            model: current.model,
-            modelSettings: current.modelSettings,
-            providerAccountId: supportsProviderAccounts(current.harness)
-              ? (conversationProviderAccountId(current) ??
-                selectedProviderAccountId(current.harness, current.cwd))
-              : undefined,
-            runtimeMode: current.runtimeMode,
-            onEvent: (event) => {
-              if (turnGen.current.get(sessionId) !== gen) return;
-              enqueueHarnessEvent(sessionId, event);
-            },
-          });
-          if (turnGen.current.get(sessionId) !== gen) return;
-          enqueueHarnessEvent(sessionId, {
-            type: "status",
-            text: "Compacted context",
-          });
-        } catch (error: unknown) {
-          if (turnGen.current.get(sessionId) !== gen) return;
-          enqueueHarnessEvent(sessionId, {
-            type: "session.error",
-            message:
-              error instanceof Error
-                ? error.message
-                : `${current.harness} could not compact this context`,
-          });
-        } finally {
-          if (turnGen.current.get(sessionId) !== gen) return;
-          flushHarnessEvents();
-          const finished = sessionsRef.current.map((session) =>
-            session.id === sessionId ? { ...session, busy: false } : session,
-          );
-          sessionsRef.current = finished;
-          syncDockBadge(finished);
-          setSessions(finished);
-        }
-      })();
-      return true;
-    },
-    [enqueueHarnessEvent, flushHarnessEvents],
-  );
-
-  const onStop = useCallback(
-    (sessionId: string, managed = false) => {
-      titleCoordinator.current!.cancel(sessionId);
-      const remote = sessionsRef.current.find((s) => s.id === sessionId);
-      if (remote && sessionUsesHost(remote)) {
-        remoteSessionActions(sessionId)?.stop();
-        return;
-      }
-      if (!managed) {
-        const stopping = orchestrator.stopForSession(sessionId);
-        if (stopping) {
-          void stopping.catch(console.error);
-          return;
-        }
-      }
-      const session = sessionsRef.current.find((s) => s.id === sessionId);
-      turnGen.current.set(sessionId, (turnGen.current.get(sessionId) ?? 0) + 1);
-      flushHarnessEvents();
-      const cancelling = Promise.all(
-        (session ? sessionChildHarnesses(session) : []).map((id) =>
-          cancelHarnessTurn(id, sessionId),
-        ),
-      );
-      // Record the turn's final workspace once its providers have stopped.
-      if (session) {
-        void finishSessionTurn(sessionId, sessionExecutionCwd(session), {
-          after: cancelling.catch(() => undefined),
-        }).catch(() => undefined);
-      }
-      void cancelling.catch(() => undefined);
-      setSessions((prev) =>
-        prev.map((s) => {
-          if (s.id !== sessionId) return s;
-          const stopped = stopStreaming(s);
-          const completed = isPreparingHandoff(stopped)
-            ? completeHandoff(stopped, buildDeterministicHandoff(stopped))
-            : stopped;
-          const ready = { ...completed, worktreePreparing: undefined };
-          return ready.queuedMessages?.length
-            ? { ...ready, queueStatus: "paused" }
-            : ready;
-        }),
-      );
-      if (session) {
-        notifyReviewChanged(sessionId);
-        nudgeWorkspace(sessionExecutionCwd(session));
-        notifyGitChanged();
-        nudgeWatchedFiles();
-        window.setTimeout(() => nudgeWatchedFiles(), 150);
-      } else {
-        notifyReviewChanged(sessionId);
-      }
-    },
-    [flushHarnessEvents],
-  );
-
-  useEffect(() => {
-    const onEscape = (event: KeyboardEvent) => {
-      const target = event.target instanceof Element ? event.target : null;
-      const inTerminal = Boolean(target?.closest(".omnicode-terminal"));
-      const activeTabId = activeTabIdRef.current;
-      const sessionId = focusedBusyAgentSessionId(
-        activeTabId,
-        tabsRef.current,
-        sessionsRef.current,
-        projectTerminalFocusedRef.current,
-      );
-      if (
-        !sessionId ||
-        !shouldStopFocusedTurnOnEscape(event, {
-          inTerminal,
-          focusedSessionBusy: true,
-        })
-      ) {
-        return;
-      }
-
-      // Other surfaces (drag/reorder included) can claim Escape later in the
-      // same keydown dispatch. Defer the destructive stop until every handler
-      // has had a chance to preventDefault, then verify focus did not move.
-      deferUnhandledEscape(event, () => {
-        const stillFocusedSessionId = focusedBusyAgentSessionId(
-          activeTabIdRef.current,
-          tabsRef.current,
-          sessionsRef.current,
-          projectTerminalFocusedRef.current,
-        );
-        if (
-          activeTabIdRef.current !== activeTabId ||
-          stillFocusedSessionId !== sessionId
-        ) {
-          return;
-        }
-        onStop(sessionId);
-      });
-    };
-    window.addEventListener("keydown", onEscape);
-    return () => window.removeEventListener("keydown", onEscape);
-  }, [onStop]);
-
-  const onApproval = useCallback(
-    (sessionId: string, requestId: number, decision: ApprovalDecision) => {
-      const session = sessionsRef.current.find((s) => s.id === sessionId);
-      if (!session || session.worktreeRemoved) return;
-      if (sessionUsesHost(session)) {
-        remoteSessionActions(sessionId)?.approve(requestId, decision);
-        return;
-      }
-      respondHarnessApproval(session.harness, sessionId, requestId, decision);
-    },
-    [],
-  );
-
-  const onQuestionReply = useCallback(
-    (sessionId: string, requestId: number, reply: UserQuestionReply) => {
-      const session = sessionsRef.current.find((s) => s.id === sessionId);
-      if (!session || session.worktreeRemoved) return;
-      if (sessionUsesHost(session)) {
-        remoteSessionActions(sessionId)?.answer(requestId, reply);
-        return;
-      }
-      respondHarnessQuestion(session.harness, sessionId, requestId, reply);
-    },
-    [],
-  );
-
-  const onQuestionInteraction = useCallback(
-    (sessionId: string, requestId: number) => {
-      const session = sessionsRef.current.find((s) => s.id === sessionId);
-      if (session && sessionUsesHost(session)) {
-        remoteSessionActions(sessionId)?.keepQuestionOpen?.(requestId);
-        return;
-      }
-      if (session && !session.worktreeRemoved)
-        keepHarnessQuestionOpen(session.harness, sessionId, requestId);
-    },
-    [],
-  );
+  const {
+    onCompactContext,
+    onStop,
+    onApproval,
+    onQuestionReply,
+    onQuestionInteraction,
+  } = useSessionRuntimeActions({
+    sessionsRef,
+    tabsRef,
+    activeTabIdRef,
+    projectTerminalFocusedRef,
+    setSessions,
+    turnGen,
+    titleCoordinator,
+    enqueueHarnessEvent,
+    flushHarnessEvents,
+  });
 
   const onOpenApprovalSession = useCallback(
     (sessionId: string) => {
@@ -3738,168 +3202,60 @@ export function useWorkspaceController({
     );
   }, []);
 
-  const onSessionNavigationOrder = useCallback(
-    (ids: readonly string[]) => {
-      sessionNavigationIdsRef.current = ids;
-      sessionNavigationProjectRef.current = pathKey(sidebarCwd);
-    },
-    [sidebarCwd],
-  );
+  const {
+    onSessionNavigationOrder,
+    onNavigateSessionList,
+    onNavigateProjectList,
+  } = useWorkspaceListNavigation({
+    sessionsRef,
+    tabsRef,
+    activeTabIdRef,
+    projectCwdRef,
+    sidebarCwd,
+    onPrefetchHistorySession,
+    onSelectHistorySession,
+    onSelectRemoteSession,
+    onSelectProject,
+  });
 
-  const onNavigateSessionList = useCallback(
-    (delta: number, _inCurrentTab = false) => {
-      const activeWorkspace = tabsRef.current.find(
-        (entry) => entry.id === activeTabIdRef.current,
-      );
-      if (!activeWorkspace || activeWorkspace.diffFocused) return;
-      const current =
-        sessionsRef.current.find(
-          (session) => session.id === activeWorkspace.focusedId,
-        ) ??
-        sessionsRef.current.find((session) =>
-          leafIds(activeWorkspace.layout).includes(session.id),
-        );
-      if (
-        !current ||
-        sessionNavigationProjectRef.current !== pathKey(current.cwd)
-      )
-        return;
-      const remoteProject =
-        isRemoteProjectPath(current.cwd) || !!sessionUsesHost(current);
-      const navigationId = remoteProject
-        ? remoteSessionFor(current.id)
-        : current.id;
-      if (!navigationId) return;
-
-      const next = adjacentItemId(
-        sessionNavigationIdsRef.current,
-        navigationId,
-        delta,
-      );
-      if (!next || next === navigationId) return;
-      if (remoteProject) {
-        onSelectRemoteSession(current.cwd, next);
-        return;
-      }
-      // Stepping gives no hover to warm the transcript, so load the one a
-      // further step away once this switch has its own session.
-      const prefetchAhead = () => {
-        const ahead = adjacentItemId(
-          sessionNavigationIdsRef.current,
-          next,
-          delta,
-        );
-        if (ahead && ahead !== current.id) onPrefetchHistorySession(ahead);
-      };
-      void onSelectHistorySession(next).then(prefetchAhead);
-    },
-    [onPrefetchHistorySession, onSelectHistorySession, onSelectRemoteSession],
-  );
-
-  const onNavigateProjectList = useCallback(
-    (delta: number) => {
-      const current = normalizeProjectPath(projectCwdRef.current);
-      const ids = projectRailItems(loadRecents(), current).map(
-        (project) => project.path,
-      );
-      const next = adjacentItemId(ids, current, delta);
-      if (!next || sameProjectPath(next, current)) return;
-      onSelectProject(next);
-    },
-    [onSelectProject],
-  );
-
-  const toggleAutosave = useCallback(() => {
-    const next = saveAutosave(!loadAutosave());
-    if (IS_MAC) void invoke("autosave_set_enabled", { enabled: next });
-  }, []);
-
-  const zoom = useCallback((direction: "in" | "out" | "reset") => {
-    const next = saveUiScale(
-      direction === "reset"
-        ? UI_SCALE_DEFAULT
-        : direction === "in"
-          ? zoomInUiScale(loadUiScale())
-          : zoomOutUiScale(loadUiScale()),
-    );
-    void applyUiScale(next);
-  }, []);
-
-  const commandHandlers: CommandHandlers = {
-    "Tab: New": onNew,
-    "Terminal: New": onNewTerminal,
-    "App: New Window": () => void invoke("open_new_window").catch(() => {}),
-    "App: Open Project": () => void pickProject(),
-    "File: Autosave": toggleAutosave,
-    "Pane: Close": appPage ? closeAppPage : () => onClosePane(),
-    "Tab: Close": appPage
-      ? closeAppPage
-      : activeTabId
-        ? () => onCloseTitleTab(activeTabId)
-        : undefined,
-    "Tab: Close Others": onCloseOtherTabs,
-    "Tab: Close All": onCloseAllTabs,
-    "Editor: Find": appPage ? undefined : () => void openFindInActiveEditor(),
-    "Editor: Replace": appPage
-      ? undefined
-      : () => void openReplaceInActiveEditor(),
-    "App: Find in Files": onFindInProject,
-    "App: Command Palette": onOpenCommandPalette,
-    "App: Search": onGoToFile,
-    "View: Search Everywhere": () => onOpenSearch(),
-    "App: Toggle Sidebar": onToggleSidebar,
-    "View: Toggle Changes": sourceControlAvailable ? onToggleChanges : undefined,
-    "Terminal: Toggle Dock": onToggleProjectTerminal,
-    "View: Toggle Menu Bar": IS_MAC
-      ? undefined
-      : () => void saveMenuBarVisible(!loadMenuBarVisible()),
-    "Pane: Split Right": appPage ? undefined : () => onSplit("right"),
-    "Pane: Split Down": appPage ? undefined : () => onSplit("down"),
-    "View: Inbox": onOpenInbox,
-    "View: Notes": notesEnabled ? onOpenNotes : undefined,
-    "View: Usage": () => openSettings("usage"),
-    "View: Automations": onOpenAutomations,
-    "View: Workflows": onOpenWorkflows,
-    "App: Settings": () => openSettings(),
-    "App: Switch Model": appPage
-      ? undefined
-      : () => window.dispatchEvent(new Event("open_model_picker")),
-    "View: Zoom In": () => zoom("in"),
-    "View: Zoom Out": () => zoom("out"),
-    "View: Reset Zoom": () => zoom("reset"),
-    "View: Reload": onReload,
-    "Tab: Back": onVisitBack,
-    "Tab: Forward": onVisitForward,
-    "App: Go to File": onGoToFile,
-    "Tab: Next": onNext,
-    "Tab: Previous": onPrev,
-    "Tab: Cycle Next": onNext,
-    "Tab: Cycle Previous": onPrev,
-    "Tab: Activate 1–8": (slot) => onActivate(Number(slot)),
-    "Tab: Activate Last": () => onActivate(-1),
-    "Session: Previous": () => onNavigateSessionList(-1),
-    "Session: Next": () => onNavigateSessionList(1),
-    "Session: Previous in Current Tab": () => onNavigateSessionList(-1, true),
-    "Session: Next in Current Tab": () => onNavigateSessionList(1, true),
-    "Project: Previous": () => onNavigateProjectList(-1),
-    "Project: Next": () => onNavigateProjectList(1),
-    "Pane: Focus Left": appPage ? undefined : () => onFocusDir("left"),
-    "Pane: Focus Right": appPage ? undefined : () => onFocusDir("right"),
-    "Pane: Focus Up": appPage ? undefined : () => onFocusDir("up"),
-    "Pane: Focus Down": appPage ? undefined : () => onFocusDir("down"),
-    "Terminal: New Tab": onNewTerminalTab,
-    "Help: Keyboard Shortcuts": () => openSettings("keybindings"),
-    "Help: What's New": () =>
-      void readAppVersion().then((version) => onOpenWhatsNew(version)),
-    "Help: Check for Updates": () => void runUpdateFlow(true),
-    ...Object.fromEntries(
-      Object.entries(HELP_URLS).map(([id, url]) => [
-        id,
-        () => void openUrl(url).catch(console.error),
-      ]),
-    ),
-  };
-  const dispatch = useCommandDispatcher(commandHandlers);
+  const { commandHandlers, dispatch } = useWorkspaceCommands({
+    appPage: Boolean(appPage),
+    activeTabId,
+    sourceControlAvailable,
+    notesEnabled,
+    onNew,
+    onNewTerminal,
+    pickProject,
+    closeAppPage,
+    onClosePane,
+    onCloseTitleTab,
+    onCloseOtherTabs,
+    onCloseAllTabs,
+    onFindInProject,
+    onOpenCommandPalette,
+    onGoToFile,
+    onOpenSearch,
+    onToggleSidebar,
+    onToggleChanges,
+    onToggleProjectTerminal,
+    onSplit,
+    onOpenInbox,
+    onOpenNotes,
+    openSettings,
+    onOpenAutomations,
+    onOpenWorkflows,
+    onReload,
+    onVisitBack,
+    onVisitForward,
+    onNext,
+    onPrev,
+    onActivate,
+    onNavigateSessionList,
+    onNavigateProjectList,
+    onFocusDir,
+    onNewTerminalTab,
+    onOpenWhatsNew,
+  });
 
   useWorkspaceShortcuts({
     onArchiveFocusedSession,

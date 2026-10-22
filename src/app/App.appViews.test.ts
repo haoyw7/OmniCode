@@ -667,6 +667,7 @@ vi.mock("../features/workflows/model/workflowSessionWatch", () => ({
 vi.mock("../features/settings/ui/SettingsView", async () => {
   const { createElement: el, useEffect, useState } = await import("react");
   return {
+    preloadSettingsSection: vi.fn(async () => {}),
     SettingsView: ({
       active,
       onClose,
