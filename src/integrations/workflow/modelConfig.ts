@@ -7,7 +7,7 @@ import type { HarnessId } from "../../features/sessions/model/session";
 import type { WorkflowAgentRuntime } from "./createWorkflow";
 
 export const WORKFLOW_HARNESSES: readonly HarnessId[] = [
-  "claude", "codex", "cursor", "grok", "opencode", "pi", "omp", "fx", "hermes", "antigravity",
+  "claude", "codex", "cursor", "grok", "opencode", "pi", "omp", "fx", "hermes", "antigravity", "kimicode",
 ];
 
 export function isWorkflowHarness(value: unknown): value is HarnessId {
@@ -42,6 +42,7 @@ const FALLBACK_THINKING_SETTING: Partial<Record<HarnessId, string>> = {
   grok: "effort",
   fx: "effort",
   antigravity: "effort",
+  kimicode: "thinking",
 };
 
 const FALLBACK_SPEED_SETTING: Partial<Record<HarnessId, { id: string; kind: "toggle" | "select" }>> = {

@@ -11,10 +11,11 @@ const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
-const listCapabilities = new WeakSet<AcpClient>();
+type TitleClient = Pick<AcpClient, "request">;
+const listCapabilities = new WeakSet<TitleClient>();
 
 export function noteAcpTitleCapabilities(
-  acp: AcpClient,
+  acp: TitleClient,
   initialized: unknown,
 ): void {
   const capabilities = record(record(initialized).agentCapabilities);
@@ -47,7 +48,7 @@ export function nativeAcpTitleEvent(
 
 /** Only use the advertised read-only list method; never load/create a session. */
 export async function readAcpSessionTitle(
-  acp: AcpClient,
+  acp: TitleClient,
   providerSessionId: string,
   cwd: string,
   deadline = Date.now() + 5_000,

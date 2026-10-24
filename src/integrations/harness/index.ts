@@ -13,7 +13,7 @@ export {
   generatePrContent,
   pickTextHarness,
 } from "./core/textHarness";
-export { registerBuiltinHarnesses } from "./core/register";
+export { registerBuiltinHarnesses } from "./providers/register";
 export { probeHarnessAvailability } from "./core/availability";
 export {
   isLiveHarness,

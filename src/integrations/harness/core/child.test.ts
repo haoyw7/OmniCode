@@ -154,6 +154,7 @@ describe("child bridge", () => {
               omp: "/opt/omp/bin/omp",
               fx: "/opt/fx/bin/fx",
               hermes: "/opt/hermes/bin/hermes",
+              kimicode: "/opt/kimi/bin/kimi",
               antigravity: "/opt/antigravity/bin/agy_acp_server.par",
             })
           : null,
@@ -175,6 +176,7 @@ describe("child bridge", () => {
       ["omp", "/opt/omp/bin/omp", child.resolveOmpBinary],
       ["fx", "/opt/fx/bin/fx", child.resolveFxBinary],
       ["hermes", "/opt/hermes/bin/hermes", child.resolveHermesBinary],
+      ["kimicode", "/opt/kimi/bin/kimi", child.resolveKimiCodeBinary],
       [
         "antigravity",
         "/opt/antigravity/bin/agy_acp_server.par",

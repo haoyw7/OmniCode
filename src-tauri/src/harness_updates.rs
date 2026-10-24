@@ -25,6 +25,7 @@ fn npm_package(provider: &str) -> Option<&'static str> {
         "codex" => Some("@openai/codex"),
         "opencode" => Some("opencode-ai"),
         "pi" => Some("@earendil-works/pi-coding-agent"),
+        "kimicode" => Some("@moonshot-ai/kimi-code"),
         _ => None,
     }
 }
@@ -37,6 +38,7 @@ fn update_args(provider: &str) -> Option<&'static [&'static str]> {
         "codex" => Some(&["update"]),
         "opencode" => Some(&["upgrade"]),
         "pi" => Some(&["update", "--self"]),
+        "kimicode" => Some(&["upgrade", "--yes"]),
         _ => None,
     }
 }

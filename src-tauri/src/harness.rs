@@ -920,6 +920,17 @@ pub fn harness_resolve_hermes() -> Result<CursorBinary, String> {
         })
 }
 
+#[tauri::command(async)]
+pub fn harness_resolve_kimicode() -> Result<CursorBinary, String> {
+    resolve_kimicode()
+        .map(|path| CursorBinary {
+            path: path.to_string_lossy().into_owned(),
+        })
+        .ok_or_else(|| {
+            "Kimi Code CLI not found. Install it with `npm i -g @moonshot-ai/kimi-code`, then retry.".into()
+        })
+}
+
 /// Antigravity's ACP server is separate from the interactive agy CLI.
 #[tauri::command(async)]
 pub fn harness_resolve_antigravity() -> Result<AntigravityBinary, String> {
@@ -1828,6 +1839,7 @@ fn is_harness_argv_token(part: &str) -> bool {
             | "omp"
             | "fx"
             | "hermes"
+            | "kimi"
             | "agy_acp_server.par"
             | "pi"
             | "worker-server"
@@ -2075,6 +2087,7 @@ fn resolve_harness_binary_default(provider: &str) -> Option<PathBuf> {
         "omp" => resolve_omp(),
         "fx" => resolve_fx(),
         "hermes" => resolve_hermes(),
+        "kimicode" => resolve_kimicode(),
         "antigravity" => resolve_antigravity(),
         _ => None,
     }
@@ -2120,6 +2133,7 @@ fn resolve_harness_binary_override(provider: &str, binary_path: &str) -> Result<
         "omp" => &["omp"],
         "fx" => &["fx"],
         "hermes" => &["hermes"],
+        "kimicode" => &["kimi"],
         "antigravity" => &["agy_acp_server.par"],
         _ => {
             return Err(format!(
@@ -2569,6 +2583,29 @@ fn resolve_hermes() -> Option<PathBuf> {
         candidates.push(from_shell);
     }
 
+    first_binary(candidates)
+}
+
+fn resolve_kimicode() -> Option<PathBuf> {
+    let mut candidates = Vec::new();
+    if let Some(home) = dirs_home().map(PathBuf::from) {
+        for directory in [
+            ".local/bin",
+            ".kimi/bin",
+            ".kimi-code/bin",
+            ".npm-global/bin",
+        ] {
+            candidates.push(home.join(directory).join("kimi"));
+        }
+        #[cfg(windows)]
+        candidates.push(home.join("AppData/Roaming/npm/kimi"));
+    }
+    for directory in ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin"] {
+        candidates.push(PathBuf::from(directory).join("kimi"));
+    }
+    if let Some(path) = which_via_login_shell("kimi") {
+        candidates.push(path);
+    }
     first_binary(candidates)
 }
 

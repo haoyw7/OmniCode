@@ -57,7 +57,7 @@ readline.createInterface({input: process.stdin}).on('line', line => {
       send({jsonrpc: '2.0', method: 'session/update', params: {sessionId: 'fixture_acp', update: {sessionUpdate: 'usage_update', used: 25000, size: 100000}}});
       setTimeout(() => send({jsonrpc: '2.0', id: request.id, result: {stopReason: 'end_turn'}}), 30);
     } else {
-      send({jsonrpc: '2.0', id: request.id, result: request.method === 'session/new' || request.method === 'session/load' || request.method === 'session/resume' ? {sessionId: 'fixture_acp', configOptions: []} : {}});
+      send({jsonrpc: '2.0', id: request.id, result: request.method === 'session/new' || request.method === 'session/load' || request.method === 'session/resume' ? {sessionId: 'fixture_acp', configOptions: [], modes: {currentModeId: 'default', availableModes: [{id: 'default', name: 'Default'}]}} : {}});
     }
     return;
   }
@@ -167,6 +167,7 @@ describe("existing providers over headless process I/O", () => {
       fx: binary,
       hermes: binary,
       antigravity: binary,
+      kimicode: binary,
     });
     configureChildBackend(backend);
     release = await acquireHarnessBridge();
@@ -458,7 +459,7 @@ describe("existing providers over headless process I/O", () => {
     expect(store.sync(sessionId).kind).toBe("snapshot");
   });
 
-  it.each(["cursor", "grok", "fx", "hermes", "antigravity"] as const)(
+  it.each(["cursor", "grok", "fx", "hermes", "antigravity", "kimicode"] as const)(
     "completes a %s turn over the headless ACP transport",
     async (harness) => {
       const project = await engine.openProject(directory);

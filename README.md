@@ -10,7 +10,7 @@
 
 ## 功能
 
-- **多智能体**：接入 Claude Code、Codex、OpenCode、Pi、OMP 等，统一管理会话与模型选择。
+- **多智能体**：接入 Claude Code、Codex、OpenCode、Pi、OMP、[Kimi Code](docs/kimicode.md) 等，统一管理会话与模型选择。
 - **项目工作区**：文件浏览、内置终端、Git 差异审查、分支与 worktree 管理。
 - **任务与工作流**：子智能体、可复用工作流，以及 Bots、笔记和自动化工具。
 - **跨设备**：通过共享 Host 连接远程电脑，Android / iOS 客户端可访问项目与会话。

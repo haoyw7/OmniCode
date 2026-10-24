@@ -221,6 +221,7 @@ final class MobileActivityTracker {
             case "omp": return R.drawable.ic_harness_omp;
             case "fx": return R.drawable.ic_harness_fx;
             case "hermes": return R.drawable.ic_harness_hermes;
+            case "kimicode": return R.drawable.ic_harness_kimicode;
             case "antigravity": return R.drawable.ic_harness_antigravity;
             default: return 0;
         }

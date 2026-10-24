@@ -11,7 +11,7 @@ import { z } from "zod";
  */
 export const WorkflowAgentRuntimeSchema = z
   .object({
-    provider: z.string().trim().min(1).optional().describe("Agent runtime id: pi, codex, claude, omp, opencode, cursor, grok, hermes, fx or antigravity."),
+    provider: z.string().trim().min(1).optional().describe("Agent runtime id: pi, codex, claude, omp, opencode, cursor, grok, hermes, fx, antigravity or kimicode."),
     model: z.string().trim().min(1).optional().describe("Model id for that provider."),
     thinking: z.string().trim().min(1).optional().describe("Thinking / reasoning level, for example low, medium, high, xhigh or max."),
     speed: z.string().trim().min(1).optional().describe("Speed tier: default or fast where supported."),

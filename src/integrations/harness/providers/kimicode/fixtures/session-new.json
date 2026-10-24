@@ -1,0 +1,73 @@
+{
+  "sessionId": "kimi-native",
+  "modes": {
+    "currentModeId": "default",
+    "availableModes": [
+      {
+        "id": "default",
+        "name": "default"
+      },
+      {
+        "id": "plan",
+        "name": "plan"
+      },
+      {
+        "id": "auto",
+        "name": "auto"
+      },
+      {
+        "id": "yolo",
+        "name": "yolo"
+      }
+    ]
+  },
+  "configOptions": [
+    {
+      "id": "model",
+      "name": "Model",
+      "category": "model",
+      "type": "select",
+      "currentValue": "kimi-code/kimi-for-coding",
+      "options": [
+        {
+          "group": "Local",
+          "options": [
+            {
+              "value": "custom/other",
+              "name": "Custom user name"
+            }
+          ]
+        },
+        {
+          "value": "kimi-code/kimi-for-coding",
+          "name": "Kimi Code"
+        }
+      ]
+    },
+    {
+      "id": "thinking",
+      "name": "Thinking",
+      "category": "thought_level",
+      "type": "select",
+      "currentValue": "off",
+      "options": [
+        {
+          "value": "off",
+          "name": "Thinking Off"
+        },
+        {
+          "value": "high",
+          "name": "Thinking High"
+        }
+      ]
+    },
+    {
+      "id": "mode",
+      "name": "Mode",
+      "category": "mode",
+      "type": "select",
+      "currentValue": "default",
+      "options": []
+    }
+  ]
+}

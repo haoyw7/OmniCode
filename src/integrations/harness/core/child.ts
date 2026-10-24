@@ -399,6 +399,7 @@ async function resolveHarnessBinary(
     omp: "harness_resolve_omp",
     fx: "harness_resolve_fx",
     hermes: "harness_resolve_hermes",
+    kimicode: "harness_resolve_kimicode",
     antigravity: "harness_resolve_antigravity",
   };
   return invoke(command[provider]);
@@ -456,6 +457,10 @@ export function resolveHermesBinary(
   binaryPath?: string | null,
 ): Promise<{ path: string }> {
   return resolveHarnessBinary("hermes", binaryPath);
+}
+
+export function resolveKimiCodeBinary(binaryPath?: string | null): Promise<{ path: string }> {
+  return resolveHarnessBinary("kimicode", binaryPath);
 }
 
 export function resolveAntigravityBinary(

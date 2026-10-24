@@ -265,6 +265,8 @@ export async function discoverHostSkills(
       scope: "user",
       source: "antigravity",
     },
+    { path: machinePath.join(cwd, ".kimi-code/skills"), scope: "project", source: "kimicode" },
+    { path: machinePath.join(home, ".kimi-code/skills"), scope: "user", source: "kimicode" },
   );
   const plugins = await pluginRoots(cwd, home, managed);
   const found = new Map<string, DiscoveredSkill>();

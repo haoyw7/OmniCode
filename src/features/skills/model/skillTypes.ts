@@ -12,6 +12,7 @@ export type SkillSource =
   | "fx"
   | "grok"
   | "hermes"
+  | "kimicode"
   | "antigravity"
   | "omnicode";
 

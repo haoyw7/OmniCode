@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   hydrateCachedModelCatalogs,
+  modelsFor,
   resetHarnessModelOverlays,
   setHarnessModels,
 } from "../../../features/sessions/model/models";
@@ -23,7 +24,7 @@ import {
   type HarnessAdapter,
 } from "./registry";
 import type { SendTurnInput, SteerTurnInput } from "./types";
-import { registerBuiltinHarnesses } from "./register";
+import { registerBuiltinHarnesses } from "../providers/register";
 
 function stub(
   id: "cursor" | "codex" | "claude" | "pi" | "omp",
@@ -275,6 +276,15 @@ describe("harness registry", () => {
     await refreshHarnessCatalogs(["pi"]);
 
     expect(pi).toHaveBeenCalledOnce();
+  });
+
+  it("stores catalogs returned by adapters without a provider owning UI state", async () => {
+    const refresh = vi.fn(async () => [{ id: "pi:returned", harness: "pi" as const, name: "Returned", nativeId: "returned" }]);
+    registerHarness(stub("pi", { refreshCatalog: refresh }));
+    await refreshHarnessCatalogs(["pi"], { force: true });
+    expect(modelsFor("pi")).toContainEqual(expect.objectContaining({ id: "pi:returned" }));
+    await refreshHarnessCatalogs(["pi"]);
+    expect(refresh).toHaveBeenCalledOnce();
   });
 
   it("re-reads a catalog cached by an earlier run once", async () => {

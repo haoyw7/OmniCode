@@ -153,6 +153,7 @@ export type DiscoveredSkill = {
     | "fx"
     | "grok"
     | "hermes"
+    | "kimicode"
     | "antigravity"
     | "omnicode";
 };

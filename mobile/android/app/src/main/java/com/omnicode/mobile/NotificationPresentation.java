@@ -22,15 +22,17 @@ final class NotificationPresentation {
             case "omp": name = "omp"; break;
             case "fx": name = "fx"; break;
             case "hermes": name = "Hermes Agent"; break;
+            case "kimicode": name = "Kimi Code"; break;
             case "antigravity": name = "Antigravity"; break;
             default: return title;
         }
-        String prefix = harness + " · ";
+        String label = harness.equals("kimicode") ? "kimi" : harness;
+        String prefix = label + " · ";
         if (title.startsWith(prefix)) {
             String display = title.substring(prefix.length());
             return display.isEmpty() ? "OmniCode" : display;
         }
-        return title.equals(harness) || title.equals(name) ? newSession : title;
+        return title.equals(label) || title.equals(name) ? newSession : title;
     }
 
     /** Keep in sync with src/mobile/notificationText.ts, including literal protection. */

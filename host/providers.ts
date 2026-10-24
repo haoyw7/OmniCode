@@ -11,6 +11,7 @@ import * as pi from "../src/integrations/harness/providers/pi/pi";
 import * as omp from "../src/integrations/harness/providers/omp/omp";
 import * as fx from "../src/integrations/harness/providers/fx/fx";
 import * as hermes from "../src/integrations/harness/providers/hermes/hermes";
+import * as kimicode from "../src/integrations/harness/providers/kimicode/kimiCode";
 import * as antigravity from "../src/integrations/harness/providers/antigravity/antigravity";
 import type {
   SendTurnInput,
@@ -58,6 +59,16 @@ export interface HostProvider {
 }
 
 export const hostProviders: Record<RemoteProvider, HostProvider> = {
+  kimicode: {
+    botCapabilities: providerBotCapabilities("kimicode"),
+    readSessionTitle: kimicode.readKimiCodeSessionTitle,
+    send: kimicode.sendKimiCodeTurn,
+    cancel: kimicode.cancelKimiCodeTurn,
+    stop: kimicode.forgetKimiCodeSession,
+    bind: kimicode.bindKimiCodeSession,
+    approve: kimicode.respondKimiCodeApproval,
+    answer: kimicode.respondKimiCodeQuestion,
+  },
   codex: {
     botCapabilities: providerBotCapabilities("codex"),
     readSessionTitle: codex.readCodexSessionTitle,

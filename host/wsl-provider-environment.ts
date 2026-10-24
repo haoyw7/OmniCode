@@ -3,6 +3,7 @@ import { isAbsolute, join, resolve } from "node:path";
 import type { MachineTransport } from "./machine-io";
 
 const unsupported: Record<string, string> = {
+  kimicode: "Kimi Code cannot use the shared WSL Host yet: sharing its credentials and session storage across Windows and Linux has not been verified.",
   omp: "OMP cannot use the shared WSL Host yet: its Linux home environment can override the shared desktop account and session directory.",
   cursor: "Cursor cannot use the shared WSL Host yet: sharing its desktop credentials and native session directory has not been verified.",
   grok: "Grok cannot use the shared WSL Host yet: sharing its desktop credentials and native session directory has not been verified.",

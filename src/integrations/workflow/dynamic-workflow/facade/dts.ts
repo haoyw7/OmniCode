@@ -32,7 +32,7 @@ declare interface AgentPersona {
   system?: string;
   /**
    * Agent runtime that runs this actor: "pi", "codex", "claude", "omp", "opencode",
-   * "cursor", "grok", "hermes", "fx" or "antigravity". Omit to use the run default.
+   * "cursor", "grok", "hermes", "fx", "antigravity" or "kimicode". Omit to use the run default.
    */
   provider?: string;
   /** Model id for the chosen provider (for example "gpt-5.5" or "opus"). Omit for the provider default. */

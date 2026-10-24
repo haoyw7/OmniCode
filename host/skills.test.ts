@@ -66,6 +66,8 @@ describe("Host skills owned by the execution computer", () => {
     s.skill(s.cwd, ".claude/skills", "review", "Native instructions");
     s.skill(s.home, ".pi/agent/skills", "personal");
     s.skill(s.home, ".gemini/antigravity/skills", "agy-skill");
+    s.skill(s.cwd, ".kimi-code/skills", "kimi-project");
+    s.skill(s.home, ".kimi-code/skills", "kimi-personal");
     s.write(
       join(s.cwd, ".agents/skills/Fallback Folder/skill.md"),
       "---\nname: Invalid Name\ndescription: >\n  line one\n  中文 line two\n---\nBody",
@@ -79,6 +81,8 @@ describe("Host skills owned by the execution computer", () => {
     expect(skills.find((skill) => skill.name === "agy-skill")?.source).toBe(
       "antigravity",
     );
+    expect(skills.find((skill) => skill.name === "kimi-project")).toMatchObject({ source: "kimicode", scope: "project" });
+    expect(skills.find((skill) => skill.name === "kimi-personal")).toMatchObject({ source: "kimicode", scope: "user" });
     expect(
       skills.find((skill) => skill.name === "fallback-folder")?.description,
     ).toBe("line one 中文 line two");

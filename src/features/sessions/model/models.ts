@@ -205,6 +205,7 @@ export const MODELS: AgentModel[] = [
     name: "Configured model",
     nativeId: "",
   },
+  { id: "kimicode:default", harness: "kimicode", name: "Configured model", nativeId: "" },
   {
     id: "antigravity:gemini-3.8-flash-high",
     harness: "antigravity",
@@ -223,6 +224,7 @@ export const DEFAULT_MODEL_ID: Record<HarnessId, string> = {
   omp: "omp:default",
   fx: "fx:zai/glm-5.2-fast",
   hermes: "hermes:default",
+  kimicode: "kimicode:default",
   antigravity: "antigravity:gemini-3.8-flash-high",
 };
 
@@ -252,6 +254,7 @@ const HARNESS_ORDER: HarnessId[] = [
   "omp",
   "fx",
   "hermes",
+  "kimicode",
   "antigravity",
 ];
 

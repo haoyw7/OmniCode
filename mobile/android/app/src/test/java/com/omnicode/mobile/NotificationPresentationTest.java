@@ -10,6 +10,10 @@ public class NotificationPresentationTest {
         assertEquals("codex 使用说明", NotificationPresentation.displayTitle("codex 使用说明", "codex", "新会话"));
         assertEquals("新会话", NotificationPresentation.displayTitle("Codex", "codex", "新会话"));
         assertEquals("新会话", NotificationPresentation.displayTitle("codex", "codex", "新会话"));
+        assertEquals("用户标题", NotificationPresentation.displayTitle("kimi · 用户标题", "kimicode", "新会话"));
+        assertEquals("新会话", NotificationPresentation.displayTitle("kimi", "kimicode", "新会话"));
+        assertEquals("新会话", NotificationPresentation.displayTitle("Kimi Code", "kimicode", "新会话"));
+        assertEquals("kimicode · 用户原文", NotificationPresentation.displayTitle("kimicode · 用户原文", "kimicode", "新会话"));
         assertEquals("Title", NotificationPresentation.displayTitle("Title", null, "New session"));
         assertEquals("custom · Title", NotificationPresentation.displayTitle("custom · Title", "custom", "New session"));
         assertEquals("OmniCode", NotificationPresentation.displayTitle("", "codex", "New session"));

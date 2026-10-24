@@ -77,6 +77,7 @@ const SOURCE_ORDER: SkillSource[] = [
   "grok",
   "hermes",
   "antigravity",
+  "kimicode",
   "omnicode",
 ];
 

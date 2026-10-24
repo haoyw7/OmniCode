@@ -27,6 +27,7 @@ const runtimeArguments = (runtime: Runtime, args: string[]): string[] => {
 };
 type Connection = MachineTransport & { onEvent(listener: (event: WslExecutionEvent) => void): () => void; isConnected?(): boolean };
 const names: Record<RemoteProvider, string[]> = {
+  kimicode: ["kimi"],
   claude: ["claude"], codex: ["codex"], pi: ["pi", "pi-coding-agent"], omp: ["omp"],
   opencode: ["opencode"], cursor: ["cursor-agent", "agent"], grok: ["grok"], fx: ["fx"], hermes: ["hermes"], antigravity: ["agy_acp_server.par"],
 };

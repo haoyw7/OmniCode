@@ -11,6 +11,7 @@ import type {
   TurnMetrics,
 } from "../../../features/sessions/model/session";
 import type { UserQuestion, UserQuestionReply } from "../../../features/sessions/model/userQuestion";
+export type { UserQuestion, UserQuestionReply } from "../../../features/sessions/model/userQuestion";
 import type { SessionModelSettings } from "../../../features/sessions/model/models";
 
 export type HarnessEvent =

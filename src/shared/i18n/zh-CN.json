@@ -4216,5 +4216,13 @@
   "Target has user changes; worktree preserved until the target is clean": "目标目录含用户修改，成果已保留，等待目标目录恢复干净状态",
   "Target changed during verification; worktree preserved": "验证期间目标发生变化，成果已保留",
   "Task or target changed after verification; worktree preserved": "验证后任务或目标发生变化，成果已保留",
-  "Task checkout is being integrated or reclaimed; retry after it finishes": "正在合并或回收此工作副本，请稍后重试"
+  "Task checkout is being integrated or reclaimed; retry after it finishes": "正在合并或回收此工作副本，请稍后重试",
+  "Run `kimi login` in a terminal, then retry in OmniCode.": "请先在终端运行 `kimi login`，然后回到 OmniCode 重试。",
+  "Kimi Code CLI not found. Install it with `npm i -g @moonshot-ai/kimi-code`, then retry.": "未找到 Kimi Code CLI，请运行 `npm i -g @moonshot-ai/kimi-code` 安装后重试。",
+  "Kimi Code does not support steering an in-flight turn.": "Kimi Code 不支持在当前轮次运行时插入消息。",
+  "Kimi Code process exited.": "Kimi Code 进程已退出。",
+  "Kimi Code did not return a session id.": "Kimi Code 未返回会话 ID。",
+  "The selected Kimi Code setting is no longer available. Refresh the model list and retry.": "所选 Kimi Code 设置已不可用，请刷新模型列表后重试。",
+  "This Kimi Code CLI does not support the selected permission mode. Update Kimi Code and retry.": "此 Kimi Code CLI 不支持所选权限模式，请更新 Kimi Code 后重试。",
+  "Kimi Code cannot use the shared WSL Host yet: sharing its credentials and session storage across Windows and Linux has not been verified.": "Kimi Code 暂不支持共享 WSL Host：尚未验证 Windows 与 Linux 之间的凭据和会话存储共享。"
 }

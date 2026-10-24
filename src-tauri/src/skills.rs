@@ -157,6 +157,8 @@ pub(crate) fn list_skills_from(
         if root.is_dir() {
             add_root(root, "user", "antigravity");
         }
+        add_root(project.join(".kimi-code/skills"), "project", "kimicode");
+        add_root(home.join(".kimi-code/skills"), "user", "kimicode");
         for (root, scope, namespace) in claude_plugin_skill_roots(home, project) {
             add_namespaced_root(
                 &mut by_name,
@@ -167,6 +169,8 @@ pub(crate) fn list_skills_from(
                 disabled_filter.as_ref(),
             );
         }
+    } else {
+        add_root(project.join(".kimi-code/skills"), "project", "kimicode");
     }
 
     let mut out: Vec<DiscoveredSkill> = by_name.into_values().collect();

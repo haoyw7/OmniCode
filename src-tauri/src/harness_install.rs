@@ -51,6 +51,8 @@ fn install_script(provider: &str, windows: bool) -> Result<String, String> {
         ("omp", false) => ("https://omp.sh/install", "--binary"),
         ("omp", true) => ("https://omp.sh/install.ps1", "-Binary"),
         ("fx", false) => ("https://fx.sh/setup.sh", ""),
+        ("kimicode", false) => ("https://code.kimi.com/kimi-code/install.sh", ""),
+        ("kimicode", true) => ("https://code.kimi.com/kimi-code/install.ps1", ""),
         ("hermes", false) => (
             "https://hermes-agent.nousresearch.com/install.sh",
             "--non-interactive",
@@ -151,7 +153,7 @@ mod tests {
     #[test]
     fn supports_native_windows_and_posix_without_interactive_setup() {
         for provider in [
-            "claude", "codex", "cursor", "grok", "opencode", "pi", "omp", "hermes",
+            "claude", "codex", "cursor", "grok", "opencode", "pi", "omp", "hermes", "kimicode",
         ] {
             assert!(!install_script(provider, true).unwrap().is_empty());
             assert!(!install_script(provider, false).unwrap().is_empty());

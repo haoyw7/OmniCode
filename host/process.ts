@@ -21,6 +21,7 @@ import {
 
 /** npm packages whose Windows .cmd shims OmniCode launches, by shim name. */
 const npmPackages: Record<string, string[]> = {
+  kimi: ["@moonshot-ai/kimi-code"],
   codex: ["@openai/codex"],
   claude: ["@anthropic-ai/claude-code"],
   opencode: ["opencode-ai", "@opencode/cli"],
@@ -32,6 +33,7 @@ const npmPackages: Record<string, string[]> = {
 };
 
 const binaryNames: Record<RemoteProvider, string[]> = {
+  kimicode: ["kimi"],
   codex: ["codex"],
   claude: ["claude"],
   cursor: ["cursor-agent", "agent"],
@@ -47,6 +49,7 @@ const binaryNames: Record<RemoteProvider, string[]> = {
 const providerDirectories = (provider: RemoteProvider): string[] => {
   const home = homedir();
   const extra: Partial<Record<RemoteProvider, string[]>> = {
+    kimicode: [join(home, ".kimi", "bin"), join(home, ".kimi-code", "bin")],
     claude: [
       join(home, ".claude", "local"),
       join(home, ".local", "share", "claude"),

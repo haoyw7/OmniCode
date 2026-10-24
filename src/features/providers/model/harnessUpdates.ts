@@ -16,6 +16,7 @@ export const UPDATABLE_HARNESSES: ReadonlySet<HarnessId> = new Set([
   "codex",
   "opencode",
   "pi",
+  "kimicode",
 ]);
 
 export type HarnessUpdate = {
